@@ -84,7 +84,7 @@ public abstract class Authorizer {
      *
      * @param subject the subject
      * @return the set of user roles for the given subject
-     * @throws RuntimeException o nerror retrieving user roles
+     * @throws RuntimeException on error retrieving user roles
      */
     public abstract Set getUserRoles(Subject subject) throws RuntimeException;
 
