@@ -6,6 +6,7 @@
 
 package com.l7tech.identity.internal;
 
+import java.io.Serializable;
 
 
 /**
@@ -14,7 +15,7 @@ package com.l7tech.identity.internal;
  * @author alex
  * @version $Revision$
  */
-public class GroupMembership {
+public class GroupMembership implements Serializable {
     public GroupMembership() {
     }
 

@@ -9,12 +9,13 @@ package com.l7tech.identity;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import java.util.Set;
+import java.io.Serializable;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class UserBean implements User {
+public class UserBean implements User, Serializable {
     public String getUniqueIdentifier() {
         return _uniqueId;
     }

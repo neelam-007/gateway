@@ -1,8 +1,9 @@
 package com.l7tech.identity;
 
 import java.util.Set;
+import java.io.Serializable;
 
-public class GroupBean implements Group {
+public class GroupBean implements Group, Serializable {
     public String getUniqueIdentifier() {
         return _uniqueId;
     }
