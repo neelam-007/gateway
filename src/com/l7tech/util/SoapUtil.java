@@ -65,6 +65,10 @@ public class SoapUtil {
         return getEnvelopePart( request, BODY );
     }
 
+    public static Element getBodyElement( Document request ) {
+        return getEnvelopePart( request, BODY );
+    }
+
     static Element getEnvelopePart( Request request, String elementName ) throws SAXException, IOException {
         return getEnvelopePart( getDocument( request ), elementName );
     }
@@ -107,6 +111,22 @@ public class SoapUtil {
         fault.setFaultCode( faultCode );
         fault.setFaultString( faultString);
         return fault;
+    }
+
+    /**
+     * Find the Namespace URI of the given document, which is assumed to contain a SOAP Envelope.
+     * @param request  the SOAP envelope to examine
+     * @return the body's namespace URI, or null if not found.
+     */
+    public static String getNamespaceUri( Document request ) {
+        Element body = SoapUtil.getBodyElement( request );
+        Node n = body.getFirstChild();
+        while ( n != null ) {
+            if ( n.getNodeType() == Node.ELEMENT_NODE )
+                return n.getNamespaceURI();
+            n = n.getNextSibling();
+        }
+        return null;
     }
 
     public static final String FC_CLIENT = "Client";
