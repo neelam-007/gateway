@@ -14,19 +14,21 @@ package com.l7tech.proxy.datamodel.exceptions;
  * Time: 9:56:47 AM
  */
 public class PolicyRetryableException extends Exception {
+    private static final String DEFAULT_MESSAGE = "Retry policy operation.";
+
     public PolicyRetryableException() {
-        super("Retry policy operation.");
+        super(DEFAULT_MESSAGE);
     }
 
     public PolicyRetryableException(String message) {
-        super(message);
+        super(message != null ? message : DEFAULT_MESSAGE);
     }
 
     public PolicyRetryableException(Throwable cause) {
-        super(cause);
+        super(DEFAULT_MESSAGE, cause);
     }
 
     public PolicyRetryableException(String message, Throwable cause) {
-        super(message, cause);
+        super(message != null ? message : DEFAULT_MESSAGE, cause);
     }
 }
