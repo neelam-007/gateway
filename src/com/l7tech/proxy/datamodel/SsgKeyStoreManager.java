@@ -173,7 +173,8 @@ public class SsgKeyStoreManager {
     }
 
     /**
-     * Get the private key for our client certificate with this SSG.
+     * Get the private key for our client certificate with this SSG.  Caller *must not* hold the SSG monitor
+     * when calling this method.
      *
      * @param ssg   the SSG whose KeyStore to examine
      * @return      The PrivateKey, or null if we haven't yet applied for a client certificate with this SSG.
@@ -184,6 +185,9 @@ public class SsgKeyStoreManager {
     public static PrivateKey getClientCertPrivateKey(Ssg ssg)
             throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException
     {
+        if (Thread.holdsLock(ssg))
+            throw new IllegalStateException("Must not hold SSG monitor when calling for private key");
+
         synchronized (ssg) {
             if (!isClientCertAvailabile(ssg))
                 return null;
