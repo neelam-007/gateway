@@ -1,14 +1,15 @@
 package com.l7tech.identity.ldap;
 
+import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import junit.framework.TestCase;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.io.IOException;
-
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.identity.User;
+import java.util.Set;
 
 /**
  * A test class for the ldap redesign.
@@ -24,7 +25,7 @@ public class LdapIdentityProviderTest extends TestCase {
 
     private LdapIdentityProviderConfig getConfigForSpock() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
-        LdapIdentityProviderConfig spockTemplate = templateManager.getTemplate("Standard LDAP Template");
+        LdapIdentityProviderConfig spockTemplate = templateManager.getTemplate("GenericLdap");
         //spockTemplate.setLdapUrl("ldap://localhost:3899");
         spockTemplate.setLdapUrl("ldap://spock:389");
         spockTemplate.setSearchBase("dc=layer7-tech,dc=com");
@@ -45,6 +46,19 @@ public class LdapIdentityProviderTest extends TestCase {
         }
     }
 
+    public void testGetGroupsAndMembers() throws Exception {
+        GroupManager manager = getSpockProvider().getGroupManager();
+        Collection groups = manager.findAll();
+        for (Iterator i = groups.iterator(); i.hasNext(); ) {
+            LdapGroup grp = (LdapGroup)i.next();
+            System.out.println("found group " + grp);
+            Set userheaders = manager.getUserHeaders(grp);
+            for (Iterator ii = userheaders.iterator(); ii.hasNext(); ) {
+                System.out.println("group member " + ii.next());
+            }
+        }
+    }
+
     public void testAuthenticate() throws Exception {
         try {
         User notauthenticated = getSpockProvider().getUserManager().findByLogin("flascelles");
@@ -62,5 +76,12 @@ public class LdapIdentityProviderTest extends TestCase {
             e.printStackTrace(System.err);
             throw e;
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        LdapIdentityProviderTest me = new LdapIdentityProviderTest();
+        me.testAuthenticate();
+        me.testGetUsers();
+        me.testGetGroupsAndMembers();
     }
 }
