@@ -24,7 +24,7 @@ public class ServiceStatistics implements Serializable {
         return _attemptedRequestCount;
     }
 
-    public void attemptedRequest() {
+    public synchronized void attemptedRequest() {
         _attemptedRequestCount++;
     }
 
@@ -32,7 +32,7 @@ public class ServiceStatistics implements Serializable {
         return _authorizedRequestCount;
     }
 
-    public void authorizedRequest() {
+    public synchronized void authorizedRequest() {
         _authorizedRequestCount++;
     }
 
@@ -40,7 +40,7 @@ public class ServiceStatistics implements Serializable {
         return _completedRequestCount;
     }
 
-    public void completedRequest() {
+    public synchronized void completedRequest() {
         _completedRequestCount++;
     }
 
