@@ -457,7 +457,7 @@
         <input message="Enter a version number" addproperty="build.version"/>
 
         <echo>Running cvs update ${buildnumber.file}</echo>
-        <cvs command="update -r HEAD ${buildnumber.path}"/>
+        <cvs command="update -C -r HEAD ${buildnumber.path}"/>
 
         <buildnumber/>
 
