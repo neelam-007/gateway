@@ -37,6 +37,7 @@ import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.io.PushbackInputStream;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -600,7 +601,36 @@ public class MessageProcessor {
 
             HttpHeaders headers = new HttpHeaders(postMethod.getResponseHeaders());
 
-            String responseString = postMethod.getResponseBodyAsString();
+
+            Header contentType = postMethod.getResponseHeader(XmlUtil.CONTENT_TYPE);
+            log.info("Response Content-Type: " + contentType);
+            if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf(XmlUtil.TEXT_XML) < 0)
+                return new SsgResponse(XmlUtil.stringToDocument(CannedSoapFaults.RESPONSE_NOT_XML), null, 500, null, null);
+
+            String responseString = null;
+            MultipartMessageReader multipartReader = null;
+            if(contentType.getValue().startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
+                MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + contentType.getValue());
+
+                String multipartBoundary = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY));
+                if (multipartBoundary == null) throw new IOException("Multipart header '" + contentTypeHeader.getName() + "' did not contain a boundary");
+
+                String innerType = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE));
+                if (innerType.startsWith(XmlUtil.TEXT_XML)) {
+
+                    InputStream is = postMethod.getRequestBody();
+                    multipartReader = new MultipartMessageReader(is, multipartBoundary);
+
+                    MultipartUtil.Part part = multipartReader.getSoapPart();
+                    if (!part.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
+
+                    responseString = part.getContent();
+                } else throw new IOException("Expected first part of multipart message to be XML (was '" + innerType + "')");
+
+            } else {
+                responseString = postMethod.getResponseBodyAsString();
+            }
+
             if (logResponse()) {
                 if (reformatLogs()) {
                     String logStr = responseString;
@@ -614,10 +644,6 @@ public class MessageProcessor {
                     log.info("Got response from Gateway: " + responseString);
             }
 
-            Header contentType = postMethod.getResponseHeader(XmlUtil.CONTENT_TYPE);
-            log.info("Response Content-Type: " + contentType);
-            if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf(XmlUtil.TEXT_XML) < 0)
-                return new SsgResponse(XmlUtil.stringToDocument(CannedSoapFaults.RESPONSE_NOT_XML), null, 500, null);
 
             Document responseDocument = XmlUtil.stringToDocument(responseString);
 
@@ -660,7 +686,7 @@ public class MessageProcessor {
                 processorResult = null;
             }
 
-            SsgResponse response = new SsgResponse(responseDocument, processorResult, status, headers);
+            SsgResponse response = new SsgResponse(responseDocument, processorResult, status, headers, multipartReader);
             if (status == 401 || status == 402) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");

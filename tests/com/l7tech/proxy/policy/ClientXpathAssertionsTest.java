@@ -54,11 +54,11 @@ public class ClientXpathAssertionsTest extends TestCase {
 
         // build simulated placeOrder response (we'll fake it with the request XML though)
         Document placeorderDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        SsgResponse placeorderRes = new SsgResponse(placeorderDoc, null, 200, null);
+        SsgResponse placeorderRes = new SsgResponse(placeorderDoc, null, 200, null, null);
 
         // build simulated getQuote response (we'll faek it with the request XML though)
         Document getquoteDoc = TestDocuments.getTestDocument(TestDocuments.ETTK_SIGNED_REQUEST);
-        SsgResponse getquoteRes = new SsgResponse(getquoteDoc, null, 200, null);
+        SsgResponse getquoteRes = new SsgResponse(getquoteDoc, null, 200, null, null);
 
         // build xpath assertion that matches placeorder, with a namespace prefix
         Map placeorderNsmap = XpathBasedAssertion.createDefaultNamespaceMap();

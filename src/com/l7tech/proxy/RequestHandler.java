@@ -18,6 +18,8 @@ import org.w3c.dom.NodeList;
 import javax.wsdl.Port;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PushbackInputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -236,16 +238,16 @@ public class RequestHandler extends AbstractHttpHandler {
             throw new HttpException(500, "Invalid SOAP envelope: " + e);
         }
 
-        SsgResponse responseString = null;
+        SsgResponse responseMessage = null;
         try {
-            responseString = getServerResponse(pendingRequest);
+            responseMessage = getServerResponse(pendingRequest);
         } catch (HttpChallengeRequiredException e) {
             interceptor.onMessageError(e);
             sendChallenge(response);
             log.info("Send HTTP Basic auth challenge back to the client");
         }
 
-        transmitResponse(200, response, responseString);
+        transmitResponse(200, response, responseMessage);
     }
 
     private void sendChallenge(HttpResponse response) throws IOException {
@@ -265,9 +267,35 @@ public class RequestHandler extends AbstractHttpHandler {
      */
     private void transmitResponse(int status, final HttpResponse response, SsgResponse ssgResponse) throws IOException {
         try {
+            OutputStream os = response.getOutputStream();
+
             response.setStatus(status);
             response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
-            response.getOutputStream().write(ssgResponse.getResponseAsString().getBytes());
+
+            MultipartMessageReader multipartReader = null;
+            if((multipartReader = ssgResponse.getMultipartReader()) != null) {
+                StringBuffer sb = new StringBuffer();
+
+                // add modified SOAP part
+                MultipartUtil.addModifiedSoapPart(sb,
+                        ssgResponse.getResponseAsString(),
+                        multipartReader.getSoapPart(),
+                        multipartReader.getMultipartBoundary());
+
+                PushbackInputStream pbis = multipartReader.getPushbackInputStream();
+
+                // push the modified SOAP part back to the input stream
+                pbis.unread(sb.toString().getBytes());
+
+                byte[] buf = new byte[1024];
+                int read = pbis.read(buf);
+                while (read > 0) {
+                    os.write(buf, 0, read);
+                }
+                                
+            } else {
+                os.write(ssgResponse.getResponseAsString().getBytes());
+            }
             response.commit();
         } catch (IOException e) {
             interceptor.onReplyError(e);

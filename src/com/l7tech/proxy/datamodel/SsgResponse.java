@@ -9,6 +9,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.MultipartMessageReader;
 import org.apache.commons.httpclient.Header;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -30,15 +31,17 @@ public class SsgResponse {
     final private int httpStatus;
     final private ProcessorResult processorResult;
     private String responseString = null;
+    private MultipartMessageReader multipartReader;
 
     public SsgResponse(Document wssProcessedResponse, ProcessorResult wssProcessorResult,
-                       int httpStatus, HttpHeaders headers)
+                       int httpStatus, HttpHeaders headers, MultipartMessageReader multipartReader)
     {
         if (wssProcessedResponse == null) throw new IllegalArgumentException("response document must be non-null");
         this.responseDoc = wssProcessedResponse;
         this.httpStatus = httpStatus;
         this.headers = headers;
         this.processorResult = wssProcessorResult;
+        this.multipartReader = multipartReader;
     }
 
     public static SsgResponse makeFaultResponse(String faultCode, String faultString, String faultActor) {
@@ -48,7 +51,7 @@ public class SsgResponse {
                                                                         "",
                                                                         "");
             HttpHeaders headers = new HttpHeaders(new Header[0]);
-            return new SsgResponse(XmlUtil.stringToDocument(responseString), null, 500, headers);
+            return new SsgResponse(XmlUtil.stringToDocument(responseString), null, 500, headers, null);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         }  catch (SAXException e) {
@@ -58,6 +61,10 @@ public class SsgResponse {
 
     public int getHttpStatus() {
         return this.httpStatus;
+    }
+
+    public MultipartMessageReader getMultipartReader() {
+        return multipartReader;
     }
 
     public String getResponseAsString() throws IOException {
