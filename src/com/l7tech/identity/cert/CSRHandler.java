@@ -9,7 +9,6 @@ import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.AuthenticatableHttpServlet;
-import sun.security.x509.X500Name;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -293,19 +292,9 @@ public class CSRHandler extends AuthenticatableHttpServlet {
                           return true;
                       }
                   });
-            } else if (connection instanceof com.sun.net.ssl.HttpsURLConnection) {
-                ((com.sun.net.ssl.HttpsURLConnection)connection).setHostnameVerifier(
-                  new com.sun.net.ssl.HostnameVerifier() {
-                      public boolean verify(String s, SSLSession sslSession) {
-                          return true;
-                      }
-                      public boolean verify(String s, String s1) {
-                          return true;
-                      }
-                  });
             } else {
                 // this should not happen
-                logger.finest("non https connection(?): " + connection.getClass().getName());
+                logger.severe("non https connection(?): " + connection.getClass().getName());
             }
 
             connection.setRequestProperty(CONTENT_TYPE, req.getContentType());
