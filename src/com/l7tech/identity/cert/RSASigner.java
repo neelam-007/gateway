@@ -7,12 +7,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Properties;
 import java.util.Arrays;
-import java.util.Vector;
 import java.util.Date;
 import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.security.cert.X509CRL;
 import java.security.*;
 import org.bouncycastle.jce.*;
 import org.bouncycastle.asn1.x509.*;
@@ -290,22 +288,6 @@ public class RSASigner {
         System.out.println("<createCertificate(pkcs10)");
         return ret;
     }
-
-
-    /**
-     *  Implements ISignSession::createCRL
-     *
-     *@param  certs          Description of the Parameter
-     *@return                Description of the Return Value
-     *@exception  Exception  Description of the Exception
-     */
-    public X509CRL createCRL(Vector certs) throws Exception {
-        System.out.println(">createCRL()");
-        X509CRL crl = null;
-        return crl;
-    }
-    // createCRL
-
 
     /**
      *  Gets the password from the user.
