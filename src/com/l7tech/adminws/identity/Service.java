@@ -20,9 +20,9 @@ import java.security.cert.CertificateEncodingException;
  *
  * Admin WS for identities (provider configs, users, groups)
  */
-public class Service {
+public class Service implements IdentityService {
 
-    public static final String VERSION = "20030908";
+    public static final String VERSION = "20030911";
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
 
     public Service() {
