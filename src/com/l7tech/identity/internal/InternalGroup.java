@@ -37,12 +37,12 @@ public class InternalGroup extends NamedEntityImp implements Group {
     }
 
     public Set getMembers() {
-        GroupManager gman = getGroupManager();
+        UserManager uman = getUserManager();
         try {
             Set out = new HashSet();
             for (Iterator i = getMemberHeaders().iterator(); i.hasNext();) {
                 EntityHeader header = (EntityHeader) i.next();
-                out.add( gman.findByPrimaryKey( header.getStrId() ) );
+                out.add( uman.findByPrimaryKey( header.getStrId() ) );
             }
             return out;
         } catch (FindException e) {
@@ -138,6 +138,21 @@ public class InternalGroup extends NamedEntityImp implements Group {
         return _groupManager;
     }
 
+    private UserManager getUserManager() {
+        if ( _userManager == null ) {
+            IdentityProviderConfig config = null;
+            long providerId = _groupBean.getProviderId();
+            try {
+                config = getConfigManager().findByPrimaryKey( providerId );
+            } catch (FindException e) {
+                throw new IllegalStateException( "Group " + this._name + "'s IdentityProviderConfig (id = " + providerId + ") has ceased to exist!" );
+            }
+            IdentityProvider provider = IdentityProviderFactory.makeProvider( config );
+            _userManager = provider.getUserManager();
+        }
+        return _userManager;
+    }
+
     private IdentityProviderConfigManager getConfigManager() {
         IdentityProviderConfigManager ipc =
           (IdentityProviderConfigManager)Locator.
@@ -150,4 +165,5 @@ public class InternalGroup extends NamedEntityImp implements Group {
 
     private GroupBean _groupBean;
     private GroupManager _groupManager;
+    private UserManager _userManager;
 }
