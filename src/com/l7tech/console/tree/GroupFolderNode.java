@@ -1,13 +1,11 @@
 package com.l7tech.console.tree;
 
 
-import com.l7tech.identity.GroupManager;
-import com.l7tech.console.action.NewUserAction;
 import com.l7tech.console.action.NewGroupAction;
+import com.l7tech.identity.GroupManager;
 
-import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
 import javax.swing.*;
+import javax.swing.tree.MutableTreeNode;
 import java.util.Enumeration;
 
 
@@ -19,6 +17,7 @@ import java.util.Enumeration;
  * @version 1.1
  */
 public class GroupFolderNode extends AbstractTreeNode {
+    public final static String NAME = "Groups";
     private final GroupManager groupManager;
     private long providerId;
 
@@ -87,7 +86,7 @@ public class GroupFolderNode extends AbstractTreeNode {
      * @return the name as a String
      */
     public String getName() {
-        return "Groups";
+        return NAME;
     }
 
     /**

@@ -16,6 +16,8 @@ import java.util.Enumeration;
  * @version 1.1
  */
 public class UserFolderNode extends AbstractTreeNode {
+    public static String NAME = "Users";
+
     private UserManager userManager;
     private long providerId;
 
@@ -71,7 +73,7 @@ public class UserFolderNode extends AbstractTreeNode {
      * @return the name as a String
      */
     public String getName() {
-        return "Users";
+        return NAME;
     }
 
 

@@ -7,12 +7,12 @@ import java.util.Enumeration;
 
 
 /**
- * TreeNodeAction - bag of utility methods for TreeNodes.
+ * TreeNodeActions - bag of utility methods for TreeNodes.
  */
-public class TreeNodeAction {
+public class TreeNodeActions {
 
     // Hide the constructor
-    private TreeNodeAction() {
+    private TreeNodeActions() {
     }
 
     /**
@@ -22,7 +22,7 @@ public class TreeNodeAction {
      * instance.
      *
      * @param name   the name to look for
-     * @param node   the intiial position where the search starts
+     * @param node   the intial position where the search starts
      * @return the <CODE>TreeNode</CODE> that contains the
      *         userObject with the given name, or <B>null</B> if
      *         not found
@@ -32,13 +32,13 @@ public class TreeNodeAction {
         while (enum.hasMoreElements()) {
             DefaultMutableTreeNode tn =
               (DefaultMutableTreeNode) enum.nextElement();
-            Object o = tn.getUserObject();
-            if (!(o instanceof AbstractTreeNode)) {
+
+            if (!(tn instanceof AbstractTreeNode)) {
                 continue;
             }
-            AbstractTreeNode dobj = (AbstractTreeNode) o;
+            AbstractTreeNode an = (AbstractTreeNode) tn;
 
-            if (name.equals(dobj.getName())) {
+            if (name.equals(an.getName())) {
                 return tn;
             }
         }

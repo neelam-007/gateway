@@ -1013,7 +1013,7 @@ public class MainWindow extends JFrame {
      */
     private void selectNodeByName(String name) {
         TreeNode node =
-          TreeNodeAction.
+          TreeNodeActions.
           nodeByName(name,
             (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot());
         if (node != null) {
@@ -1031,7 +1031,7 @@ public class MainWindow extends JFrame {
     private void removeNode(EntityTreeNode node) {
         // store the parent node to use as a panel for later
         EntityTreeNode parentNode = (EntityTreeNode)node.getParent();
-        if (!TreeNodeAction.deleteNode(node)) return;
+        if (!TreeNodeActions.deleteNode(node)) return;
 
         // node deleted now change selection to parent
         TreePath tPath = new TreePath(parentNode.getPath());

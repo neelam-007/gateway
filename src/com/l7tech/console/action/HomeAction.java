@@ -2,12 +2,18 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.GroupFolderNode;
+import com.l7tech.console.tree.TreeNodeActions;
+import com.l7tech.console.tree.UserFolderNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.WindowManager;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.io.IOException;
 import java.net.URL;
 
@@ -18,8 +24,8 @@ import java.net.URL;
  * @version 1.0
  */
 public class HomeAction extends BaseAction {
-   private WorkSpacePanel wpanel;
-   private ClassLoader cl = getClass().getClassLoader();
+    private WorkSpacePanel wpanel;
+    private ClassLoader cl = getClass().getClassLoader();
 
     public HomeAction() {
         // Law of Demeter oh yeah
@@ -58,10 +64,10 @@ public class HomeAction extends BaseAction {
     public void performAction() {
         SwingUtilities.invokeLater(
           new Runnable() {
-            public void run() {
-                wpanel.setComponent(getHomePageComponent());
-            }
-        });
+              public void run() {
+                  wpanel.setComponent(getHomePageComponent());
+              }
+          });
     }
 
 
@@ -84,7 +90,36 @@ public class HomeAction extends BaseAction {
                             }
                         });
                     } else if (EDIT_POLICY.equals(url)) {
+                    } else if (ADD_USER.equals(url)) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                JTree tree =
+                                  (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+                                if (tree != null) {
+                                    AbstractTreeNode node =
+                                      (AbstractTreeNode)TreeNodeActions.
+                                      nodeByName(UserFolderNode.NAME,
+                                                 (DefaultMutableTreeNode)tree.getModel().getRoot());
+                                    if (node !=null) new NewUserAction(node).performAction();
+                                }
 
+                            }
+                        });
+                    } else if (ADD_GROUP.equals(url)) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                JTree tree =
+                                  (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+                                if (tree != null) {
+                                    AbstractTreeNode node =
+                                      (AbstractTreeNode)TreeNodeActions.
+                                      nodeByName(GroupFolderNode.NAME,
+                                                 (DefaultMutableTreeNode)tree.getModel().getRoot());
+                                    if (node !=null) new NewGroupAction(node).performAction();
+                                }
+
+                            }
+                        });
                     }
                 }
             }
@@ -100,4 +135,6 @@ public class HomeAction extends BaseAction {
 
     private static final String ADD_SERVICE = "file://add.service";
     private static final String EDIT_POLICY = "file://edit.policy";
+    private static final String ADD_USER = "file://add.user";
+    private static final String ADD_GROUP = "file://add.group";
 }
