@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.io.IOException;
 
 /**
  * The interface <code>CustomAssertionsRegistrar</code> implementations
@@ -35,11 +36,21 @@ public interface CustomAssertionsRegistrar extends Remote {
      * Resolve the policy with the custom assertions support for a
      * given service. The server is asked will resolve registered
      * custom elements.
-     * @param eh the netity header representing the service
+     * @param eh the entoty header representing the service
      * @return the policy tree
      * @throws RemoteException on remote invocation error
      * @throws ObjectNotFoundException if the service cannot be found
      */
     Assertion resolvePolicy(EntityHeader eh)
       throws RemoteException, ObjectNotFoundException;
+
+     /**
+     * Resolve the policy in the xml string format with the custom assertions
+      * support. The server is asked will resolve registered custom elements.
+     * @param xml the netity header representing the service
+     * @return the policy tree
+     * @throws RemoteException on remote invocation error
+       @throws IOException on policy format error
+     */
+    Assertion resolvePolicy(String xml) throws IOException, RemoteException;
 }

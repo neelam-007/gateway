@@ -96,6 +96,19 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
         }
     }
 
+    /**
+     * Resolve the policy in the xml string format with the custom assertions
+     * support. The server is asked will resolve registered custom elements.
+     *
+     * @param xml the netity header representing the service
+     * @return the policy tree
+     * @throws java.rmi.RemoteException on remote invocation error
+     * @throws IOException on policy format error
+     */
+    public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
+        return WspReader.parse(xml);
+    }
+
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection result = new ArrayList();
         Iterator it = customAssertionDescriptors.iterator();
