@@ -7,20 +7,17 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import com.l7tech.common.xml.Wsdl;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -36,6 +33,8 @@ import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Downloads WSDL documents from the Ssg, and rewrites the target URLs.
@@ -187,7 +186,7 @@ public class WsdlProxy {
                 } else if (status == 404) {
                     throw new ServiceNotFoundException("No service was found on Gateway " + ssg + " with serviceoid " + serviceoid);
                 } else if (status == 401) {
-                    pw = Managers.getCredentialManager().getNewCredentials(ssg);
+                    pw = Managers.getCredentialManager().getNewCredentials(ssg, true);
                     // FALLTHROUGH - continue and try again with new password
                 } else if (status == -1) {
                     // FALLTHROUGH -- continue and try again with empty keystore

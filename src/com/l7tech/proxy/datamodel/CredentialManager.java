@@ -43,10 +43,11 @@ public abstract class CredentialManager {
      * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
      * @param ssg the Ssg whose credentials you want to update
+     * @param displayBadPasswordMessage if true, user will be told that current credentials are no good.
      * @return the new credentials for this Ssg
      * @throws OperationCanceledException if we prompted the user, but he clicked cancel
      */
-    public abstract PasswordAuthentication getNewCredentials(Ssg ssg) throws OperationCanceledException;
+    public abstract PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException;
 
     /**
      * Unobtrusively notify that a lengthy operation is now in progress.

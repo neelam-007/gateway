@@ -23,9 +23,11 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.security.KeyStoreException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.*;
 
 /**
  * Panel listing known SSGs and allowing create/edit/delete.
@@ -375,9 +377,9 @@ public class SsgListPanel extends JPanel {
                                     prompted = true;
                                 }
 
-                                PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
+                                PasswordAuthentication pw = Managers.getCredentialManager().getNewCredentials(ssg, false);
                                 if (newpass == null)
-                                    newpass = PasswordDialog.getPassword(Gui.getInstance().getFrame(), "Enter desired new password");
+                                    newpass = PasswordDialog.getPassword(Gui.getInstance().getFrame(), "New password");
                                 if (newpass == null)
                                     return;
 
@@ -413,7 +415,7 @@ public class SsgListPanel extends JPanel {
                                     return;
                                 } catch (BadCredentialsException e1) {
                                     log.log(Level.WARNING, e1.getMessage(), e1);
-                                    Gui.errorMessage("Unable to change your password -- the Gateway reports that your current " +
+                                    Gui.errorMessage("Unable to change your password -- the Gateway reports that your\ncurrent " +
                                                      "password or client certificate is not valid.");
                                     return;
                                 } catch (Exception e1) {

@@ -75,7 +75,7 @@ public class GuiCredentialManager extends CredentialManager {
     public PasswordAuthentication getCredentials(final Ssg ssg) throws OperationCanceledException {
         for (;;) {
             try {
-                return getCredentials(ssg, false);
+                return getCredentials(ssg, false, false);
             } catch (KeyStoreCorruptException e) {
                 notifyKeyStoreCorrupt(ssg);
                 SsgKeyStoreManager.deleteStores(ssg);
@@ -84,10 +84,10 @@ public class GuiCredentialManager extends CredentialManager {
         }
     }
 
-    public PasswordAuthentication getNewCredentials(final Ssg ssg) throws OperationCanceledException {
+    public PasswordAuthentication getNewCredentials(final Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
         for (;;) {
             try {
-                return getCredentials(ssg, true);
+                return getCredentials(ssg, displayBadPasswordMessage, true);
             } catch (KeyStoreCorruptException e) {
                 notifyKeyStoreCorrupt(ssg);
                 SsgKeyStoreManager.deleteStores(ssg);
@@ -96,14 +96,16 @@ public class GuiCredentialManager extends CredentialManager {
         }
     }
 
-    private PasswordAuthentication getCredentials(final Ssg ssg, final boolean oldOnesWereBad)
+    private PasswordAuthentication getCredentials(final Ssg ssg, final boolean oldOnesWereBad, boolean mustGetNewOnes)
             throws OperationCanceledException, KeyStoreCorruptException
     {
+        if (oldOnesWereBad) mustGetNewOnes = true;
+
         if (ssg.getTrustedGateway() != null)
             throw new OperationCanceledException("Not permitted to send password credentials to a Federated Gateway");
 
         PasswordAuthentication pw = ssg.getCredentials();
-        if (!oldOnesWereBad && pw != null)
+        if (!mustGetNewOnes && pw != null)
             return pw;
 
         // If this SSG isn't supposed to be hassling us with dialog boxes, stop now

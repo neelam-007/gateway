@@ -6,13 +6,13 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Default CredentialManager implementation.  This version requires that the credentials already be
@@ -43,7 +43,7 @@ public class CredentialManagerImpl extends CredentialManager {
         throw new CredentialsUnavailableException("Unable to obtain new credentials");
     }
 
-    public PasswordAuthentication getNewCredentials(Ssg ssg) throws OperationCanceledException {
+    public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
         log.log(Level.WARNING, "Headless CredentialManager: unable to obtain new credentials");
         throw new CredentialsUnavailableException("Unable to obtain new credentials");
     }

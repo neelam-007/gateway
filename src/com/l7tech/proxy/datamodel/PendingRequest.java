@@ -163,7 +163,7 @@ public class PendingRequest {
     public PasswordAuthentication getNewCredentials() throws OperationCanceledException, HttpChallengeRequiredException {
         if (ssg.isChainCredentialsFromClient())
             throw new HttpChallengeRequiredException("Invalid username or password");
-        return this.pw = credentialManager.getNewCredentials(ssg);
+        return this.pw = credentialManager.getNewCredentials(ssg, true);
     }
 
     /**
