@@ -1,33 +1,27 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 
 import java.util.*;
 
 /**
  * Default policy path builder. The class builds assertion paths from
  * the assertion tree.
- *
+ * <p/>
  * It analyzes the policy using the following :
- * <p>
- * <ul>
- * <li>Given the assertion tree, generate the list of possible policy
- * paths. Policy path is a sequence of assertions that is processed
+ * <p/>
+ * Given the assertion tree, generate the list of possible assertion
+ * paths. Assertion path is a sequence of assertions that is processed
  * by the policy enforcemment point (<i>message processor</i> in L7
  * parlance). The <i>and</i> composite assertion results in a single
  * path, and <i>or</i> composite assertion generates number of paths
  * that is equal to a number of children. This is done by preorder
  * traversal of the policy tree.
- * <li>Processes each policy path and determine if the sequence of
- * assertions is in expected order.
- * </ul>
- * <p>
-
- *
+ * <p/>
+ * <p/>
+ * <p/>
  * the result is returned in an object of <code>PolicyPathResult</code> type.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
@@ -46,15 +40,15 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * the <code>Assertion</code> tree.
      *
      * @param assertion the assertion tree to attempt the build
-     * path for.
+     *                  path for.
      * @return the result of the build
      */
     public PolicyPathResult generate(Assertion assertion) {
         Set paths = generatePaths(assertion);
 
-//        for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
-//                printPath((AssertionPath)iterator.next());
-//        }
+        for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
+            printPath((AssertionPath)iterator.next());
+        }
 
         return new DefaultPolicyPathResult(paths);
     }
@@ -79,9 +73,11 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                 assertionPaths.remove(cp);
                 AssertionPath assertionPath = cp.addAssertion(anext);
                 assertionPaths.add(assertionPath);
-                if (isSplitPath(anext)) pathStack.push(assertionPath);
+                if (isSplitPath(anext)) {
+                    pathStack.push(assertionPath);
+                }
             } else {
-                Set add = new HashSet();
+                Set add = new LinkedHashSet();
                 Set remove = new HashSet();
 
                 for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
@@ -92,20 +88,32 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                         remove.add(assertionPath);
                     }
                 }
-                AssertionPath[] paths = (AssertionPath[])add.toArray(new AssertionPath[] {});
+                AssertionPath[] paths = (AssertionPath[])add.toArray(new AssertionPath[]{});
                 if (paths.length > 0) {
                     AssertionPath path = paths[paths.length - 1];
-                    if (path.lastAssertion() instanceof OneOrMoreAssertion)
-                        pathStack.push(path);
+                    Assertion lastAssertion = path.lastAssertion();
+                    if (lastAssertion instanceof OneOrMoreAssertion) {
+                        OneOrMoreAssertion oom = (OneOrMoreAssertion)lastAssertion;
+                        if (!oom.getChildren().isEmpty())
+                            pathStack.push(path);
+                    }
                 }
                 assertionPaths.removeAll(remove);
                 assertionPaths.addAll(add);
             }
+
+            List siblings = anext.getParent().getChildren();
+            // if last sibling and the parent path was pushed on stack, pop the parent
+            if (siblings.indexOf(anext) + 1 == siblings.size()) {
+                if (parentCreatesNewPaths(anext)) {
+                    pathStack.pop();
+                }
+            }
         }
-        pathStack.pop();
         // return pruneEmptyComposites(assertionPaths);
-        return assertionPaths; 
+        return assertionPaths;
     }
+
     private Stack pathStack = new Stack();
 
 
@@ -124,7 +132,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      *
      * @param assertionPaths the assertion path set to process
      * @return the new <code>Set</code> without assertion paths
-     * that end with empty composites.
+     *         that end with empty composites.
      */
     private Set pruneEmptyComposites(Set assertionPaths) {
         Set result = new HashSet();
@@ -150,6 +158,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
 
         /**
          * returns the number of paths in this result
+         *
          * @return the number of assertiuon paths
          */
         public int getPathCount() {
@@ -159,8 +168,8 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         /**
          * return the <code>Set</code> of paths that this path result contains
          *
-         * @see AssertionPath
          * @return the set of assertion paths
+         * @see AssertionPath
          */
         public Set paths() {
             return assertionPaths;
@@ -193,11 +202,11 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
 
     private static void printPath(AssertionPath ap) {
         Assertion[] ass = ap.getPath();
-System.out.println("** Begin assertion path");
+        System.out.println("** Begin assertion path");
         for (int i = 0; i < ass.length; i++) {
-System.out.println(ass[i].getClass());
+            System.out.println(ass[i].getClass());
         }
-System.out.println("** End assertion path");
+        System.out.println("** End assertion path");
 
     }
 
