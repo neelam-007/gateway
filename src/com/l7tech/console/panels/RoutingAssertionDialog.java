@@ -153,7 +153,7 @@ public class RoutingAssertionDialog extends JDialog {
 
         serviceUrlTextField = new JTextField();
         serviceUrlTextField.setText(assertion.getProtectedServiceUrl());
-        serviceUrlTextField.setPreferredSize(new Dimension(200, 20));
+        serviceUrlTextField.setPreferredSize(new Dimension(300, 20));
         serviceUrlPanel.add(serviceUrlTextField);
 
         JButton buttonDefaultUrl = new JButton();
@@ -182,7 +182,7 @@ public class RoutingAssertionDialog extends JDialog {
                 }
             }
         });
-        buttonDefaultUrl.setText("Reset");
+        buttonDefaultUrl.setText("Default");
         serviceUrlPanel.add(buttonDefaultUrl);
 
         return serviceUrlPanel;
@@ -206,31 +206,7 @@ public class RoutingAssertionDialog extends JDialog {
 
         JPanel authMethodPanel = new JPanel();
         authMethodPanel.setLayout(new BoxLayout(authMethodPanel, BoxLayout.X_AXIS));
-        JLabel credentialsLabel = new JLabel();
-        credentialsLabel.setText("Credentials");
-        authMethodPanel.add(credentialsLabel);
-        authMethodPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
-//        final JComboBox acBox = getAuthenticationMethodComboBox();
-//        acBox.addActionListener( new ActionListener() {
-//            public void actionPerformed(ActionEvent e) {
-//                boolean enable = !isAnonymous();
-//                identityTextField.setEnabled(enable);
-//                identityPasswordField.setEnabled(enable);
-//                realmTextField.setEnabled(enable);
-//            }
-//        });
-     //   authMethodPanel.add(Box.createGlue());
-        // default disable
-//             SwingUtilities.invokeLater(new Runnable() {
-//                 public void run() {
-//                     acBox.setSelectedIndex(0);
-//                 }
-//             });
-
-   //     authMethodPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
-   //     authMethodPanel.add(Box.createGlue());
         credentialsPanel.add(authMethodPanel);
 
         credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
@@ -290,8 +266,7 @@ public class RoutingAssertionDialog extends JDialog {
 
 
         Utilities.equalizeComponentSizes(
-          new JComponent[]{credentialsLabel,
-                           realmLabel,
+          new JComponent[]{realmLabel,
                            identityLabel,
                            passwordLabel});
 
