@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.server.identity.IdentityProviderFactory;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -40,7 +39,7 @@ public class IdentityRule extends Filter {
     public Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException {
         requestor = policyRequestor;
         if (assertionTree == null) return null;
-        applyRules(assertionTree);
+        applyRules(assertionTree, null);
         if (anIdentityAssertionWasFound && !userPassedAtLeastOneIdentityAssertion && requestor != null) {
             logger.severe("This user is not authorized to consume this service. Policy filter returning null.");
             return null;
@@ -51,22 +50,32 @@ public class IdentityRule extends Filter {
     /**
      * returns true if one or more assertion was deleted amoungs the siblings of this assertion
      */
-    private boolean applyRules(Assertion arg) throws FilteringException {
+    private boolean applyRules(Assertion arg, Iterator parentIterator) throws FilteringException {
         // apply rules on this one
         if (arg instanceof IdentityAssertion) {
             anIdentityAssertionWasFound = true;
             if (validateIdAssertion((IdentityAssertion)arg)) {
                 userPassedAtLeastOneIdentityAssertion = true;
-                removeSelfFromParent(arg, false);
-            }
-            else {
-                Assertion parent = arg.getParent();
-                if (parent == null) return true;
-                else if (parent instanceof AllAssertion) {
-                    removeSelfAndAllSiblings(arg);
-                    //removeSelfFromParent(arg, true);
+                if (parentIterator == null) {
+                    throw new RuntimeException("Invalid policy, all policies must have a composite assertion at the root");
                 }
-                else removeSelfFromParent(arg, false);
+                parentIterator.remove();
+            } else {
+                if (parentIterator == null) {
+                    throw new RuntimeException("Invalid policy, all policies must have a composite assertion at the root");
+                }
+                Assertion parent = arg.getParent();
+                if (parent == null) {
+                    throw new RuntimeException("This should not happen");
+                } else if (parent instanceof AllAssertion) {
+                    parentIterator.remove();
+                    while (parentIterator.hasNext()) {
+                        parentIterator.next();
+                        parentIterator.remove();
+                    }
+                } else {
+                    parentIterator.remove();
+                }
             }
             return true;
         } else if (arg instanceof CompositeAssertion) {
@@ -75,19 +84,13 @@ public class IdentityRule extends Filter {
             Iterator i = root.getChildren().iterator();
             while (i.hasNext()) {
                 Assertion kid = (Assertion)i.next();
-                boolean res = applyRules(kid);
-                // the children were affected
-                if (res) {
-                    // if all children of this composite were removed, we have to remove it from it's parent
-                    if (root.getChildren().isEmpty()) {
-                        removeSelfFromParent(root, false);
-                        return true;
-                    }
-                    // otherwise continue, but reget the iterator because the list of children is affected
-                    else i = root.getChildren().iterator();
-                }
+                applyRules(kid, i);
             }
-            // else unknown
+            // if all children of this composite were removed, we have to remove it from it's parent
+            if (root.getChildren().isEmpty() && parentIterator != null) {
+                parentIterator.remove();
+                return true;
+            }
         }
         return false;
     }
@@ -100,6 +103,8 @@ public class IdentityRule extends Filter {
     }
 
     public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user) throws FilteringException {
+        /*
+        Free pass for federated users no longer applies
         try {
             IdentityProvider provider = IdentityProviderFactory.getProvider(idassertion.getIdentityProviderOid());
             if (provider == null) {
@@ -112,13 +117,16 @@ public class IdentityRule extends Filter {
             logger.log( Level.WARNING, MISSING_PROVIDER_MESSAGE, e );
             return false;
         }
+        */
 
         if (user == null) return false;
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
             SpecificUser userass = (SpecificUser)idassertion;
             if (userass.getIdentityProviderOid() == user.getProviderId())
-                if (userass.getUserLogin().equals(user.getLogin())) return true;
+                if (userass.getUserLogin().equals(user.getLogin())) {
+                    return true;
+                }
             return false;
         } else if (idassertion instanceof MemberOfGroup) {
             MemberOfGroup grpmemship = (MemberOfGroup)idassertion;
@@ -166,5 +174,4 @@ public class IdentityRule extends Filter {
     private User requestor = null;
     private boolean anIdentityAssertionWasFound = false;
     private boolean userPassedAtLeastOneIdentityAssertion = false;
-    private static final String MISSING_PROVIDER_MESSAGE = "Identity assertion refers to a nonexistent identity provider";
 }

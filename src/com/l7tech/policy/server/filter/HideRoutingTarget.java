@@ -20,7 +20,7 @@ import java.util.Iterator;
 public class HideRoutingTarget extends Filter {
     public Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException {
         if (assertionTree == null) return null;
-        applyRules(assertionTree);
+        applyRules(assertionTree, null);
         return assertionTree;
     }
 
@@ -31,10 +31,13 @@ public class HideRoutingTarget extends Filter {
     /**
      * returns true if one or more assertion was deleted amoungs the siblings of this assertion
      */
-    private boolean applyRules(Assertion arg) throws FilteringException {
+    private boolean applyRules(Assertion arg, Iterator parentIterator) throws FilteringException {
         // apply rules on this one
         if (arg instanceof RoutingAssertion) {
-            removeSelfFromParent(arg, false);
+            if (parentIterator == null) {
+                throw new RuntimeException("Invalid policy, all policies must have a composite assertion at the root");
+            }
+            parentIterator.remove();
             return true;
         } else if (arg instanceof CompositeAssertion) {
             // apply rules to children
@@ -42,17 +45,12 @@ public class HideRoutingTarget extends Filter {
             Iterator i = root.getChildren().iterator();
             while (i.hasNext()) {
                 Assertion kid = (Assertion)i.next();
-                boolean res = applyRules(kid);
-                // the children were affected
-                if (res) {
-                    // if all children of this composite were removed, we have to remove it from it's parent
-                    if (root.getChildren().isEmpty()) {
-                        removeSelfFromParent(root, false);
-                        return true;
-                    }
-                    // otherwise continue, but reget the iterator because the list of children is affected
-                    else i = root.getChildren().iterator();
-                }
+                applyRules(kid, i);
+            }
+            // if all children of this composite were removed, we have to remove it from it's parent
+            if (root.getChildren().isEmpty() && parentIterator != null) {
+                parentIterator.remove();
+                return true;
             }
         }
         return false;
