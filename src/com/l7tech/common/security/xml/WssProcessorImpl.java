@@ -50,18 +50,6 @@ public class WssProcessorImpl implements WssProcessor {
         JceProvider.init();
     }
 
-    private static class ProcessorException extends com.l7tech.common.security.xml.ProcessorException {
-        public ProcessorException(Throwable cause) {
-            super();
-            initCause(cause);
-        }
-
-        public ProcessorException(String message) {
-            super();
-            initCause(new IllegalArgumentException(message));
-        }
-    }
-
     private static class ParsedElementImpl implements ParsedElement {
         private final Element element;
 
