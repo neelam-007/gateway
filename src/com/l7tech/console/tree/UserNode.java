@@ -77,7 +77,7 @@ public class UserNode extends EntityHeaderNode {
     public Assertion asAssertion() {
         ProviderNode parent = (ProviderNode)getParent();
         EntityHeader e = parent.getEntityHeader();
-        return new SpecificUser(parent.getEntityHeader().getOid(), e.getName());
+        return new SpecificUser(parent.getEntityHeader().getOid(), getEntityHeader().getName());
     }
 
     /**
