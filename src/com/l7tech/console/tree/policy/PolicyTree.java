@@ -239,7 +239,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     /**
      * Make a popup menu from actions.
-     * The menu is constructed from the set of actions returned
+     * The menu is constructed from the set of actions and returned. If the actions arrays
+     * is empty, or there are no actions that could be added to the menu (unauthorized user)
+     * the <b>null</b>  <code>JPopupMenu</code> is returned
      *
      * @return the popup menu
      */
@@ -247,16 +249,24 @@ public class PolicyTree extends JTree implements DragSourceListener,
         if (actions == null || actions.length == 0)
             return null;
         JPopupMenu pm = new JPopupMenu();
+        boolean empty = true;
         for (int i = 0; i < actions.length; i++) {
             final Action action = actions[i];
             if (action instanceof SecureAction) {
                 if (((SecureAction)action).isAuthorized()) {
                     pm.add(action);
+                    empty = false;
                 }
             } else {
                 pm.add(action);
+                empty = false;
             }
         }
+
+        if (empty) { // no items have been added
+            return null;
+        }
+
         Utilities.removeToolTipsFromMenuItems(pm);
         return pm;
     }
