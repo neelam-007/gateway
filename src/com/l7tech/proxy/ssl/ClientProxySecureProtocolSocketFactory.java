@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory implements SecureProtocolSocketFactory {
     private static final Logger log = Logger.getLogger(ClientProxySecureProtocolSocketFactory.class.getName());
-    private static final SSLSocketFactory defaultSslSocketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
+    private final SSLSocketFactory defaultSslSocketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
 
     private static class InstanceHolder {
         private static final ClientProxySecureProtocolSocketFactory INSTANCE = new ClientProxySecureProtocolSocketFactory();
