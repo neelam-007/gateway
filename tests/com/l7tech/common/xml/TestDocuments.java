@@ -51,6 +51,7 @@ public final class TestDocuments {
     public static final String ETTK_ENCRYPTED_REQUEST = DIR + "ibmEttkEncryptedRequest.xml";
     public static final String ETTK_SIGNED_ENCRYPTED_REQUEST = DIR + "ibmEttkSignedEncryptedRequest.xml";
     public static final String WEBSPHERE_SIGNED_REQUEST = DIR + "websphereSignedRequest.xml";
+    public static final String AGENT_FAILING_SIGNED_REQUEST = DIR + "agentSignedRequest.xml";
 
     public static final String WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndWrappedL7Actors.xml";
     public static final String MULTIPLE_WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndMultipleL7Actors.xml";

@@ -1,0 +1,18 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><soap:Header><wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" soap:mustUnderstand="true"><wsu:Timestamp wsu:Id="Timestamp-0-84c4944e19c5ec3e64059ffeab2ad74d"><wsu:Created>2004-08-12T23:35:06.953Z</wsu:Created><wsu:Expires>2004-08-12T23:40:06.953Z</wsu:Expires></wsu:Timestamp><wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="BinarySecurityToken-1-08e560f02d51605c1c0c716351cdc793">MIICDTCCAXagAwIBAgIIAxA6KV+rOCswDQYJKoZIhvcNAQEFBQAwIDEeMBwGA1UEAxMVcm9vdC53aGFsZS5sN3RlY2guY29tMB4XDTA0MDgxMjIyMTIyOVoXDTA2MDgxMjIyMTIyOVowEDEOMAwGA1UEAxMFZnBhbmcwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAKUu3SKRf3XaYIROuknXNhSSt68RkC8d5ahzQOotHkhQtgzIfXmPtzE07xSKEgDzYH7pObj55/4HjaQYueSIuaXh15P513832/aL4zhIota8aNPKgQOEfN2Z9BBZ0kOw8dJM1lz5Bz8Lv4FKudH6Wt2pGE8UYlwVwFBQ6lvxHhBBAgMBAAGjYDBeMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgXgMB0GA1UdDgQWBBQNn0dqnmP9tdpec46UUEO95zfarDAfBgNVHSMEGDAWgBR4zuXIlCmvMsTXPvvdv0x0+YHq8TANBgkqhkiG9w0BAQUFAAOBgQB9Uj1HrEH4Q0p6DIO2pmZkb+AuWJ0iSdYF09bGZNfFi2SO8CMAQbUjotGIodZOJmIpTQywCTWZttaYo8z3JHNR/6nhLxuGGMmcCYb0zktuseL6fMdRshXLcWXJVcphRnDUxvL8NNEA1vrW4kAfISDXGlkQzftKSMTdxB5H3nShgw==</wsse:BinarySecurityToken><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+  <ds:SignedInfo>
+    <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"><c14n:InclusiveNamespaces xmlns:c14n="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList=""></c14n:InclusiveNamespaces></ds:CanonicalizationMethod>
+    <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"></ds:SignatureMethod>
+    <ds:Reference URI="#Timestamp-0-84c4944e19c5ec3e64059ffeab2ad74d">
+      <ds:Transforms>
+        <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"><c14n:InclusiveNamespaces xmlns:c14n="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList=""></c14n:InclusiveNamespaces></ds:Transform>
+      </ds:Transforms>
+      <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></ds:DigestMethod>
+      <ds:DigestValue>OioSFWJtSnA1IdsryPVDSl13MGA=</ds:DigestValue>
+    </ds:Reference>
+  </ds:SignedInfo>
+  <ds:SignatureValue>
+    IMftF0Dcc9RorpMgjeHGAmT80IYnfoxUVaoGu5kJCDhpy9+RaXMyqXBudC0jaEPi4U3AGnMc
+    naTO1OqpntX0Nl4k2Ce7betnW3Gc60t4G542o6XUtWR+AqCQDWw1cCRzF5ilqx48KMT+UkPD
+    eBKk5A7AZO/trpYLMBzIvcAElTQ=
+  </ds:SignatureValue>
+<ds:KeyInfo><wsse:SecurityTokenReference><wsse:Reference URI="#BinarySecurityToken-1-08e560f02d51605c1c0c716351cdc793" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"></wsse:Reference></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></wsse:Security></soap:Header><soap:Body><getTodaysBirthdays xmlns="http://www.abundanttech.com/webservices/deadoralive"></getTodaysBirthdays></soap:Body></soap:Envelope>
