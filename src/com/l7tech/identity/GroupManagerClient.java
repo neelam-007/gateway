@@ -1,15 +1,11 @@
 package com.l7tech.identity;
 
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.CannotDeleteAdminAccountException;
 import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Layer 7 Technologies, inc.
@@ -17,15 +13,16 @@ import java.rmi.RemoteException;
  * Date: Jun 24, 2003
  *
  */
-public class GroupManagerClient extends IdentityManagerClient implements GroupManager {
+public class GroupManagerClient extends GroupManagerAdapter {
 
     public GroupManagerClient(IdentityProviderConfig config) {
-        super(config);
+        manager = new IdentityManagerClient( config );
+        this.config = config;
     }
 
     public Group findByPrimaryKey(String oid) throws FindException {
         try {
-            return getStub().findGroupByPrimaryKey(config.getOid(), oid);
+            return manager.getStub().findGroupByPrimaryKey(config.getOid(), oid);
         } catch (RemoteException e) {
             throw new FindException("RemoteException in findByPrimaryKey", e);
         }
@@ -39,7 +36,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
         try {
             if (groupIsAdminGroup(group)) throw new CannotDeleteAdminAccountException();
             // todo, group must be refactored so that it's id is always a string
-            getStub().deleteGroup(config.getOid(), Long.toString(group.getOid()));
+            manager.getStub().deleteGroup(config.getOid(), Long.toString(group.getOid()));
         } catch (RemoteException e) {
             throw new DeleteException(e.getMessage(), e);
         }
@@ -47,7 +44,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
 
     public long save(Group group) throws SaveException {
         try {
-            long res = getStub().saveGroup(config.getOid(), group);
+            long res = manager.getStub().saveGroup(config.getOid(), group);
             if (res > 0) group.setOid(res);
             return res;
         } catch (UpdateException e) {
@@ -59,7 +56,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
 
     public void update(Group group) throws UpdateException {
         try {
-            getStub().saveGroup(config.getOid(), group);
+            manager.getStub().saveGroup(config.getOid(), group);
         } catch (SaveException e) {
             throw new UpdateException(e.getMessage(), e);
         } catch (RemoteException e) {
@@ -78,7 +75,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
     public Collection findAllHeaders() throws FindException {
         EntityHeader[] array = null;
         try {
-            array = getStub().findAllGroups(config.getOid());
+            array = manager.getStub().findAllGroups(config.getOid());
         } catch (RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
         }
@@ -90,7 +87,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         EntityHeader[] array = null;
         try {
-            array = getStub().findAllGroupsByOffset(config.getOid(), offset, windowSize);
+            array = manager.getStub().findAllGroupsByOffset(config.getOid(), offset, windowSize);
         } catch (RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
         }
@@ -137,4 +134,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
         }
         return false;
     }
+
+    private IdentityManagerClient manager;
+    private IdentityProviderConfig config;
 }
