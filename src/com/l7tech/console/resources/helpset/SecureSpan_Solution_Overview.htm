@@ -1,0 +1,201 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>SecureSpan Solution Overview</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=3321>
+<meta name=layout-width content=796>
+
+
+
+
+ <link rel="StyleSheet" href="SecureSpan.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>SecureSpan™ Solution Overview</h1>
+
+<p>The SecureSpan™ Solution enables the simple creation and management 
+ of Web service security policies. Three architectural components combine 
+ to form a powerful standards-based security solution: the SecureSpan™ 
+ Gateway, the SecureSpan™ Manager, and the SecureSpan™ Agent.</p>
+
+<h4>Quick Links:</h4>
+
+<p><a href="#SecureSpan__Solution_Components">SecureSpan™ Solution Components</a></p>
+
+<p><a href="#SecureSpan__Solution_Architecture">SecureSpan<symbol name=Trademark>&#8482; 
+ Solution Architecture</a></p>
+
+<h2><a name=SecureSpan__Solution_Components>SecureSpan™ Solution Components</a></h2>
+
+<p>The SecureSpan™ Gateway is an industry-standard, 1U rack-mount appliance 
+ that installs quickly onto any network. The Gateway mediates Web service 
+ activities by acting as an engine to create, publish, and enforce policy. 
+ The Gateway shields access to internal services, ensuring that only those 
+ messages that pass all of its security requirements are ultimately forwarded 
+ to the protected Web service. </p>
+
+<p>&nbsp;</p>
+
+<p>The SecureSpan™ Manager functions as a single point of policy management 
+ for the Gateway, which can exist as a single Gateway or a cluster of parallel 
+ systems within an organization. The Manager is used to create and manage 
+ Web service security policies, configure the Gateway, manage policy users, 
+ and monitor Gateway status and performance.</p>
+
+<p>&nbsp;</p>
+
+<p>The SecureSpan™ Agent simplifies the task of layering security onto 
+ Web service transactions. The Agent follows the policy directives of the 
+ Gateway. Policy changes are instantly loaded and applied on the Agent 
+ without changing any code. The Agent also manages client-side certificates 
+ issued by the Gateway, thereby ensuring strong authentication, digital 
+ signing, and message-based encryption. </p>
+
+<h3>SecureSpan<symbol name=Trademark>&#8482; 
+ Gateway</h3>
+
+<p>Typically residing between the application server and the DMZ, the SecureSpan™ 
+ Gateway is a rack-mountable, high-performance network appliance that enforces 
+ all provider-side security and integration policies. No manual configuration 
+ or integration of Web services is required.</p>
+
+<p>&nbsp;</p>
+
+<p>The Gateway is an intelligent message-processing engine that controls 
+ Web services security policies provisioned through the SecureSpan™ Manager. 
+ The Gateway identifies and processes each request and response message 
+ in accordance with the Web service security policy. It shields access 
+ to internal services, ensuring that only messages that meet all security 
+ and integration requirements are forwarded. Although delivered as a network 
+ appliance, the Gateway tightly integrates with existing network infrastructure 
+ including identity and network management systems. The Gateway is normally 
+ deployed in a high-availability, active-standby configuration. The appliance 
+ can easily peer with other Gateways to form scalable clusters for high 
+ volume processing. For more information on monitoring the Gateway from 
+ the Manager, see <a href="SecureSpan_Gateway_Analysis_Overview.htm">SecureSpan™ 
+ Gateway Analysis Overview</a>.</p>
+
+<h3>SecureSpan<symbol name=Trademark>&#8482; 
+ Manager </h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b style="font-weight: bold;">NOTE:</b> For program 
+ and release information, click [Help] &gt; About from the Main Menu to 
+ open the About the SecureSpan™ Manager form. In the form, the [About] 
+ tab contains program and release information, and the [Info] tab contains 
+ dynamic memory and system information. </p>
+</div>
+
+<p>The SecureSpan™ Manager is a GUI-based application that enables users 
+ to centrally define, provision, and monitor security and integration policies 
+ for Web services. The Manager offers two user interfaces: 1) a GUI for 
+ defining Web services and security policies (see <a href="SecureSpan_Manager_Interface.htm">SecureSpan<symbol 
+ name=Trademark>&#8482; Manager Interface</a>) 
+ and 2) a Troubleshooting Mode for assessing issues with the SecureSpan™ 
+ Gateway (see <a HREF="SecureSpan_Manager_Troubleshooting_Mode.htm">SecureSpan™ 
+ Manager Troubleshooting Mode</a>). Through the Manager, users connect 
+ to shared Web services and establish trust and identity sources with existing 
+ infrastructure. Personalized security policies are defined through policy 
+ assertions that include transport protocols, message signing and encryption, 
+ credential validation, and message routing declarations. Policy changes, 
+ additions, or deletions are implemented in real-time by the Gateway and 
+ applied to all subsequent messages. For more information about the Manager, 
+ see <a href="SecureSpan_Manager_Overview.htm">SecureSpan™ Manager Overview</a>.</p>
+
+<h3>SecureSpan<symbol name=Trademark>&#8482; 
+ Agent </h3>
+
+<p>The SecureSpan™ Agent interfaces with client-side applications and automatically 
+ negotiates policy-specific security, routing, and transaction preferences 
+ with the SecureSpan™ Gateway. The Agent resides on the same hardware platform 
+ as the Web services client and establishes a PKI-based trust relationship 
+ with multiple Gateways. Client systems send SOAP requests to the Agent. 
+ The Agent then negotiates the appropriate policy with the Gateway and 
+ applies any necessary protocols, headers, or transformations. Changes 
+ made to existing security policies in the SecureSpan™ Manager are propagated 
+ by the Gateway to the appropriate Agents. These Agents then apply the 
+ changes to ensure that subsequent messages conform to the updated policy. 
+ The Agent transparently off-loads the complexity of security policy, key, 
+ and certificate management without adding coding to the client application. 
+ This enforces the consistent application of policy while ensuring a robust 
+ and flexible Web services implementation. For more information on the 
+ Agent, see <a href="SecureSpan_Agent_Overview.htm">SecureSpan™ Agent Overview</a>.</p>
+
+<h2><a name=SecureSpan__Solution_Architecture>SecureSpan<symbol name=Trademark>&#8482; 
+ Solution Architecture</a></h2>
+
+<p><img src="product_diagram.gif" x-maintain-ratio="TRUE" style="border: none;
+				width: 575px;
+				height: 295px;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 4px;
+				margin-bottom: 10px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="575" height="295" border="0"></p>
+
+<p>The SecureSpan™ Gateway consists of a high performance server that executes 
+ core messaging, security, and management software. The appliance provides 
+ a high availability solution and supports an active standby configuration 
+ with database synchronization capabilities. </p>
+
+<p>&nbsp;</p>
+
+<p>Web services are centrally managed and audited through the SecureSpan™ 
+ Manager. The Manager resides outside of the DMZ, allowing users to de-couple 
+ policy control from a Web service’s programmed business logic so that 
+ no manual configuration of the Web service itself is required. </p>
+
+<p>&nbsp;</p>
+
+<p>The client-side SecureSpan™ Agent streamlines the process of coordinating 
+ security between Web services and their clients. Residing non-invasively 
+ on any Linux, Solaris, or .NET application platform, the Agent automates 
+ the negotiation of both transport and message-level security. Web service 
+ security policies that are defined through the Gateway are retrieved by 
+ the Agent. Messages from the Agent are then automatically formatted with 
+ all of the security parameters required to be trusted and processed by 
+ the Gateway. </p>
+
+<h6>&nbsp;</h6>
+
+<h4><b style="font-weight: bold;">Next Topic:</b> </h4>
+
+<p><a href="SecureSpan_Manager_Documentation.htm">SecureSpan™ Manager Documentation</a></p>
+
+</body>
+
+</html>

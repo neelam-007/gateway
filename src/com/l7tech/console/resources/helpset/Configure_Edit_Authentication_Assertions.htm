@@ -1,0 +1,666 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Configure/Edit Authentication Assertions</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=6331>
+<meta name=layout-width content=774>
+<meta name=x-ignored-words content="SSL;TLS;WS;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;XPath;folder(s;username;SSL-TLS;requestor">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Configure and Edit Authentication Assertions</h1>
+
+<p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
+ assertions are available in the Authentication category of the [Assertions] 
+ tab:</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Multiple 
+ authentication methods may be required when constructing a security policy 
+ for merged organizations. In this case, a single Web service may have 
+ to respond to two sets of users: one within the parent organization that 
+ requires one authentication method, and the other within the acquired 
+ organization that requires a different authentication method. The SecureSpan™ 
+ Manager allows you to customize a Web service security policy to suit 
+ the needs of any type of organization. For general policy and assertion 
+ information and rules, see <a href="Security_Policies_Overview_and_Rules.htm">Security 
+ Policies Overview and Rules</a>.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<p><img src="AuthenAssens.gif" x-maintain-ratio="TRUE" style="border: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 4px;
+				margin-bottom: 10px;
+				width: 250px;
+				height: 264px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="250" height="264" border="0"></p>
+
+<h4>Quick Links:</h4>
+
+<p><a href="#Grant_Access_to_Users_and_Groups">Grant Access to Users and 
+ Groups</a></p>
+
+<p><a href="#HTTP_Basic">HTTP Basic</a></p>
+
+<p><a href="#HTTP_Digest">HTTP Digest</a></p>
+
+<p><a href="#HTTP_Client_Certificates">HTTP Client Certificate</a></p>
+
+<p><a href="#WS_Token_Basic">WS Token Basic</a></p>
+
+<p><a href="#XML_Request_Security">XML Request Security</a></p>
+
+<h2><a name=Grant_Access_to_Users_and_Groups>Grant Access to Users and 
+ Groups</a></h2>
+
+<p>The Grant Access to Users and Groups assertion allows you to provide 
+ Web service access to particular External Identity Provider (EIP) and 
+ Internal Identity Provider (IIP) groups and/or users. </p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> A security 
+ policy with more than one Grant Access to Users and Groups assertion must 
+ organize the identities into an &quot;At least one assertion must evaluate 
+ to true&quot; assertion folder. To add a folder to the Policy Development 
+ window, right-click any assertion and select &quot;Add 'One or More' Assertion&quot; 
+ from the drop-down menu. Drag and drop configured groups and/or users 
+ into the folder as required. For more information, see <a href="Security_Policies_Overview_and_Rules.htm">Security 
+ Policies Overview and Rules</a> and <a href="Security_Policies_Overview_and_Rules.htm">Configure 
+ and Edit Security Policies</a>. </p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of three methods:</p></li>
+</ol>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar</p></li>
+		
+		<li class="kadov-p"><p>Right-click an &quot;All assertions must evaluate 
+ to true&quot; or &quot;At least one assertion must evaluate to true&quot; 
+ assertion folder. A drop-down menu appears. Select <span style="font-weight: bold;"><B>Add 
+ User or Group</B></span>.</p></li>
+	</ul>
+</ul>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Search Identity Provider form appears. Select 
+ the EIP or IIP name that contains the target group(s) and/or user(s) from 
+ the <span style="font-weight: bold;"><B>Search</B></span> drop-down list.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> To initiate 
+ a new search in the Search Identity Provider form, click [New Search]. 
+ To stop a search that is in progress, click [Stop]. </p>
+</div>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">Select the search target 
+ — groups, users, or both — from the <span style="font-weight: bold;"><B>Type</B></span> 
+ drop-down list.</p></li>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">If necessary, specify 
+ any search criteria using the <span style="font-weight: bold;"><B>Name</B></span> 
+ drop-down list and field.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The Search 
+ Identity Provider form supports the following search characters in the 
+ Name field: </p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p-ctipsnotes"><p class="tipsnotes">The asterisk truncation 
+ operator (*) retrieves terms with a common initial spelling. It substitutes 
+ a string of zero or more characters when searching the Internal and External 
+ Identity Provider</p></li>
+	
+	<li class="kadov-p-ctipsnotes"><p class="tipsnotes">The question mark wild 
+ card operator (?) substitutes zero or one character in a term. Use within 
+ a word or at the end of a word when searching the Internal Identity Provider.</p></li>
+</ul>
+</div>
+
+<ol start=5
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>Search</B></span>]. 
+ Search results appear in the Search Results window. <span style="margin-left: 40px;">Select 
+ one or more groups and/or users as follows:</span></p></li>
+</ol>
+
+<p style="margin-left: 40px;"><img src="SearchIdentityProvider.gif" x-maintain-ratio="TRUE" style="border: none;
+											margin-left: 0px;
+											margin-right: 0px;
+											margin-top: 4px;
+											margin-bottom: 10px;
+											width: 480px;
+											height: 460px;
+											float: none;
+											border-style: none;
+											border-style: none;" width="480" height="460" border="0"></p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> A single 
+ Grant Access to Users and Groups assertion will be added to the security 
+ policy for each group and/or user selected in the Search Identity Provider 
+ form.</p>
+</div>
+
+<h4 style="margin-left: 40px;">Select a Single Group or User</h4>
+
+<p style="margin-left: 40px;">To select a single group or user for the 
+ security policy, click the group or user's name and click [<span style="font-weight: bold;"><B>Select</B></span>]. 
+ The Search Identity Provider form closes and an assertion for the group 
+ or user is added to the Policy Development window.</p>
+
+<h4 style="margin-left: 40px;">Select Multiple Groups and/or Users</h4>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Select multiple groups or users for the security 
+ policy by one of two methods:</p></li>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p"><p>To select a consecutive range of groups 
+ or users, hold down your left mouse button as move from the first group 
+ or user to the last group or user in your target range. Or, press [<span 
+ style="font-weight: bold;"><B>Shift</B></span>] on your keyboard, left-click 
+ the first group or user in the range, and then left-click the last group 
+ or user in the range. Click [<span style="font-weight: bold;"><B>Select</B></span>]</p></li>
+			
+			<li class="kadov-p"><p>To add groups or users placed throughout 
+ the list, press [<span style="font-weight: bold;"><B>Ctrl</B></span>] on your 
+ keyboard as you click each group or user name that you want to add. Click 
+ [<span style="font-weight: bold;"><B>Select</B></span>].</p></li>
+		</ul>
+	</ol>
+	
+	<ol start=2
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>The Search Identity Provider form closes and 
+ an assertion for each group or user is added to the Policy Development 
+ window. Repeat the process as required.</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> You cannot 
+ edit the Grant Access to Users and Groups assertion(s). To remove an assertion, 
+ right-click the assertion name. A drop-down menu appears. Click [Delete]. 
+ To view policy assertions by the configured groups and/or users in the 
+ policy (read-only), click the [Identity View] button on the Policy Tool 
+ Bar. To switch back to the Policy Development window, click the [Policy 
+ View] button.</p>
+</div>
+
+<h2><a name=HTTP_Basic>HTTP Basic</a></h2>
+
+<p>The HTTP Basic assertion allows you to require basic HTTP authentication 
+ — username, 
+ password, and the authentication realm as a string in the request headers 
+ — for the Web service. </p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window.</p></li>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> You cannot 
+ edit the HTTP Basic assertion. To remove an assertion, right-click the 
+ assertion name. A drop-down menu appears. Click [Delete].</p>
+</div>
+
+<h2><a name=HTTP_Digest>HTTP Digest</a> </h2>
+
+<p>The HTTP Digest assertion allows you to require digest HTTP authentication 
+ — username, password, and the authentication realm in the request headers 
+ of a &quot;SHA&quot; digest form — for the Web service. HTTP Digest authentication 
+ provides better security because it does not transmit the password used 
+ to authenticate. </p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window.</p></li>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> You cannot 
+ edit the HTTP Digest assertion. To remove an assertion, right-click the 
+ assertion name. A drop-down menu appears. Click [Delete].</p>
+</div>
+
+<h2><a name=HTTP_Client_Certificates>HTTP Client Certificate</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> If using 
+ the HTTP Client Certificate assertion in a security policy, you must also 
+ select the SSL Transport assertion from the Transport Layer Security (TLS) 
+ category in the [Assertions] tab. See <a href="Configure_Edit_TLS_Assertions.htm">Configure 
+ and Edit Transport Layer Security (TLS) Assertions</a> for information.</p>
+</div>
+
+<p>The HTTP Client Certificate assertion allows you to require a client 
+ certificate signed by the SecureSpan™ Gateway certificate authority as 
+ part of the SSL-TLS handshake. The client certificate can later be used 
+ to authenticate the Web service requestor. </p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window.</p></li>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> You cannot 
+ edit the HTTP Client Certificate assertion. To remove an assertion, right-click 
+ the assertion name. A drop-down menu appears. Click [Delete].</p>
+</div>
+
+<h2><a name=WS_Token_Basic>WS Token Basic</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			margin-left: 4px;
+			float: none;
+			height: 76px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Since 
+ the WS Token Basic assertion requires the insertion of the password into 
+ the XML Web service message, it is recommended that you also select the 
+ SSL Transport assertion when using basic WS Token authentication. See 
+ <a href="Configure_Edit_TLS_Assertions.htm">Configure and Edit Transport 
+ Layer Security (TLS) Assertions</a> for information about the SSL Transport 
+ assertion.</p>
+</div>
+
+<p>The WS Token Basic assertion allows you to require basic WS Token authentication 
+ — username, password, and the authentication realm in a section of the 
+ XML message — for the Web service.</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window.</p></li>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> You cannot 
+ edit the WS Token Basic assertion. To remove an assertion, right-click 
+ the assertion name. A drop-down menu appears. Click [Delete].</p>
+</div>
+
+<h2><a name=XML_Digital_Signature>XML Digital Signature</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> You must 
+ require the signature of the entire XML message in the XML Security Properties 
+ form in order to use the XML Digital Signature assertion for authentication. 
+ If you sign and/or encrypt only certain message elements, then a secondary 
+ authentication method will be required in the security policy. </p>
+</div>
+
+<p>The XML Digital Signature assertion allows you to require that the Web 
+ service requestor digitally sign the message when making a request. </p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+</ol>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ul>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window. Right-click the assertion. A drop-down menu appears. Select <span 
+ style="font-weight: bold;"><B>XML Security Properties.</B></span></p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
+ also double-click the assertion in the Policy Development window to open 
+ the XML Security Properties form. &nbsp;</p>
+</div>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The XML Security Properties form appears. <span 
+ style="margin-left: 40px;">Confirm the selection of the </span><span style="margin-left: 40px; font-weight: bold;"><B>Sign/encrypt 
+ the entire message</B></span><span style="margin-left: 40px;"> option in the 
+ Signature and Encryption Scope section.</span></p></li>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> If you 
+ change the signature option in the XML Security Properties form, then 
+ you will not be able to use the XML Digital Signature assertion for authentication 
+ in the security policy. The title of the XML Digital Signature assertion 
+ in the Policy Development window is the same as the title of the Sign/Encrypt 
+ Request assertion from the XML Security category of the [Assertions] tab. 
+ See <a href="Configure_Edit_XML_Security_Assertions.htm">Configure and 
+ Edit XML Security Assertions</a> for more information on the Sign/Encrypt 
+ Request assertion.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Configure_Edit_TLS_Assertions.htm">Configure and Edit Transport 
+ Layer Security (TLS) Assertions</a></p>
+
+</body>
+
+</html>

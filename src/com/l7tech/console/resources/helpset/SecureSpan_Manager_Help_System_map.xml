@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='ISO-8859-1' ?>
+<!DOCTYPE map PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp Map Version 1.0//EN" "http://java.sun.com/products/javahelp/map_1_0.dtd">
+
+<map version="1.0">
+  <mapID target="welcome_htm" url="Welcome.htm" />
+  <mapID target="securespan_solution_overview_htm" url="SecureSpan_Solution_Overview.htm" />
+  <mapID target="securespan_manager_documentation_htm" url="SecureSpan_Manager_Documentation.htm" />
+  <mapID target="securespan_manager_overview_htm" url="SecureSpan_Manager_Overview.htm" />
+  <mapID target="securespan_manager_interface_htm" url="SecureSpan_Manager_Interface.htm" />
+  <mapID target="securespan_manager_workflow_htm" url="SecureSpan_Manager_Workflow.htm" />
+  <mapID target="connect_to_the_securespan_gateway_htm" url="Connect_to_the_SecureSpan_Gateway.htm" />
+  <mapID target="configure_securespan_manager_preferences_htm" url="Configure_SecureSpan_Manager_Preferences.htm" />
+  <mapID target="securespan_manager_troubleshooting_mode_htm" url="SecureSpan_Manager_Troubleshooting_Mode.htm" />
+  <mapID target="identity_providers_overview_htm" url="Identity_Providers_Overview.htm" />
+  <mapID target="add_edit_external_identity_providers_htm" url="Add_Edit_External_Identity_Providers.htm" />
+  <mapID target="add_edit_iip_users_and_groups_htm" url="Add_Edit_IIP_Users_and_Groups.htm" />
+  <mapID target="search_identity_providers_htm" url="Search_Identity_Providers.htm" />
+  <mapID target="web_services_overview_htm" url="Web_Services_Overview.htm" />
+  <mapID target="publish_web_services_htm" url="Publish_Web_Services.htm" />
+  <mapID target="manage_web_services_htm" url="Manage_Web_Services.htm" />
+  <mapID target="view_web_service_wsdl_htm" url="View_Web_Service_WSDL.htm" />
+  <mapID target="create_web_service_wsdl_htm" url="Create_Web_Service_WSDL.htm" />
+  <mapID target="web_service_security_policies_overview_htm" url="Web_Service_Security_Policies_Overview.htm" />
+  <mapID target="security_policy_assertions_overview_htm" url="Security_Policy_Assertions_Overview.htm" />
+  <mapID target="configure_edit_authentication_assertions_htm" url="Configure_Edit_Authentication_Assertions.htm" />
+  <mapID target="configure_edit_tls_assertions_htm" url="Configure_Edit_TLS_Assertions.htm" />
+  <mapID target="configure_edit_xml_security_assertions_htm" url="Configure_Edit_XML_Security_Assertions.htm" />
+  <mapID target="configure_edit_xml_transformation_validation_assertions_htm" url="Configure_Edit_XML_Transformation_Validation_Assertions.htm" />
+  <mapID target="configure_edit_message_routing_assertions_htm" url="Configure_Edit_Message_Routing_Assertions.htm" />
+  <mapID target="configure_edit_web_service_availability_assertions_htm" url="Configure_Edit_Web_Service_Availability_Assertions.htm" />
+  <mapID target="security_policies_overview_and_rules_htm" url="Security_Policies_Overview_and_Rules.htm" />
+  <mapID target="security_policy_examples_htm" url="Security_Policy_Examples.htm" />
+  <mapID target="configure_edit_security_policies_htm" url="Configure_Edit_Security_Policies.htm" />
+  <mapID target="save_and_use_policy_templates_htm" url="Save_and_Use_Policy_Templates.htm" />
+  <mapID target="securespan_gateway_analysis_overview_htm" url="SecureSpan_Gateway_Analysis_Overview.htm" />
+  <mapID target="view_gateway_cluster_status_htm" url="View_Gateway_Cluster_Status.htm" />
+  <mapID target="view_gateway_log_htm" url="View_Gateway_Log.htm" />
+  <mapID target="securespan_agent_overview_htm" url="SecureSpan_Agent_Overview.htm" />
+  <mapID target="securespan_agent_interface_htm" url="SecureSpan_Agent_Interface.htm" />
+  <mapID target="technical_support_and_contact_information_htm" url="Technical_Support_and_Contact_Information.htm" />
+  <mapID target="version_and_legalities_htm" url="Version_and_Legalities.htm" />
+  <mapID target="RemoteUrlf67476ed" url="mailto:info@layer7tech.com" />
+</map>

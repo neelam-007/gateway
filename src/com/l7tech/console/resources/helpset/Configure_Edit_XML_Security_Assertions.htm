@@ -1,0 +1,596 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Configure/Edit XML Security Assertions</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=5427>
+<meta name=layout-width content=824>
+<meta name=x-ignored-words content="XPath;SAML;NotOnOrAfter;saml;requestor">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Configure and Edit XML Security Assertions</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> More than 
+ one XML Security assertion can be used in a single security policy.</p>
+</div>
+
+<p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
+ assertions are available in the XML Security category of the [Assertions] 
+ tab:</p>
+
+<p><img src="XMLSAssens.gif" x-maintain-ratio="TRUE" style="border: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 4px;
+				margin-bottom: 10px;
+				width: 250px;
+				height: 264px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="250" height="264" border="0"></p>
+
+<h4>Quick Links:</h4>
+
+<p><a href="#Sign_Encrypt_Request_or_Sign_Encrypt_Response">Sign/Encrypt 
+ Request or Sign/Encrypt Response</a></p>
+
+<p><a href="#SAML_Security">SAML Security</a></p>
+
+<h2><a name=Sign_Encrypt_Request_or_Sign_Encrypt_Response>Sign/Encrypt 
+ Request or Sign/Encrypt Response</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> In a security 
+ policy, the Sign/Encrypt Request assertion must be placed anywhere <span 
+ style="font-style: italic;"><I>before</I></span> the routing assertion and the 
+ Sign/Encrypt Response assertion must be place anywhere <span style="font-style: italic;"><I>after</I></span> 
+ the routing assertion. For information about routing assertions, see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure and Edit 
+ Message Routing Assertions</a>. For information on the policy and assertion 
+ rules used in the SecureSpan™ Manager, see <a href="Security_Policies_Overview_and_Rules.htm">Security 
+ Policies Overview and Rules</a>.</p>
+</div>
+
+<p>The Sign/Encrypt Request assertion allows you to require that the Web 
+ service requestor sign and optionally encrypt the request message. The 
+ Sign/Encrypt Response assertion allows you to require that the SecureSpan™ 
+ Gateway sign and optionally encrypt the response message before sending 
+ it back to the Web service requestor.</p>
+
+<h3><a name=Add_and_Configure_the_Sign_Encrypt_Request_or_Sign_Encrypt_Response_Assertions>Add 
+ and Configure the Sign/Encrypt Request or Sign/Encrypt Response Assertions</a></h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Each assertion 
+ must be added and configured separately. For brevity, the Sign/Encrypt 
+ Request assertion is used as an example in the following instructions. 
+ The title of the Sign/Encrypt Request assertion in the Policy Development 
+ window is the same as the title of the XML Digital Signature assertion 
+ from the Authentication category of the [Assertions] tab. See <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
+ and Edit Authentication Assertions</a> for more information on the XML 
+ Digital Signature assertion.</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+</ol>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window. By default, the Sign/Encrypt Request assertion is set to &quot;Sign/encrypt 
+ the entire message&quot; in the XML Security Properties form. Do one of 
+ the following: </p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> By default, 
+ the XML Security Properties form is configured to sign the entire message. 
+ </p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>If you do not want to change or define additional 
+ signature and/or encryption requirements, then leave the Sign/Encrypt 
+ Request assertion as it is in the Policy Development window</p></li>
+	</ul>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> If the 
+ setting of the Sign/Encrypt Request assertion is left as &quot;Sign/encrypt 
+ the entire message,&quot; and if encryption is not selected in the Operations 
+ table, then the assertion will duplicate the function of the XML Digital 
+ Signature assertion, if present, in the Policy Development window. See 
+ <a href="Configure_Edit_Authentication_Assertions.htm">Configure and Edit 
+ Authentication Assertions</a> for more information on the XML Digital 
+ Signature assertion.</p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>If you want to change or define additional 
+ signature and/or encryption requirements for the Sign/Encrypt Request 
+ assertion, proceed to Step #3. </p></li>
+	</ul>
+</ul>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Right-click the Sign/Encrypt Request assertion. 
+ A drop-down menu appears. Select <span style="font-weight: bold;"><B>XML 
+ Security Properties</B></span>.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
+ also double-click the assertion in the Policy Development window to open 
+ the XML Security Properties form. &nbsp;&nbsp;</p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The XML Security Properties form appears. Configure 
+ the signature and/or encryption requirements for all or some request message 
+ operations and/or elements:</p></li>
+</ol>
+
+<p style="margin-left: 40px;"><img src="XMLSecurityProp.gif" x-maintain-ratio="TRUE" style="border: none;
+											margin-left: 0px;
+											margin-right: 0px;
+											margin-top: 4px;
+											margin-bottom: 10px;
+											width: 631px;
+											height: 524px;
+											float: none;
+											border-style: none;
+											border-style: none;" width="631" height="524" border="0"></p>
+
+<h4 style="margin-left: 40px;">Sign Entire Message</h4>
+
+<p style="margin-left: 40px;">The <span style="font-weight: bold;"><B>Sign/encrypt 
+ entire message</B></span> option in the Signature and Encryption Scope section 
+ of the XML Security Properties form is selected by default. Proceed to 
+ the instructions below to encrypt the entire request message or sign and/or 
+ encrypt selected request message operations and/or elements.</p>
+
+<h4 style="margin-left: 40px;">Encrypt Entire Message</h4>
+
+<p style="margin-left: 40px;">To require the encryption of the entire request 
+ message, check the check box in the <span style="font-weight: bold;"><B>Encrypt</B></span> 
+ column of the Operations table in the XML Security Properties form. </p>
+
+<h4 style="margin-left: 40px;">Sign Selected Message Elements</h4>
+
+<p style="margin-left: 40px;">To require the signature of some request 
+ message operations and/or elements, do the following:</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click the <span style="font-weight: bold;"><B>Sign/encrypt 
+ selected operations and elements in operations</B></span> option in the Signature 
+ and Encryption Scope section of the XML Security Properties form.</p></li>
+		
+		<li class="kadov-p"><p>The Web Service Operations window and Code 
+ window are activated. Configure the signature requirement for one or more 
+ message operations and/or elements as follows:</p></li>
+	</ol>
+</ol>
+
+<h5 style="margin-left: 80px;
+			margin-top: 6.5pt;
+			margin-bottom: 4pt;">Select an Operation</h5>
+
+<p style="margin-left: 80px;">To require the signature of a particular 
+ operation, select the operation from the Web Service Operations window 
+ and click [<span style="font-weight: bold;"><B>Add</B></span>]. The operation 
+ appears in the Operations table. Repeat to add additional operations.</p>
+
+<h5 style="margin-left: 80px;">Select an Element</h5>
+
+<p style="margin-left: 80px;">To require the signature of a particular 
+ element:</p>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ul style="list-style: decimal;"
+		type=1>
+		
+		<ol style="list-style: decimal;"
+			type=1>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Select the operation 
+ that contains the element from the Web Service Operations window.</p></li>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">The XML code 
+ for the operation appears as nodes in the Code window:</p></li>
+		</ol>
+		
+		<ol style="list-style: disc;"
+			type=disc>
+			
+			<ul style="list-style: disc;"
+				type=disc>
+				
+				<li class="kadov-p"><p style="margin-left: 0px;">To expand 
+ the nodes, click <img src="ExpandNode.gif" x-maintain-ratio="TRUE" style="border: none;
+								float: none;
+								width: 20px;
+								height: 20px;
+								border-style: none;
+								border-style: none;" width="20" height="20" border="0"></p></li>
+				
+				<li class="kadov-p"><p style="margin-left: 0px;">To collapse 
+ expanded nodes, click <img src="CollapseNode.gif" x-maintain-ratio="TRUE" style="border: none;
+									float: none;
+									width: 20px;
+									height: 20px;
+									border-style: none;
+									border-style: none;" width="20" height="20" border="0"></p></li>
+				
+				<li class="kadov-p"><p style="margin-left: 0px;">To navigate 
+ to an XPath expression in the operation, select a string from the <span 
+ style="font-weight: bold;"><B>XPath</B></span> drop-down list and click [<span 
+ style="font-weight: bold;"><B>Select</B></span>].</p></li>
+			</ul>
+		</ol>
+		
+		<ol start=3
+			style="list-style: decimal;"
+			type=1>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Select the target 
+ element from the Code window. Click [<span style="font-weight: bold;"><B>Add</B></span>]. 
+ The element appears in the Operations table. Repeat to add additional 
+ elements.</p></li>
+		</ol>
+	</ul>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 124px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The Operations 
+ table lists selected operations and selected operation elements. &nbsp;&nbsp;</p>
+</div>
+
+<h4 style="margin-left: 40px;">Encrypt Selected Message Elements</h4>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Before 
+ you can encrypt selected operations and/or elements in the message, the 
+ &quot;Sign/encrypt selected operations and elements in operations&quot; 
+ option must be selected and all target operations and/or elements added 
+ to the Operations table in the XML Security Properties form.</p>
+</div>
+
+<p style="margin-left: 40px;">To require the encryption of a particular 
+ message operation or element, check the check box in the <span style="font-weight: bold;"><B>Encrypt</B></span> 
+ column next to the target operation or element in the Operations table. 
+ Repeat to require the encryption of additional operations or elements.</p>
+
+<ol start=5
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">In the XML Security 
+ Properties form, click [<span style="font-weight: bold;"><B>OK</B></span>]. The 
+ modified assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<h3>Edit the Sign/Encrypt Request or Sign/Encrypt Response Assertions</h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Each assertion 
+ must be added and configured separately. For brevity, the Sign/Encrypt 
+ Request assertion is used as an example in the following instructions. 
+ </p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;XML Request Security&quot; assertion. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>XML Security Properties</B></span></p></li>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
+ also double-click the assertion in the Policy Development window to open 
+ the XML Security Properties form. In the Policy Development window, the 
+ Sign/Encrypt Response assertion appears as &quot;XML Response Security.&quot; 
+ &nbsp;&nbsp;</p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The XML Security Properties form appears. Edit 
+ the signature and/or encryption requirements for all or some message operations 
+ and/or elements as required. See Step #2 in <a href="#Add_and_Configure_the_Sign_Encrypt_Request_or_Sign_Encrypt_Response_Assertions">Add 
+ and Configure the Sign/Encrypt Request or Sign/Encrypt Response Assertions</a> 
+ for configuration instructions.</p></li>
+</ul>
+
+<h2><a name=SAML_Security>SAML Security</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> To avoid 
+ constraint conflicts, only a single SAML Security assertion should be 
+ present in a security policy. The SAML Security assertion should be the 
+ first element in the policy assertion tree in the Policy Development window. 
+ For information on the policy and assertion rules used in the SecureSpan™ 
+ Manager, see <a href="Security_Policies_Overview_and_Rules.htm">Security 
+ Policies Overview and Rules</a>.</p>
+</div>
+
+<p>The SAML Security assertion allows you to require single sign-on authentication 
+ and authorization in the Web service. Using the required constraint, SAML 
+ (Security Assertions Markup Language) validates a ticket to ensure that 
+ it falls within the approved time and date period. If validation succeeds, 
+ then the SecureSpan™ Gateway passes the message through to the Web service. 
+ If validation fails, the Gateway returns a SOAP fault.</p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The acceptable 
+ time and date parameters are specified in the &quot;Not Before&quot; and 
+ &quot;NotOnOrAfter&quot; attributes of the &quot;saml:Conditions&quot; 
+ in the SOAP header of the XML document.</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+</ol>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window. Right-click the assertion. A drop-down menu appears. Select <span 
+ style="font-weight: bold;"><B>SAML Properties</B></span>.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
+ also double-click the assertion in the Policy Development window to open 
+ the SAML Properties form. &nbsp;&nbsp;</p>
+</div>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The SAML Properties form appears. Check the <span 
+ style="font-weight: bold;"><B>Check the date and time on ticket</B></span> check 
+ box. </p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Additional 
+ SAML properties will be available in a future version of the SecureSpan™ 
+ Manager. </p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The modified assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Configure_Edit_XML_Transformation_Validation_Assertions.htm">Configure 
+ and Edit XML Transformation/Validation Assertions</a></p>
+
+</body>
+
+</html>

@@ -1,0 +1,654 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Create Web Service WSDL</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=7269>
+<meta name=layout-width content=768>
+<meta name=x-ignored-words content="Workflow;WSDL;TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;SSL;WS;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;SAML;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;Namespace;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Create Web Service WSDL</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The SecureSpan™ 
+ Manager's Create WSDL Wizard should only be used by advanced users who 
+ are familiar with WSDL, XML, SOAP, and the SOAP protocols. </p>
+</div>
+
+<p>The SecureSpan™ Manager guides advanced users through the WSDL creation 
+ process. WSDL is an XML-based language that describes the business services, 
+ transactions, and electronic access instructions for a Web service. Using 
+ the Create WSDL Wizard, you can configure the WSDL elements required by 
+ a new Web service. Once completed, the Web service is automatically disabled 
+ and published to the Manager's [Web Services] tab. For information on 
+ enabling and managing a published Web service, see <a href="Manage_Web_Services.htm">Manage 
+ Published Web Services</a>. See <a href="View_Web_Service_WSDL.htm">View 
+ Web Service WSDL</a> for information on viewing the WSDL code for a published 
+ Web service.</p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> You cannot 
+ edit or replace the WSDL for a published Web service. To change the WSDL 
+ for a Web service, you must delete the Web service as outlined in <a href="Manage_Web_Services.htm">Manage 
+ Published Web Services</a> and then re-create the Web service using the 
+ Create WSDL Wizard or re-publish the Web service as outlined in <a href="Publish_Web_Services.htm">Publish 
+ Web Services</a>.</p>
+</div>
+
+<h2>Create WSDL for a New Web Service </h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> View screen-specific 
+ information and instructions in the Tips Box located near the bottom of 
+ the Create WSDL Wizard. </p>
+</div>
+
+<p>The SecureSpan™ Manager allows advanced users to create a WSDL document 
+ for a new Web service. The Create WSDL Wizard contains six screens corresponding 
+ to the six main and child elements in the WSDL document: </p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The Overview screen describes the overall process 
+ and information required by the Create WSDL Wizard</p></li>
+	
+	<li class="kadov-p"><p>The Definition screen configures the root <span 
+ style="font-style: italic;"><I>definitions</I></span> element and its child elements. 
+ These elements define the particulars of the Web service</p></li>
+	
+	<li class="kadov-p"><p>The Messages screen configures the <span style="font-style: italic;"><I>messages</I></span> 
+ element. A Web service contains multiple messages with one or more logical 
+ parts that define the communication between the Web service client and 
+ server</p></li>
+	
+	<li class="kadov-p"><p>The Port Type and Operations screen configures 
+ the <span style="font-style: italic;"><I>port type</I></span> element that includes 
+ the set of operations used in the Web service. Each operation refers to 
+ one input message and one output message configured in the previous Messages 
+ screen</p></li>
+	
+	<li class="kadov-p"><p>The Port Type Binding screen configures the <span 
+ style="font-style: italic;"><I>binding</I></span> element that specifies the 
+ binding definitions that govern message formatting and protocol details</p></li>
+	
+	<li class="kadov-p"><p>The Services screen configures the <span style="font-style: italic;"><I>service</I></span> 
+ element that defines the Web service endpoint address (URL) and access 
+ port.</p></li>
+</ul>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> Click [Preview] 
+ at any time during the configuration process to view the read-only WSDL 
+ for the Web service. To close the WSDL form, click the [X] in the top 
+ right corner of the form window.</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>&nbsp;Access 
+ the Create WSDL Wizard by one of three methods:</p></li>
+</ol>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Click the &quot;Create WSDL&quot; link on 
+ the Home Page</p></li>
+	</ul>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The Home 
+ Page appears upon startup or when the Main Tool Bar's [Home] button is 
+ clicked.</p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Tasks</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Create WSDL</B></span> from the Main 
+ Menu</p></li>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Right-click the &quot;Services@https://servername:port&quot; 
+ item in the [<span style="font-weight: bold;"><B>Web Services</B></span>] tab. 
+ A drop-down menu appears. Select <span style="font-weight: bold;"><B>Create 
+ WSDL</B></span>.</p></li>
+	</ul>
+	
+	<li class="kadov-p"><p>The Overview screen of the Create WSDL Wizard 
+ appears. Read the information and instructions. Click [<span style="font-weight: bold;"><B>Next</B></span>].</p></li>
+	
+	<li class="kadov-p"><p>The Definition screen appears:</p></li>
+</ol>
+
+<p style="margin-left: 40px;"><img src="CreateWSDL.gif" x-maintain-ratio="TRUE" style="border: none;
+											margin-left: 0px;
+											margin-right: 0px;
+											margin-top: 4px;
+											margin-bottom: 10px;
+											width: 683px;
+											height: 435px;
+											float: none;
+											border-style: none;
+											border-style: none;" width="683" height="435" border="0"></p>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Enter a descriptive 
+ name for the Web service into the <span style="font-weight: bold;"><B>Name</B></span> 
+ field. For example, &quot;Warehouse.&quot;</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The name 
+ entered in the Name field will appear in the [Web Services] tab. </p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol start=2
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>By default, an &quot;http://tempuri.org/Name.wsdl&quot; 
+ URI is placed in the <span style="font-weight: bold;"><B>Target</B></span> <span 
+ style="font-weight: bold;"><B>Namespace</B></span> field. The &quot;http://tempuri.org&quot; 
+ domain is a default namespace assigned to Web services in development, 
+ and the &quot;Name.wsdl&quot; portion of the URI is the name that was 
+ entered in the Name field. To ensure that the Web service namespace is 
+ unique, it is strongly recommended that you replace the domain &quot;http://tempuri.org&quot; 
+ with your company's domain name. For example, &quot;http://yourcompany.com/MyWebService.wsdl.&quot;</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The namespace 
+ plus SOAP Action combination determines the uniqueness of the Web service. 
+ The SecureSpan™ Manager checks for duplicity during the publication process 
+ and will display an error message if the Web service is not unique. A 
+ namespace that looks like a URL does not necessarily point to a Web-based 
+ resource.</p>
+</div>
+
+<ul>
+	
+	<ol start=3
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>By default, an &quot;http://schemas.xmlsoap.org/wsdl/&quot; 
+ URI is placed in the <span style="font-weight: bold;"><B>Default</B></span> <span 
+ style="font-weight: bold;"><B>Namespace</B></span> field. The URI is the namespace 
+ convention for the main elements in the WSDL document.</p></li>
+		
+		<li class="kadov-p"><p>The Namespace Details window displays read-only 
+ information about the namespace URIs.</p></li>
+	</ol>
+</ul>
+
+<ol start=4>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Next</B></span>]. 
+ The Messages screen appears:</p></li>
+</ol>
+
+<p style="margin-left: 40px;"><img src="CreateWSDL2.gif" x-maintain-ratio="TRUE" style="border: none;
+											margin-left: 0px;
+											margin-right: 0px;
+											margin-top: 4px;
+											margin-bottom: 10px;
+											width: 683px;
+											height: 435px;
+											float: none;
+											border-style: none;
+											border-style: none;" width="683" height="435" border="0"></p>
+
+<ol start=4>
+	
+	<ol>
+		
+		<li class="kadov-p"><p>In the Message List section of the screen, 
+ click [<span style="font-weight: bold;"><B>Add</B></span>]. A new message name 
+ appears in the Message List window. Double-click and highlight the default 
+ name and replace it with a name that describes the message type. For example, 
+ &quot;GetQuoteResponse.&quot;</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> To remove 
+ a message from the Message List window, select the message name and click 
+ [Remove].</p>
+</div>
+
+<ol start=4>
+	
+	<ol start=2>
+		
+		<li class="kadov-p"><p>In the Message Part List section of the screen, 
+ click [<span style="font-weight: bold;"><B>Add</B></span>]. A new part item appears 
+ in the Message Part List window:</p></li>
+		
+		<ol>
+			
+			<li style="list-style: decimal;" type="1" class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Name</B></span> 
+ column of the Message Part List window, double-click and highlight the 
+ default name and replace it with a name that describes the message part. 
+ For example, &quot;stockSymbol.&quot;</p></li>
+			
+			<li style="list-style: decimal;" type="1" class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Type</B></span> 
+ column of the Message Part List window, click and select the specific 
+ part type from the drop-down list.</p></li>
+			
+			<li class="kadov-p"><p>To add additional parts to the message 
+ selected in the Message List window, click [<span style="font-weight: bold;"><B>Add</B></span>]. 
+ Define the part name and type as outlined above.</p></li>
+		</ol>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 124px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> To remove 
+ a part from the Message Part List window, select the part name and click 
+ [Remove].</p>
+</div>
+
+<ol start=4>
+	
+	<ol start=3>
+		
+		<li class="kadov-p"><p>In the Message List section of the screen, 
+ click [<span style="font-weight: bold;"><B>Add</B></span>] to add another message 
+ to the Message List window. Repeat Step #2 above to define one or more 
+ parts for the message. Repeat as necessary to add additional messages 
+ and parts. </p></li>
+	</ol>
+</ol>
+
+<ol start=5>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Next</B></span>]. 
+ The Port Type and Operations screen appears:</p></li>
+</ol>
+
+<p style="margin-left: 40px;"><img src="CreateWSDL3.gif" x-maintain-ratio="TRUE" style="border: none;
+											margin-left: 0px;
+											margin-right: 0px;
+											margin-top: 4px;
+											margin-bottom: 10px;
+											width: 683px;
+											height: 435px;
+											float: none;
+											border-style: none;
+											border-style: none;" width="683" height="435" border="0"></p>
+
+<ol start=5>
+	
+	<ol>
+		
+		<li class="kadov-p"><p>Enter a descriptive name for the port type 
+ into the <span style="font-weight: bold;"><B>Name</B></span> field. For example, 
+ &quot;StockInfo.&quot;</p></li>
+		
+		<li class="kadov-p"><p>In the Operation List section of the screen, 
+ click [<span style="font-weight: bold;"><B>Add</B></span>]. A new operation appears 
+ in the Operation List window:</p></li>
+		
+		<ol>
+			
+			<li style="list-style: decimal;" type="1" class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Name</B></span> 
+ column of the Operation List window, double-click and highlight the default 
+ name and replace it with a name that describes the operation. For example, 
+ &quot;getQuote.&quot;</p></li>
+			
+			<li style="list-style: decimal;" type="1" class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Input</B></span> 
+ column of the Operation List window, click and select an input message 
+ from the drop-down list. For example, &quot;getQuoteRequest.&quot;</p></li>
+			
+			<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Output</B></span> 
+ column of the Operation List window, click and select an output message 
+ from the drop-down list. For example, &quot;getQuoteResponse.&quot;</p></li>
+		</ol>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 124px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> An operation 
+ consists of an input and output message. The messages in the drop-down 
+ lists were defined in the Messages screen of the Create WSDL Wizard.</p>
+</div>
+
+<ol start=5>
+	
+	<ol>
+		
+		<ol start=4
+			style="list-style: decimal;"
+			type=1>
+			
+			<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Add</B></span>] 
+ to add additional operations to the Operation List window. Name and define 
+ messages for the operation(s) as outlined above.</p></li>
+		</ol>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 124px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> To remove 
+ an operation from the Operation List window, select the operation name 
+ and click [Remove].</p>
+</div>
+
+<ol start=6>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Next</B></span>]. 
+ The Port Type Binding screen appears:</p></li>
+</ol>
+
+<p style="margin-left: 40px;"><img src="CreateWSDL4.gif" x-maintain-ratio="TRUE" style="border: none;
+											margin-left: 0px;
+											margin-right: 0px;
+											margin-top: 4px;
+											margin-bottom: 10px;
+											width: 683px;
+											height: 435px;
+											float: none;
+											border-style: none;
+											border-style: none;" width="683" height="435" border="0"></p>
+
+<ol start=6>
+	
+	<ol>
+		
+		<li class="kadov-p"><p>Enter a descriptive name for the port type 
+ binding into the <span style="font-weight: bold;"><B>Name</B></span> field. For 
+ example, &quot;StockServiceSOAPBinding.&quot;</p></li>
+		
+		<li class="kadov-p"><p>Select a message format for the operations 
+ from the <span style="font-weight: bold;"><B>Style</B></span> drop-down list. 
+ </p></li>
+		
+		<li class="kadov-p"><p>The read-only default namespace URI displays 
+ in the <span style="font-weight: bold;"><B>Transport</B></span> field. The URI 
+ is the namespace of the transport-specific elements in the WSDL document.</p></li>
+		
+		<li class="kadov-p"><p>In the Operations window:</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The Operations 
+ window lists the operations defined in the Port Type and Operations screen 
+ of the Create WSDL Wizard. </p>
+</div>
+
+<ol start=6>
+	
+	<ol>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p"><p>Select an operation. Double-click and 
+ highlight the attribute in the corresponding <span style="font-weight: bold;"><B>SOAP 
+ Action</B></span> column. If necessary, replace the default attribute name</p></li>
+			
+			<li class="kadov-p"><p>Repeat for all operations in the Operations 
+ window. </p></li>
+		</ul>
+	</ol>
+</ol>
+
+<ol start=7>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Next</B></span>]. 
+ The Service screen appears:</p></li>
+</ol>
+
+<p style="margin-left: 40px;"><img src="CreateWSDL5.gif" x-maintain-ratio="TRUE" style="border: none;
+											margin-left: 0px;
+											margin-right: 0px;
+											margin-top: 4px;
+											margin-bottom: 10px;
+											width: 683px;
+											height: 435px;
+											float: none;
+											border-style: none;
+											border-style: none;" width="683" height="435" border="0"></p>
+
+<ol start=7>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Enter a descriptive name for the service element 
+ into the <span style="font-weight: bold;"><B>Name</B></span> field. For example, 
+ &quot;StockQuote.&quot;</p></li>
+		
+		<li class="kadov-p"><p>A default access port for the Web service 
+ appears in the <span style="font-weight: bold;"><B>Port</B></span> field. Do 
+ not edit the default value.</p></li>
+		
+		<li class="kadov-p"><p>By default, the read-only port type binding 
+ name appears in the <span style="font-weight: bold;"><B>Binding</B></span> field.</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> To update 
+ the default URL in the Address field with the information entered in the 
+ Name and Port fields, click [Back] and then [Next] in the Create WSDL 
+ Wizard. The port type binding name in the Binding field was entered in 
+ the Port Type Binding screen of the Create WSDL Wizard.</p>
+</div>
+
+<ol start=7>
+	
+	<ol start=4
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>By default, an &quot;http://localhost:8080/ws/Name&quot; 
+ URL is placed in the <span style="font-weight: bold;"><B>Address</B></span> field. 
+ The &quot;localhost&quot; is the host name of the server hosting the Web 
+ service, &quot;8080&quot; is the TCP port at which the Web service can 
+ be reached, &quot;ws/&quot; is a sample folder that might contain the 
+ Web service, and &quot;Name&quot; is the Web service name that was entered 
+ in the Name field. Replace one or more values as required to construct 
+ a valid URL for the Web service. </p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The URL 
+ in the Address field will determine the default message routing assertion 
+ in the security policy for the Web service. See <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ and Edit Message Routing Assertions</a> for more information.</p>
+</div>
+
+<ol start=8
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Optional: Click [<span style="font-weight: bold;"><B>Preview</B></span>] 
+ to view the read-only WSDL for the Web service. To close the WSDL form, 
+ click the [<span style="font-weight: bold;"><B>X</B></span>] in the top right 
+ corner of the form window.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> Since you 
+ cannot edit a Web service once it is published, it is recommended that 
+ you use the Create WSDL Wizard's [Back] and [Next] buttons to scroll through 
+ and double-check each screen before you click [Finish]. </p>
+</div>
+
+<ol start=9
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Finish</B></span>]. 
+ The disabled Web service is immediately added to the [<span style="font-weight: bold;"><B>Web 
+ Services</B></span>] tab. Construct a security policy for the Web service 
+ as outlined in <a href="Web_Service_Security_Policies_Overview.htm">Web 
+ Service Security Policies Overview</a>, then enable the Web service as 
+ outlined in <a href="Manage_Web_Services.htm">Manage Published Web Services</a>.</p></li>
+</ol>
+
+</body>
+
+</html>

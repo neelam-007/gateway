@@ -1,0 +1,153 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Security Policy Examples</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=2191>
+<meta name=layout-width content=824>
+<meta name=x-ignored-words content="HTTP(S;screenshots;ui">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Security Policy Examples</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The type 
+ and order of assertions are important when constructing a valid Web service 
+ security policy. Become familiar with the policy and assertion information 
+ and rules in <a href="Security_Policies_Overview_and_Rules.htm">Security 
+ Policies Overview and Rules</a>. For in-depth information on the category 
+ and individual assertions used in a security policy, see <a href="Security_Policy_Assertions_Overview.htm">Security 
+ Policy Assertion Overview</a>. For information on configuring a security 
+ policy, see <a href="Configure_Edit_Security_Policies.htm">Configure and 
+ Edit Security Policies</a>.</p>
+</div>
+
+<p>The following security policy scenarios illustrate the policy and assertion 
+ organization, dependency, and combination rules described in <a href="Security_Policies_Overview_and_Rules.htm">Security 
+ Policies Overview and Rules</a>. Use the scenarios as reference-only examples 
+ when learning how to construct your own security policy. </p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The following 
+ examples are for reference purposes only. An &quot;identity&quot; is a 
+ group or user configured with the Grant Access to Users and Groups authentication 
+ assertion. See <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
+ and Edit Authentication Assertions</a> for more information. By default, 
+ all security policies contain a message routing assertion. See <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ and Edit Message Routing Assertions</a> for more information.</p>
+</div>
+
+<h4>Quick Links:</h4>
+
+<p><a href="#Scenario_One__One_Authentication_Method_One_or_More_Identities">Scenario 
+ One: One Authentication Method/One or More Identities</a></p>
+
+<p><a href="#Scenario_Two__Multiple_Authentication_Methods_One_or_More_Identities">Scenario 
+ Two: Multiple Authentication Methods/One or More Identities</a></p>
+
+<p><a href="#Scenario_Three__Multiple_Authentication_Methods_One_or_More_Identities_Response_Security">Scenario 
+ Three: Multiple Authentication Methods/One or More Identities/Response 
+ Security</a></p>
+
+<h2><a name=Scenario_One__One_Authentication_Method_One_or_More_Identities>Scenario 
+ One: One Authentication Method/One or More Identities</a></h2>
+
+<p style="margin-bottom: 9pt;">In this security policy, a single authentication 
+ method is used, and only the listed groups and users have authorized access 
+ to the Web service. Access requests are routed to the defined HTTP(S) 
+ Web service URL.</p>
+
+<p><img src="ScenarioOne.gif" x-maintain-ratio="TRUE" style="border: none;
+				width: 548px;
+				height: 268px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="548" height="268" border="0"></p>
+
+<h2><a name=Scenario_Two__Multiple_Authentication_Methods_One_or_More_Identities>Scenario 
+ Two: Multiple Authentication Methods/One or More Identities</a></h2>
+
+<p style="margin-bottom: 9pt;">In this security policy, multiple authentication 
+ methods are used to gain Web service access when the authorized identities 
+ evaluate to &quot;true.&quot; Access requests are routed to the defined 
+ HTTP(S) Web service URL.</p>
+
+<p><img src="ScenarioTwo.gif" x-maintain-ratio="TRUE" style="border: none;
+				width: 548px;
+				height: 268px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="548" height="268" border="0"></p>
+
+<h2><a name=Scenario_Three__Multiple_Authentication_Methods_One_or_More_Identities_Response_Security>Scenario 
+ Three: Multiple Authentication Methods/One or More Identities/Response 
+ Security</a></h2>
+
+<p style="margin-bottom: 9pt;">In this security policy, multiple authentication 
+ methods are also used to gain Web service access when the authorized identities 
+ evaluate to &quot;true.&quot; The Web service signs and encrypts the XML 
+ response messages. Access requests are routed to the defined HTTP(S) Web 
+ service URL.</p>
+
+<p><img src="ScenarioThree.gif" x-maintain-ratio="TRUE" style="border: none;
+				width: 548px;
+				height: 268px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="548" height="268" border="0"></p>
+
+<h6>&nbsp;</h6>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Configure_Edit_Security_Policies.htm">Configure and Edit Security 
+ Policies</a></p>
+
+</body>
+
+</html>

@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='ISO-8859-1' ?>
+<!DOCTYPE toc PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp TOC Version 1.0//EN" "http://java.sun.com/products/javahelp/toc_1_0.dtd">
+<toc version="1.0">
+ <tocitem text="Welcome" target="welcome_htm" />
+ <tocitem text="Getting Started">
+  <tocitem text="Solution Overview" target="securespan_solution_overview_htm" />
+  <tocitem text="Documentation" target="securespan_manager_documentation_htm" />
+  </tocitem>
+ <tocitem text="SecureSpan Manager">
+  <tocitem text="Overview" target="securespan_manager_overview_htm" />
+  <tocitem text="Interface" target="securespan_manager_interface_htm" />
+  <tocitem text="Workflow" target="securespan_manager_workflow_htm" />
+  <tocitem text="Connect to the Gateway" target="connect_to_the_securespan_gateway_htm" />
+  <tocitem text="Configure Preferences" target="configure_securespan_manager_preferences_htm" />
+  <tocitem text="Troubleshooting Mode" target="securespan_manager_troubleshooting_mode_htm" />
+  <tocitem text="Manage Identity Providers">
+   <tocitem text="Overview" target="identity_providers_overview_htm" />
+   <tocitem text="Add/Edit External Identity Providers" target="add_edit_external_identity_providers_htm" />
+   <tocitem text="Add/Edit IIP Users and Groups" target="add_edit_iip_users_and_groups_htm" />
+   <tocitem text="Search Identity Providers" target="search_identity_providers_htm" />
+   </tocitem>
+  <tocitem text="Manage Web Services">
+   <tocitem text="Overview" target="web_services_overview_htm" />
+   <tocitem text="Publish Web Services" target="publish_web_services_htm" />
+   <tocitem text="Manage Web Services" target="manage_web_services_htm" />
+   <tocitem text="View Web Service WSDL" target="view_web_service_wsdl_htm" />
+   <tocitem text="Advanced Option">
+    <tocitem text="Create Web Service WSDL" target="create_web_service_wsdl_htm" />
+    </tocitem>
+   </tocitem>
+  <tocitem text="Manage Security Policies">
+   <tocitem text="Overview" target="web_service_security_policies_overview_htm" />
+   <tocitem text="Configure/Edit Policy Assertions">
+    <tocitem text="Overview" target="security_policy_assertions_overview_htm" />
+    <tocitem text="Authentication Assertions" target="configure_edit_authentication_assertions_htm" />
+    <tocitem text="TLS Assertions" target="configure_edit_tls_assertions_htm" />
+    <tocitem text="XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
+    <tocitem text="XML Transformation/Validation Assertions" target="configure_edit_xml_transformation_validation_assertions_htm" />
+    <tocitem text="Message Routing Assertions" target="configure_edit_message_routing_assertions_htm" />
+    <tocitem text="Web Service Availability Assertions" target="configure_edit_web_service_availability_assertions_htm" />
+    </tocitem>
+   <tocitem text="Configure/Edit Security Policies">
+    <tocitem text="Overview/Rules" target="security_policies_overview_and_rules_htm" />
+    <tocitem text="Security Policy Examples" target="security_policy_examples_htm" />
+    <tocitem text="Configure/Edit Security Policies" target="configure_edit_security_policies_htm" />
+    </tocitem>
+   <tocitem text="Save/Use Policy Templates" target="save_and_use_policy_templates_htm" />
+   </tocitem>
+  <tocitem text="Analyze Gateway">
+   <tocitem text="Overview" target="securespan_gateway_analysis_overview_htm" />
+   <tocitem text="View Gateway Cluster Status" target="view_gateway_cluster_status_htm" />
+   <tocitem text="View Gateway Log" target="view_gateway_log_htm" />
+   </tocitem>
+  </tocitem>
+ <tocitem text="SecureSpan Agent">
+  <tocitem text="Overview" target="securespan_agent_overview_htm" />
+  <tocitem text="Interface" target="securespan_agent_interface_htm" />
+  </tocitem>
+ <tocitem text="Support/Contacts">
+  <tocitem text="Support/Contacts" target="technical_support_and_contact_information_htm" />
+  <tocitem text="Legalities/Version" target="version_and_legalities_htm" />
+  </tocitem>
+</toc>

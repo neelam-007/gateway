@@ -1,0 +1,561 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Configure/Edit XML Transformation/Validation Assertions</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=5626>
+<meta name=layout-width content=653>
+<meta name=x-ignored-words content="Workflow;WSDL;TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;SSL;WS;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;SAML;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;Namespace;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;workflow;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;screenshots;ui;searchability;JGoodies;XP;connection(s;JMS;Expiry;PDF;www.zvon.org;xxl;XPathTutorial;www.purpletech.com;xpe;index.jsp;xpath;pls;Stylesheet;XSLT;eXtensible;elementName;attributeName;local-name(;xpath#function-local-name;examples.html;WSDL-based;namespaces">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Configure and Edit XML Transformation/Validation Assertions</h1>
+
+<p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
+ assertions are available in the XML Transformation/Validation category 
+ of the [Assertions] tab:</p>
+
+<p><img src="XMLVAssens.gif" x-maintain-ratio="TRUE" style="border: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 4px;
+				margin-bottom: 10px;
+				width: 250px;
+				height: 264px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="250" height="264" border="0"></p>
+
+<h4>Quick Links:</h4>
+
+<p><a href="#Evaluate_XPath_Expression">Evaluate XPath Expression</a></p>
+
+<p><a href="#Validate_XML_Schema">Validate XML Schema</a></p>
+
+<p><a href="#XSL_Transformation">XSL Transformation</a></p>
+
+<h2><a name=Evaluate_XPath_Expression>Evaluate XPath Expression</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Ensure 
+ that you are familiar with XPath patterns and specifications before you 
+ configure the Evaluate XPath Expression assertion. The Evaluate XPath 
+ Expression assertion must be placed anywhere before the routing assertion 
+ in a security policy. For information about routing assertions, see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure and Edit 
+ Message Routing Assertions</a>. For information on the policy and assertion 
+ rules used in the SecureSpan™ Manager, see <a href="Security_Policies_Overview_and_Rules.htm">Security 
+ Policies Overview and Rules</a>.</p>
+</div>
+
+<p>The Evaluate XPath Expression assertion allows you to configure a specific 
+ XPath query pattern for incoming XML messages. The XPath query targets 
+ specific parts of the message, evaluating and validating document structure 
+ and/or filtering the XML data. The Evaluate XPath Expression assertion 
+ can be used, for example, to break a security policy into different paths 
+ for different types of operations and/or to provide preferential routing 
+ to special customers or high dollar value transactions. </p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> View XPath 
+ query results in the Gateway Log. See <a href="View_Gateway_Log.htm">View 
+ Gateway Log</a> for information.</p>
+</div>
+
+<h3>Add and Configure the Evaluate XPath Expression Assertion</h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+</ol>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ul>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The XPath Assertion Properties form appears. The 
+ SecureSpan™ Manager automatically populates the form with the namespaces 
+ defined in the Web service WSDL. Type the selected namespace into the 
+ field.</p></li>
+</ol>
+
+<p style="margin-left: 40px;"><img src="XPathAssProps.gif" x-maintain-ratio="TRUE" style="border: none;
+											margin-left: 0px;
+											margin-right: 0px;
+											margin-top: 4px;
+											margin-bottom: 10px;
+											width: 464px;
+											height: 207px;
+											float: none;
+											border-style: none;
+											border-style: none;" width="464" height="207" border="0"></p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> If the 
+ elements or attributes used in the XPath pattern belong to a namespace, 
+ then include the namespace prefix in the URI. For example, &quot;prefix:elementName&quot; 
+ or &quot;@prefix:attributeName.&quot; If the target URI does not appear 
+ in the XPath Assertion Properties form, then you can construct an XPath 
+ URI that does not refer to the nodes by name, or you can use the local-name() 
+ function to point to the nodes. For more information about the XPath local-name() 
+ function, see www.w3.org/TR/xpath#function-local-name.</p>
+</div>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The configured assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> For more 
+ information about XPath, see the following Web sites: 1. www.zvon.org/xxl/XPathTutorial/General/examples.html, 
+ 2. www.purpletech.com/xpe/index.jsp, and 3. www.w3.org/TR/xpath.</p>
+</div>
+
+<h3>Edit the Evaluate XPath Expression Assertion</h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;Request must match XPath&quot; assertion. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Edit Request</B></span> <span style="font-weight: bold;"><B>XPath 
+ Assertion</B></span>.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
+ also double-click the assertion in the Policy Development window to open 
+ the XPath Assertion Properties form. &nbsp;&nbsp;</p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The XPath Assertion Properties form appears. Edit 
+ the path in the field as required. </p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The modified assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<h2><a name=Validate_XML_Schema>Validate XML Schema</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The Validate 
+ XML Schema can be placed anywhere before or after the routing assertion 
+ in a security policy. For information about routing assertions, see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure and Edit 
+ Message Routing Assertions</a>. For information on the policy and assertion 
+ rules used in the SecureSpan™ Manager, see <a href="Security_Policies_Overview_and_Rules.htm">Security 
+ Policies Overview and Rules</a>.</p>
+</div>
+
+<p>The Validate XML Schema assertion allows you to specify a schema for 
+ validating a Web service request or response message. The XML Schema used 
+ in the security policy can be extracted from the Web service WSDL (if 
+ present) or loaded from a URL or local file. </p>
+
+<h3><a name=Add_and_Configure_the_Validate_XML_Schema_Assertion>Add and 
+ Configure the Validate XML Schema Assertion</a></h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+</ol>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ul>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Schema Validation Properties form appears. 
+ Select an XML schema for the assertion by one of three methods:</p></li>
+</ol>
+
+<ul start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>To extract the schema from the Web service 
+ WSDL document, click [<span style="font-weight: bold;"><B>Extract Schema 
+ from WSDL</B></span>]. Proceed to Step #3</p></li>
+	</ul>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> A WSDL-based 
+ schema is typically only included in document-style Web services. </p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>To load the schema from a URL, enter the URL 
+ into the <span style="font-weight: bold;"><B>Load Schema from URL</B></span> 
+ field. Click [<span style="font-weight: bold;"><B>Load</B></span>]. Proceed to 
+ Step #3</p></li>
+		
+		<li class="kadov-p"><p>To load the schema from a local file, click 
+ [<span style="font-weight: bold;"><B>Load Schema from File</B></span>]. Search 
+ and add the schema. Proceed to Step #3.</p></li>
+	</ul>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
+ also cut and paste the XML schema into the Validation Schema window.</p>
+</div>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">The XML schema appears 
+ in the Validation Schema window. Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The configured assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<h3>Edit the Validate XML Schema Assertion</h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;Validate Message's Schema&quot; assertion. A drop-down menu 
+ appears. Select <span style="font-weight: bold;"><B>Schema Validation Properties</B></span>.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
+ also double-click the assertion in the Policy Development window to open 
+ the Schema Validation Properties form. &nbsp;&nbsp;</p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Schema Validation Properties form appears. 
+ Extract or load a new XML schema as outlined in <a href="#XSL_Transformation">Add 
+ and Configure the Validate XML Schema Assertion</a>.</p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The modified assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<h2><a name=XSL_Transformation>XSL Transformation</a></h2>
+
+<p>The XSL Transformation assertion allows you to specify a transformation 
+ to apply to a Web service request or response message. The XSL transformation 
+ used in the security policy can be edited manually or loaded from a URL 
+ or file.</p>
+
+<h3><a name=Add_and_Configure_the_XSL_Transformation_Assertion>Add and 
+ Configure the XSL Transformation Assertion</a></h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+</ol>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ul>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The XSL Transformation Properties form appears. 
+ From the <span style="font-weight: bold;"><B>Transformation Target</B></span> 
+ drop-down list, select the target message to transform.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> A security 
+ policy can contain more than one XSL Transformation assertion — one for 
+ the request message and one for the response message — and each assertion 
+ can specify a different transformation. </p>
+</div>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Provide the transformation by one of three methods:</p></li>
+</ol>
+
+<ul start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Enter the XSLT manually into the XSL Transformation 
+ window. Proceed to Step #4</p></li>
+		
+		<li class="kadov-p"><p>To load the transformation from a URL, enter 
+ the URL into the <span style="font-weight: bold;"><B>Load XSL from URL</B></span> 
+ field. Click [<span style="font-weight: bold;"><B>Load</B></span>]. Proceed to 
+ Step #4</p></li>
+		
+		<li class="kadov-p"><p>To load the transformation from a local file, 
+ click [<span style="font-weight: bold;"><B>Load XSL from File</B></span>]. Search 
+ and add the transformation. Proceed to Step #4.</p></li>
+	</ul>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
+ also cut and paste the transformation into the XSL Transformation window.</p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">The transformation appears 
+ in the XSL Transformation window. Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The configured assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<h3>Edit the XSL Transformation Assertion</h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;XSL Transform Request Message&quot; or &quot;XSL Transform Response 
+ Message&quot; assertion. A drop-down menu appears. Select <span style="font-weight: bold;"><B>XSL 
+ Properties</B></span>.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
+ also double-click the assertion in the Policy Development window to open 
+ the XSL Transformation Properties form. &nbsp;&nbsp;</p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The XSL Transformation Properties form appears. 
+ Load a new XSL source as outlined in <a href="#XSL_Transformation">Add 
+ and Configure the XSL Transformation Assertion</a>.</p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The modified assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Configure_Edit_Message_Routing_Assertions.htm">Configure and 
+ Edit Message Routing Assertions</a></p>
+
+</body>
+
+</html>

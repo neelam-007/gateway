@@ -1,0 +1,188 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Security Policy Assertions Overview</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=1735>
+<meta name=layout-width content=824>
+<meta name=x-ignored-words content=TLS>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Security Policy Assertions Overview</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> This section 
+ discusses configuration instructions for the individual security policy 
+ assertions in the [Assertions] tab of the SecureSpan™ Manager. For information 
+ on the policy and assertion rules used in the Manager, see <a href="Security_Policies_Overview_and_Rules.htm">Security 
+ Policies Overview and Rules</a>. For information on configuring, editing, 
+ and manipulating a security policy in the Policy Development window, see 
+ <a href="Configure_Edit_Security_Policies.htm">Configure and Edit Security 
+ Policies</a>.</p>
+</div>
+
+<p>A security policy defines restrictions for the consumption of a published 
+ Web service that is protected by the SecureSpan™ Gateway. Policy assertions 
+ are the building blocks for security policies in the SecureSpan™ Manager. 
+ Located in the [Assertions] tab, the assertions are organized into categories 
+ corresponding to the main requirements of a Web service security policy:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold;">Authentication</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Authentication assertions establish the 
+ protocols used for credential authentication in a security policy and 
+ the authentication requirements for accessing a Web service. See <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
+ and Edit Authentication Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold;">Transport Layer Security 
+ (TLS)</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Transport Layer Security (TLS) assertion 
+ establishes the encryption requirement for a Web service. See <a href="Configure_Edit_TLS_Assertions.htm">Configure 
+ and Edit Transport Layer Security (TLS) Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px; font-weight: bold;">XML 
+ Security</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The XML Security assertions define the encryption 
+ and signature requirements for Web service XML messages. See <a href="Configure_Edit_XML_Security_Assertions.htm">Configure 
+ and Edit XML Security Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold;">XML Transformation/Validation</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The XML Transformation/Validation assertions 
+ configure the XML transformations and validation schemas applied to Web 
+ service messages. See <a href="Configure_Edit_XML_Transformation_Validation_Assertions.htm">Configure 
+ and Edit XML Transformation/Validation Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px; font-weight: bold;">Message 
+ Routing</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Message Routing assertions define where 
+ Web service messages are sent and what access credentials are required 
+ by the Web service. See <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ and Edit Message Routing Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px; font-weight: bold;">Web 
+ Service Availability</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Web Service Availability assertions define 
+ access and availability inclusions or restrictions for the Web service. 
+ See <a href="Configure_Edit_Web_Service_Availability_Assertions.htm">Configure 
+ and Edit Web Service Availability Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px; font-weight: bold;">Policy 
+ Templates</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Policy Templates section is a repository 
+ for previously configured security policies that are saved as templates 
+ for future use in other Web service policies. For &nbsp;information 
+ on saving and using security policy templates, see <a href="Save_and_Use_Policy_Templates.htm">Save 
+ and Use Security Policy Templates</a>.</p>
+
+<p>&nbsp;</p>
+
+<p>A Web service security policy is constructed by either:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>Dragging and dropping an assertion from the [Assertions] 
+ tab into the Policy Development window, or by </p></li>
+	
+	<li class="kadov-p"><p>Highlighting the target assertion in the [Assertions] 
+ tab and clicking the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+									width: 22px;
+									height: 18px;
+									margin-left: 0px;
+									margin-right: 0px;
+									margin-top: 0px;
+									margin-bottom: -2.5px;
+									float: none;
+									border-style: none;
+									border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+</ul>
+
+<p>Most assertions require configuration either before or after being added 
+ to the Policy Development window. See the assertion category-based topic 
+ pages for instructions for the individual assertions. See <a href="Security_Policies_Overview_and_Rules.htm">Security 
+ Policies Overview and Rules</a> for general policy and assertion information 
+ and rules. See <a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a> for information on constructing a security 
+ policy. </p>
+
+<h6>&nbsp;</h6>
+
+<h4>Next Topic:</h4>
+
+<p><a href="Configure_Edit_Authentication_Assertions.htm">Configure and 
+ Edit Authentication Assertions</a></p>
+
+</body>
+
+</html>
