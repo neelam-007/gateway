@@ -3,6 +3,7 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.util.Set;
+import java.util.HashSet;
 import java.security.Principal;
 
 public class Group extends NamedEntityImp implements Principal {
@@ -14,10 +15,12 @@ public class Group extends NamedEntityImp implements Principal {
     }
 
     public Set getMembers() {
+        if (_members == null) _members = new HashSet();
         return _members;
     }
 
     public Set getMemberHeaders() {
+        if (_memberHeaders == null) _memberHeaders = new HashSet();
         return _memberHeaders;
     }
 
