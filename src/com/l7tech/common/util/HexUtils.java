@@ -55,6 +55,14 @@ public class HexUtils {
     }
 
     public static byte[] decodeBase64(String s) throws IOException {
+        return decodeBase64(s, false);
+    }
+
+    public static byte[] decodeBase64(String s, boolean stripWhitespaceFirst) throws IOException {
+        if (stripWhitespaceFirst) {
+            Matcher matcher = whitespacePattern.matcher(s);
+            s = matcher.replaceAll("");
+        }
         BASE64Decoder decoder = (BASE64Decoder)localDecoder.get();
         return decoder.decodeBuffer(s);
     }
