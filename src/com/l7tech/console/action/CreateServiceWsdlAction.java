@@ -154,7 +154,7 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                       "Service already exists",
                       JOptionPane.ERROR_MESSAGE);
                 } else {
-                    e.printStackTrace();
+                    log.log(Level.WARNING, "erro saving service", e);
                     JOptionPane.showMessageDialog(w,
                       "Unable to save the service '" + service.getName() + "'\n",
                       "Error",
