@@ -7,12 +7,17 @@ import net.jini.core.lookup.ServiceRegistrar;
 import net.jini.core.lookup.ServiceTemplate;
 import net.jini.security.ProxyPreparer;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.AccessController;
+import java.security.Principal;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.logging.Level;
+
 
 /**
  * <code>ServiceLookup</code> is the utility class that  performs the
@@ -28,6 +33,7 @@ import java.util.logging.Level;
  */
 public class HttpServiceLookup extends ServiceLookup {
     private final String serviceUrl;
+    private ServiceRegistrar serviceRegistrar;
 
     /**
      * Instantiate http serrvice lookup.
@@ -72,12 +78,12 @@ public class HttpServiceLookup extends ServiceLookup {
             return preparer.prepareProxy(server);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Unable to obtain the service proxy", e);
+            throw new RuntimeException(e);
         } catch (ConfigurationException e) {
-            logger.log(Level.SEVERE, "Unable to obtain the service proxy", e);
+            throw new RuntimeException(e);
         } catch (ClassNotFoundException e) {
-            logger.log(Level.SEVERE, "Unable to obtain the service proxy", e);
+            throw new RuntimeException(e);
         }
-        return null;
     }
 
     /**
@@ -89,9 +95,28 @@ public class HttpServiceLookup extends ServiceLookup {
      */
     protected ServiceRegistrar getRegistrar()
       throws IOException, ConfigurationException, ClassNotFoundException {
+        if (serviceRegistrar !=null) return serviceRegistrar;
+
         URLConnection conn = null;
         URL url = new URL(serviceUrl+"/registrar");
         conn = url.openConnection();
+
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
+        if (subject != null) {
+            Iterator i = subject.getPrincipals().iterator();
+
+            String cred = i.hasNext() ? ((Principal)i.next()).getName() : "";
+            i = subject.getPrivateCredentials().iterator();
+            cred += (i.hasNext() ? (":" + new String((char[])i.next())) : "");
+
+            String encoded = encoder.encode(cred.getBytes());
+            conn.setRequestProperty("Authorization", "Basic "+encoded);
+        } else {
+            String encoded = encoder.encode("ssgadmin:ssgadminpasswd".getBytes());
+            conn.setRequestProperty("Authorization", "Basic "+encoded);
+        }
+
         // for both input and output
         conn.setUseCaches(false);
         conn.setDefaultUseCaches(false);
@@ -102,9 +127,11 @@ public class HttpServiceLookup extends ServiceLookup {
         ObjectInputStream oi = new ObjectInputStream(conn.getInputStream());
 
         try {
-            return (ServiceRegistrar) oi.readObject();
+            serviceRegistrar = (ServiceRegistrar)oi.readObject();
+            return serviceRegistrar;
         } finally {
             if (oi !=null) oi.close();
         }
     }
+
 }

@@ -1,7 +1,6 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.adminws.identity.Client;
 import com.l7tech.adminws.identity.IdentityProviderClient;
 import com.l7tech.adminws.identity.IdentityService;
 import com.l7tech.util.Locator;

@@ -1,14 +1,10 @@
 package com.l7tech.adminws;
 
-import com.l7tech.adminws.identity.Client;
-import com.l7tech.adminws.identity.Service;
-import java.io.IOException;
-import java.net.PasswordAuthentication;
-import java.rmi.RemoteException;
+import com.l7tech.jini.lookup.ServiceLookup;
+import com.l7tech.util.Locator;
+
 import javax.security.auth.login.LoginException;
-import javax.xml.namespace.QName;
-import javax.xml.rpc.ServiceException;
-import org.apache.axis.client.Call;
+import java.net.PasswordAuthentication;
 
 /**
  * Default <code>ClientCredentialManager</code> implementaiton that validates
@@ -28,56 +24,13 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
         resetCredentials();
         try {
             setCredentials(creds);
-            // test client call to make sure creds are valid
-            org.apache.axis.client.Service service = new org.apache.axis.client.Service();
-            Call call = null;
-            call = (Call)service.createCall();
-            call.setTargetEndpointAddress(new java.net.URL(getServiceURL()));
-            call.setUsername(creds.getUserName());
-            call.setPassword(new String(creds.getPassword()));
-            call.setOperationName(new QName(Client.IDENTITY_URN, "echoVersion"));
-            call.setReturnClass(String.class);
-            call.setMaintainSession(true);
-            String remoteVersion = (String)call.invoke(new Object[]{});
-            if (remoteVersion == null) {
-                throw new VersionException("Unknown version");
-            }
-            if (!remoteVersion.equals(Service.VERSION)) {
-                throw new VersionException("Version mismatch ", Service.VERSION, remoteVersion);
-            }
-            axisSessionCall = call;
-        } catch (RemoteException e) {
+            Object serviceLookup =
+                    Locator.getDefault().lookup(ServiceLookup.class);
+            // version check
+        } catch (Exception e) {
             LoginException le = new LoginException();
             le.initCause(e); // no constructor with nested throwable
             throw le;
-        } catch (IOException e) {
-            LoginException le = new LoginException("Unable to obtain the SSG service url");
-            le.initCause(e); // no constructor with nested throwable
-            throw le;
-        } catch (ServiceException e) {
-            LoginException le = new LoginException("Unable to establish connection with remote service");
-            le.initCause(e); // no constructor with nested throwable
-            throw le;
         }
     }
-
-    protected void resetCredentials() {
-        super.resetCredentials();
-        axisSessionCall = null;
-    }
-
-    public Call getAxisSession() {
-        return axisSessionCall;
-    }
-
-    private String getServiceURL() throws IOException {
-        String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
-        if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
-            throw new IOException("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
-        }
-        prefUrl += Service.SERVICE_DEPENDENT_URL_PORTION;
-        return prefUrl;
-    }
-
-    private static Call axisSessionCall = null;
 }

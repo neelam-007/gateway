@@ -1,12 +1,11 @@
 package com.l7tech.adminws;
 
-import org.apache.axis.client.Call;
-
+import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
-import java.util.Iterator;
-import java.util.HashSet;
-import java.util.Set;
+import java.security.AccessController;
+import java.security.Principal;
+import java.util.logging.Logger;
 
 /**
  * Layer 7 Technologies, inc.
@@ -15,6 +14,8 @@ import java.util.Set;
  *
  */
 public abstract class ClientCredentialManager {
+    protected static final Logger logger = Logger.getLogger(ClientCredentialManager.class.getName());
+
 
     /**
      * Subclasses implement this method to provide the concrete login implementation.
@@ -23,33 +24,22 @@ public abstract class ClientCredentialManager {
      * @see ClientCredentialManagerImpl
      */
     public abstract void login(PasswordAuthentication creds)
-      throws LoginException, VersionException;
+            throws LoginException, VersionException;
 
-
-    /**
-     * @return the username that was last authenticated. Emtpy string
-     * otherwise, never <b>null</b>
-     */
-    public final String getUsername() {
-        return cachedCredentials.getUserName();
-    }
-
-    /**
-     * @return the password that was last authenticated. Emtpy string
-     * otherwise, never <b>null</b>
-     */
-    public final String getPassword() {
-        return String.valueOf(cachedCredentials.getPassword());
-    }
-
-    public abstract Call getAxisSession();
 
     /**
      * Subclasses reset the credentials using this method.
      */
     protected void resetCredentials() {
         synchronized (ClientCredentialManager.class) {
-            cachedCredentials = new PasswordAuthentication("", new char[]{});
+            Subject subject = Subject.getSubject(AccessController.getContext());
+            if (subject == null) {
+                logger.warning("The subject is null");
+                return;
+            }
+            subject.getPrincipals().clear();
+            subject.getPrivateCredentials().clear();
+
         }
     }
 
@@ -59,9 +49,35 @@ public abstract class ClientCredentialManager {
      */
     protected final void setCredentials(PasswordAuthentication pa) {
         synchronized (ClientCredentialManager.class) {
-            cachedCredentials = pa;
+            Subject subject = Subject.getSubject(AccessController.getContext());
+            if (subject == null) {
+                logger.warning("The subject is null");
+                return;
+            }
+            subject.getPrincipals().clear();
+            subject.getPrincipals().add(new ClientPrincipal(pa.getUserName()));
+            subject.getPrivateCredentials().clear();
+            subject.getPrivateCredentials().add(pa.getPassword());
         }
     }
 
-    protected static PasswordAuthentication cachedCredentials = new PasswordAuthentication("", new char[]{});
+    /**
+     * internal principal holder class
+     */
+    static class ClientPrincipal implements Principal {
+        private final String principal;
+
+        ClientPrincipal(String principal) {
+            this.principal = principal;
+        }
+
+        /**
+         * Returns the name of this principal.
+         *
+         * @return the name of this principal.
+         */
+        public String getName() {
+            return principal;
+        }
+    }
 }

@@ -6,9 +6,18 @@
 
 package com.l7tech.jini.lookup;
 
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.util.Locator;
 import net.jini.config.*;
 import net.jini.core.discovery.LookupLocator;
 import net.jini.core.lookup.ServiceRegistrar;
+import org.apache.axis.encoding.Base64;
+import org.apache.axis.transport.http.HTTPConstants;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -21,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,6 +49,7 @@ public class RegistrarLookupServlet extends HttpServlet {
 
     private Configuration lookupConfig;
     private static final String LOOKUP_CONFIG = "com/l7tech/jini/lookup/lookupservlet.config";
+    private IdentityProviderConfigManager identityProviderConfigManager;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -46,13 +57,13 @@ public class RegistrarLookupServlet extends HttpServlet {
             URL url = getClass().getClassLoader().getResource(LOOKUP_CONFIG);
             if (url == null) {
                 throw new
-                  UnavailableException(
-                    "Cannot locate configuration "+LOOKUP_CONFIG+
-                    " in the current classpath"
-                  );
+                        UnavailableException(
+                                "Cannot locate configuration " + LOOKUP_CONFIG +
+                        " in the current classpath"
+                        );
             }
             String cf = url.toString();
-            logger.info("Initializing servlet registrar lookup from "+cf);
+            logger.info("Initializing servlet registrar lookup from " + cf);
             String[] configOptions = {cf};
             lookupConfig = ConfigurationProvider.getInstance(configOptions);
         } catch (ConfigurationNotFoundException e) {
@@ -63,11 +74,26 @@ public class RegistrarLookupServlet extends HttpServlet {
     }
 
     public void service(HttpServletRequest request, HttpServletResponse response)
-      throws IOException, ServletException {
+            throws IOException, ServletException {
         try {
+            String authorizationHeader = request.getHeader(HTTPConstants.HEADER_AUTHORIZATION);
+            if (authorizationHeader == null) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                logger.warning("Empty credentials received IP: "+request.getRemoteAddr());
+                return;
+            }
+            authorizationHeader = authorizationHeader.trim();
+            PrincipalCredentials creds = extractCredentials(authorizationHeader);
+
+            getConfigManager().getInternalIdentityProvider().authenticate(creds);
+
             LookupLocator ll = getLookupLocator();
             logger.info("Obtained locator");
             ServiceRegistrar sr = ll.getRegistrar(5000);
+            if (sr == null) {
+                response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                return;
+            }
             // MIME type
             response.setContentType(DataFlavor.javaSerializedObjectMimeType);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -79,9 +105,23 @@ public class RegistrarLookupServlet extends HttpServlet {
             bos.writeTo(response.getOutputStream());
             response.getOutputStream().close();
             logger.info("Wrote locator as response");
+        } catch (BadCredentialsException e) {
+            logger.log(Level.WARNING, "Bad credentials received", e);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (AuthenticationException e) {
+            logger.log(Level.WARNING, "Authentication exception", e);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error obtaining the lookup locator", e);
             throw new ServletException(e);
+        } finally {
+            // todo: do this kind of things as a part of the service proxy (dyn proxy or similar)
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.log(Level.SEVERE, "Error closing the persistence context", e);
+
+            }
         }
     }
 
@@ -92,18 +132,70 @@ public class RegistrarLookupServlet extends HttpServlet {
      * @throws IOException
      * @throws net.jini.config.ConfigurationException
      */
-    protected LookupLocator getLookupLocator()
-      throws IOException, ConfigurationException {
+    private LookupLocator getLookupLocator()
+            throws IOException, ConfigurationException {
         String entry = getClass().getName();
         try {
             LookupLocator locator =
-              (LookupLocator) lookupConfig.getEntry(
-                entry,
-                "lookupLocator", LookupLocator.class);
+                    (LookupLocator) lookupConfig.getEntry(
+                            entry,
+                            "lookupLocator", LookupLocator.class);
             return locator;
         } catch (NoSuchEntryException e) {
             // use default
         }
         return new LookupLocator("jini://localhost");
     }
+
+    /**
+     * Extract the basic credentials from the string
+     * @param tokenBasic
+     * @return
+     * @throws BadCredentialsException
+     */
+    private PrincipalCredentials extractCredentials(String tokenBasic)
+      throws BadCredentialsException {
+        if (tokenBasic == null) {
+            throw new BadCredentialsException("Null credentials passed");
+        }
+
+
+        if (!tokenBasic.startsWith("Basic ")) {
+            throw new BadCredentialsException("Unknown header - expected basic");
+        }
+        String decodedCredentials = new String(Base64.decode(tokenBasic.substring(6)));
+        if (decodedCredentials == null) {
+            throw new BadCredentialsException("cannot decode basic header");
+        }
+
+        String login = null;
+        String clearTextPasswd = null;
+
+        int i = decodedCredentials.indexOf(':');
+        if (i == -1) {
+            throw new BadCredentialsException("invalid basic credentials " + tokenBasic);
+        } else {
+            login = decodedCredentials.substring(0, i);
+            clearTextPasswd = decodedCredentials.substring(i + 1);
+        }
+
+        User user = new User();
+        user.setLogin(login);
+        PrincipalCredentials creds = new PrincipalCredentials(user, clearTextPasswd.getBytes());
+        return creds;
+    }
+
+    private IdentityProviderConfigManager getConfigManager() {
+        if (identityProviderConfigManager != null) {
+            return identityProviderConfigManager;
+        }
+        synchronized (this) {
+            identityProviderConfigManager =
+                    (IdentityProviderConfigManager) Locator.getDefault().lookup(IdentityProviderConfigManager.class);
+        }
+        return identityProviderConfigManager;
+    }
+
+
+    private static final String AUTHORIZATION = "Authorizaiton";
 }
