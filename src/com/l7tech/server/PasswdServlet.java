@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -52,11 +53,11 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
                 res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No valid credentials");
                 return;
             }
-            User internalUser = null;
+            InternalUser internalUser = null;
             for (Iterator i = users.iterator(); i.hasNext();) {
                 User u = (User)i.next();
                 if (u.getProviderId() == IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) {
-                    internalUser = u;
+                    internalUser = (InternalUser)u;
                     break;
                 }
             }
@@ -106,11 +107,15 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
                 PersistenceContext pc = PersistenceContext.getCurrent();
                 pc.beginTransaction();
                 // save user
-                internalUser.getUserBean().setPassword(str_newpasswd);
+                InternalUser newInternalUser = new InternalUser();
+                newInternalUser.copyFrom(internalUser);
+                newInternalUser.setVersion(internalUser.getVersion());
+                newInternalUser.getUserBean().setPassword(str_newpasswd);
+
                 IdentityProvider provider = IdentityProviderFactory.getProvider(
                                                 IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
                 UserManager userManager = provider.getUserManager();
-                userManager.update(internalUser);
+                userManager.update(newInternalUser);
                 logger.fine("Password changed for user " + internalUser.getLogin());
                 // end transaction
                 pc.commitTransaction();
