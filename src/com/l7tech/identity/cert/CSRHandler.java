@@ -42,8 +42,13 @@ public class CSRHandler extends HttpServlet {
 
     public void init( ServletConfig config ) throws ServletException {
         super.init(config);
-        rootkstore = getServletConfig().getInitParameter("RootKeyStore");
+        String tmp = getServletConfig().getInitParameter("RootKeyStore");
+        if (tmp == null || tmp.length() < 1) tmp = "../../kstores/ssgroot";
+        rootkstore = config.getServletContext().getRealPath(tmp);
         rootkstorepasswd = getServletConfig().getInitParameter("RootKeyStorePasswd");
+        if (rootkstorepasswd == null || rootkstorepasswd.length() < 1) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Key store password not found (root CA).");
+        }
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
