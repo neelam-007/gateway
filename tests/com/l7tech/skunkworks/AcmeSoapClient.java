@@ -6,21 +6,19 @@
 
 package com.l7tech.skunkworks;
 
+import com.l7tech.common.security.AesKey;
+import com.l7tech.common.security.xml.XmlMangler;
+import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import java.util.logging.Logger;
-import java.security.SecureRandom;
-import java.security.NoSuchAlgorithmException;
-import java.security.Key;
-
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.w3c.dom.Document;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.security.xml.XmlMangler;
-import com.l7tech.common.security.AesKey;
+
+import java.security.Key;
+import java.security.SecureRandom;
+import java.util.logging.Logger;
 
 /**
  *
@@ -44,8 +42,8 @@ public class AcmeSoapClient extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    private static AesKey generateKey() throws NoSuchAlgorithmException {
-        SecureRandom rand = SecureRandom.getInstance("SHA1PRNG");
+    private static AesKey generateKey() {
+        SecureRandom rand = new SecureRandom();
         byte[] keyBytes = new byte[32];
         rand.nextBytes(keyBytes);
         return new AesKey(keyBytes);
