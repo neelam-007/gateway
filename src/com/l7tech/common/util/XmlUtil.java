@@ -6,21 +6,20 @@
 
 package com.l7tech.common.util;
 
-import org.apache.log4j.Category;
-import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.DocumentBuilder;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
-import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 
 /**
  * Thread-local XML parsing and pretty-printing utilities.
@@ -29,8 +28,6 @@ import java.io.OutputStreamWriter;
  * Time: 4:20:59 PM
  */
 public class XmlUtil {
-    private static final Category log = Category.getInstance(XmlUtil.class);
-
     private static ThreadLocal documentBuilder = new ThreadLocal() {
         protected synchronized Object initialValue() {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -38,7 +35,6 @@ public class XmlUtil {
             try {
                 return dbf.newDocumentBuilder();
             } catch (ParserConfigurationException e) {
-                log.error(e);
                 throw new RuntimeException(e); // can't happen
             }
         }

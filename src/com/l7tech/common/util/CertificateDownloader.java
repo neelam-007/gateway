@@ -7,7 +7,6 @@
 package com.l7tech.common.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import org.apache.log4j.Category;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -63,7 +62,6 @@ import java.util.Map;
  * Time: 1:40:08 PM
  */
 public class CertificateDownloader {
-    public static final Category log = Category.getInstance(CertificateDownloader.class);
     private static final int CHECK_PREFIX_LENGTH = SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX.length();
 
     private String username = null;
@@ -167,13 +165,11 @@ public class CertificateDownloader {
 
         URL remote = null;
         remote = new URL(ssgUrl.getProtocol(), ssgUrl.getHost(), ssgUrl.getPort(), uri);
-        log.info("Connecting to certificate discovery service at " + remote);
         HexUtils.Slurpage result = HexUtils.slurpUrl(remote);
         certBytes = result.bytes;
         Map headers = result.headers;
         ByteArrayInputStream bais = new ByteArrayInputStream(certBytes);
         cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(bais);
-        log.info("Certificate decoded successfully; let's see if we trust it.  DN=" + cert.getSubjectDN());
         this.checks = new ArrayList();
 
         for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
@@ -187,7 +183,7 @@ public class CertificateDownloader {
             String idp = key.substring(CHECK_PREFIX_LENGTH);
             int semiPos = value.indexOf(';');
             if (semiPos < 0) {
-                log.error("Cert check header from SSG was badly formatted (ignoring): " + key + ":" + value);
+                // Check header was badly formatted -- continuing
                 continue;
             }
             String hash = value.substring(0, semiPos);
@@ -213,7 +209,8 @@ public class CertificateDownloader {
             if (checkInfo.checkCert())
                 return true;
         }
-        log.warn("Downloaded certificate was not trusted");
+
+        // downloaded certificate was not trusted
         return false;
     }
 
