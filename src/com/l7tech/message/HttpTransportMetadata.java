@@ -8,6 +8,7 @@ package com.l7tech.message;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Vector;
 
 /**
  * @author alex
@@ -25,6 +26,14 @@ public class HttpTransportMetadata extends TransportMetadata {
 
     public HttpServletResponse getResponse() {
         return _response;
+    }
+
+    public Vector getUpdatedCookies() {
+        return updatedCookies;
+    }
+
+    public void setUpdatedCookies(Vector updatedCookies) {
+        this.updatedCookies = updatedCookies;
     }
 
     public TransportProtocol getProtocol() {
@@ -72,4 +81,6 @@ public class HttpTransportMetadata extends TransportMetadata {
 
     protected final HttpServletRequest _request;
     protected final HttpServletResponse _response;
+
+    private Vector updatedCookies = new Vector();
 }

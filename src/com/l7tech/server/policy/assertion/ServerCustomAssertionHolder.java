@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.security.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -199,8 +200,10 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             if (transportMetadata instanceof HttpTransportMetadata) {
                 HttpServletRequest req = ((HttpTransportMetadata)transportMetadata).getRequest();
                 HttpServletResponse res = ((HttpTransportMetadata)transportMetadata).getResponse();
+                Vector newCookies = ((HttpTransportMetadata)transportMetadata).getUpdatedCookies();
                 context.put("httpRequest", req);
                 context.put("httpResponse", res);
+                context.put("updatedCookies", newCookies);
             }
             securityContext = new SecurityContext() {
                 public Subject getSubject() {

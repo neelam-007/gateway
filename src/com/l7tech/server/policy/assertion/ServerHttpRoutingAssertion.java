@@ -41,6 +41,7 @@ import java.net.URL;
 import java.security.SignatureException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Vector;
 
 /**
  * Server-side implementation of HTTP routing assertion.
@@ -203,24 +204,84 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         }
         HttpTransportMetadata httpTransportMetaData = (HttpTransportMetadata)transportMetadata;
         HttpServletRequest req = httpTransportMetaData.getRequest();
+        Vector updatedCookies = httpTransportMetaData.getUpdatedCookies();
         HttpState state = client.getState();
+        Cookie updatedCookie = null;
 
         Cookie[] cookies = req.getCookies();
-        for (int i = 0; cookies !=null && i < cookies.length; i++) {
-            Cookie incomingCookie = cookies[i];
-            org.apache.commons.httpclient.Cookie cookieOut = new org.apache.commons.httpclient.Cookie();
-            cookieOut.setDomain(incomingCookie.getDomain());
-            cookieOut.setPath(incomingCookie.getPath());
-            cookieOut.setName(incomingCookie.getName());
-            cookieOut.setValue(incomingCookie.getValue());
-            cookieOut.setSecure(incomingCookie.getSecure());
-            cookieOut.setVersion(incomingCookie.getVersion());
-            cookieOut.setComment(incomingCookie.getComment());
-            // cookieOut.setExpiryDate(??); // how to translate the getMaxAge() to the date? em
-            logger.fine("Adding outgoing cookie: name = "+ cookieOut.getName() + ", version = " + cookieOut.getVersion());
-            state.addCookie(cookieOut);
+        org.apache.commons.httpclient.Cookie cookieOut = null;
+
+        // if no cookies found in the request but there is cookies in the udpatedCookies list (i.e. new cookies)
+        if ((cookies == null || cookies.length == 0)) {
+            if (updatedCookies.size() > 0) {
+                for (int i = 0; i < updatedCookies.size(); i++) {
+                    Object o = (Object) updatedCookies.elementAt(i);
+                    if (o instanceof Cookie) {
+                        Cookie newCookie = (Cookie) o;
+                        cookieOut = new org.apache.commons.httpclient.Cookie();
+                        cookieOut.setDomain(newCookie.getDomain());
+                        cookieOut.setPath(newCookie.getPath());
+                        cookieOut.setName(newCookie.getName());
+                        cookieOut.setSecure(newCookie.getSecure());
+                        cookieOut.setVersion(newCookie.getVersion());
+                        cookieOut.setComment(newCookie.getComment());
+                        // cookieOut.setExpiryDate(??); // how to translate the getMaxAge() to the date? em
+                        logger.fine("Adding outgoing cookie: name = " + cookieOut.getName() + ", version = " + cookieOut.getVersion());
+                        state.addCookie(cookieOut);
+                    }
+                }
+            }
+        } else {
+            for (int i = 0; cookies != null && i < cookies.length; i++) {
+                Cookie incomingCookie = cookies[i];
+                cookieOut = new org.apache.commons.httpclient.Cookie();
+                cookieOut.setDomain(incomingCookie.getDomain());
+                cookieOut.setPath(incomingCookie.getPath());
+                cookieOut.setName(incomingCookie.getName());
+
+                // override the old cookie if the new one is found
+                updatedCookie = findCookieByName(updatedCookies, incomingCookie.getName());
+                if (updatedCookie != null) {
+                    cookieOut.setValue(updatedCookie.getValue());
+                    System.out.println("Replacing the old cookie. \nName = " + updatedCookie.getName() + "\nold value: " + incomingCookie.getValue() + "\nnew value = " + updatedCookie.getValue());
+                } else {
+                    cookieOut.setValue(incomingCookie.getValue());
+                }
+                cookieOut.setSecure(incomingCookie.getSecure());
+                cookieOut.setVersion(incomingCookie.getVersion());
+                cookieOut.setComment(incomingCookie.getComment());
+                // cookieOut.setExpiryDate(??); // how to translate the getMaxAge() to the date? em
+                logger.fine("Adding outgoing cookie: name = " + cookieOut.getName() + ", version = " + cookieOut.getVersion());
+                state.addCookie(cookieOut);
+            }
         }
 
+    }
+
+    /**
+     * Find the cookie given the name.
+     *
+     * @param updatedCookies  the list of cookies
+     * @param cookieName  the given cookie name
+     * @return  Cookie  the cookie object that matches the given name, null otherwise.
+     */ 
+    private Cookie findCookieByName(Vector updatedCookies, String cookieName) {
+
+        Cookie cookie = null;
+
+        for (int i = 0; i < updatedCookies.size(); i++) {
+            Object o = (Object) updatedCookies.elementAt(i);
+            if(o instanceof Cookie) {
+                cookie = (Cookie) o;
+                if(cookie.getName().equals(cookieName))
+                {
+                    break;
+                } else {
+                    cookie = null;
+                }
+            }
+        }
+        return cookie;
     }
 
     private static class MethodCloser implements Runnable {
