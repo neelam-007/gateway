@@ -112,7 +112,7 @@ public class WssProcessorImpl implements WssProcessor {
             } else if (securityChildToProcess.getLocalName().equals("Timestamp")) {
                 processTimestamp(securityChildToProcess);
             } else if (securityChildToProcess.getLocalName().equals("BinarySecurityToken")) {
-                processBinarySecurityToken(securityChildToProcess);
+                processBinarySecurityToken(securityChildToProcess, cntx);
             } else if (securityChildToProcess.getLocalName().equals("Signature")) {
                 processSignature(securityChildToProcess);
             } else {
@@ -392,7 +392,8 @@ public class WssProcessorImpl implements WssProcessor {
         // todo
     }
 
-    private void processBinarySecurityToken(Element binarySecurityTokenElement) throws ProcessorException {
+    private void processBinarySecurityToken(final Element binarySecurityTokenElement,
+                                            ProcessingStatusHolder cntx) throws ProcessorException {
         logger.finest("Processing BinarySecurityToken");
 
         // assume that this is a b64ed binary x509 cert, get the value
@@ -419,7 +420,26 @@ public class WssProcessorImpl implements WssProcessor {
         } catch (CertificateException e) {
             throw new ProcessorException(e);
         }
-        // todo, remember this cert
+        // remember this cert
+        final X509Certificate finalcert = referencedCert;
+        WssProcessor.SecurityToken rememberedSecToken = new WssProcessor.SecurityToken() {
+            public Object asObject() {
+                return finalcert;
+            }
+
+            public Element asElement() {
+                return binarySecurityTokenElement;
+            }
+
+            public String asXmlString() {
+                try {
+                    return XmlUtil.elementToString(binarySecurityTokenElement);
+                } catch (IOException e) {
+                    return e.getMessage();
+                }
+            }
+        };
+        cntx.securityTokens.add(rememberedSecToken);
     }
 
     private void processSignature(Element signatureElement) {
