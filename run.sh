@@ -64,7 +64,7 @@ for i in "$SRC_ROOT/lib"/*.jar
     	fi
       fi
     done 
-CLASSPATH="${JDK_CLASSES}:${BUILD_CLASSES}:${LOCALCLASSPATH}:${CLASSPATH}"
+CLASSPATH=".:${JDK_CLASSES}:${BUILD_CLASSES}:${LOCALCLASSPATH}:${CLASSPATH}"
 # Cygwin - switch paths to Windows format before running java
 if $cygwin; then
   CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
@@ -93,10 +93,15 @@ case "$foo" in
 		target="com.l7tech.proxy.Main";
 		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
 		;;
-	bridge)
-		exec installer/Bridge-*/Bridge.sh $*
-		#target="com.l7tech.proxy.gui.Main";
+        bridge)
+                exec installer/Bridge-*/Bridge.sh $*
+                #target="com.l7tech.proxy.gui.Main";
                 #exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
+                ;;
+
+	testagent)
+		target="com.l7tech.proxy.AgentPerfClient";
+                exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} $*
                 ;;
 	*)
 		exec $JAVA_HOME/bin/java $JAVA_OPTS $foo $*
