@@ -17,7 +17,7 @@ public class RequestXpathPaletteNode extends AbstractTreeNode {
     /**
      * construct the <CODE>RequestXpathPaletteNode</CODE> instance.
      */
-    public RequestXpathPaletteNode(){
+    public RequestXpathPaletteNode() {
         super(null);
     }
 
@@ -66,7 +66,7 @@ public class RequestXpathPaletteNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Request XPath expression";
+        return "Evaluate XPath expression";
     }
 
     /**

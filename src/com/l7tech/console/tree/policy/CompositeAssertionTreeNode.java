@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 /**
  * Composite policy nodes extend this node
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -44,19 +45,14 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
         if (true == super.receive(node)) {
             return true;
         }
-        JTree tree =
-          (JTree)ComponentRegistry.
-          getInstance().getComponent(PolicyTree.NAME);
+        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(PolicyTree.NAME);
         if (tree != null) {
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            Assertion nass = node.asAssertion();
-
-            if (nass != null) {
-                AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nass);
-                as = prepareNode(as);
+            Assertion[] nass = node.asAssertions();
+            for (int i = 0; i < nass.length; i++) {
+                Assertion nas = nass[i];
+                AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nas);
                 model.insertNodeInto(as, this, getChildCount());
-            } else {
-                log.log(Level.WARNING, "The node has no associated assertion " + node);
             }
         } else {
             log.log(Level.WARNING, "Unable to reach the palette tree.");
@@ -91,7 +87,9 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
     }
 
 
-    /** @return  a string representation of the object.  */
+    /**
+     * @return a string representation of the object.
+     */
     public String toString() {
         return getUserObject().getClass().getName();
     }

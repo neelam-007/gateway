@@ -1,20 +1,21 @@
-package com.l7tech.console.tree;
+package com.l7tech.console.tree.identity;
 
+import com.l7tech.console.tree.EntitiesCollection;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.objectmodel.FindException;
 
 import java.util.Collection;
 import java.util.Collections;
 
 /**
  * Class ProviderEntitiesCollection.
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class ProviderEntitiesCollection implements EntitiesCollection {
     final IdentityProviderConfigManager manager;
     private boolean exhausted = false;
 
-    ProviderEntitiesCollection(IdentityProviderConfigManager im) {
+    public ProviderEntitiesCollection(IdentityProviderConfigManager im) {
         manager = im;
     }
 

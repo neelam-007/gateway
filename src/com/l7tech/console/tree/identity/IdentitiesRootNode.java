@@ -1,11 +1,16 @@
-package com.l7tech.console.tree;
+package com.l7tech.console.tree.identity;
 
 import com.l7tech.console.action.NewProviderAction;
-import com.l7tech.console.util.Preferences;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.EntitiesEnumeration;
+import com.l7tech.console.tree.RefreshTreeNodeAction;
+import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 
 /**
@@ -15,11 +20,11 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class AssertionsPaletteRootNode extends AbstractTreeNode {
+public class IdentitiesRootNode extends AbstractTreeNode {
     /**
      * construct the <CODE>AssertionsPaletteRootNode</CODE> instance
      */
-    public AssertionsPaletteRootNode(String title)
+    public IdentitiesRootNode(String title)
       throws IllegalArgumentException {
         super(null);
         if (title == null)
@@ -48,15 +53,11 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
      */
     protected void loadChildren() {
         Registry r = Registry.getDefault();
-        String homePath = null;
-        homePath = Preferences.getPreferences().getHomePath();
         List nodeList = new ArrayList();
-        nodeList.add(new AuthenticationFolderNode());
-        nodeList.add(new TransportLayerSecurityFolderNode());
-        nodeList.add(new XmlSecurityFolderNode());
-        nodeList.add(new XmlFolderNode());
-        nodeList.add(new RoutingFolderNode());
-        nodeList.add(new PoliciesFolderNode(homePath));
+        Enumeration e =
+          TreeNodeFactory.
+          getTreeNodeEnumeration(new EntitiesEnumeration(new ProviderEntitiesCollection(r.getProviderConfigManager())));
+        nodeList.addAll(Collections.list(e));
 
         AbstractTreeNode[] nodes = (AbstractTreeNode[])nodeList.toArray(new AbstractTreeNode[]{});
 

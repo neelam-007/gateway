@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 abstract class LeafAssertionTreeNode extends AssertionTreeNode {
     private static final Logger log =
       Logger.getLogger(LeafAssertionTreeNode.class.getName());
+
     /**
      * Instantiate the new <code>LeafAssertionTreeNode</code>
      * with the given assertion.
@@ -55,15 +56,12 @@ abstract class LeafAssertionTreeNode extends AssertionTreeNode {
 
             if (nass != null) {
                 AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nass);
-
-                as = prepareNode(as);
                 final MutableTreeNode parent = (MutableTreeNode)getParent();
-
                 int index = parent.getIndex(this);
                 if (index == -1) {
-                    throw new IllegalStateException("Unknown node to the three model "+this);
+                    throw new IllegalStateException("Unknown node to the three model " + this);
                 }
-                model.insertNodeInto(as, parent, index+1);
+                model.insertNodeInto(as, parent, index + 1);
             } else {
                 log.log(Level.WARNING, "The node has no associated assertion " + node);
             }

@@ -29,6 +29,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
 
     /**
      * Instantiate the
+     *
      * @param object
      */
     public AbstractTreeNode(Object object) {
@@ -37,6 +38,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
 
     /**
      * add a cookie to the node
+     *
      * @param c
      */
     public void addCookie(Cookie c) {
@@ -68,6 +70,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
 
     /**
      * test whether the node has loaded it's child nodes
+     *
      * @return true if the children have been loaded,
      *         false otherwise
      */
@@ -99,7 +102,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
 
     /**
      * @return the TreeNode in this node's child array at the specified
-     * index using the filter if specified
+     *         index using the filter if specified
      */
     public TreeNode getChildAt(int index, NodeFilter filter) {
         if (filter == null) {
@@ -167,7 +170,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
-     *
+     * <p/>
      * <P>
      * By default returns the empty actions array.
      *
@@ -183,7 +186,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      *
      * @param cl the class paremeter to test the actions against
      * @return actions appropriate to the node that are assignable
-     * by class.
+     *         by class.
      */
     public Action[] getActions(Class cl) {
         java.util.List list = new ArrayList();
@@ -224,14 +227,30 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * Return assertion representation of the node
      * or <b>null</b> if the node cannot be an assertion
      *
-     * @return the popup menu
+     * @return the assertion or <b>null</b>
      */
     public Assertion asAssertion() {
         return null;
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>false</code>
+     * Return assertions representation of the node. Palette elements that
+     * return multiple elements override this api.
+     * <p/>
+     * or <b>emtpy array</b> if the node does not have any assertins
+     *
+     * @return the assertions corrsponding to this node
+     */
+    public Assertion[] asAssertions() {
+        Assertion a = asAssertion();
+        if (a == null) {
+            return new Assertion[]{};
+        }
+        return new Assertion[]{a};
+    }
+
+    /**
+     * Test if the node can be deleted. Default is <code>false</code>
      *
      * @return true if the node can be deleted, false otherwise
      */
@@ -240,7 +259,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
-     *Test if the node can be refreshed. Default is <code>false</code>
+     * Test if the node can be refreshed. Default is <code>false</code>
      *
      * @return true if the node children can be refreshed, false otherwise
      */
@@ -251,6 +270,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
 
     /**
      * Gets the default action for this node.
+     *
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
@@ -273,6 +293,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * Finds an icon for this node when opened. This icon should
      * represent the node only when it is opened (when it can have
      * children).
+     *
      * @return icon to use to represent the bean when opened
      */
     public Image getOpenedIcon() {
@@ -314,7 +335,9 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         propChangeSupport.addPropertyChangeListener(propertyName, l);
     }
 
-    /** Remove listener for changes in properties */
+    /**
+     * Remove listener for changes in properties
+     */
     public synchronized void removePropertyChangeListener(PropertyChangeListener l) {
         propChangeSupport.removePropertyChangeListener(l);
     }

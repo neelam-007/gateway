@@ -1,7 +1,6 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 
 
@@ -56,7 +55,7 @@ public class WsTokenBasicAuthNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "WS Token BASIC";
+        return "WS Token Basic auhentication";
     }
 
     /**

@@ -13,6 +13,8 @@ import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.identity.IdentitiesRootNode;
+import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Preferences;
@@ -50,14 +52,20 @@ import java.util.logging.Logger;
  */
 public class MainWindow extends JFrame {
     static Logger log = Logger.getLogger(MainWindow.class.getName());
-    /** the resource path for the application */
+    /**
+     * the resource path for the application
+     */
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
 
-    /** the path to JavaHelp helpset file */
+    /**
+     * the path to JavaHelp helpset file
+     */
     public static final String HELP_PATH = "com/l7tech/console/resources/helpset/secure_span_gateway_console_help.hs";
 
     public static final int MAIN_SPLIT_PANE_DIVIDER_SIZE = 10;
-    /** the resource bundle name */
+    /**
+     * the resource bundle name
+     */
     private static
     ResourceBundle resapplication =
       java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
@@ -483,18 +491,6 @@ public class MainWindow extends JFrame {
 
             {
                 MainWindow.this.addConnectionListener(listener);
-                // listen for own actions to add the tree elements
-                this.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        final DefaultMutableTreeNode root =
-                          (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
-                        AbstractTreeNode parent =
-                          (AbstractTreeNode)TreeNodeActions.
-                          nodeByNamePath(new String[]{"Internal Identity Provider"},
-                            root);
-                        node = parent;
-                    }
-                });
             }
         };
         newInernalUserAction.setEnabled(false);
@@ -523,18 +519,6 @@ public class MainWindow extends JFrame {
 
             {
                 MainWindow.this.addConnectionListener(listener);
-                // listen for own actions to add the tree elements
-                this.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        final DefaultMutableTreeNode root =
-                          (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
-                        AbstractTreeNode parent =
-                          (AbstractTreeNode)TreeNodeActions.
-                          nodeByNamePath(new String[]{"Internal Identity Provider"},
-                            root);
-                        node = parent;
-                    }
-                });
             }
         };
         newInernalGroupAction.setEnabled(false);
@@ -556,7 +540,7 @@ public class MainWindow extends JFrame {
                 public void onConnect(ConnectionEvent e) {
                     setEnabled(true);
                     final DefaultMutableTreeNode root =
-                      (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
+                      (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
                     node = (AbstractTreeNode)root;
                 }
 
@@ -587,18 +571,13 @@ public class MainWindow extends JFrame {
           new TreeSelectionListener() {
               private final JTree assertionPalette = getAssertionPaletteTree();
               private final JTree services = getServicesTree();
+              private final JTree identitites = getIdentitiesTree();
 
               public void valueChanged(TreeSelectionEvent e) {
                   Object o = e.getSource();
-                  if (o == assertionPalette) {
+                  if (o == assertionPalette || o == identitites || o == services) {
                       TreePath path = e.getNewLeadSelectionPath();
                       if (path == null) return;
-                      AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
-                      refreshAction.setEnabled(n.canRefresh());
-                  } else if (o == services) {
-                      TreePath path = e.getNewLeadSelectionPath();
-                      if (path == null) return;
-
                       AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
                       refreshAction.setEnabled(n.canRefresh());
                   } else {
@@ -609,10 +588,11 @@ public class MainWindow extends JFrame {
 
         getServicesTree().addTreeSelectionListener(treeCanRefreshSelectionListener);
         getAssertionPaletteTree().addTreeSelectionListener(treeCanRefreshSelectionListener);
+        getIdentitiesTree().addTreeSelectionListener(treeCanRefreshSelectionListener);
 
         refreshAction =
           new AbstractAction(atext, icon) {
-              final JTree[] trees = new JTree[]{getAssertionPaletteTree(), getServicesTree()};
+              final JTree[] trees = new JTree[]{getAssertionPaletteTree(), getServicesTree(), getIdentitiesTree()};
 
 
               ConnectionListener listener = new ConnectionListener() {
@@ -878,6 +858,21 @@ public class MainWindow extends JFrame {
     }
 
     /**
+     * Return the identities tree.
+     *
+     * @return JTree
+     */
+    private JTree getIdentitiesTree() {
+        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(IdentityProvidersTree.NAME);
+        if (tree != null) return tree;
+        tree = new IdentityProvidersTree();
+        tree.setShowsRootHandles(true);
+        tree.setBorder(null);
+        ComponentRegistry.getInstance().registerComponent(IdentityProvidersTree.NAME, tree);
+        return tree;
+    }
+
+    /**
      * Return the JTreeView property value.
      * 
      * @return JTree
@@ -898,14 +893,21 @@ public class MainWindow extends JFrame {
      */
     private void initalizeWorkspace() {
         DefaultTreeModel treeModel = new FilteredTreeModel(null);
-        final AbstractTreeNode paletteRootNode =
-          new AssertionsPaletteRootNode("Policy Assertions");
+        final AbstractTreeNode paletteRootNode = new AssertionsPaletteRootNode("Policy Assertions");
         treeModel.setRoot(paletteRootNode);
-        getAssertionPaletteTree().setRootVisible(true);
-        getAssertionPaletteTree().setModel(treeModel);
+        final JTree assertionPaletteTree = getAssertionPaletteTree();
+        assertionPaletteTree.setRootVisible(true);
+        assertionPaletteTree.setModel(treeModel);
         TreePath path = new TreePath(paletteRootNode.getPath());
-        getAssertionPaletteTree().setSelectionPath(path);
+        assertionPaletteTree.setSelectionPath(path);
 
+        final AbstractTreeNode identitiesRootNode = new IdentitiesRootNode("Identities/SAML");
+        treeModel = new FilteredTreeModel(null);
+        treeModel.setRoot(identitiesRootNode);
+
+        final JTree identitiesTree = getIdentitiesTree();
+        identitiesTree.setRootVisible(false);
+        identitiesTree.setModel(treeModel);
 
         String rootTitle = "Services @ ";
         rootTitle +=
@@ -922,7 +924,7 @@ public class MainWindow extends JFrame {
         TreeSelectionListener treeSelectionListener =
           new TreeSelectionListener() {
               private final JTree assertionPalette =
-                getAssertionPaletteTree();
+                assertionPaletteTree;
               private final JTree services = getServicesTree();
 
               public void valueChanged(TreeSelectionEvent e) {
@@ -954,7 +956,7 @@ public class MainWindow extends JFrame {
 
           };
         getServicesTree().addTreeSelectionListener(treeSelectionListener);
-        getAssertionPaletteTree().addTreeSelectionListener(treeSelectionListener);
+        assertionPaletteTree.addTreeSelectionListener(treeSelectionListener);
 
         getMainSplitPaneRight().removeAll();
         GridBagConstraints constraints
@@ -1053,7 +1055,7 @@ public class MainWindow extends JFrame {
                   if (item.isSelected()) {
                       getGatewayLogWindow().show();
                   } else {
-                      if(gatewayLogWindow != null) {
+                      if (gatewayLogWindow != null) {
                           gatewayLogWindow.dispose();
                           gatewayLogWindow = null;
                       }
@@ -1063,14 +1065,14 @@ public class MainWindow extends JFrame {
               ConnectionListener listener = new ConnectionListener() {
                   public void onConnect(ConnectionEvent e) {
                       setEnabled(true);
-                      if(gatewayLogWindow != null) {
+                      if (gatewayLogWindow != null) {
                           gatewayLogWindow.onConnect();
                       }
                   }
 
                   public void onDisconnect(ConnectionEvent e) {
                       setEnabled(false);
-                      if(gatewayLogWindow != null) {
+                      if (gatewayLogWindow != null) {
                           gatewayLogWindow.onDisconnect();
                       }
                   }
@@ -1100,7 +1102,7 @@ public class MainWindow extends JFrame {
                * @see Action#removePropertyChangeListener
                */
               public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
                   if (item.isSelected()) {
                       getClusterStatusWindow().show();
                   } else {
@@ -1350,10 +1352,10 @@ public class MainWindow extends JFrame {
             return mainLeftPanel;
 
         JTabbedPane treePanel = new JTabbedPane();
-        treePanel.setTabPlacement(JTabbedPane.BOTTOM);
         treePanel.setBorder(null);
         //treePanel.setLayout(new BorderLayout());
         treePanel.addTab("Assertions", getAssertionPaletteTree());
+        treePanel.addTab("Identitites/SAML", getIdentitiesTree());
 
         JScrollPane js = new JScrollPane(treePanel);
         js.setBorder(null);

@@ -1,21 +1,13 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.console.action.*;
-import com.l7tech.console.util.Registry;
-import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
-import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
-import java.util.*;
-import java.util.List;
-import java.util.logging.Level;
-import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * The class represents an tree node gui node element that
@@ -39,7 +31,7 @@ public class ProviderNode extends EntityHeaderNode {
         if (e == null) {
             throw new IllegalArgumentException("entity == null");
         }
-        setAllowsChildren(true);
+        //setAllowsChildren(true);
     }
 
 
@@ -67,8 +59,8 @@ public class ProviderNode extends EntityHeaderNode {
 
         list.addAll(Arrays.asList(super.getActions()));
         for (Iterator iterator = list.iterator(); iterator.hasNext();) {
-            Action action = (Action) iterator.next();
-            if(action instanceof DeleteEntityAction){
+            Action action = (Action)iterator.next();
+            if (action instanceof DeleteEntityAction) {
                 action.setEnabled(oid != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
             }
 
@@ -90,6 +82,7 @@ public class ProviderNode extends EntityHeaderNode {
      * subclasses override this method
      */
     protected void loadChildren() {
+        /*
         try {
             long oid = getEntityHeader().getOid();
             IdentityProvider ip =
@@ -104,7 +97,7 @@ public class ProviderNode extends EntityHeaderNode {
             }
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Error obtaining identity provider " + getEntityHeader().getName(), e);
-        }
+        } */
     }
 
     /**
@@ -113,7 +106,7 @@ public class ProviderNode extends EntityHeaderNode {
      * @return true if leaf, false otherwise
      */
     public boolean isLeaf() {
-        return false;
+        return true;
     }
 
     /**
@@ -128,14 +121,15 @@ public class ProviderNode extends EntityHeaderNode {
     /**
      * test whether the node can refresh its children. The provider
      * node can always refresh its children
+     *
      * @return always true
      */
     public boolean canRefresh() {
-        return true;
+        return false;
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
+     * Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
      */

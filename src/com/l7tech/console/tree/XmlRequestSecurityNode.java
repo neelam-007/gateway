@@ -14,8 +14,17 @@ import javax.swing.*;
  * @version 1.0
  */
 public class XmlRequestSecurityNode extends AbstractTreeNode {
-    public XmlRequestSecurityNode(){
+    private static final String DEFAULT_NAME = "Sign and/or Encrypt Request";
+    private final String name;
+
+    public XmlRequestSecurityNode(String name) {
         super(null);
+        this.name = name;
+    }
+
+    public XmlRequestSecurityNode() {
+        super(null);
+        this.name = DEFAULT_NAME;
     }
 
     /**
@@ -63,8 +72,7 @@ public class XmlRequestSecurityNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "XML Request Security";
-
+        return name;
     }
 
     /**

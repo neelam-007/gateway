@@ -1,7 +1,5 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-
 
 /**
  * The class represents a node element in the palette assertion tree.
@@ -10,13 +8,12 @@ import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class AuthMethodFolderNode extends AbstractTreeNode {
+public class AuthenticationFolderNode extends AbstractTreeNode {
     /**
      * construct the <CODE>PoliciesFolderNode</CODE> instance for
      * a given entry.
-     *
      */
-    public AuthMethodFolderNode() {
+    public AuthenticationFolderNode() {
         super(null);
     }
 
@@ -42,12 +39,13 @@ public class AuthMethodFolderNode extends AbstractTreeNode {
     protected void loadChildren() {
         int index = 0;
         children = null;
+        insert(new IdentityNode(), index++);
         insert(new HttpBasicAuthNode(), index++);
         insert(new HttpDigestAuthNode(), index++);
         insert(new HttpClientCertificateAuthNode(), index++);
         insert(new WsTokenBasicAuthNode(), index++);
         // insert(new WsTokenDigestAuthNode(), index++);
-        insert(new XmlRequestSecurityNode(), index++);
+        insert(new XmlRequestSecurityNode("XML Digital Signature authentication"), index++);
     }
 
     /**
@@ -56,7 +54,7 @@ public class AuthMethodFolderNode extends AbstractTreeNode {
      * @return the name as a String
      */
     public String getName() {
-        return "Authentication methods";
+        return "Authentication";
     }
 
     /**

@@ -7,28 +7,24 @@ import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Cookie;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import javax.wsdl.WSDLException;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.rmi.RemoteException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
-import java.text.MessageFormat;
 
 /**
  * Class <code>AssertionTreeNode</code> is the base superclass for the
@@ -42,7 +38,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     /**
      * package private constructor accepting the asseriton
      * this node represents.
-
+     *
      * @param assertion that this node represents
      */
     AssertionTreeNode(Assertion assertion) {
@@ -64,17 +60,19 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
 
     /**
      * Set the validator messages for this node.
+     *
      * @param messages the messages
      */
     public void setValidatorMessages(List messages) {
         this.validatorMessages = new ArrayList();
-        if (messages !=null) {
+        if (messages != null) {
             validatorMessages.addAll(messages);
         }
     }
 
     /**
      * Set the validator messages for this node.
+     *
      * @return tthe list of validator messages
      */
     public List getValidatorMessages() {
@@ -96,7 +94,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         boolean first = true;
         boolean hasWarnings = false;
         boolean hasErrors = false;
-        for (;it.hasNext();) {
+        for (; it.hasNext();) {
             if (!first) {
                 sb.append("<br>");
             }
@@ -107,17 +105,17 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
             } else if ((pm instanceof PolicyValidatorResult.Warning)) {
                 hasWarnings = true;
             }
-            sb.append("<i>"+pm.getMessage()+"</i>");
+            sb.append("<i>" + pm.getMessage() + "</i>");
         }
         sb.append("</strong></html>");
         String format = sb.toString();
         String msg = "warnings and errors, the policy might be invalid";
         if (hasWarnings && !hasErrors) {
-           msg = "warnings, the policy might be invalid";
+            msg = "warnings, the policy might be invalid";
         } else if (!hasWarnings && hasErrors) {
             msg = "errors, the policy might be invalid";
         }
-        return MessageFormat.format(format, new Object[] {msg});
+        return MessageFormat.format(format, new Object[]{msg});
     }
 
     /**
@@ -155,13 +153,13 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         md.setEnabled(canMoveDown());
         list.add(md);
 
-    /*
-        Action sp = new SavePolicyAction(this);
-        list.add(sp);
+        /*
+            Action sp = new SavePolicyAction(this);
+            list.add(sp);
 
-        Action vp = new ValidatePolicyAction((AssertionTreeNode)getRoot());
-        list.add(vp);
-    */
+            Action vp = new ValidatePolicyAction((AssertionTreeNode)getRoot());
+            list.add(vp);
+        */
 
         return (Action[])list.toArray(new Action[]{});
     }
@@ -294,36 +292,6 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
             if (value instanceof ServiceNode) return (ServiceNode)value;
         }
         return null;
-    }
-
-
-    /**
-     * some nodes need to be additionally prepared
-     * @param node to prapre
-     * @return the preapred node
-     */
-    protected final AssertionTreeNode prepareNode(AssertionTreeNode node) {
-        if (node instanceof RoutingAssertionTreeNode) {
-            String url = "Unable to determine the service url. Please edit";
-            for (Iterator i = ((AbstractTreeNode)this.getRoot()).cookies(); i.hasNext();) {
-                Object value = ((Cookie)i.next()).getValue();
-                if (value instanceof ServiceNode) {
-                    ServiceNode sn = (ServiceNode)value;
-                    try {
-                        url = sn.getPublishedService().parsedWsdl().getServiceURI();
-                    } catch (WSDLException e) {
-                        logger.log(Level.WARNING, "Wsdl error", e);
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Service lookup failed, service gone?  " + sn.getEntityHeader().getOid());
-                    } catch (RemoteException e) {
-                        logger.log(Level.WARNING, "Remote service error", e);
-                    }
-                }
-            }
-            RoutingAssertionTreeNode rn = (RoutingAssertionTreeNode)node;
-            ((RoutingAssertion)rn.asAssertion()).setProtectedServiceUrl(url);
-        }
-        return node;
     }
 
     /**

@@ -1,21 +1,10 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.panels.NewGroupDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.AssertionsTree;
-import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ComponentRegistry;
-import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -52,51 +41,21 @@ public class NewGroupAction extends NodeAction {
         return "com/l7tech/console/resources/group16.png";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              public void run() {
-                  JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-                  NewGroupDialog dialog = new NewGroupDialog(f);
-                  dialog.addEntityListener(listener);
-                  dialog.setResizable(false);
-                  dialog.show();
-              }
-          });
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                NewGroupDialog dialog = new NewGroupDialog(f);
+                dialog.setResizable(false);
+                dialog.show();
+            }
+        });
     }
-
-    private EntityListener listener = new EntityListenerAdapter() {
-        /**
-         * Fired when an new entity is added.
-         * @param ev event describing the action
-         */
-        public void entityAdded(final EntityEvent ev) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    if (node == null) {
-                        log.fine("Parent node has not been set - skipping notificaiton.");
-                        return;
-                    }
-                    EntityHeader eh = (EntityHeader)ev.getEntity();
-                    JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
-                    if (tree != null) {
-                        TreeNode[] nodes = node.getPath();
-                        TreePath nPath = new TreePath(nodes);
-                        if (tree.hasBeenExpanded(nPath)) {
-                            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                            model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
-                        }
-                    } else {
-                        log.log(Level.WARNING, "Unable to reach the palette tree.");
-                    }
-                }
-            });
-        }
-    };
 }
