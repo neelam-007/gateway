@@ -178,25 +178,17 @@ public class ClusterStatusWindow extends JFrame {
         jScrollPane2.setMinimumSize(new java.awt.Dimension(400, 220));
         jTable2.setModel(getClusterStatusTableModel());
 
-        BarIndicator loadShareRenderer = new BarIndicator(MIN, MAX, Color.green);
+        BarIndicator loadShareRenderer = new BarIndicator(MIN, MAX, Color.blue);
         loadShareRenderer.setStringPainted(true);
         loadShareRenderer.setBackground(jTable2.getBackground());
 
         // set limit value and fill color
         Hashtable limitColors1 = new Hashtable();
         limitColors1.put(new Integer(0), Color.green);
-        // limitColors.put(new Integer(60), Color.yellow);
-        // limitColors.put(new Integer(80), Color.red);
 
-        //loadShareRenderer.setLimits(limitColors1);
-
-        BarIndicator requestRoutedRenderer = new BarIndicator(MIN, MAX, Color.blue);
+        BarIndicator requestRoutedRenderer = new BarIndicator(MIN, MAX, Color.magenta);
         requestRoutedRenderer.setStringPainted(true);
         requestRoutedRenderer.setBackground(jTable2.getBackground());
-
-        Hashtable limitColors2 = new Hashtable();
-        limitColors2.put(new Integer(0), Color.red);
-        //requestFailureRenderer.setLimits(limitColors2);
 
         jTable2.getColumnModel().getColumn(2).setCellRenderer(loadShareRenderer);
         jTable2.getColumnModel().getColumn(3).setCellRenderer(requestRoutedRenderer);
