@@ -3,6 +3,7 @@ package com.l7tech.cluster;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import net.sf.hibernate.Hibernate;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
@@ -39,6 +40,23 @@ public class ServiceUsageManager extends HibernateDaoSupport {
             String msg = "could not retreive service usage obj";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
+        }
+    }
+
+    /**
+     * Finds the ServiceUsage records for the given {@link com.l7tech.service.PublishedService} OID for all cluster nodes
+     * @return
+     * @throws FindException
+     */
+    public ServiceUsage[] findByServiceOid(long serviceOid) throws FindException {
+        try {
+            String find = "FROM " + TABLE_NAME +
+                    " IN CLASS " + ServiceUsage.class.getName() +
+                    " WHERE " + SERVICE_ID_COLUMN_NAME + " = ?";
+            List results = getSession().find(find, new Long(serviceOid), Hibernate.LONG);
+            return (ServiceUsage[])results.toArray(new ServiceUsage[0]);
+        } catch (HibernateException e) {
+            throw new FindException("Couldn't retrieve ServiceUsage", e);
         }
     }
 
