@@ -24,6 +24,7 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  *
@@ -139,6 +140,24 @@ public class ServicePanel extends WizardStepPanel {
         return isWsdlUrlSyntaxValid;
     }
 
+    private static class WsdlLookupCancelableOperation implements CancelableOperationDialog.CancelableOperation {
+        private String wsdlUrl = null;
+        private String wsdlXml = null;
+
+        private WsdlLookupCancelableOperation(String wsdlUrl) {
+            this.wsdlUrl = wsdlUrl;
+        }
+
+        public void runOperation() throws RemoteException, WSDLException {
+            wsdlXml =
+              Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrl);
+        }
+
+        private String getWsdlXml() {
+            return wsdlXml;
+        }
+    }
+
     /**
      * Attempt to resolve the WSDL.  Returns true if we have a valid one, or false otherwise.
      * Will pester the user with a dialog box if the WSDL could not be fetched.
@@ -147,9 +166,11 @@ public class ServicePanel extends WizardStepPanel {
     public boolean onNextButton() {
         isWsdlDownloaded = false;
         notifyListeners();
+
         try {
-            String wsdlXml =
-              Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrlTextField.getText());
+            WsdlLookupCancelableOperation wlco = new WsdlLookupCancelableOperation(wsdlUrlTextField.getText());
+            new CancelableOperationDialog(wlco).runOperation();
+            String wsdlXml = wlco.getWsdlXml();
             wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
 
             service.setName(wsdl.getServiceName());
@@ -158,12 +179,15 @@ public class ServicePanel extends WizardStepPanel {
 
             isWsdlDownloaded = true;
             notifyListeners();
-        } catch (RemoteException e1) {
+        } catch (CancelableOperationDialog.OperationCanceledException e1) {
+            // silenty cancel
+        } catch (InvocationTargetException e1) {
             e1.printStackTrace();
             JOptionPane.showMessageDialog(null,
-              "Unable to resolve the WSDL at location '" + wsdlUrlTextField.getText() + "'\n",
-              "Error",
-              JOptionPane.ERROR_MESSAGE);
+                                          "Unable to resolve the WSDL at location '" +
+                                                wsdlUrlTextField.getText() + "'\n",
+                                          "Error",
+                                          JOptionPane.ERROR_MESSAGE);
         } catch (WSDLException e1) {
             e1.printStackTrace();
             JOptionPane.showMessageDialog(null,
