@@ -5,14 +5,10 @@ import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.event.CertListenerAdapter;
 import com.l7tech.console.event.CertEvent;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
@@ -22,8 +18,6 @@ import javax.swing.event.ListSelectionEvent;
 import java.util.*;
 import java.util.logging.Logger;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.rmi.RemoteException;
@@ -181,8 +175,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
 
-                Wizard w = (Wizard) TopComponents.getInstance().getComponent(CreateFederatedIPWizard.NAME);
-                CertSearchPanel sp = new CertSearchPanel(w);
+                CertSearchPanel sp = new CertSearchPanel(getOwner());
                 sp.addCertListener(certListener);
                 sp.show();
                 sp.setSize(400, 600);
@@ -204,9 +197,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
-                    Wizard w = (Wizard) TopComponents.getInstance().getComponent(CreateFederatedIPWizard.NAME);
-
-                    CertPropertiesWindow cpw = new CertPropertiesWindow(w, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
+                    CertPropertiesWindow cpw = new CertPropertiesWindow(getOwner(), (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
                     cpw.show();
                 }
             }
