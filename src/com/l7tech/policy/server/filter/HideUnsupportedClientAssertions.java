@@ -83,6 +83,5 @@ public class HideUnsupportedClientAssertions extends Filter {
         RequestXpathAssertion.class,
         ResponseXpathAssertion.class,
         RequestWssReplayProtection.class,
-        SecureConversation.class,
     };
 }
