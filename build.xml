@@ -297,19 +297,27 @@
                 <include name="com/l7tech/policy/**/*"/>
             </fileset>
         </jar>
-        <!-- the console jar -->
-        <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
+
+         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
-                <exclude name="com/l7tech/common/security/**/*"/> <!-- no security in manager -->
-                <exclude name="com/l7tech/identity/cert/**/*" />
-                <exclude name="com/l7tech/identity/rmi/**/*" />
-                <exclude name="com/l7tech/identity/ws/**/*" />
+                <exclude name="com/l7tech/common/security/**/*"/>
                 <exclude name="com/l7tech/logging/rmi/**/*" />
                 <exclude name="com/l7tech/policy/server/**/*" />
+                <include name="com/l7tech/identity/*Exception*"/>
+                <include name="com/l7tech/identity/cert/ClientCertManager.class" />
+                <include name="com/l7tech/identity/cert/ClientCertManagerRemote.class" />
+                <include name="com/l7tech/identity/*Client*"/>
+                <include name="com/l7tech/identity/Group*"/>
+                <include name="com/l7tech/identity/User*"/>
+                <include name="com/l7tech/identity/Identity*"/>
+                <exclude name="com/l7tech/identity/*Server*"/>
+                <include name="com/l7tech/identity/internal/InternalUser.class"/>
+                <include name="com/l7tech/identity/internal/InternalGroup.class"/>
+                <include name="com/l7tech/identity/ldap/LdapUser.class"/>
+                <include name="com/l7tech/identity/ldap/LdapGroup.class"/>
 
                 <include name="com/l7tech/common/**/*"/>
                 <include name="com/l7tech/console/**/*"/>
-                <include name="com/l7tech/identity/**/*"/>
                 <include name="com/l7tech/remote/jini/lookup/*ServiceLookup*"/>
                 <include name="com/l7tech/remote/jini/lookup/ServiceFactory.class"/>
                 <include name="com/l7tech/logging/**/*"/>
@@ -318,6 +326,7 @@
                 <include name="com/l7tech/policy/**/*"/>
                 <include name="com/l7tech/service/ServiceAdmin.class"/>
                 <include name="com/l7tech/service/PublishedService.class"/>
+                <include name="com/l7tech/service/ServiceStatistics.class"/>
             </fileset>
         </jar>
 
