@@ -557,7 +557,8 @@ public class TimeRangePropertiesDialog extends JDialog {
         timeOfDayPanel.add(new JLabel(""));
 
         titlePanel = new JPanel();
-        titlePanel.setLayout(new FlowLayout(FlowLayout.LEADING, CONTROL_SPACING, 0));
+        titlePanel.setLayout(new FlowLayout(FlowLayout.LEADING, 0, 0));
+        //titlePanel.setLayout(new FlowLayout(FlowLayout.LEADING, CONTROL_SPACING, 0));
         enableDayOfWeek = new JCheckBox(resources.getString("enableDayOfWeek.name"));
         titlePanel.add(enableDayOfWeek);
         enableDayOfWeek.setSelected(true);

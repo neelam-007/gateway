@@ -46,7 +46,7 @@ public class TimeRangeTreeNode extends LeafAssertionTreeNode {
 
             return nodeName;
         }
-        else return "No availability defined";
+        else return "No Availability Defined";
     }
 
     protected String iconResource(boolean open) {
