@@ -37,7 +37,7 @@ public class MessageProcessor {
                 else
                     LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Service disabled" );
 
-                status = AssertionStatus.NOT_FOUND;
+                status = AssertionStatus.SERVICE_NOT_FOUND;
             } else {
                 LogManager.getInstance().getSystemLogger().log(Level.FINER, "Service resolved" );
                 request.setParameter( Request.PARAM_SERVICE, service );
@@ -53,13 +53,13 @@ public class MessageProcessor {
                         status = AssertionStatus.FALSIFIED;
                     }
                 } else {
-                    LogManager.getInstance().getSystemLogger().log(Level.SEVERE, status.getMessage());
+                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, status.getMessage() );
                 }
             }
 
             return status;
         } catch ( ServiceResolutionException sre ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, sre);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, sre.getMessage(), sre);
             return AssertionStatus.SERVER_ERROR;
         }
     }
