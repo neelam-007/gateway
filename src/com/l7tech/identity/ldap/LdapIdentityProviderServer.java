@@ -22,7 +22,7 @@ import java.util.ArrayList;
  * Date: Jun 13, 2003
  *
  */
-public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityProvider {
+public class LdapIdentityProviderServer implements IdentityProvider {
     public void initialize(IdentityProviderConfig config) {
         if (!(config.type() == IdentityProviderType.LDAP)) throw new IllegalArgumentException("Expecting Ldap config type");
         cfg = config;
