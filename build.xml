@@ -1071,6 +1071,8 @@
         </replaceregexp>
 
         <copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}"/>
+        <copy file="${src.root}/etc/uddi.properties" tofile="${install.src.uddi.properties}"/>
+
         <echo>Patching ${install.src.ssglog.properties}...</echo>
         <replaceregexp file="${install.src.ssglog.properties}">
             <regexp pattern="java.util.logging.FileHandler.pattern=.*"/>
@@ -1097,6 +1099,7 @@
         </replaceregexp>
 
         <copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}-dist"/>
+        <copy file="${src.root}/etc/uddi.properties" tofile="${install.src.uddi.properties}-dist"/>
         <echo>Patching ${install.src.ssglog.properties}-dist...</echo>
         <replaceregexp file="${install.src.ssglog.properties}-dist">
             <regexp pattern="java.util.logging.FileHandler.pattern=.*"/>
@@ -1168,6 +1171,7 @@
         <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
         <property name="install.src.cluster_hostname" value="${install.src.conf}/cluster_hostname"/>
         <property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
+        <property name="install.src.uddi.properties" value="${install.src.conf}/uddi.properties"/>
         <property name="install.src.server.xml" value="${install.src.tomcat}/conf/server.xml"/>
         <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
         <property name="install.src.web-inf" value="${install.src.tomcat}/webapps/ROOT/WEB-INF"/>
