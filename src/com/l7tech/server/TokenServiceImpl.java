@@ -20,6 +20,7 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -189,12 +190,12 @@ public class TokenServiceImpl implements TokenService {
             OneOrMoreAssertion root = new OneOrMoreAssertion();
 
             AllAssertion msgLvlBranch = new AllAssertion();
-            msgLvlBranch.addChild(new RequestWssIntegrity());
             OneOrMoreAssertion validCredsOverMsgLvlSec = new OneOrMoreAssertion();
             validCredsOverMsgLvlSec.addChild(new RequestWssX509Cert());
             validCredsOverMsgLvlSec.addChild(new SamlAuthenticationStatement());
             validCredsOverMsgLvlSec.addChild(new SecureConversation());
             msgLvlBranch.addChild(validCredsOverMsgLvlSec);
+            msgLvlBranch.addChild(new RequestWssIntegrity());
 
             AllAssertion sslBranch = new AllAssertion();
             sslBranch.addChild(new SslAssertion());
@@ -203,6 +204,9 @@ public class TokenServiceImpl implements TokenService {
             validCredsOverSSL.addChild(new WssBasic());
             validCredsOverSSL.addChild(new HttpDigest());
             validCredsOverSSL.addChild(new HttpClientCert());
+            SamlAuthenticationStatement samlBearerToken = new SamlAuthenticationStatement();
+            samlBearerToken.setRequireProofOfPosession(false);
+            validCredsOverSSL.addChild(samlBearerToken);
             sslBranch.addChild(validCredsOverSSL);
 
             root.addChild(msgLvlBranch);
