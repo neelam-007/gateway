@@ -290,10 +290,10 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
             // Close the context when we're done
             userCtx.close();
         } catch (AuthenticationException e) {
-            logger.log(Level.SEVERE, "User failed to authenticate: " + dn, e);
+            logger.info( "User failed to authenticate: " + dn );
             return false;
         } catch (NamingException e) {
-            logger.log(Level.SEVERE, "General naming failure for user: " + dn, e);
+            logger.log( Level.WARNING, "General naming failure for user: " + dn, e);
             return false;
         }
         logger.info("User: "+ dn +" authenticated successfully.");
