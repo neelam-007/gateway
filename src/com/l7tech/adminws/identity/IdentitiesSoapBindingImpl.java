@@ -5,9 +5,9 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.util.Locator;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
+
+import java.rmi.RemoteException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -19,11 +19,19 @@ import com.l7tech.objectmodel.DeleteException;
  */
 public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Identity{
     public com.l7tech.adminws.identity.Header[] findAlllIdentityProviderConfig() throws java.rmi.RemoteException {
-        return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManager().findAllHeaders());
+        try {
+            return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManager().findAllHeaders());
+        } catch (FindException e) {
+            throw new RemoteException( e.toString(), e );
+        }
     }
 
     public com.l7tech.adminws.identity.Header[] findAllIdentityProviderConfigByOffset(int offset, int windowSize) throws java.rmi.RemoteException {
-        return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManager().findAllHeaders(offset, windowSize));
+        try {
+            return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManager().findAllHeaders(offset, windowSize));
+        } catch (FindException e) {
+            throw new RemoteException( e.toString(), e );
+        }
     }
 
     public com.l7tech.adminws.identity.IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws java.rmi.RemoteException {
@@ -89,40 +97,69 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     }
 
     public com.l7tech.adminws.identity.Header[] findAllUsers(long identityProviderConfigId) throws java.rmi.RemoteException {
-        UserManager userManager = retrieveUserManager(identityProviderConfigId);
-        return TypeTranslator.collectionToServiceHeaders(userManager.findAllHeaders());
+        try {
+            UserManager userManager = retrieveUserManager(identityProviderConfigId);
+            return TypeTranslator.collectionToServiceHeaders(userManager.findAllHeaders());
+        } catch (FindException e) {
+            throw new RemoteException( e.toString(), e );
+        }
     }
 
     public com.l7tech.adminws.identity.Header[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
         UserManager userManager = retrieveUserManager(identityProviderConfigId);
-        return TypeTranslator.collectionToServiceHeaders(userManager.findAllHeaders(offset, windowSize));
+        try {
+            return TypeTranslator.collectionToServiceHeaders(userManager.findAllHeaders(offset, windowSize));
+        } catch (FindException e) {
+            throw new RemoteException( e.toString(), e );
+        }
     }
 
     public com.l7tech.adminws.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
         GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
-        return TypeTranslator.genGroupToServiceGroup(groupManager.findByPrimaryKey(groupId));
+        try {
+            return TypeTranslator.genGroupToServiceGroup(groupManager.findByPrimaryKey(groupId));
+        } catch (FindException e) {
+            throw new RemoteException( e.toString(), e );
+        }
     }
 
     public void deleteGroup(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
         GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
-        com.l7tech.identity.Group grp = groupManager.findByPrimaryKey(groupId);
-        if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
-        groupManager.delete(grp);
+        try {
+            com.l7tech.identity.Group grp = groupManager.findByPrimaryKey(groupId);
+            if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
+            groupManager.delete(grp);
+        } catch (ObjectModelException e) {
+            throw new RemoteException( e.toString(), e );
+        }
+
     }
 
     public long saveGroup(long identityProviderConfigId, com.l7tech.adminws.identity.Group group) throws java.rmi.RemoteException {
-        GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
-        return groupManager.save(TypeTranslator.serviceGroupToGenGroup(group));
+        try {
+            GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
+            return groupManager.save(TypeTranslator.serviceGroupToGenGroup(group));
+        } catch (SaveException e) {
+            throw new RemoteException( e.toString(), e );
+        }
     }
 
     public com.l7tech.adminws.identity.Header[] findAllGroups(long identityProviderConfigId) throws java.rmi.RemoteException {
         GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
-        return TypeTranslator.collectionToServiceHeaders(groupManager.findAllHeaders());
+        try {
+            return TypeTranslator.collectionToServiceHeaders(groupManager.findAllHeaders());
+        } catch (FindException e) {
+            throw new RemoteException( e.toString(), e );
+        }
     }
 
     public com.l7tech.adminws.identity.Header[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
-        GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
-        return TypeTranslator.collectionToServiceHeaders(groupManager.findAllHeaders(offset, windowSize));
+        try {
+            GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
+            return TypeTranslator.collectionToServiceHeaders(groupManager.findAllHeaders(offset, windowSize));
+        } catch ( FindException e ) {
+            throw new RemoteException( e.toString(), e );
+        }
     }
 
     // ************************************************
