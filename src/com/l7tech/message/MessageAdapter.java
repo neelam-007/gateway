@@ -18,6 +18,7 @@ public abstract class MessageAdapter implements Message {
     }
 
     public void setParameter( String name, Object value ) {
+        if ( _params == Collections.EMPTY_MAP ) _params = new HashMap();
         _params.put( name, value );
     }
 
