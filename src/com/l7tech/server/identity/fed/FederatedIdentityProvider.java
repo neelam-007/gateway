@@ -185,9 +185,12 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                                           csa.getName() );
     }
 
-    private TrustedCert getTrustedCertForRequestCert( X509Certificate requestCert ) throws FindException, IOException, CertificateException {
-        // TODO what if the client cert's issuer DN doesn't match the CA's subject DN?
-        return trustedCertManager.getCachedCertBySubjectDn( requestCert.getIssuerDN().getName(), MAX_CACHE_AGE );
+    private TrustedCert getTrustedCertForRequestCert( X509Certificate requestCert )
+            throws FindException, IOException, CertificateException
+    {
+        TrustedCert cert = trustedCertManager.getCachedCertBySubjectDn( requestCert.getIssuerDN().getName(), MAX_CACHE_AGE );
+        if (cert == null) certOidSet.remove(new Long(cert.getOid()));
+        return cert;
     }
 
     /**
