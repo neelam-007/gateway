@@ -129,6 +129,40 @@ public class SoapUtil {
         return null;
     }
 
+    /**
+     * Returns the Header element from a soap message. If the message does not have a header yet, it creates one and
+     * adds it to the envelope, and returns it back to you. If a body element exists, the header element will be inserted right before the body element.
+     * @param soapMsg DOM document containing the soap message
+     * @return the header element (never null)
+     */
+    public static Element getOrMakeHeader(Document soapMsg) {
+        // use the soap flavor of this document
+        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
+        NodeList list = soapMsg.getElementsByTagNameNS(soapEnvNS, HEADER);
+        if (list.getLength() < 1) {
+            String soapEnvNamespacePrefix = soapMsg.getDocumentElement().getPrefix();
+
+            // create header element
+            Element header = soapMsg.createElementNS(soapEnvNS, HEADER);
+            header.setPrefix(soapEnvNamespacePrefix);
+
+            // if the body is there, get it so that the header can be inserted before it
+            Element body = null;
+            NodeList bodylist = soapMsg.getElementsByTagNameNS(soapEnvNS, BODY);
+            if (bodylist.getLength() > 0) {
+                body = (Element)bodylist.item(0);
+            }
+
+            // insert new element
+            if (body != null)
+                soapMsg.getDocumentElement().insertBefore(header, body);
+            else
+                soapMsg.getDocumentElement().appendChild(header);
+            return header;
+        }
+        else return (Element)list.item(0);
+    }
+
     public static final String FC_CLIENT = "Client";
     public static final String FC_SERVER = "Server";
 }
