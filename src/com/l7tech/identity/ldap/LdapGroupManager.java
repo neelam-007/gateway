@@ -137,15 +137,112 @@ public class LdapGroupManager implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * go from a user to the group it belongs to
+     */
     public Set getGroupHeaders(User user) throws FindException {
-        // todo : optimize this!
-        Collection allgroups = findAll();
+        GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
+        StringBuffer uberGroupMembershipFilter = new StringBuffer("(|");
+        boolean checkOuStrategyToo = false;
+        boolean somethingToSearchFor = false;
+        for (int i = 0; i < groupTypes.length; i ++) {
+            String grpclass = groupTypes[i].getObjClass();
+            String mbmAttrName = groupTypes[i].getMemberAttrName();
+            MemberStrategy memberstrategy = groupTypes[i].getMemberStrategy();
+            if (memberstrategy.equals(MemberStrategy.MEMBERS_ARE_LOGIN)) {
+                uberGroupMembershipFilter.append("(&" +"(objectClass=" + grpclass + ")");
+                uberGroupMembershipFilter.append("(" + mbmAttrName + "=" + user.getLogin() + ")");
+                uberGroupMembershipFilter.append(")");
+                somethingToSearchFor = true;
+            } else if (memberstrategy.equals(MemberStrategy.MEMBERS_BY_OU)) {
+                checkOuStrategyToo = true;
+                continue;
+            } else {
+                uberGroupMembershipFilter.append("(&" +"(objectClass=" + grpclass + ")");
+                uberGroupMembershipFilter.append("(|");
+                uberGroupMembershipFilter.append("(" + mbmAttrName + "=cn=" + user.getName() + ")");
+                uberGroupMembershipFilter.append("(" + mbmAttrName + "=" + user.getUniqueIdentifier() + ")");
+                uberGroupMembershipFilter.append(")");
+                uberGroupMembershipFilter.append(")");
+                somethingToSearchFor = true;
+            }
+        }
+        uberGroupMembershipFilter.append(")");
+
         Set output = new HashSet();
-        for (Iterator i = allgroups.iterator(); i.hasNext();) {
-            Group agrp = (Group)i.next();
-            if (isMember(user, agrp)) {
-                output.add(new EntityHeader(agrp.getUniqueIdentifier(), EntityType.GROUP, agrp.getName(),
-                            agrp.getDescription()));
+        if (somethingToSearchFor) {
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            DirContext context = null;
+            try {
+                context = parent.getBrowseContext(cfg);
+            } catch (NamingException e) {
+                String msg = "cannot get context";
+                logger.log(Level.WARNING, msg, e);
+                throw new FindException(msg, e);
+            }
+            try {
+                NamingEnumeration answer = null;
+                try {
+                    answer = context.search(cfg.getSearchBase(), uberGroupMembershipFilter.toString(), sc);
+                } catch (NamingException e) {
+                    String msg = "error getting answer";
+                    logger.log(Level.WARNING, msg, e);
+                    throw new FindException(msg, e);
+                }
+                try {
+                    while (answer.hasMore()) {
+                        SearchResult sr = (SearchResult)answer.next();
+                        // set the dn (unique id)
+                        String dn = sr.getName() + "," + cfg.getSearchBase();
+                        //Attributes atts = sr.getAttributes();
+                        EntityHeader header = parent.searchResultToHeader(sr, dn);
+                        if (header != null) {
+                            output.add(header);
+                        }
+                    }
+                } catch (NamingException e) {
+                    String msg = "error getting next answer";
+                    logger.log(Level.WARNING, msg, e);
+                    throw new FindException(msg, e);
+                } finally {
+                    try {
+                        answer.close();
+                    } catch (NamingException e) {
+                        logger.info("error closing answer " + e.getMessage());
+                    }
+                }
+            } finally {
+                try {
+                    context.close();
+                } catch (NamingException e) {
+                    logger.info("error closing context " + e.getMessage());
+                }
+            }
+        }
+
+        if (checkOuStrategyToo) {
+            // look for OU memberships
+            String tmpdn = user.getUniqueIdentifier();
+            int pos = 0;
+            int res = tmpdn.indexOf("ou", pos);
+            while (res >= 0) {
+                // is there a valid organizational unit there?
+                Group maybegrp = null;
+                try {
+                    maybegrp = findByPrimaryKey(tmpdn.substring(res));
+                } catch (FindException e) {
+                    logger.finest("could not resolve this group " + e.getMessage());
+                    maybegrp = null;
+                }
+                if (maybegrp != null) {
+                    LdapGroup ldapgrp = (LdapGroup)maybegrp;
+                    EntityHeader grpheader = new EntityHeader(ldapgrp.getDn(), EntityType.GROUP, ldapgrp.getCn(),
+                                                ldapgrp.getDescription());
+                    output.add(grpheader);
+                }
+                pos = res+1;
+                res = tmpdn.indexOf("ou", pos);
             }
         }
         return output;
