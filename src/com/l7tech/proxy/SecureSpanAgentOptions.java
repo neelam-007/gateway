@@ -153,7 +153,7 @@ public class SecureSpanAgentOptions {
      * The CertStore is in PKCS#12 format, and holds only public information including the Gateway's server
      * certificate and a publicly readable copy of the signed client certificate (if any).  It is obscured on disk
      * with Triple-DES using a constant key.
-     * @return The pah of the custom CertStore file, or null if no custom CertStore path is being requested.
+     * @return The path of the custom CertStore file, or null if no custom CertStore path is being requested.
      */
     public String getCertStorePath() {
         return trustStorePath;
@@ -168,7 +168,7 @@ public class SecureSpanAgentOptions {
      * The CertStore is in PKCS#12 format, and holds only public information including the Gateway's server
      * certificate and a publicly readable copy of the signed client certificate (if any).  It is obscured on disk
      * with Triple-DES using a constant key.
-     * @param certStorePath The pah of the custom CertStore file, or null if you wish to use the default path.
+     * @param certStorePath The path of the custom CertStore file, or null if you wish to use the default path.
      */
     public void setCertStorePath(String certStorePath) {
         this.trustStorePath = certStorePath;
