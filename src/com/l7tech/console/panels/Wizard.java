@@ -28,6 +28,7 @@ public class Wizard extends JDialog {
     private WizardStepPanel startPanel;
     private Wizard.Iterator wizardIterator;
     protected Object wizardInput;
+    private boolean wasCanceled = false;
 
     /**
      * is show description enabled for the panel steps
@@ -304,10 +305,15 @@ public class Wizard extends JDialog {
         }
     }
 
+    public boolean wasCanceled() {
+        return wasCanceled;
+    }
+
     /**
      * Notifies all the listeners that the wizard has been canceled
      */
     private void fireWizardCanceled() {
+        wasCanceled = true;
         EventListener[] listeners = listenerList.getListeners(WizardListener.class);
         WizardEvent we = new WizardEvent(this, WizardEvent.CANCELED);
         for (int i = 0; i < listeners.length; i++) {
