@@ -205,7 +205,7 @@ public abstract class AbstractLocator extends Locator {
                             instancesCache.remove(this);
                             return getInstance();
                         }
-                        logger.finest("Cache lookup success, returns instance " +o);
+//                        logger.finest("Cache lookup success, returns instance " +o);
                         instance = o;
                     }
                     return instance;
