@@ -21,6 +21,7 @@ import x0Assertion.oasisNamesTcSAML1.AssertionType;
 import x0Assertion.oasisNamesTcSAML1.ConditionsType;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,12 +73,16 @@ public class ServerSamlSecurity implements ServerAssertion {
             xo = new XmlOptions();
             Collection errors = new ArrayList();
             xo.setErrorListener(errors);
+            xo.setSavePrettyPrint();
+            xo.setSavePrettyPrintIndent(2);
             if(!doc.validate(xo)) {
                 for (Iterator iterator = errors.iterator(); iterator.hasNext();) {
                     XmlError xerr = (XmlError)iterator.next();
                     logger.warning("Error validating SAML assertion" +xerr);
                 }
-                logger.warning("Aborting request (invalid SAML assertion)");
+                StringWriter sw = new StringWriter();
+                doc.save(sw, xo);
+                logger.warning("Aborting request (invalid SAML assertion) \n"+sw.toString());
                 return AssertionStatus.FALSIFIED;
             }
 
@@ -113,7 +118,18 @@ public class ServerSamlSecurity implements ServerAssertion {
         checkNonNullAssertionElement("Not Before", notBefore);
         Calendar notAfter = type.getNotOnOrAfter();
         checkNonNullAssertionElement("Not After", notAfter);
-        return (notBefore.before(now) && notAfter.after(now));
+        final boolean retb = (notBefore.before(now) && notAfter.after(now));
+
+        if (!retb && logger.getLevel().intValue() <= Level.INFO.intValue()) {
+            StringBuffer sb = new StringBuffer();
+            sb.append("Date/time range check failed").append("\n")
+              .append("Time Now is:"+now.toString()).append("\n")
+              .append("Not  Before is:"+notBefore.getTime().toString()).append("\n")
+              .append("Not  After is:"+notAfter.getTime().toString());
+            logger.info(sb.toString());
+
+        }
+        return retb;
     }
 
     /**
