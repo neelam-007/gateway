@@ -1,26 +1,24 @@
 package com.l7tech.common.xml;
 
+import com.l7tech.common.util.SoapUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.*;
+import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.extensions.soap.SOAPBody;
-import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
 import javax.xml.soap.SOAPConstants;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
-import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.net.URL;
-import java.net.MalformedURLException;
-
-import com.l7tech.common.util.SoapUtil;
 
 
 /**
@@ -361,10 +359,9 @@ public class Wsdl {
         if ( !soapenv ) {
             if ( result.get( SoapUtil.SOAP_ENV_PREFIX) == null )
                 result.put( SoapUtil.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_ENVELOPE );
-            else
+            else if ( !result.containsValue(SOAPConstants.URI_NS_SOAP_ENVELOPE ) )
                 result.put( NS + ns++, SOAPConstants.URI_NS_SOAP_ENVELOPE );
         }
-
 
         Collection operations = getBindingOperations();
         for (Iterator i = operations.iterator(); i.hasNext();) {
