@@ -57,12 +57,12 @@ import java.util.logging.Logger;
  */
 public class PolicyService {
 
-    interface ServiceInfo {
+    public interface ServiceInfo {
         Assertion getPolicy();
         String getVersion();
     }
 
-    interface PolicyGetter {
+    public interface PolicyGetter {
         /**
          * @return the policy or null if service does not exist
          */
