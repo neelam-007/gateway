@@ -8,6 +8,7 @@ package com.l7tech.proxy.policy.assertion;
 
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.ResponseXpathAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
@@ -23,7 +24,7 @@ import org.xml.sax.SAXException;
  * @version 1.0
  */
 public class ClientResponseXpathAssertion extends ClientAssertion {
-    public ClientResponseXpathAssertion(RequestXpathAssertion requestXpathAssertion) {
+    public ClientResponseXpathAssertion(ResponseXpathAssertion responseXpathAssertion) {
     }
 
     public AssertionStatus decorateRequest(PendingRequest request)
