@@ -12,12 +12,21 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.XmlRequestSecurityTreeNode;
 import com.l7tech.console.tree.policy.XmlResponseSecurityTreeNode;
 import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
-import com.l7tech.console.tree.wsdl.*;
+import com.l7tech.console.tree.wsdl.BindingOperationTreeNode;
+import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.xmlviewer.ExchangerDocument;
+import com.l7tech.console.xmlviewer.Viewer;
+import com.l7tech.console.xmlviewer.ViewerToolBar;
+import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
+import com.l7tech.console.xmlviewer.util.DocumentUtilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 import org.apache.xml.utils.NameSpace;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -25,7 +34,9 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
-import javax.wsdl.*;
+import javax.wsdl.Binding;
+import javax.wsdl.BindingOperation;
+import javax.wsdl.WSDLException;
 import javax.xml.soap.Name;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
@@ -34,6 +45,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URL;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -44,6 +60,7 @@ import java.util.*;
  */
 public class XmlSecurityPropertiesDialog extends JDialog {
     private JPanel mainPanel;
+    private JPanel soapMessagePanel;
     private JRadioButton entireMessage;
     private JRadioButton messageParts;
     private JTable securedItemsTable;
@@ -66,6 +83,9 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private static final String SOAP_BODY = "/soapenv:Envelope/soapenv:Body";
     private static final String SOAP_ENVELOPE = "/soapenv:Envelope";
     private Map namespaces = new HashMap();
+    private Viewer messageViewer;
+    private ViewerToolBar messageToolbar;
+    private ExchangerDocument exchangerDocument;
 
     /**
      * @param owner this panel owner
@@ -95,7 +115,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             soapRequests = sg.generate(serviceWsdl);
             for (int i = 0; i < soapRequests.length; i++) {
                 SOAPRequest soapRequest = soapRequests[i];
-                //System.out.println(soapRequest);
                 namespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
             }
         } catch (Exception e) {
@@ -116,7 +135,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 boolean selected = entireMessage.isSelected();
                 if (selected) {
                     wsdlMessagesTree.setEnabled(!selected);
-                    // setScopeIsEntireMessage();
+                    messageViewer.setViewerEnabled(!selected);
+                    messageToolbar.setToolbarEnabled(!selected);
                     securedMessagePartsTableModel = memoTableModelEntireMessage;
                     if (securedMessagePartsTableModel == null) {
                         securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
@@ -138,7 +158,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 boolean selected = messageParts.isSelected();
                 if (selected) {
                     wsdlMessagesTree.setEnabled(selected);
-
+                    messageViewer.setViewerEnabled(selected);
+                    messageToolbar.setToolbarEnabled(selected);
                     securedMessagePartsTableModel = memoTableModelMessageParts;
                     if (securedMessagePartsTableModel == null) {
                         securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
@@ -177,28 +198,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                     throw new IllegalStateException("No message/part selected (path is null)");
                 }
                 WsdlTreeNode node = (WsdlTreeNode)path.getLastPathComponent();
-                if (node instanceof MessagePartTreeNode) {
-                    MessagePartTreeNode mpn = (MessagePartTreeNode)node;
-                    MessageTreeNode mn = (MessageTreeNode)node.getParent();
-                    BindingOperationTreeNode bn = (BindingOperationTreeNode)mn.getParent();
-                    BindingOperation bo = bn.getOperation();
-                    String xpathExpression = SOAP_BODY;
-                    try {
-                        NameSpace ns = getOperationNamespace(bo.getName());
-                        String nameSpacePrefix = "";
-                        if (ns != null) {
-                            nameSpacePrefix = ns.m_prefix + ":";
-                        }
-                        xpathExpression += ("/" + nameSpacePrefix + bn.getName());
-                        xpathExpression += ("/" + mpn.getMessagePart().getName());
-                        SecuredMessagePart p = new SecuredMessagePart();
-                        p.setOperation(bn.getName());
-                        p.setXpathExpression(xpathExpression);
-                        addSecuredPart(p);
-                    } catch (SOAPException e1) {
-                        throw new RuntimeException(e1);
-                    }
-                } else if (node instanceof BindingOperationTreeNode) {
+
+                if (node instanceof BindingOperationTreeNode) {
                     BindingOperationTreeNode bn = (BindingOperationTreeNode)node;
                     BindingOperation bo = bn.getOperation();
                     String xpathExpression = SOAP_BODY;
@@ -216,19 +217,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                     } catch (SOAPException e1) {
                         throw new RuntimeException(e1);
                     }
-                } else if (node instanceof XmlElementTreeNode) {
-                    XmlElementTreeNode xe = (XmlElementTreeNode)node;
-                    SecuredMessagePart p = new SecuredMessagePart();
-                    BindingOperationTreeNode bn = (BindingOperationTreeNode)xe.getParent();
-                    p.setOperation(bn.getName());
-                    if ("Envelope".equals(xe.getName())) {
-                        String xpathExpression = SOAP_ENVELOPE;
-                        p.setXpathExpression(xpathExpression);
-                    } else if ("Body".equals(xe.getName())) {
-                        String xpathExpression = SOAP_BODY;
-                        p.setXpathExpression(xpathExpression);
-                    }
-                    addSecuredPart(p);
                 }
             }
         });
@@ -247,15 +235,14 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             final DefaultTreeModel treeModel = new DefaultTreeModel(root);
             Collection collection = wsdl.getBindings();
             WsdlTreeNode.Options wo = new WsdlTreeNode.Options();
-            wo.setShowMessageParts();
-            wo.setShowInputMessages();
+            ;
             for (Iterator iterator = collection.iterator(); iterator.hasNext();) {
                 Binding b = (Binding)iterator.next();
                 java.util.List operations = b.getBindingOperations();
                 int index = 0;
                 for (Iterator itop = operations.iterator(); itop.hasNext();) {
                     BindingOperation bo = (BindingOperation)itop.next();
-                    treeModel.insertNodeInto(new BindingOperationTreeNodeWithEnvelope(bo, wo), root, index++);
+                    treeModel.insertNodeInto(new BindingOperationTreeNode(bo, wo), root, index++);
                 }
                 break;
             }
@@ -269,8 +256,12 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             selectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             final ElementSecurity[] elements = xmlSecAssertion.getElements();
             final boolean envelopeAllOperations = isEnvelopeAllOperations(elements);
+            initializeSoapMessageViewer();
+
             entireMessage.setSelected(envelopeAllOperations);
             messageParts.setSelected(!envelopeAllOperations);
+            messageViewer.setViewerEnabled(!envelopeAllOperations);
+            messageToolbar.setToolbarEnabled(!envelopeAllOperations);
 
             for (int i = 0; !envelopeAllOperations && i < elements.length; i++) {
                 ElementSecurity elementSecurity = elements[i];
@@ -283,7 +274,39 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             throw new RuntimeException(e);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (SAXParseException e) {
+            throw new RuntimeException(e);
+        } catch (DocumentException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    private void initializeSoapMessageViewer() throws IOException, SAXParseException, DocumentException {
+        ConfigurationProperties cp = new ConfigurationProperties();
+        exchangerDocument = asExchangerDocument("<empty/>");
+        messageViewer = new Viewer(cp.getViewer(), exchangerDocument);
+        messageToolbar = new ViewerToolBar(cp.getViewer(), messageViewer);
+        soapMessagePanel.add(messageToolbar, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 7, 7, null, null, null));
+        soapMessagePanel.add(messageViewer, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 7, 7, null, null, null));
+    }
+
+    private static ExchangerDocument asExchangerDocument(String content)
+      throws IOException, DocumentException, SAXParseException {
+        URL url = asTempFileURL(content);
+        ExchangerDocument exchangerDocument = new ExchangerDocument(url, false);
+        exchangerDocument.load();
+        return exchangerDocument;
+    }
+
+    private static URL asTempFileURL(String content)
+      throws IOException, DocumentException {
+        final File file = File.createTempFile("Temp", "xml");
+        Document doc = DocumentUtilities.createReader(false).read(new StringReader(content));
+        DocumentUtilities.writeDocument(doc, file.toURL());
+        file.deleteOnExit();
+        return file.toURL();
     }
 
     private ElementSecurity toElementSecurity(SecuredMessagePart sp) {
@@ -375,45 +398,26 @@ public class XmlSecurityPropertiesDialog extends JDialog {
               if (path == null) {
                   addButton.setEnabled(false);
               } else {
-                  boolean enable = !(path.getLastPathComponent() instanceof MessageTreeNode);
-                  addButton.setEnabled(enable);
+                  BindingOperationTreeNode boperation = (BindingOperationTreeNode)path.getLastPathComponent();
+                  SOAPRequest sreq = forOperation(boperation.getName());
+                  if (sreq == null) {
+                      addButton.setEnabled(false);
+                  } else {
+                      addButton.setEnabled(true);
+                      try {
+                          ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                          sreq.getSOAPMessage().writeTo(bos);
+                          URL url = asTempFileURL(bos.toString());
+                          exchangerDocument.setProperties(url, null);
+                          exchangerDocument.load();
+                      } catch (Exception e1) {
+                          throw new RuntimeException(e1);
+                      }
+
+                  }
               }
           }
       };
-
-
-    /**
-     * This form specific <code>BindingOperationTreeNode</code> that allows
-     * section of envelope and body
-     */
-    private class BindingOperationTreeNodeWithEnvelope extends BindingOperationTreeNode {
-        public BindingOperationTreeNodeWithEnvelope(BindingOperation bo, WsdlTreeNode.Options options) {
-            super(bo, options);
-        }
-
-        protected void loadChildren() {
-            int index = 0;
-            children = null;
-            insert(new XmlElementTreeNode("Envelope", wsdlOptions), index++);
-            insert(new XmlElementTreeNode("Body", wsdlOptions), index++);
-
-            if (wsdlOptions.isShowInputMessages()) {
-                final Input input = operation.getOperation().getInput();
-                if (input != null) {
-                    final Message m = input.getMessage();
-                    insert(new MessageTreeNode(m, wsdlOptions), index++);
-                }
-            }
-
-            if (wsdlOptions.isShowOutputMessages()) {
-                final Output output = operation.getOperation().getOutput();
-                if (output != null) {
-                    final Message m = output.getMessage();
-                    insert(new MessageTreeNode(m, wsdlOptions), index++);
-                }
-            }
-        }
-    }
 
 
     private final ListSelectionListener tableSelectionListener = new ListSelectionListener() {
@@ -488,79 +492,93 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 2, 1, 6, null, null, null));
         final JPanel _7;
         _7 = new JPanel();
-        _7.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 4, new Insets(10, 0, 0, 0), -1, -1));
+        _7.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 5, new Insets(10, 0, 0, 0), -1, -1));
         _1.add(_7, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JScrollPane _8;
         _8 = new JScrollPane();
-        treeScrollPane = _8;
-        _7.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 1, 7, new Dimension(200, -1), new Dimension(200, -1), null));
-        final JTree _9;
-        _9 = new JTree();
-        wsdlMessagesTree = _9;
-        _9.setShowsRootHandles(false);
+        tableScrollPane = _8;
+        _7.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 1, 1, 0, 3, 3, 7, null, null, null));
+        final JTable _9;
+        _9 = new JTable();
+        securedItemsTable = _9;
+        _9.setPreferredScrollableViewportSize(new Dimension(350, 400));
         _8.setViewportView(_9);
-        final JScrollPane _10;
-        _10 = new JScrollPane();
-        tableScrollPane = _10;
-        _7.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 3, 7, 7, null, null, null));
-        final JTable _11;
-        _11 = new JTable();
-        securedItemsTable = _11;
-        _10.setViewportView(_11);
-        final JPanel _12;
-        _12 = new JPanel();
-        _12.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _7.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JButton _13;
-        _13 = new JButton();
-        removeButton = _13;
-        _13.setText("Remove");
-        _12.add(_13, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 1, 3, 0, null, null, null));
-        final JButton _14;
-        _14 = new JButton();
-        addButton = _14;
-        _14.setText("Add");
-        _12.add(_14, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 3, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _15;
-        _15 = new com.intellij.uiDesigner.core.Spacer();
-        _12.add(_15, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 2, 1, 6, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _16;
-        _16 = new com.intellij.uiDesigner.core.Spacer();
-        _12.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 2, 1, 0, new Dimension(-1, 20), new Dimension(-1, 20), null));
-        final JPanel _17;
-        _17 = new JPanel();
-        _17.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 4, new Insets(5, 0, 5, 0), -1, -1));
-        _1.add(_17, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JButton _18;
-        _18 = new JButton();
-        okButton = _18;
-        _18.setText("OK");
-        _17.add(_18, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 0, 1, 3, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _19;
-        _19 = new com.intellij.uiDesigner.core.Spacer();
-        _17.add(_19, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 6, 1, null, null, null));
-        final JButton _20;
-        _20 = new JButton();
-        helpButton = _20;
-        _20.setText("Help");
-        _17.add(_20, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, 0, 1, 3, 0, null, null, null));
+        final JPanel _10;
+        _10 = new JPanel();
+        _10.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _7.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JButton _11;
+        _11 = new JButton();
+        removeButton = _11;
+        _11.setText("Remove");
+        _10.add(_11, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 1, 3, 0, null, null, null));
+        final JButton _12;
+        _12 = new JButton();
+        addButton = _12;
+        _12.setText("Add");
+        _10.add(_12, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 3, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _13;
+        _13 = new com.intellij.uiDesigner.core.Spacer();
+        _10.add(_13, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _14;
+        _14 = new com.intellij.uiDesigner.core.Spacer();
+        _10.add(_14, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 2, 1, 6, new Dimension(-1, 20), new Dimension(-1, 20), null));
+        final JPanel _15;
+        _15 = new JPanel();
+        soapMessagePanel = _15;
+        _15.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _7.add(_15, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 0, 3, 7, 7, null, new Dimension(300, -1), null));
+        final JPanel _16;
+        _16 = new JPanel();
+        _16.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _7.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JScrollPane _17;
+        _17 = new JScrollPane();
+        treeScrollPane = _17;
+        _16.add(_17, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 1, 7, new Dimension(120, -1), new Dimension(120, -1), new Dimension(120, -1)));
+        final JTree _18;
+        _18 = new JTree();
+        wsdlMessagesTree = _18;
+        _18.setShowsRootHandles(false);
+        _17.setViewportView(_18);
+        final JLabel _19;
+        _19 = new JLabel();
+        _19.setText("Operations");
+        _16.add(_19, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 6, null, null, null));
+        final JPanel _20;
+        _20 = new JPanel();
+        _20.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 4, new Insets(5, 0, 5, 0), -1, -1));
+        _1.add(_20, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JButton _21;
         _21 = new JButton();
-        cancelButton = _21;
-        _21.setText("Cancel");
-        _17.add(_21, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 0, 1, 3, 0, null, null, null));
+        okButton = _21;
+        _21.setText("OK");
+        _20.add(_21, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 0, 1, 3, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _22;
         _22 = new com.intellij.uiDesigner.core.Spacer();
-        _17.add(_22, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 2, 1, 6, null, null, null));
-        final JPanel _23;
-        _23 = new JPanel();
-        _23.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 5, 0, 0), -1, -1));
-        _1.add(_23, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        _23.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
-        final JLabel _24;
-        _24 = new JLabel();
-        _24.setText("Signature and encryption properties");
-        _23.add(_24, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        _20.add(_22, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 6, 1, null, null, null));
+        final JButton _23;
+        _23 = new JButton();
+        helpButton = _23;
+        _23.setText("Help");
+        _20.add(_23, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, 0, 1, 3, 0, null, null, null));
+        final JButton _24;
+        _24 = new JButton();
+        cancelButton = _24;
+        _24.setText("Cancel");
+        _20.add(_24, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 0, 1, 3, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _25;
+        _25 = new com.intellij.uiDesigner.core.Spacer();
+        _20.add(_25, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        final JPanel _26;
+        _26 = new JPanel();
+        _26.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 5, 0, 0), -1, -1));
+        _1.add(_26, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        _26.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
+        final JLabel _27;
+        _27 = new JLabel();
+        _27.setText("Signature and encryption properties");
+        _26.add(_27, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
     }
 
 
