@@ -48,7 +48,7 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
         try {
             User specifiedUser = getUser();
             if (specifiedUser == null || !requestingUser.equals(specifiedUser)) {
-                logger.log( Level.WARNING, "Requesting user " + requestingUser.getLogin() +
+                logger.log( Level.FINE, "Requesting user " + requestingUser.getLogin() +
                                          " does not match specified user " + _data.getUserLogin());
                 return AssertionStatus.UNAUTHORIZED;
             }
