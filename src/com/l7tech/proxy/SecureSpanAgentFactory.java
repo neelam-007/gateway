@@ -7,6 +7,7 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -57,13 +58,6 @@ public class SecureSpanAgentFactory {
 
     private static class CausedCertificateAlreadyIssuedException extends SecureSpanAgent.CertificateAlreadyIssuedException {
         CausedCertificateAlreadyIssuedException(Throwable cause) {
-            super();
-            initCause(cause);
-        }
-    }
-
-    private static class CausedIOException extends IOException {
-        CausedIOException(Throwable cause) {
             super();
             initCause(cause);
         }
