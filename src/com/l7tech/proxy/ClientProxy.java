@@ -45,7 +45,6 @@ import java.security.cert.X509Certificate;
  */
 public class ClientProxy {
     private static final Category log = Category.getInstance(ClientProxy.class);
-    public static final String CVS_REVISION = "$Name$";
     public static final String PROXY_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
 
