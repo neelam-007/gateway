@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.service.PublishedService;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 
@@ -21,7 +22,6 @@ import java.util.logging.Logger;
  * $Id$<br/>
  */
 public class NonSoapServicePanel extends WizardStepPanel {
-    public static final String DEF_PREFIX = "/xml/";
     /**
      * Creates new form WizardPanel
      */
@@ -52,7 +52,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
         add(mainPanel);
         // set the prefix based on what host we are connected to
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        prefixURL.setText(mw.ssgURL() + DEF_PREFIX);
+        prefixURL.setText(mw.ssgURL() + PublishedService.ROUTINGURI_PREFIX);
     }
 
     private void bark(Component control, String msg) {
@@ -84,7 +84,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
             bark(ssgURLSuffix, msg);
             return false;
         } else {
-            routingURI = DEF_PREFIX + tmp;
+            routingURI = PublishedService.ROUTINGURI_PREFIX + tmp;
         }
         // check that this is a valid url
         try {

@@ -1,7 +1,6 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.panels.NonSoapServicePanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.Registry;
@@ -42,7 +41,16 @@ public class EditServiceRoutingURIAction extends NodeAction {
 
     protected void performAction() {
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        String prefix = mw.ssgURL() + NonSoapServicePanel.DEF_PREFIX;
+        String ssgUrl = mw.ssgURL();
+        if (!ssgUrl.startsWith("http://")) {
+            ssgUrl = "http://" + ssgUrl;
+        }
+        int pos = ssgUrl.lastIndexOf(':');
+        if (pos > 0) {
+            ssgUrl = ssgUrl.substring(0, pos);
+            ssgUrl = ssgUrl + ":8080";
+        }
+        String prefix = ssgUrl + PublishedService.ROUTINGURI_PREFIX;
         String newURI = null;
         String existingRoutingURI = null;
         PublishedService svc = null;
@@ -51,9 +59,9 @@ public class EditServiceRoutingURIAction extends NodeAction {
             final ServiceNode serviceNode = ((ServiceNode)node);
             svc = serviceNode.getPublishedService();
             existingRoutingURI = svc.getRoutingUri();
-            if (existingRoutingURI == null) existingRoutingURI = ""; //  should not happen
-            if (existingRoutingURI.length() > NonSoapServicePanel.DEF_PREFIX.length()) {
-                existingRoutingURI = existingRoutingURI.substring(NonSoapServicePanel.DEF_PREFIX.length());
+            if (existingRoutingURI == null) existingRoutingURI = ""; //  should only happen for soap services
+            if (existingRoutingURI.length() > PublishedService.ROUTINGURI_PREFIX.length()) {
+                existingRoutingURI = existingRoutingURI.substring(PublishedService.ROUTINGURI_PREFIX.length());
             }
 
             newURI = (String)JOptionPane.showInputDialog(mw,
@@ -65,10 +73,17 @@ public class EditServiceRoutingURIAction extends NodeAction {
               existingRoutingURI);
 
             if (newURI != null && !newURI.equals(existingRoutingURI)) {
-                if (newURI.length() > 0) {
-                    if (newURI.startsWith("/")) newURI = newURI.substring(1);
-                    new URL(mw.ssgURL() + NonSoapServicePanel.DEF_PREFIX + newURI);
-                    svc.setRoutingUri(NonSoapServicePanel.DEF_PREFIX + newURI);
+                if (newURI.length() <= 0 && !svc.isSoap()) { // non-soap service cannot have null routing uri
+                    JOptionPane.showMessageDialog(mw, "Cannot set empty uri on non-soap service");
+                    return;
+                } else {
+                    if (newURI.length() <= 0) {
+                        svc.setRoutingUri(null);
+                    } else {
+                        if (newURI.startsWith("/")) newURI = newURI.substring(1);
+                        new URL(ssgUrl + PublishedService.ROUTINGURI_PREFIX+ newURI);
+                        svc.setRoutingUri(PublishedService.ROUTINGURI_PREFIX + newURI);
+                    }
                     Registry.getDefault().getServiceManager().savePublishedService(svc);
                     serviceNode.clearServiceHolder();
                     updated = true;
@@ -77,9 +92,6 @@ public class EditServiceRoutingURIAction extends NodeAction {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.nodeChanged(node);
                     }
-                } else {
-                    JOptionPane.showMessageDialog(mw, "Cannot set empty uri");
-                    return;
                 }
             }
         } catch (DuplicateObjectException e) {
@@ -89,11 +101,15 @@ public class EditServiceRoutingURIAction extends NodeAction {
               "Service already exists",
               JOptionPane.ERROR_MESSAGE);
         } catch (MalformedURLException e) {
-            JOptionPane.showMessageDialog(mw, "Invalid URL " + mw.ssgURL() + prefix + newURI);
+            JOptionPane.showMessageDialog(mw, "Invalid URL " + prefix + newURI);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(mw, "Error while changing name " + e.getMessage());
+            JOptionPane.showMessageDialog(mw, "Error while changing routin URI " + e.getMessage());
         } finally {
+            // go back to previous value if something was aborted
             if (!updated && svc != null) {
+                if (existingRoutingURI.length() <= 0) {
+                    existingRoutingURI = null;
+                }
                 svc.setRoutingUri(existingRoutingURI);
             }
         }

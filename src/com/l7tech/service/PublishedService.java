@@ -32,6 +32,8 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class PublishedService extends NamedEntityImp {
+    public static final String ROUTINGURI_PREFIX = "/xml/";
+
     /**
      * Please do not change this logger type. Instead, provide the
      * {@link java.util.logging.Handler} implementation - as governed by
