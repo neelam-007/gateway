@@ -34,13 +34,13 @@ INSERT INTO hibernate_unique_key VALUES (70);
 
 DROP TABLE IF EXISTS identity_provider;
 CREATE TABLE identity_provider (
-  oid bigint(20) NOT NULL default '0',
+  objectid bigint(20) NOT NULL default '0',
   version int(11) default NULL,
   name varchar(128) NOT NULL default '',
   description mediumtext default '',
   type bigint(20) NOT NULL default '0',
   properties text,
-  PRIMARY KEY  (oid),
+  PRIMARY KEY  (objectid),
   UNIQUE KEY ipnm_idx (name)
 ) TYPE=InnoDB;
 
@@ -56,11 +56,11 @@ CREATE TABLE identity_provider (
 
 DROP TABLE IF EXISTS internal_group;
 CREATE TABLE internal_group (
-  oid bigint(20) NOT NULL default '0',
+  objectid bigint(20) NOT NULL default '0',
   version int(11) NOT NULL default '0',
   name varchar(128) NOT NULL default '',
   description mediumtext,
-  PRIMARY KEY  (oid),
+  PRIMARY KEY  (objectid),
   UNIQUE KEY g_idx (name)
 ) TYPE=InnoDB;
 
@@ -77,7 +77,7 @@ INSERT INTO internal_group VALUES (2,0,'Gateway Administrators','Admin console u
 
 DROP TABLE IF EXISTS internal_user;
 CREATE TABLE internal_user (
-  oid bigint(20) NOT NULL default '0',
+  objectid bigint(20) NOT NULL default '0',
   version int(11) NOT NULL default '0',
   name varchar(128) default NULL,
   login varchar(32) NOT NULL default '',
@@ -86,7 +86,7 @@ CREATE TABLE internal_user (
   last_name varchar(32) default NULL,
   email varchar(128) default NULL,
   title varchar(64) default NULL,
-  PRIMARY KEY  (oid),
+  PRIMARY KEY  (objectid),
   UNIQUE KEY l_idx (login)
 ) TYPE=InnoDB;
 
@@ -143,14 +143,14 @@ CREATE TABLE object_identity (
 
 DROP TABLE IF EXISTS published_service;
 CREATE TABLE published_service (
-  oid bigint(20) NOT NULL default '0',
+  objectid bigint(20) NOT NULL default '0',
   version int(11) NOT NULL default '0',
   name varchar(255) NOT NULL default '',
   policy_xml text,
   wsdl_url varchar(255) NOT NULL default '',
   wsdl_xml text,
   disabled TINYINT(1) NOT NULL default '0',
-  PRIMARY KEY  (oid)
+  PRIMARY KEY  (objectid)
 ) TYPE=InnoDB;
 
 --
@@ -236,7 +236,7 @@ CREATE TABLE service_usage (
 
 DROP TABLE IF EXISTS ssg_logs;
 CREATE TABLE ssg_logs (
-  oid bigint NOT NULL default '0',
+  objectid bigint NOT NULL default '0',
   nodeid varchar(18) NOT NULL default '',
   message text,
   strlvl varchar(12),
@@ -245,7 +245,7 @@ CREATE TABLE ssg_logs (
   sourceclassname varchar(128),
   sourcemethodname varchar(128),
   strrequestid varchar(40),
-  PRIMARY KEY(oid)
+  PRIMARY KEY(objectid)
 ) TYPE=InnoDB;
 CREATE INDEX idx_nodeid ON ssg_logs (nodeid);
 CREATE INDEX idx_millis ON ssg_logs (millis);
@@ -260,7 +260,7 @@ CREATE INDEX idx_millis ON ssg_logs (millis);
 
 DROP TABLE IF EXISTS jms_connection;
 CREATE TABLE jms_connection (
-  oid bigint NOT NULL default '0',
+  objectid bigint NOT NULL default '0',
   version integer NOT NULL default '0',
   name varchar(128) NOT NULL default '',
   jndi_url varchar(255) NOT NULL default '',
@@ -270,7 +270,7 @@ CREATE TABLE jms_connection (
   topic_factory_url varchar(255) default '',
   username varchar(32) default '',
   password varchar(32) default '',
-  primary key(oid)
+  primary key(objectid)
 ) TYPE=InnoDB;
 
 --
@@ -279,9 +279,9 @@ CREATE TABLE jms_connection (
 
 DROP TABLE IF EXISTS jms_endpoint;
 CREATE TABLE jms_endpoint(
-  oid bigint NOT NULL default '0',
+  objectid bigint NOT NULL default '0',
   version integer NOT NULL default '0',
-  connection_oid bigint NOT NULL default '0',
+  connection_objectid bigint NOT NULL default '0',
   name varchar(128) NOT NULL default '',
   destination_name varchar(128) NOT NULL default '',
   reply_type integer default '0',
@@ -289,5 +289,5 @@ CREATE TABLE jms_endpoint(
   password varchar(32) default '',
   max_concurrent_requests integer default '1',
   is_message_source tinyint default '0',
-  primary key(oid)
+  primary key(objectid)
 ) TYPE=InnoDB;

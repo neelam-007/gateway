@@ -6,14 +6,16 @@
 <!-- $Id$ -->
 
 <!--
-   This is the MySQL version of Hibernate mapping file.
+  This is the PostgreSQL version of the Hibernate mapping file.
 
-   NOTE: Any changes to this file must also be made to ../postgres/SSG.hbm.xml!
- -->
+  NOTE: All changes to this file must also be made in ../mysql/SSG.hbm.xml!
+-->
 
 <hibernate-mapping>
+    <!-- "oid" is a built-in column in PostgreSQL, so all column="oid" have been changed to column="objectid" -->
+
     <class name="com.l7tech.identity.ldap.LdapIdentityProviderConfig" table="identity_provider">
-        <id name="oid" column="oid" type="long" unsaved-value="-1">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
         <version name="version" column="version" type="integer"/>
@@ -27,7 +29,7 @@
     </class>
 
     <class name="com.l7tech.identity.internal.InternalGroup" table="internal_group">
-        <id name="oid" column="oid" type="long" unsaved-value="-1">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
 
@@ -45,7 +47,7 @@
     </class>
 
     <class name="com.l7tech.identity.internal.InternalUser" table="internal_user">
-        <id name="oid" column="oid" type="long" unsaved-value="-1">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
 
@@ -79,8 +81,9 @@
         -->
     </class>
 
+
     <class name="com.l7tech.service.PublishedService" table="published_service">
-        <id name="oid" column="oid" type="long" unsaved-value="-1">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
 
@@ -105,11 +108,11 @@
 
     <!--
     <class name="com.l7tech.server.url.UrlCacheRow" table="urlcache">
-        <id name="oid" column="oid" type="long" unsaved-value="-1">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
 
-        <timestamp name="timestamp"/>
+        <timestamp name="timestamp" column="timestamp"/>
 
         <property name="url" column="url" type="string"/>
         <property name="content" column="content" type="string"/>
@@ -150,7 +153,7 @@
     </class>
 
     <class name="com.l7tech.logging.SSGLogRecord" table="ssg_logs">
-        <id name="oid" column="oid" type="long">
+        <id name="oid" column="objectid" type="long">
             <generator class="hilo"/>
         </id>
         <property name="nodeId" column="nodeid" type="string"/>
@@ -164,7 +167,7 @@
     </class>
 
     <class name="com.l7tech.common.transport.jms.JmsConnection" table="jms_connection">
-        <id name="oid" column="oid" type="long" unsaved-value="-1">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
         <version name="version" column="version" type="integer"/>
@@ -187,16 +190,15 @@
     </class>
 
     <class name="com.l7tech.common.transport.jms.JmsEndpoint" table="jms_endpoint">
-        <id name="oid" column="oid" type="long" unsaved-value="-1">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
         <version name="version" column="version" type="integer"/>
 
+        <property name="connectionOid" column="connection_oid"/>
         <!--
         <many-to-one name="connection" class="com.l7tech.common.transport.jms.JmsConnection" column="connection_oid"/>
         -->
-
-        <property name="connectionOid" column="connection_oid"/>
 
         <property name="name" column="name" type="string"/>
         <property name="destinationName" column="destination_name" type="string"/>
