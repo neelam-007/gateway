@@ -11,8 +11,8 @@ import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Preferences;
 
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.HostnameVerifier;
+import com.sun.net.ssl.HttpsURLConnection;
+import com.sun.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
@@ -45,7 +45,11 @@ public class LogonDialog extends JDialog {
     private boolean aborted = false;
 
     /** True if "remember id" pref is enabled and a remembered ID was found. */
-    private static boolean rememberUser = false;
+    private boolean rememberUser = false;
+
+    /* was the error handled (to avoid double exception messages) */
+    private boolean userNotified = false;
+
 
     /** Resource bundle with default locale */
     private ResourceBundle resources = null;
@@ -398,6 +402,7 @@ public class LogonDialog extends JDialog {
 
         while (!dialog.isAborted() && !authenticated) {
             try {
+                dialog.userNotified = false;
                 frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 pw = dialog.getAuthentication();
                 if (dialog.isAborted()) break;
@@ -405,7 +410,7 @@ public class LogonDialog extends JDialog {
                 ClientCredentialManager credentialManager = getCredentialManager();
 
                 // if the service is not avail, format the message and show to te client
-                if (!dialog.isServiceAvailable(serviceURL)) {
+                if (!dialog.isServiceAvailable(serviceURL) && !dialog.userNotified) {
                     String msg = MessageFormat.format(
                             dialog.resources.getString("logon.connect.error"),
                             new Object[]{getHostPart(serviceURL)});
@@ -495,7 +500,7 @@ public class LogonDialog extends JDialog {
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) new URL(serviceUrl).openConnection();
-
+            addSslHostNameVerifier(conn);
             conn.connect();
             int code = conn.getResponseCode();
             if (code == 403 || code == 401 || code == 200 || code == 302) {
@@ -529,14 +534,19 @@ public class LogonDialog extends JDialog {
         return serviceAvailable;
     }
 
-    private void addSslListeners(HttpURLConnection conn) {
+    private void addSslHostNameVerifier(HttpURLConnection conn) {
         if (conn instanceof HttpsURLConnection) {
             ((HttpsURLConnection) conn).setHostnameVerifier(
                     new HostnameVerifier() {
-                        public boolean verify(String host, SSLSession session) {
-                            log.info("URL hostname " + host);
-                            log.info("SSL session hostname " + session.getPeerHost());
-                            return true;
+                        public boolean verify(String host, String peerHost) {
+                            if (host.equals(peerHost)) return true;
+                            String msg = MessageFormat.format(
+                                    resources.getString("logon.hostname.mismatch"),
+                                    new Object[]{host, peerHost});
+                            userNotified = true;
+                            JOptionPane.
+                                    showMessageDialog(LogonDialog.this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+                            return false;
                         }
                     });
         }
@@ -621,6 +631,7 @@ public class LogonDialog extends JDialog {
      * @param e
      */
     private static void handleLogonThrowable(Throwable e, LogonDialog dialog, String serviceUrl) {
+        if (dialog.userNotified) return;
         Throwable cause = ExceptionUtils.unnestToRoot(e);
         if (cause instanceof VersionException) {
             log.log(Level.WARNING, "logon()", e);
