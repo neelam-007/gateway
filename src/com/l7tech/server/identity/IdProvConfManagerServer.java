@@ -147,21 +147,6 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         return IdentityProviderFactory.findAllIdentityProviders(this);
     }
 
-    public Collection findAllHeaders() throws FindException {
-        // return collection of ldap ones and add the internal one
-        // this is an unmodifiable collection so i must construct a new one
-        Collection out = new ArrayList(super.findAllHeaders());
-        out.add(headerFromConfig(internalProvider.getConfig()));
-        return out;
-    }
-
-    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        // return collection of ldap ones and add the internal one
-        Collection out = new ArrayList(super.findAllHeaders(offset, windowSize - 1));
-        out.add(headerFromConfig(internalProvider.getConfig()));
-        return out;
-    }
-
     public Collection findAll() throws FindException {
         Collection out = new ArrayList(super.findAll());
         out.add(internalProvider.getConfig());
