@@ -59,7 +59,7 @@ public class ServicePolicyPropertiesAction extends NodeAction {
                       ComponentRegistry windowManager =
                         Registry.getDefault().getComponentRegistry();
                       WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
-
+                      serviceNode.clearServiceHolder();
                       PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode);
                       wpanel.setComponent(pep);
                       wpanel.addWorkspaceContainerListener(pep);

@@ -9,7 +9,9 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.ldap.LdapConfigSettings;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
@@ -22,11 +24,15 @@ import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * This class is the Identity Provider dialog.
  */
 public class IdentityProviderDialog extends JDialog {
+    static final Logger log = Logger.getLogger(IdentityProviderDialog.class.getName());
+
     private EntityHeader header = new EntityHeader();
     private IdentityProviderConfig iProvider = new IdentityProviderConfig();
     private EventListenerList listenerList = new EventListenerList();
@@ -253,7 +259,7 @@ public class IdentityProviderDialog extends JDialog {
     private JComboBox getProviderTypes() {
         if (providerTypesCombo == null) {
             Object[] items =
-              new Object[] {
+              new Object[]{
                   "Select the provider type",
                   IdentityProviderType.LDAP
               };
@@ -266,7 +272,7 @@ public class IdentityProviderDialog extends JDialog {
                     Object o = providerTypesCombo.getSelectedItem();
                     IdentityProviderType ipt = null;
                     if (o instanceof IdentityProviderType) {
-                       ipt = (IdentityProviderType)o;
+                        ipt = (IdentityProviderType)o;
                     }
                     selectProvidersPanel(ipt);
                 }
@@ -305,7 +311,7 @@ public class IdentityProviderDialog extends JDialog {
           providerSettingsPanel != null && providerNameTextField.getText().length() > 0);
         Dimension size = origDimension;
         // todo: fix the hardcoded multiply
-        setSize((int)size.getWidth(), (int)(size.getHeight() * (found ? 1.5 : 1.0 )));
+        setSize((int)size.getWidth(), (int)(size.getHeight() * (found ? 1.5 : 1.0)));
         validate();
         repaint();
 
@@ -375,7 +381,7 @@ public class IdentityProviderDialog extends JDialog {
                 providerNameTextField.requestFocus();
                 return;
             }
-            insertProvider();
+            addOrUpdateProvider();
         }
     }
 
@@ -400,8 +406,8 @@ public class IdentityProviderDialog extends JDialog {
     }
 
 
-    /** insert the provider */
-    private void insertProvider() {
+    /** add or pudfate the provider */
+    private void addOrUpdateProvider() {
         iProvider.setName(providerNameTextField.getText());
         providerSettingsPanel.readSettings(iProvider);
 
@@ -414,15 +420,15 @@ public class IdentityProviderDialog extends JDialog {
                       if (header.getOid() == -1) {
                           header.setOid(getProviderConfigManager().save(iProvider));
                           fireEventProviderAdded(header);
+                          IdentityProviderDialog.this.dispose();
                       } else {
                           getProviderConfigManager().update(iProvider);
                           fireEventProviderUpdated(header);
+                          IdentityProviderDialog.this.dispose();
                       }
                   } catch (Exception e) {
-                      ErrorManager.getDefault().
-                        notify(Level.WARNING, e, "Error updating the identity provider.");
+                      handleThrowable(e);
                   }
-                  IdentityProviderDialog.this.dispose();
               }
           });
     }
@@ -554,6 +560,21 @@ public class IdentityProviderDialog extends JDialog {
 
         return ipc;
     }
+
+
+    private void handleThrowable(Throwable e) {
+        Throwable cause = ExceptionUtils.unnestToRoot(e);
+        if (cause instanceof SaveException) {
+            String msg =
+              MessageFormat.format(resources.getString("provider.save.error"), new Object[]{header.getName()});
+              ErrorManager.getDefault().
+                notify(Level.WARNING, cause, msg, log);
+        } else {
+            ErrorManager.getDefault().
+              notify(Level.WARNING, e, "Error updating the identity provider.");
+        }
+    }
+
 
     // hierarchy listener
     private final HierarchyListener

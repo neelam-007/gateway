@@ -15,7 +15,6 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class DefaultErrorManager extends ErrorManager {
-    static final Logger log = Logger.getLogger(DefaultErrorManager.class.getName());
     private JFrame mainFrame = null;
 
     /**
@@ -25,7 +24,7 @@ public class DefaultErrorManager extends ErrorManager {
      * @param t the throwable with the
      * @param message the message
      */
-    public void notify(Level level, Throwable t, String message) {
+    public void notify(Level level, Throwable t, String message, Logger log) {
         log.log(level, message, t);
         ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Securespan Manager - message", message, t, level);
         d.pack();

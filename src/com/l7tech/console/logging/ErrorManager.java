@@ -12,6 +12,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
 public abstract class ErrorManager {
+    private static final Logger log = Logger.getLogger(ErrorManager.class.getName());
 
     private static ErrorManager instance;
     private static final ErrorManager EMPTY = new NullErrorManager();
@@ -34,11 +35,23 @@ public abstract class ErrorManager {
      * @param t the throwable with the
      * @param message the message
      */
-    public abstract void notify(Level level, Throwable t, String message);
+    public void notify(Level level, Throwable t, String message) {
+        notify(level, t, message, log);
+    }
+
+    /**
+     * Log and notify the user about the problem or error and log the message
+     * to the specified log
+     *
+     * @param level the log level
+     * @param t the throwable with the
+     * @param message the message
+     * @param log where the message should be logged
+     */
+    public abstract void notify(Level level, Throwable t, String message, Logger log);
 
     /** null error manager */
     private static class NullErrorManager extends ErrorManager {
-        static final Logger log = Logger.getLogger(ErrorManager.class.getName());
         /**
          * Log and notify the user about the problem or error
          *
@@ -46,8 +59,9 @@ public abstract class ErrorManager {
          * @param t the throwable with the
          * @param message the message
          */
-        public void notify(Level level, Throwable t, String message) {
+        public void notify(Level level, Throwable t, String message, Logger log) {
             log.log(level, message, t);
         }
+
     }
 }
