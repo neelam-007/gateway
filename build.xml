@@ -166,9 +166,9 @@
         <copy todir="${tomcat.home}/webapps">
             <fileset dir="${build.dir}" includes="*.war"/>
         </copy>
-        <mkdir dir="${tomcat.home}/classpath"/>
-        <copy todir="${tomcat.home}/classpath">
-              <fileset dir="${src.root}/lib" includes="jsk-*.jar"/>
+        <mkdir dir="${tomcat.home}/common/classpath"/>
+        <copy todir="${tomcat.home}/common/classpath">
+            <fileset dir="${src.root}/lib" includes="jsk-*.jar"/>
         </copy>
 
         <!--
@@ -191,7 +191,7 @@
             <fileset dir="${src.root}/etc" includes="server.xml, catalina.policy"/>
         </copy>
         <copy todir="${tomcat.home}/bin">
-              <fileset dir="${src.root}/etc/tomcat" includes="setclasspath.*"/>
+            <fileset dir="${src.root}/etc/tomcat" includes="setclasspath.*"/>
         </copy>
 
     </target>

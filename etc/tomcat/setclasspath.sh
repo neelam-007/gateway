@@ -32,7 +32,7 @@ JAVA_ENDORSED_DIRS="$BASEDIR"/common/endorsed
 # Set standard CLASSPATH
 CLASSPATH="$JAVA_HOME"/lib/tools.jar
 
-for i in "$BASEDIR"/classpath/*.jar; do
+for i in "$BASEDIR"/common/classpath/*.jar; do
   # if the directory is empty, then it will return the input string
   # this is stupid, so case for it
   if [ -f "$i" ] ; then

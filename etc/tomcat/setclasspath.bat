@@ -48,5 +48,5 @@ set _RUNJAVAW="%JAVA_HOME%\bin\javaw"
 set _RUNJDB="%JAVA_HOME%\bin\jdb"
 set _RUNJAVAC="%JAVA_HOME%\bin\javac"
 
-for %%i in ("%BASEDIR%\classpath\*.jar") do call "%BASEDIR%\bin\cpappend.bat" %%i
+for %%i in ("%BASEDIR%\common\classpath\*.jar") do call "%BASEDIR%\bin\cpappend.bat" %%i
 :end
