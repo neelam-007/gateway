@@ -95,12 +95,12 @@ public class RequestSwAAssertionDialog extends JDialog {
 
             public void actionPerformed(ActionEvent e) {
 
-                TableCellEditor  cellEditor = getMimePartsTable().getDefaultEditor(Integer.class);
+               /* TableCellEditor  cellEditor = getMimePartsTable().getDefaultEditor(Integer.class);
 
                 if(!cellEditor.stopCellEditing()) {
                     JOptionPane.showMessageDialog(RequestSwAAssertionDialog.this, "The max. length must be an integer. Please re-enter an integer.", "Error!", JOptionPane.ERROR_MESSAGE);
                     return;
-                }
+                }*/
 
                 fireEventAssertionChanged(assertion);
                 dispose();
