@@ -510,7 +510,7 @@
         <antcall target="prepare.jms.mqseries"/>
     </target>
 
-    <target name="prepare.db" if="dev.build">
+    <target name="prepare.db">
         <antcall target="prepare.db.oracle"/>
 	<antcall target="prepare.db.mysql"/>
  	<antcall target="prepare.db.postgres"/>
