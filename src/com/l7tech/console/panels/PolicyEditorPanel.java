@@ -12,6 +12,7 @@ import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.Preferences;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -31,8 +32,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ContainerEvent;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.StringReader;
 import java.net.URI;
 import java.rmi.RemoteException;
@@ -40,6 +39,8 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * The class represents the policy editor
@@ -48,6 +49,7 @@ import java.util.logging.Logger;
  */
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
+    private static final String MESSAGE_AREA_DIVIDER_KEY = "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
     private PublishedService service;
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
@@ -114,8 +116,28 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (splitPane != null) return splitPane;
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.add(getPolicyTreePane(), "top");
-        splitPane.add(getMessagePane(), "bottom");
+        JComponent messagePane = getMessagePane();
+        splitPane.add(messagePane, "bottom");
+
         splitPane.setDividerSize(2);
+        splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
+          new PropertyChangeListener() {
+              public void propertyChange(PropertyChangeEvent evt) {
+                  Preferences prefs = Preferences.getPreferences();
+                  int l = splitPane.getDividerLocation();
+                  prefs.putProperty(MESSAGE_AREA_DIVIDER_KEY, Integer.toString(l));
+              }
+          });
+        try {
+            Preferences prefs = Preferences.getPreferences();
+            String s = prefs.getString(MESSAGE_AREA_DIVIDER_KEY);
+            if (s != null) {
+                int l = Integer.parseInt(s);
+                splitPane.setDividerLocation(l);
+            }
+        } catch (NumberFormatException e1) {
+        }
+
         return splitPane;
     }
 
