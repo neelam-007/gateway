@@ -99,6 +99,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         operationElementFound = true;
                         if(result.size() > 1) {
                             logger.info("Element appears more than once in the request. Xpath expression is: " + bo.getXpath());
+                            assertionStatusOK = false;
                             return AssertionStatus.FALSIFIED;
                         }
 
@@ -111,6 +112,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                         if(type != Node.ELEMENT_NODE) {
                             logger.info( "XPath pattern " + bo.getXpath() + " found some other node '" + operationNodeRequest.toString() + "'" );
+                            assertionStatusOK = false;
                             return AssertionStatus.FAILED;
                         }
 
@@ -128,11 +130,13 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                             if(result == null || result.size() == 0) {
                                 logger.info("Element not found in the request. Xpath expression is: "  + bo.getXpath() + "/" + part.getName());
+                                assertionStatusOK = false;
                                 return AssertionStatus.FALSIFIED;
                             }
 
                             if(result.size() > 1) {
                                 logger.info("Element appears more than once in the request. Xpath expression is: "  + bo.getXpath() + "/" + part.getName());
+                                assertionStatusOK = false;
                                 return AssertionStatus.FALSIFIED;
                             }
 
@@ -145,6 +149,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                             if(type != Node.ELEMENT_NODE) {
                                 logger.info( "XPath pattern " + bo.getXpath() + "/" + part.getName() + " found some other node '" + parameterNodeRequest.toString() + "'" );
+                                assertionStatusOK = false;
                                 return AssertionStatus.FAILED;
                             }
 
@@ -173,6 +178,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                             // for each attachment (href)
                             if(hrefs.size() == 0) {
                                 logger.info("The reference (href) of the " + part.getName() + " is found in the request");
+                                assertionStatusOK = false;
                                 return AssertionStatus.FALSIFIED;
                             }
 
@@ -187,6 +193,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                                 if(!xreq.isMultipart()) {
                                     logger.info("The request does not contain attachment or is not a mulitipart message");
+                                    assertionStatusOK = false;
                                     return AssertionStatus.FALSIFIED;
                                 }
 
@@ -203,6 +210,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                         } else {
                                             logger.info("The content type of the attachment " + mimePartCID + " must be: " + part.retrieveAllContentTypes());
                                         }
+                                        assertionStatusOK = false;
                                         return AssertionStatus.FALSIFIED;
                                     }
 
@@ -215,6 +223,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                         } else {
                                             logger.info("The length of the attachment " + mimePartCID + " exceeds the limit: " + part.getMaxLength() + "K bytes");
                                         }
+                                        assertionStatusOK = false;
                                         return AssertionStatus.FALSIFIED;
                                     }
 
@@ -223,6 +232,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                     mimepartRequest.setValidated(true);
                                 } else {
                                     logger.info("The required attachment " + mimePartCID + " is not found in the request");
+                                    assertionStatusOK = false;
                                     return AssertionStatus.FALSIFIED;
                                 }
                             } // for each attachment
@@ -231,6 +241,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         // also check if there is any unexpected attachments in the request
                         if(xreq.getMultipartReader().hasNextMessagePart()) {
                             logger.info( "Unexpected attachment(s) found in the request." );
+                            assertionStatusOK = false;
                             return AssertionStatus.FALSIFIED;
                         } else {
 
@@ -242,6 +253,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 MultipartUtil.Part attachment = (MultipartUtil.Part) attachments.get(attachmentName);
                                 if(!attachment.isValidated()) {
                                     logger.info( "Unexpected attachment " + attachmentName + " found in the request." );
+                                    assertionStatusOK = false;
                                     return AssertionStatus.FALSIFIED;
                                 }
                             }
@@ -261,7 +273,10 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                 logger.log(Level.WARNING, "Caught JaxenException when retrieving xml document from request", e);
                 return AssertionStatus.SERVER_ERROR;
             } finally {
-                cleanUp(multipartReader);
+                // clean up the reader only if status is OK because the routing assertion needs to get the data from the reader
+                if(!assertionStatusOK) {
+                    cleanUp(multipartReader);
+                }
             }
         } else {
             logger.finest("The operation specified in the request is invalid.");
