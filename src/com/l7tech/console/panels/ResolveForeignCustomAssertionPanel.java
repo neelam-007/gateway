@@ -100,7 +100,6 @@ public class ResolveForeignCustomAssertionPanel extends WizardStepPanel {
         _4 = new JTextField();
         assNameTxtField = _4;
         _4.setEditable(false);
-        _4.setText("Blah dzzt");
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JPanel _5;
         _5 = new JPanel();
@@ -118,4 +117,5 @@ public class ResolveForeignCustomAssertionPanel extends WizardStepPanel {
         _7.setText("Import erroneous assertions as-is");
         _5.add(_7, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
     }
+
 }
