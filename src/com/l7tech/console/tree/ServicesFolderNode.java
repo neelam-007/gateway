@@ -6,9 +6,7 @@ import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.logging.Logger;
 
 
@@ -58,18 +56,11 @@ public class ServicesFolderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        List actions = new ArrayList();
-        final PublishServiceAction publishServiceAction = new PublishServiceAction();
-        if (publishServiceAction.isAuthorized()) {
-            actions.add(publishServiceAction);
-        }
-        final CreateServiceWsdlAction createServiceWsdlAction = new CreateServiceWsdlAction();
-        if (createServiceWsdlAction.isAuthorized()) {
-            actions.add(createServiceWsdlAction);
-        }
-        actions.add(new RefreshTreeNodeAction(this));
-
-        return (Action[])actions.toArray(new Action[]{});
+        return new Action[]{
+            new PublishServiceAction(),
+            new CreateServiceWsdlAction(),
+            new RefreshTreeNodeAction(this)
+        };
     }
 
     /**

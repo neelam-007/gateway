@@ -78,11 +78,8 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      */
     public Action[] getActions() {
         final DeleteEntityAction deleteAction = new DeleteEntityAction(this, config);
-        if (deleteAction.isAuthorized()) {
-            deleteAction.setEnabled(canDelete());
-            return new Action[]{deleteAction};
-        }
-        return new Action[]{};
+        deleteAction.setEnabled(canDelete());
+        return new Action[]{deleteAction};
     }
 
     /**

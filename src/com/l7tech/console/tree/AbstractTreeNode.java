@@ -247,10 +247,16 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
             return null;
         JPopupMenu pm = new JPopupMenu();
         for (int i = 0; i < actions.length; i++) {
-            if (actions[i] instanceof NodeAction) {
-                ((NodeAction)actions[i]).setTree(tree);
+            final Action action = actions[i];
+            if (action instanceof NodeAction) {
+                final NodeAction nodeAction = ((NodeAction)actions[i]);
+                if (nodeAction.isAuthorized()) {
+                    nodeAction.setTree(tree);
+                    pm.add(actions[i]);
+                }
+            } else {
+                pm.add(actions[i]);
             }
-            pm.add(actions[i]);
         }
         Utilities.removeToolTipsFromMenuItems(pm);
         return pm;

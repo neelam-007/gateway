@@ -3,17 +3,19 @@
  *
  * $Id$
  */
-package com.l7tech.server;
+package com.l7tech.common;
 
 import com.l7tech.common.util.Locator;
 
 import javax.security.auth.Subject;
 import java.util.Collections;
 import java.util.Set;
+import java.security.Permission;
 
 /**
- * The <code>AdminAuthorizer</code> abstract class provide authorization methods for
- * users. The concrete implementaiton implement the abstract method {@link Authorizer#getUserRoles(javax.security.auth.Subject)}
+ * The <code>Authorizer</code> abstract class provide authorization methods for
+ * roles and access permissions. The concrete implementaiton implement the abstract
+ * method {@link Authorizer#getUserRoles(javax.security.auth.Subject)}
  *
  * @author emil
  * @version Sep 2, 2004
@@ -47,6 +49,16 @@ public abstract class Authorizer {
         }
         return false;
 
+    }
+    /**
+     * Test whether a given subject has a permission on a given target object
+     * @param target the target object
+     * @param permission the permission to test
+     * @return true if the target object allows access described by permission, false otherwise
+     */
+    public boolean hasPermission(Object target, Permission permission) {
+        // todo: finish implementation - em
+        return false;
     }
 
     /**

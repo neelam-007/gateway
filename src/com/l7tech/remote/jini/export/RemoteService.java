@@ -1,7 +1,7 @@
 package com.l7tech.remote.jini.export;
 
 import com.l7tech.identity.Group;
-import com.l7tech.server.Authorizer;
+import com.l7tech.common.Authorizer;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.Configuration;
 import net.jini.config.ConfigurationException;

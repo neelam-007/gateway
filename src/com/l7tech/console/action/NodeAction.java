@@ -10,7 +10,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
-import javax.swing.tree.TreeNode;
 import java.util.Iterator;
 import java.util.logging.Level;
 

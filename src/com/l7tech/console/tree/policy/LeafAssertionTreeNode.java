@@ -9,6 +9,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.action.SavePolicyAction;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
@@ -74,12 +75,16 @@ abstract class LeafAssertionTreeNode extends AssertionTreeNode {
     }
 
     /**
-     * True whether this node acceptrs a node
+     * True whether this node accepts a node
      *
      * @param node the node to accept
      * @return true if policy template node
      */
     public boolean accept(AbstractTreeNode node) {
+        if (!new SavePolicyAction().isAuthorized()) {
+            return false;
+        }
+
         return node instanceof PolicyTemplateNode || getParent() != null;
     }
 }

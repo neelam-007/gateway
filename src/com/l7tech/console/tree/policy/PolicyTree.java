@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.action.EditServicePolicyAction;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.AssertionsTree;
@@ -242,7 +243,14 @@ public class PolicyTree extends JTree implements DragSourceListener,
             return null;
         JPopupMenu pm = new JPopupMenu();
         for (int i = 0; i < actions.length; i++) {
-            pm.add(actions[i]);
+            final Action action = actions[i];
+            if (action instanceof SecureAction) {
+                if (((SecureAction)action).isAuthorized()) {
+                    pm.add(action);
+                }
+            } else {
+                pm.add(action);
+            }
         }
         Utilities.removeToolTipsFromMenuItems(pm);
         return pm;

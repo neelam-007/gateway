@@ -8,7 +8,7 @@ package com.l7tech.server.identity.internal;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.Authorizer;
+import com.l7tech.common.Authorizer;
 import com.l7tech.server.identity.IdProvConfManagerServer;
 
 import javax.security.auth.Subject;

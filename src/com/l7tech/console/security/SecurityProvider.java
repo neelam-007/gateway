@@ -3,7 +3,7 @@ package com.l7tech.console.security;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.UserBean;
-import com.l7tech.server.Authorizer;
+import com.l7tech.common.Authorizer;
 
 import javax.security.auth.Subject;
 import java.net.PasswordAuthentication;
