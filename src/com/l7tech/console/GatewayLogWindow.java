@@ -1,8 +1,14 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.ClusterStatusWorker;
+import com.l7tech.console.util.ClusterInfoWorker;
+import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.cluster.GatewayStatus;
+import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -10,6 +16,10 @@ import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
 import java.awt.*;
 import java.util.ResourceBundle;
+import java.util.Hashtable;
+import java.util.Vector;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -60,7 +70,9 @@ public class GatewayLogWindow extends JFrame {
      * @see ActionEvent for details
      */
     private void exitMenuEventHandler(ActionEvent event) {
-        Registry.getDefault().getComponentRegistry().getMainWindow().getLogMenuItem().setSelected(false);
+
+        //todo: stop the refresh timer here
+
         this.dispose();
     }
 
@@ -134,21 +146,21 @@ public class GatewayLogWindow extends JFrame {
         if (mainPane != null) return mainPane;
 
         mainPane = new javax.swing.JPanel();
-        jPanel1 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
+        gatewayLogPane = new javax.swing.JPanel();
+        gatewayLogTitle = new javax.swing.JLabel();
 
         mainPane.setLayout(new java.awt.BorderLayout());
 
-        jLabel1.setFont(new java.awt.Font("Dialog", 1, 18));
-        jLabel1.setText("  Log Browser");
-        jLabel1.setMaximumSize(new java.awt.Dimension(136, 40));
-        jLabel1.setMinimumSize(new java.awt.Dimension(136, 40));
-        jLabel1.setPreferredSize(new java.awt.Dimension(136, 40));
+        gatewayLogTitle.setFont(new java.awt.Font("Dialog", 1, 18));
+        gatewayLogTitle.setText("  Log Browser");
+        gatewayLogTitle.setMaximumSize(new java.awt.Dimension(136, 40));
+        gatewayLogTitle.setMinimumSize(new java.awt.Dimension(136, 40));
+        gatewayLogTitle.setPreferredSize(new java.awt.Dimension(136, 40));
 
-        jPanel1.setLayout(new java.awt.BorderLayout());
-        jPanel1.add(jLabel1);
+        gatewayLogPane.setLayout(new java.awt.BorderLayout());
+        gatewayLogPane.add(gatewayLogTitle);
 
-        mainPane.add(jPanel1, java.awt.BorderLayout.NORTH);
+        mainPane.add(gatewayLogPane, java.awt.BorderLayout.NORTH);
         mainPane.add(getLogPane(), java.awt.BorderLayout.CENTER);
 
         return mainPane;
@@ -163,11 +175,89 @@ public class GatewayLogWindow extends JFrame {
 
     }
 
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JPanel jPanel1;
-//    private javax.swing.JPanel jPanel2;
-//    private javax.swing.JPanel jPanel3;
+        private javax.swing.Timer getLogRefreshTimer() {
 
+        if (logRefreshTimer != null) return logRefreshTimer;
+
+        // Create a refresh timer.
+        logRefreshTimer = new javax.swing.Timer(GatewayStatus.STATUS_REFRESH_TIMER, new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                refreshLogs();
+            }
+        });
+
+        return logRefreshTimer;
+    }
+
+    private void refreshLogs() {
+        getLogRefreshTimer().stop();
+
+        // create a worker thread to retrieve the cluster info
+        final ClusterInfoWorker infoWorker = new ClusterInfoWorker(clusterStatusAdmin, currentNodeList) {
+            public void finished() {
+
+                // Note: the get() operation is a blocking operation.
+                if (this.get() != null) {
+
+                    currentNodeList = getNewNodeList();
+/*
+                    updateClusterRequestCounterCache(this.getClusterRequestCount());
+
+                    Vector cs = prepareClusterStatusData();
+
+                    getClusterStatusTableModel().setData(cs);
+                    getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
+                    getClusterStatusTableModel().fireTableDataChanged();
+*/
+
+                    SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy HH:mm:ss aaa");
+                    getLogPane().setLastUpdateTime(("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      "));
+                    getLogRefreshTimer().start();
+                }
+                else{
+                    if(isRemoteExceptionCaught()){
+                        // the connection to the cluster is down
+                        onDisconnect();
+                    }
+                }
+            }
+        };
+
+        infoWorker.start();
+    }
+
+    public void dispose() {
+        getLogRefreshTimer().stop();
+        super.dispose();
+    }
+
+    public void onConnect() {
+        initAdminConnection();
+        initCaches();
+//        getClusterConnectionStatusLabel().setText("");
+        getLogRefreshTimer().start();
+    }
+
+    public void onDisconnect() {
+//        getClusterConnectionStatusLabel().setText("      Error: Connection to the gateway cluster is down.");
+//        getClusterConnectionStatusLabel().setForeground(Color.red);
+        getLogRefreshTimer().stop();
+
+        serviceManager = null;
+        clusterStatusAdmin = null;
+    }
+
+     private void initAdminConnection() {
+        clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
+        if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
+    }
+
+    private void initCaches() {
+        currentNodeList = new Hashtable();
+    }
+
+    private javax.swing.JLabel gatewayLogTitle;
+    private javax.swing.JPanel gatewayLogPane;
     private javax.swing.JPanel mainPane;
 
     private javax.swing.JMenuBar clusterWindowMenuBar;
@@ -178,5 +268,9 @@ public class GatewayLogWindow extends JFrame {
     private javax.swing.JMenuItem helpTopicsMenuItem;
     private JPanel frameContentPane;
     private LogPanel logPane;
+    private javax.swing.Timer logRefreshTimer;
+    private ClusterStatusAdmin clusterStatusAdmin;
+    private ServiceAdmin serviceManager;
+    private Hashtable currentNodeList;
 
 }

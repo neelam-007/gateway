@@ -13,6 +13,8 @@ import java.awt.event.ActionEvent;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.ResourceBundle;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
 
 
 /*
@@ -44,6 +46,7 @@ public class LogPanel extends JPanel {
 
     private JPanel controlPane = null;
     private JScrollPane msgTablePane = null;
+    private JPanel statusPane = null;
     private JTable msgTable = null;
     private JTabbedPane msgDetailsPane = null;
     private JTextArea msgDetails = null;
@@ -53,6 +56,7 @@ public class LogPanel extends JPanel {
     private DefaultTableModel logTableModel = null;
     private FilteredLogTableModel logTableModelFilter = null;
     private JLabel msgTotal = null;
+    private JLabel lastUpdateTimeLabel = null;
 
     /**
      * Constructor
@@ -134,9 +138,16 @@ public class LogPanel extends JPanel {
         selectPane = new JPanel();
         selectPane.setMinimumSize(new Dimension((int)selectPane.getSize().getWidth(), 50));
         selectPane.setPreferredSize(new Dimension((int)selectPane.getSize().getWidth(), 50));
-        selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
-        selectPane.add(getFilterPane());
-        selectPane.add(getControlPane());
+       // selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
+        selectPane.setLayout(new BorderLayout());
+
+        JPanel leftPane = new JPanel();
+        leftPane.setLayout(new FlowLayout());
+        leftPane.add(getFilterPane());
+        leftPane.add(getControlPane());
+
+        selectPane.add(leftPane, BorderLayout.WEST);
+        selectPane.add(getStatusPane(), BorderLayout.EAST);
 
         return selectPane;
     }
@@ -318,7 +329,26 @@ public class LogPanel extends JPanel {
         return msgDetails;
     }
 
+    private JPanel getStatusPane() {
+        if(statusPane != null)  return statusPane;
 
+        statusPane = new JPanel();
+        statusPane.setLayout(new FlowLayout());
+
+        statusPane.add(getLastUpdateTimeLabel());
+
+        return statusPane;
+    }
+
+    private JLabel getLastUpdateTimeLabel() {
+
+        if(lastUpdateTimeLabel != null) return lastUpdateTimeLabel;
+
+        lastUpdateTimeLabel = new JLabel();
+        lastUpdateTimeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
+        lastUpdateTimeLabel.setText("");
+        return lastUpdateTimeLabel;
+    }
     /**
      * Return LogColumnModel property value
      * @return  DefaultTableColumnModel
@@ -479,6 +509,12 @@ public class LogPanel extends JPanel {
 
     public void updateMsgTotal(){
          msgTotal.setText(MSG_TOTAL_PREFIX + msgTable.getRowCount());
+    }
+
+    public void setLastUpdateTime(String updateTime){
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy HH:mm:ss aaa");
+        getLastUpdateTimeLabel().setText("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      ");
+
     }
 
 }

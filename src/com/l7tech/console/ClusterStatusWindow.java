@@ -207,6 +207,7 @@ public class ClusterStatusWindow extends JFrame {
         if(updateTimeStamp != null) return updateTimeStamp;
 
         updateTimeStamp = new JLabel();
+        updateTimeStamp.setFont(new java.awt.Font("Dialog", 0, 12));
         updateTimeStamp.setText("");
 
         return updateTimeStamp;
@@ -500,7 +501,7 @@ public class ClusterStatusWindow extends JFrame {
                     getClusterStatusTableModel().fireTableDataChanged();
 
                     SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy HH:mm:ss aaa");
-                    ;
+
                     getLastUpdateLabel().setText("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      ");
                     getStatusRefreshTimer().start();
                 }

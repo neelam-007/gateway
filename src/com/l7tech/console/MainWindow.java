@@ -1021,15 +1021,15 @@ public class MainWindow extends JFrame {
             public void windowClosing(final WindowEvent e) {
                 logMenuItem.setSelected(false);
 
-                //todo: override the dispose if something need to be cleanup first
                 gatewayLogWindow.dispose();
                 gatewayLogWindow = null;
             }
 
-/*            public void windowStateChanged(final WindowEvent e) {
-                logMenuItem.setSelected(gatewayLogWindow.isShowing());
-                gatewayLogWindow.show();
-            }*/
+            public void windowClosed(final WindowEvent e) {
+                logMenuItem.setSelected(false);
+                gatewayLogWindow = null;
+            }
+
         });
 
         return gatewayLogWindow;
