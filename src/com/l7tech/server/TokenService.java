@@ -4,10 +4,7 @@ import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.common.security.xml.WssDecoratorImpl;
-import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.ISO8601Date;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -21,11 +18,12 @@ import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
 
 import javax.xml.soap.SOAPConstants;
+import javax.crypto.SecretKey;
+import javax.crypto.Cipher;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStoreException;
-import java.security.PrivateKey;
+import java.security.*;
+import java.security.interfaces.RSAPublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -149,7 +147,7 @@ public class TokenService {
     }
 
     private Document handleSecureConversationContextRequest(User requestor, X509Certificate requestorCert)
-                                                                throws TokenServiceException{
+                                                                throws TokenServiceException, GeneralSecurityException {
         SecureConversationSession newSession = null;
         try {
             newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor);
@@ -160,18 +158,20 @@ public class TokenService {
         Document response = null;
         Calendar exp = Calendar.getInstance();
         exp.setTimeInMillis(newSession.getExpiration());
+        String encryptedKeyRawXML = produceEncryptedKeyXml(newSession.getSharedSecret(), requestorCert);
         try {
             String xmlStr = "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
                                 "<soap:Body>" +
                                   "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\" " +
                                                                     "xmlns:wsu=\"" + SoapUtil.WSU_NAMESPACE + "\" " +
+                                                                    "xmlns:wsse=\"" + SoapUtil.SECURITY_NAMESPACE + "\" " +
                                                                     "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
                                     "<wst:RequestedSecurityToken>" +
                                         "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
                                         "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
                                     "</wst:RequestedSecurityToken>" +
                                     "<wst:RequestedProofToken>" +
-                                      // todo, add encrypted key here with the shared secret
+                                      encryptedKeyRawXML +
                                     "</wst:RequestedProofToken>" +
                                   "</wst:RequestSecurityTokenResponse>" +
                                 "</soap:Body>" +
@@ -227,6 +227,72 @@ public class TokenService {
             throw new TokenServiceException(e);
         }
         return response;
+    }
+
+    private String produceEncryptedKeyXml(SecretKey sharedSecret, X509Certificate requestorCert) throws GeneralSecurityException {
+        StringBuffer encryptedKeyXml = new StringBuffer();
+        // Key info and all
+        encryptedKeyXml.append("<xenc:EncryptedKey xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\">" +
+                                 "<xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\" />" +
+                                 "<KeyInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">");
+
+        // append ski if applicable
+
+        byte[] recipSki = requestorCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
+        if (recipSki != null && recipSki.length > 4) {
+            byte[] goodSki = new byte[recipSki.length - 4];
+            System.arraycopy(recipSki, 4, goodSki, 0, goodSki.length);
+            // add the ski
+            String recipSkiB64 = HexUtils.encodeBase64(goodSki, true);
+            String skiRef = "<wsse:SecurityTokenReference>" +
+                              "<wsse:KeyIdentifier ValueType=\"" + SoapUtil.VALUETYPE_SKI + "\">" +
+                                recipSkiB64 +
+                              "</wsse:KeyIdentifier>" +
+                            "</wsse:SecurityTokenReference>";
+            encryptedKeyXml.append(skiRef);
+        } else {
+            // add a full cert ?
+            // todo
+        }
+        encryptedKeyXml.append("</KeyInfo>");
+        encryptedKeyXml.append("<xenc:CipherData>" +
+                                "<xenc:CipherValue>");
+        encryptedKeyXml.append(encryptWithRsa(sharedSecret.getEncoded(), requestorCert.getPublicKey()));
+        encryptedKeyXml.append("</xenc:CipherValue>" +
+                             "</xenc:CipherData>" +
+                           "</xenc:EncryptedKey>");
+        return encryptedKeyXml.toString();
+    }
+
+    // todo, this was copied from WssDecoratorImpl, should generalize
+    private String encryptWithRsa(byte[] keyBytes, PublicKey publicKey) throws GeneralSecurityException {
+        Cipher rsa = Cipher.getInstance("RSA");
+        rsa.init(Cipher.ENCRYPT_MODE, publicKey);
+        if (!(publicKey instanceof RSAPublicKey))
+            throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
+                                   publicKey.getClass().getName());
+        final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length;
+        byte[] paddedKeyBytes = padSymmetricKeyForRsaEncryption(keyBytes, modulusLength);
+        byte[] encrypted = rsa.doFinal(paddedKeyBytes);
+        return HexUtils.encodeBase64(encrypted, true);
+    }
+
+    // todo, this was copied from WssDecoratorImpl, should generalize
+    private byte[] padSymmetricKeyForRsaEncryption(byte[] keyBytes, int modulusBytes) throws KeyException {
+        int padbytes = modulusBytes - 3 - keyBytes.length;
+        // Check just in case, although this should never happen in real life
+        if (padbytes < 8)
+            throw new KeyException("Recipient RSA public key has too few bits to encode this symmetric key");
+        byte[] padded = new byte[modulusBytes - 1];
+        int pos = 0;
+        padded[pos++] = 2;
+        while (padbytes > 0) {
+            padded[pos++] = (byte)(rand.nextInt(255) + 1);
+            padbytes--;
+        }
+        padded[pos++] = 0;
+        System.arraycopy(keyBytes, 0, padded, pos, keyBytes.length);
+        return padded;
     }
 
     private boolean isValidRequestForSecureConversationContext(Document request,
@@ -307,4 +373,5 @@ public class TokenService {
     private final static String RST_ELNAME = "RequestSecurityToken";
     private final static String TOKTYPE_ELNAME = "TokenType";
     private final static String REQTYPE_ELNAME = "RequestType";
+    private final static SecureRandom rand = new SecureRandom();
 }
