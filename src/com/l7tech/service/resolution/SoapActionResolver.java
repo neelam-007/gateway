@@ -19,7 +19,7 @@ public class SoapActionResolver extends NameValueServiceResolver {
     }
 
     protected String getParameterName() {
-        return Request.PARAM_SOAPACTION;
+        return Request.PARAM_HTTP_SOAPACTION;
     }
 
     protected Object[] getTargetValues( PublishedService service ) {
@@ -27,7 +27,7 @@ public class SoapActionResolver extends NameValueServiceResolver {
     }
 
     protected Object getRequestValue( Request request ) {
-        return request.getParameter( request.PARAM_SOAPACTION );
+        return request.getParameter( request.PARAM_HTTP_SOAPACTION );
     }
 
 }
