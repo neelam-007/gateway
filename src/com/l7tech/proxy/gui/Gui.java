@@ -48,10 +48,10 @@ public class Gui {
     private Gui() {
         // Try to set up enhanced look and feel
         try {
-            Class kunststoffClass = Class.forName(KUNSTSTOFF_CLASSNAME);
-            Object kunststoffLnF = kunststoffClass.newInstance();
-            Class themeClass = Class.forName(KUNSTSTOFF_THEME_CLASSNAME);
-            Object theme = themeClass.newInstance();
+            final Class kunststoffClass = Class.forName(KUNSTSTOFF_CLASSNAME);
+            final Object kunststoffLnF = kunststoffClass.newInstance();
+            final Class themeClass = Class.forName(KUNSTSTOFF_THEME_CLASSNAME);
+            final Object theme = themeClass.newInstance();
             kunststoffClass.getMethod("setCurrentTheme", new Class[] {MetalTheme.class}).invoke(kunststoffLnF,
                                                                                                 new Object[] {theme});
             UIManager.setLookAndFeel((LookAndFeel)kunststoffLnF);
@@ -90,7 +90,7 @@ public class Gui {
      * Connect us to someone who wants to know when the GUI is exiting.
      * @param guiShutdownListener
      */
-    public void setShutdownListener(ShutdownListener guiShutdownListener) {
+    public void setShutdownListener(final ShutdownListener guiShutdownListener) {
         this.ShutdownListener = guiShutdownListener;
     }
 
@@ -99,11 +99,11 @@ public class Gui {
         if (messageViewer == null) {
             messageViewer = new MessageViewer("Message Window");
             messageViewer.addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent e) {
+                public void windowClosing(final WindowEvent e) {
                     showMessages.setSelected(false);
                 }
 
-                public void windowStateChanged(WindowEvent e) {
+                public void windowStateChanged(final WindowEvent e) {
                     showMessages.setSelected(messageViewer.isShowing());
                 }
             });
@@ -116,12 +116,12 @@ public class Gui {
         if (frame == null) {
             frame = new JFrame("Client Proxy");
             frame.addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent e) {
+                public void windowClosing(final WindowEvent e) {
                     closeFrame();
                 }
             });
 
-            JMenuBar menus = makeMenus();
+            final JMenuBar menus = makeMenus();
             frame.setJMenuBar(menus);
             frame.setContentPane(new SsgListPanel());
             frame.pack();
@@ -132,21 +132,21 @@ public class Gui {
 
     /** Build the menu bar. */
     private JMenuBar makeMenus() {
-        ActionListener menuActionListener = new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+        final ActionListener menuActionListener = new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
                 action(e);
             }
         };
 
-        JMenuBar menus = new JMenuBar();
-        JMenu fileMenu = new JMenu(MENU_FILE);
+        final JMenuBar menus = new JMenuBar();
+        final JMenu fileMenu = new JMenu(MENU_FILE);
 
-        JMenuItem fileQuit = new JMenuItem(MENU_FILE_QUIT);
+        final JMenuItem fileQuit = new JMenuItem(MENU_FILE_QUIT);
         fileQuit.addActionListener(menuActionListener);
         fileMenu.add(fileQuit);
 
         menus.add(fileMenu);
-        JMenu showMenu = new JMenu(MENU_SHOW);
+        final JMenu showMenu = new JMenu(MENU_SHOW);
 
         showMessages = new JCheckBoxMenuItem(MENU_SHOW_MESSAGES, false);
         showMessages.addActionListener(menuActionListener);
@@ -157,7 +157,7 @@ public class Gui {
     }
 
     /** Respond to a menu command. */
-    private void action(ActionEvent e) {
+    private void action(final ActionEvent e) {
         if (MENU_FILE_QUIT.equals(e.getActionCommand())) {
             closeFrame();
         } else if (MENU_SHOW_MESSAGES.equals(e.getActionCommand())) {
@@ -191,7 +191,7 @@ public class Gui {
      * Display an error message.
      * @param msg the error message to display
      */
-    public static void errorMessage(String msg) {
+    public static void errorMessage(final String msg) {
         JOptionPane.showMessageDialog(getInstance().getFrame(), msg, "Unable to proceed", JOptionPane.ERROR_MESSAGE);;
     }
 }

@@ -27,10 +27,10 @@ public class SsgListPanel extends JPanel {
     private void init() {
         setLayout(new GridBagLayout());
 
-        JPanel ssgListPanel = new JPanel(new BorderLayout());
+        final JPanel ssgListPanel = new JPanel(new BorderLayout());
         ssgListPanel.setMinimumSize(new Dimension(400, 300));
 
-        JToolBar toolBar = new JToolBar(JToolBar.HORIZONTAL);
+        final JToolBar toolBar = new JToolBar(JToolBar.HORIZONTAL);
         toolBar.setFloatable(false);
         toolBar.setRollover(true);
 
@@ -51,12 +51,12 @@ public class SsgListPanel extends JPanel {
         ssgList = new JList(ssgListModel);
         ssgList.setSelectedIndex(0);
         ssgList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        JScrollPane ssgListPane = new JScrollPane(ssgList);
+        final JScrollPane ssgListPane = new JScrollPane(ssgList);
         ssgListPanel.add(ssgListPane, BorderLayout.CENTER);
 
         toolBar.add(new AbstractAction("New", IconManager.getAdd()) {
-            public void actionPerformed(ActionEvent e) {
-                Ssg newSsg = new Ssg();
+            public void actionPerformed(final ActionEvent e) {
+                final Ssg newSsg = new Ssg();
                 newSsg.setName("New SSG");
                 try {
                     if (PropertyDialog.getPropertyDialogForObject(newSsg).runDialog())
@@ -69,12 +69,12 @@ public class SsgListPanel extends JPanel {
         });
 
         toolBar.add(new AbstractAction("Edit", IconManager.getEdit()) {
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 try {
-                    Ssg ssg = (Ssg)ssgList.getSelectedValue();
+                    final Ssg ssg = (Ssg)ssgList.getSelectedValue();
                     if (ssg != null) {
                         if (PropertyDialog.getPropertyDialogForObject(ssgList.getSelectedValue()).runDialog())
-                            ssgListModel.editedSsg(ssg);
+                            ssgListModel.editedSsg();
                     }
                 } catch (ClassNotFoundException e1) {
                     // No property editor for Ssg objects.  this can't happen
@@ -84,8 +84,8 @@ public class SsgListPanel extends JPanel {
         });
 
         toolBar.add(new AbstractAction("Delete", IconManager.getRemove()) {
-            public void actionPerformed(ActionEvent e) {
-                Ssg ssg = (Ssg)ssgList.getSelectedValue();
+            public void actionPerformed(final ActionEvent e) {
+                final Ssg ssg = (Ssg)ssgList.getSelectedValue();
                 if (ssg != null)
                     ssgListModel.removeSsg(ssg);
             }

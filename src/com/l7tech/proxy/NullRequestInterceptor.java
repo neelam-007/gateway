@@ -20,27 +20,27 @@ public class NullRequestInterceptor implements RequestInterceptor {
      * Fired when a message is received from a client, but before it is parsed.
      * @param message
      */
-    public void onReceiveMessage(SOAPEnvelope message) {
+    public void onReceiveMessage(final SOAPEnvelope message) {
     }
 
     /**
      * Fired when a reply is read from the SSG, but before it is parsed.
      * @param reply
      */
-    public void onReceiveReply(SOAPEnvelope reply) {
+    public void onReceiveReply(final SOAPEnvelope reply) {
     }
 
     /**
      * Fired when an error is encountered while reading the message from a client.
      * @param t The error that occurred during the request.
      */
-    public void onMessageError(Throwable t) {
+    public void onMessageError(final Throwable t) {
     }
 
     /**
      * Fired when an error is encountered while obtaining a reply from the server.
      * @param t The error that occurred during the request.
      */
-    public void onReplyError(Throwable t) {
+    public void onReplyError(final Throwable t) {
     }
 }

@@ -23,7 +23,7 @@ public class ClientProxy {
      * Create a ClientProxy with the specified settings.
      * @param ssgFinder provides the list of SSGs to which we are proxying.
      */
-    ClientProxy(SsgFinder ssgFinder) {
+    ClientProxy(final SsgFinder ssgFinder) {
         this.ssgFinder = ssgFinder;
     }
 
@@ -63,11 +63,11 @@ public class ClientProxy {
         mustNotBeDestroyed();
         if (httpServer == null) {
             httpServer = new HttpServer();
-            SocketListener socketListener = new SocketListener();
+            final SocketListener socketListener = new SocketListener();
             socketListener.setMaxThreads(100);
             socketListener.setMinThreads(6);
             socketListener.setPort(5555);
-            HttpContext context = new HttpContext(httpServer, "/");
+            final HttpContext context = new HttpContext(httpServer, "/");
             context.addHandler(getRequestHandler());
             httpServer.addContext(context);
             httpServer.addListener(socketListener);

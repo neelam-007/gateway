@@ -20,8 +20,8 @@ public class SsgListModel extends AbstractListModel {
         return Managers.getSsgManager().getSsgList().size();
     }
 
-    public Object getElementAt(int index) {
-        SsgManager ssgManager = Managers.getSsgManager();
+    public Object getElementAt(final int index) {
+        final SsgManager ssgManager = Managers.getSsgManager();
         synchronized (ssgManager) {
             if (index < 0 || index >= ssgManager.getSsgList().size())
                 return null;
@@ -29,14 +29,14 @@ public class SsgListModel extends AbstractListModel {
         }
     }
 
-    public void addSsg(Ssg ssg) {
+    public void addSsg(final Ssg ssg) {
         if (Managers.getSsgManager().add(ssg)) {
             saveSsgList();
             fireIntervalAdded(this, getSize(), getSize());
         }
     }
 
-    public void removeSsg(Ssg ssg) {
+    public void removeSsg(final Ssg ssg) {
         try {
             Managers.getSsgManager().remove(ssg);
             saveSsgList();
@@ -46,7 +46,7 @@ public class SsgListModel extends AbstractListModel {
         }
     }
 
-    public void editedSsg(Ssg ssg) {
+    public void editedSsg() {
         saveSsgList();
         fireContentsChanged(this, 0, getSize());
     }

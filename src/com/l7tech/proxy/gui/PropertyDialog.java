@@ -25,7 +25,7 @@ public abstract class PropertyDialog extends JDialog {
      * Sets up our tabbed pane, but doesn't put anything into it.
      * @param title
      * */
-    protected PropertyDialog(String title) {
+    protected PropertyDialog(final String title) {
         super(Gui.getInstance().getFrame(), title, true);
         getContentPane().setLayout(new BorderLayout());
 
@@ -33,7 +33,7 @@ public abstract class PropertyDialog extends JDialog {
         tabbedPane.setPreferredSize(new Dimension(400, 450));
         getContentPane().add(tabbedPane, BorderLayout.CENTER);
 
-        JPanel buttonPane = new JPanel();
+        final JPanel buttonPane = new JPanel();
         buttonPane.setLayout(new GridBagLayout());
         buttonPane.add(new JPanel(),
                        new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
@@ -44,7 +44,7 @@ public abstract class PropertyDialog extends JDialog {
 
         okButton = new JButton("Ok");
         okButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 commitChanges();
                 userClickedOk = true;
                 PropertyDialog.this.hide();
@@ -60,7 +60,7 @@ public abstract class PropertyDialog extends JDialog {
 
         cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 userClickedOk = false;
                 PropertyDialog.this.hide();
                 PropertyDialog.this.dispose();
@@ -91,7 +91,7 @@ public abstract class PropertyDialog extends JDialog {
      * @return The property dialog that will edit said properties.  Call show() on it to run it.
      * @throws ClassNotFoundException if no proerty dialog could be found for the given object.
      */
-    public static PropertyDialog getPropertyDialogForObject(Object obj) throws ClassNotFoundException {
+    public static PropertyDialog getPropertyDialogForObject(final Object obj) throws ClassNotFoundException {
         if (obj.getClass().equals(Ssg.class))
             return SsgPropertyDialog.getPropertyDialogForObject((Ssg)obj);
         throw new ClassNotFoundException("No property dialog for " + obj.getClass());

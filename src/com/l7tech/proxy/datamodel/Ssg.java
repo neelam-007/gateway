@@ -18,8 +18,8 @@ public class Ssg implements Cloneable, Comparable {
     private String username = "";
     private String password = null;
 
-    public int compareTo(Object o) {
-        Ssg that = (Ssg)o;
+    public int compareTo(final Object o) {
+        final Ssg that = (Ssg)o;
         int res;
 
         // Check each field
@@ -43,7 +43,7 @@ public class Ssg implements Cloneable, Comparable {
         return res;
     }
 
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o)
             return true;
         if (!this.getClass().equals(o.getClass()))
@@ -70,7 +70,7 @@ public class Ssg implements Cloneable, Comparable {
      * @param username
      * @param password
      */
-    public Ssg(String name, String localEndpoint, String serverUrl, String username, String password) {
+    public Ssg(final String name, final String localEndpoint, final String serverUrl, final String username, final String password) {
         this.name = name;
         this.localEndpoint = localEndpoint;
         this.serverUrl = serverUrl;
@@ -104,7 +104,7 @@ public class Ssg implements Cloneable, Comparable {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -112,7 +112,7 @@ public class Ssg implements Cloneable, Comparable {
         return localEndpoint;
     }
 
-    public void setLocalEndpoint(String localEndpoint) {
+    public void setLocalEndpoint(final String localEndpoint) {
         this.localEndpoint = localEndpoint;
     }
 
@@ -120,7 +120,7 @@ public class Ssg implements Cloneable, Comparable {
         return serverUrl;
     }
 
-    public void setServerUrl(String serverUrl) {
+    public void setServerUrl(final String serverUrl) {
         this.serverUrl = serverUrl;
     }
 
@@ -128,7 +128,7 @@ public class Ssg implements Cloneable, Comparable {
         return username;
     }
 
-    public void setUsername(String username) {
+    public void setUsername(final String username) {
         this.username = username;
     }
 
@@ -136,7 +136,7 @@ public class Ssg implements Cloneable, Comparable {
         return password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(final String password) {
         this.password = password;
     }
 }

@@ -24,7 +24,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JPanel generalPane;
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
-    private SsgPropertyDialog(Ssg ssg) {
+    private SsgPropertyDialog(final Ssg ssg) {
         super("SSG Properties");
         tabbedPane.add("General", getGeneralPane());
         setSsg(ssg);
@@ -36,7 +36,7 @@ public class SsgPropertyDialog extends PropertyDialog {
      * @param ssg The ssg whose properties we intend to edit
      * @return The property dialog that will edit said properties.  Call show() on it to run it.
      */
-    public static PropertyDialog getPropertyDialogForObject(Ssg ssg) {
+    public static PropertyDialog getPropertyDialogForObject(final Ssg ssg) {
         return new SsgPropertyDialog(ssg);
     }
 
@@ -88,7 +88,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     }
 
     /** Set the Ssg object being edited by this panel. */
-    public void setSsg(Ssg ssg) {
+    public void setSsg(final Ssg ssg) {
         this.ssg = ssg;
 
         fieldName.setText(ssg.getName());

@@ -32,7 +32,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
         private String title;
         private  Date when;
 
-        SavedMessage(String title) {
+        SavedMessage(final String title) {
             this.title = title;
             this.when = new Date();
         }
@@ -48,7 +48,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
     private static class SavedTextMessage extends SavedMessage {
         private String message;
 
-        SavedTextMessage(String title, String message) {
+        SavedTextMessage(final String title, final String message) {
             super(title);
             this.message = message;
         }
@@ -78,13 +78,13 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             xmlSerializer.setOutputFormat(outputFormat);
         }
 
-        SavedXmlMessage(String title, SOAPEnvelope msg) {
+        SavedXmlMessage(final String title, final SOAPEnvelope msg) {
             super(title);
             this.soapEnvelope = msg;
         }
 
         public String getMessageText() {
-            StringWriter sw = new StringWriter();
+            final StringWriter sw = new StringWriter();
             xmlSerializer.setOutputCharStream(sw);
             try {
                 xmlSerializer.serialize(soapEnvelope.getAsDOM());
@@ -108,7 +108,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * @param idx
      * @return
      */
-    public String getMessageTextAt(int idx) {
+    public String getMessageTextAt(final int idx) {
         return ((SavedMessage)messages.get(idx)).getMessageText();
     }
 
@@ -120,10 +120,10 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
     private void appendMessage(final SavedMessage message) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                int oldSize = messages.size();
+                final int oldSize = messages.size();
                 messages.add(message);
                 cutoff();
-                int newSize = messages.size();
+                final int newSize = messages.size();
                 if (newSize > oldSize) {
                     fireIntervalAdded(this, oldSize, newSize);
                 } else {
@@ -169,7 +169,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
 
     /** Remove all saved messages from the list. */
     public void clear() {
-        int oldsize = messages.size();
+        final int oldsize = messages.size();
         messages.clear();
         fireContentsChanged(this, 0, oldsize);
     }
@@ -187,7 +187,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * @param index the requested index
      * @return the value at <code>index</code>
      */
-    public Object getElementAt(int index) {
+    public Object getElementAt(final int index) {
         return messages.get(index);
     }
 }

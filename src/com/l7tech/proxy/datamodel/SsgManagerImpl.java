@@ -57,7 +57,7 @@ class SsgManagerImpl implements SsgManager {
         try {
             in = new FileInputStream(STORE_FILE);
             decoder = new XMLDecoder(in);
-            Collection newssgs = (Collection)decoder.readObject();
+            final Collection newssgs = (Collection)decoder.readObject();
             if (newssgs != null) {
                 clear();
                 ssgs.addAll(newssgs);
@@ -118,11 +118,11 @@ class SsgManagerImpl implements SsgManager {
      * @return The requested Ssg.  Never null.
      * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified name was not found.
      */
-    public synchronized Ssg getSsgByName(String name) throws SsgNotFoundException {
+    public synchronized Ssg getSsgByName(final String name) throws SsgNotFoundException {
         if (!init)
             initialize();
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
-            Ssg ssg = (Ssg)i.next();
+            final Ssg ssg = (Ssg)i.next();
             if (name.equals(ssg.getName()))
                 return ssg;
         }
@@ -137,11 +137,11 @@ class SsgManagerImpl implements SsgManager {
      * @return The requested Ssg.  Never null.
      * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified endpoint was not found.
      */
-    public synchronized Ssg getSsgByEndpoint(String endpoint) throws SsgNotFoundException {
+    public synchronized Ssg getSsgByEndpoint(final String endpoint) throws SsgNotFoundException {
         if (!init)
             initialize();
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
-            Ssg ssg = (Ssg)i.next();
+            final Ssg ssg = (Ssg)i.next();
             if (endpoint.equals(ssg.getLocalEndpoint()))
                 return ssg;
         }
@@ -154,7 +154,7 @@ class SsgManagerImpl implements SsgManager {
      * @param ssg The new Ssg.
      * @return true iff. the given ssg was not already registered
      */
-    public synchronized boolean add(Ssg ssg) {
+    public synchronized boolean add(final Ssg ssg) {
         if (!init)
             initialize();
         return ssgs.add(ssg);
@@ -166,7 +166,7 @@ class SsgManagerImpl implements SsgManager {
      * @param ssg The Ssg to forget about.
      * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified Ssg was not found.
      */
-    public synchronized void remove(Ssg ssg) throws SsgNotFoundException {
+    public synchronized void remove(final Ssg ssg) throws SsgNotFoundException {
         if (!init)
             initialize();
         if (!ssgs.remove(ssg))

@@ -27,7 +27,7 @@ public class Main {
     private static ClientProxy clientProxy;
 
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
-    public static void main(String[] argv) {
+    public static void main(final String[] argv) {
         clientProxy = new ClientProxy(Managers.getSsgManager());
 
         // Hook up the Message Viewer window

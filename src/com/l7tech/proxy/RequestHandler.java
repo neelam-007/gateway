@@ -24,7 +24,7 @@ import com.l7tech.proxy.datamodel.SsgNotFoundException;
  * To change this template use Options | File Templates.
  */
 public class RequestHandler extends AbstractHttpHandler {
-    private Category log = Category.getInstance(RequestHandler.class);
+    private final Category log = Category.getInstance(RequestHandler.class);
     private SsgFinder ssgFinder;
     private RequestInterceptor interceptor = NullRequestInterceptor.INSTANCE;
 
@@ -34,7 +34,7 @@ public class RequestHandler extends AbstractHttpHandler {
      *
      * @param ssgFinder the list of SSGs (SSG URLs and local endpoints) we support.
      */
-    public RequestHandler(SsgFinder ssgFinder) {
+    public RequestHandler(final SsgFinder ssgFinder) {
         this.ssgFinder = ssgFinder;
     }
 
@@ -48,22 +48,22 @@ public class RequestHandler extends AbstractHttpHandler {
      * @throws HttpException
      * @throws IOException
      */
-    public void handle(String pathInContext,
-                       String pathParams,
-                       HttpRequest request,
-                       HttpResponse response)
+    public void handle(final String pathInContext,
+                       final String pathParams,
+                       final HttpRequest request,
+                       final HttpResponse response)
             throws HttpException, IOException
     {
         log.info("Incoming request: " + request);
 
         validateRequestMethod(request);
 
-        Ssg ssg = getDesiredSsg(request);
+        final Ssg ssg = getDesiredSsg(request);
         log.info("Mapped to SSG: " + ssg);
 
-        SOAPEnvelope requestEnvelope = getRequestEnvelope(request);
+        final SOAPEnvelope requestEnvelope = getRequestEnvelope(request);
 
-        SOAPEnvelope responseEnvelope = getServerResponse(ssg, requestEnvelope);
+        final SOAPEnvelope responseEnvelope = getServerResponse(ssg, requestEnvelope);
 
         transmitResponse(response, responseEnvelope);
     }
@@ -74,7 +74,7 @@ public class RequestHandler extends AbstractHttpHandler {
      * @param responseEnvelope  the SOAPEnvelope we are to send them
      * @throws IOException      if something went wrong
      */
-    private void transmitResponse(HttpResponse response, SOAPEnvelope responseEnvelope) throws IOException {
+    private void transmitResponse(final HttpResponse response, final SOAPEnvelope responseEnvelope) throws IOException {
         try {
             response.addField("Content-Type", "text/xml");
             response.commitHeader();
@@ -92,14 +92,14 @@ public class RequestHandler extends AbstractHttpHandler {
      * @return          the SOAPEnvelope it contained
      * @throws HttpException    if no valid SOAPEnvelope could be extracted
      */
-    private SOAPEnvelope getRequestEnvelope(HttpRequest request) throws HttpException {
+    private SOAPEnvelope getRequestEnvelope(final HttpRequest request) throws HttpException {
         // Read the envelope
-        SOAPEnvelope requestEnvelope;
+        final SOAPEnvelope requestEnvelope;
         try {
             requestEnvelope = new SOAPEnvelope(request.getInputStream());
             interceptor.onReceiveMessage(requestEnvelope);
         } catch (SAXException e) {
-            HttpException t = new HttpException(400, "Couldn't parse SOAP envelope: " + e.getMessage());
+            final HttpException t = new HttpException(400, "Couldn't parse SOAP envelope: " + e.getMessage());
             interceptor.onMessageError(t);
             throw t;
         }
@@ -111,9 +111,9 @@ public class RequestHandler extends AbstractHttpHandler {
      * @param request           the Request that should be an HTTP POST
      * @throws HttpException    thrown if it isn't
      */
-    private void validateRequestMethod(HttpRequest request) throws HttpException {
+    private void validateRequestMethod(final HttpRequest request) throws HttpException {
         if (request.getMethod().compareToIgnoreCase("POST") != 0) {
-            HttpException t = new HttpException(405); // "Method not allowed"
+            final HttpException t = new HttpException(405); // "Method not allowed"
             interceptor.onMessageError(t);
             throw t;
         }
@@ -125,14 +125,14 @@ public class RequestHandler extends AbstractHttpHandler {
      * @return          the Ssg to route it to
      * @throws HttpException    if there was Trouble
      */
-    private Ssg getDesiredSsg(HttpRequest request) throws HttpException {
+    private Ssg getDesiredSsg(final HttpRequest request) throws HttpException {
         // Figure out which SSG is being invoked.
-        String endpoint = request.getURI().getPath();
-        Ssg ssg;
+        final String endpoint = request.getURI().getPath();
+        final Ssg ssg;
         try {
             ssg = ssgFinder.getSsgByEndpoint(endpoint);
         } catch (SsgNotFoundException e) {
-            HttpException t = new HttpException(401, "This Client Proxy has no SSG mapped to the endpoint " + endpoint);
+            final HttpException t = new HttpException(401, "This Client Proxy has no SSG mapped to the endpoint " + endpoint);
             interceptor.onMessageError(t);
             throw t;
         }
@@ -146,20 +146,20 @@ public class RequestHandler extends AbstractHttpHandler {
      * @return                  the response it sends back
      * @throws HttpException    if there was Trouble
      */
-    private SOAPEnvelope getServerResponse(Ssg ssg, SOAPEnvelope requestEnvelope) throws HttpException {
+    private SOAPEnvelope getServerResponse(final Ssg ssg, final SOAPEnvelope requestEnvelope) throws HttpException {
         log.info("Passing request on to " + ssg.getServerUrl());
 
-        Call call = null;
+        Call call;
         try {
             call = new Call(ssg.getServerUrl());
         } catch (MalformedURLException e) {
-            HttpException t = new HttpException(500, "Client Proxy: this SSG has an invalid server url: " +
+            final HttpException t = new HttpException(500, "Client Proxy: this SSG has an invalid server url: " +
                                                      ssg.getServerUrl());
             interceptor.onReplyError(t);
             throw t;
         }
 
-        SOAPEnvelope responseEnvelope;
+        final SOAPEnvelope responseEnvelope;
         try {
             responseEnvelope = call.invoke(requestEnvelope);
         } catch (Exception e) {
@@ -177,7 +177,7 @@ public class RequestHandler extends AbstractHttpHandler {
      * Set the RequestInterceptor, which is called as messages come and go.
      * @param requestInterceptor
      */
-    public void setRequestInterceptor(RequestInterceptor requestInterceptor) {
+    public void setRequestInterceptor(final RequestInterceptor requestInterceptor) {
         interceptor = requestInterceptor;
     }
 

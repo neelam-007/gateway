@@ -19,23 +19,23 @@ import java.awt.event.ActionListener;
  * To change this template use Options | File Templates.
  */
 public class MessageViewer extends JFrame {
-    private static Category log = Category.getInstance(MessageViewer.class);
+    private static final Category log = Category.getInstance(MessageViewer.class);
 
     MessageViewerModel messageViewerModel = new MessageViewerModel();
     private JTextArea messageView;
     private JList messageList;
 
     private class MessageViewListener implements ListDataListener {
-        public void intervalAdded(ListDataEvent e) {
+        public void intervalAdded(final ListDataEvent e) {
             contentsChanged(e);
         }
 
-        public void intervalRemoved(ListDataEvent e) {
+        public void intervalRemoved(final ListDataEvent e) {
             contentsChanged(e);
         }
 
-        public void contentsChanged(ListDataEvent e) {
-            int sel = messageList.getSelectedIndex();
+        public void contentsChanged(final ListDataEvent e) {
+            final int sel = messageList.getSelectedIndex();
             if (sel <= 0 || sel >= messageViewerModel.getSize()) {
                 setSelectedIndex(-1);
             } else if (sel >= 0 && sel < messageViewerModel.getSize()) {
@@ -49,7 +49,7 @@ public class MessageViewer extends JFrame {
      * Will clear the messageView if idx is out of range.
      * @param idx The message number to focus on. Set to -1 to focus on no message
      */
-    private void setSelectedIndex(int idx) {
+    private void setSelectedIndex(final int idx) {
         if (messageList.getSelectedIndex() != idx)
             messageList.setSelectedIndex(idx);
         if (idx >= 0 && idx <= messageViewerModel.getSize()) {
@@ -63,39 +63,39 @@ public class MessageViewer extends JFrame {
      * Create a new MessageViewer with the given title.
      * @param title
      */
-    public MessageViewer(String title) {
+    public MessageViewer(final String title) {
         super(title);
         getContentPane().setLayout(new BorderLayout());
 
         messageViewerModel.addListDataListener(new MessageViewListener());
         messageList = new JList(messageViewerModel);
         messageList.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
+            public void valueChanged(final ListSelectionEvent e) {
                 setSelectedIndex(messageList.getSelectedIndex());
             }
         });
-        JScrollPane messageListPane = new JScrollPane(messageList);
+        final JScrollPane messageListPane = new JScrollPane(messageList);
         messageListPane.setPreferredSize(new Dimension(210, 350));
 
         messageView = new JTextArea(15, 30);
         messageView.setWrapStyleWord(true);
-        JScrollPane messageViewPane = new JScrollPane(messageView);
+        final JScrollPane messageViewPane = new JScrollPane(messageView);
         messageViewPane.setPreferredSize(new Dimension(610, 350));
 
-        JButton clearButton = new JButton("Clear");
+        final JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 messageViewerModel.clear();
             }
         });
-        JButton hideButton = new JButton("Hide");
+        final JButton hideButton = new JButton("Hide");
         hideButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 MessageViewer.this.setVisible(false);
                 Gui.getInstance().updateMessageViewerStatus(); // TODO: clean up this hack somehow
             }
         });
-        JPanel buttonPanel = new JPanel();
+        final JPanel buttonPanel = new JPanel();
         buttonPanel.add(clearButton);
         buttonPanel.add(hideButton);
 

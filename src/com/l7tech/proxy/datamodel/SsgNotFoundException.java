@@ -10,15 +10,15 @@ public class SsgNotFoundException extends Exception {
     public SsgNotFoundException() {
     }
 
-    public SsgNotFoundException(String message) {
+    public SsgNotFoundException(final String message) {
         super(message);
     }
 
-    public SsgNotFoundException(String message, Throwable cause) {
+    public SsgNotFoundException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public SsgNotFoundException(Throwable cause) {
+    public SsgNotFoundException(final Throwable cause) {
         super(cause);
     }
 }
