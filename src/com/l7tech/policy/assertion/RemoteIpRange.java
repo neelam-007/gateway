@@ -13,7 +13,7 @@ import java.util.StringTokenizer;
  * $Id$<br/>
  *
  */
-public class RemoteIpRange {
+public class RemoteIpRange extends Assertion {
 
     public RemoteIpRange() {
         startIp = "192.168.0.0";
