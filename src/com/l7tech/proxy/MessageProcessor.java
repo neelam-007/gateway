@@ -111,7 +111,8 @@ public class MessageProcessor {
             state.setCredentials(null, null,
                                  new UsernamePasswordCredentials(pendingRequest.getHttpDigestUsername(),
                                                                  new String(pendingRequest.getHttpDigestPassword())));
-        }
+        } else
+            log.info("No authentication specified by current policy");
 
         postMethod.setRequestBody(pendingRequest.getSoapEnvelope().toString());
         try {
