@@ -97,7 +97,7 @@ public class SsgListPanel extends JPanel {
         ssgTable.getColumnModel().getColumn(0).setHeaderValue("Gateway");
         ssgTable.getColumnModel().getColumn(1).setHeaderValue("Proxy");
         ssgTable.getColumnModel().getColumn(2).setHeaderValue("Type");
-        ssgTable.getColumnModel().getColumn(3).setHeaderValue("Username");
+        ssgTable.getColumnModel().getColumn(3).setHeaderValue("User Name");
         ssgTable.getSelectionModel().setSelectionInterval(0, 0);
         ssgTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         ssgTable.getTableHeader().setReorderingAllowed(false);
