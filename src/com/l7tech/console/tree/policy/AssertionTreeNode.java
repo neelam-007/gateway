@@ -12,7 +12,7 @@ import java.awt.*;
 
 /**
  * Class AssertionTreeNode.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 abstract class AssertionTreeNode extends DefaultMutableTreeNode {
     protected boolean hasLoadedChildren;
@@ -45,11 +45,26 @@ abstract class AssertionTreeNode extends DefaultMutableTreeNode {
      */
     public Icon getIcon() {
         Image image = IconManager2.getInstance().getIcon(iconResource(false));
-        if (image !=null) {
+        if (image != null) {
             return new ImageIcon(image);
         }
         return null;
     }
+
+    /**
+     * Finds an icon for this node when opened. This icon should
+     * represent the node only when it is opened (when it can have
+     * children).
+     * @return icon to use to represent the bean when opened
+     */
+    public Icon getOpenedIcon() {
+            Image image = IconManager2.getInstance().getIcon(iconResource(true));
+        if (image != null) {
+            return new ImageIcon(image);
+        }
+        return null;
+    }
+
 
     /**
      * subclasses override this method specifying the resource name
@@ -63,7 +78,7 @@ abstract class AssertionTreeNode extends DefaultMutableTreeNode {
 abstract class LeafAssertionTreeNode extends AssertionTreeNode {
     public LeafAssertionTreeNode(Assertion assertion) {
         super(assertion);
-         if (assertion == null) {
+        if (assertion == null) {
             throw new IllegalArgumentException();
         }
     }
@@ -82,10 +97,10 @@ class CompositeAssertionTreeNode extends AssertionTreeNode {
     }
 
     protected void loadChildren() {
-        CompositeAssertion assertion =  (CompositeAssertion)getUserObject();
+        CompositeAssertion assertion = (CompositeAssertion) getUserObject();
         int index = 0;
-        for (Iterator i= assertion.children(); i.hasNext();) {
-            insert((AssertionTreeNodeFactory.asTreeNode((Assertion)i.next())), index++);
+        for (Iterator i = assertion.children(); i.hasNext();) {
+            insert((AssertionTreeNodeFactory.asTreeNode((Assertion) i.next())), index++);
         }
         hasLoadedChildren = true;
     }

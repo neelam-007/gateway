@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -24,10 +25,12 @@ import java.lang.reflect.InvocationTargetException;
 class AssertionTreeNodeFactory {
     static Map assertionMap = new HashMap();
 
+    // maping assertion to tree nodes to
     static {
         assertionMap.put(SslAssertion.class, SslAssertionTreeNode.class);
         assertionMap.put(SpecificUser.class, SpecificUserAssertionTreeNode.class);
         assertionMap.put(MemberOfGroup.class, MemberOfGroupAssertionTreeNode.class);
+        assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
     }
 
     /**
@@ -48,7 +51,7 @@ class AssertionTreeNodeFactory {
         }
 
         Class classNode = (Class)assertionMap.get(assertion.getClass());
-        if (null != classNode) {
+        if (null == classNode) {
             return new UnknownAssertionTreeNode(assertion);
         }
 
@@ -65,7 +68,7 @@ class AssertionTreeNodeFactory {
         Constructor ctor = findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
         if (ctor != null)
             return (AssertionTreeNode)ctor.newInstance(new Object[]{assertion});
-        throw new RuntimeException("Cannot locate the constructor in " + classNode);
+        throw new RuntimeException("Cannot locate expected he constructor in " + classNode);
 
     }
 
@@ -114,7 +117,7 @@ class AssertionTreeNodeFactory {
      * @param assignFrom the class array to check
      * @return true if assignable, false otherwise
      */
-    private static boolean isAssignable(Object[] assignTo, Object[] assignFrom) {
+    private static boolean isAssignable(Class[] assignTo, Class[] assignFrom) {
         if (assignTo == null) {
             return assignFrom == null || assignFrom.length == 0;
         }
@@ -128,11 +131,10 @@ class AssertionTreeNodeFactory {
         }
 
         for (int i = 0; i < assignTo.length; i++) {
-            if (assignTo[i] != assignFrom[i]) {
+            if (!(assignTo[i].isAssignableFrom(assignFrom[i]))) {
                 return false;
             }
         }
-
         return true;
     }
 }

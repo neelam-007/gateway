@@ -39,7 +39,7 @@ public class AssertionNodeCellRenderer
         AssertionTreeNode assertionTreeNode = ((AssertionTreeNode) value);
         Assertion ass = (Assertion) assertionTreeNode.getUserObject();
         setText(ass.getClass().getName());
-        icon = assertionTreeNode.getIcon();
+        icon = expanded ? assertionTreeNode.getOpenedIcon() : assertionTreeNode.getIcon();
 
         if (icon != null) {
             setIcon(icon);
