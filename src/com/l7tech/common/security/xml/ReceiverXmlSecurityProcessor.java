@@ -53,11 +53,13 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
             }
 
             // precondition satisfied
-            // TODO verify correct handling of null expression xpath (meaning env should be signed and body encrypted)
+            atLeastOneElementSecurityApplied = true;
+
             XpathExpression elementXpath = elementSecurity.getElementXpath();
             List elementMatches = null;
             List cryptMatches = null;
             if (elementXpath != null) {
+                // We have an element xpath
                 XpathEvaluator elementEval = XpathEvaluator.newEvaluator(document, elementXpath.getNamespaces());
                 try {
                     elementMatches = elementEval.select(elementXpath.getExpression());
@@ -89,19 +91,12 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
             for (Iterator ei = elementMatches.iterator(); ei.hasNext();) {
                 Element targetElement = (Element) ei.next();
 
-                boolean signed = false;
-                for (int si = 0; si < elementsThatWereSigned.length; si++) {
-                    WssProcessor.SignedElement signedElement = elementsThatWereSigned[si];
-                    if (XmlUtil.isElementAncestor(targetElement, signedElement.asElement())) {
-                        signed = true;
-                        signingTokens.add(signedElement);
-                    }
-                }
-
-                if (!signed)
+                WssProcessor.SignedElement signedElement = elementWasDirectlyOrIndirectlySigned(targetElement);
+                if (signedElement == null)
                     return Result.policyViolation(new SecurityProcessorException("Element " +
                                                                                  targetElement.getLocalName() +
                                                                                  " was not signed"));
+                signingTokens.add(signedElement);
             }
 
             if (elementSecurity.isEncryption() && cryptMatches != null) {
@@ -110,24 +105,13 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                     Element targetElement = (Element) eci.next();
 
                     if (!XmlUtil.elementIsEmpty(targetElement)) {
-                        boolean encrypted = false;
-                        for (int ci = 0; ci < elementsThatWereEncrypted.length; ci++) {
-                            Element encryptedElement = elementsThatWereEncrypted[ci];
-                            if (XmlUtil.isElementAncestor(targetElement, encryptedElement)) {
-                                encrypted = true;
-                                break;
-                            }
-                        }
-
-                        if (!encrypted)
+                        if (!elementWasDirectlyOrIndirectlyEncrypted(targetElement))
                             return Result.policyViolation(new SecurityProcessorException("Element " +
                                                                                          targetElement.getLocalName() +
-                                                                                         " was not encrypted"));
+                                                                                         " was non-empty but was not encrypted"));
                     }
                 }
             }
-
-            atLeastOneElementSecurityApplied = true;
         }
 
         if (!atLeastOneElementSecurityApplied)
@@ -148,5 +132,23 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
         WssProcessor.X509SecurityToken signingToken = (WssProcessor.X509SecurityToken) signingTokens.iterator().next();
         X509Certificate signingCert = signingToken.asX509Certificate();
         return Result.ok(document, new X509Certificate[] {signingCert});
+    }
+
+    private WssProcessor.SignedElement elementWasDirectlyOrIndirectlySigned(Element element) {
+        for (int si = 0; si < elementsThatWereSigned.length; si++) {
+            WssProcessor.SignedElement signedElement = elementsThatWereSigned[si];
+            if (XmlUtil.isElementAncestor(element, signedElement.asElement()))
+                return signedElement;
+        }
+        return null;
+    }
+
+    private boolean elementWasDirectlyOrIndirectlyEncrypted(Element element) {
+        for (int ci = 0; ci < elementsThatWereEncrypted.length; ci++) {
+            Element encryptedElement = elementsThatWereEncrypted[ci];
+            if (XmlUtil.isElementAncestor(element, encryptedElement))
+                return true;
+        }
+        return false;
     }
 }
