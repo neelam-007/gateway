@@ -17,6 +17,9 @@ import java.util.logging.Level;
 import java.rmi.RemoteException;
 
 /*
+ * This class performs the log retrieval from the cluster. The work is carried out on a separate thread.
+ * Upon completion of the data retrieval, the Log Browser window is updated by the Swing thread.
+ *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
  * $Id$
@@ -31,9 +34,15 @@ public class ClusterLogWorker extends SwingWorker {
     private Vector requests;
     private Hashtable retrievedLogs;
     private boolean remoteExceptionCaught;
-
     static Logger logger = Logger.getLogger(ClusterStatusWorker.class.getName());
 
+    /**
+     * A constructor
+     * @param clusterStatusService  An object reference to the <CODE>ClusterStatusAdmin</CODE>service
+     * @param logService  An object reference to the <CODE>LogAdmin</CODE> service
+     * @param currentNodeList  A list of nodes obtained from the last retrieval
+     * @param requests  A list of requests for retrieving logs. One request per node.
+     */
     public ClusterLogWorker(ClusterStatusAdmin clusterStatusService, LogAdmin logService, Hashtable currentNodeList, Vector requests) {
         this.clusterStatusService = clusterStatusService;
         this.currentNodeList = currentNodeList;
@@ -44,22 +53,47 @@ public class ClusterLogWorker extends SwingWorker {
         retrievedLogs = new Hashtable();
     }
 
+    /**
+     * Return the updated node list.
+     *
+     * @return  The list of nodes obtained from the lateset retrieval.
+     */
     public Hashtable getNewNodeList() {
         return newNodeList;
     }
 
+    /**
+     * Return the state indicating whether a remote exception is encountered or not.
+     *
+     * @return  true if remote exception is caught, false otherwise.
+     */
     public boolean isRemoteExceptionCaught() {
         return remoteExceptionCaught;
     }
 
+    /**
+     * Return the logs newly retrieved from the cluster.
+     *
+     * @return  new logs
+     */
     public Hashtable getNewLogs() {
         return retrievedLogs;
     }
 
+    /**
+     * Return the list of unfilled requests.
+     *
+     * @return  the list of unfilled requests.
+     */
     public Vector getUnfilledRequest() {
         return requests;
     }
 
+    /**
+     * Consturct the value. This function performs the actual work of retrieving logs.
+     *
+     * @return  Object  An object with the value constructed by this function.
+     */
     public Object construct() {
 
         // create a new empty node list
@@ -90,28 +124,12 @@ public class ClusterLogWorker extends SwingWorker {
             return null;
         }
 
-//        System.out.println("Number of nodes in the new list is: " + cluster.length);
-//       System.out.println("Number of nodes in the old list is: " + currentNodeList.size());
-
-        Object node = null;
         for (int i = 0; i < cluster.length; i++) {
 
             GatewayStatus nodeStatus = new GatewayStatus(cluster[i]);
 
-            if ((node = currentNodeList.get(nodeStatus.getNodeId())) != null) {
-                if (node instanceof GatewayStatus) {
-                    // set the caches that already exist
-                    nodeStatus.setRequestCounterCache(((GatewayStatus) node).getRequestCounterCache());
-                    nodeStatus.setCompletedCounterCache(((GatewayStatus) node).getCompletedCounterCache());
-
-                    // copy the TimeStampUpdateFailureCount
-                    nodeStatus.setTimeStampUpdateFailureCount(((GatewayStatus) node).getTimeStampUpdateFailureCount());
-
-                    // store the last update time
-                    nodeStatus.setSecondLastUpdateTimeStamp(((GatewayStatus) node).getLastUpdateTimeStamp());
-                }
-            } else {
-                // add the node to the request array with the startMsgNumber and endMsgNumber set to -1
+            if (currentNodeList.get(nodeStatus.getNodeId()) == null) {
+                // add the new node to the request array with the startMsgNumber and endMsgNumber set to -1
                 requests.add(new LogRequest(nodeStatus.getNodeId(), -1, -1));
             }
 
@@ -134,11 +152,9 @@ public class ClusterLogWorker extends SwingWorker {
                     rawLogs = new SSGLogRecord[]{};
 
                     rawLogs = logService.getSystemLog(logRequest.getNodeId(), logRequest.getStartMsgNumber(), logRequest.getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
-                    //    rawLogs = logService.getSystemLog(((LogRequest) requests.get(0)).getNodeId(), ((LogRequest) requests.get(0)).getStartMsgNumber(), ((LogRequest) requests.get(0)).getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
 
-                     //System.out.println("startMsgNumber: " + logRequest.getStartMsgNumber());
+                    //System.out.println("startMsgNumber: " + logRequest.getStartMsgNumber());
                     // System.out.println("endMsgNumber: " + logRequest.getEndMsgNumber());
-
                     //System.out.println("NodeId: " + logRequest.getNodeId() + ", Number of logs received: " + rawLogs.length);
 
                     LogMessage logMsg = null;
@@ -149,7 +165,6 @@ public class ClusterLogWorker extends SwingWorker {
                             logMsg = new LogMessage(rawLogs[j]);
 
                             newLogs.add(logMsg);
-                            // System.out.println("msg no: " + logMsg.getMsgNumber());
                         }
                         logRequest.setStartMsgNumber(logMsg.getMsgNumber());
 
@@ -163,7 +178,6 @@ public class ClusterLogWorker extends SwingWorker {
                     logRequest.addRetrievedLogCount(newLogs.size());
                 }
 
-                //System.out.println("RetrievedLogCount: " + logRequest.getRetrievedLogCount());
                 if ((rawLogs.length < FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE ||
                         logRequest.getRetrievedLogCount() >= FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES)) {
 
@@ -177,7 +191,6 @@ public class ClusterLogWorker extends SwingWorker {
 
             // remove the request from the list
             requests.removeElement(logRequest);
-            //System.out.println("Removing node: " + logRequest.getNodeId() + " from the request");
         }
 
         //System.out.println("Number of outstanding requests: " + requests.size());
