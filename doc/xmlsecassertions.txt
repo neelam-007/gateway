@@ -14,6 +14,11 @@ of the soap body. You cannot encrypt a soap body without signing the envelope.
 XmlRequestSecurity and XmlResponseSecurity do these transformations on the
 request and response messages respectively.
 
+When the server verifies the signature on a request, it loads the cert used
+for the signature into the processing context so that it can be used for
+authentication. The XmlRequestSecurity assertion can therefore be considered
+a "Credential Assertion".
+
 XML encryption uses a pair of symmetric keys (one for the request and another
 one for the response document).
 
