@@ -38,7 +38,7 @@ public class IdentityProviderStub implements IdentityProvider {
     }
 
     public void authenticate( PrincipalCredentials pc ) throws AuthenticationException {
-        return;
+        throw new AuthenticationException("not implemented");
     }
 
 
