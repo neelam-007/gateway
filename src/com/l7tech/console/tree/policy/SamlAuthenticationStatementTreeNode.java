@@ -2,6 +2,8 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -14,12 +16,19 @@ import java.util.Arrays;
  */
 public class SamlAuthenticationStatementTreeNode extends LeafAssertionTreeNode {
 
+    private SamlAuthenticationStatement data;
+
     public SamlAuthenticationStatementTreeNode(Assertion assertion) {
         super(assertion);
+        data = (SamlAuthenticationStatement)assertion;
     }
 
     public String getName() {
-        return "SAML Authentication Statement";
+        if (!data.getRecipientContext().localRecipient()) {
+            return "SAML Authentication Statement [\'" + data.getRecipientContext().getActor() + "\' actor]";
+        } else {
+            return "SAML Authentication Statement";
+        }
     }
 
     /**
@@ -30,6 +39,7 @@ public class SamlAuthenticationStatementTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
+        list.add(new EditXmlSecurityRecipientContextAction(this));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
