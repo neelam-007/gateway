@@ -1,18 +1,21 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.policy.assertion.credential.wss.WssDigest;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.WssDigest;
+import com.l7tech.policy.assertion.ext.CustomAssertionHolder;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -54,6 +57,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(SamlSecurity.class, SamlTreeNode.class);
         assertionMap.put(SchemaValidation.class, SchemaValidationTreeNode.class);
         assertionMap.put(XslTransformation.class, XslTransformationTreeNode.class);
+        assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
     }
 
     /**

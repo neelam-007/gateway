@@ -16,7 +16,7 @@ public class CustomAssertions {
      */
     private CustomAssertions() {}
 
-    public static void register(CustomAssertionHolder eh) {
+    public static void register(CustomAssertionDescriptor eh) {
         logger.fine("registering " + eh);
         assertions.put(eh.getName(), eh);
     }
@@ -29,7 +29,7 @@ public class CustomAssertions {
      */
     public static Class getClientAssertion(Class a) {
         for (Iterator iterator = assertions.keySet().iterator(); iterator.hasNext();) {
-            CustomAssertionHolder eh = (CustomAssertionHolder)iterator.next();
+            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
             if (a.equals(eh.getAssertion())) {
                 return eh.getClientAssertion();
             }
@@ -45,7 +45,7 @@ public class CustomAssertions {
      */
     public static Class getServerAssertion(Class a) {
         for (Iterator iterator = assertions.keySet().iterator(); iterator.hasNext();) {
-            CustomAssertionHolder eh = (CustomAssertionHolder)iterator.next();
+            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
             if (a.equals(eh.getAssertion())) {
                 return eh.getServerAssertion();
             }
@@ -59,7 +59,7 @@ public class CustomAssertions {
     public static Set getAssertions() {
         Set allAssertions = new HashSet();
         for (Iterator iterator = assertions.keySet().iterator(); iterator.hasNext();) {
-            CustomAssertionHolder eh = (CustomAssertionHolder)iterator.next();
+            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
             allAssertions.add(eh.getAssertion());
         }
         return allAssertions;

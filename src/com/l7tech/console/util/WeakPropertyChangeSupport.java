@@ -13,10 +13,11 @@
 
 package com.l7tech.console.util;
 
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Similair functionality as PropertyChangeSupport but holds only
@@ -52,7 +53,9 @@ public class WeakPropertyChangeSupport {
         addLImpl(propertyName, l);
     }
 
-    /** Remove listener for changes in properties */
+    /**
+     * Remove listener for changes in properties
+     */
     public synchronized void removePropertyChangeListener(PropertyChangeListener l) {
         int cnt = listeners.size();
         for (int i = 0; i < cnt; i++) {
@@ -68,9 +71,9 @@ public class WeakPropertyChangeSupport {
 
     public void firePropertyChange(Object source, String propertyName,
                                    Object oldValue, Object newValue) {
-   /*     if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
-            return;
-        } */
+        /*     if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
+                 return;
+             } */
         PropertyChangeListener la[];
         String isa[];
         int cnt;
@@ -78,8 +81,7 @@ public class WeakPropertyChangeSupport {
             cnt = listeners.size();
             la = new PropertyChangeListener[cnt];
             for (int i = 0; i < cnt; i++) {
-                PropertyChangeListener l = (PropertyChangeListener)
-                  ((WeakReference)listeners.get(i)).get();
+                PropertyChangeListener l = (PropertyChangeListener)((WeakReference)listeners.get(i)).get();
                 if (l == null) { // remove null references
                     listeners.remove(i);
                     interestNames.remove(i);
@@ -100,6 +102,26 @@ public class WeakPropertyChangeSupport {
                 la[i].propertyChange(evt);
             }
         }
+    }
+
+    /**
+     * @return the array of registered property change listener
+     */
+    public PropertyChangeListener[] getPropertyChangeListeners() {
+        List lout = new ArrayList();
+        int cnt = listeners.size();
+        for (int i = 0; i < cnt; i++) {
+            Object o = ((WeakReference)listeners.get(i)).get();
+            if (o == null) { // remove null references and the required one
+                listeners.remove(i);
+                interestNames.remove(i);
+                i--;
+                cnt--;
+            } else {
+                lout.add(o);
+            }
+        }
+        return (PropertyChangeListener[])lout.toArray(new PropertyChangeListener[]{});
     }
 
     private void addLImpl(String sn, PropertyChangeListener l) {

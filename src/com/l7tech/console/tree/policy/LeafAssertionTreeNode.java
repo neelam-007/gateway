@@ -74,10 +74,10 @@ abstract class LeafAssertionTreeNode extends AssertionTreeNode {
     }
 
     /**
-     * By default, the leaf node never accepts a node.
+     * True whether this node acceptrs a node
      *
      * @param node the node to accept
-     * @return always false
+     * @return true if policy template node
      */
     public boolean accept(AbstractTreeNode node) {
         return node instanceof PolicyTemplateNode || getParent() != null;

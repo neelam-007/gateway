@@ -7,9 +7,9 @@ import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
 import com.l7tech.console.tree.policy.IdentityAssertionTreeNode;
 import com.l7tech.console.tree.policy.IdentityPath;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
@@ -73,13 +73,13 @@ public class IdentityPolicyPanel extends JPanel {
 
     private DefaultTreeModel policyTreeModel;
     private AssertionTreeNode rootAssertionTreeNode;
-    private static final String[] XML_SEC_OPTIONS = new String[] {"sign only", "sign and encrypt"};
+    private static final String[] XML_SEC_OPTIONS = new String[]{"sign only", "sign and encrypt"};
 
     /**
      * Create the identity policy panel for a given identity and service
      *
-     * @param service the service
-     * @param model the policy tree model
+     * @param service               the service
+     * @param model                 the policy tree model
      * @param identityAssertionNode the identity assertion node
      */
     public IdentityPolicyPanel(PublishedService service,
@@ -121,7 +121,8 @@ public class IdentityPolicyPanel extends JPanel {
             public void itemStateChanged(ItemEvent e) {
                 Object key = e.getItem();
                 CredentialSourceAssertion ca =
-                  (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(key);;
+                  (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(key);
+                ;
                 xmlSecOptions.setEnabled(ca instanceof XmlRequestSecurity);
 
             }
@@ -130,7 +131,7 @@ public class IdentityPolicyPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 try {
                     final URL url = service.serviceUrl(null);
-                    if (url !=null) {
+                    if (url != null) {
                         routeToUrlField.setText(url.toString());
                     }
                 } catch (WSDLException e1) {
@@ -243,7 +244,7 @@ public class IdentityPolicyPanel extends JPanel {
         Set principalRouteAssertions =
           principalAssertionPaths.getEqualAssertions(RoutingAssertion.class);
         for (Iterator it = principalRouteAssertions.iterator(); it.hasNext();) {
-            existingRoutingAssertion = (HttpRoutingAssertion) it.next();
+            existingRoutingAssertion = (HttpRoutingAssertion)it.next();
             routeToUrlField.setText(existingRoutingAssertion.getProtectedServiceUrl());
             userRouteField.setText(existingRoutingAssertion.getLogin());
             passwordRouteField.setText(existingRoutingAssertion.getPassword());
@@ -295,18 +296,18 @@ public class IdentityPolicyPanel extends JPanel {
             }
 
             collectCredentialsAssertion();
-            if (newCredAssertion !=null) {
-                if (existingCredAssertion !=null) {
-                    replaceAssertions.add(new Assertion[] {existingCredAssertion, newCredAssertion});
+            if (newCredAssertion != null) {
+                if (existingCredAssertion != null) {
+                    replaceAssertions.add(new Assertion[]{existingCredAssertion, newCredAssertion});
                 } else {
                     addAssertions.add(newCredAssertion);
                 }
             }
 
             collectRoutingAssertion();
-            if (newRoutingAssertion  !=null) {
-                if (existingRoutingAssertion !=null) {
-                    replaceAssertions.add(new Assertion[] {existingRoutingAssertion, newRoutingAssertion});
+            if (newRoutingAssertion != null) {
+                if (existingRoutingAssertion != null) {
+                    replaceAssertions.add(new Assertion[]{existingRoutingAssertion, newRoutingAssertion});
                 } else {
                     addAssertions.add(newRoutingAssertion);
                 }
@@ -348,7 +349,7 @@ public class IdentityPolicyPanel extends JPanel {
             if (parent.asAssertion() instanceof AllAssertion) { // just add
                 for (int i = 0; i < aa.length; i++) {
                     policyTreeModel.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(aa[i]),
-                                                   parent, index);
+                      parent, index);
 
                 }
             } else {
@@ -374,7 +375,7 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
             if (outAssertion == null) {
-                throw new IllegalArgumentException("Cannot find assertion "+o.getClass()+ " (bug).");
+                throw new IllegalArgumentException("Cannot find assertion " + o.getClass() + " (bug).");
             }
             final MutableTreeNode parent = (MutableTreeNode)outAssertion.getParent();
             int pos = parent.getIndex(outAssertion);
@@ -451,9 +452,9 @@ public class IdentityPolicyPanel extends JPanel {
         _9 = new JCheckBox();
         sslCheckBox = _9;
         _9.setText("Require SSL/TLS encryption");
-        _9.setMargin(new Insets(2, 2, 2, 0));
-        _9.setContentAreaFilled(true);
         _9.setHorizontalTextPosition(10);
+        _9.setContentAreaFilled(true);
+        _9.setMargin(new Insets(2, 2, 2, 0));
         _6.add(_9, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, 4, 0, 3, 0, null, null, null));
         final JLabel _10;
         _10 = new JLabel();
@@ -523,8 +524,8 @@ public class IdentityPolicyPanel extends JPanel {
         final JButton _27;
         _27 = new JButton();
         defaultUrlButton = _27;
-        _27.setText("Default");
         _27.setLabel("Default");
+        _27.setText("Default");
         _16.add(_27, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 1, 3, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _28;
         _28 = new com.intellij.uiDesigner.core.Spacer();

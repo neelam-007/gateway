@@ -113,7 +113,7 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
             Class a = Class.forName(assertionClass);
             Class ca = Class.forName(clientClass);
             Class sa = Class.forName(serverClass);
-            CustomAssertionHolder eh = new CustomAssertionHolder(baseKey, a, ca, sa);
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, sa);
             CustomAssertions.register(eh);
         } catch (ClassNotFoundException e) {
             StringBuffer sb = new StringBuffer("Cannot load class(es) for extensibility assertion, skipping...\n");

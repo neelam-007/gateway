@@ -8,9 +8,6 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.ext.CustomAssertion;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -20,8 +17,11 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
+import com.l7tech.policy.assertion.ext.CustomAssertionHolder;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
@@ -685,7 +685,7 @@ class WspConstants {
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
         new AssertionMapping(new XslTransformation(), "XslTransformation"),
-        new SerializedJavaClassMapping(CustomAssertion.class, "CustomAssertion"),
+        new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
 
         // Special types
         new BeanTypeMapping(ElementSecurity.class, "elementSecurityValue"),

@@ -14,8 +14,9 @@ import javax.swing.*;
 public class BeanEditorTerst {
     public static void main(String[] args) {
         Person person = new Person();
-        JFrame be = BeanEditor.newFrameEditor(person, Object.class);
-        be.pack();
-        be.show();
+        JFrame frame = new JFrame();
+        BeanEditor be = new BeanEditor(frame, person, Object.class);
+        frame.pack();
+        frame.show();
     }
 }

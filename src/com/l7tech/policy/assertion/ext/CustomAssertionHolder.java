@@ -1,89 +1,58 @@
+/*
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+
 package com.l7tech.policy.assertion.ext;
 
-
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 /**
- * The class <code>CustomAssertionHolder</code> contains the
- * elements that represent an custom assertion.
- * <ul>
- * <li> the <code>Assertion</code> bean with the proerties
- * <li> the corresponding server side <code>ServerAssertion</code>
- * <li> the corresponding client side <code>ClientAssertion</code>
- * </ul>
+ * The custom assertion holder wraps a user defined instance that is
+ * essentialy user defined property.
+ * The <code>customAssertionBean,/code> property is required to
+ * be serializable and must offer Java Bean style get/set operations.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @version 1.0
  */
-public class CustomAssertionHolder {
-    private Class assertion;
-    private Class serverAssertion;
-    private Class clientAssertion;
-    private String name;
+public class CustomAssertionHolder extends Assertion {
+    protected CompositeAssertion parent;
+
+    public CustomAssertionHolder() {
+        this.parent = null;
+    }
+
+    public CustomAssertionHolder(CompositeAssertion parent) {
+        this.parent = parent;
+    }
+
+    public CompositeAssertion getParent() {
+        return parent;
+    }
+
+    public void setParent(CompositeAssertion parent) {
+        this.parent = parent;
+    }
 
     /**
-     * Create the new extensibility holder instance with the assertion, server
-     * assertion, and the client (agent) asseriton class.
+     * @return the custome assertion bean
+     */
+    public CustomAssertion getCustomAssertion() {
+        return customAssertion;
+    }
+
+    /**
+     * Set the custome assertion bean
      *
-     * @param name the assertion name
-     * @param a    the assertion class
-     * @param ca   the agent assertion class
-     * @param sa   the server side assertion class
+     * @param ca the new custome assertino bean
      */
-    public CustomAssertionHolder(String name, Class a, Class ca, Class sa) {
-        this.name = name;
-        this.assertion = a;
-        if (!Assertion.class.isAssignableFrom(a)) {
-            throw new IllegalArgumentException("assertion " + a);
-        }
-
-        this.clientAssertion = ca;
-        if (!ClientAssertion.class.isAssignableFrom(ca)) {
-            throw new IllegalArgumentException("client assertion " + ca);
-        }
-        this.serverAssertion = sa;
-
-        if (!ServerAssertion.class.isAssignableFrom(sa)) {
-            throw new IllegalArgumentException("server assertion " + sa);
-        }
+    public void setCustomAssertion(CustomAssertion ca) {
+        this.customAssertion = ca;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * @return the assertion class
-     */
-    public Class getAssertion() {
-        return assertion;
-    }
-
-    /**
-     * @return the client assertion class
-     */
-    public Class getClientAssertion() {
-        return clientAssertion;
-    }
-
-    /**
-     * @return the server assertion class
-     */
-    public Class getServerAssertion() {
-        return serverAssertion;
-    }
-
-    public String toString() {
-        return new StringBuffer("[")
-          .append("; name='").append(name).append("'")
-          .append("assertion=").append(safeName(assertion))
-          .append("; serverAssertion=").append(safeName(serverAssertion))
-          .append("; clientAssertion=").append(safeName(clientAssertion))
-          .append("]").append(super.toString()).toString();
-    }
-
-    private String safeName(Class cl) {
-        return cl != null ? cl.getName() : "null";
-    }
+    private CustomAssertion customAssertion;
 }
+

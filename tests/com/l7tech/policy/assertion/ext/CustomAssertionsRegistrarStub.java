@@ -1,8 +1,8 @@
 package com.l7tech.policy.assertion.ext;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author emil
@@ -24,6 +24,11 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @throws java.rmi.RemoteException
      */
     public List getAssertions(Category c) throws RemoteException {
-        return new ArrayList();
+        CustomAssertionHolder ca = new CustomAssertionHolder();
+        ca.setCustomAssertion(new NetegritySiteminderProperties());
+        List list = new ArrayList();
+        list.add(ca);
+        return list;
+
     }
 }

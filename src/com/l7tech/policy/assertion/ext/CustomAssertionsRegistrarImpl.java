@@ -2,13 +2,12 @@ package com.l7tech.policy.assertion.ext;
 
 import com.l7tech.remote.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.rmi.RemoteException;
-import java.io.IOException;
-
 import net.jini.config.ConfigurationException;
+
+import java.io.IOException;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author emil
@@ -26,7 +25,8 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
      * @throws java.rmi.RemoteException
      */
     public List getAssertions() throws RemoteException {
-        return new ArrayList();
+        List list = new ArrayList();
+        return list;
     }
 
     /**
@@ -36,6 +36,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
      * @throws java.rmi.RemoteException
      */
     public List getAssertions(Category c) throws RemoteException {
-        return new ArrayList();
+        List list = new ArrayList();
+        return list;
     }
 }

@@ -691,8 +691,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JTree _12;
         _12 = new JTree();
         operationsTree = _12;
-        _12.setRootVisible(false);
         _12.setShowsRootHandles(false);
+        _12.setRootVisible(false);
         _11.setViewportView(_12);
         final JScrollPane _13;
         _13 = new JScrollPane();
