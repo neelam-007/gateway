@@ -39,8 +39,8 @@ public class ClientTest extends junit.framework.TestCase {
             for (int j = 0; j < res2.length; j++) {
                 System.out.println(res2[j].toString());
                 System.out.println("group " + res2[j].getOid());
-                com.l7tech.identity.Group group = me.findGroupByPrimaryKey(ipc.getOid(), res2[j].getOid());
-                System.out.println("group found" + group.toString());
+                com.l7tech.identity.Group group = me.findGroupByPrimaryKey(ipc.getOid(), res2[j].getStrId());
+                System.out.println("group found " + group.toString());
                 // System.out.println("save group" + me.saveGroup(ipc.getOid(), group));
                 // System.out.println("delete group");
                 // me.deleteGroup(ipc.getOid(), group.getOid());
@@ -51,7 +51,7 @@ public class ClientTest extends junit.framework.TestCase {
             for (int j = 0; j < res2.length; j++) {
                 System.out.println(res2[j].toString());
                 com.l7tech.identity.User user = me.findUserByPrimaryKey(ipc.getOid(), res2[j].getStrId());
-                System.out.println("user found" + user.toString());
+                System.out.println("user found " + user.toString());
                 // System.out.println("save user" + me.saveUser(ipc.getOid(), user));
                 // System.out.println("delete user");
                 // me.deleteUser(ipc.getOid(), user.getOid());
