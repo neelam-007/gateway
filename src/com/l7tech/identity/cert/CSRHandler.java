@@ -48,7 +48,7 @@ public class CSRHandler extends HttpServlet {
         }
 
         // Process the Auth stuff in the headers
-        String tmp = request.getHeader(HTTPConstants.HEADER_AUTHORIZATION);
+        /*String tmp = request.getHeader(HTTPConstants.HEADER_AUTHORIZATION);
         if (tmp != null ) tmp = tmp.trim();
         User authenticatedUser = null;
         // TRY BASIC AUTHENTICATION
@@ -67,7 +67,7 @@ public class CSRHandler extends HttpServlet {
         if (authenticatedUser == null) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "failed authorization " + tmp);
-        }
+        }*/
 
         // check if user is allowed to generate a new cert
         // todo
@@ -82,7 +82,12 @@ public class CSRHandler extends HttpServlet {
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            return;
         }
+
+        // record cert
+        // todo
+        // ClientCertManager.recordCert
 
         // send cert back
         try {
@@ -95,6 +100,7 @@ public class CSRHandler extends HttpServlet {
         } catch (CertificateEncodingException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            return;
         }
     }
 
