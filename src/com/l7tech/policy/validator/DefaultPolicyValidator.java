@@ -185,12 +185,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
             // new fla, those assertions cannot forbid ssl
             if (a instanceof HttpBasic || a instanceof WssBasic) {
+                /* as per request to not enforce this rule (bugzilla 314) 
                 if (sslForbidden) {
                     result.addError(
                             new PolicyValidatorResult.Error(a,
                             "You cannot forbid SSL and ask for basic credentials.", null)
                     );
-                }
+                }*/
             }
             seenCredentials = true;
         }
