@@ -63,9 +63,11 @@
        * fileset (look for patternset id usage throughout this
        * build.xml for examples)
     -->
+    <!-- obsolete in recent Tomcat versions
     <property name="common.lib.jars"
               value="saaj.jar, jaxrpc.jar"/>
 
+              -->
     <!--
       ** init dev target The "dev" target depends on this target.
       -->
@@ -230,9 +232,11 @@
           ** jaxrpc.jar and saaj.jar contain javax packages, so may not get picked up.
           ** Copy such libraries into $TOMCAT_HOME/common/lib
           **  -->
+        <!-- Obsolete in later Tomcat versions
         <copy todir="${tomcat.home}/common/lib">
             <fileset dir="${src.root}/lib" includes="${common.lib.jars}"/>
         </copy>
+        -->
 
         <!--
           this server.xml is ready to be modified by sslGen.sh who will later
@@ -310,7 +314,7 @@
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib"
-                 excludes="${common.lib.jars}, jh.jar, kunststoff.jar, servlet.jar, xercesImpl.jar, xml-apis.jar">
+                 excludes="jh.jar, kunststoff.jar, servlet.jar, xercesImpl.jar, xml-apis.jar">
             </lib>
             <classes dir="${build.classes}"/>
 
