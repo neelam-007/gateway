@@ -23,7 +23,9 @@ import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Iterator;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import com.sun.jini.start.LifeCycle;
 
@@ -36,7 +38,7 @@ import com.sun.jini.start.LifeCycle;
 public abstract class RemoteService implements Remote {
     private String[] configOptions;
     private final LifeCycle lifeCycle;
-    private final Logger logger = Logger.getLogger(RemoteService.class.getName());
+    private static final Logger logger = Logger.getLogger(RemoteService.class.getName());
     private final String[] components = {getClass().getName(),
                                          RemoteService.class.getName()};
 
@@ -52,6 +54,7 @@ public abstract class RemoteService implements Remote {
 
     /** The server proxy (for use by getProxyVerifier) */
     protected Object serverProxy;
+    protected Exporter exporter;
 
     public RemoteService(String[] options, LifeCycle lifeCycle)
       throws ConfigurationException, IOException {
@@ -61,6 +64,20 @@ public abstract class RemoteService implements Remote {
         init();
         serverImpls.put(this.getClass(), this);
         logger.info("The Service '" + getClass().getName() + "' is ready");
+    }
+
+    public static void unexportAll() {
+        for (Iterator iterator = serverImpls.keySet().iterator(); iterator.hasNext();) {
+            Object key = (Object) iterator.next();
+            RemoteService rs = (RemoteService)serverImpls.get(key);
+            logger.finer("Unexporting service " + key);
+
+            try {
+                rs.exporter.unexport(true);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Error while unexporting service " + key, e);
+            }
+        }
     }
 
     protected DiscoveryManagement getDiscoveryManager()
@@ -73,7 +90,7 @@ public abstract class RemoteService implements Remote {
             String entry = components[i];
             try {
                 discoveryManager =
-                  (DiscoveryManagement)config.getEntry(
+                  (DiscoveryManagement) config.getEntry(
                     entry,
                     "discoveryManager", DiscoveryManagement.class);
                 return discoveryManager;
@@ -96,7 +113,7 @@ public abstract class RemoteService implements Remote {
      */
     protected void init() throws IOException, ConfigurationException {
         /* Export the server */
-        Exporter exporter = getExporter();
+        exporter = getExporter();
         serverProxy = exporter.export(this);
 
         /* Create the smart proxy */
@@ -106,7 +123,7 @@ public abstract class RemoteService implements Remote {
         /* Get the join manager, for joining lookup services */
         JoinManager joinManager =
           new JoinManager(serverProxy, null /* attrSets */, getServiceID(),
-                          getDiscoveryManager(), null /* leaseMgr */, config);
+            getDiscoveryManager(), null /* leaseMgr */, config);
     }
 
     /**
@@ -123,7 +140,7 @@ public abstract class RemoteService implements Remote {
         for (int i = 0; i < components.length; i++) {
             String entry = components[i];
             try {
-                exporter = (Exporter)config.getEntry(
+                exporter = (Exporter) config.getEntry(
                   entry, "exporter", Exporter.class);
                 return exporter;
             } catch (NoSuchEntryException e) {
@@ -132,7 +149,7 @@ public abstract class RemoteService implements Remote {
         }
         exporter =
           new BasicJeriExporter(TcpServerEndpoint.getInstance(0),
-                                new BasicILFactory());
+            new BasicILFactory());
         return exporter;
     }
 

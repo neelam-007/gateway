@@ -9,6 +9,7 @@ package com.l7tech.server;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.jini.Services;
+import com.l7tech.jini.export.RemoteService;
 
 import javax.servlet.http.*;
 import javax.servlet.ServletException;
@@ -19,16 +20,20 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import net.jini.config.ConfigurationException;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class BootServlet extends HttpServlet {
+    private final Logger logger = Logger.getLogger(BootServlet.class.getName());
+
     public void init( ServletConfig config ) throws ServletException {
         super.init( config );
         // note fla, more exception catching => important to diagnose why server does not boot properly
         try {
-            Services.getInstance().start();
+            initializeAdminServices();
             HibernatePersistenceManager.initialize();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "SQL ERROR IN BOOT SERVLET", e);
@@ -44,5 +49,24 @@ public class BootServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         out.println( "<b>The server has already been initialized!</b>" );
     }
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+
+    /**
+     * Called by the servlet container to indicate to a
+     * servlet that the servlet is being taken out of service.
+     *
+     */
+    public void destroy() {
+        logger.info("Stopping admin services.");
+        RemoteService.unexportAll();
+    }
+
+    protected void initializeAdminServices() {
+        try {
+            Services.getInstance().start();
+        } catch (Exception e) {
+            logger.log(Level.WARNING,
+              "There was an error in initalizing admin services.\n" +
+              " The admin services may not be available.", e);
+        }
+    }
 }

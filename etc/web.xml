@@ -58,6 +58,8 @@
         <load-on-startup>100</load-on-startup>
     </servlet>
 
+    <!--
+    ** disabled
     <servlet>
         <servlet-name>SOAPMonitorService</servlet-name>
         <display-name>SOAPMonitorService</display-name>
@@ -70,6 +72,7 @@
         </init-param>
         <load-on-startup>100</load-on-startup>
     </servlet>
+    -->
 
     <servlet-mapping>
         <servlet-name>SoapMessageProcessingServlet</servlet-name>
@@ -125,12 +128,12 @@
         <servlet-name>AxisServlet</servlet-name>
         <url-pattern>/ssg/services/*</url-pattern>
     </servlet-mapping>
-
+    <!--
     <servlet-mapping>
         <servlet-name>SOAPMonitorService</servlet-name>
         <url-pattern>/ssg/SOAPMonitor</url-pattern>
     </servlet-mapping>
-
+    -->
     <!-- uncomment this if you want the admin servlet -->
     <!-- -->
      <servlet-mapping>
