@@ -505,7 +505,7 @@ public class WssDecoratorImpl implements WssDecorator {
         element.setPrefix(securityHeader.getPrefix());
         element.setAttribute("ValueType", element.getPrefix() + ":X509v3");
         element.setAttribute("EncodingType", element.getPrefix() + ":Base64Binary");
-        element.appendChild(factory.createTextNode("\n" + HexUtils.encodeBase64(certificate.getEncoded()) + "\n"));
+        element.appendChild(factory.createTextNode(HexUtils.encodeBase64(certificate.getEncoded(), true)));
         securityHeader.appendChild(element);
         return element;
     }
