@@ -221,7 +221,11 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         // clean empty security element and header if necessary
         
         SoapUtil.cleanEmptyRefList(soapmsg);
-        SoapUtil.cleanEmptySecurityElement(soapmsg);
+        try {
+            SoapUtil.cleanEmptySecurityElement(soapmsg);
+        } catch (XmlUtil.MultipleChildElementsException e) {
+            throw new IOException(e.getMessage()); // can't happen (multiple soap:Headers won't make it this far)
+        }
         SoapUtil.cleanEmptyHeaderElement(soapmsg);
 
         // note, the routing should no longer use the non parsed payload

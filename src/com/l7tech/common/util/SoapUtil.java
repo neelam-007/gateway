@@ -23,8 +23,8 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class SoapUtil {
-    public static final List ENVELOPE_URIS = new ArrayList();
 
+    public static final List ENVELOPE_URIS = new ArrayList();
     static {
         ENVELOPE_URIS.add(SOAPConstants.URI_NS_SOAP_ENVELOPE);
         ENVELOPE_URIS.add("http://www.w3.org/2001/06/soap-envelope");
@@ -46,8 +46,19 @@ public class SoapUtil {
     public static final String WSU_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/07/utility";
     public static final String WSU_NAMESPACE2 = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
 
+    public static final List SECURITY_URIS = new ArrayList();
+    static {
+        SECURITY_URIS.add(SECURITY_NAMESPACE);
+        SECURITY_URIS.add(SECURITY_NAMESPACE2);
+        SECURITY_URIS.add(SECURITY_NAMESPACE3);
+    }
+    public static final String[] SECURITY_URIS_ARRAY = (String[])SECURITY_URIS.toArray(new String[0]);
+
     // Attribute names
     public static final String ID_ATTRIBUTE_NAME = "Id";
+    public static final String ACTOR_ATTR_NAME = "actor";  // SOAP 1.1
+    public static final String ROLE_ATTR_NAME = "role";    // SOAP 1.2
+    public static final String MUSTUNDERSTAND_EL_NAME = "mustUnderstand"; // SOAP 1.1+
 
     // Element names
     public static final String ENVELOPE_EL_NAME = "Envelope";
@@ -64,6 +75,14 @@ public class SoapUtil {
     public static final String FC_CLIENT = "Client";
     public static final String FC_SERVER = "Server";
     public static final String SOAPACTION = "SOAPAction";
+
+    // Well-known actors (SOAP 1.1)
+    public static final String ACTOR_VALUE_NEXT = "http://schemas.xmlsoap.org/soap/actor/next";
+
+    // Well-known roles (SOAP 1.2)
+    public static final String ROLE_VALUE_NONE = "http://www.w3.org/2003/05/soap-envelope/role/none";
+    public static final String ROLE_VALUE_NEXT = "http://www.w3.org/2003/05/soap-envelope/role/next";
+    public static final String ROLE_VALUE_ULTIMATE = "http://www.w3.org/2003/05/soap-envelope/role/ultimateReceiver";
 
     /** soap envelope xpath '/soapenv:Envelope' */
     public static final String SOAP_ENVELOPE_XPATH = "/" + NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":" + ENVELOPE_EL_NAME;
@@ -280,37 +299,53 @@ public class SoapUtil {
     }
 
     /**
-     * @return null if element not present, the security element if it's in the doc
+     * @return null if element not present or not addressed to us, the default security element if it's in the doc
+     * @throws XmlUtil.MultipleChildElementsException if there is more than one soap:Header
      */
-    public static Element getSecurityElement(Document soapMsg) {
-        Element[] allofthem = getSecurityElements(soapMsg);
-        if (allofthem.length <= 0) return null;
-        // todo, return only relevent one in this case
-        else return allofthem[0];
+    public static Element getSecurityElement(Document soapMsg) throws XmlUtil.MultipleChildElementsException {
+        List allofthem = getSecurityElements(soapMsg);
+        if (allofthem == null || allofthem.size() < 1) return null;
+        for (Iterator i = allofthem.iterator(); i.hasNext();) {
+            Element element = (Element)i.next();
+
+            // Check actor (SOAP 1.1)
+            String actor = element.getAttributeNS(element.getNamespaceURI(), ACTOR_ATTR_NAME);
+            if (actor != null && actor.length() > 0) {
+                // we get actor
+                if (ACTOR_VALUE_NEXT.equals(actor))
+                    return element; // it has our name written all over it
+
+                // there's a specific actor and it isn't us.  Skip this security header.
+                continue;
+            }
+
+            // No actor; check role (SOAP 1.2)
+            String role = element.getAttributeNS(element.getNamespaceURI(), ROLE_ATTR_NAME);
+            if (role != null && role.length() > 0) {
+                // we get role
+                if (ROLE_VALUE_NEXT.equals(role))
+                    return element; // it has our name written all over it
+
+                // there's a specific role and it isn't us.  Skip this security header.
+                continue;
+            }
+
+            // No actor or role.  This is the default security header; we'll take it
+            return element;
+        }
+
+        return null; // no security header for us
     }
 
     /**
      * Returns all Security elements.
      * @return never null
+     * @throws XmlUtil.MultipleChildElementsException if there is more than one soap:Header
      */
-    public static Element[] getSecurityElements(Document soapMsg) {
-        // look for the element
-        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
-        if (listSecurityElements.getLength() < 1) {
-            listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE2, SECURITY_EL_NAME);
-        }
-        if (listSecurityElements.getLength() < 1) {
-            listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE3, SECURITY_EL_NAME);
-        }
-        // is it there ?
-        if (listSecurityElements.getLength() < 1) return new Element[0];
-
-        // we got some
-        Element[] output = new Element[listSecurityElements.getLength()];
-        for (int i = 0; i < output.length; i++) {
-            output[i] = (Element)listSecurityElements.item(i);
-        }
-        return output;
+    public static List getSecurityElements(Document soapMsg) throws XmlUtil.MultipleChildElementsException {
+        Element env = soapMsg.getDocumentElement();
+        Element header = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), HEADER_EL_NAME);
+        return XmlUtil.findChildElementsByName(header, SECURITY_URIS_ARRAY, SECURITY_EL_NAME);
     }
 
     /**
@@ -330,7 +365,7 @@ public class SoapUtil {
         return (Element)secElements.get(0);
     }
 
-    public static void cleanEmptySecurityElement(Document soapMsg) {
+    public static void cleanEmptySecurityElement(Document soapMsg) throws XmlUtil.MultipleChildElementsException {
         Element secEl = getSecurityElement(soapMsg);
         while (secEl != null) {
             if (elHasChildrenElements(secEl)) {

@@ -5,6 +5,7 @@ import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -138,7 +139,11 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
 
         // clean empty security element and header if necessary
         SoapUtil.cleanEmptyRefList(doc);
-        SoapUtil.cleanEmptySecurityElement(doc);
+        try {
+            SoapUtil.cleanEmptySecurityElement(doc);
+        } catch (XmlUtil.MultipleChildElementsException e) {
+            throw new SAXException(e); // can't happen (multiple SOAP headers can't make it this far)
+        }
         SoapUtil.cleanEmptyHeaderElement(doc);
         response.setResponse(doc);
         return AssertionStatus.NONE;
