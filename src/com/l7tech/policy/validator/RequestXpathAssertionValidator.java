@@ -8,7 +8,6 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
-import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 
 import java.util.logging.Logger;
@@ -35,7 +34,7 @@ public class RequestXpathAssertionValidator implements AssertionValidator {
 
         try {
             new DOMXPath(pattern);
-        } catch (JaxenException e) {
+        } catch (Exception e) {
             result.addError(new PolicyValidatorResult.Error(assertion, "XPath pattern is not valid", e));
             logger.info("XPath pattern is not valid");
             return;
