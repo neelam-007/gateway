@@ -116,6 +116,13 @@ public class ServiceUsage implements Serializable {
         return true;
     }
 
+    /**
+     * this must be overriden (hibernate requirement for composite id classes)
+     */
+    public int hashCode() {
+	return com.l7tech.common.util.HashCode.compute(serviceid, nodeid);
+    }
+
     private long serviceid;
     private String nodeid;
     private long requests;

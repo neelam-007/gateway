@@ -40,6 +40,9 @@ public class ResolutionParameters implements Serializable {
         this.serviceid = serviceid;
     }
 
+    /**
+     * this must be overriden (hibernate requirement for composite id classes)
+     */
     public boolean equals(Object obj) {
         if (!(obj instanceof ResolutionParameters)) return false;
         ResolutionParameters theotherone = (ResolutionParameters)obj;
@@ -51,6 +54,13 @@ public class ResolutionParameters implements Serializable {
         } else if (!urn.equals(theotherone.getUrn())) return false;
         if (serviceid != theotherone.getServiceid()) return false;
         return true;
+    }
+
+    /**
+     * this must be overriden (hibernate requirement for composite id classes)
+     */
+    public int hashCode() {
+	return com.l7tech.common.util.HashCode.compute(new String[]{urn, soapaction});
     }
 
     private String soapaction;
