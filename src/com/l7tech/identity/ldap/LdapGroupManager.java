@@ -138,6 +138,7 @@ public class LdapGroupManager implements GroupManager {
     }
 
     public Set getGroupHeaders(User user) throws FindException {
+        // todo : optimize this!
         Collection allgroups = findAll();
         Set output = new HashSet();
         for (Iterator i = allgroups.iterator(); i.hasNext();) {
