@@ -28,27 +28,41 @@ public class HibernatePersistenceManager extends PersistenceManager {
     public static final String DEFAULT_PINGSQL = "select 1";
     public static String pingStatement = DEFAULT_PINGSQL;
 
+    public static void initialise(Properties properties) throws IOException, SQLException {
+        HibernatePersistenceManager me = new HibernatePersistenceManager(properties);
+        PersistenceManager.setInstance(me);
+    }
+
     public static void initialize() throws IOException, SQLException {
         HibernatePersistenceManager me = new HibernatePersistenceManager();
         PersistenceManager.setInstance(me);
     }
 
     private HibernatePersistenceManager() throws IOException, SQLException {
+        this(null);
+    }
+
+    private HibernatePersistenceManager(Properties properties) throws IOException, SQLException {
         FileInputStream fis = null;
         try {
             Configuration cfg = new Configuration();
             cfg.addResource(DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
 
-            String propsPath = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_HIBERNATE);
-
-            if (new File(propsPath).exists()) {
-                logger.info("Loading database configuration from " + propsPath);
-                Properties props = new Properties();
-                fis = new FileInputStream(propsPath);
-                props.load(fis);
-                cfg.setProperties(props);
+            if (properties != null) {
+                logger.info("Loading database configuration from presupplied properties");
+                cfg.setProperties(properties);
             } else {
-                logger.info("Loading database configuration from system classpath");
+                String propsPath = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_HIBERNATE);
+
+                if (new File(propsPath).exists()) {
+                    logger.info("Loading database configuration from " + propsPath);
+                    Properties props = new Properties();
+                    fis = new FileInputStream(propsPath);
+                    props.load(fis);
+                    cfg.setProperties(props);
+                } else {
+                    logger.info("Loading database configuration from system classpath");
+                }
             }
             _sessionFactory = cfg.buildSessionFactory();
 
