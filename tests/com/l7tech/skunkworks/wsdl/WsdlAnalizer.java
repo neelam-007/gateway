@@ -4,6 +4,7 @@ import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
 import javax.xml.namespace.QName;
@@ -15,7 +16,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Parses a wsdl into input and output schema elements.
+ * Parses schemas present in a wsdl and split them into two versions; one for input messages and
+ * one for output messages.
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -26,56 +28,74 @@ import java.util.Collection;
 public class WsdlAnalizer {
     public static void main(String[] args) throws Exception {
         WsdlAnalizer me = new WsdlAnalizer(getWsdlSample());
-        me.parseInputOutputs();
+        me.splitInputOutputs();
+
+        System.out.println("\nFound the following schemas:");
+        for (int i = 0; i < me.schemaElements.getLength(); i++) {
+            Element schema = (Element)me.schemaElements.item(i);
+            System.out.println(XmlUtil.nodeToFormattedString(schema));
+        }
+
+        System.out.println("\nSchemas for request:");
+        for (int i = 0; i < me.inputSchemas.length; i++) {
+            System.out.println(XmlUtil.nodeToFormattedString(me.inputSchemas[i]));
+        }
+
+        System.out.println("\nSchemas for response:");
+        for (int i = 0; i < me.ouputSchemas.length; i++) {
+            System.out.println(XmlUtil.nodeToFormattedString(me.ouputSchemas[i]));
+        }
     }
 
-    private WsdlAnalizer(Document wsdl) {
+    public WsdlAnalizer(Document wsdl) {
         this.wsdl = wsdl;
         this.schemaElements = extractSchemaElementFromWsdl(wsdl);
     }
 
-    public void parseInputOutputs() throws Exception {
+    /**
+     * This creates a list of schema elements that can only be present in requests and responses respectively.
+     * Then, it makes two clones of the schemas and removes those elements in each of the clones to get as a result
+     * schemas that are only applicable to requests and responses respectively.
+     */
+    public void splitInputOutputs() {
         NodeList inputlist = wsdl.getElementsByTagNameNS(WSDL_NS, "input");
         Collection intputQnames = new ArrayList();
         for (int i = 0; i < inputlist.getLength(); i++) {
             Element item = (Element)inputlist.item(i);
             String msg = item.getAttribute("message");
             if (msg != null && msg.length() > 0) {
-                System.out.println("\nINPUT: " + msg);
                 Collection schemaElements = getMessagePartsElementNames(msg);
-                for (Iterator iterator = schemaElements.iterator(); iterator.hasNext();) {
-                    QName qn = (QName) iterator.next();
-                    System.out.println("\twith schema element: " + qn.getNamespaceURI() + " : " + qn.getLocalPart());
-                }
                 intputQnames.addAll(schemaElements);
             }
         }
-        Element[] schemas = trimSchemasForElements(intputQnames);
-        System.out.println("INPUT SCHEMAS:");
-        for (int i = 0; i < schemas.length; i++) {
-            System.out.println(XmlUtil.nodeToFormattedString(schemas[i]));
-        }
-
         Collection outputQnames = new ArrayList();
         NodeList outputlist = wsdl.getElementsByTagNameNS(WSDL_NS, "output");
         for (int i = 0; i < outputlist.getLength(); i++) {
             Element item = (Element)outputlist.item(i);
             String msg = item.getAttribute("message");
             if (msg != null && msg.length() > 0) {
-                System.out.println("\nOUTPUT: " + msg);
                 Collection schemaElements = getMessagePartsElementNames(msg);
-                for (Iterator iterator = schemaElements.iterator(); iterator.hasNext();) {
-                    QName qn = (QName) iterator.next();
-                    System.out.println("\twith schema element: " + qn.getNamespaceURI() + " : " + qn.getLocalPart());
-                }
                 outputQnames.addAll(schemaElements);
             }
         }
-        schemas = trimSchemasForElements(outputQnames);
-        System.out.println("OUPUT SCHEMAS:");
-        for (int i = 0; i < schemas.length; i++) {
-            System.out.println(XmlUtil.nodeToFormattedString(schemas[i]));
+        ArrayList toberemovedfromoutputs = new ArrayList();
+        for (Iterator iterator = intputQnames.iterator(); iterator.hasNext();) {
+            QName qName = (QName) iterator.next();
+            if (outputQnames.contains(qName)) {
+                iterator.remove();
+                toberemovedfromoutputs.add(qName);
+            }
         }
+        for (Iterator iterator = outputQnames.iterator(); iterator.hasNext();) {
+            QName qName = (QName) iterator.next();
+            if (intputQnames.contains(qName)) {
+                iterator.remove();
+            } else if (toberemovedfromoutputs.contains(qName)) {
+                iterator.remove();
+            }
+        }
+        ouputSchemas = removeQnamesFromSchemas(intputQnames);
+        inputSchemas = removeQnamesFromSchemas(outputQnames);
     }
 
     public static Document getWsdlSample() throws Exception {
@@ -172,29 +192,21 @@ public class WsdlAnalizer {
         return typesel.getElementsByTagNameNS(W3C_XML_SCHEMA, TOP_SCHEMA_ELNAME);
     }
 
-    private Element[] trimSchemasForElements(Collection qnames) {
+    private Element[] removeQnamesFromSchemas(Collection qnames) {
         Element[] output = new Element[schemaElements.getLength()];
         for (int i = 0; i < schemaElements.getLength(); i++) {
             // clone the schema
             output[i] = (Element)(schemaElements.item(i).cloneNode(true));
             // only keep the elements that are in the qnames passed
             String tns = output[i].getAttribute("targetNamespace");
-            NodeList schemaElements = output[i].getElementsByTagNameNS(W3C_XML_SCHEMA, "element");
-            for (int ii = 0; ii < schemaElements.getLength(); ii++) {
-                Element element = (Element)schemaElements.item(ii);
-                if (element.getParentNode() != output[i]) continue;
-                String elName = element.getAttribute("name");
-                if (!qnames.contains(new QName(tns, elName))) {
-                    output[i].removeChild(element);
-                }
-            }
-            schemaElements = output[i].getElementsByTagNameNS(W3C_XML_SCHEMA, "complexType");
-            for (int ii = 0; ii < schemaElements.getLength(); ii++) {
-                Element element = (Element)schemaElements.item(ii);
-                if (element.getParentNode() != output[i]) continue;
-                String elName = element.getAttribute("name");
-                if (!qnames.contains(new QName(tns, elName))) {
-                    output[i].removeChild(element);
+            NodeList schemaChildren = output[i].getChildNodes();
+            for (int ii = 0; ii < schemaChildren.getLength(); ii++) {
+                Node child = schemaChildren.item(ii);
+                if (child.getNodeType() != Node.ELEMENT_NODE) continue;
+                Element el = (Element)child;
+                String elName = el.getAttribute("name");
+                if (qnames.contains(new QName(tns, elName))) {
+                    output[i].removeChild(el);
                 }
             }
         }
@@ -207,6 +219,8 @@ public class WsdlAnalizer {
     public static final String WSDL_TYPES_ELNAME = "types";
     public static final String TOP_SCHEMA_ELNAME = "schema";
     public static final String WSDL_NS = "http://schemas.xmlsoap.org/wsdl/";
+    public Element[] inputSchemas;
+    public Element[] ouputSchemas;
 
     private Document wsdl;
     private NodeList messages = null;
