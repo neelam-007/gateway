@@ -13,6 +13,7 @@ import com.l7tech.identity.User;
  */
 public class InternalIdentityProviderClient implements com.l7tech.identity.IdentityProvider {
     public void initialize(IdentityProviderConfig config) {
+        this.config = config;
     }
 
     public UserManager getUserManager() {
@@ -20,11 +21,19 @@ public class InternalIdentityProviderClient implements com.l7tech.identity.Ident
     }
 
     public GroupManager getGroupManager() {
+        if (config != null) {
+            return new InternalGroupManagerClient(config.getOid());
+        }
         return null;
     }
 
     public boolean authenticate(User user, Object credential) {
-        // this doesnt make sense on the lcient side.
+        // this doesnt make sense on the client side.
         return false;
     }
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
+    com.l7tech.identity.IdentityProviderConfig config = null;
 }
