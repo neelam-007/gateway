@@ -38,8 +38,7 @@ public class Main {
     /** Start a text-only client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
         // Prepare .l7tech directory before initializing logging (Bug #1288)
-        final File confDir = new File(ClientProxy.PROXY_CONFIG);
-        confDir.mkdirs(); // expected to fail on all but the very first execution
+        new File(ClientProxy.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
 
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties");
         log.info("Starting daemon mode Bridge; " + BuildInfo.getLongBuildString());
