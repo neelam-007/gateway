@@ -64,8 +64,8 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
             providerNameTextField.setText(iProviderConfig.getName());
         }
 
-        //x509CertCheckbox.setSelected(iProviderConfig.isX509Supported());
-       // samlCheckbox.setSelected(iProviderConfig.isSamlSupported());
+        x509CertCheckbox.setSelected(iProviderConfig.isX509Supported());
+        samlCheckbox.setSelected(iProviderConfig.isSamlSupported());
     }
 
 
@@ -82,8 +82,8 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
 
-       // iProviderConfig.setSamlSupported(samlCheckbox.isSelected());
-       // iProviderConfig.setX509Supported(x509CertCheckbox.isSelected());
+        iProviderConfig.setSamlSupported(samlCheckbox.isSelected());
+        iProviderConfig.setX509Supported(x509CertCheckbox.isSelected());
         iProviderConfig.setName(providerNameTextField.getText().trim());
 
     }
