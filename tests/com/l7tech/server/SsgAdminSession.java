@@ -45,7 +45,7 @@ public abstract class SsgAdminSession {
                            "/com/l7tech/console/resources/services.properties");
     }
 
-    protected Object doIt() throws Exception {
+    public Object doIt() throws Exception {
         final Subject current = new Subject();
 
         PrivilegedExceptionAction action = new PrivilegedExceptionAction() {

@@ -193,7 +193,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
     }
 
     public Class getImpClass() {
-        return LdapIdentityProviderConfig.class;
+        return IdentityProviderConfig.class;
     }
 
     public Class getInterfaceClass() {

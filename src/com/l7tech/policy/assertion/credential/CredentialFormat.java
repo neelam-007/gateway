@@ -7,7 +7,7 @@
 package com.l7tech.policy.assertion.credential;
 
 /**
- * Typesafe enum.
+ * Typesafe enum. Not currently persistent.
  *
  * @author alex
  * @version $Revision$

@@ -10,18 +10,24 @@
 -->
 
 <hibernate-mapping>
-    <class name="com.l7tech.identity.ldap.LdapIdentityProviderConfig" table="identity_provider">
+    <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
+
+        <discriminator column="type"/>
+
         <version name="version" column="version" type="integer"/>
 
         <property name="description" type="string"/>
         <property name="name" type="string"/>
 
-        <property name="typeVal" type="int" column="type" />
+        <property name="typeVal" type="int" column="type" insert="false" update="false"/>
 
         <property name="serializedProps" type="text" column="properties" />
+
+        <subclass name="com.l7tech.identity.ldap.LdapIdentityProviderConfig" discriminator-value="2"/>
+        <subclass name="com.l7tech.identity.fed.FederatedIdentityProviderConfig" discriminator-value="3"/>
     </class>
 
     <class name="com.l7tech.identity.internal.InternalGroup" table="internal_group">

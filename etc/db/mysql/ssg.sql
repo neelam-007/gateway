@@ -290,3 +290,60 @@ CREATE TABLE trusted_cert (
   primary key(objectid),
   unique (subject_dn)
 ) TYPE=InnoDB;
+
+DROP TABLE IF EXISTS fed_user;
+CREATE TABLE fed_user (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  name varchar(128) NOT NULL,
+
+  provider_oid bigint(20) NOT NULL,
+  subject_dn varchar(255),
+  email varchar(128) default NULL,
+  login varchar(32),
+
+  first_name varchar(32) default NULL,
+  last_name varchar(32) default NULL,
+  title varchar(64) default NULL,
+
+  PRIMARY KEY (objectid),
+  INDEX i_provider_oid (provider_oid),
+  INDEX i_email (email),
+  INDEX i_login (login),
+  INDEX i_subject_dn (subject_dn),
+  UNIQUE KEY i_name (provider_oid, name)
+) Type=InnoDB;
+
+DROP TABLE IF EXISTS fed_group;
+CREATE TABLE fed_group (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  provider_oid bigint(20) NOT NULL,
+  name varchar(128) NOT NULL,
+  description mediumtext,
+
+  PRIMARY KEY  (objectid),
+  INDEX i_provider_oid (provider_oid),
+  UNIQUE KEY i_name (provider_oid, name)
+) TYPE=InnoDB;
+
+DROP TABLE IF EXISTS fed_group_virtual;
+CREATE TABLE fed_group_virtual (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  provider_oid bigint(20) NOT NULL,
+  name varchar(128) NOT NULL,
+  description mediumtext,
+
+  subject_dn_pattern varchar(255),
+  email_pattern varchar(128),
+  properties text,
+
+  PRIMARY KEY  (objectid),
+  INDEX i_provider_oid (provider_oid),
+  INDEX i_subject_dn_pattern (subject_dn_pattern),
+  INDEX i_email_pattern (email_pattern),
+  UNIQUE KEY i_name (provider_oid, name)
+) TYPE=InnoDB;
+
+

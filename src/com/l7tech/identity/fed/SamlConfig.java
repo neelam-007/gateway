@@ -125,7 +125,7 @@ public class SamlConfig implements Serializable {
         this.attributeStatementConfigs = attributeStatementConfigs;
     }
 
-    public class AttributeStatementConfig {
+    public class AttributeStatementConfig implements Serializable {
         public String getName() {
             return name;
         }

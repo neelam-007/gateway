@@ -9,8 +9,6 @@ package com.l7tech.identity.fed;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 
-import java.util.Set;
-
 /**
  * @author alex
  * @version $Revision$
@@ -21,7 +19,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     public boolean isSamlSupported() {
-        return getBooleanProperty(PROP_SAML_SUPPORTED);
+        return getBooleanProperty(PROP_SAML_SUPPORTED, false);
     }
 
     public void setSamlSupported(boolean saml) {
@@ -29,7 +27,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     public boolean isX509Supported() {
-        return getBooleanProperty(PROP_X509_SUPPORTED);
+        return getBooleanProperty(PROP_X509_SUPPORTED, true);
     }
 
     public void setX509Supported(boolean x509) {
@@ -65,6 +63,18 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
 
     public void setTrustedCertOids(long[] oids) {
         props.put(PROP_CERT_OIDS, oids);
+    }
+
+    public String toString() {
+        StringBuffer sb = new StringBuffer("<FederatedIdentityProviderConfig ");
+        sb.append("oid=\"").append(_oid).append("\" ");
+        sb.append("name=\"").append(_name).append("\" ");
+        sb.append("samlSupported=\"").append(isSamlSupported()).append("\" ");
+        sb.append("x509Supported=\"").append(isX509Supported()).append("\">\n  ");
+        sb.append(getSamlConfig().toString()).append("\n  ");
+        sb.append(getX509Config().toString());
+        sb.append("</FederatedIdentityProviderConfig>");
+        return sb.toString();
     }
 
     private static final String PROP_SAML_SUPPORTED = "samlSupported";

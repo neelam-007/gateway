@@ -1,5 +1,6 @@
 package com.l7tech.identity.fed;
 
+import com.l7tech.server.SsgAdminSession;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -29,6 +30,9 @@ public class FederatedIdentityProviderTest extends TestCase {
 
     public void setUp() throws Exception {
         this.config = new FederatedIdentityProviderConfig();
+        config.setX509Supported(true);
+        config.setSamlSupported(true);
+        config.setName("Example FIP");
         SamlConfig saml = config.getSamlConfig();
         saml.setNameQualifier("www.example.com");
         List configs = new ArrayList();
@@ -52,6 +56,32 @@ public class FederatedIdentityProviderTest extends TestCase {
         X509Config x509 = config.getX509Config();
         assertNotNull(x509);
         System.err.println(x509);
+    }
+
+    public void testSaveConfig() throws Exception {
+        final long oid = ((Long)new SsgAdminSession() {
+            protected Object doSomething() throws Exception {
+                return new Long(getIdentityAdmin().saveIdentityProviderConfig(config));
+            }
+        }.doIt()).longValue();;
+
+        System.err.println("Saved Federated IDPC #" + oid);
+
+        FederatedIdentityProviderConfig conf = (FederatedIdentityProviderConfig)new SsgAdminSession() {
+            protected Object doSomething() throws Exception {
+                return getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(oid);
+            }
+        }.doIt();
+
+        assertNotNull(conf);
+        System.err.println("Loaded FIPC " + conf);
+
+        new SsgAdminSession() {
+            protected Object doSomething() throws Exception {
+                getIdentityAdmin().deleteIdentityProviderConfig(oid);
+                return null;
+            }
+        }.doIt();
     }
 
     /**
