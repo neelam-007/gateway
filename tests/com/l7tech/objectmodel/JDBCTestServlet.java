@@ -9,7 +9,7 @@ package com.l7tech.objectmodel;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
-import javax.transaction.*;
+//import javax.transaction.*;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.sql.*;
 public class JDBCTestServlet extends HttpServlet {
     private InitialContext _initialContext;
     private DataSource _dataSource;
-    private TransactionManager _tmanager;
+//    private TransactionManager _tmanager;
 
     public void init( ServletConfig config ) throws ServletException {
         super.init( config );
@@ -30,7 +30,7 @@ public class JDBCTestServlet extends HttpServlet {
         try {
             _initialContext = new InitialContext();
             _dataSource = (DataSource)_initialContext.lookup( "java:comp/env/jdbc/ssg" );
-            _tmanager = (TransactionManager)_initialContext.lookup( "java:comp/TransactionManager" );
+//            _tmanager = (TransactionManager)_initialContext.lookup( "java:comp/TransactionManager" );
         } catch ( Exception e ) {
             e.printStackTrace();
             throw new ServletException( e );
@@ -43,7 +43,7 @@ public class JDBCTestServlet extends HttpServlet {
         Connection conn = null;
 
         try {
-            _tmanager.begin();
+//            _tmanager.begin();
             conn = _dataSource.getConnection();
             out.println( conn );
         } catch ( Exception e ) {
@@ -145,10 +145,10 @@ public class JDBCTestServlet extends HttpServlet {
         } finally {
             try {
                 String rollback = request.getParameter("rollback");
-                if ( rollback != null && rollback.equals("true") )
-                    _tmanager.rollback();
-                else
-                    _tmanager.commit();
+//                if ( rollback != null && rollback.equals("true") )
+//                    _tmanager.rollback();
+//                else
+//                    _tmanager.commit();
 
                 if ( conn != null ) conn.close();
             } catch ( Exception e ) {
