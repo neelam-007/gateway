@@ -217,17 +217,21 @@ public class ClientCertManagerImp implements ClientCertManager {
      * @return the data in the table or null if no data exist for this user
      */
     private CertEntryRow getFromTable(User user) {
-        String query = "from " + TABLE_NAME + " in class " + CertEntryRow.class.getName() +
-                       " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
-                       " and " + TABLE_NAME + "." + USER_ID + " = ?";
         List hibResults = null;
         HibernatePersistenceContext context = null;
         try {
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Query q = context.getSession().createQuery(query);
+            Query q = context.getSession().createQuery(FIND_BY_USER_ID);
             q.setLong(0, user.getProviderId());
             q.setString(1, user.getUniqueIdentifier());
             hibResults = q.list();
+            if (hibResults.size() == 0) {
+                // Try searching by login if userId fails
+                q = context.getSession().createQuery(FIND_BY_LOGIN);
+                q.setLong(0, user.getProviderId());
+                q.setString(1, user.getLogin());
+                hibResults = q.list();
+            }
         } catch (SQLException e) {
             hibResults = Collections.EMPTY_LIST;
             logger.log(Level.WARNING, "hibernate error finding cert entry for " + user.getLogin(), e);
@@ -256,4 +260,13 @@ public class ClientCertManagerImp implements ClientCertManager {
     private static final String TABLE_NAME = "client_cert";
     private static final String PROVIDER_COLUMN = "provider";
     private static final String USER_ID = "userId";
+    private static final String USER_LOGIN = "login";
+
+    private static final String FIND_BY_USER_ID = "from " + TABLE_NAME + " in class " + CertEntryRow.class.getName() +
+                           " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
+                           " and " + TABLE_NAME + "." + USER_ID + " = ?";
+
+    private static final String FIND_BY_LOGIN = "from " + TABLE_NAME + " in class " + CertEntryRow.class.getName() +
+                           " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
+                           " and " + TABLE_NAME + "." + USER_LOGIN + " = ?";
 }
