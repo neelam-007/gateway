@@ -60,7 +60,7 @@ public class MainWindow extends JFrame {
     /**
      * the path to JavaHelp helpset file
      */
-    public static final String HELP_PATH = "com/l7tech/console/resources/helpset/secure_span_gateway_console_help.hs";
+    public static final String HELP_PATH = "com/l7tech/console/resources/helpset/SecureSpan_Manager_Help_System.hs";
 
     public static final int MAIN_SPLIT_PANE_DIVIDER_SIZE = 10;
     public static final String CONNECTION_PREFIX = " [connected to node: ";
