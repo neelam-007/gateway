@@ -28,11 +28,7 @@ public abstract class IdentityAssertion extends Assertion {
         super();
     }
 
-    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
-        return doCheckRequest( request, response );
-    }
-
-    public AssertionStatus doCheckRequest( Request request, Response response ) throws IdentityAssertionException {
+    public AssertionStatus checkRequest( Request request, Response response ) throws IdentityAssertionException {
         PrincipalCredentials pc = request.getPrincipalCredentials();
         if ( pc == null ) {
             // No credentials have been found yet
