@@ -106,6 +106,10 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         _requestCount++;
     }
 
+    public String toString() {
+        return super.toString() + " url=" + getProtectedServiceUrl() + " login=" + getLogin() + " realm=" + getRealm();
+    }
+
     protected String _protectedServiceUrl;
     protected String _login;
     protected String _password;
