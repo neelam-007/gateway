@@ -8,6 +8,7 @@ package com.l7tech.message;
 
 /**
  * @author alex
+ * @version $Revision$
  */
-public abstract class Header {
+public interface SoapMessage extends XmlMessage {
 }

@@ -7,10 +7,8 @@
 package com.l7tech.message;
 
 /**
- * This will probably just be an adapter to an Axis SOAPMessage.
- *
  * @author alex
  * @version $Revision$
  */
-public class SOAPMessage {
+public interface XmlRequest extends Request, XmlMessage {
 }

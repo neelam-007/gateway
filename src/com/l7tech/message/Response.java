@@ -6,8 +6,11 @@
 
 package com.l7tech.message;
 
+import java.io.OutputStream;
+
 /**
  * @author alex
  */
-public class Response extends Message {
+public interface Response extends Message {
+    OutputStream getResponseStream();
 }

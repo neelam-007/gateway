@@ -8,8 +8,6 @@ package com.l7tech.service.protect;
 
 import com.l7tech.service.Service;
 
-import java.util.Set;
-
 /**
  * @author alex
  */

@@ -8,13 +8,13 @@ package com.l7tech.credential.wss;
 
 import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.credential.CredentialFinderException;
-import com.l7tech.message.Header;
+import com.l7tech.message.Message;
 
 /**
  * @author alex
  */
 public class WssClientCertCredentialFinder extends WssCredentialFinder {
-    public PrincipalCredentials findCredentials(Header header) throws CredentialFinderException {
+    public PrincipalCredentials findCredentials( Message message ) throws CredentialFinderException {
         return null;
     }
 }
