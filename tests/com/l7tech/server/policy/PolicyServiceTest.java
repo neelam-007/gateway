@@ -14,10 +14,10 @@ import com.l7tech.message.TestSoapRequest;
 import com.l7tech.message.TestSoapResponse;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.proxy.util.PolicyServiceClient;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -38,6 +38,10 @@ public class PolicyServiceTest extends TestCase {
 
     public static Test suite() {
         return new TestSuite(PolicyServiceTest.class);
+    }
+
+    protected void setUp() throws Exception {
+        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.TestLocator");
     }
 
     public static void main(String[] args) {
