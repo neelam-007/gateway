@@ -9,7 +9,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.apache.axis.AxisFault;
 import org.apache.axis.MessageContext;
 import org.apache.axis.encoding.Base64;
@@ -142,9 +142,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
             clearTextPasswd = value.substring(i+1);
         }
 
-        User tmpUser = new User();
-        tmpUser.setLogin(login);
-        PrincipalCredentials creds = new PrincipalCredentials(tmpUser, clearTextPasswd.getBytes());
+        LoginCredentials creds = new LoginCredentials( login, clearTextPasswd.getBytes());
 
         if (identityProviderConfigManager == null) {
             identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
@@ -152,13 +150,11 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
         
         try {
             try {
-                identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds);
+                return identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds);
             } catch (AuthenticationException e) {
                 logger.log(Level.SEVERE, "authentication failed for " + login, e);
                 return null;
             }
-            return creds.getUser();
-
         } finally {
             try {
                 PersistenceContext.getCurrent().close();
@@ -167,29 +163,6 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
                 throw new AxisFault("", e);
             }
         }
-    }
-
-    /**
-     * Encodes the 128 bit (16 bytes) MD5 into a 32 character String.
-     *
-     * @param binaryData Array containing the digest
-     * @return Encoded MD5, or null if encoding failed
-     */
-    private static String encodeDigest(byte[] binaryData) {
-        if (binaryData == null) return "";
-
-        char[] hexadecimal ={'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-        if (binaryData.length != 16) return "";
-
-        char[] buffer = new char[32];
-
-        for (int i = 0; i < 16; i++) {
-            int low = (int) (binaryData[i] & 0x0f);
-            int high = (int) ((binaryData[i] & 0xf0) >> 4);
-            buffer[i*2] = hexadecimal[high];
-            buffer[i*2 + 1] = hexadecimal[low];
-        }
-        return new String(buffer);
     }
 
     /**

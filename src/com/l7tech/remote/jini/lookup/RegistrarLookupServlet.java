@@ -8,7 +8,8 @@ package com.l7tech.remote.jini.lookup;
 
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.common.util.Locator;
 import net.jini.config.*;
 import net.jini.core.discovery.LookupLocator;
@@ -82,11 +83,11 @@ public class RegistrarLookupServlet extends HttpServlet {
                 return;
             }
             authorizationHeader = authorizationHeader.trim();
-            PrincipalCredentials creds = extractCredentials(authorizationHeader);
+            LoginCredentials creds = extractCredentials(authorizationHeader);
 
-            getConfigManager().getInternalIdentityProvider().authenticate(creds);
-            if (!hasPermission(creds.getUser())) {
-                throw new AccessControlException(creds.getUser().getName() + " does not have 'admin' privileges");
+            User user = getConfigManager().getInternalIdentityProvider().authenticate(creds);
+            if (!hasPermission(user)) {
+                throw new AccessControlException(user.getName() + " does not have 'admin' privileges");
             }
 
             LookupLocator ll = getLookupLocator();
@@ -131,9 +132,9 @@ public class RegistrarLookupServlet extends HttpServlet {
     }
 
     private boolean hasPermission(User user) {
-        for (Iterator i = user.getGroups().iterator(); i.hasNext();) {
-            Group grp = (Group)i.next();
-            if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) return true;
+        for (Iterator i = user.getGroupHeaders().iterator(); i.hasNext();) {
+            EntityHeader grp = (EntityHeader)i.next();
+            if (Group.ADMIN_GROUP_NAME.equals(grp.getName() )) return true;
         }
         return false;
     }
@@ -166,7 +167,7 @@ public class RegistrarLookupServlet extends HttpServlet {
      * @return
      * @throws BadCredentialsException
      */
-    private PrincipalCredentials extractCredentials(String tokenBasic)
+    private LoginCredentials extractCredentials(String tokenBasic)
       throws BadCredentialsException {
         if (tokenBasic == null) {
             throw new BadCredentialsException("Null credentials passed");
@@ -191,9 +192,7 @@ public class RegistrarLookupServlet extends HttpServlet {
             clearTextPasswd = decodedCredentials.substring(i + 1);
         }
 
-        User user = new User();
-        user.setLogin(login);
-        PrincipalCredentials creds = new PrincipalCredentials(user, clearTextPasswd.getBytes());
+        LoginCredentials creds = new LoginCredentials( login, clearTextPasswd.getBytes());
         return creds;
     }
 

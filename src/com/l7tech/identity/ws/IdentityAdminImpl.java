@@ -2,6 +2,7 @@ package com.l7tech.identity.ws;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -156,28 +157,10 @@ public class IdentityAdminImpl implements IdentityAdmin {
         try {
             IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
-            GroupManager groupManager = provider.getGroupManager();
             UserManager userManager = provider.getUserManager();
 
-            User u = userManager.findByPrimaryKey(userId);
-            User output = new User();
-            output.copyFrom(u);
-            Set groups = u.getGroups();
-            // switch groups to group headers
-            if (!groups.isEmpty()) {
-                Set groupHeaders = new HashSet();
-                Group g;
-                EntityHeader gh;
-                for (Iterator i = groups.iterator(); i.hasNext();) {
-                    g = (Group)i.next();
-                    gh = groupManager.groupToHeader(g);
-                    groupHeaders.add( gh );
-                }
-
-                output.setGroupHeaders( groupHeaders );
-                output.setGroups(new HashSet());
-            }
-            return output;
+            return userManager.findByPrimaryKey(userId);
+            // Groups are separate now
         } finally {
             closeContext();
         }
@@ -198,30 +181,20 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    public long saveUser(long cfgid, User user) throws RemoteException, SaveException, UpdateException {
-        beginTransaction();
+    public String saveUser(long identityProviderConfigId, User user)
+                                    throws RemoteException, SaveException, UpdateException {
         try {
-            IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(cfgid);
+            IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
-            GroupManager groupManager = provider.getGroupManager();
             UserManager userManager = provider.getUserManager();
 
-            // transfer group header into groups
-            Set groupHeaders = user.getGroupHeaders();
-            Set groups = new HashSet();
-            if (groupHeaders != null && groupHeaders.size() > 0) {
-                for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
-                    EntityHeader header = (EntityHeader)i.next();
-                    Group grp = groupManager.headerToGroup(header);
-                    groups.add(grp);
-                }
-            }
-            user.setGroups(groups);
+            // Groups are separate now
 
-            if (user.getOid() > 0) {
+            String id = user.getUniqueIdentifier();
+            if ( id != null ) {
                 userManager.update(user);
-                logger.info("Updated User: " + user.getName() + "[" + user.getOid() + "]");
-                return user.getOid();
+                logger.info("Updated User: " + user.getName() + "[" + id + "]");
+                return id;
             }
             logger.info("Saving User: " + user.getName());
             return userManager.save(user);
@@ -257,23 +230,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
             IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(cfgid);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
             GroupManager groupManager = provider.getGroupManager();
-            UserManager userManager = provider.getUserManager();
-            Group existingGroup = groupManager.findByPrimaryKey(groupId);
-            Group output = new Group();
-            output.copyFrom(existingGroup);
-            // transfer members into member headers
-            Set members = existingGroup.getMembers();
-            if (members != null && members.size() > 0) {
-                Set memberHeaders = new HashSet();
-                for (Iterator i = members.iterator(); i.hasNext();) {
-                    User usr = (User)i.next();
-                    EntityHeader header = userManager.userToHeader(usr);
-                    memberHeaders.add(header);
-                }
-                output.setMemberHeaders(memberHeaders);
-                output.setMembers(new HashSet());
-            }
-            return output;
+
+            return groupManager.findByPrimaryKey(groupId);
         } finally {
             closeContext();
         }
@@ -292,32 +250,22 @@ public class IdentityAdminImpl implements IdentityAdmin {
             endTransaction();
         }
     }
-    public long saveGroup(long identityProviderConfigId, Group group)
+
+    public String saveGroup(long identityProviderConfigId, Group group)
                                 throws RemoteException, SaveException, UpdateException {
         beginTransaction();
         try {
             IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
             GroupManager groupManager = provider.getGroupManager();
-            UserManager userManager = provider.getUserManager();
 
-            // transfer member headers into members
-            Set memberHeaders = group.getMemberHeaders();
-            Set members = new HashSet();
-            if (memberHeaders != null) {
-                for (Iterator i = memberHeaders.iterator(); i.hasNext();) {
-                    EntityHeader header = (EntityHeader)i.next();
-                    User usr = userManager.headerToUser(header);
-                    members.add(usr);
-                }
-            }
-            group.setMembers(members);
-
-            if (group.getOid() > 0) {
+            String id = group.getUniqueIdentifier();
+            if ( id != null ) {
                 groupManager.update(group);
-                logger.info("Updated Group: " + group.getName() + "[" + group.getOid() + "]");
-                return group.getOid();
+                logger.info("Updated Group: " + group.getName() + "[" + id + "]");
+                return id;
             }
+
             logger.info("Saving Group: " + group.getName());
             return groupManager.save(group);
         } catch (FindException e) {
@@ -356,7 +304,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
                 // must change the password now
                 IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
                 UserManager userManager = provider.getUserManager();
-                User dbuser = userManager.findByLogin(user.getLogin());
+                InternalUser dbuser = (InternalUser)userManager.findByLogin(user.getLogin());
                 // maybe a new password is already provided?
                 String newPasswd = null;
                 if (!dbuser.getPassword().equals(user.getPassword())) {

@@ -14,7 +14,7 @@ import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import javax.naming.NamingEnumeration;
@@ -51,15 +51,15 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
         return cfg;
     }
 
-    public void authenticate( PrincipalCredentials pc ) throws AuthenticationException {
+    public User authenticate( LoginCredentials pc ) throws AuthenticationException {
         if (!valid) {
             String msg = "invalid id provider asked to authenticate";
             logger.info(msg);
             throw new AuthenticationException(msg);
         }
-        User realUser = null;
+        LdapUser realUser = null;
         try {
-            realUser = userManager.findByLogin(pc.getUser().getLogin());
+            realUser = (LdapUser)userManager.findByLogin( pc.getLogin());
         } catch (FindException e) {
             logger.log(Level.INFO, "invalid user", e);
             throw new BadCredentialsException("invalid user");
@@ -71,20 +71,19 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
 
         if (pc.getFormat() == CredentialFormat.CLEARTEXT) {
             // basic authentication
-            boolean res = userManager.authenticateBasic(realUser.getName(), new String(pc.getCredentials()));
+            boolean res = userManager.authenticateBasic( realUser.getDn(), new String(pc.getCredentials()) );
             if (res) {
-                pc.getUser().copyFrom(realUser);
                 // success
-                return;
+                return realUser;
             }
-            logger.info("credentials did not authenticate for " + pc.getUser().getLogin());
+            logger.info("credentials did not authenticate for " + pc.getLogin());
             throw new BadCredentialsException("credentials did not authenticate");
         } else if (pc.getFormat() == CredentialFormat.DIGEST) {
             String dbPassHash = realUser.getPassword();
             byte[] credentials = pc.getCredentials();
             Map authParams = (Map)pc.getPayload();
             if (authParams == null) {
-                String msg = "No Digest authentication parameters found in PrincipalCredentials payload!";
+                String msg = "No Digest authentication parameters found in LoginCredentials payload!";
                 logger.log(Level.SEVERE, msg);
                 throw new AuthenticationException(msg);
             }
@@ -111,13 +110,12 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
             String expectedResponse = HexUtils.encodeMd5Digest( _md5.digest( serverDigestValue.getBytes() ) );
             String response = new String( credentials );
 
-            User authUser = pc.getUser();
+            String login = pc.getLogin();
             if ( response.equals( expectedResponse ) ) {
-                logger.info("User " + authUser.getLogin() + " authenticated successfully with digest credentials.");
-                authUser.copyFrom( realUser );
-                return;
+                logger.info("User " + login + " authenticated successfully with digest credentials.");
+                return realUser;
             } else {
-                String msg = "User " + authUser.getLogin() + " failed to match.";
+                String msg = "User " + login + " failed to match.";
                 logger.warning(msg);
                 throw new AuthenticationException(msg);
             }

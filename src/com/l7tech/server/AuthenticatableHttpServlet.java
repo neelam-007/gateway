@@ -1,32 +1,32 @@
 package com.l7tech.server;
 
 import com.l7tech.identity.*;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.logging.LogManager;
+import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.service.PublishedService;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
-import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -62,7 +62,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
 
         ServerHttpBasic httpBasic = new ServerHttpBasic( new HttpBasic() );
-        PrincipalCredentials creds = null;
+        LoginCredentials creds = null;
         try {
             creds = httpBasic.findCredentials(authorizationHeader);
         } catch (CredentialFinderException e) {
@@ -81,12 +81,11 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             for (Iterator i = providers.iterator(); i.hasNext();) {
                 IdentityProvider provider = (IdentityProvider) i.next();
                 try {
-                    provider.authenticate(creds);
-                    logger.fine("Authentication success for user " + creds.getUser().getLogin() +
-                                " on identity provider: " + provider.getConfig().getName());
-                    users.add( creds.getUser() );
+                    User u = provider.authenticate(creds);
+                    logger.fine("Authentication success for user " + creds.getLogin() + " on identity provider: " + provider.getConfig().getName());
+                    users.add( u );
                 } catch (AuthenticationException e) {
-                    logger.fine("Authentication failed for user " + creds.getUser().getLogin() +
+                    logger.fine("Authentication failed for user " + creds.getLogin() +
                                 " on identity provider: " + provider.getConfig().getName());
                     continue;
                 }
@@ -149,12 +148,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             }
         }
         return null;
-    }
-
-    private void commitTransaction() throws java.sql.SQLException, TransactionException {
-        PersistenceContext context = PersistenceContext.getCurrent();
-        context.commitTransaction();
-        context.close();
     }
 
     private void rollbackTransaction() throws java.sql.SQLException, TransactionException {

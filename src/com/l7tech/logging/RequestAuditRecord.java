@@ -6,17 +6,18 @@
 
 package com.l7tech.logging;
 
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
-import com.l7tech.message.*;
-import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.service.PublishedService;
-import com.l7tech.logging.AuditRecord;
+import com.l7tech.identity.User;
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
+import com.l7tech.message.XmlRequest;
+import com.l7tech.message.XmlResponse;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
+import com.l7tech.service.PublishedService;
 
-import java.util.logging.Level;
 import java.io.IOException;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -48,10 +49,10 @@ public class RequestAuditRecord extends AuditRecord {
             }
             if ( _requestContentLength == -1 && _requestXml != null ) _requestContentLength = _requestXml.length();
 
-            PrincipalCredentials pc = currentRequest.getPrincipalCredentials();
-            if ( pc != null ) {
-                User u = pc.getUser();
-                if ( u != null ) _userLogin = u.getLogin();
+            User u = currentRequest.getUser();
+            if ( u != null ) {
+                _providerOid = u.getProviderId();
+                _userLogin = u.getLogin();
             }
 
             _remoteAddr = (String)currentRequest.getParameter( Request.PARAM_REMOTE_ADDR );

@@ -4,7 +4,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.identity.*;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.TransactionException;
@@ -98,7 +98,7 @@ public class XMLEncSessionServlet extends HttpServlet {
         }
 
         ServerHttpBasic httpBasic = new ServerHttpBasic( new HttpBasic() );
-        PrincipalCredentials creds = null;
+        LoginCredentials creds = null;
         try {
             creds = httpBasic.findCredentials(authorizationHeader);
         } catch (CredentialFinderException e) {
@@ -117,14 +117,14 @@ public class XMLEncSessionServlet extends HttpServlet {
             for (Iterator i = providers.iterator(); i.hasNext();) {
                 IdentityProvider provider = (IdentityProvider) i.next();
                 try {
-                    provider.authenticate(creds);
+                    User u = provider.authenticate(creds);
+                    return u;
                 } catch (AuthenticationException e) {
-                    logger.fine("Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
+                    logger.fine("Authentication successful for user " + creds.getLogin() + " on identity provider: " + provider.getConfig().getName());
                     continue;
                 }
-                return creds.getUser();
             }
-            logger.warning("user " + creds.getUser().getLogin() + " did not provide valid credentials.");
+            logger.warning("user " + creds.getLogin() + " did not provide valid credentials.");
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Exception getting id providers.", e);
             return null;

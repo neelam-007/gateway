@@ -9,6 +9,7 @@ package com.l7tech.identity.ldap;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.*;
 import com.l7tech.logging.LogManager;
 
@@ -49,9 +50,9 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
         try {
             DirContext context = _ldapManager.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
-            User out = new User();
+            LdapUser out = new LdapUser();
             out.setProviderId(_config.getOid());
-            out.setName(dn);
+            out.setDn(dn);
             Object tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userEmailAttribute() );
             if (tmp != null) out.setEmail(tmp.toString());
             tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userFirstnameAttribute() );
@@ -68,8 +69,6 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
                 byte[] tmp2 = (byte[])tmp;
                 out.setPassword(new String(tmp2));
             }
-            Collection groupHeaders = findGroupMembershipsAsHeaders(out);
-            out.setGroupHeaders(new HashSet(groupHeaders));
             context.close();
             return out;
         } catch (NamingException e) {
@@ -112,20 +111,32 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
         return null;
     }
 
-    /**
-     * This is actually not supported in this UserManager since the we assume the ldap connector is only used to
-     * read user information
-     */
-    public void delete(User user) throws DeleteException {
-        throw new DeleteException("Not supported in LdapUserManagerServer");
+    public void delete(String identifier) throws DeleteException {
+        throw new DeleteException( UNSUPPORTED );
     }
 
     /**
      * This is actually not supported in this UserManager since the we assume the ldap connector is only used to
      * read user information
      */
-    public long save(User user) throws SaveException {
-        throw new SaveException("Not supported in LdapUserManagerServer");
+    public void delete(User user) throws DeleteException {
+        throw new DeleteException( UNSUPPORTED );
+    }
+
+    /**
+     * This is actually not supported in this UserManager since the we assume the ldap connector is only used to
+     * read user information
+     */
+    public String save(User user) throws SaveException {
+        throw new SaveException( UNSUPPORTED );
+    }
+
+    public String save(UserBean user) throws SaveException {
+        throw new SaveException( UNSUPPORTED );
+    }
+
+    public void update(UserBean user) throws UpdateException {
+        throw new UpdateException( UNSUPPORTED );
     }
 
     /**
@@ -133,7 +144,7 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
      * read user information
      */
     public void update(User user) throws UpdateException {
-        throw new UpdateException("Not supported in LdapUserManagerServer");
+        throw new UpdateException( UNSUPPORTED );
     }
 
     public EntityHeader userToHeader(User user) {
@@ -305,8 +316,6 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
         valid = false;
     }
 
-    protected abstract String doGetGroupMembershipFilter( User user );
-
     /*private void buildGroupMembershipsBasedOnOUs(User user) {
         String dn = user.getName();
         // look for traces of "ou=" in the dn, see if the user belongs to any ous
@@ -319,47 +328,11 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
 
     }*/
 
-    private Collection findGroupMembershipsAsHeaders(User user) {
-        // todo, add group memberships based on "OU"s
-        AbstractLdapConstants constants = getConstants();
-        Collection out = new ArrayList();
-        try
-        {
-            NamingEnumeration answer = null;
-            String filter = doGetGroupMembershipFilter( user );
-            SearchControls sc = new SearchControls();
-            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            DirContext context = _ldapManager.getBrowseContext();
-            answer = context.search(_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
-            while (answer.hasMore())
-            {
-                SearchResult sr = (SearchResult)answer.next();
-
-                String dn = null;
-                String cn = null;
-                String description = null;
-
-                Attributes atts = sr.getAttributes();
-                Object tmp = _ldapManager.extractOneAttributeValue(atts, constants.userNameAttribute() );
-                if (tmp != null) cn = tmp.toString();
-                tmp = _ldapManager.extractOneAttributeValue(atts, constants.descriptionAttribute() );
-                if (tmp != null) description = tmp.toString();
-
-                dn = sr.getName() + "," + _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
-                EntityHeader grpheader = new EntityHeader(dn, EntityType.GROUP, cn, description);
-                out.add(grpheader);
-            }
-            if (answer != null) answer.close();
-            context.close();
-        } catch (NamingException e) {
-            // if nothing can be found, just trace this exception and return empty collection
-            logger.log(Level.SEVERE, null, e);
-        }
-        return out;
-    }
 
     private volatile boolean valid = true;
     private LdapManager _ldapManager;
     private IdentityProviderConfig _config;
     protected Logger logger = null;
+
+    private static final String UNSUPPORTED = "This operation is not supported in an LDAP-style UserManager!";
 }
