@@ -7,6 +7,7 @@ import com.l7tech.console.util.Preferences;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.util.Locator;
 import com.l7tech.common.util.CertificateDownloader;
+import com.l7tech.common.util.ExceptionUtils;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -416,27 +417,8 @@ public class LogonDialog extends JDialog {
                 credentialManager.login(pw);
                 authenticated = true;
                 break;
-            } catch (VersionException e) {
-                frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                log.log(Level.WARNING, "logon()", e);
-                String msg =
-                  MessageFormat.format(
-                    dialog.resources.getString("logon.version.mismatch"),
-                    new Object[]{e.getExpectedVersion()});
-                JOptionPane.
-                  showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
-            } catch (LoginException e) { // on invalid credentials
-                log.log(Level.WARNING, "logon()", e);
-                dialog.showInvalidCredentialsMessage();
-            } catch (Exception e) { // everything else, generic error message
-                log.log(Level.WARNING, "logon()", e);
-                frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                String msg =
-                  MessageFormat.format(
-                    dialog.resources.getString("logon.connect.error"),
-                    new Object[]{getHostPart(serviceURL)});
-                JOptionPane.
-                  showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception e) {
+              handleLogonThrowable(e, dialog, serviceURL);
             }
         }
 
@@ -636,9 +618,36 @@ public class LogonDialog extends JDialog {
             return false;
         }
         return true;
-
     }
 
+    /**
+     * handle the logon throwable. Unwrap the exception
+     * @param e
+     */
+    private static void handleLogonThrowable(Throwable e, LogonDialog dialog, String serviceUrl) {
+        Throwable cause = ExceptionUtils.unnestToRoot(e);
+        if (cause instanceof VersionException) {
+                log.log(Level.WARNING, "logon()", e);
+                String msg =
+                  MessageFormat.format(
+                    dialog.resources.getString("logon.version.mismatch"),
+                    new Object[]{((VersionException)e).getExpectedVersion()});
+                JOptionPane.
+                  showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
+        } else if (cause instanceof LoginException) {
+             log.log(Level.WARNING, "logon()", e);
+              dialog.showInvalidCredentialsMessage();
+        } else {
+                log.log(Level.WARNING, "logon()", e);
+                String msg =
+                  MessageFormat.format(
+                    dialog.resources.getString("logon.connect.error"),
+                    new Object[]{getHostPart(serviceUrl)});
+                JOptionPane.
+                  showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            }
+
+    }
 
     /**
      * the LogonListener interface, implementations receive the logon
