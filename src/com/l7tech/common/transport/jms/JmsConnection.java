@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.util.Set;
 
 /**
- * A reference to a preconfigured JMS provider.
+ * A reference to a preconfigured connection to a JMS provider.
  *
  * Persistent.
  *
@@ -27,7 +27,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private String _destinationFactoryUrl;
     private String _username;
     private String _password;
-    private Set _destinations;
+    private Set _endpoints;
 
     public String getUsername() {
         return _username;
@@ -86,10 +86,10 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public Set getEndpoints() {
-        return _destinations;
+        return _endpoints;
     }
 
-    public void setDestinations( Set destinations ) {
-        _destinations = destinations;
+    public void setEndpoints( Set endpoints ) {
+        _endpoints = endpoints;
     }
 }
