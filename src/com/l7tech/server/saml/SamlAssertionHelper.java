@@ -352,7 +352,9 @@ public abstract class SamlAssertionHelper {
         x509.setParameters(signingCertChain[0], false, false, true);
         keyInfo.setX509Data(new KeyInfo.X509Data[] { x509 });
 
-        signatureElement.appendChild(keyInfo.getKeyInfoElement(assertionDoc));
+        final Element keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc);
+        keyInfoElement.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns", SoapUtil.DIGSIG_URI);
+        signatureElement.appendChild(keyInfoElement);
 
         try {
             context.sign(signatureElement, signingKey);
