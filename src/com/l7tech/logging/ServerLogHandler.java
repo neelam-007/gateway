@@ -9,6 +9,8 @@ import com.l7tech.server.MessageProcessor;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Timer;
@@ -33,7 +35,7 @@ import java.util.logging.*;
  * Date: Jan 13, 2004<br/>
  * $Id$<br/>
  */
-public class ServerLogHandler extends Handler {
+public class ServerLogHandler extends Handler implements PropertyChangeListener {
     private LogManager manager = LogManager.getLogManager();
     private final ServerLogManager serverLogManager = ServerLogManager.getInstance();
 
@@ -42,7 +44,18 @@ public class ServerLogHandler extends Handler {
      */
     public ServerLogHandler() {
         super();
-        initialize();
+        configure();
+        manager.addPropertyChangeListener(this);
+        // start the deamon
+        if (flusherTask == null) {
+            flusherTask = new TimerTask() {
+                public void run() {
+                    cleanAndFlush();
+                }
+            };
+            // as configurable properties
+            flusherDeamon.schedule(flusherTask, FLUSH_FREQUENCY, FLUSH_FREQUENCY);
+        }
     }
 
     public void publish(LogRecord record) {
@@ -67,10 +80,19 @@ public class ServerLogHandler extends Handler {
         flusherDeamon.cancel();
     }
 
-    // Private method to configure a FileHandler from LogManager
-    // properties and/or default values as specified in the class
-    private void initialize() throws IllegalStateException {
+    /**
+     * This method gets called when a logmanager config gets changed.
+     *
+     * @param evt A PropertyChangeEvent object describing the event source
+     *            and the property that has changed.
+     */
+    public void propertyChange(PropertyChangeEvent evt) {
+        configure();
+    }
 
+    // Private method to configure Handler from LogManager
+    // properties and/or default values as specified in the class
+    private void configure() {
         String cname = ServerLogHandler.class.getName();
 
         setLevel(getLevelProperty(cname + ".level", Level.ALL));
@@ -86,25 +108,13 @@ public class ServerLogHandler extends Handler {
                 // assert false;
             }
         }
-
-
-        // start the deamon
-        if (flusherTask == null) {
-            flusherTask = new TimerTask() {
-                public void run() {
-                    cleanAndFlush();
-                }
-            };
-            // as configurable properties
-            flusherDeamon.schedule(flusherTask, FLUSH_FREQUENCY, FLUSH_FREQUENCY);
-        }
     }
 
 
     /**
      * record a log record in tmp cache. it will eventually be flushed by a deamon thread
      */
-    protected void add(SSGLogRecord arg) {
+    private void add(SSGLogRecord arg) {
         synchronized (cache) {
             if (cache.size() >= MAX_CACHE_SIZE) {
                 // todo, maybe we should force a flush?
@@ -211,7 +221,7 @@ if (fullClean) {
         String val = manager.getProperty(name);
         try {
             if (val != null) {
-                Class clz = ClassLoader.getSystemClassLoader().loadClass(val);
+                Class clz = getClass().getClassLoader().loadClass(val);
                 return (Filter)clz.newInstance();
             }
         } catch (Exception ex) {
@@ -279,4 +289,5 @@ if (fullClean) {
     private final Timer flusherDeamon = new Timer(true);
 
     private static final long FLUSH_FREQUENCY = 15000;
+
 }
