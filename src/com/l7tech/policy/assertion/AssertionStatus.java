@@ -31,6 +31,7 @@ public class AssertionStatus {
     /** Assertion not yet implemented. */
     public static final AssertionStatus NOT_YET_IMPLEMENTED = make( MISC + 0, "Not yet implemented!" );
     public static final AssertionStatus NOT_APPLICABLE      = make( MISC + 1, "Not applicable in this context" );
+    public static final AssertionStatus UNDEFINIED          = make( MISC + 999, "Undefined" );
 
     /** Generic catch-all status */
     public static final AssertionStatus SERVER_ERROR = make( SERVER + 0, "Internal Server Error" );
