@@ -269,5 +269,6 @@ CREATE TABLE trusted_cert (
   trusted_for_client char(1) default '0',
   trusted_for_server char(1) default '0',
   trusted_for_saml char(1) default '0',
-  primary key(objectid)
+  primary key(objectid),
+  unique(subject_dn)
 );

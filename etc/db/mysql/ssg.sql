@@ -287,5 +287,6 @@ CREATE TABLE trusted_cert (
   trusted_for_client tinyint(1) default '0',
   trusted_for_server tinyint(1) default '0',
   trusted_for_saml tinyint(1) default '0',
-  primary key(objectid)
+  primary key(objectid),
+  unique (subject_dn)
 ) TYPE=InnoDB;

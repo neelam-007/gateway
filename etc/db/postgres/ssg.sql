@@ -285,5 +285,6 @@ CREATE TABLE trusted_cert (
   trusted_for_client boolean default 'F',
   trusted_for_server boolean default 'F',
   trusted_for_saml boolean default 'F',
-  primary key(objectid)
+  primary key(objectid),
+  unique(subject_dn)
 );

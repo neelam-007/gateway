@@ -196,8 +196,8 @@
         </id>
         <version name="version" column="version" type="integer"/>
 
-        <property name="name" column="name" type="string"/>
-        <property name="subjectDn" column="subject_dn" type="string"/>
+        <property name="name" type="string"/>
+        <property name="subjectDn" column="subject_dn" type="string" unique="true"/>
         <property name="certBase64" column="cert_base64" type="text"/>
         <property name="trustedForSsl" column="trusted_for_ssl" type="boolean"/>
         <property name="trustedForSigningClientCerts" column="trusted_for_client" type="boolean"/>
