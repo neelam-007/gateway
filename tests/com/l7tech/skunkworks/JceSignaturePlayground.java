@@ -85,7 +85,7 @@ public class JceSignaturePlayground {
                     verifier.update( clearBytes );
                     byte[] signature2 = HexUtils.decodeBase64( base64Signature );
                     if ( !verifier.verify(signature2) )
-                        assert false : "Verification should have succeeded";
+                        throw new AssertionError( "Verification should have succeeded" );
                 } catch ( Exception e ) {
                     throw new RuntimeException(e);
                 }
@@ -99,7 +99,7 @@ public class JceSignaturePlayground {
                     verifier.initVerify( cert );
                     verifier.update( clearBytes );
                     if ( !verifier.verify( signature ) )
-                        assert false : "Verification should have succeeded";
+                        throw new AssertionError( "Verification should have succeeded" );
                 } catch ( Exception e ) {
                     throw new RuntimeException(e);
                 }
