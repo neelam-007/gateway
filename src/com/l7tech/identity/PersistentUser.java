@@ -58,6 +58,14 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         bean.setName( name );
     }
 
+    public String getSubjectDn() {
+        return bean.getSubjectDn();
+    }
+
+    public void setSubjectDn(String subjectDn) {
+        bean.setSubjectDn(subjectDn);
+    }
+
     /**
      * set the login before setting the password.
      * if the password is not encoded, this will encode it.
