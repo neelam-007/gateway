@@ -121,7 +121,7 @@ public class PolicyEditorPanel extends JPanel {
         setName(service.getName());
         getSplitPane().setName(service.getName());
 
-        policyTree.putClientProperty("service", service);
+        policyTree.putClientProperty("service.node", sn);
         PolicyTreeModel model = PolicyTreeModel.make(service);
         rootAssertion = (AssertionTreeNode)model.getRoot();
 

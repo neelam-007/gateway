@@ -63,7 +63,7 @@ public class AddAssertionAction extends BaseAction {
                     throw new IllegalStateException();
                 }
                 if (paletteNode instanceof PolicyTemplateNode) {
-                    assignPolicyTemplate((PolicyTemplateNode)paletteNode);
+                    //assignPolicyTemplate((PolicyTemplateNode)paletteNode);
                 } else {
                     assertionNode.receive(paletteNode);
                 }

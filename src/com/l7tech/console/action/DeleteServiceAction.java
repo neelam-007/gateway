@@ -66,8 +66,11 @@ public class DeleteServiceAction extends BaseAction {
             model.removeNodeFromParent(node);
             tree = (JTree)ComponentRegistry.
               getInstance().getComponent(PolicyTree.NAME);
-            PublishedService svc = (PublishedService)tree.getClientProperty("service");
+            ServiceNode sn =  (ServiceNode)tree.getClientProperty("service.node");
+            if (sn == null) return;
+
             try {
+                PublishedService svc = sn.getPublishedService();
                 // if currently edited service was deleted
                 if (node.getPublishedService().getOid() == svc.getOid()) {
                     ComponentRegistry.getInstance().getCurrentWorkspace().clearWorskpace();

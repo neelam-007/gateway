@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.policy.assertion.Assertion;
@@ -65,9 +66,12 @@ public class SavePolicyAction extends BaseAction {
         }
         try {
             JTree tree = ComponentRegistry.getInstance().getPolicyTree();
-            PublishedService svc = (PublishedService)tree.getClientProperty("service");
-            if (svc == null)
+            ServiceNode sn = (ServiceNode)tree.getClientProperty("service.node");
+
+            if (sn == null)
                 throw new IllegalArgumentException("No edited service specified");
+            PublishedService svc = sn.getPublishedService();
+
             Assertion rootAssertion = ((AssertionTreeNode)node.getRoot()).asAssertion();
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(rootAssertion, bo);
