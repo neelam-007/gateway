@@ -2,6 +2,8 @@ package com.l7tech.adminws.identity;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.ldap.LdapConfigSettings;
 
 /**
  * Layer 7 Technologies, inc.
@@ -71,13 +73,13 @@ public class ClientTest extends junit.framework.TestCase {
         System.out.println(me.echoVersion());
 
         // create a ldap id provider config
-        com.l7tech.identity.ldap.LdapIdentityProviderConfig cfg = new com.l7tech.identity.ldap.LdapIdentityProviderConfig();
+        com.l7tech.identity.IdentityProviderConfig cfg = new com.l7tech.identity.IdentityProviderConfig(IdentityProviderType.LDAP);
 
         cfg.setName("spock directory");
         cfg.setDescription("spock directory as seen from the kelowna office");
 
-        cfg.setLdapHostURL("ldap://localhost:3899");
-        cfg.setSearchBase("dc=layer7-tech,dc=com");
+        cfg.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
+        cfg.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
 
         // save it
         long newcfgid = me.saveIdentityProviderConfig(cfg);
