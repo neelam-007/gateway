@@ -1,7 +1,6 @@
 package com.l7tech.console.xmlviewer;
 
 import com.l7tech.console.xmlviewer.properties.ViewerProperties;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -47,8 +46,9 @@ public class ViewerToolBar extends JToolBar {
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     String xpathString = (String)xpathComboBox.getEditor().getItem();
-                    viewer.selectXpath(xpathString);
-                    setXPaths();
+                    if (viewer.selectXpath(xpathString)) {
+                        setXPaths();
+                    }
                 }
             }
         });
@@ -58,10 +58,11 @@ public class ViewerToolBar extends JToolBar {
         selectXpath.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String xpathString = (String)xpathComboBox.getEditor().getItem();
-                viewer.selectXpath(xpathString);
-                setXPaths();
-                if (selectionFeedback != null) {
-                    selectionFeedback.selected(xpathString);
+                if (viewer.selectXpath(xpathString)) {
+                    setXPaths();
+                    if (selectionFeedback != null) {
+                        selectionFeedback.selected(xpathString);
+                    }
                 }
             }
         });
