@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SortedSingleColumnTableModel;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -19,13 +20,12 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 
 
@@ -126,15 +126,15 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
                 int[] rows = identitiesOutTable.getSelectedRows();
-                Collection toAdd = new ArrayList();
-                java.util.List listOut = getIdentitiesOutTableModel().getDataVector();
+                Object[] toAdd = new Object[rows.length];
+                Object[] listOut = getIdentitiesOutTableModel().getDataSet();
 
                 for (int i = 0; i < rows.length; i++) {
-                    toAdd.add(listOut.get(rows[i]));
+                    toAdd[i] = listOut[rows[i]];
                 }
-                getIdentitiesOutTableModel().getDataVector().removeAll(toAdd);
+                getIdentitiesOutTableModel().removeRows(toAdd);
                 getIdentitiesOutTableModel().fireTableDataChanged();
-                getIdentitiesInTableModel().getDataVector().addAll(toAdd);
+                getIdentitiesInTableModel().addRows(toAdd);
                 getIdentitiesInTableModel().fireTableDataChanged();
 
             }
@@ -149,10 +149,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         buttonAddAll.addActionListener(new ActionListener() {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
-                java.util.List listOut = getIdentitiesOutTableModel().getDataVector();
+                Object[] listOut = getIdentitiesOutTableModel().getDataSet();
 
-                getIdentitiesInTableModel().getDataVector().addAll(listOut);
-                getIdentitiesOutTableModel().getDataVector().clear();
+                getIdentitiesInTableModel().addRows(listOut);
+                getIdentitiesOutTableModel().clearDataSet();
                 getIdentitiesOutTableModel().fireTableDataChanged();
                 getIdentitiesInTableModel().fireTableDataChanged();
 
@@ -169,15 +169,15 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
                 int[] rows = identitiesInTable.getSelectedRows();
-                Collection toRemove = new ArrayList();
-                java.util.List listIn = getIdentitiesInTableModel().getDataVector();
+                Object[] toRemove = new Object[rows.length];
+                Object[] listIn = getIdentitiesInTableModel().getDataSet();
 
                 for (int i = 0; i < rows.length; i++) {
-                    toRemove.add(listIn.get(rows[i]));
+                    toRemove[i] = listIn[rows[i]];
                 }
-                getIdentitiesInTableModel().getDataVector().removeAll(toRemove);
+                getIdentitiesInTableModel().removeRows(toRemove);
                 getIdentitiesInTableModel().fireTableDataChanged();
-                getIdentitiesOutTableModel().getDataVector().addAll(toRemove);
+                getIdentitiesOutTableModel().addRows(toRemove);
                 getIdentitiesOutTableModel().fireTableDataChanged();
             }
         });
@@ -192,9 +192,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         buttonRemoveAll.addActionListener(new ActionListener() {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
-                java.util.List listIn = getIdentitiesInTableModel().getDataVector();
-                getIdentitiesOutTableModel().getDataVector().addAll(listIn);
-                getIdentitiesInTableModel().getDataVector().clear();
+                Object[] listIn = getIdentitiesInTableModel().getDataSet();
+                getIdentitiesOutTableModel().addRows(listIn);
+                getIdentitiesInTableModel().clearDataSet();
                 getIdentitiesOutTableModel().fireTableDataChanged();
                 getIdentitiesInTableModel().fireTableDataChanged();
             }
@@ -286,19 +286,19 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         try {
             IdentityProvider ip = (IdentityProvider)getProvidersComboBoxModel().getSelectedItem();
-            DefaultTableModel modelOut = getIdentitiesOutTableModel();
-            modelOut.getDataVector().clear();
+            SortedSingleColumnTableModel modelOut = getIdentitiesOutTableModel();
+            modelOut.clearDataSet();
 
             Iterator i = ip.getUserManager().findAllHeaders().iterator();
             while (i.hasNext()) {
-                modelOut.addRow(new Object[]{i.next()});
+                 modelOut.addRow(i.next());
             }
             i = ip.getGroupManager().findAllHeaders().iterator();
             while (i.hasNext()) {
-                modelOut.addRow(new Object[]{i.next()});
+                 modelOut.addRow(i.next());
             }
-            DefaultTableModel modelIn = getIdentitiesInTableModel();
-            modelIn.getDataVector().clear();
+            SortedSingleColumnTableModel modelIn = getIdentitiesInTableModel();
+            modelIn.clearDataSet();
             getIdentitiesOutTableModel().fireTableDataChanged();
             getIdentitiesInTableModel().fireTableDataChanged();
         } catch (FindException ex) {
@@ -321,10 +321,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
     }
 
     private void clearIdentitiesTables() {
-        DefaultTableModel modelIn = getIdentitiesInTableModel();
-        DefaultTableModel modelOut = getIdentitiesOutTableModel();
-        modelIn.getDataVector().clear();
-        modelOut.getDataVector().clear();
+        SortedSingleColumnTableModel modelIn = getIdentitiesInTableModel();
+        SortedSingleColumnTableModel modelOut = getIdentitiesOutTableModel();
+        modelIn.clearDataSet();
+        modelOut.clearDataSet();
         getIdentitiesOutTableModel().fireTableDataChanged();
         getIdentitiesInTableModel().fireTableDataChanged();
     }
@@ -354,12 +354,20 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
      * @return the table model representing the identities that
      *         have permisison to use the service.
      */
-    private DefaultTableModel getIdentitiesInTableModel() {
+    private SortedSingleColumnTableModel getIdentitiesInTableModel() {
         if (identitiesInTableModel != null)
             return identitiesInTableModel;
 
-        identitiesInTableModel = new DefaultTableModel() {
-            public boolean isCellEditable(int row, int column) {
+        identitiesInTableModel = new SortedSingleColumnTableModel(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                EntityHeader e1 = (EntityHeader) o1;
+                EntityHeader e2 = (EntityHeader) o2;
+
+                return e1.getName().compareToIgnoreCase(e2.getName());
+            }
+        }) {
+
+            public boolean isCellEditable(int row, int col) {
                 return false;
             }
         };
@@ -371,14 +379,24 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
      * @return the table model representing the identities that
      *         are not permitted to use the service.
      */
-    private DefaultTableModel getIdentitiesOutTableModel() {
+    private SortedSingleColumnTableModel getIdentitiesOutTableModel() {
         if (identitiesOutTableModel != null)
             return identitiesOutTableModel;
-        identitiesOutTableModel = new DefaultTableModel() {
-            public boolean isCellEditable(int row, int column) {
+
+        identitiesOutTableModel = new SortedSingleColumnTableModel(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                EntityHeader e1 = (EntityHeader) o1;
+                EntityHeader e2 = (EntityHeader) o2;
+
+                return e1.getName().compareToIgnoreCase(e2.getName());
+            }
+        }) {
+
+            public boolean isCellEditable(int row, int col) {
                 return false;
             }
         };
+
         identitiesOutTableModel.addColumn("No permission");
         return identitiesOutTableModel;
     }
@@ -419,10 +437,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         }
 
         if (!isAnonymous()) {
-            Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
+            Iterator it = getIdentitiesInTableModel().getDataIterator();
             while (it.hasNext()) {
-                java.util.List row = (java.util.List)it.next();
-                EntityHeader eh = (EntityHeader)row.get(0);
+                EntityHeader eh = (EntityHeader)it.next();
                 if (EntityType.USER.equals(eh.getType())) {
                     UserBean u = new UserBean();
                     u.setName(eh.getName());
@@ -466,7 +483,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         java.util.List allAssertions = new ArrayList();
 
 
-        Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
+        Iterator it = getIdentitiesInTableModel().getDataIterator();
         while (it.hasNext()) {
 
             java.util.List identityAssertion = new ArrayList();
@@ -484,9 +501,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                     identityAssertion.add(ca);
             }
 
-
-            java.util.List row = (java.util.List)it.next();
-            EntityHeader eh = (EntityHeader)row.get(0);
+            EntityHeader eh = (EntityHeader)it.next();
             if (EntityType.USER.equals(eh.getType())) {
                 UserBean u = new UserBean();
                 u.setName(eh.getName());
@@ -590,8 +605,8 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
     private JTable identitiesInTable;
     private JTable identitiesOutTable;
-    private DefaultTableModel identitiesInTableModel;
-    private DefaultTableModel identitiesOutTableModel;
+    private SortedSingleColumnTableModel identitiesInTableModel;
+    private SortedSingleColumnTableModel identitiesOutTableModel;
 
     private JScrollPane identitiesOutScrollPane;
 
