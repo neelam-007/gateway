@@ -101,22 +101,16 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         Map services = _oidToServiceMap;
 
         // Check for duplicate services
-        Map matchingServices = null;
-        Map tempMatches = null;
-
         for (Iterator i = _resolvers.iterator(); i.hasNext(); ) {
             resolver = (ServiceResolver)i.next();
-            tempMatches = resolver.matchingServices( candidateService, services );
-            if ( tempMatches != null && tempMatches.size() > 0 ) {
-                // One or more matched... Let's see if anyone else matches.
-                matchingServices = tempMatches;
-                services = matchingServices;
+            services = resolver.matchingServices( candidateService, services );
+            if ( services == null || services .size() == 0 ) {
+                // At least one resolver doesn't think it's a duplicate--that's good enough!
+                return;
             }
         }
 
-        if ( matchingServices != null && !matchingServices.isEmpty() )
-            throw new DuplicateObjectException( "Duplicate service resolution parameters!" );
-
+        throw new DuplicateObjectException( "Duplicate service resolution parameters!" );
     }
 
     public ServiceManagerImp() throws ObjectModelException {
