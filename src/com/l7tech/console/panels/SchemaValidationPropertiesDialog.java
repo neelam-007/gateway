@@ -103,7 +103,10 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private boolean docIsSchema(String str) {
-        if (str != null || str.length() < 1) return false;
+        if (str == null || str.length() < 1) {
+            log.finest("empty doc");
+            return false;
+        }
         Document doc = stringToDoc(str);
         if (doc == null) return false;
         return docIsSchema(doc);
@@ -111,9 +114,10 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     private boolean docIsSchema(Document doc) {
         Element rootEl = doc.getDocumentElement();
-        if (!SchemaValidation.TOP_SCHEMA_ELNAME.equals(rootEl.getNodeName())) {
-            log.log(Level.WARNING, "document is not schema (top element is not " +
-                                    SchemaValidation.TOP_SCHEMA_ELNAME + ")");
+
+        if (!SchemaValidation.TOP_SCHEMA_ELNAME.equals(rootEl.getLocalName())) {
+            log.log(Level.WARNING, "document is not schema (top element " + rootEl.getLocalName() +
+                                   " is not " + SchemaValidation.TOP_SCHEMA_ELNAME + ")");
             return false;
         }
         if (!SchemaValidation.W3C_XML_SCHEMA.equals(rootEl.getNamespaceURI())) {
