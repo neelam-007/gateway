@@ -4,6 +4,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.ldap.LdapConfigSettings;
+import com.l7tech.identity.internal.InternalGroup;
+import com.l7tech.identity.internal.InternalUser;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -51,32 +53,32 @@ public class IdProvConfManagerClientTest {
         System.out.println("done");
     }
 
-    public static long testCreateGroup(IdProvConfManagerClient testee) throws Exception {
+    public static String testCreateGroup(IdProvConfManagerClient testee) throws Exception {
         IdentityProvider provider = testee.getInternalIdentityProvider();
         GroupManager groupMan = provider.getGroupManager();
-        Group newgrp = new Group();
+        InternalGroup newgrp = new InternalGroup();
         System.out.println("creating group");
         newgrp.setName("thepolice");
         newgrp.setDescription("70s and early 80s rock");
         System.out.println("saving group");
-        long grpId = groupMan.save(newgrp);
+        String grpId = groupMan.save(newgrp);
         System.out.println("group saved oid=" + grpId);
         return grpId;
     }
 
-    public static void testAssignUserToGroup(IdProvConfManagerClient testee, long groupid) throws Exception {
+    public static void testAssignUserToGroup(IdProvConfManagerClient testee, String groupid) throws Exception {
         IdentityProvider provider = testee.getInternalIdentityProvider();
         GroupManager groupMan = provider.getGroupManager();
         System.out.println("get existing group");
-        Group thepolice = groupMan.findByPrimaryKey(Long.toString(groupid));
+        Group thepolice = groupMan.findByPrimaryKey(groupid);
         System.out.println("create new user");
         UserManager userMan = provider.getUserManager();
-        User newUser = new User();
+        InternalUser newUser = new InternalUser();
         newUser.setName("stewart");
         newUser.setLogin("scopeland");
         newUser.setPassword("drumer");
         System.out.println("saving new user");
-        long usrid = userMan.save(newUser);
+        String usrid = userMan.save(newUser);
         System.out.println("add user to group");
         thepolice.getMembers().add(newUser);
         System.out.println("update the group");
@@ -88,7 +90,7 @@ public class IdProvConfManagerClientTest {
         IdentityProvider provider = testee.getInternalIdentityProvider();
         GroupManager groupMan = provider.getGroupManager();
         System.out.println("get existing group");
-        Group thepolice = groupMan.findByPrimaryKey("4718592");
+        InternalGroup thepolice = (InternalGroup)groupMan.findByPrimaryKey("4718592");
 
         System.out.println(thepolice);
         thepolice.setDescription("completly different description");
@@ -102,7 +104,7 @@ public class IdProvConfManagerClientTest {
         IdentityProvider provider = testee.getInternalIdentityProvider();
         UserManager userMan = provider.getUserManager();
         System.out.println("retrieving existing user");
-        User stewart = userMan.findByPrimaryKey("5046272");
+        InternalUser stewart = (InternalUser)userMan.findByPrimaryKey("5046272");
         System.out.println("change it");
         stewart.setEmail("completly different email address");
         System.out.println("update it");
@@ -120,7 +122,7 @@ public class IdProvConfManagerClientTest {
         IdProvConfManagerClient manager = new IdProvConfManagerClient();
         testListContentOfInternalIDProvider(manager);
         testAddAndDeleteIDProviderConfig(manager);
-        long grp = testCreateGroup(manager);
+        String grp = testCreateGroup(manager);
         testAssignUserToGroup(manager, grp);
         //updateGroup(manager);
         //updateUser(manager);
