@@ -110,7 +110,8 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         UserMappingConfig[] output = new UserMappingConfig[allmappings.size()];
         int i = 0;
         for (Iterator it = allmappings.iterator(); it.hasNext(); i++) {
-            output[i] = (UserMappingConfig)it.next();
+            Object obj = it.next();
+            output[i] = (UserMappingConfig)obj;
         }
         return output;
     }
