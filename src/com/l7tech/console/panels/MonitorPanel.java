@@ -60,12 +60,12 @@ public class MonitorPanel extends JTabbedPane {
     public void connectHandler(ConnectionEvent e) {
 
         if (componentRegistry.getMainWindow().getLogMenuItem().isSelected()) {
-            getLogPane().initConnect();
+            getLogPane().onConnect();
             restoreLogPane();
 
         }
         if (componentRegistry.getMainWindow().getStatMenuItem().isSelected()) {
-            getStatisticsPane().initConnect();
+            getStatisticsPane().onConnect();
             restoreStatPane();
         }
 
@@ -73,11 +73,8 @@ public class MonitorPanel extends JTabbedPane {
 
     public void disconnectHandler(ConnectionEvent e) {
 
-        getLogPane().stopRefreshTimer();
-        getLogPane().clearMsgTable();
-
-        getStatisticsPane().stopRefreshTimer();
-        getStatisticsPane().clearStatiistics();
+        getLogPane().onDisconnect();
+        getStatisticsPane().onDisconnect();
     }
 
 

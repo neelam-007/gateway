@@ -116,8 +116,14 @@ public class LogPanel extends JPanel {
         getLogsRefreshTimer().stop();
     }
 
-    public void initConnect(){
-        getLogTableModelFilter().initConnect();
+    public void onConnect(){
+        getLogTableModelFilter().onConnect();
+    }
+
+    public void onDisconnect(){
+        getLogTableModelFilter().onDisconnect();
+        stopRefreshTimer();
+        clearMsgTable();
     }
 
     public void setLogPaneDividerLocation(){

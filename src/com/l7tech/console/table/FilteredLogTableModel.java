@@ -46,37 +46,42 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          logsCache.removeAllElements();
      }
 
-    public void initConnect() {
+    public void onConnect() {
         logger = Logger.getLogger(FilteredLogTableModel.class.getName());
 
         logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
         if (logService == null) throw new IllegalStateException("cannot obtain LogAdmin remote reference");
     }
 
-     public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer){
+    public void onDisconnect(){
+        logger = null;
+        logService = null;
+    }
 
-         long startMsgNumber = -1;
-         long endMsgNumber = -1;
+    public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer) {
 
-         if(logsCache.size() > 0){
-             endMsgNumber = ((LogMessage) logsCache.firstElement()).getMsgNumber();
-         }
+        long startMsgNumber = -1;
+        long endMsgNumber = -1;
 
-         // create a worker thread to retrieve the Service statistics
+        if (logsCache.size() > 0) {
+            endMsgNumber = ((LogMessage) logsCache.firstElement()).getMsgNumber();
+        }
+
+        // create a worker thread to retrieve the Service statistics
         final LogsWorker logsWorker = new LogsWorker(logService, startMsgNumber, endMsgNumber) {
-            public void finished(){
+            public void finished() {
                 updateLogsTable(getNewLogs(), msgFilterLevel);
                 logPane.updateMsgTotal();
                 logPane.setSelectedRow(msgNumSelected);
 
-                if(restartTimer){
+                if (restartTimer) {
                     logPane.getLogsRefreshTimer().start();
                 }
             }
         };
 
         logsWorker.start();
-     }
+    }
 
     private void updateLogsTable(Vector newLogs, int msgFilterLevel) {
         boolean cleanUp = true;

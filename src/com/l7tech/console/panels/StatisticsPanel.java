@@ -89,7 +89,7 @@ public class StatisticsPanel extends JPanel {
     /**
      * This function is called when a connection to the server is established.
      */
-    public void initConnect(){
+    public void onConnect(){
         logger = Logger.getLogger(StatisticsPanel.class.getName());
 
         logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
@@ -98,6 +98,14 @@ public class StatisticsPanel extends JPanel {
         serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
         if (serviceManager == null) throw new RuntimeException("Cannot obtain ServiceManager remote reference");
 
+    }
+
+    public void onDisconnect(){
+        logger = null;
+        logService = null;
+        serviceManager = null;
+        stopRefreshTimer();
+        clearStatiistics();
     }
 
     private JScrollPane getStatTablePane() {
