@@ -30,6 +30,10 @@ public class LdapGroupManager implements GroupManager {
         this.parent = daddy;
     }
 
+    /**
+     * get group based on dn
+     * @return an LdapGroup object, null if group dont exist
+     */
     public Group findByPrimaryKey(String dn) throws FindException {
         DirContext context = null;
         try {
@@ -61,6 +65,9 @@ public class LdapGroupManager implements GroupManager {
         }
     }
 
+    /**
+     * does equivalent of LdapIdentityProvider.search(new EntityType[] {EntityType.GROUP}, name);
+     */
     public Group findByName(String name) throws FindException {
         Collection res = parent.search(new EntityType[] {EntityType.GROUP}, name);
         switch (res.size()) {
@@ -78,30 +85,53 @@ public class LdapGroupManager implements GroupManager {
         }
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void delete(Group group) throws DeleteException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public String save(Group group) throws SaveException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void update(Group group) throws UpdateException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public String save(Group group, Set userHeaders) throws SaveException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void update(Group group, Set userHeaders) throws UpdateException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * checks if a user is member of a group
+     * @return true if user is member of group, false otherwise
+     * @throws FindException
+     */
     public boolean isMember(User user, Group group) throws FindException {
         Set userHeaders = getUserHeaders( group );
         for (Iterator i = userHeaders.iterator(); i.hasNext();) {
@@ -112,32 +142,51 @@ public class LdapGroupManager implements GroupManager {
         return false;
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void addUsers(Group group, Set users) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void removeUsers(Group group, Set users) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void addUser(User user, Set groups) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void removeUser(User user, Set groups) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void addUser(User user, Group group) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void removeUser(User user, Group group) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * go from a user to the group it belongs to
+     * searches for the groups to which the passed user belong to
+     * @return a collection containing EntityHeader objects
      */
     public Set getGroupHeaders(User user) throws FindException {
         GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
@@ -251,23 +300,33 @@ public class LdapGroupManager implements GroupManager {
         return output;
     }
 
+    /**
+     * practical equivalent to getGroupHeaders(LdapUserManager.findByPrimaryKey(userId));
+     */
     public Set getGroupHeaders(String userId) throws FindException {
         return getGroupHeaders( getUserManager().findByPrimaryKey( userId ) );
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void setGroupHeaders(User user, Set groupHeaders) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void setGroupHeaders(String userId, Set groupHeaders) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * return a Set of groups headers for all the subgroups of the group whose dn is passed
+     * return a Set of groups headers for all the subgroups of the group whose dn is passed.
+     * note: this is recursive
      *
      * @param dn the dn of the group to inspect
-     * @return
+     * @return a collection containing EntityHeader objects
      */
     private Set getSubGroups(DirContext context, String dn) {
         Set output = new HashSet();
@@ -300,6 +359,9 @@ public class LdapGroupManager implements GroupManager {
         return output;
     }
 
+    /**
+     * filter string for subgroup search
+     */
     private String subGroupSearchString(String dnOfChildGroup) {
         StringBuffer output = new StringBuffer("(|");
         GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
@@ -313,6 +375,10 @@ public class LdapGroupManager implements GroupManager {
         return output.toString();
     }
 
+    /**
+     * get members for a group
+     * @return a collection containing EntityHeader objects
+     */
     public Set getUserHeaders(Group group) throws FindException {
         NamingEnumeration answer = null;
         DirContext context = null;
@@ -424,26 +490,44 @@ public class LdapGroupManager implements GroupManager {
         }
     }
 
+    /**
+     * equivalent to getUserHeaders(findByPrimaryKey(groupId));
+     */
     public Set getUserHeaders(String groupId) throws FindException {
         return getUserHeaders( findByPrimaryKey( groupId ) );
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void setUserHeaders(Group group, Set groupHeaders) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void setUserHeaders(String groupId, Set groupHeaders) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * practical equivalent to LdapIdentityProvider.search(new EntityType[] {EntityType.GROUP}, "*");
+     */
     public Collection findAllHeaders() throws FindException {
         return parent.search(new EntityType[] {EntityType.GROUP}, "*");
     }
 
+    /**
+     * throws an UnsupportedOperationException
+     */
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * like findAllHeaders but contains actual LdapUser objects instead of EntityHeader objects
+     */
     public Collection findAll() throws FindException {
         Collection headers = findAllHeaders();
         Collection output = new ArrayList();
@@ -455,6 +539,9 @@ public class LdapGroupManager implements GroupManager {
         return output;
     }
 
+    /**
+     * like findAllHeaders but contains actual LdapUser objects instead of EntityHeader objects
+     */
     public Collection findAll(int offset, int windowSize) throws FindException {
         Collection headers = findAllHeaders(offset, windowSize);
         Collection output = new ArrayList();

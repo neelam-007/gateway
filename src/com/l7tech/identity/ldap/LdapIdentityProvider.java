@@ -53,14 +53,7 @@ public class LdapIdentityProvider implements IdentityProvider {
 
     public void initialize(IdentityProviderConfig config) {
         try {
-            /*if (config instanceof LdapIdentityProviderConfig) {
-                this.cfg = (LdapIdentityProviderConfig)config;
-            } else this.cfg = new LdapIdentityProviderConfig(config);*/
-
-            
             this.cfg = new LdapIdentityProviderConfig(config);
-
-
             _md5 = MessageDigest.getInstance( "MD5" );
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -253,6 +246,13 @@ public class LdapIdentityProvider implements IdentityProvider {
         return true;
     }
 
+    /**
+     * searches the ldap provider for identities
+     *
+     * @param types any combination of EntityType.USER and or EntityType.GROUP
+     * @param searchString the search string for the users and group names, use "*" for all
+     * @return a collection containing EntityHeader objects
+     */
     public Collection search(EntityType[] types, String searchString) throws FindException {
         if (types == null || types.length < 1) {
             throw new IllegalArgumentException("must pass at least one type");
@@ -288,7 +288,6 @@ public class LdapIdentityProvider implements IdentityProvider {
                 SearchResult sr = (SearchResult)answer.next();
                 // set the dn (unique id)
                 String dn = sr.getName() + "," + cfg.getSearchBase();
-                Attributes atts = sr.getAttributes();
                 EntityHeader header = searchResultToHeader(sr, dn);
                 // if we successfully constructed a header, add it to result list
                 if (header != null) output.add(header);
@@ -306,7 +305,9 @@ public class LdapIdentityProvider implements IdentityProvider {
         return null;
     }
 
-    // builds a search filter for all user object classes
+    /**
+     * builds a search filter for all user object classes based on the config object
+     */
     public String userSearchFilterWithParam(String param) {
         if (cfg == null) throw new IllegalStateException("this provider needs a config!");
         StringBuffer output = new StringBuffer("(|");
@@ -321,6 +322,9 @@ public class LdapIdentityProvider implements IdentityProvider {
         return output.toString();
     }
 
+    /**
+     * builds a search filter for all group object classes based on the config object
+     */
     public String groupSearchFilterWithParam(String param) {
         if (cfg == null) throw new IllegalStateException("this provider needs a config!");
         StringBuffer output = new StringBuffer("(|");
@@ -355,11 +359,12 @@ public class LdapIdentityProvider implements IdentityProvider {
     }
 
     /**
-     * determines whether the SearchResult contains a User or a Group
+     * determines whether the SearchResult contains a User or a Group. this is a utility method used throughout
+     * this package
      * @param sr
      * @return EntityType.USER, EntityType.GROUP, or EntityType.UNDEFINED
      */
-    public EntityHeader searchResultToHeader(SearchResult sr, String dn) {
+    EntityHeader searchResultToHeader(SearchResult sr, String dn) {
         Attributes atts = sr.getAttributes();
         // is it user or group ?
         Attribute objectclasses = atts.get("objectclass");
@@ -402,7 +407,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         return null;
     }
 
-    public static boolean attrContainsCaseIndependent(Attribute attr, String valueToLookFor) {
+    static boolean attrContainsCaseIndependent(Attribute attr, String valueToLookFor) {
         if (attr.contains(valueToLookFor)) return true;
         if (attr.contains(valueToLookFor.toLowerCase())) return true;
         return false;

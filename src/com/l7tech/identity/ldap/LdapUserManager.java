@@ -28,6 +28,10 @@ public class LdapUserManager implements UserManager {
         this.parent = daddy;
     }
 
+    /**
+     * find user based on dn
+     * @return a LdapUser object, null if not found
+     */
     public User findByPrimaryKey(String dn) throws FindException {
         DirContext context = null;
         try {
@@ -78,6 +82,10 @@ public class LdapUserManager implements UserManager {
         }
     }
 
+    /**
+     * find a user based on his login attribute
+     * @return a LdapUser object, null if not found
+     */
     public User findByLogin(String login) throws FindException {
         try {
             DirContext context = LdapIdentityProvider.getBrowseContext(cfg);
@@ -112,38 +120,65 @@ public class LdapUserManager implements UserManager {
         return null;
     }
 
+    /**
+     * throws UnsupportedOperationException
+     */
     public void delete(User user) throws DeleteException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws UnsupportedOperationException
+     */
     public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws UnsupportedOperationException
+     */
     public String save(User user) throws SaveException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws UnsupportedOperationException
+     */
     public void update(User user) throws UpdateException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws UnsupportedOperationException
+     */
     public String save(User user, Set groupHeaders) throws SaveException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * throws UnsupportedOperationException
+     */
     public void update(User user, Set groupHeaders) throws UpdateException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * practical equivalent to LdapIdentityProvider.search(new EntityType[] {EntityType.USER}, "*");
+     */
     public Collection findAllHeaders() throws FindException {
         return parent.search(new EntityType[] {EntityType.USER}, "*");
     }
 
+    /**
+     * throws UnsupportedOperationException
+     */
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * like findAllHeaders but returns LdapUser objects instead of EntityHeader objects
+     */
     public Collection findAll() throws FindException {
         Collection headers = findAllHeaders();
         Collection output = new ArrayList();
@@ -155,6 +190,9 @@ public class LdapUserManager implements UserManager {
         return output;
     }
 
+    /**
+     * like findAllHeaders but returns LdapUser objects instead of EntityHeader objects
+     */
     public Collection findAll(int offset, int windowSize) throws FindException {
         Collection headers = findAllHeaders(offset, windowSize);
         Collection output = new ArrayList();
