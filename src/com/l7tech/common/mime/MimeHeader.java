@@ -55,7 +55,7 @@ public class MimeHeader {
      *               must not be empty or null.
      * @param value  the value, ie "text/xml", not including any params that have already been parsed out into params.
      *               May be empty, but must not be null.
-     * @param params the parameters, ie {charset=>"utf8"}.  May be empty or null.
+     * @param params the parameters, ie {charset=>"utf-8"}.  May be empty or null.
      *               Caller must not modify this map after giving it to this constructor.
      *
      */
@@ -75,7 +75,7 @@ public class MimeHeader {
      * object will be a MimeHeader.
      *
      * @param name the name, ie "Content-Type".  may not be null
-     * @param value the value, ie "text/xml; charset=utf8".  may not be null
+     * @param value the value, ie "text/xml; charset=utf-8".  may not be null
      * @return the parsed MimeHeader
      * @throws IOException if the value is not a valid MIME value.
      */
@@ -101,7 +101,7 @@ public class MimeHeader {
      *         If this header was not one whose format was recognized (ie, was not Content-Type),
      *         any parameters will have been left unparsed and will be returned as part of getValue().
      *         <p>
-     *         For headers with a predefined value format (ie, "Content-Type: text/xml; charset=utf8"),
+     *         For headers with a predefined value format (ie, "Content-Type: text/xml; charset=utf-8"),
      *         this will return only the value (ie, "text/xml")
      */
     public String getValue() {
@@ -118,7 +118,7 @@ public class MimeHeader {
         return params;
     }
 
-    /** @return the ENTIRE header string, including name and trailing CRLF, ie "Content-Type: text/xml; charset=utf8\r\n" */
+    /** @return the ENTIRE header string, including name and trailing CRLF, ie "Content-Type: text/xml; charset=utf-8\r\n" */
     public String toString() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
@@ -132,7 +132,7 @@ public class MimeHeader {
     /**
      * @return The complete value of this header, including all parameters.  Never null.
      *         This will return the complete value even for headers with a predefined value format.
-     *         (that is, it will return "text/xml; charset=utf8" rather than "text/xml").
+     *         (that is, it will return "text/xml; charset=utf-8" rather than "text/xml").
      */
     public String getFullValue() {
         try {
@@ -189,9 +189,13 @@ public class MimeHeader {
             String value = (String)entry.getValue();
             os.write(SEMICOLON);
             os.write(' ');
-            os.write(name.getBytes(ENCODING));
-            os.write('=');
-            os.write(MimeUtility.quote(value, HeaderTokenizer.MIME).getBytes(ENCODING));
+            writeParam(os, name, value);
         }
+    }
+
+    protected void writeParam(OutputStream os, String name, String value) throws IOException {
+        os.write(name.getBytes(ENCODING));
+        os.write('=');
+        os.write(MimeUtility.quote(value, HeaderTokenizer.MIME).getBytes(ENCODING));
     }
 }

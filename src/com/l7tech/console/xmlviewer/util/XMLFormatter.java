@@ -51,7 +51,7 @@ import java.io.Writer;
  * <code>Element</code>, to either a <code>Writer</code> or an
  * <code>OutputStream</code>.  Warning: using your own
  * <code>Writer</code> may cause the writer's preferred character
- * encoding to be ignored.  If you use encodings other than UTF8, we
+ * encoding to be ignored.  If you use encodings other than UTF-8, we
  * recommend using the method that takes an OutputStream instead.
  * </p>
  *

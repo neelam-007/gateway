@@ -12,6 +12,7 @@ import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
 import javax.mail.internet.ParseException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -23,10 +24,12 @@ public class ContentTypeHeader extends MimeHeader {
     private static final Logger logger = Logger.getLogger(ContentTypeHeader.class.getName());
     public static final ContentTypeHeader XML_DEFAULT;
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT;
+    public static final String CHARSET = "charset";
+    public static final String DEFAULT_ENCODING_MIME = "utf-8";
 
     static {
         try {
-            XML_DEFAULT = parseValue("text/xml; charset=utf8");
+            XML_DEFAULT = parseValue("text/xml; charset=utf-8");
             XML_DEFAULT.getEncoding();
             OCTET_STREAM_DEFAULT = parseValue("application/octet-stream");
             OCTET_STREAM_DEFAULT.getEncoding();
@@ -38,7 +41,8 @@ public class ContentTypeHeader extends MimeHeader {
     private final String type;
     private final String subtype;
 
-    private String encoding = null; // figured out lazy-like
+    private String javaEncoding = null; // figured out lazy-like
+    private String mimeCharset = null;
 
     /**
      * Create a new ContentTypeHeader with the specified type, subtype, and parameters.  Currently
@@ -46,7 +50,7 @@ public class ContentTypeHeader extends MimeHeader {
      *
      * @param type   the major type, ie "text". may not be null
      * @param subtype the minor type, ie "xml". may not be null
-     * @param params the parameters, ie {charset=>"utf8"}.  might be null
+     * @param params the parameters, ie {charset=>"utf-8"}.  might be null
      * @throws IllegalArgumentException if type is multipart, but boundary param is missing or empty
      * @throws IllegalArgumentException if type is multipart, but the subtype is other than "related"
      */
@@ -156,18 +160,21 @@ public class ContentTypeHeader extends MimeHeader {
      *         is not guaranteed to be meaningful on this system, however.
      */
     public String getEncoding() {
-        if (encoding == null) {
-            String mimeCharset = (String)getParam("charset");
-            String javaCharset = null;
+        if (javaEncoding == null) {
+            this.mimeCharset = (String)getParam("charset");
+
             if (mimeCharset == null) {
-                logger.info("No charset value found in Content-Type header; assuming UTF-8");
-                javaCharset = "UTF-8";
+                logger.info("No charset value found in Content-Type header; assuming " + ENCODING);
+                javaEncoding = ENCODING;
             } else {
-                javaCharset = MimeUtility.javaCharset(mimeCharset);
+                String tmp = MimeUtility.javaCharset(mimeCharset);
+                if ("UTF8".equalsIgnoreCase(tmp))
+                    javaEncoding = ENCODING;
+                else
+                    javaEncoding = tmp;
             }
-            encoding = javaCharset;
         }
-        return encoding;
+        return javaEncoding;
     }
 
     /** @return the type, ie "text".  never null */
@@ -226,5 +233,24 @@ public class ContentTypeHeader extends MimeHeader {
                 return false;
         }
         return true;
+    }
+
+    protected void writeParam(OutputStream os, String name, String value) throws IOException {
+        if (CHARSET.equalsIgnoreCase(name)) {
+            getEncoding();
+            os.write(name.getBytes(ENCODING));
+            os.write('=');
+
+            String charsetValue = mimeCharset;
+            if (charsetValue == null && javaEncoding != null)
+                    charsetValue = MimeUtility.mimeCharset(javaEncoding);
+
+            if (charsetValue == null)
+                charsetValue = DEFAULT_ENCODING_MIME;
+
+            os.write(MimeUtility.quote(charsetValue.toLowerCase(), HeaderTokenizer.MIME).getBytes(ENCODING));
+        } else {
+            super.writeParam(os, name, value);
+        }
     }
 }
