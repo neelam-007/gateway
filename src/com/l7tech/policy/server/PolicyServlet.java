@@ -75,6 +75,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+        dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
     }
 
     /**
@@ -106,11 +108,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             }
 
             // pass over to the service
-            X509Certificate cert = null;
-            PrivateKey key = null;
+            PolicyService service = null;
             try {
-                cert = KeystoreUtils.getInstance().getSslCert();
-                key = KeystoreUtils.getInstance().getSSLPrivateKey();
+                service = getService();
             } catch (CertificateException e) {
                 logger.log(Level.SEVERE, "configuration exception, cannot get server cert.", e);
                 generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
@@ -121,7 +121,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 return;
             }
 
-            PolicyService service = new PolicyService(key, cert);
             HttpTransportMetadata htm = new HttpTransportMetadata(req, res);
             HttpSoapRequest sreq = new HttpSoapRequest(htm);
             sreq.setDocument(payload);
@@ -166,6 +165,14 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
     }
 
+    protected PolicyService getService() throws CertificateException, KeyStoreException, IOException {
+        X509Certificate cert = null;
+        PrivateKey key = null;
+        cert = KeystoreUtils.getInstance().getSslCert();
+        key = KeystoreUtils.getInstance().getSSLPrivateKey();
+        return new PolicyService(key, cert);
+    }
+
     protected PolicyService.PolicyGetter normalPolicyGetter() {
         return new PolicyService.PolicyGetter() {
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
@@ -190,9 +197,85 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     }
 
 
-    protected void doGetNew(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
+    protected void doGetNew(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
+        try {
+            // GET THE PARAMETERS PASSED
+            String str_oid = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
+            String getCert = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_GETCERT);
+            String username = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_USERNAME);
+            String nonce = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_NONCE);
 
+            // See if it's actually a certificate download request
+            if (getCert != null) {
+                try {
+                    doCertDownload(res, username, nonce);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Unable to fulfil certificate discovery request", e);
+                    throw new ServletException("Unable to fulfil cert request", e);
+                }
+                return;
+            }
+
+            // get credentials and check that they are valid for this policy
+            List users;
+            try {
+                users = authenticateRequestBasic(req);
+            } catch (AuthenticationException e) {
+                generateFaultAndSendAsResponse(res, "Authentication exception", e.getMessage());
+                return;
+            }
+
+            // pass over to the service
+            PolicyService service = null;
+            try {
+                service = getService();
+            } catch (CertificateException e) {
+                logger.log(Level.SEVERE, "configuration exception, cannot get server cert.", e);
+                generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
+                return;
+            } catch (KeyStoreException e) {
+                logger.log(Level.SEVERE, "configuration exception, cannot get server key.", e);
+                generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
+                return;
+            }
+            Document response = null;
+            try {
+                switch (users.size()) {
+                    case 0:
+                        response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter());
+                        break;
+                    case 1:
+                        response = service.respondToPolicyDownloadRequest(str_oid, (User)(users.get(0)), this.normalPolicyGetter());
+                        break;
+                    default:
+                        // todo use the best response (?)
+                        throw new UnsupportedOperationException("not implemented");
+                }
+            } catch (FilteringException e) {
+                logger.log(Level.WARNING, "Error in PolicyService", e);
+                generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
+                return;
+            } catch (SAXException e) {
+                logger.log(Level.WARNING, "Error in PolicyService", e);
+                generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
+                return;
+            }
+            if (response == null) {
+                logger.info("this policy download is refused.");
+                generateFaultAndSendAsResponse(res, "Policy not found or download unauthorized", "");
+                return;
+            } else {
+                outputPolicyDoc(res, response);
+                return;
+            }
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.log(Level.WARNING, "Could not get current persistence context to close.", e);
+            }
+        }
     }
 
     protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
