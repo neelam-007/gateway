@@ -6,12 +6,8 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
@@ -274,45 +270,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private synchronized void initialiseServiceManager() throws ClassCastException, RuntimeException {
         serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class);
         if (serviceManagerInstance == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
-    }
-
-    /**
-     * Decides whether a policy should be downloadable without providing credentials. This will return true if the
-     * service described by this policy could be consumed anonymouly.
-     */
-    private boolean policyAllowAnonymous(PublishedService policy) throws IOException {
-        // todo, validate the following assumption
-        // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
-        // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
-        Assertion rootassertion = WspReader.parse(policy.getPolicyXml());
-        if (findCredentialAssertion(rootassertion) != null) {
-            logger.info("Policy does not allow anonymous requests.");
-            return false;
-        }
-        logger.info("Policy does allow anonymous requests.");
-        return true;
-    }
-
-    /**
-     * Look for an assertion extending CredentialSourceAssertion in the assertion passed
-     * and all it's decendents.
-     * Returns null if not there.
-     * (recursive method)
-     */
-    private CredentialSourceAssertion findCredentialAssertion(Assertion arg) {
-        if (arg instanceof CredentialSourceAssertion) {
-            return (CredentialSourceAssertion)arg;
-        }
-        if (arg instanceof CompositeAssertion) {
-            CompositeAssertion root = (CompositeAssertion)arg;
-            Iterator i = root.getChildren().iterator();
-            while (i.hasNext()) {
-                Assertion child = (Assertion)i.next();
-                CredentialSourceAssertion res = findCredentialAssertion(child);
-                if (res != null) return res;
-            }
-        }
-        return null;
     }
 
 
