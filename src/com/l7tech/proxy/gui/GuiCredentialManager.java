@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * Date: Jun 27, 2003
  * Time: 10:36:01 AM
  */
-public class GuiCredentialManager extends CredentialManager {
+class GuiCredentialManager extends CredentialManager {
     private static final Logger log = Logger.getLogger(GuiCredentialManager.class.getName());
     private PleaseWaitDialog pleaseWaitDialog;
     private SsgManager ssgManager;
@@ -42,7 +42,7 @@ public class GuiCredentialManager extends CredentialManager {
         this.ssgManager = ssgManager;
     }
 
-    public static GuiCredentialManager createGuiCredentialManager(SsgManager ssgManager) {
+    static GuiCredentialManager createGuiCredentialManager(SsgManager ssgManager) {
         return new GuiCredentialManager(ssgManager);
     }
 

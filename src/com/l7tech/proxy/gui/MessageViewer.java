@@ -1,5 +1,8 @@
 package com.l7tech.proxy.gui;
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.proxy.gui.util.IconManager;
+
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
@@ -9,19 +12,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import com.l7tech.proxy.gui.util.IconManager;
-import java.util.logging.Logger;
-import com.l7tech.common.gui.util.Utilities;
-
 /**
  * Displays a list of messages.
  * User: mike
  * Date: May 22, 2003
  * Time: 5:01:29 PM
  */
-public class MessageViewer extends JFrame {
-    private static final Logger log = Logger.getLogger(MessageViewer.class.getName());
-
+class MessageViewer extends JFrame {
     MessageViewerModel messageViewerModel = new MessageViewerModel();
     private JPanel messageView;
     private JList messageList;
@@ -72,7 +69,7 @@ public class MessageViewer extends JFrame {
      * Create a new MessageViewer with the given title.
      * @param title
      */
-    public MessageViewer(final String title) {
+    MessageViewer(final String title) {
         super(title);
         setIconImage(IconManager.getAppImage());
         Container cp = getContentPane();
@@ -152,7 +149,7 @@ public class MessageViewer extends JFrame {
     }
 
     /** Get the underlying MessageViewerModel. */
-    public MessageViewerModel getMessageViewerModel() {
+    MessageViewerModel getMessageViewerModel() {
         return messageViewerModel;
     }
 }

@@ -43,14 +43,14 @@ import java.util.logging.Logger;
  * Date: Sep 18, 2003
  * Time: 5:12:42 PM
  */
-public class WsdlProxy {
+class WsdlProxy {
     private static final Logger log = Logger.getLogger(WsdlProxy.class.getName());
 
     private interface StreamReader {
         Object readStream(InputStream is) throws WSDLException, IOException, SAXException;
     }
 
-    public static class DownloadException extends Exception {
+    static class DownloadException extends Exception {
         private DownloadException(String message) {
             super(message);
         }
@@ -60,7 +60,7 @@ public class WsdlProxy {
         }
     }
 
-    public static class ServiceNotFoundException extends Exception {
+    static class ServiceNotFoundException extends Exception {
         public ServiceNotFoundException(String message) {
             super(message);
         }
@@ -81,7 +81,7 @@ public class WsdlProxy {
      * @throws WSDLException                    if the Ssg gave us back something other than a valid Wsdl document
      * @throws ServiceNotFoundException     if we got back a 404 from the Wsdl service
      */
-    public static Wsdl obtainWsdlForService(Ssg ssg, long serviceoid)
+    static Wsdl obtainWsdlForService(Ssg ssg, long serviceoid)
             throws OperationCanceledException, WSDLException, IOException, DownloadException, ServiceNotFoundException
     {
         try {
@@ -109,7 +109,7 @@ public class WsdlProxy {
      * @throws SAXException                 if we got back invalid XML
      * @throws ServiceNotFoundException     if we got back a 404
      */
-    public static Document obtainWsilForServices(Ssg ssg)
+    static Document obtainWsilForServices(Ssg ssg)
             throws OperationCanceledException, DownloadException, IOException, SAXException, ServiceNotFoundException
     {
         try {

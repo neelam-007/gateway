@@ -27,13 +27,13 @@ import java.util.logging.Logger;
  * Date: May 22, 2003
  * Time: 5:03:25 PM
  */
-public class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
+class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
     private static final Logger log = Logger.getLogger(MessageViewerModel.class.getName());
     private static final int maxMessages = 32;
 
     private List messages = new ArrayList(maxMessages);
 
-    public MessageViewerModel() {
+    MessageViewerModel() {
         messages.add(new SavedTextMessage("Listening", ""));
     }
 
@@ -48,7 +48,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             this.when = new Date();
         }
 
-        abstract public Component getComponent(boolean reformat);
+        abstract Component getComponent(boolean reformat);
 
         public String toString() {
             return dateFormat.format(when) + ": " + title;
@@ -64,7 +64,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             this.message = message;
         }
 
-        public Component getComponent(boolean reformat) {
+        Component getComponent(boolean reformat) {
             JTextArea ta = new ContextMenuTextArea(message);
             ta.setEditable(false);
             return ta;
@@ -81,7 +81,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             this.policy = policy;
         }
 
-        public Component getComponent(boolean reformat) {
+        Component getComponent(boolean reformat) {
             JPanel panel = new JPanel(new GridBagLayout());
 
             final JLabel namespaceLabel = new JLabel("Body Namespace:  ");
@@ -167,7 +167,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             this.headers = headers;
         }
 
-        public String getMessageText(boolean reformat) {
+        String getMessageText(boolean reformat) {
             if (str != null && reformat == strWasFormatted)
                 return str;
             if (message == null) {
@@ -283,7 +283,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
     }
 
     /** Remove all saved messages from the list. */
-    public void clear() {
+    void clear() {
         final int oldsize = messages.size();
         messages.clear();
         fireContentsChanged(this, 0, oldsize);
