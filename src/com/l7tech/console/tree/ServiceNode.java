@@ -82,7 +82,7 @@ public class ServiceNode extends EntityHeaderNode {
 
         }
 
-        if (svc.isNonSoap()) {
+        if (!svc.isSoap()) {
             return new Action[]{
                 new EditServicePolicyAction(this),
                 // todo, some action to edit/view the routing uri
@@ -125,7 +125,7 @@ public class ServiceNode extends EntityHeaderNode {
     protected void loadChildren() {
         try {
             PublishedService s = getPublishedService();
-            if (s != null && !s.isNonSoap()) {
+            if (s != null && s.isSoap()) {
                 Wsdl wsdl = Wsdl.newInstance(null, new StringReader(svc.getWsdlXml()));
                 WsdlTreeNode node = WsdlTreeNode.newInstance(wsdl);
                 children = null;

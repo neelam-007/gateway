@@ -196,7 +196,7 @@ public class ServiceCache {
         if (services.get(key) != null) update = true;
         if (update) {
             for (int i = 0; i < resolvers.length; i++) {
-                if (service.isNonSoap()) {
+                if (!service.isSoap()) {
                     nonSoapResolver.serviceUpdated(service);
                 } else {
                     resolvers[i].serviceUpdated(service);
@@ -207,7 +207,7 @@ public class ServiceCache {
             // make sure no duplicate exist
             //validate(service);
             for (int i = 0; i < resolvers.length; i++) {
-                if (service.isNonSoap()) {
+                if (!service.isSoap()) {
                     nonSoapResolver.serviceCreated(service);
                 } else {
                     resolvers[i].serviceCreated(service);
@@ -255,7 +255,7 @@ public class ServiceCache {
         services.remove(key);
         serverPolicies.remove(key);
         serviceStatistics.remove(key);
-        if (service.isNonSoap()) {
+        if (!service.isSoap()) {
             nonSoapResolver.serviceDeleted(service);
         } else {
             for (int i = 0; i < resolvers.length; i++) {

@@ -99,7 +99,7 @@
         <property name="wsdlUrl" column="wsdl_url" type="string"/>
         <property name="wsdlXml" column="wsdl_xml" type="text"/>
         <property name="disabled" column="disabled" type="boolean"/>
-        <property name="nonSoap" column="non_soap" type="boolean"/>
+        <property name="soap" column="soap" type="boolean"/>
         <property name="routingUri" column="routing_uri" type="string"/>
     </class>
 

@@ -201,19 +201,20 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
-     * Whether or not this service is not a soap service.
-     * It is resolved through its routing URI property.
+     * Whether or not this service is a soap service.
+     * If not soap, then service does not have wsdl and
+     * it is resolved through its routing URI property.
      */
-    public boolean isNonSoap() {
-        return nonSoap;
+    public boolean isSoap() {
+        return soap;
     }
 
-    /**
-     * Whether or not this service is not a soap service.
-     * It is resolved through its routing URI property.
+    /** Whether or not this service is a soap service.
+     * If not soap, then service does not have wsdl and
+     * it is resolved through its routing URI property.
      */
-    public void setNonSoap(boolean nonSoap) {
-        this.nonSoap = nonSoap;
+    public void setSoap(boolean nonSoap) {
+        this.soap = nonSoap;
     }
 
     /**
@@ -239,7 +240,7 @@ public class PublishedService extends NamedEntityImp {
     protected String _wsdlUrl;
     protected String _wsdlXml;
     protected boolean _disabled;
-    protected boolean nonSoap;
+    protected boolean soap = true;
     protected String routingUri;
 
     protected transient Wsdl _parsedWsdl;
