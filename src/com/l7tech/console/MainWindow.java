@@ -633,7 +633,7 @@ public class MainWindow extends JFrame {
 
                 boolean enable = c instanceof Refreshable && ((Refreshable)c).canRefresh();
                 refreshAction.setEnabled(enable);
-                log.info("focusGained " + c.getClass() + " setting refreshAction to " + enable);
+                log.finest("focusGained " + c.getClass() + " setting refreshAction to " + enable);
             }
 
             public void focusLost(FocusEvent e) {
