@@ -41,27 +41,16 @@ public class SsgPropertyPanel extends JPanel {
         buttonGroup.add(federatedSSGRadioButton);
         buttonGroup.add(trustedSSGRadioButton);
 
-        federatedSSGRadioButton.addActionListener(new ActionListener() {
-                 public void actionPerformed(ActionEvent e) {
-                     setFederatedSSGFormEnabled(federatedSSGRadioButton.isSelected());
-                     setTrustedSSGFormEnabled(!federatedSSGRadioButton.isSelected());
-                 }
-        });
-
-        trustedSSGRadioButton.addActionListener(new ActionListener() {
-                 public void actionPerformed(ActionEvent e) {
-                     setTrustedSSGFormEnabled(trustedSSGRadioButton.isSelected());
-                     setFederatedSSGFormEnabled(!trustedSSGRadioButton.isSelected());
-                 }
-        });
-
         trustedSSGComboBox.setRenderer(new DefaultListCellRenderer() {
 
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 Ssg g = (Ssg) value;
-                setText(g.getLocalEndpoint());
+
+                if(g != null) {
+                    setText(g.getLocalEndpoint());
+                }
                 return c;
             }
         });

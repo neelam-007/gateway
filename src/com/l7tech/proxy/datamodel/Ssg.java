@@ -106,6 +106,9 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     public boolean equals(final Object o) {
+
+        if(o == null) return false;
+        
         if (this == o)
             return true;
         if (!o.getClass().equals(this.getClass()))

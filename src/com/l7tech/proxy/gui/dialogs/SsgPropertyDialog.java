@@ -245,6 +245,24 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
         identityPane = new SsgPropertyPanel();
 
+        identityPane.getFederatedSSGRadioButton().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                identityPane.setFederatedSSGFormEnabled(identityPane.getFederatedSSGRadioButton().isSelected());
+                identityPane.setTrustedSSGFormEnabled(!identityPane.getFederatedSSGRadioButton().isSelected());
+                // populate the SSG list if not done yet
+                if(identityPane.getTrustedSSGComboBox().getItemCount() <= 0 ) {
+                    populateSSGList();
+                }
+            }
+        });
+
+        identityPane.getTrustedSSGRadioButton().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                identityPane.setTrustedSSGFormEnabled(identityPane.getTrustedSSGRadioButton().isSelected());
+                identityPane.setFederatedSSGFormEnabled(!identityPane.getTrustedSSGRadioButton().isSelected());
+            }
+        });
+
         identityPane.getClientCertButton().addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     try {
@@ -296,20 +314,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     updateIdentityEnableState();
                 }
             });
-
-        List sslList = clientProxy.getSsgFinder().getSsgList();
-
-        int i = 0;
-        for (; i < sslList.size(); i++) {
-            Ssg item = (Ssg) sslList.get(i);
-            if (!item.getLocalEndpoint().equals(ssg.getLocalEndpoint())) {
-                identityPane.getTrustedSSGComboBox().addItem(item);
-            }
-
-        }
-        if (i <= 0) {
-            identityPane.getTrustedSSGComboBox().addItem("<No trusted gateways configured>");
-        }
 
         return identityPane;
     }
@@ -636,19 +640,22 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         this.ssg = ssg;
         synchronized (ssg) {
 
-            int index = 0;
-            for(; index < identityPane.getTrustedSSGComboBox().getItemCount() ; index++) {
-                if(((Ssg) identityPane.getTrustedSSGComboBox().getItemAt(index)).getId() == ssg.getTrustedGatewayId()) {
-                    identityPane.getTrustedSSGComboBox().setSelectedIndex(index);
-                    break;
-                }
-            }
-
             // override the default (trusted SSG) if the ssg is a federated SSG
-            if(ssg.getTrustedGatewayId() > 0) {
+            if (ssg.getTrustedGatewayId() > 0) {
                 identityPane.getFederatedSSGRadioButton().setSelected(true);
                 identityPane.setTrustedSSGFormEnabled(false);
                 identityPane.setFederatedSSGFormEnabled(true);
+
+                populateSSGList();
+
+                int index = 0;
+                for (; index < identityPane.getTrustedSSGComboBox().getItemCount(); index++) {
+                    if (((Ssg) identityPane.getTrustedSSGComboBox().getItemAt(index)).getId() == ssg.getTrustedGatewayId()) {
+                        identityPane.getTrustedSSGComboBox().setSelectedIndex(index);
+                        break;
+                    }
+                }
+
             } else {
                 identityPane.getUsernameTextField().setText(ssg.getUsername());
                 char[] pass = ssg.cmPassword();
@@ -681,6 +688,26 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             updatePolicyPanel();
         }
         checkOk();
+    }
+
+    private void populateSSGList() {
+
+        List sslList = clientProxy.getSsgFinder().getSsgList();
+
+        //clear the list first
+        identityPane.getTrustedSSGComboBox().removeAllItems();
+
+        int i = 0;
+        for (; i < sslList.size(); i++) {
+            Ssg item = (Ssg) sslList.get(i);
+            if (!item.getLocalEndpoint().equals(ssg.getLocalEndpoint())) {
+                identityPane.getTrustedSSGComboBox().addItem(item);
+            }
+
+        }
+        if (i <= 0) {
+            identityPane.getTrustedSSGComboBox().addItem("<No trusted gateways configured>");
+        }
     }
 
     /**
