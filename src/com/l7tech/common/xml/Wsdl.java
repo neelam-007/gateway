@@ -780,6 +780,8 @@ public class Wsdl {
                 for (int k = 0; k < importList.size(); k++) {
                     imp = (Import) importList.elementAt(k);
                     Map elements = null;
+
+                    if(imp.getDefinition() == null) continue;
                     switch (elementType) {
                         case ELEMENT_TYPE_MESSAGE:
                             elements = imp.getDefinition().getMessages();
