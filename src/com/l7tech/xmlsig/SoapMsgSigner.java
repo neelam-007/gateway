@@ -4,6 +4,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.cert.X509Certificate;
@@ -17,6 +18,7 @@ import com.ibm.xml.dsig.*;
  * $Id$
  *
  * Signs soap messages.
+ * Meant to be used by both server-side and proxy-side dsig assertions
  */
 public class SoapMsgSigner {
 
@@ -81,6 +83,75 @@ public class SoapMsgSigner {
         sigContext.setIDResolver(idResolver);
 
         sigContext.sign(envelopedSigEl, privateKey);
+    }
+
+    /**
+     * Verify that a valid signature is included and that the entire envelope is signed.
+     * The validity of the signer's cert is NOT verified against the local root authority.
+     *
+     * @param soapMsg the soap message that potentially contains a digital signature
+     * @return the cert used as part of the message's signature (not checked against any authority) never null
+     * @throws SignatureNotFoundException if no signature is found in document
+     * @throws InvalidSignatureException if the signature is invalid, not in an expected format or is missing information
+     */
+    public X509Certificate validateSignature(Document soapMsg) throws SignatureNotFoundException, InvalidSignatureException, XSignatureException {
+        // find signature element
+        NodeList tmpNodeList = soapMsg.getElementsByTagNameNS(XSignature.XMLDSIG_NAMESPACE, "Signature");
+        if (tmpNodeList.getLength() < 1) {
+            throw new SignatureNotFoundException("No signature element in this document");
+        }
+        Element sigElement = (Element)tmpNodeList.item(0);
+
+        SignatureContext sigContext = new SignatureContext();
+        AdHocIDResolver idResolver = new AdHocIDResolver(soapMsg);
+        sigContext.setIDResolver(idResolver);
+
+        // Find KeyInfo element, and extract certificate from this
+        Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
+        if (keyInfoElement == null) {
+            throw new SignatureNotFoundException("KeyInfo element not found in " + sigElement.toString());
+        }
+        KeyInfo keyInfo = new KeyInfo(keyInfoElement);
+
+        // Assume a single X509 certificate
+        KeyInfo.X509Data[] x509DataArray = keyInfo.getX509Data();
+        // according to javadoc, this can be null
+        if (x509DataArray == null || x509DataArray.length < 1) {
+            throw new InvalidSignatureException("No x509 data found in KeyInfo element");
+        }
+        KeyInfo.X509Data x509Data = x509DataArray[0];
+        X509Certificate[] certs = x509Data.getCertificates();
+        // according to javadoc, this can be null
+        if (certs == null || certs.length < 1) {
+            throw new InvalidSignatureException("Could not get X509 cert");
+        }
+        X509Certificate cert = certs[0];
+
+        // validate signature
+        PublicKey pubKey = cert.getPublicKey();
+        Validity validity = sigContext.verify(sigElement, pubKey);
+
+        if (!validity.getCoreValidity() || !validity.getSignedInfoValidity()) {
+            throw new InvalidSignatureException("Validity not achieved!");
+        }
+
+        // verify that the entire envelope is signed
+        String refid = soapMsg.getDocumentElement().getAttribute("Id");
+        if (refid == null || refid.length() < 1) {
+            throw new InvalidSignatureException("No reference id on envelope");
+        }
+        String envelopeURI = "#" + refid;
+        for (int i = 0; i < validity.getNumberOfReferences(); i++) {
+            if (!validity.getReferenceValidity(i)) {
+                throw new InvalidSignatureException("Validity not achieved for element " + validity.getReferenceURI(i));
+            }
+            if (envelopeURI.equals(validity.getReferenceURI(i))) {
+                // SUCCESS, RETURN THE CERT
+                return cert;
+            }
+        }
+        // if we get here, the envelope uri reference was not verified
+        throw new InvalidSignatureException("No reference to envelope was verified.");
     }
 
     // todo, move this to util class
