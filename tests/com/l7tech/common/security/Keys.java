@@ -11,7 +11,8 @@ import java.util.Date;
 import java.math.BigInteger;
 
 /**
- * Test class that generates key pair and certificate programatically.
+ * Test class that generates key pair and self signed certificate
+ * programatically.
  * <p/>
  * Useful for testing (no need to prepare keys/cert using keytool). 
  * Uses bouncycastle specific api to generate the certificate.
