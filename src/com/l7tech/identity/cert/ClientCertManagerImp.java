@@ -159,7 +159,7 @@ public class ClientCertManagerImp implements ClientCertManager {
             case 0:
                 return null;
             case 1:
-                CertEntryRow res = (CertEntryRow)hibResults.get(0);
+                return (CertEntryRow)hibResults.get(0);
             default:
                 logger.warning("this should not happen. more than one entry found" +
                                           "for login: " + user.getLogin());
