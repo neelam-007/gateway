@@ -217,6 +217,7 @@
             <test name="com.l7tech.policy.AllTests" haltonfailure="no"/>
             <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
             <!--
             ** TODO: make sure -security flag is added to the 'nightly' build/test
             ** Tomcat config. When done enable the tests below.
