@@ -255,11 +255,6 @@ public class SnmpQueryServlet extends HttpServlet {
         out.close();
     }
 
-    /** Same as {@link #send(javax.servlet.http.HttpServletResponse,String,String,String)} but takes int value. */
-    private void send(HttpServletResponse response, String next, String type, int value) throws IOException {
-        send(response, next, type, String.valueOf(value));
-    }
-
     /** Same as {@link #send(javax.servlet.http.HttpServletResponse,String,String,String)} but takes long value. */
     private void send(HttpServletResponse response, String next, String type, long value) throws IOException {
         send(response, next, type, String.valueOf(value));
