@@ -10,6 +10,10 @@ import com.l7tech.common.wsdl.BindingInfo;
 public class RequestSwAAssertion extends SwAAssertion {
     private BindingInfo bindingInfo = new BindingInfo();
 
+    public RequestSwAAssertion() {
+
+    }
+
     /** @return the BindingInfo.  Never null. */
     public BindingInfo getBindingInfo() {
         return bindingInfo;
