@@ -18,7 +18,6 @@ public abstract class MessageAdapter implements Message {
     }
 
     public void setParameter( String name, Object value ) {
-        _params = new HashMap();
         _params.put( name, value );
     }
 
@@ -37,5 +36,5 @@ public abstract class MessageAdapter implements Message {
     }
 
     protected TransportMetadata _transportMetadata;
-    protected Map _params = Collections.EMPTY_MAP;
+    protected Map _params = new HashMap();
 }
