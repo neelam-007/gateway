@@ -585,10 +585,12 @@ public class XmlUtil {
      */
     public static Text createTextNode(Node factory, String nodeValue) {
         if (nodeValue == null) {
-            final String msg = "Attempt to create DOM text node with null value; using empty string instead.  Please report this.ok c";
+            final String msg = "Attempt to create DOM text node with null value; using empty string instead.  Please report this.";
             logger.log(Level.WARNING, msg, new NullPointerException(msg));
             nodeValue = "";
         }
+        if (factory.getNodeType() == Node.DOCUMENT_NODE)
+            return ((Document)factory).createTextNode(nodeValue);
         return factory.getOwnerDocument().createTextNode(nodeValue);
     }
 
