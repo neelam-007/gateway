@@ -910,7 +910,7 @@ public class MainWindow extends JFrame {
         TreePath path = new TreePath(paletteRootNode.getPath());
         assertionPaletteTree.setSelectionPath(path);
 
-        final AbstractTreeNode identitiesRootNode = new IdentitiesRootNode("Identities/SAML");
+        final AbstractTreeNode identitiesRootNode = new IdentitiesRootNode("Identities");
         treeModel = new FilteredTreeModel(null);
         treeModel.setRoot(identitiesRootNode);
 
@@ -1389,7 +1389,7 @@ public class MainWindow extends JFrame {
         treePanel.setBorder(null);
         //treePanel.setLayout(new BorderLayout());
         treePanel.addTab("Assertions", getAssertionPaletteTree());
-        treePanel.addTab("Identitites/SAML", getIdentitiesTree());
+        treePanel.addTab("Identities", getIdentitiesTree());
 
         JScrollPane js = new JScrollPane(treePanel);
         js.setBorder(null);
