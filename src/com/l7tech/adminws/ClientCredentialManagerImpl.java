@@ -7,6 +7,7 @@ import com.l7tech.adminws.identity.IdentityService;
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
+import java.rmi.ConnectException;
 
 import com.l7tech.adminws.identity.Service;
 import com.l7tech.console.event.ConnectionEvent;
@@ -29,6 +30,9 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
         setCredentials(creds);
         // version check
         IdentityService is = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        if (is == null) {
+            throw new ConnectException("Unable to connect to the remote service");
+        }
         String remoteVersion = is.echoVersion();
         if (!Service.VERSION.equals(remoteVersion)) {
             throw new VersionException(Service.VERSION, remoteVersion);
