@@ -115,7 +115,9 @@ public class TokenServiceClient {
         Object result = parseRequestSecurityTokenResponse(response,
                                                           clientCertificate,
                                                           clientPrivateKey);
-        return null;
+        if (!(result instanceof SecureConversationSession))
+            throw new IOException("Token server returned unwanted token type " + result.getClass());
+        return (SecureConversationSession)result;
     }
 
 
@@ -123,6 +125,7 @@ public class TokenServiceClient {
                                                     X509Certificate clientCertificate,
                                                     PrivateKey clientPrivateKey)
     {
+        // TODO parse response and build object
         return null;
     }
 }
