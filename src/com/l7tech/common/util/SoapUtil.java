@@ -262,6 +262,23 @@ public class SoapUtil {
         return (Element)listSecurityElements.item(0);
     }
 
+    /**
+     * Get the security element from a specific header instead of the entire soap message.
+     * This alternative is used in the case of nested soap messages.
+     * @return null if element not present, the security element if it's in the doc
+     */
+    public static Element getSecurityElement(Element header) {
+        List secElements = XmlUtil.findChildElementsByName(header,
+                                                           new String[] {SECURITY_NAMESPACE,
+                                                                         SECURITY_NAMESPACE2,
+                                                                         SECURITY_NAMESPACE3},
+                                                           SECURITY_EL_NAME);
+        // is it there ?
+        if (secElements.size() < 1) return null;
+        // we got it
+        return (Element)secElements.get(0);
+    }
+
     public static void cleanEmptySecurityElement(Document soapMsg) {
         Element secEl = getSecurityElement(soapMsg);
         while (secEl != null) {
