@@ -6,8 +6,6 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.proxy.datamodel.PendingRequest;
-
 import java.io.Serializable;
 
 /**
@@ -92,10 +90,19 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         this._protectedServiceUrl = protectedServiceUrl;
     }
 
+    public int requestCount() {
+        return _requestCount;
+    }
+
+    public void incrementRequestCount() {
+        _requestCount++;
+    }
+
     protected String _protectedServiceUrl;
     protected String _login;
     protected String _password;
     protected String _realm;
     protected int _maxConnections;
 
+    protected transient volatile int _requestCount = 0;
 }
