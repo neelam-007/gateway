@@ -20,6 +20,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.server.PolicyFilter.FilterManager;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -114,7 +115,7 @@ public class PolicyServlet extends HttpServlet {
         }
 
         // THE POLICY SHOULD BE STRIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
-        targetService = reducePolicyToNeedToKnowBasicForUser(user, targetService);
+        targetService = FilterManager.getInstance().applyAllFilters(user, targetService); 
 
         // OUTPUT THE POLICY
         outputPublishedServicePolicy(targetService, httpServletResponse);
@@ -260,7 +261,7 @@ public class PolicyServlet extends HttpServlet {
     /**
      * Decides whether a policy should be downloadable without providing credentials. This will return true if the
      * service described by this policy could be consumed anonymouly.
-     */ 
+     */
     private boolean policyAllowAnonymous(PublishedService policy) throws IOException {
         // todo, validate the following assumption
         // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
@@ -326,7 +327,7 @@ public class PolicyServlet extends HttpServlet {
             for (Iterator i = providers.iterator(); i.hasNext();) {
                 IdentityProvider provider = (IdentityProvider) i.next();
                 if (provider.authenticate(creds)) {
-                    LogManager.getInstance().getSystemLogger().log(Level.INFO, "Authentication successful for user " + creds.getUser().getLogin() + " on identity provider " + provider.getConfig().getName());
+                    LogManager.getInstance().getSystemLogger().log(Level.INFO, "Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
                     return creds.getUser();
                 }
             }
@@ -345,17 +346,6 @@ public class PolicyServlet extends HttpServlet {
 
         LogManager.getInstance().getSystemLogger().log(Level.WARNING, "Creds do not authenticate against any registered id provider.");
         return null;
-    }
-
-    /**
-     * Go through assertion tree and remove the assertions that are not relevent to this particular user.
-     *
-     * @param requestor can be null if the request was anonymous
-     * @return
-     */
-    private PublishedService reducePolicyToNeedToKnowBasicForUser(User requestor, PublishedService fullpolicy) {
-        // todo
-        return fullpolicy;
     }
 
     private ServiceManager serviceManagerInstance = null;
