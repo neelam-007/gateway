@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.server.policy.assertion.credential.wss.ServerWssCredentialSource;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.policy.assertion.credential.wss.WssClientCert;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
