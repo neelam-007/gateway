@@ -2,7 +2,6 @@ package com.l7tech.console.tree;
 
 import com.l7tech.service.ServiceManager;
 
-import java.util.Collections;
 import java.util.Enumeration;
 
 
@@ -15,14 +14,16 @@ import java.util.Enumeration;
  */
 public class ServicesFolderNode implements BasicTreeNode {
     private ServiceManager serviceManager;
+    private String title;
+
 
     /**
      * construct the <CODE>ServicesFolderNode</CODE> instance for
-     * a given entry.
+     * a given servcie manager with the name.
      */
-    public ServicesFolderNode(ServiceManager sm) {
+    public ServicesFolderNode(ServiceManager sm, String name) {
         serviceManager = sm;
-
+        title = name;
     }
 
     /**
@@ -50,18 +51,18 @@ public class ServicesFolderNode implements BasicTreeNode {
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
-        return false;
+        return true;
     }
 
     /**
-     * Returns the node FQ name.
-     * Gui nodes have FQ name to facilitate handling in
-     * hierarchical gui components such as JTree.
+     * Returns the node name.
+     * Gui nodes have name to facilitate handling in
+     * components such as JTree.
      *
-     * @return the FQ name as a String
+     * @return the name as a String
      */
     public String getName() {
-        return "Services";
+        return title;
     }
 
 }

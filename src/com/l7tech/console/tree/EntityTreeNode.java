@@ -4,6 +4,7 @@ import org.apache.log4j.Category;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.MutableTreeNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -123,7 +124,11 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
             Iterator iterator = nodes.iterator();
             int index = 0;
             while (iterator.hasNext()) {
-                insert(new EntityTreeNode((BasicTreeNode)iterator.next()), index++);
+                Object o = iterator.next();
+                if (o instanceof BasicTreeNode)
+                    insert(new EntityTreeNode((BasicTreeNode)o), index++);
+                else if (o instanceof MutableTreeNode)
+                    insert((MutableTreeNode)o, index++);
             }
             hasLoaded = true;
         } catch (Exception e) {
@@ -158,12 +163,12 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
         int realIndex = -1;
         Enumeration enum = children.elements();
         while (enum.hasMoreElements()) {
-            if (filter.accept((javax.swing.tree.TreeNode)enum.nextElement())) {
+            if (filter.accept((TreeNode)enum.nextElement())) {
                 visibleIndex++;
             }
             realIndex++;
             if (visibleIndex == index) {
-                return (javax.swing.tree.TreeNode)children.elementAt(realIndex);
+                return (TreeNode)children.elementAt(realIndex);
             }
         }
         throw new ArrayIndexOutOfBoundsException("index unmatched");
@@ -237,20 +242,6 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
                     return n1.getName().compareToIgnoreCase(n2.getName());
                 }
             };
-
-    /**
-     * is the object a folder?
-     *
-     * @param object the object to check
-     * @return true if object is any of the folders, false otherwise
-     */
-    private static boolean isFolder(Object object) {
-        Class clazz = object.getClass();
-        return
-                clazz.equals(ProvidersFolderNode.class) ||
-                clazz.equals(AdminFolderNode.class) ||
-                clazz.equals(UserFolderNode.class);
-    }
 
     boolean hasLoaded = false;
 }

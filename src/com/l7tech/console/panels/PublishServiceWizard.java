@@ -133,10 +133,12 @@ public class PublishServiceWizard extends JDialog {
                     for (int i = 0; i < panels.length; i++) {
                         panels[i].readSettings(service);
                     }
-                    Registry.getDefault().getServiceManager().save(service);
+                    long oid =
+                      Registry.getDefault().getServiceManager().save(service);
                     EntityHeader header = new EntityHeader();
                     header.setType(EntityType.SERVICE);
                     header.setName(service.getName());
+                    header.setOid(oid);
                     if (panelListener != null) {
                         panelListener.onInsert(header);
                     }

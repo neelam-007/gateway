@@ -4,6 +4,8 @@ import com.l7tech.service.Wsdl;
 import org.apache.log4j.Category;
 
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.wsdl.*;
 import java.util.*;
 
@@ -14,13 +16,12 @@ import java.util.*;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @see BasicTreeNode
  */
-public abstract class WsdlTreeNode implements TreeNode {
-    private TreeNode parent;
-    protected List children = new ArrayList(0);
-    private boolean hasLoadedChildren = false;
+public abstract class WsdlTreeNode extends DefaultMutableTreeNode {
 
-    protected WsdlTreeNode(TreeNode parent) {
-        this.parent = parent;
+    protected boolean hasLoadedChildren = false;
+
+    protected WsdlTreeNode(MutableTreeNode parent) {
+        setParent(parent);
     }
 
     /**
@@ -37,23 +38,14 @@ public abstract class WsdlTreeNode implements TreeNode {
     }
 
     /**
-     * Returns the child <code>TreeNode</code> at index
-     * <code>childIndex</code>.
-     */
-    public TreeNode getChildAt(int childIndex) {
-        return (TreeNode)children.get(childIndex);
-    }
-
-    /**
      * Returns the number of children <code>TreeNode</code>s the receiver
      * contains.
      */
     public int getChildCount() {
         if (!hasLoadedChildren) {
             loadChildren();
-            hasLoadedChildren = true;
         }
-        return children.size();
+        return super.getChildCount();
 
     }
 
@@ -88,28 +80,6 @@ public abstract class WsdlTreeNode implements TreeNode {
 
     protected abstract void loadChildren();
 
-
-    /**
-     * Returns the parent <code>TreeNode</code> of the receiver.
-     */
-    public TreeNode getParent() {
-        return parent;
-    }
-
-    /**
-     * Returns the index of <code>node</code> in the receivers children.
-     * If the receiver does not contain <code>node</code>, -1 will be
-     * returned.
-     */
-    public int getIndex(TreeNode node) {
-        for (int i = children.size() - 1; i >= 0; i--) {
-            if (children.get(i).equals(node)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
     /**
      * Returns true if the receiver allows children.
      */
@@ -121,13 +91,6 @@ public abstract class WsdlTreeNode implements TreeNode {
      * Returns true if the receiver is a leaf.
      */
     public abstract boolean isLeaf();
-
-    /**
-     * Returns the children of the receiver as an <code>Enumeration</code>.
-     */
-    public Enumeration children() {
-        return Collections.enumeration(children);
-    }
 
     public interface FolderLister {
         List list();
@@ -143,8 +106,9 @@ class DefinitionsTreeNode extends WsdlTreeNode {
     }
 
     protected void loadChildren() {
-        FolderTreeNode ms = new FolderTreeNode(this,
-                new FolderLister() {
+        int index = 0;
+        FolderTreeNode ms = new FolderTreeNode(
+          new FolderLister() {
                     /** @return  a string representation of the object.  */
                     public String toString() {
                         return "Messages";
@@ -154,16 +118,16 @@ class DefinitionsTreeNode extends WsdlTreeNode {
                         List list = new ArrayList();
                         Map messages = definition.getMessages();
                         for (Iterator i = messages.values().iterator(); i.hasNext();) {
-                            list.add(new MessageTreeNode(null, (Message)i.next()));
+                            list.add(new MessageTreeNode((Message)i.next()));
                         }
                         return list;
                     }
                 });
 
-        children.add(ms);
+        insert(ms, index++);
 
-        FolderTreeNode pt = new FolderTreeNode(this,
-                new FolderLister() {
+        FolderTreeNode pt = new FolderTreeNode(
+          new FolderLister() {
                     /** @return  a string representation of the object.  */
                     public String toString() {
                         return "Port Types";
@@ -173,17 +137,17 @@ class DefinitionsTreeNode extends WsdlTreeNode {
                         List list = new ArrayList();
                         Map portTypes = definition.getPortTypes();
                         for (Iterator i = portTypes.values().iterator(); i.hasNext();) {
-                            list.add(new PortTypeTreeNode(null, (PortType)i.next()));
+                            list.add(new PortTypeTreeNode((PortType)i.next()));
                         }
 
                         return list;
                     }
                 });
 
-        children.add(pt);
+        insert(pt, index++);
 
-        FolderTreeNode bn = new FolderTreeNode(this,
-                new FolderLister() {
+        FolderTreeNode bn = new FolderTreeNode(
+          new FolderLister() {
                     /** @return  a string representation of the object.  */
                     public String toString() {
                         return "Bindings";
@@ -199,9 +163,9 @@ class DefinitionsTreeNode extends WsdlTreeNode {
                     }
                 });
 
-        children.add(bn);
-        FolderTreeNode svc = new FolderTreeNode(this,
-                new FolderLister() {
+        insert(bn, index++);
+        FolderTreeNode svc = new FolderTreeNode(
+          new FolderLister() {
                     /** @return  a string representation of the object.  */
                     public String toString() {
                         return "Services";
@@ -219,9 +183,8 @@ class DefinitionsTreeNode extends WsdlTreeNode {
                     }
                 });
 
-        children.add(svc);
-
-
+        insert(svc, index++);
+        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
@@ -240,13 +203,17 @@ class DefinitionsTreeNode extends WsdlTreeNode {
 class FolderTreeNode extends WsdlTreeNode {
     private FolderLister lister;
 
-    FolderTreeNode(TreeNode parent, FolderLister l) {
-        super(parent);
+    FolderTreeNode(FolderLister l) {
+        super(null);
         this.lister = l;
     }
 
     protected void loadChildren() {
-        children.addAll(lister.list());
+        int index = 0;
+        for (Iterator i = lister.list().iterator(); i.hasNext();) {
+            insert((MutableTreeNode)i.next(), index++);
+        }
+        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
@@ -266,12 +233,13 @@ class FolderTreeNode extends WsdlTreeNode {
 class MessageTreeNode extends WsdlTreeNode {
     private Message message;
 
-    MessageTreeNode(TreeNode parent, Message m) {
-        super(parent);
+    MessageTreeNode(Message m) {
+        super(null);
         this.message = m;
     }
 
     protected void loadChildren() {
+        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
@@ -290,15 +258,17 @@ class MessageTreeNode extends WsdlTreeNode {
 class PortTypeTreeNode extends WsdlTreeNode {
     private PortType portType;
 
-    PortTypeTreeNode(TreeNode parent, PortType p) {
-        super(parent);
+    PortTypeTreeNode(PortType p) {
+        super(null);
         this.portType = p;
     }
 
     protected void loadChildren() {
+        int index = 0;
         for (Iterator i = portType.getOperations().iterator(); i.hasNext();) {
-            children.add(new OperationTreeNode(this, (Operation)i.next()));
+            insert(new OperationTreeNode((Operation)i.next()), index++);
         }
+        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
@@ -315,15 +285,17 @@ class PortTypeTreeNode extends WsdlTreeNode {
 class BindingTreeNode extends WsdlTreeNode {
     private Binding binding;
 
-    BindingTreeNode(TreeNode parent, Binding b) {
+    BindingTreeNode(MutableTreeNode parent, Binding b) {
         super(parent);
         this.binding = b;
     }
 
     protected void loadChildren() {
+        int index = 0;
         for (Iterator i = binding.getBindingOperations().iterator(); i.hasNext();) {
-            children.add(new BindingOperationTreeNode(this, (BindingOperation)i.next()));
+            insert(new BindingOperationTreeNode((BindingOperation)i.next()), index++);
         }
+        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
@@ -341,12 +313,13 @@ class BindingTreeNode extends WsdlTreeNode {
 class OperationTreeNode extends WsdlTreeNode {
     private Operation operation;
 
-    OperationTreeNode(TreeNode parent, Operation o) {
-        super(parent);
+    OperationTreeNode(Operation o) {
+        super(null);
         this.operation = o;
     }
 
     protected void loadChildren() {
+        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
@@ -364,12 +337,13 @@ class OperationTreeNode extends WsdlTreeNode {
 class BindingOperationTreeNode extends WsdlTreeNode {
     private BindingOperation operation;
 
-    BindingOperationTreeNode(TreeNode parent, BindingOperation bo) {
-        super(parent);
+    BindingOperationTreeNode(BindingOperation bo) {
+        super(null);
         this.operation = bo;
     }
 
     protected void loadChildren() {
+        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
@@ -387,12 +361,13 @@ class BindingOperationTreeNode extends WsdlTreeNode {
 class ServiceTreeNode extends WsdlTreeNode {
     private Service service;
 
-    ServiceTreeNode(TreeNode parent, Service s) {
-        super(parent);
+    ServiceTreeNode(MutableTreeNode parent, Service s) {
+        super(null);
         this.service = s;
     }
 
     protected void loadChildren() {
+        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */

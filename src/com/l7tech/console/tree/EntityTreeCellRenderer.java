@@ -17,7 +17,7 @@ import com.l7tech.console.util.IconManager;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class EntityTreeCellRenderer
-        extends DefaultTreeCellRenderer {
+  extends DefaultTreeCellRenderer {
 
     /**
      * default constructor
@@ -29,50 +29,30 @@ public class EntityTreeCellRenderer
      * @see javax.swing.tree.DefaultTreeCellRenderer#getTreeCellRendererComponent
      */
     public Component
-            getTreeCellRendererComponent(JTree tree, Object value,
-                                         boolean sel, boolean expanded,
-                                         boolean leaf, int row, boolean hasFocus) {
+      getTreeCellRendererComponent(JTree tree, Object value,
+                                   boolean sel, boolean expanded,
+                                   boolean leaf, int row, boolean hasFocus) {
 
         super.getTreeCellRendererComponent(tree, value,
-                sel, expanded,
-                leaf, row, hasFocus);
+          sel, expanded,
+          leaf, row, hasFocus);
 
-        Object object = ((DefaultMutableTreeNode)value).getUserObject();
         this.setBackgroundNonSelectionColor(tree.getBackground());
-        if (object instanceof BasicTreeNode) {
-            BasicTreeNode node = (BasicTreeNode)object;
+        Icon icon = null;
+        if (value instanceof EntityTreeNode) {
+            BasicTreeNode node = (BasicTreeNode)((EntityTreeNode)value).getUserObject();
             setText(node.getName());
-            Icon icon = IconManager.getInstance().getIcon(node);
+            icon = IconManager.getInstance().getIcon(node);
 
-            if (icon == null) {
-                if (isFolder(node)) {
-                    setIcon(UIManager.getIcon("Tree.closedIcon"));
-                } else {
-                    icon = UIManager.getIcon("Tree.leafIcon");
-                }
-            }
-            setIcon(icon);
-
+        } else if (value instanceof WsdlTreeNode) {
+            WsdlTreeNode node = (WsdlTreeNode)value;
+            setText(node.toString());
+            icon = IconManager.getInstance().getIcon(node);
         }
-
+        if (icon !=null) {
+            setIcon(icon);
+        }
         return this;
-    }
-
-    /**
-     * is the object a folder?
-     *
-     * @param object the object to check
-     * @return true if object is any of the folders, false otherwise
-     */
-    private boolean isFolder(Object object) {
-        Class clazz = object.getClass();
-        return
-                clazz.equals(ProvidersFolderNode.class) ||
-                clazz.equals(PoliciesFolderNode.class) ||
-                clazz.equals(ServicesFolderNode.class) ||
-                clazz.equals(AdminFolderNode.class) ||
-                clazz.equals(GroupFolderNode.class) ||
-                clazz.equals(UserFolderNode.class);
     }
 
 }

@@ -596,7 +596,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
                     invokeLater(new Runnable() {
                         public void run() {
                             BasicTreeNode row =
-                                    TreeNodeFactory.getTreeNode((EntityHeader) object);
+                                    TreeNodeFactory.asTreeNode((EntityHeader) object);
                             tableModel.addRow(row);
                         }
                     });

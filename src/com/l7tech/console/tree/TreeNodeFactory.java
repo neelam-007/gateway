@@ -33,7 +33,7 @@ public class TreeNodeFactory {
      *
      * @return the TreeNode for a given Entry
      */
-    public static BasicTreeNode getTreeNode(EntityHeader entity) {
+    public static BasicTreeNode asTreeNode(EntityHeader entity) {
         if (entity == null) {
             throw new NullPointerException("entity");
         }
@@ -109,7 +109,7 @@ public class TreeNodeFactory {
 
         /**
          * Returns an enumeration element. It runs the element through the
-         * getTreeNode method if it is an Entry.
+         * asTreeNode method if it is an Entry.
          *
          * @param element object the is the next requested enumeration element
          * @return the  BasicTreeNode instance for a given Entry if the object
@@ -117,7 +117,7 @@ public class TreeNodeFactory {
          */
         private Object getEnumerationElement(Object element) {
             if (element instanceof EntityHeader)  {
-                return TreeNodeFactory.getTreeNode((EntityHeader)element);
+                return TreeNodeFactory.asTreeNode((EntityHeader)element);
             }
             return element;
         }
