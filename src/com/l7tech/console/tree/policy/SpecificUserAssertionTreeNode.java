@@ -55,6 +55,7 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Identity is "+ ((SpecificUser)getUserObject()).getUserLogin() + " [" + idProviderName() + "]";
+        return "Identity is "+ ((SpecificUser)getUserObject()).getUserLogin() +
+                        " [" + idProviderName() + "]";
     }
 }
