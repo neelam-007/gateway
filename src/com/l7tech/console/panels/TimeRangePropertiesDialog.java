@@ -31,6 +31,42 @@ public class TimeRangePropertiesDialog extends JDialog {
         initialize();
     }
 
+    /**
+     * create controls and layout
+     */
+    private void initialize() {
+
+        // load corresponding resource file
+        initResources();
+
+        itemsToToggleForTimeOfDay.clear();
+        itemsToToggleForDayOfWeek.clear();
+
+        // calculate UTC offset
+        int totOffsetInMin = Calendar.getInstance().getTimeZone().getRawOffset() / (1000*60);
+        hroffset = totOffsetInMin/60;
+        minoffset = totOffsetInMin%60;
+
+        week = new String[] {resources.getString("week.sunday"),
+                             resources.getString("week.monday"),
+                             resources.getString("week.tuesday"),
+                             resources.getString("week.wednesday"),
+                             resources.getString("week.thursday"),
+                             resources.getString("week.friday"),
+                             resources.getString("week.saturday")};
+
+        setTitle(resources.getString("window.title"));
+        Container contents = getContentPane();
+        contents.setLayout(new BorderLayout(0,0));
+        contents.add(makeGlobalPanel(), BorderLayout.CENTER);
+        contents.add(makeBottomButtonsPanel(), BorderLayout.SOUTH);
+
+        // create callbacks
+        setCallbacks();
+
+        setValuesToAssertion();
+    }
+
     private void ok() {
         if (assertion != null) {
             // validate and save data
@@ -136,35 +172,7 @@ public class TimeRangePropertiesDialog extends JDialog {
         utcEndTime.setText(timeToString(utctime));
     }
 
-    /**
-     * create controls and layout
-     */
-    private void initialize() {
-        initResources();
-
-        itemsToToggleForTimeOfDay.clear();
-        itemsToToggleForDayOfWeek.clear();
-
-        // calculate UTC offset
-        int totOffsetInMin = Calendar.getInstance().getTimeZone().getRawOffset() / (1000*60);
-        hroffset = totOffsetInMin/60;
-        minoffset = totOffsetInMin%60;
-
-        week = new String[] {resources.getString("week.sunday"),
-                             resources.getString("week.monday"),
-                             resources.getString("week.tuesday"),
-                             resources.getString("week.wednesday"),
-                             resources.getString("week.thursday"),
-                             resources.getString("week.friday"),
-                             resources.getString("week.saturday")};
-
-        setTitle(resources.getString("window.title"));
-        Container contents = getContentPane();
-        contents.setLayout(new BorderLayout(0,0));
-        contents.add(makeGlobalPanel(), BorderLayout.CENTER);
-        contents.add(makeBottomButtonsPanel(), BorderLayout.SOUTH);
-
-        // create callbacks
+    private void setCallbacks() {
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok();
@@ -222,8 +230,6 @@ public class TimeRangePropertiesDialog extends JDialog {
                 refreshEndUTCLabel();
             }
         });
-
-        setValuesToAssertion();
     }
 
     /**
