@@ -130,7 +130,7 @@ public class MessageProcessor {
 
         postMethod.setRequestBody(pendingRequest.getSoapEnvelope().toString());
         try {
-            log.info("Posting request to SSG url " + ssg.getServerUrl());
+            log.info("Posting request to SSG " + ssg + ", url " + url);
             int status = client.executeMethod(postMethod);
             log.info("POST to SSG completed with HTTP status code " + status);
             Header policyUrlHeader = postMethod.getResponseHeader("PolicyUrl");
