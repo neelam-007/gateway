@@ -1,9 +1,12 @@
 package com.l7tech.adminws;
 
+import org.apache.axis.client.Call;
+
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Layer 7 Technologies, inc.
@@ -39,21 +42,14 @@ public abstract class ClientCredentialManager {
         return String.valueOf(cachedCredentials.getPassword());
     }
 
-    public synchronized void registerForInvalidation(CredentialsInvalidatorCallback callback) {
-        if (callback != null && !credsInvalidationCallbacks.contains(callback)) credsInvalidationCallbacks.add(callback);
-    }
+    public abstract Call getAxisSession();
 
     /**
      * Subclasses reset the credentials using this method.
      */
-    protected final void resetCredentials() {
+    protected void resetCredentials() {
         synchronized (ClientCredentialManager.class) {
             cachedCredentials = new PasswordAuthentication("", new char[]{});
-            Iterator i = credsInvalidationCallbacks.iterator();
-            while (i.hasNext()) {
-                CredentialsInvalidatorCallback callbackdude = (CredentialsInvalidatorCallback)i.next();
-                callbackdude.invalidateCredentials();
-            }
         }
     }
 
@@ -68,5 +64,4 @@ public abstract class ClientCredentialManager {
     }
 
     protected static PasswordAuthentication cachedCredentials = new PasswordAuthentication("", new char[]{});
-    protected static ArrayList credsInvalidationCallbacks = new ArrayList();
 }
