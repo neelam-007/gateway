@@ -16,8 +16,7 @@ import junit.framework.TestSuite;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Test SAML policies. USes mock http servlet and http
- * response.
+ * Test mock servlet API.
  */
 public class MockServletApiTest extends TestCase {
     private SoapMessageProcessingServlet messageProcessingServlet;
@@ -26,7 +25,7 @@ public class MockServletApiTest extends TestCase {
     private PublishedService publishedService;
 
     /**
-     * test <code>SamlPolicyTest</code> constructor
+     * test <code>MockServletApiTest</code> constructor
      */
     public MockServletApiTest(String name) {
         super(name);
