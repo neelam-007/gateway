@@ -57,6 +57,8 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
         UptimeMetrics metrics = null;
         try {
             metrics = UptimeMonitor.getLastUptime();
+            load = metrics.getLoad1();
+            clusterInfoManager.updateSelfStatus(load);
         } catch (FileNotFoundException e) {
             String msg = "cannot get uptime metrics";
             logger.log(Level.SEVERE, msg, e);
@@ -64,8 +66,6 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
             String msg = "cannot get uptime metrics";
             logger.log(Level.SEVERE, msg, e);
         }
-        load = metrics.getLoad1();
-        clusterInfoManager.updateSelfStatus(load);
     }
 
     private void updateServiceUsage() {
