@@ -12,7 +12,6 @@ import java.awt.*;
 import java.util.Iterator;
 
 /**
- *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -41,13 +40,14 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
 
     private void initialize() {
         defaultNameSpaceField.setText(DEFAULT_NAME_SPACE);
-        nameSpaceDetailsModel = new DefaultTableModel(
-          new String[]{
-              "Prefix",
-              "Namespace"
-          },
-          0
-        );
+        nameSpaceDetailsModel =
+          new DefaultTableModel(new String[]{"Prefix", "Namespace"},
+                                0)
+        {
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
         nameSpaceDetailsModel.addRow(new String[]{"xsd", XSD_NAME_SPACE});
         nameSpaceDetailsModel.addRow(new String[]{"soap", SOAP_NAME_SPACE});
@@ -89,7 +89,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "<html><b>Definition</b><br>"+
+        return "<html><b>Definition</b><br>" +
           "The root element in the WSDL document, the <i>definitions</i> element, contains" +
           " child elements that define particular service. " +
           "The target namespace distinguishes the definitions in this WSDL documents from" +
@@ -102,7 +102,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
      * Test whether the step is finished and it is safe to proceed to the next
      * one.
      * If the step is valid, the "Next" (or "Finish") button will be enabled.
-     *
+     * 
      * @return true if the panel is valid, false otherwis
      */
     public boolean isValid() {
@@ -111,7 +111,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
 
     /**
      * Test whether the step is finished and it is safe to finish the wizard.
-     *
+     * 
      * @return true if the panel is valid, false otherwis
      */
 
@@ -126,12 +126,12 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
      * Rather than updating its settings with every change in the GUI,
      * it should collect them, and then only save them when requested to
      * by this method.
-     *
+     * <p/>
      * This is a noop version that subclasses implement.
-     *
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
+     * 
      * @param settings the object representing wizard panel state
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (!(settings instanceof Definition)) {
@@ -228,8 +228,8 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         final JTable _16;
         _16 = new JTable();
         namespaceDetails = _16;
-        _16.setAutoCreateColumnsFromModel(true);
         _16.setShowVerticalLines(true);
+        _16.setAutoCreateColumnsFromModel(true);
         _16.setShowHorizontalLines(true);
         _15.setViewportView(_16);
         final JLabel _17;
