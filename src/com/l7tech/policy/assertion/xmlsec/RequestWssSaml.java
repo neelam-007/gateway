@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.common.security.saml.SamlConstants;
 
 
 /**
@@ -15,7 +16,9 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
     private String[] nameFormats = new String[]{};
     private String audienceRestriction;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
-    private boolean requireProofOfPosession = true;
+    private boolean requireSenderVouchesWithMessageSignature = false;
+    private boolean requireHolderOfKeyWithMessageSignature = false;
+
     private boolean checkAssertionValidity = true;
 
     private SamlAuthenticationStatement authenticationStatement;
@@ -90,12 +93,46 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
     }
 
     public boolean isRequireProofOfPosession() {
-        return requireProofOfPosession;
+        return hasHolderOfKey() && requireHolderOfKeyWithMessageSignature ||
+               hasSenderVouches() && requireSenderVouchesWithMessageSignature;
     }
 
-    public void setRequireProofOfPosession(boolean requireProofOfPosession) {
-        this.requireProofOfPosession = requireProofOfPosession;
+    private boolean hasHolderOfKey() {
+        for (int i = subjectConfirmations.length - 1; i >= 0; i--) {
+            String subjectConfirmation = subjectConfirmations[i];
+            if (SamlConstants.CONFIRMATION_HOLDER_OF_KEY.equals(subjectConfirmation)) {
+                return true;
+            }
+        }
+        return false;
     }
+
+    private boolean hasSenderVouches() {
+         for (int i = subjectConfirmations.length - 1; i >= 0; i--) {
+             String subjectConfirmation = subjectConfirmations[i];
+             if (SamlConstants.CONFIRMATION_SENDER_VOUCHES.equals(subjectConfirmation)) {
+                 return true;
+             }
+         }
+         return false;
+     }
+
+    public boolean isRequireHolderOfKeyWithMessageSignature() {
+        return requireHolderOfKeyWithMessageSignature;
+    }
+
+    public void setRequireHolderOfKeyWithMessageSignature(boolean requireHolderOfKeyWithMessageSignature) {
+        this.requireHolderOfKeyWithMessageSignature = requireHolderOfKeyWithMessageSignature;
+    }
+
+    public boolean isRequireSenderVouchesWithMessageSignature() {
+        return requireSenderVouchesWithMessageSignature;
+    }
+
+    public void setRequireSenderVouchesWithMessageSignature(boolean requireSenderVouchesWithMessageSignature) {
+        this.requireSenderVouchesWithMessageSignature = requireSenderVouchesWithMessageSignature;
+    }
+
 
     public String getNameQualifier() {
         return nameQualifier;

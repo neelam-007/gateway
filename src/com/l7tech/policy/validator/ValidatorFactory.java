@@ -34,9 +34,7 @@ class ValidatorFactory {
         assertionMap.put(ResponseWssIntegrity.class, XpathBasedAssertionValidator.class);
         assertionMap.put(ResponseWssConfidentiality.class, XpathBasedAssertionValidator.class);
         assertionMap.put(RequestSwAAssertion.class, SwaRequestAssertionValidator.class);
-        assertionMap.put(SamlAttributeStatement.class, SamlStatementValidator.class);
-        assertionMap.put(SamlAuthorizationStatement.class, SamlStatementValidator.class);
-        assertionMap.put(SamlAuthenticationStatement.class, SamlStatementValidator.class);
+        assertionMap.put(RequestWssSaml.class, SamlStatementValidator.class);
         // add mapping
     }
 

@@ -317,9 +317,13 @@ public class SamlAssertionValidate {
         }
 
         if (!confirmationMatch) {
-            validationResults.add(new Error("Subject Confirmations mismatch presented/required",
+            List acceptedConfirmations = Arrays.asList(confirmations);
+            if (requestWssSaml.isNoSubjectConfirmation()) {
+                acceptedConfirmations.add("None");
+            }
+            validationResults.add(new Error("Subject Confirmations mismatch presented/accepted {0}/{1}",
                                             subjectStatementAbstractType.toString(),
-                                            new Object[]{presentedConfirmations, Arrays.asList(confirmations)}, null));
+                                            new Object[]{presentedConfirmations, acceptedConfirmations}, null));
             return;
         }
     }
@@ -359,8 +363,8 @@ public class SamlAssertionValidate {
         }
 
         public String toString() {
-            final String msg = exception == null ? "" : exception.getMessage();
-            return "SAML validation error: " + formattedReason + " Exception: " + msg;
+            final String exceptionMessage = exception == null ? "" : "Exception :"+exception.getMessage();
+            return "SAML Constraint Error: " + formattedReason +  exceptionMessage;
         }
     }
 

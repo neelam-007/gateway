@@ -74,9 +74,7 @@ public class PolicyService extends ApplicationObjectSupport {
      * The supported credential sources used to determine whether the requester is
      * allowd to download the policy */
     private static final Assertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[] {
-        //new SamlAuthorizationStatement(),
         new RequestWssSaml(),
-        //new SamlAttributeStatement(),
         new RequestWssX509Cert(),
         new SecureConversation(),
         new SslAssertion(true),
@@ -107,7 +105,6 @@ public class PolicyService extends ApplicationObjectSupport {
             if (assertion instanceof RequestWssSaml) {
                 // Lighed saml requirements for policy download
                 RequestWssSaml requestWssSaml = (RequestWssSaml)assertion;
-                requestWssSaml.setRequireProofOfPosession(false);
                 requestWssSaml.setCheckAssertionValidity(false);
             }
 

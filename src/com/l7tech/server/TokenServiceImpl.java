@@ -202,7 +202,6 @@ public class TokenServiceImpl implements TokenService {
             validCredsOverSSL.addChild(new HttpDigest());
             validCredsOverSSL.addChild(new SslAssertion(true));
             RequestWssSaml samlBearerToken = new RequestWssSaml();
-            samlBearerToken.setRequireProofOfPosession(false);
             validCredsOverSSL.addChild(samlBearerToken);
             sslBranch.addChild(validCredsOverSSL);
 

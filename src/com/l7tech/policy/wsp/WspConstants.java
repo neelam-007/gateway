@@ -580,6 +580,7 @@ public class WspConstants {
         "AssertionWithOrdinal", // getAssertionWithOrdinal() is a utility lookup method of Assertion; not a property
         "Ordinal", // ordinal is transient and is recomputed when policy is deserialized
         "CredentialSource", // computed by an assertion to signal that is a credential source
+        "RequireProofOfPosession", // computed by an saml assertion to indicate that the proof of posesions has been required
     };
 
     static boolean isIgnorableProperty(String parm) {

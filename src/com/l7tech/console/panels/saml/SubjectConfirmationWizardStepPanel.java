@@ -15,6 +15,8 @@ import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 import java.util.*;
 
 /**
@@ -29,11 +31,12 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private JCheckBox checkBoxSenderVouches;
     private JCheckBox checkBoxHolderOfKey;
     private JCheckBox checkBoxBearer;
-    private JCheckBox checkBoxRequireProofOfPosession;
+    private JCheckBox checkBoxSVMessageSignature;
     private Map confirmationsMap;
     private JCheckBox checkBoxNoSubjectConfirmation;
     private boolean proofOfPossesionManuallyDisabled = false;
     private boolean showTitleLabel;
+    private JCheckBox checkBoxHoKMessageSignature;
 
     /**
      * Creates new form SubjectConfirmationWizardStepPanel
@@ -86,7 +89,10 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             }
             jc.setSelected(true);
         }
-        checkBoxRequireProofOfPosession.setSelected(requestWssSaml.isRequireProofOfPosession());
+        checkBoxSVMessageSignature.setSelected(requestWssSaml.isRequireSenderVouchesWithMessageSignature());
+        checkBoxSVMessageSignature.setEnabled(checkBoxSenderVouches.isSelected());
+        checkBoxHoKMessageSignature.setSelected(requestWssSaml.isRequireHolderOfKeyWithMessageSignature());
+        checkBoxHoKMessageSignature.setEnabled(checkBoxHolderOfKey.isSelected());
         checkBoxNoSubjectConfirmation.setSelected(requestWssSaml.isNoSubjectConfirmation());
     }
 
@@ -114,7 +120,8 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             }
         }
         requestWssSaml.setSubjectConfirmations((String[])confirmations.toArray(new String[]{}));
-        requestWssSaml.setRequireProofOfPosession(checkBoxRequireProofOfPosession.isSelected());
+        requestWssSaml.setRequireHolderOfKeyWithMessageSignature(checkBoxHoKMessageSignature.isSelected());
+        requestWssSaml.setRequireSenderVouchesWithMessageSignature(checkBoxSVMessageSignature.isSelected());
         requestWssSaml.setNoSubjectConfirmation(checkBoxNoSubjectConfirmation.isSelected());
     }
 
@@ -132,15 +139,19 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         checkBoxHolderOfKey.setToolTipText("<html>Key Info for the Subject, that the Assertion describes<br>" +
           " MUST be present within the Subject Confirmation.</html>");
 
-        checkBoxHolderOfKey.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (!proofOfPossesionManuallyDisabled) { //if the uses did not diable explicitely
-                    checkBoxRequireProofOfPosession.setSelected(true);
-                }
+        checkBoxHolderOfKey.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                checkBoxHoKMessageSignature.setEnabled(checkBoxHolderOfKey.isSelected());
+
             }
         });
         checkBoxSenderVouches.setToolTipText("<html>The attesting entity, different form the subject,<br>" +
           " vouches for the verification of the subject.</html>");
+        checkBoxSenderVouches.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                checkBoxSVMessageSignature.setEnabled(checkBoxSenderVouches.isSelected());
+            }
+        });
         checkBoxBearer.setToolTipText("<html>Browser/POST Profile of SAML</html>");
 
         checkBoxNoSubjectConfirmation.setToolTipText("<html>No Subject Confirmation MUST be present</html>");
@@ -149,11 +160,11 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         confirmationsMap.put(SamlConstants.CONFIRMATION_SENDER_VOUCHES, checkBoxSenderVouches);
         confirmationsMap.put(SamlConstants.CONFIRMATION_BEARER, checkBoxBearer);
 
-        checkBoxRequireProofOfPosession.setToolTipText("<html>Require the message signature that provides the proof material</html>");
+        checkBoxSVMessageSignature.setToolTipText("<html>Require the message signature that provides the proof material</html>");
 
-        checkBoxRequireProofOfPosession.addActionListener(new ActionListener() {
+        checkBoxSVMessageSignature.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (!checkBoxRequireProofOfPosession.isSelected()) {
+                if (!checkBoxSVMessageSignature.isSelected()) {
                     proofOfPossesionManuallyDisabled = true;
                 }
             }

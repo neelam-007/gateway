@@ -3,7 +3,6 @@
  *
  * $Id$
  */
-
 package com.l7tech.server.audit;
 
 import com.l7tech.cluster.ClusterInfoManager;
@@ -83,8 +82,8 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         public LevelMapping(Class entityClass, Map eventClassesToLevels) {
             if (entityClass == null || eventClassesToLevels == null) throw new IllegalArgumentException("Args must not be null");
             if (!Entity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException(Entity.class.getName() + " is not assignable from " + entityClass.getName());
-            for ( Iterator i = eventClassesToLevels.keySet().iterator(); i.hasNext(); ) {
-                Class eventClass = (Class) i.next();
+            for (Iterator i = eventClassesToLevels.keySet().iterator(); i.hasNext();) {
+                Class eventClass = (Class)i.next();
                 if (!ApplicationEvent.class.isAssignableFrom(eventClass)) throw new IllegalArgumentException(ApplicationEvent.class.getName() + " is not assignable from " + eventClass.getName());
             }
             this.entityClass = entityClass;
@@ -107,7 +106,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         if (genericEvent instanceof PersistenceEvent) {
             PersistenceEvent event = (PersistenceEvent)genericEvent;
             Entity ent = event.getEntity();
-            LevelMapping lm = (LevelMapping) levelMappings.get(ent.getClass());
+            LevelMapping lm = (LevelMapping)levelMappings.get(ent.getClass());
             Level level = DEFAULT_LEVEL;
             if (lm != null) {
                 Map map = lm.getEventClassesToLevels();
@@ -134,7 +133,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             if (entity instanceof NamedEntity) name = ((NamedEntity)entity).getName();
 
             int ppos = entityClassname.lastIndexOf(".");
-            String localClassname = ppos >= 0 ? entityClassname.substring(ppos+1) : entityClassname;
+            String localClassname = ppos >= 0 ? entityClassname.substring(ppos + 1) : entityClassname;
             StringBuffer msg = new StringBuffer(localClassname);
             msg.append(" #").append(entityOid);
             if (entity instanceof NamedEntity) {
@@ -220,16 +219,13 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         String login = null;
         String address = null;
         try {
-            //todo: verify that this is equivalent to what it used to be 
-            clientSubject = Subject.getSubject(AccessController.getContext());
             address = UnicastRemoteObject.getClientHost();
-            if (address != null) {
-            } else {
-                logger.warning("Could not determine administrator IP address. Will use " + LOCALHOST_IP);
-                address = LOCALHOST_IP;
-            }
-        } catch ( ServerNotActiveException e ) {
-            return null;
+            clientSubject = Subject.getSubject(AccessController.getContext());
+        } catch (ServerNotActiveException e) {
+            logger.warning("The administrative event caused as local call, outside of servicing an adminstrative remote call." +
+              "Will use ip/user" + LOCALHOST_IP + "/" + LOCALHOST_SUBJECT);
+            address = LOCALHOST_IP;
+            login = LOCALHOST_SUBJECT;
         }
         if (clientSubject != null) {
             Set principals = clientSubject.getPrincipals();
@@ -240,23 +236,21 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             }
         }
 
-        if (login != null) {
-            AdminInfo info = new AdminInfo();
-            info.login = login;
-            if (address != null) info.ip = address;
-            return info;
-        }
-
-        logger.warning("Unable to determine current administrator login");
-        return null;
+        return new AdminInfo(address, login);
     }
 
     private static class AdminInfo {
-        private String login;
-        private String ip;
+        public AdminInfo(String login, String ip) {
+            this.ip = ip;
+            this.login = login;
+        }
+
+        private final String login;
+        private final String ip;
     }
 
     private Map levelMappings = new HashMap();
     private static final Logger logger = Logger.getLogger(AdminAuditListener.class.getName());
     public static final String LOCALHOST_IP = "127.0.0.1";
+    public static final String LOCALHOST_SUBJECT = "localsystem";
 }
