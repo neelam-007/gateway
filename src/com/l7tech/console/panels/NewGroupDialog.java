@@ -1,21 +1,22 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityEvent;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.EventListener;
+import java.util.logging.Level;
 
 /**
  * New Group dialog.
@@ -329,10 +330,10 @@ public class NewGroupDialog extends JDialog {
                             header.setOid(Registry.getDefault().getInternalGroupManager().save(group));
                             NewGroupDialog.this.fireEventGroupAdded(header);
                             insertSuccess = true;
-                        } catch (SaveException e) {
-                            e.printStackTrace();
-                        } catch (RuntimeException e) {
-                            e.printStackTrace();
+                        } catch (Exception e) {
+                            ErrorManager.getDefault().
+                              notify(Level.WARNING, e, "Error encountered while adding a group\n"+
+                                     "The Group has not been created.");
                         }
                         NewGroupDialog.this.dispose();
                     }

@@ -36,6 +36,7 @@ public abstract class ErrorManager {
      */
     public abstract void notify(Level level, Throwable t, String message);
 
+    /** null error manager */
     private static class NullErrorManager extends ErrorManager {
         static final Logger log = Logger.getLogger(ErrorManager.class.getName());
         /**

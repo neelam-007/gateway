@@ -138,6 +138,14 @@ public class Preferences extends PropertyChangeSupport {
         return CONSOLE_CONFIG;
     }
 
+    public String getTrustStoreFile() {
+        return TRUST_STORE_FILE;
+    }
+
+    public String getTrustStorePassword() {
+        return TRUST_STORE_PASSWORD;
+    }
+
     /**
      * setup default application properties
      *
@@ -204,8 +212,8 @@ public class Preferences extends PropertyChangeSupport {
         Map knownProps = new HashMap();
         knownProps.put("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
         knownProps.put("javax.net.ssl.trustStore",
-                new File(CONSOLE_CONFIG + File.separator + "trustStore").getAbsolutePath());
-        knownProps.put("javax.net.ssl.trustStorePassword", "password");
+                new File(TRUST_STORE_FILE).getAbsolutePath());
+        knownProps.put("javax.net.ssl.trustStorePassword", TRUST_STORE_PASSWORD);
 
         Iterator keys = knownProps.keySet().iterator();
         while (keys.hasNext()) {
@@ -637,6 +645,10 @@ public class Preferences extends PropertyChangeSupport {
     /** where is home (properties are stored there) */
     private final String CONSOLE_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
+
+    private final String TRUST_STORE_FILE = CONSOLE_CONFIG + File.separator + "trustStore";
+    private final String TRUST_STORE_PASSWORD = "password";
+
 
     private static final
     String[] res =

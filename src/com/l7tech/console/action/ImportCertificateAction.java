@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.WindowManager;
-import com.l7tech.proxy.ClientProxy;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -109,13 +109,15 @@ public class ImportCertificateAction extends BaseAction {
     private void importSsgCertificate(File selectedFile)
       throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         KeyStore ks = KeyStore.getInstance("JKS");
+        char[] trustStorPassword = Preferences.getPreferences().getTrustStorePassword().toCharArray();
+        String trustStoreFile = Preferences.getPreferences().getTrustStoreFile();
         try {
-            FileInputStream ksfis = new FileInputStream(ClientProxy.TRUST_STORE_FILE);
-            ks.load(ksfis, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+            FileInputStream ksfis = new FileInputStream(trustStoreFile);
+            ks.load(ksfis, trustStorPassword);
             ksfis.close();
         } catch (FileNotFoundException e) {
             // Create a new one.
-            ks.load(null, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+            ks.load(null, trustStorPassword);
         }
 
         FileInputStream certfis = new FileInputStream(selectedFile);
@@ -130,8 +132,8 @@ public class ImportCertificateAction extends BaseAction {
 
         FileOutputStream ksfos = null;
         try {
-            ksfos = new FileOutputStream(ClientProxy.TRUST_STORE_FILE);
-            ks.store(ksfos, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+            ksfos = new FileOutputStream(trustStoreFile);
+            ks.store(ksfos, trustStorPassword);
         } finally {
             if (ksfos != null)
                 ksfos.close();
