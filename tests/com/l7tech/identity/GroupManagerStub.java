@@ -101,17 +101,19 @@ public class GroupManagerStub extends GroupManagerAdapter {
         } catch (Exception e) {
             throw new FindException("Error in parsing user id " + userId, e);
         }
-        for (;it.hasNext();) {
+        for (; it.hasNext();) {
             GroupMembership gm = (GroupMembership)it.next();
             if (uid == gm.getUserOid()) {
                 remove.add(gm);
             }
         }
         groupMemberships.removeAll(remove);
-        for (Iterator iterator = groupHeaders.iterator(); iterator.hasNext();) {
-            EntityHeader eh = (EntityHeader)iterator.next();
-            GroupMembership gm = new GroupMembership(uid, eh.getOid());
-            groupMemberships.add(gm);
+        if (groupHeaders != null) {
+            for (Iterator iterator = groupHeaders.iterator(); iterator.hasNext();) {
+                EntityHeader eh = (EntityHeader)iterator.next();
+                GroupMembership gm = new GroupMembership(uid, eh.getOid());
+                groupMemberships.add(gm);
+            }
         }
     }
 

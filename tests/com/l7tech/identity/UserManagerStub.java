@@ -1,6 +1,6 @@
 package com.l7tech.identity;
 
-import com.l7tech.common.util.Locator;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 
@@ -12,13 +12,14 @@ import java.util.Set;
 /**
  * Test stub for user  manager. A <code>Map</code> backed user
  * manager for easier testing.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class UserManagerStub implements UserManager {
     /**
      * initialize the user manager with the data store
+     * 
      * @param dataStore the datastore to use
      */
     public UserManagerStub(StubDataStore dataStore) {
@@ -30,11 +31,11 @@ public class UserManagerStub implements UserManager {
     }
 
     public User findByLogin(String login) throws FindException {
-         for (Iterator i = dataStore.getUsers().values().iterator(); i.hasNext();) {
-             User u = (User)i.next();
-             if (login.equals(u.getLogin())) {
-                 return u;
-             }
+        for (Iterator i = dataStore.getUsers().values().iterator(); i.hasNext();) {
+            User u = (User)i.next();
+            if (login.equals(u.getLogin())) {
+                return u;
+            }
         }
         return null;
     }
@@ -48,13 +49,15 @@ public class UserManagerStub implements UserManager {
 
     public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         InternalUser imp = new InternalUser();
-        imp.setOid( Long.valueOf(identifier).longValue() );
+        imp.setOid(Long.valueOf(identifier).longValue());
         delete(imp);
     }
 
     public String save(User user) throws SaveException {
-        InternalUser imp = new InternalUser();
-        imp.copyFrom(user);
+        if (!(user instanceof UserBean)) {
+            throw new IllegalArgumentException("Expected " + UserBean.class);
+        }
+        InternalUser imp = new InternalUser((UserBean)user);
         long oid = dataStore.nextObjectId();
         imp.setOid(oid);
         final String uniqueIdentifier = imp.getUniqueIdentifier();
@@ -76,7 +79,11 @@ public class UserManagerStub implements UserManager {
     }
 
     public String save(User user, Set groupHeaders) throws SaveException {
-        GroupManager gman = (GroupManager)Locator.getDefault().lookup(GroupManager.class);
+        IdentityProvider ip = Registry.getDefault().getIdentityProvider(user.getProviderId());
+        if (ip == null) {
+            throw new SaveException("Could not obtain provider " + user.getProviderId());
+        }
+        GroupManager gman = ip.getGroupManager();
         if (gman == null) {
             throw new RuntimeException("Could not obtain the group manager service");
         }
@@ -85,15 +92,19 @@ public class UserManagerStub implements UserManager {
             gman.setGroupHeaders(uid, groupHeaders);
             return uid;
         } catch (FindException e) {
-            throw new SaveException("Error saving groups for uid "+uid, e);
+            throw new SaveException("Error saving groups for uid " + uid, e);
         } catch (UpdateException e) {
-            throw new SaveException("Error saving groups for uid "+uid, e);
+            throw new SaveException("Error saving groups for uid " + uid, e);
         }
     }
 
     public void update(User user, Set groupHeaders) throws UpdateException, ObjectNotFoundException {
+        IdentityProvider ip = Registry.getDefault().getIdentityProvider(user.getProviderId());
+        if (ip == null) {
+            throw new ObjectNotFoundException("Could not obtain provider " + user.getProviderId());
+        }
         update(user);
-        GroupManager gman = (GroupManager)Locator.getDefault().lookup(GroupManager.class);
+        GroupManager gman = ip.getGroupManager();
         if (gman == null) {
             throw new RuntimeException("Could not obtain the group manager service");
         }
@@ -101,27 +112,29 @@ public class UserManagerStub implements UserManager {
         try {
             gman.setGroupHeaders(uid, groupHeaders);
         } catch (FindException e) {
-            throw new UpdateException("Error saving groups for uid "+uid, e);
+            throw new UpdateException("Error saving groups for uid " + uid, e);
         }
     }
 
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.
+     * 
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAllHeaders() throws FindException {
         Collection list = new ArrayList();
         for (Iterator i =
-                dataStore.getUsers().keySet().iterator(); i.hasNext();) {
+          dataStore.getUsers().keySet().iterator(); i.hasNext();) {
             Object key = i.next();
-            list.add(fromUser((User) dataStore.getUsers().get(key)));
+            list.add(fromUser((User)dataStore.getUsers().get(key)));
         }
         return list;
     }
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for instances of this entity class from a list sorted by <code>oid</code>, selecting only a specific subset of the list.
+     * 
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
@@ -129,11 +142,11 @@ public class UserManagerStub implements UserManager {
         int index = 0;
         int count = 0;
         for (Iterator i =
-                dataStore.getUsers().keySet().iterator(); i.hasNext(); index++) {
+          dataStore.getUsers().keySet().iterator(); i.hasNext(); index++) {
             Object key = i.next();
 
             if (index >= offset && count <= windowSize) {
-                list.add(fromUser((User) dataStore.getUsers().get(key)));
+                list.add(fromUser((User)dataStore.getUsers().get(key)));
                 count++;
             }
         }
@@ -143,12 +156,13 @@ public class UserManagerStub implements UserManager {
 
     /**
      * Returns an unmodifiable collection of <code>Entity</code> objects for all instances of the entity class corresponding to this Manager.
+     * 
      * @return A <code>Collection</code> of Entity objects.
      */
     public Collection findAll() throws FindException {
         Collection list = new ArrayList();
         for (Iterator i =
-                dataStore.getUsers().keySet().iterator(); i.hasNext();) {
+          dataStore.getUsers().keySet().iterator(); i.hasNext();) {
             Object key = i.next();
             list.add(dataStore.getUsers().get(key));
         }
@@ -157,6 +171,7 @@ public class UserManagerStub implements UserManager {
 
     /**
      * Returns an unmodifiable collection of <code>Entity</code> objects for instances of this entity class from a list sorted by <code>oid</code>, selecting only a specific subset of the list.
+     * 
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAll(int offset, int windowSize) throws FindException {
@@ -164,7 +179,7 @@ public class UserManagerStub implements UserManager {
         int index = 0;
         int count = 0;
         for (Iterator i =
-                dataStore.getUsers().keySet().iterator(); i.hasNext(); index++) {
+          dataStore.getUsers().keySet().iterator(); i.hasNext(); index++) {
             Object key = i.next();
 
             if (index >= offset && count <= windowSize) {
@@ -177,7 +192,7 @@ public class UserManagerStub implements UserManager {
 
     private EntityHeader fromUser(User u) {
         InternalUser imp = (InternalUser)u;
-        return  new EntityHeader(imp.getOid(), EntityType.USER, u.getLogin(), null);
+        return new EntityHeader(imp.getOid(), EntityType.USER, u.getLogin(), null);
     }
 
     private StubDataStore dataStore;
