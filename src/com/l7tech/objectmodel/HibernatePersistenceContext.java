@@ -137,19 +137,25 @@ public class HibernatePersistenceContext extends PersistenceContext {
                     return _session;
                 } catch ( SQLException se ) {
                     logger.log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
-                    _session = null;
                     sqlException = se;
                 } catch ( HibernateException he ) {
                     logger.log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
-                    _session = null;
                     hibernateException = he;
                 }
                 // if the connection did not work, do something with it instead of
                 // just retrying the same thing
-                if (conn != null) {
-                    _session.reconnect(conn);
-                } else {
-                    _session.reconnect();
+                try {
+                    if (conn != null) {
+                        _session.reconnect(conn);
+                    } else {
+                        _session.reconnect();
+                    }
+                } catch (SQLException e) {
+                    logger.log(Level.WARNING, "Exception trying to reconnect session", e);
+                    _session = null;
+                } catch (HibernateException e) {
+                    logger.log(Level.WARNING, "Exception trying to reconnect session", e);
+                    _session = null;
                 }
             }
         } finally {
