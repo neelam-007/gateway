@@ -48,13 +48,41 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        throwBadMethod( response, "GET" );
+    }
+
+    private void throwBadMethod(HttpServletResponse response, String method) throws IOException {
         response.setContentType("text/html");
         response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         PrintWriter out = response.getWriter();
         out.println("<html>");
-        out.println("<head><title>GET not supported!</title></head>");
-        out.println("<body><h1>GET not supported!</h1>Use POST instead!</body>");
+        out.print("<head><title>");
+        out.print(method);
+        out.print(" not supported!</title></head>");
+        out.print("<body><h1>");
+        out.print(method);
+        out.print(" not supported!</h1>Use POST instead!</body>");
         out.close();
+    }
+
+    protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        throwBadMethod(response, "HEAD");
+    }
+
+    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        throwBadMethod(response, "PUT");
+    }
+
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        throwBadMethod(response, "DELETE");
+    }
+
+    protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        throwBadMethod(response, "OPTIONS");
+    }
+
+    protected void doTrace(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        throwBadMethod(response, "TRACE");
     }
 
     public void doPost(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
