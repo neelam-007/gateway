@@ -60,19 +60,21 @@ public class CertPropertiesWindow extends JDialog {
      *
      * @param owner The parent component.
      * @param tc   The trusted certificate.
+     * @param editable  TRUE if the properties are editable
      */
-    public CertPropertiesWindow(Dialog owner, TrustedCert tc) {
+    public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable) {
         super(owner, resources.getString("cert.properties.dialog.title"), true);
         trustedCert = tc;
-        initialize();
+        initialize(editable);
         pack();
         Utilities.centerOnScreen(this);
     }
 
     /**
      * Initialization of the window
+     * @param editable  TRUE if the properties are editable
      */
-    private void initialize() {
+    private void initialize(boolean editable) {
 
         JRootPane rp = this.getRootPane();
         rp.setPreferredSize(new Dimension(550, 350));
@@ -83,6 +85,11 @@ public class CertPropertiesWindow extends JDialog {
         certMainPanel.setBackground(Color.white);
         certPanel.setLayout(new FlowLayout());
         certPanel.setBackground(Color.white);
+
+        // disable the fields if the properties should not be modified
+        if(!editable) {
+            disableAll();
+        }
 
         populateData();
 
@@ -148,6 +155,24 @@ public class CertPropertiesWindow extends JDialog {
                 dispose();
             }
         });
+    }
+
+    /**
+     * Disable all fields and buttons
+     */
+    private void disableAll() {
+
+        // all text fields
+        certNameTextField.setEnabled(false);
+
+        // all check boxes
+        signingServerCertCheckBox.setEnabled(false);
+        signingSAMLTokenCheckBox.setEnabled(false);
+        signingClientCertCheckBox.setEnabled(false);
+        outboundSSLConnCheckBox.setEnabled(false);
+
+        // all buttons except the Cancel button
+        saveButton.setEnabled(false);
     }
 
     /**

@@ -156,7 +156,7 @@ public class CertManagerWindow extends JDialog {
                 }
 
                 trustedCertTable.getTableSorter().updateData(sr, updatedTrustedCert);
-                CertPropertiesWindow cpw = new CertPropertiesWindow(instance, updatedTrustedCert);
+                CertPropertiesWindow cpw = new CertPropertiesWindow(instance, updatedTrustedCert, true);
 
                 cpw.show();
             }
