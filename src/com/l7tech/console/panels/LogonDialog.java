@@ -529,13 +529,13 @@ public class LogonDialog extends JDialog {
             try {
                 importCertificate(url);
             } catch (CertificateException e1) {
-                log.log(Level.INFO, "LogonDialog", e);
+                log.log(Level.INFO, "LogonDialog", e1);
             } catch (IOException e1) {
-                log.log(Level.INFO, "LogonDialog", e);
+                log.log(Level.INFO, "LogonDialog", e1);
             } catch (NoSuchAlgorithmException e1) {
-                log.log(Level.INFO, "LogonDialog", e);
+                log.log(Level.INFO, "LogonDialog", e1);
             } catch (KeyStoreException e1) {
-                log.log(Level.INFO, "LogonDialog", e);
+                log.log(Level.INFO, "LogonDialog", e1);
             }
         } catch (HttpException e) {
             serviceAvailable = false;
