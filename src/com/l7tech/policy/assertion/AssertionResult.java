@@ -16,6 +16,7 @@ import com.l7tech.message.Request;
  */
 public class AssertionResult {
     public AssertionResult( Assertion assertion, Request request, AssertionError error, String message, Object[] params, Throwable cause ) {
+        // TODO: Defensively copy anything?
         _assertion = assertion;
         _request = request;
         _error = error;
