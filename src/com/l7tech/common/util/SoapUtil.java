@@ -41,6 +41,7 @@ public class SoapUtil {
     public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
     public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
     public static final String SECURITY_NAMESPACE3 = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
+    public static final String SECURITY_NAMESPACE4 = "http://schemas.xmlsoap.org/ws/2002/07/secext";
     public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
     public static final String WSU_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/07/utility";
@@ -51,6 +52,7 @@ public class SoapUtil {
         SECURITY_URIS.add(SECURITY_NAMESPACE);
         SECURITY_URIS.add(SECURITY_NAMESPACE2);
         SECURITY_URIS.add(SECURITY_NAMESPACE3);
+        SECURITY_URIS.add(SECURITY_NAMESPACE4);
     }
     public static final String[] SECURITY_URIS_ARRAY = (String[])SECURITY_URIS.toArray(new String[0]);
 
@@ -238,12 +240,10 @@ public class SoapUtil {
      * @return the security element, or null if the message is not SOAP.
      */
     public static Element getOrMakeSecurityElement(Document soapMsg) {
-        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
-        if (listSecurityElements.getLength() < 1) {
-            listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE2, SECURITY_EL_NAME);
-        }
-        if (listSecurityElements.getLength() < 1) {
-            listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE3, SECURITY_EL_NAME);
+        NodeList listSecurityElements = null;
+        for (int i = 0; i < SECURITY_URIS_ARRAY.length; i++) {
+            listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_URIS_ARRAY[i], SECURITY_EL_NAME);
+            if (listSecurityElements.getLength() > 0) break;
         }
         if (listSecurityElements.getLength() < 1) {
             // element does not exist
@@ -356,11 +356,7 @@ public class SoapUtil {
      * @return null if element not present, the security element if it's in the doc
      */
     public static Element getSecurityElement(Element header) {
-        List secElements = XmlUtil.findChildElementsByName(header,
-                                                           new String[] {SECURITY_NAMESPACE,
-                                                                         SECURITY_NAMESPACE2,
-                                                                         SECURITY_NAMESPACE3},
-                                                           SECURITY_EL_NAME);
+        List secElements = XmlUtil.findChildElementsByName(header, SECURITY_URIS_ARRAY, SECURITY_EL_NAME);
         // is it there ?
         if (secElements.size() < 1) return null;
         // we got it
