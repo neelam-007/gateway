@@ -228,6 +228,23 @@ public class XmlUtil {
     }
 
     /**
+     * Same as other findChildElementsByName but allows for different namespaces. This is practical when
+     * an element can have different versions of the same namespace.
+     *
+     * @param namespaces an array containing all possible namespaces
+     */
+    public static List findChildElementsByName(Element parent, String[] namespaces, String name) {
+        List found = new ArrayList();
+        for (int i = 0; i < namespaces.length; i++) {
+            List partial = findChildElementsByName(parent, namespaces[i], name);
+            if (partial != null && !partial.isEmpty()) {
+                found.addAll(partial);
+            }
+        }
+        return found;
+    }
+
+    /**
      * Removes all child Elements of a parent Element
      * with the specified name that are in the specified namespace.
      *
