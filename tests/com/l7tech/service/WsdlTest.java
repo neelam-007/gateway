@@ -52,11 +52,11 @@ public class WsdlTest extends TestCase {
         // put tear down code here
     }
 
-    public static Reader getWsdlReader(String resourcetoread) {
+    public Reader getWsdlReader(String resourcetoread) {
         if (resourcetoread == null) {
             resourcetoread = WSDL;
         }
-        ClassLoader cl = WsdlTest.class.getClassLoader();
+        ClassLoader cl = getClass().getClassLoader();
         InputStream i = cl.getResourceAsStream(resourcetoread);
         InputStreamReader r = new InputStreamReader(i);
         return r;

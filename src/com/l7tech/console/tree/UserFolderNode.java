@@ -3,10 +3,14 @@ package com.l7tech.console.tree;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.console.action.NewUserAction;
+import com.l7tech.console.action.RefreshAction;
 
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import javax.swing.*;
 import java.util.Enumeration;
+import java.awt.*;
 
 
 /**
@@ -29,7 +33,7 @@ public class UserFolderNode extends AbstractTreeNode {
      * @param um the user manager
      */
     public UserFolderNode(UserManager um, long providerId) {
-       this(um, providerId, INTERNAL_USERS_NAME);
+        this(um, providerId, INTERNAL_USERS_NAME);
     }
 
     /**
@@ -64,6 +68,13 @@ public class UserFolderNode extends AbstractTreeNode {
     }
 
     /**
+     * @return true as this node children can be refreshed
+     */
+    public boolean canRefresh() {
+        return true;
+    }
+
+    /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
      *
@@ -72,7 +83,9 @@ public class UserFolderNode extends AbstractTreeNode {
     public Action[] getActions() {
         final NewUserAction newUserAction = new NewUserAction(this);
         newUserAction.setEnabled(providerId == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-        return new Action[]{newUserAction};
+        RefreshAction ra = new UserFolderRefreshAction(this);
+
+        return new Action[]{newUserAction, ra};
     }
 
     /**
@@ -120,6 +133,40 @@ public class UserFolderNode extends AbstractTreeNode {
             return "com/l7tech/console/resources/folderOpen.gif";
 
         return "com/l7tech/console/resources/folder.gif";
+    }
+
+    /**
+     * the refresh users action class
+     */
+    class UserFolderRefreshAction extends RefreshAction {
+        public UserFolderRefreshAction(UserFolderNode node) {
+            super(node);
+
+        }
+
+        public void performAction() {
+            if (tree == null) {
+                logger.warning("No tree assigned, ignoring the refresh action");
+                return;
+            }
+
+            Runnable runnable = new Runnable() {
+                public void run() {
+                    try {
+                        tree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        TreePath treePath = new TreePath(UserFolderNode.this.getPath());
+                        if (tree.isExpanded(treePath)) {
+                            UserFolderNode.this.hasLoadedChildren = false;
+                            model.reload(UserFolderNode.this);
+                        }
+                    } finally {
+                        tree.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    }
+                }
+            };
+            SwingUtilities.invokeLater(runnable);
+        }
     }
 
 }

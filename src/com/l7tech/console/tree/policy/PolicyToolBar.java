@@ -199,8 +199,12 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
       assertionPaletteListener = new TreeSelectionListener() {
           public void valueChanged(TreeSelectionEvent e) {
               try {
-                  TreePath path = e.getPath();
-                  lastPaletteNode = (AbstractTreeNode)path.getLastPathComponent();
+                  TreePath path = e.getNewLeadSelectionPath();
+                  if (path == null) {
+                       lastPaletteNode = null;
+                  } else {
+                      lastPaletteNode = (AbstractTreeNode)path.getLastPathComponent();
+                  }
                   updateActions();
               } catch (Exception e1) {
                   e1.printStackTrace();

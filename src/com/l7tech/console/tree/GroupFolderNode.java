@@ -2,12 +2,16 @@ package com.l7tech.console.tree;
 
 
 import com.l7tech.console.action.NewGroupAction;
+import com.l7tech.console.action.RefreshAction;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfigManager;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.util.Enumeration;
+import java.awt.*;
 
 
 /**
@@ -76,6 +80,13 @@ public class GroupFolderNode extends AbstractTreeNode {
     }
 
     /**
+     * @return true as this node children can be refreshed
+     */
+    public boolean canRefresh() {
+        return true;
+    }
+
+    /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
      *
@@ -84,11 +95,13 @@ public class GroupFolderNode extends AbstractTreeNode {
     public Action[] getActions() {
         final NewGroupAction newGroupAction = new NewGroupAction(this);
         newGroupAction.setEnabled(providerId == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-        return new Action[]{newGroupAction};
+        RefreshAction ra = new GroupFolderRefreshAction(this);
+
+        return new Action[]{newGroupAction, ra};
     }
 
     /**
-     * Returns the provider id for the users.
+     * Returns the provider id for the groups.
      *
      * @return the provider id
      */
@@ -116,5 +129,43 @@ public class GroupFolderNode extends AbstractTreeNode {
 
         return "com/l7tech/console/resources/folder.gif";
     }
+
+
+    /**
+     * the refresh groups action class
+     */
+    class GroupFolderRefreshAction extends RefreshAction {
+        public GroupFolderRefreshAction(GroupFolderNode node) {
+            super(node);
+
+        }
+
+        public void performAction() {
+            if (tree == null) {
+                logger.warning("No tree assigned, ignoring the refresh action");
+                return;
+            }
+
+            Runnable runnable = new Runnable() {
+                public void run() {
+                    try {
+                        SwingUtilities.getWindowAncestor(tree);
+                        tree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        TreePath treePath = new TreePath(GroupFolderNode.this.getPath());
+                        if (tree.isExpanded(treePath)) {
+                            GroupFolderNode.this.hasLoadedChildren = false;
+                            model.reload(GroupFolderNode.this);
+                        }
+                    } finally {
+                        tree.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    }
+                }
+            };
+            SwingUtilities.invokeLater(runnable);
+        }
+    }
+
 
 }

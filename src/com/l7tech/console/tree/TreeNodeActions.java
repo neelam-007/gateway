@@ -66,25 +66,8 @@ public class TreeNodeActions {
         return n;
     }
 
-
     /**
-     * Deletes the given EntityTreeNode
-     *
-     * @param node - the node to be deleted
-     * @return true if deleted, false otherwise
-     */
-    public static boolean deleteNode(EntityTreeNode node) {
-        boolean rb = false;
-        // Dispatch deletion based on the actual node type
-        Object object = node.getUserObject();
-        if (object instanceof AbstractTreeNode) {
-            rb = delete((AbstractTreeNode)object);
-        }
-        return rb;
-    }
-
-    /**
-     * Deletes the given EntityTreeNode
+     * Deletes the given AbstractTreeNode
      *
      * @param bn - the node to be deleted
      * @return true if deleted, false otherwise

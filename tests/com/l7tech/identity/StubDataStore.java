@@ -31,7 +31,7 @@ import java.util.*;
 public class StubDataStore {
     private static StubDataStore defaultStore = null;
     /** default data store patch */
-    public static final String DEFAULT_STORE_PATH = "tests/com/l7tech/identity/data.xml";
+    public static final String DEFAULT_STORE_PATH = "stubdata.xml";
 
     StubDataStore() {
     }
@@ -91,7 +91,7 @@ public class StubDataStore {
 
     private IdentityProviderConfig initialInternalProvider(XMLEncoder encoder) {
         IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
-        config.setOid(nextObjectId());
+        config.setOid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         config.setDescription("Internal identity provider (stub)");
         config.setName(config.getDescription());
         encoder.writeObject(config);
@@ -170,7 +170,7 @@ public class StubDataStore {
 
     private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
       throws IOException, WSDLException, MalformedURLException {
-        Wsdl wsdl = Wsdl.newInstance(null, WsdlTest.getWsdlReader(null));
+        Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(null));
 
         PublishedService service = new PublishedService();
         service.setName(wsdl.getDefinition().getTargetNamespace());
@@ -282,7 +282,7 @@ public class StubDataStore {
     private Map users = new HashMap();
     private Map groups = new HashMap();
     private Map pubServices = new HashMap();
-    private long objectIdSequence = 0;
+    private long objectIdSequence = 100;
 
     /**
      * initial seed data load.

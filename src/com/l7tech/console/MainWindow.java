@@ -25,6 +25,8 @@ import javax.help.HelpSetException;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
@@ -574,8 +576,38 @@ public class MainWindow extends JFrame {
         if (refreshAction != null) return refreshAction;
         String atext = resapplication.getString("Refresh_MenuItem_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Refresh16.gif"));
+
+        final TreeSelectionListener treeCanRefreshSelectionListener =
+          new TreeSelectionListener() {
+              private final JTree assertionPalette = getAssertionPaletteTree();
+              private final JTree services = getServicesTree();
+
+              public void valueChanged(TreeSelectionEvent e) {
+                  Object o = e.getSource();
+                  if (o == assertionPalette) {
+                      TreePath path = e.getNewLeadSelectionPath();
+                      if (path == null) return;
+                      AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
+                      refreshAction.setEnabled(n.canRefresh());
+                  } else if (o == services) {
+                      TreePath path = e.getNewLeadSelectionPath();
+                      if (path == null) return;
+
+                      AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
+                      refreshAction.setEnabled(n.canRefresh());
+                  } else {
+                      log.warning("Received unexpected selection path from " + o.getClass());
+                  }
+              }
+          };
+
+        getServicesTree().addTreeSelectionListener(treeCanRefreshSelectionListener);
+        getAssertionPaletteTree().addTreeSelectionListener(treeCanRefreshSelectionListener);
+
         refreshAction =
           new AbstractAction(atext, icon) {
+              final JTree[] trees = new JTree[]{getAssertionPaletteTree(), getServicesTree()};
+
               /**
                * Invoked when an action occurs.
                *
@@ -583,12 +615,32 @@ public class MainWindow extends JFrame {
                * @see Action#removePropertyChangeListener
                */
               public void actionPerformed(ActionEvent event) {
-                  JTree tree = getAssertionPaletteTree();
-                  EntityTreeNode node =
-                    (EntityTreeNode)tree.getLastSelectedPathComponent();
-
-                  if (node != null) {
-                      refreshNode(node);
+                  //todo: consider reworking this, by pushing more of this into
+                  // the node itself em.
+                  for (int i = 0; i < trees.length; i++) {
+                      final JTree tree = trees[i];
+                      TreePath path = tree.getSelectionPath();
+                      if (path != null) {
+                          AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
+                          final Action[] actions = n.getActions(RefreshAction.class);
+                          if (actions.length == 0) {
+                              log.warning("No refresh action found");
+                          } else {
+                              refreshAction.setEnabled(false);
+                              Runnable runnable = new Runnable() {
+                                  public void run() {
+                                      try {
+                                          ((NodeAction)actions[0]).setTree(tree);
+                                          ActionManager.getInstance().invokeAction(actions[0]);
+                                      } finally {
+                                          refreshAction.setEnabled(true);
+                                      }
+                                  }
+                              };
+                              SwingUtilities.invokeLater(runnable);
+                              break;
+                          }
+                      }
                   }
               }
           };
@@ -801,7 +853,43 @@ public class MainWindow extends JFrame {
         getServicesTree().setRootVisible(true);
         getServicesTree().setModel(servicesTreeModel);
         TreePath initialPath = new TreePath(servicesRootNode.getPath());
-        getServicesTree().setSelectionPath(initialPath);
+
+        TreeSelectionListener treeSelectionListener =
+          new TreeSelectionListener() {
+              private final JTree assertionPalette =
+                getAssertionPaletteTree();
+              private final JTree services = getServicesTree();
+
+              public void valueChanged(TreeSelectionEvent e) {
+                  Object o = e.getSource();
+                  if (o == assertionPalette) {
+                      if (!isRemovePath(e)) {
+                          log.finer("Clearing selection services");
+                          services.clearSelection();
+                      }
+                  } else if (o == services) {
+                      if (!isRemovePath(e)) {
+                          log.finer("Clearing selection assertions palette");
+                          assertionPalette.clearSelection();
+                      }
+                  } else {
+                      log.warning("Received unexpected selection path from " + o.getClass());
+                  }
+              }
+
+              private boolean isRemovePath(TreeSelectionEvent e) {
+                  TreePath[] paths = e.getPaths();
+                  for (int i = 0; i < paths.length; i++) {
+                      if (!e.isAddedPath(i)) {
+                          return true;
+                      }
+                  }
+                  return false;
+              }
+
+          };
+        getServicesTree().addTreeSelectionListener(treeSelectionListener);
+        getAssertionPaletteTree().addTreeSelectionListener(treeSelectionListener);
 
         getMainSplitPaneRight().removeAll();
         GridBagConstraints constraints
@@ -1204,13 +1292,7 @@ public class MainWindow extends JFrame {
      *
      * @param node   the node to refresh
      */
-    private void refreshNode(EntityTreeNode node) {
-        JTree tree = getAssertionPaletteTree();
-
-        node.removeAllChildren();
-        TreePath path = new TreePath(node.getPath());
-        tree.expandPath(path);
-        tree.setSelectionPath(path);
+    private void refreshNode(AbstractTreeNode node) {
     }
 
     /**

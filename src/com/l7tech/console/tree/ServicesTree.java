@@ -122,7 +122,7 @@ public class ServicesTree extends JTree {
                     }
                     AbstractTreeNode node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
 
-                    JPopupMenu menu = node.getPopupMenu();
+                    JPopupMenu menu = node.getPopupMenu(ServicesTree.this);
                     if (menu != null) {
                         menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
                     }

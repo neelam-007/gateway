@@ -1,19 +1,20 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.console.util.WeakPropertyChangeSupport;
+import com.l7tech.console.action.NodeAction;
 import com.l7tech.console.util.Cookie;
+import com.l7tech.console.util.WeakPropertyChangeSupport;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.awt.*;
-import java.util.Enumeration;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -131,6 +132,15 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         return count;
     }
 
+    /**
+     * reload the children under this node
+     */
+    public void reloadChildren() {
+        hasLoadedChildren = false;
+        loadChildren();
+        hasLoadedChildren = true;
+    }
+
 
     /**
      * subclasses override this method
@@ -142,7 +152,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * This may be used e.g. in constructing a context menu.
      *
      * <P>
-     * By default returns the empty actions arrays.
+     * By default returns the empty actions array.
      *
      * @return actions appropriate to the node
      */
@@ -151,18 +161,43 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
+     * Get the set of actions associated with this node that
+     * are assignable by the class parameter.
+     *
+     * @param cl the class paremeter to test the actions against
+     * @return actions appropriate to the node that are assignable
+     * by class.
+     */
+    public Action[] getActions(Class cl) {
+        java.util.List list = new ArrayList();
+        Action[] actions = getActions();
+        for (int i = 0; i < actions.length; i++) {
+            Action action = actions[i];
+            if (cl.isAssignableFrom(action.getClass())) {
+                list.add(actions[i]);
+            }
+        }
+        return (Action[])list.toArray(new Action[]{});
+    }
+
+
+    /**
      * Make a popup menu for this node.
      * The menu is constructed from the set of actions returned
      * by {@link #getActions}.
      *
      * @return the popup menu
      */
-    public final JPopupMenu getPopupMenu() {
+    public final JPopupMenu getPopupMenu(JTree tree) {
         Action[] actions = getActions();
         if (actions == null || actions.length == 0)
             return null;
         JPopupMenu pm = new JPopupMenu();
         for (int i = 0; i < actions.length; i++) {
+            //todo: consider reworking this a bit. em
+            if (actions[i] instanceof NodeAction) {
+                ((NodeAction)actions[i]).setTree(tree);
+            }
             pm.add(actions[i]);
         }
         return pm;
@@ -186,6 +221,16 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     public boolean canDelete() {
         return false;
     }
+
+    /**
+     *Test if the node can be refreshed. Default is <code>false</code>
+     *
+     * @return true if the node children can be refreshed, false otherwise
+     */
+    public boolean canRefresh() {
+        return false;
+    }
+
 
     /**
      * Gets the default action for this node.

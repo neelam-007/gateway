@@ -192,7 +192,7 @@ public class AssertionsTree extends JTree implements DragGestureListener {
                     }
                     AbstractTreeNode node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
 
-                    JPopupMenu menu = node.getPopupMenu();
+                    JPopupMenu menu = node.getPopupMenu(AssertionsTree.this);
                     if (menu != null) {
                         menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
                     }
@@ -241,4 +241,5 @@ public class AssertionsTree extends JTree implements DragGestureListener {
         public void treeCollapsed(TreeExpansionEvent event) {
         }
     }
+
 }

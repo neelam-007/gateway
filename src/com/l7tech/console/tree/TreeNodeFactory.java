@@ -2,7 +2,6 @@ package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
 
 import java.util.Enumeration;
 
@@ -10,7 +9,7 @@ import java.util.Enumeration;
 /**
  * The class <code>TreeNodeFactory</code> is a factory
  * class that creates <code>TreeNode</code> instances that
- * are placed in <code>DirTreeModel.</code>.
+ * are placed in <code>TreeModel.</code>.
  *
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>

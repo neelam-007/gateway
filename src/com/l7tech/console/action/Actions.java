@@ -26,7 +26,7 @@ public class Actions {
     static Logger log = Logger.getLogger(Actions.class.getName());
 
     /**
-     * Deletes the given EntityTreeNode
+     * Deletes the given EntityHeaderNode
      *
      * @param bn - the node to be deleted
      * @return true if deleted, false otherwise

@@ -8,7 +8,6 @@ package com.l7tech.service;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
@@ -28,6 +27,13 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class PublishedService extends NamedEntityImp {
+    /**
+     * Please do not change this logger type. Instead, provide the
+     * {@link java.util.logging.Handler} implementation - as governed by
+     * the JDK 1.4 logging API - if you wish to provide custom behaviour.
+     */
+    static final Logger logger = Logger.getLogger(PublishedService.class.getName());
+
     public PublishedService() {
         setVersion(1);
     }
@@ -203,7 +209,6 @@ public class PublishedService extends NamedEntityImp {
     protected String _wsdlXml;
     protected boolean _disabled;
 
-    protected transient Logger logger = LogManager.getInstance().getSystemLogger();
     protected transient Wsdl _parsedWsdl;
     protected transient Port _wsdlPort;
     protected transient URL _serviceUrl;

@@ -4,8 +4,8 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
 /**
- * FilteredTreeModel extends DirTreeModel and provides basic
- * filtering.
+ * FilteredTreeModel extends DefaultTreeModel and provides basic
+ * node filtering.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */

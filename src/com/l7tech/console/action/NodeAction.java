@@ -2,6 +2,8 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AbstractTreeNode;
 
+import javax.swing.*;
+
 /**
  * The <code>NodeAction</code> is the action that is
  * associated with tree nodes.
@@ -14,8 +16,40 @@ import com.l7tech.console.tree.AbstractTreeNode;
  */
 public abstract class NodeAction extends BaseAction {
     protected AbstractTreeNode node;
+    protected JTree tree;
 
+    /**
+     * constructor accepting the node that this action will
+     * act on.
+     * The tree will be set to <b>null<b/>
+     *
+     * @param node the node this action will acto on
+     */
     public NodeAction(AbstractTreeNode node) {
-        this.node = node;
+        this(node, null);
     }
+
+    /**
+     * full constructor. Construct the node action with the
+     * node and the tree parameters.
+     *
+     * @param node the node that this action will act on
+     * @param tree the tree where the node lives
+     */
+    public NodeAction(AbstractTreeNode node, JTree tree) {
+        this.node = node;
+        this.tree = tree;
+    }
+
+    /**
+     * set the tree that this node is associated with
+     *
+     * @param tree the tree this node is associated with
+     */
+    public final void setTree(JTree tree) {
+        JTree ot = tree;
+        this.tree = tree;
+        this.firePropertyChange("tree", ot, tree);
+    }
+
 }

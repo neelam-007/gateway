@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 /**
- * The class represents an <code>AbstractTreeNode</code>
- * node element that represents the assertions palette root.
+ * The class represents an <code>AbstractTreeNode</code> specialization
+ * element that represents the assertions palette root.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
@@ -47,14 +47,11 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
      */
     protected void loadChildren() {
         Registry r = Registry.getDefault();
-        long providerId =
-          r.getInternalProvider().getConfig().getOid();
-
         String homePath = null;
         try {
             homePath = Preferences.getPreferences().getHomePath();
         } catch (IOException e) {
-            // something happened to the preferences home path
+            // something bad happened to the preferences home path
             ErrorManager.
                       getDefault().
                       notify(Level.WARNING, e, "There was an error in retreiving preferences.");
