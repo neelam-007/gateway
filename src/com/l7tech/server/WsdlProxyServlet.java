@@ -163,7 +163,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
             // Is there anything to show?
             if (services.size() < 1) {
-                res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
+                //res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
+                // return empty wsil
+                String emptywsil = "<?xml version=\"1.0\"?>\n" +
+                                   "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\" />\n";
+                res.setContentType("text/xml; charset=utf-8");
+                res.getOutputStream().println(emptywsil);
                 return;
             }
             outputServiceDescriptions(req, res, services);
