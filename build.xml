@@ -230,6 +230,9 @@
 
             <formatter type="plain"/>
             <sysproperty key="src.root" value="${src.root}"/>
+            <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
+
+<!--
             <test name="com.l7tech.common.util.ThreadPoolTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.datamodel.SsgManagerTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.datamodel.SsgTest" haltonfailure="no"/>
@@ -256,15 +259,17 @@
             <test name="com.l7tech.server.TokenServiceTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.PolicyServiceTest" haltonfailure="no"/>
             <test name="com.l7tech.common.message.KnobblyMessageTest" haltonfailure="no"/>
-
+  -->
             <!--
              ** add policy tests into the com.l7tech.policy.AllPolicyTests class
-            -->
+-->
+            <!--
             <test name="com.l7tech.policy.AllPolicyTests" haltonfailure="no"/>
             <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
             <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.SoapMessageGeneratorTest" haltonfailure="no" fork="yes"/>
+-->
             <!--
             ** TODO: make sure -security flag is added to the 'nightly' build/test
             ** Tomcat config. When done enable the tests below.

@@ -182,7 +182,7 @@ public class SoapMessageGenerator {
      */
     private Object[] generateEnvelope(BindingOperation bindingOperation)
       throws SOAPException {
-        MessageFactory messageFactory = SoapUtil.getAxisMessageFactory();
+        MessageFactory messageFactory = SoapUtil.getMessageFactory();
         SOAPMessage soapMessage = messageFactory.createMessage();
         SOAPPart soapPart = soapMessage.getSOAPPart();
         SOAPEnvelope envelope = soapPart.getEnvelope();

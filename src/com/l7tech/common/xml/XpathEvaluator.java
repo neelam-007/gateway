@@ -98,8 +98,10 @@ public class XpathEvaluator {
         //Add namespaces of top body element
         Iterator bodyElements = body.getChildElements();
         while (bodyElements.hasNext()) {
-            SOAPElement element = (SOAPElement)bodyElements.next();
-            addNamespaces(namespaces, element);
+            Object element = bodyElements.next();
+            if(element instanceof SOAPElement) {
+                addNamespaces(namespaces, (SOAPElement)element);
+            }
         }
         return namespaces;
     }

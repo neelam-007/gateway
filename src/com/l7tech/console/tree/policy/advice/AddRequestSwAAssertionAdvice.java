@@ -12,7 +12,6 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.service.PublishedService;
-import org.apache.axis.message.SOAPBodyElement;
 
 import javax.swing.*;
 import javax.wsdl.Binding;
@@ -24,6 +23,7 @@ import javax.wsdl.extensions.mime.MIMEPart;
 import javax.xml.soap.Name;
 import javax.xml.soap.SOAPEnvelope;
 import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPElement;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -94,7 +94,6 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                 }
 
                 HashMap partList = new HashMap();
-                Collection elements = parsedWsdl.getInputParameters(bo);
                 List parts = multipart.getMIMEParts();
 
                 // for each MIME part of the input parameter of the operation in WSDL
@@ -160,10 +159,12 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                 }
                 Iterator soapBodyElements = soapBody.getChildElements();
 
-// get the first element
-                SOAPBodyElement operation = (SOAPBodyElement)soapBodyElements.next();
-                String operationName = operation.getName();
-                String operationPrefix = operation.getPrefix();
+               // get the first element
+                Object operation = soapBodyElements.next();
+                if(!(operation instanceof SOAPElement))
+                    throw new RuntimeException("operation must be an instance of SOAPBodyElement class");
+
+                String operationQName = ((SOAPElement) operation).getElementName().getQualifiedName();
 
                 Map bindings = swaAssertion.getBindings();
                 Iterator bindingsItr = bindings.keySet().iterator();
@@ -193,8 +194,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                   ":" + soapEnvLocalName +
                   "/" + soapBodyNamePrefix +
                   ":" + soapBodyLocalName +
-                  "/" + operationPrefix +
-                  ":" + operationName;
+                  "/" + operationQName;
 
                 if (bo != null) {
                     bo.setXpath(xpathExpression);

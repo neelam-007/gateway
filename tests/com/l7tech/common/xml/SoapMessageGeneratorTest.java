@@ -118,9 +118,11 @@ public class SoapMessageGeneratorTest extends TestCase {
                     SOAPBody sb = request.getSOAPMessage().getSOAPPart().getEnvelope().getBody();
                     Iterator elements = sb.getChildElements();
                     while (elements.hasNext() && !found) {
-                        SOAPElement se = (SOAPElement)elements.next();
-                        if (bindingOperationName.equals(se.getElementName().getLocalName())) {
+                        Object  se = elements.next();
+                        if(se instanceof SOAPElement) {
+                        if (bindingOperationName.equals(((SOAPElement)se).getElementName().getLocalName())) {
                             found = true;
+                        }
                         }
                     }
                 }

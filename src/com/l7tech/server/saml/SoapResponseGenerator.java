@@ -31,7 +31,7 @@ class SoapResponseGenerator {
     private MessageFactory msgFactory;
 
     SoapResponseGenerator() {
-        msgFactory = SoapUtil.getAxisMessageFactory();
+        msgFactory = SoapUtil.getMessageFactory();
     }
 
     /**
