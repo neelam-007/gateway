@@ -29,7 +29,7 @@ public class SsgPropertyDialog extends PropertyDialog {
 
     /** Create an SsgPropertyDialog ready to edit a new Ssg instance. */
     private SsgPropertyDialog(Ssg ssg) {
-        super();
+        super("SSG Properties");
         tabbedPane.add("General", getGeneralPane());
         setSsg(ssg);
         pack();

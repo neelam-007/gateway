@@ -113,8 +113,8 @@ public class Gui {
         return messageViewer;
     }
 
-    /** Create the GUI frame. */
-    private JFrame getFrame() {
+    /** Get the main frame. */
+    public JFrame getFrame() {
         if (frame == null) {
             frame = new JFrame("Client Proxy");
             frame.addWindowListener(new WindowAdapter() {
@@ -128,6 +128,7 @@ public class Gui {
             frame.setContentPane(new SsgListPanel());
             frame.pack();
         }
+
         return frame;
     }
 

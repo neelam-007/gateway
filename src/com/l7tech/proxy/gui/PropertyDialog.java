@@ -22,8 +22,10 @@ public abstract class PropertyDialog extends JDialog {
     /**
      * Creates a new PropertyDialog.
      * Sets up our tabbed pane, but doesn't put anything into it.
+     * @param title
      * */
-    protected PropertyDialog() {
+    protected PropertyDialog(String title) {
+        super(Gui.getInstance().getFrame(), title, true);
         getContentPane().setLayout(new BorderLayout());
 
         tabbedPane = new JTabbedPane(JTabbedPane.NORTH, JTabbedPane.WRAP_TAB_LAYOUT);

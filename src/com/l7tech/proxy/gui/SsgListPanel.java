@@ -32,23 +32,30 @@ public class SsgListPanel extends JPanel {
         setLayout(new BorderLayout());
 
         JPanel ssgListPanel = new JPanel();
-        JPanel buttonPanel = new JPanel();
-        add(ssgListPanel, BorderLayout.WEST);
-        add(buttonPanel, BorderLayout.SOUTH);
+
+        JToolBar toolBar = new JToolBar(JToolBar.HORIZONTAL);
+        toolBar.setFloatable(false);
+        toolBar.setRollover(true);
+
+        add(toolBar, BorderLayout.NORTH);
+        add(ssgListPanel, BorderLayout.CENTER);
 
         ssgListModel = new DefaultListModel();
         ssgListModel.addElement(new Ssg("Main SSG", "SSG0", "http://localhost:9898/", "", ""));
         ssgListModel.addElement(new Ssg("Alternate SSG", "SSG1", "http://localhost:9898/", "", ""));
         ssgList = new JList(ssgListModel);
-        ssgListPanel.add(ssgList);
         ssgList.setSelectedIndex(0);
         ssgList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        ssgList.setPreferredSize(new Dimension(350, 300));
+        JScrollPane ssgListPane = new JScrollPane(ssgList);
+        ssgListPanel.add(ssgListPane);
 
-        JButton newSsgButton = new JButton("New SSG", IconManager.getAdd());
-        buttonPanel.add(newSsgButton);
+        toolBar.add(new AbstractAction("New", IconManager.getAdd()) {
+            public void actionPerformed(ActionEvent e) {
+            }
+        });
 
-        JButton editSsgButton = new JButton("Edit SSG", IconManager.getEdit());
-        editSsgButton.addActionListener(new ActionListener() {
+        toolBar.add(new AbstractAction("Edit", IconManager.getEdit()) {
             public void actionPerformed(ActionEvent e) {
                 try {
                     PropertyDialog.getPropertyDialogForObject(ssgList.getSelectedValue()).show();
@@ -57,11 +64,10 @@ public class SsgListPanel extends JPanel {
                 }
             }
         });
-        buttonPanel.add(editSsgButton);
 
-        JButton deleteSsgButton = new JButton("Delete SSG", IconManager.getRemove());
-        buttonPanel.add(deleteSsgButton);
-
-        ssgList.setPreferredSize(new Dimension(350, 300));
+        toolBar.add(new AbstractAction("Delete", IconManager.getRemove()) {
+            public void actionPerformed(ActionEvent e) {
+            }
+        });
     }
 }
