@@ -128,13 +128,8 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                 final CertDetailsPanel panel2 = new CertDetailsPanel(panel3);
                 final CertImportMethodsPanel panel1 = new CertImportMethodsPanel(panel2, true);
 
-                JFrame f = TopComponents.getInstance().getMainWindow();
-                Wizard w = new AddCertificateWizard(f, panel1);
-                w.setTitle("Define new XML security recipient");
-
-                w.addWizardListener(new WizardListener() {
-                    public void wizardSelectionChanged(WizardEvent e) {}
-                    public void wizardFinished(WizardEvent e) {
+                panel3.setValidator(new RecipientSecurityHeaderWizardStep.Validator() {
+                    public boolean checkData() {
                         // make sure this data does not already exist in another assertion
                         String maybeNewActor = panel3.getCapturedValue();
                         X509Certificate maybeNewCert = panel2.getCert();
@@ -142,17 +137,32 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                             JOptionPane.showMessageDialog(assignCertButton, "The actor value " + maybeNewActor +
                                                                             " is already associated to a " +
                                                                             "recipient cert.");
+                            return false;
                         } else if (xmlSecRecipientsFromOtherAssertions.containsValue(maybeNewCert)) {
                             String dn = maybeNewCert.getSubjectDN().getName();
                             JOptionPane.showMessageDialog(assignCertButton, "The cert " + dn +
                                                                             " is already associated to an actor.");
-                        } else {
-                            locallyDefinedRecipient = maybeNewCert;
-                            certSubject.setText(locallyDefinedRecipient.getSubjectDN().getName());
-                            locallyDefinedActor = maybeNewActor;
-                            ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(locallyDefinedActor);
-                            ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(locallyDefinedActor);
+                            return false;
                         }
+                        return true;
+                    }
+                });
+
+                JFrame f = TopComponents.getInstance().getMainWindow();
+                Wizard w = new AddCertificateWizard(f, panel1);
+                w.setTitle("Define new XML security recipient");
+
+                w.addWizardListener(new WizardListener() {
+                    public void wizardSelectionChanged(WizardEvent e) {}
+                    public void wizardFinished(WizardEvent e) {
+                        String maybeNewActor = panel3.getCapturedValue();
+                        X509Certificate maybeNewCert = panel2.getCert();
+                        locallyDefinedRecipient = maybeNewCert;
+                        certSubject.setText(locallyDefinedRecipient.getSubjectDN().getName());
+                        locallyDefinedActor = maybeNewActor;
+                        ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(locallyDefinedActor);
+                        ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(locallyDefinedActor);
+
                     }
                     public void wizardCanceled(WizardEvent e) {}
                 });

@@ -19,10 +19,19 @@ import java.awt.*;
 public class RecipientSecurityHeaderWizardStep extends WizardStepPanel {
     private JPanel mainPanel;
     private JTextField actorAttributeValueField;
+    private Validator validator;
+
+    public interface Validator {
+        boolean checkData();
+    }
 
     public RecipientSecurityHeaderWizardStep(WizardStepPanel next) {
         super(next);
         initialize();
+    }
+
+    public void setValidator(Validator validator) {
+        this.validator = validator;
     }
 
     private void initialize() {
@@ -48,8 +57,12 @@ public class RecipientSecurityHeaderWizardStep extends WizardStepPanel {
     }
 
     public boolean onNextButton() {
+
         String currentval = getCapturedValue();
         if (currentval != null && currentval.length() > 0) {
+            if (validator != null) {
+                return validator.checkData();
+            }
             return true;
         }
         return false;
