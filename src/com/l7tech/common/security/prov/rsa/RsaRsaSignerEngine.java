@@ -118,7 +118,7 @@ public class RsaRsaSignerEngine implements RsaSignerEngine {
         cert.setSubjectName(csr.getSubjectName());
         cert.setSubjectPublicKey(csr.getSubjectPublicKey("Native/Java"));
 
-        cert.signCertificate ("SHA1/RSA/PKCS1Block01Pad", "Java", caKey, new SecureRandom());
+        cert.signCertificate ("SHA1/RSA/PKCS1Block01Pad", "Native/Java", caKey, new SecureRandom());
         byte[] encoded = new byte[cert.getDERLen(0)];
         cert.getDEREncoding(encoded, 0, encoded.length);
         return new X509CertImpl(encoded);
