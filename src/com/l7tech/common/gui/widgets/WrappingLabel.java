@@ -79,7 +79,15 @@ public class WrappingLabel extends JTextArea {
     private MouseListener getCopyMenuMouseListener() {
         if (copyMenuMouseListener == null) {
             copyMenuMouseListener = new MouseAdapter() {
+                public void mousePressed(final MouseEvent ev) {
+                    checkPopup(ev);
+                }
+
                 public void mouseReleased(final MouseEvent ev) {
+                    checkPopup(ev);
+                }
+
+                private void checkPopup(MouseEvent ev) {
                     if (ev.isPopupTrigger()) {
                         WrappingLabel.this.requestFocus();
                         WrappingLabel.this.selectAll();
