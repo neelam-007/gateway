@@ -53,12 +53,18 @@ public interface WssProcessor {
         String getContextIdentifier();
     }
 
-    /** Provided by SecurityContextFinder TO the WssProcessor.  Result of looking up a session. */
+    /**
+     * Provided by SecurityContextFinder TO the WssProcessor.  Result of looking up a session. WssProcessor will
+     * never create an instance of this.
+     */
     public interface SecurityContext {
         SecretKey getSharedSecret();
     }
 
-    /** Provided by the caller TO the WssProcessor.  WssProcessor will use this to look up sessions. */
+    /**
+     * Provided by the caller TO the WssProcessor.  WssProcessor will use this to look up sessions.
+     * WssProcessor will never create an instance of this.
+     */
     public interface SecurityContextFinder {
         SecurityContext getSecurityContext(String securityContextIdentifier);
     }
