@@ -87,8 +87,12 @@ public class ServerRoutingAssertion implements ServerAssertion {
             postMethod = new PostMethod(url.toString());
 
             // TODO: Attachments
-            postMethod.setRequestHeader(CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
-            postMethod.setRequestHeader( USER_AGENT, DEFAULT_USER_AGENT );
+            postMethod.setRequestHeader( CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
+
+            String userAgent = _data.getUserAgent();
+            if ( userAgent == null || userAgent.length() == 0 ) userAgent = DEFAULT_USER_AGENT;
+            postMethod.setRequestHeader( USER_AGENT, userAgent );
+
             int port = wsdlUrl.getPort();
             StringBuffer hostValue = new StringBuffer(wsdlUrl.getHost());
             if (port != -1) {
