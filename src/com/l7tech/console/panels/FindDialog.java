@@ -6,6 +6,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.action.BaseAction;
+import com.l7tech.console.action.UserPropertiesAction;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
@@ -676,6 +677,9 @@ public class FindDialog extends JDialog {
             }
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
+                    if (a instanceof UserPropertiesAction) {
+                        ((UserPropertiesAction)a).setIdProvider(searchInfo.getProvider());
+                    }
                     a.performAction();
                 }
             });

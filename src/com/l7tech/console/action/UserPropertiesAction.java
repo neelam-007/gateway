@@ -57,9 +57,12 @@ public class UserPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(
           new Runnable() {
             public void run() {
-                IdentityProvider ip = Registry.getDefault().getIdentityProvider((EntityHeaderNode)node);
+                if (idProvider == null) {
+                    idProvider = Registry.getDefault().getIdentityProvider((EntityHeaderNode)node);
+                    System.out.println("provider for " + node);
+                }
                 // read only mode not allowed at this point
-                if (ip.isReadOnly()) {
+                if (idProvider.isReadOnly()) {
                     JOptionPane.showMessageDialog(null, "This user is read-only.",
                                                         "Read-only",
                                                         JOptionPane.INFORMATION_MESSAGE);
@@ -70,11 +73,17 @@ public class UserPropertiesAction extends NodeAction {
                 JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
                 EditorDialog dialog = new EditorDialog(f, panel);
 
-                panel.edit(header);
+                panel.edit(header, idProvider);
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
                 dialog.show();
             }
         });
     }
+
+    public void setIdProvider(IdentityProvider idProvider) {
+        this.idProvider = idProvider;
+    }
+
+    private IdentityProvider idProvider;
 }

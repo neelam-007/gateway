@@ -8,10 +8,7 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.UserBean;
-import com.l7tech.identity.UserManager;
-import com.l7tech.identity.User;
-import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -77,6 +74,8 @@ public class UserPanel extends EntityEditorPanel {
     private JTextField emailTextField;
     private JButton changePassButton;
 
+    private IdentityProvider idProvider;
+
 
     /**
      * default constructor
@@ -100,6 +99,15 @@ public class UserPanel extends EntityEditorPanel {
         formModified = b;
     }
 
+    /**
+     * Constructs the panel
+     * @param userHeader
+     * @param idProvider
+     */
+    public void edit(EntityHeader userHeader, IdentityProvider idProvider) {
+        this.idProvider = idProvider;
+        edit(userHeader);
+    }
 
     /**
      * Retrieves the Group and constructs the Panel
@@ -123,34 +131,28 @@ public class UserPanel extends EntityEditorPanel {
                   + "\nReceived: " + userHeader.getType());
             }
 
+            if (idProvider == null) {
+                throw new RuntimeException("User edit operation without specified identity provider.");
+            }
+
             boolean isNew = userHeader.getOid() == 0;
             if (isNew) {
                 user = new UserBean();
                 user.setName(userHeader.getName());
                 userGroups = null;
             } else {
-                User u = getUserManager().findByPrimaryKey(userHeader.getStrId());
+                User u = idProvider.getUserManager().findByPrimaryKey(userHeader.getStrId());
                 if ( u == null )
                     throw new RuntimeException("User missing " + userHeader.getOid());
-
                 user = u.getUserBean();
-                userGroups = getGroupManager().getGroupHeaders(u.getUniqueIdentifier());
+                userGroups = idProvider.getGroupManager().getGroupHeaders(u.getUniqueIdentifier());
             }
-
             // Populate the form for insert/update
             setData(user);
         } catch (Exception e) {
             log.log(Level.SEVERE, "GroupPanel Edit Exception: " + e.toString());
             e.printStackTrace();
         }
-    }
-
-    private UserManager getUserManager() {
-        return Registry.getDefault().getInternalUserManager();
-    }
-
-    private GroupManager getGroupManager() {
-        return Registry.getDefault().getInternalGroupManager();
     }
 
     /**
@@ -548,7 +550,7 @@ public class UserPanel extends EntityEditorPanel {
           public void entityUpdated(EntityEvent ev) {
               try {
                   user =
-                    getUserManager().findByPrimaryKey(userHeader.getStrId()).getUserBean();
+                    idProvider.getUserManager().findByPrimaryKey(userHeader.getStrId()).getUserBean();
                   user = collectChanges();
                   boolean b = formModified;
                   setData(user);
@@ -616,9 +618,9 @@ public class UserPanel extends EntityEditorPanel {
             String id;
             if (userHeader.getStrId() != null) {
                 id = user.getUniqueIdentifier();
-                getUserManager().update(user, userGroups);
+                idProvider.getUserManager().update(user, userGroups);
             } else {
-                id = getUserManager().save(user, userGroups);
+                id = idProvider.getUserManager().save(user, userGroups);
                 userHeader.setStrId(id);
             }
 
