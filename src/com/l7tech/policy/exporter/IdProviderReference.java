@@ -7,6 +7,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.Assertion;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -73,7 +74,7 @@ public class IdProviderReference extends ExternalReference {
         super();
     }
 
-    public void serializeToRefElement(Element referencesParentElement) {
+    void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, IdProviderReference.class.getName());
         referencesParentElement.appendChild(refEl);
@@ -102,7 +103,7 @@ public class IdProviderReference extends ExternalReference {
      * 2. Look for same properties. If that exists, => record corresponding match.
      * 3. Otherwise => this reference if 'not verified'.
      */
-    public boolean verifyReference() {
+    boolean verifyReference() {
         // 1. Look for same oid and name. If that exists, => record perfect match.
         IdentityProviderConfigManager manager = (IdentityProviderConfigManager)
                                                   Locator.getDefault().lookup(IdentityProviderConfigManager.class);
@@ -152,6 +153,10 @@ public class IdProviderReference extends ExternalReference {
         // 3. Otherwise => this reference if 'not verified' and will require manual resolution.
         logger.fine("this reference cannot be established locally (" + getProviderName() + ").");
         return false;
+    }
+
+    void localizeAssertion(Assertion assertionToLocalize) {
+        // todo
     }
 
     public boolean equals(Object o) {

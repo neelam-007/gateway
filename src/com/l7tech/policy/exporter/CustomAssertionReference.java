@@ -3,6 +3,16 @@ package com.l7tech.policy.exporter;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.console.util.Registry;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 /**
  * A reference to a CustomAssertion type. This reference is exported alongside
@@ -35,7 +45,7 @@ public class CustomAssertionReference extends ExternalReference {
         super();
     }
 
-    public void serializeToRefElement(Element referencesParentElement) {
+    void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, CustomAssertionReference.class.getName());
         referencesParentElement.appendChild(refEl);
@@ -65,11 +75,36 @@ public class CustomAssertionReference extends ExternalReference {
     /**
      * Checks whether or not an external reference can be mapped on this local
      * system without administrator interaction.
+     *
+     * LOGIC:
+     * Load all registered remote assertion through CustomAssertionsRegistrar
+     * and look for one with same name as the one from this reference.
      */
-    public boolean verifyReference() {
-        // todo
-        return true;
+    boolean verifyReference() {
+        final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
+        Collection assertins = null;
+        try {
+            assertins = cr.getAssertions();
+            // test
+            for (Iterator iterator = assertins.iterator(); iterator.hasNext();) {
+                CustomAssertionHolder cah = (CustomAssertionHolder)iterator.next();
+                String thisname = cah.getCustomAssertion().getName();
+                if (thisname != null && thisname.equals(customAssertionName)) {
+                    // WE HAVE A MATCH!
+                    return true;
+                }
+            }
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "Cannot get remote assertions", e);
+        }
+        return false;
     }
+
+    void localizeAssertion(Assertion assertionToLocalize) {
+        // nothing to do. if the verify passed, then this is good to go
+    }
+
+    private final Logger logger = Logger.getLogger(CustomAssertionReference.class.getName());
 
     private String customAssertionName;
     public static final String REF_EL_NAME = "CustomAssertionReference";

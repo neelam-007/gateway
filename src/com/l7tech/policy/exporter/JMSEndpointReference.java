@@ -6,6 +6,7 @@ import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.Assertion;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
@@ -72,7 +73,7 @@ public class JMSEndpointReference extends ExternalReference {
         super();
     }
 
-    public void serializeToRefElement(Element referencesParentElement) {
+    void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, JMSEndpointReference.class.getName());
         referencesParentElement.appendChild(refEl);
@@ -141,9 +142,13 @@ public class JMSEndpointReference extends ExternalReference {
      * Checks whether or not an external reference can be mapped on this local
      * system without administrator interaction.
      */
-    public boolean verifyReference() {
+    boolean verifyReference() {
         // todo
         return true;
+    }
+
+    void localizeAssertion(Assertion assertionToLocalize) {
+        // todo
     }
 
     private final Logger logger = Logger.getLogger(JMSEndpointReference.class.getName());
