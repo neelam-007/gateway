@@ -7,13 +7,14 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.xml.Session;
-import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.util.ClientLogger;
 import org.w3c.dom.Document;
@@ -34,11 +35,11 @@ public class PendingRequest {
     private static final ClientLogger log = ClientLogger.getInstance(PendingRequest.class);
 
     //private ClientProxy clientProxy;
-    private CredentialManager credentialManager = Managers.getCredentialManager();
+    private final CredentialManager credentialManager = Managers.getCredentialManager();
     private Document soapEnvelope;
     private Document initialEnvelope;
-    private Ssg ssg;
-    private RequestInterceptor requestInterceptor = NullRequestInterceptor.INSTANCE;
+    private final Ssg ssg;
+    private final RequestInterceptor requestInterceptor;
     private String soapAction = "";
     private String uri = "";
     private SsgResponse lastErrorResponse = null; // Last response received from SSG in the case of 401 or 500 status
@@ -65,7 +66,7 @@ public class PendingRequest {
         this.soapEnvelope = soapEnvelope;
         this.initialEnvelope = soapEnvelope;
         this.ssg = ssg;
-        setRequestInterceptor(requestInterceptor);
+        this.requestInterceptor = requestInterceptor;
     }
 
     public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor ri, URL origUrl, HttpHeaders headers) {
@@ -88,12 +89,21 @@ public class PendingRequest {
      */
     public void prepareClientCertificate() throws OperationCanceledException, KeyStoreCorruptException,
             GeneralSecurityException, ClientCertificateException,
-            ServerCertificateUntrustedException, BadCredentialsException
+            ServerCertificateUntrustedException, BadCredentialsException, PolicyRetryableException
     {
         try {
             if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 log.info("PendingRequest: applying for client certificate");
                 SsgKeyStoreManager.obtainClientCertificate(ssg, getCredentials());
+            }
+        } catch (CertificateAlreadyIssuedException e) {
+            // Bug #380 - if we haven't updated policy yet, try that first - mlyons
+            if (!isPolicyUpdated()) {
+                Managers.getPolicyManager().flushPolicy(this);
+                throw new PolicyRetryableException();
+            } else {
+                Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
+                throw new OperationCanceledException();
             }
         } catch (IOException e) {
             throw new ClientCertificateException("Unable to obtain a client certificate", e);
@@ -206,12 +216,6 @@ public class PendingRequest {
 
     public RequestInterceptor getRequestInterceptor() {
         return requestInterceptor;
-    }
-
-    public void setRequestInterceptor(RequestInterceptor requestInterceptor) {
-        if (requestInterceptor == null)
-            throw new IllegalArgumentException("requestInterceptor mustn't be null; use NullRequestInterceptor");
-        this.requestInterceptor = requestInterceptor;
     }
 
     public boolean isSslRequired() {
