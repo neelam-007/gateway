@@ -24,10 +24,7 @@ import java.rmi.RemoteException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 
 
@@ -126,9 +123,11 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             try {
                 users = authenticateRequestBasic(httpServletRequest, targetService);
             } catch (BadCredentialsException e) {
-                logger.info("Returning 401 to requestor because invalid credentials were provided");
-                httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
-                return;
+                if (!anonymousok) {
+                    logger.info("Returning 401 to requestor because invalid credentials were provided");
+                    httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+                    return;
+                } else users = Collections.EMPTY_LIST;
             }
 
             if (!anonymousok) {
