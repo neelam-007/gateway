@@ -166,7 +166,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 30, 0, 0);
+        constraints.insets = new Insets(12, 20, 0, 0);
         panel.add(getProviderTypes(), constraints);
         add(panel);
 
@@ -458,19 +458,30 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     public void storeSettings(Object settings) {
 
         if (settings != null) {
-            LdapIdentityProviderConfig ldapType = (LdapIdentityProviderConfig) providerTypesCombo.getSelectedItem();
 
+            Object selectedType = providerTypesCombo.getSelectedItem();
 
-            ((LdapIdentityProviderConfig) settings).setTemplateName(ldapType.getTemplateName());
-            ((LdapIdentityProviderConfig) settings).setGroupMappings(ldapType.getGroupMappings());
-            ((LdapIdentityProviderConfig) settings).setUserMappings(ldapType.getUserMappings());
+            if (selectedType instanceof LdapIdentityProviderConfig) {
+                LdapIdentityProviderConfig ldapType = (LdapIdentityProviderConfig) selectedType;
 
-            ((LdapIdentityProviderConfig) settings).setLdapUrl(getLdapHostTextField().getText());
-            ((LdapIdentityProviderConfig) settings).setName(getProviderNameTextField().getText());
-            ((LdapIdentityProviderConfig) settings).setSearchBase(getLdapSearchBaseTextField().getText());
-            ((LdapIdentityProviderConfig) settings).setBindDN(getLdapBindDNTextField().getText());
-            ((LdapIdentityProviderConfig) settings).setBindPasswd(getLdapBindPassTextField().getText());
+                // stores the default mappings only when the config is a new object or
+                // when the selection of the template is changed
+                if (((LdapIdentityProviderConfig) settings).getTemplateName() == null ||
+                        (((LdapIdentityProviderConfig) settings).getTemplateName() != null &&
+                        !((LdapIdentityProviderConfig) settings).getTemplateName().equals(ldapType.getTemplateName()))) {
 
+                    ((LdapIdentityProviderConfig) settings).setGroupMappings(ldapType.getGroupMappings());
+                    ((LdapIdentityProviderConfig) settings).setUserMappings(ldapType.getUserMappings());
+                }
+
+                ((LdapIdentityProviderConfig) settings).setTemplateName(ldapType.getTemplateName());
+                ((LdapIdentityProviderConfig) settings).setLdapUrl(getLdapHostTextField().getText());
+                ((LdapIdentityProviderConfig) settings).setName(getProviderNameTextField().getText());
+                ((LdapIdentityProviderConfig) settings).setSearchBase(getLdapSearchBaseTextField().getText());
+                ((LdapIdentityProviderConfig) settings).setBindDN(getLdapBindDNTextField().getText());
+                ((LdapIdentityProviderConfig) settings).setBindPasswd(getLdapBindPassTextField().getText());
+
+            }
         }
     }
 

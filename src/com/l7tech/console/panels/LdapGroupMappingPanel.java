@@ -137,16 +137,24 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
                 if (lastSelectedGroup != null) {
 
                     Iterator itr = getGroupListModel().iterator();
+                    boolean found = false;
+                    Object obj = null;
                     while (itr.hasNext()) {
-                        Object o = itr.next();
-                        if (o instanceof GroupMappingConfig) {
-                            if (((GroupMappingConfig) o).getObjClass().equals(lastSelectedGroup.getObjClass())) {
+                        obj = itr.next();
+                        if (obj instanceof GroupMappingConfig) {
+                            if (((GroupMappingConfig) obj).getObjClass().equals(lastSelectedGroup.getObjClass())) {
                                 // the selected group found
-                                getGroupList().setSelectedValue(o, true);
-                                lastSelectedGroup = (GroupMappingConfig) o;
+                                found = true;
                                 break;
                             }
                         }
+                    }
+                    if(found) {
+                        getGroupList().setSelectedValue(obj, true);
+                        lastSelectedGroup = (GroupMappingConfig) obj;
+                    } else {
+                        getGroupList().setSelectedIndex(0);
+                        lastSelectedGroup = null;
                     }
                 } else {
                     getGroupList().setSelectedIndex(0);

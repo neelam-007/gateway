@@ -143,18 +143,27 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
             if (getUserListModel().getSize() > 0) {
                 if (lastSelectedUser != null) {
 
+                    boolean found = false;
+                    Object obj = null;
                     Iterator itr = getUserListModel().iterator();
                     while (itr.hasNext()) {
-                        Object o = itr.next();
-                        if (o instanceof UserMappingConfig) {
-                            if (((UserMappingConfig) o).getObjClass().equals(lastSelectedUser.getObjClass())) {
+                        obj = itr.next();
+                        if (obj instanceof UserMappingConfig) {
+                            if (((UserMappingConfig) obj).getObjClass().equals(lastSelectedUser.getObjClass())) {
                                 // the selected group found
-                                getUserList().setSelectedValue(o, true);
-                                lastSelectedUser = (UserMappingConfig) o;
+                                found = true;
                                 break;
                             }
                         }
                     }
+                    if (found) {
+                        getUserList().setSelectedValue(obj, true);
+                        lastSelectedUser = (UserMappingConfig) obj;
+                    } else {
+                        getUserList().setSelectedIndex(0);
+                        lastSelectedUser = null;
+                    }
+
                 } else {
                     getUserList().setSelectedIndex(0);
                 }
