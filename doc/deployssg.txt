@@ -16,15 +16,20 @@ PREPARING THE SERVER
 [GATEWAY] download and uncompress tomcat custom version it should go in /usr/java/tomcat-4.1.27-l7p2
 
 [ROOT]	user postgres should already exist, set its password "passwd postgres"
+
 [POSTGRES] initdb --pgdata=/var/lib/pgsql/data
-[POSTGRES] change /var/lib/pgsql/data/postgresql.conf to allow network access (required for jdbc access) look for tcpip_socket
-[ROOT] service postgresql start
-[ROOT] chkconfig postgresql on (make sure mysqld starts at boot)
+[POSTGRES] change /var/lib/pgsql/data/postgresql.conf to allow network access (required for jdbc access) look for tcpip_socket = false, set to true
+
+[ROOT] start psql server service postgresql start
+[ROOT] make sure mysqld starts at boot chkconfig postgresql on
 
 [POSTGRES]	createdb ssg
 [POSTGRES]	psql ssg -f ssg.sql
 [POSTGRES]	CREATE USER gateway WITH PASSWORD 'same_as_linux_passwd';
-[POSTGRES]	GRANT ALL PRIVILEGES ON ssg.* to gateway;
+[POSTGRES]	GRANT ALL ON table_name to gateway; (for every tables)
+[POSTGRES]  ADD ENTRYS IN PGSQL Auth file /var/lib/pgsql/data/pg_hba.conf
+            host  ssg  gateway  127.0.0.1  255.255.255.255  password
+
 
 DEPLOYING THE SSG
 =========================================
