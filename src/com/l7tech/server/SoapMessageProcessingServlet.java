@@ -87,6 +87,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 } else if (sresp.isAuthenticationMissing() || status.isAuthProblem()) {
                     logger.fine("servlet transport returning challenge");
                     sendChallenge(sreq, sresp, hrequest, hresponse);
+                } else if (sresp.getFaultDetail() != null) {
+                    logger.fine("returning special soap fault");
+                    sendFault(sresp.getFaultDetail(), hresponse);
                 } else {
                     logger.fine("servlet transport returning 500");
                     sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
@@ -124,6 +127,24 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             try { if (respWriter != null) respWriter.close(); } catch (Throwable t) {}
             try { if (sreq != null) sreq.close(); } catch (Throwable t) {}
             try { if (sresp != null) sresp.close(); } catch (Throwable t) {}
+        }
+    }
+
+    private void sendFault(SoapFaultDetail faultDetail, HttpServletResponse res) throws SOAPException, IOException{
+        OutputStream responseStream = null;
+        try {
+            res.setContentType(DEFAULT_CONTENT_TYPE);
+            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
+            SOAPMessage msg = SoapUtil.makeMessage();
+            SoapUtil.addFaultTo(msg,
+                                faultDetail.getFaultCode(),
+                                faultDetail.getFaultString(),
+                                null);  // TODO use SSG url as faultactor
+            responseStream = res.getOutputStream();
+            msg.writeTo(responseStream);
+        } finally {
+            if (responseStream != null) responseStream.close();
         }
     }
 
