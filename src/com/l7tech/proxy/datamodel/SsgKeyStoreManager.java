@@ -46,7 +46,7 @@ public class SsgKeyStoreManager {
      */
     private static final char[] KEYSTORE_PASSWORD = "lwbnasudg".toCharArray();
 
-    /** Keystore type.  This is a read-write PKCS12 keystore provided by Bouncy Castle. */
+    /** Keystore type.  JCEKS is more secure than the default JKS format. */
     private static final String KEYSTORE_TYPE = "JCEKS";
 
     /**
