@@ -1,12 +1,14 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,6 +21,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.io.UnsupportedEncodingException;
 
 /**
  * This class is the Password change dialog.
@@ -59,14 +62,16 @@ public class PasswordDialog extends JDialog {
     private int MIN_PASSWORD_LENGTH = 6;
     private int MAX_PASSWORD_LENGTH = 32;
     private EntityListener listener;
+    private UserPanel userPanel;
 
     /**
      * Create a new PasswordDialog
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
-    public PasswordDialog(Frame parent, User user, EntityListener l) {
+    public PasswordDialog(Frame parent, UserPanel userPanel, User user, EntityListener l) {
         super(parent, true);
+        this.userPanel = userPanel;
         this.user = user;
         this.listener = l;
         initResources();
@@ -295,14 +300,22 @@ public class PasswordDialog extends JDialog {
             return false;
         }
 
-        int res = JOptionPane.showConfirmDialog(
-                    null,
-                    resources.getString("confirmPassChange.question"),
-                    resources.getString("confirmPassChange.title"),
-                    JOptionPane.YES_NO_OPTION);
-        if (res != JOptionPane.YES_OPTION) {
+        try {
+            if (user.getPassword().equals(User.encodePasswd(user.getLogin(), new String((new String(newPass)).getBytes(), InternalIdentityProviderServer.ENCODING), HttpDigest.REALM))) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        resources.getString("sameOldPassord.question"),
+                        resources.getString("sameOldPassord.title"),
+                        JOptionPane.ERROR_MESSAGE);
+                newPasswordField.setText("");
+                confirmPasswordField.setText("");
+                return false;
+            }
+        } catch (UnsupportedEncodingException e) {
+            log.log(Level.WARNING, "validateInput()", e);
             return false;
         }
+
         return true;
     }
 
@@ -313,10 +326,21 @@ public class PasswordDialog extends JDialog {
      */
     private void changePassword(char[] newPass) {
         try {
+            if (userPanel.certExist()) {
+                int res = JOptionPane.showConfirmDialog(
+                        null,
+                        resources.getString("confirmPassChange.question"),
+                        resources.getString("confirmPassChange.title"),
+                        JOptionPane.YES_NO_OPTION);
+                if (res != JOptionPane.YES_OPTION) {
+                    return;
+                }
+            }
+
             user.setPassword(new String(newPass));
             Registry.getDefault().getInternalUserManager().update(user);
             dispose();
-            if (listener !=null) {
+            if (listener != null) {
                 EntityHeader eh = new EntityHeader();
                 eh.setOid(user.getOid());
                 eh.setName(user.getName());
@@ -326,9 +350,9 @@ public class PasswordDialog extends JDialog {
         } catch (Exception e) {
             log.log(Level.WARNING, "changePassword()", e);
             JOptionPane.showMessageDialog(null,
-              "There was an system error saving the password",
-              "Error",
-              JOptionPane.ERROR_MESSAGE);
+                    "There was an system error saving the password",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
             newPasswordField.setText("");
             confirmPasswordField.setText("");
             newPasswordField.requestFocus();

@@ -499,6 +499,8 @@ public class UserPanel extends EntityEditorPanel {
 
     /** Create the Change password button */
     private JButton getChangePassButton() {
+        final UserPanel userPanel = this;
+
         if (changePassButton == null) {
             changePassButton = new JButton(CHANGE_PASSWORD_LABEL);
 
@@ -506,7 +508,7 @@ public class UserPanel extends EntityEditorPanel {
               addActionListener(new ActionListener() {
                   public void actionPerformed(ActionEvent e) {
                       new PasswordDialog(
-                        Registry.getDefault().getComponentRegistry().getMainWindow(),
+                        Registry.getDefault().getComponentRegistry().getMainWindow(), userPanel,
                         user, passwordChangeListener).show();
                       // Refresh the panel (since the agent's cert might have been revoked)
                   }
@@ -535,8 +537,11 @@ public class UserPanel extends EntityEditorPanel {
               }
 
           }
-
       };
+
+    public boolean certExist(){
+        return certPanel.certExist();
+    }
 
     /**
      * Populates the form from the user bean

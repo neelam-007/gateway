@@ -231,6 +231,11 @@ class CertificatePanel extends JPanel {
         }
     }
 
+    public boolean certExist(){
+        user = userPanel.getUser();
+        getUserCert();
+        return (cert != null)?true:false;
+    }
 
     // hierarchy listener
     private final HierarchyListener hierarchyListener = new HierarchyListener() {
@@ -330,7 +335,7 @@ class CertificatePanel extends JPanel {
 
             cert = (X509Certificate)clientCert;
         } catch (FindException e) {
-            log.log(Level.WARNING, "There was an error loading the certifuc", e);
+            log.log(Level.WARNING, "There was an error loading the certificate", e);
         }
     }
 
