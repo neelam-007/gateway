@@ -53,7 +53,7 @@ public class DigestSessions {
     public String generate( Request request, int timeout, int maxUses ) {
         long currentTime = System.currentTimeMillis();
 
-        String nonceValue = request.getTransportMetadata().getParameter( Request.PARAM_REMOTE_ADDR ) + ":" +
+        String nonceValue = request.getParameter( Request.PARAM_REMOTE_ADDR ) + ":" +
             currentTime + ":" + NONCEKEY;
 
         byte[] buffer = _md5.digest(nonceValue.getBytes());
