@@ -7,18 +7,21 @@ import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Cookie;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import javax.wsdl.WSDLException;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -218,6 +221,37 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
             if (value instanceof ServiceNode) return (ServiceNode)value;
         }
         return null;
+    }
+
+
+    /**
+     * some nodes need to be additionally prepared
+     * @param node to prapre
+     * @return the preapred node
+     */
+    protected final AssertionTreeNode prepareNode(AssertionTreeNode node) {
+        if (node instanceof RoutingAssertionTreeNode) {
+            String url = "Unable to determine the service url. Please edit";
+            for (Iterator i = ((AbstractTreeNode)this.getRoot()).cookies(); i.hasNext();) {
+                Object value = ((Cookie)i.next()).getValue();
+                if (value instanceof ServiceNode) {
+                    ServiceNode sn = (ServiceNode)value;
+                    try {
+                        url = sn.getPublishedService().parsedWsdl().getServiceURI();
+                    } catch (WSDLException e) {
+                        log.log(Level.WARNING, "Wsdl error", e);
+                    } catch (FindException e) {
+                        log.log(Level.WARNING, "Service lookup failed, service gone?  " + sn.getEntityHeader().getOid());
+                    } catch (RemoteException e) {
+                        log.log(Level.WARNING, "Remote service error", e);
+                    }
+                }
+            }
+            RoutingAssertionTreeNode rn = (RoutingAssertionTreeNode)node;
+            ((RoutingAssertion)rn.asAssertion()).setProtectedServiceUrl(url);
+        }
+
+        return node;
     }
 
     /**
