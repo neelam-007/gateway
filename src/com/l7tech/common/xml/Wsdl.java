@@ -701,6 +701,25 @@ public class Wsdl {
         if (num > 1) logger.warning("WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements");
     }
 
+    public String getPortUrl(Port wsdlPort) {
+        if (wsdlPort == null)
+            throw new IllegalArgumentException("No WSDL port was provided");
+        List elements = wsdlPort.getExtensibilityElements();
+        ExtensibilityElement eel;
+        int num = 0;
+        for (int i = 0; i < elements.size(); i++) {
+            eel = (ExtensibilityElement)elements.get(i);
+            if (eel instanceof SOAPAddress) {
+                SOAPAddress sadd = (SOAPAddress)eel;
+                num++;
+                if (sadd.getLocationURI() != null) {
+                    return sadd.getLocationURI();
+                }
+            }
+        }
+        return null;
+    }
+
     private Definition definition;
 
     private transient Logger logger = Logger.getLogger(getClass().getName());

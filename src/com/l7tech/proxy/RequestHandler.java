@@ -525,12 +525,22 @@ public class RequestHandler extends AbstractHttpHandler {
 
             // Rewrite the wsdl URL
             int port = clientProxy.getBindPort();
-            URL newUrl = new URL("http", request.getHost(), port,
-              "/" + ssg.getLocalEndpoint() + "/service/" + oid);
-            Port soapPort = wsdl.getSoapPort();
-            if (soapPort != null)
-                wsdl.setPortUrl(soapPort, newUrl);
 
+            Port soapPort = wsdl.getSoapPort();
+            if (soapPort != null) {
+                String existinglocation = wsdl.getPortUrl(soapPort);
+                URL newUrl = null;
+                if (existinglocation != null && existinglocation.lastIndexOf("/ssg/soap") == -1) {
+                    newUrl = new URL(existinglocation);
+                    newUrl = new URL("http", request.getHost(), port,
+                      "/" + ssg.getLocalEndpoint() + newUrl.getPath());
+                } else {
+                    newUrl = new URL("http", request.getHost(), port,
+                      "/" + ssg.getLocalEndpoint() + "/service/" + oid);
+                }
+                if (soapPort != null)
+                    wsdl.setPortUrl(soapPort, newUrl);
+            }
             response.addField(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             wsdl.toOutputStream(response.getOutputStream());
             response.commit();
