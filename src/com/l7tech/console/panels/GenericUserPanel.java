@@ -66,6 +66,7 @@ public class GenericUserPanel extends UserPanel {
     private JLabel emailLabel;
     private JTextField emailTextField;
     private JButton changePassButton;
+    private JButton setExpirationButton;
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 
     public GenericUserPanel() {
@@ -296,6 +297,19 @@ public class GenericUserPanel extends UserPanel {
             GridBagConstraints.NONE,
             new Insets(15, 10, 0, 10), 0, 0));
 
+        // add account expiration here?
+        detailsPanel.add(new JLabel("Account expiration:"),
+                         new GridBagConstraints(0, 13, 1, 1, 0.0, 0.0,
+                         GridBagConstraints.WEST,
+                         GridBagConstraints.NONE,
+                         new Insets(0, 10, 0, 10), 0, 0));
+
+        detailsPanel.add(getSetExpirationButton(),
+                         new GridBagConstraints(1, 13, 1, 1, 1.0, 0.0,
+                         GridBagConstraints.WEST,
+                         GridBagConstraints.HORIZONTAL,
+                         new Insets(0, 10, 0, 10), 0, 0));
+
         Component strut = Box.createVerticalStrut(8);
 
         detailsPanel.add(strut,
@@ -504,6 +518,33 @@ public class GenericUserPanel extends UserPanel {
 
         // Return button
         return cancelButton;
+    }
+
+    private JButton getSetExpirationButton() {
+        if (setExpirationButton == null) {
+            setExpirationButton = new JButton("never");
+            setExpirationButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    // get parent dialog
+                    JDialog parent = null;
+                    Container container = GenericUserPanel.this.getParent();
+                    while (container != null) {
+                        if (container instanceof JDialog) {
+                            parent = (JDialog)container;
+                            break;
+                        }
+                        container = container.getParent();
+                    }
+                    // todo get initial value
+                    AccountExpirationPanel exirationChooser = new AccountExpirationPanel(parent, -1);
+                    exirationChooser.pack();
+                    Utilities.centerOnScreen(exirationChooser);
+                    exirationChooser.show();
+                    // todo store value somewhere
+                }
+            });
+        }
+        return setExpirationButton;
     }
 
     /**
