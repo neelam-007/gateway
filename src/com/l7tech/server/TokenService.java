@@ -240,12 +240,10 @@ public class TokenService {
     private String produceEncryptedKeyXml(SecretKey sharedSecret, X509Certificate requestorCert) throws GeneralSecurityException {
         StringBuffer encryptedKeyXml = new StringBuffer();
         // Key info and all
-        encryptedKeyXml.append("<xenc:EncryptedKey xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\">" +
-                                 "<xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\" />" +
-                                 "<KeyInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">");
+        encryptedKeyXml.append("<xenc:EncryptedKey wsu:Id=\"newProof\" xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\">" +
+                                 "<xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\" />");
 
         // append ski if applicable
-
         byte[] recipSki = requestorCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
         if (recipSki != null && recipSki.length > 4) {
             byte[] goodSki = new byte[recipSki.length - 4];
@@ -257,12 +255,14 @@ public class TokenService {
                                 recipSkiB64 +
                               "</wsse:KeyIdentifier>" +
                             "</wsse:SecurityTokenReference>";
+
+            encryptedKeyXml.append("<KeyInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">");
             encryptedKeyXml.append(skiRef);
+            encryptedKeyXml.append("</KeyInfo>");
         } else {
             // add a full cert ?
             // todo
         }
-        encryptedKeyXml.append("</KeyInfo>");
         encryptedKeyXml.append("<xenc:CipherData>" +
                                 "<xenc:CipherValue>");
         encryptedKeyXml.append(encryptWithRsa(sharedSecret.getEncoded(), requestorCert.getPublicKey()));
