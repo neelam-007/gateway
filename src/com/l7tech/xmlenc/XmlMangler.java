@@ -161,6 +161,16 @@ public class XmlMangler {
         return hdrEl;
     }
 
+    private static Element findOrCreateSecurityHeader(Document soapMsg) {
+        Element hdr = findOrCreateSoapHeader(soapMsg);
+        Element sec = (Element) hdr.getElementsByTagNameNS(wsseNS, "wsse:Security").item(0);
+        if (sec == null) {
+            sec = soapMsg.createElementNS(wsseNS, "wsse:Security");
+            hdr.appendChild(sec);
+        }
+        return sec;
+    }
+
     /**
      * Insert a WSS style header into the specified document referring to the EncryptedData element.
      * @param soapMsg
@@ -179,11 +189,8 @@ public class XmlMangler {
         Element refEl = soapMsg.createElementNS(xencNS, "xenc:ReferenceList");
         refEl.appendChild(dataRefEl);
 
-        Element securityEl = soapMsg.createElementNS(wsseNS, "wsse:Security");
-        securityEl.appendChild(refEl);
-
-        Element hdrEl = findOrCreateSoapHeader(soapMsg);
-        hdrEl.appendChild(securityEl);
+        Element sec = findOrCreateSecurityHeader(soapMsg);
+        sec.appendChild(refEl);
     }
 
     /**
