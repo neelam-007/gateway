@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 
 import javax.swing.*;
 import java.util.Map;
@@ -73,15 +74,11 @@ public class CredentialsLocation {
         credentialsLocationMap.put("HTTP Basic", new HttpBasic());
         credentialsLocationMap.put("HTTP Digest", new HttpDigest());
         credentialsLocationMap.put("HTTP Client Certificate", new HttpClientCert());
-        if (soap) credentialsLocationMap.put("WS Token Basic", new WssBasic());
-        // credentialsLocationMap.put("WS Token Digest", new WssDigest());
-
-        //RequestWssIntegrity xmlRequestSecurity = new RequestWssIntegrity();
-        //Map namespaces = new HashMap();
-        //namespaces.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
-        //namespaces.put("SOAP-ENV", SOAPConstants.URI_NS_SOAP_ENVELOPE);
-
-        if (soap) credentialsLocationMap.put("XML Digital Signature", new RequestWssX509Cert());
+        if (soap) {
+            credentialsLocationMap.put("WS Token Basic", new WssBasic());
+            credentialsLocationMap.put("WSS Signature", new RequestWssX509Cert());
+            credentialsLocationMap.put("Secure Conversation", new SecureConversation());
+        }
 
         return credentialsLocationMap;
     }
