@@ -482,7 +482,7 @@ public class FederatedUserPanel extends UserPanel {
             x509SubjectNameTextField.setMinimumSize(new Dimension(200, 20));
             x509SubjectNameTextField.setPreferredSize(new Dimension(200, 20));
             x509SubjectNameTextField.setEditable(true);
-            x509SubjectNameTextField.setDocument(new MaxLengthDocument(50));
+            x509SubjectNameTextField.setDocument(new MaxLengthDocument(255));
             // Register listeners
             x509SubjectNameTextField.getDocument().addDocumentListener(documentListener);
         }
