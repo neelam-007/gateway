@@ -313,23 +313,10 @@ public class LogonDialog extends JDialog {
              * Invoked when a window has been opened.
              */
             public void windowOpened(WindowEvent e) {
-                if (didOpen)
-                    return;
-                didOpen = true;
-
-                frame.setState(JFrame.ICONIFIED);
+                frame.setState(Frame.NORMAL);
+                frame.show();
                 frame.toFront();
-                frame.setState(JFrame.NORMAL);
-                LogonDialog.this.requestFocus();
-            }
-
-            public void windowDeactivated(WindowEvent e) {
-                if (didOpen)
-                    return;
-                didOpen = true;
-                frame.setState(JFrame.ICONIFIED);
-                frame.toFront();
-                frame.setState(JFrame.NORMAL);
+                LogonDialog.this.toFront();
                 LogonDialog.this.requestFocus();
             }
         });
