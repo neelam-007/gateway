@@ -56,7 +56,14 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         Document soapmsg = extractDocumentFromRequest(request);
 
         // get the session
-        Session xmlsecSession = getXmlSecSession(soapmsg);
+        Session xmlsecSession = null;
+        try {
+            xmlsecSession = getXmlSecSession(soapmsg);
+        } catch (PolicyAssertionException e) {
+            response.setAuthenticationMissing(true);
+            response.setPolicyViolated(true);
+            throw e;
+        }
 
         // check validity of the session
         if (!checkSeqNrValidity(soapmsg, xmlsecSession)) {
