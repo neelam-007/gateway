@@ -197,6 +197,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     }
 
 
+    // todo, plug this in, get rid of old doGet()
     protected void doGetNew(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
         try {
