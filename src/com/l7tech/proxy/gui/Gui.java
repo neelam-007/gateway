@@ -28,13 +28,10 @@ import java.util.logging.Level;
 import java.net.URL;
 
 /**
- * Encapsulates the Client Proxy's user interface.
- * User: mike
- * Date: May 22, 2003
- * Time: 1:47:04 PM
+ * Encapsulates the Client Proxy's user interface. User: mike Date: May 22, 2003 Time: 1:47:04 PM
  */
 public class Gui {
-    private static final ClientLogger log = ClientLogger.getInstance(Gui.class);
+    private static final ClientLogger log = ClientLogger.getInstance( Gui.class );
     public static final String RESOURCE_PATH = "com/l7tech/proxy/resources";
     public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/proxy.hs";
     public static final String APP_NAME = "SecureSpan Agent";
@@ -64,48 +61,62 @@ public class Gui {
     private ClientProxy clientProxy;
     private SysTrayMenu sysTrayMenu = null;
 
-    /** Get the singleton Gui. */
-   public static Gui getInstance() {
-        if (instance == null)
-            throw new IllegalStateException("No Gui instance has been configured yet");
+    /**
+     * Get the singleton Gui.
+     */
+    public static Gui getInstance() {
+        if ( instance == null )
+            throw new IllegalStateException( "No Gui instance has been configured yet" );
         return instance;
     }
 
-    /** Set the singleton Gui. */
-    public static void setInstance(Gui instance) {
+    /**
+     * Set the singleton Gui.
+     */
+    public static void setInstance( Gui instance ) {
         Gui.instance = instance;
     }
 
-    /** Configure a Gui instance. */
-    public static Gui createGui(ClientProxy clientProxy, SsgManager ssgManager) {
-        return new Gui(clientProxy, ssgManager);
+    /**
+     * Configure a Gui instance.
+     */
+    public static Gui createGui( ClientProxy clientProxy, SsgManager ssgManager ) {
+        return new Gui( clientProxy, ssgManager );
     }
 
     private static interface LnfSetter {
         void setLnf() throws Exception;
     }
 
-    /** Try to set the Kunststoff look and feel. */
+    /**
+     * Try to set the Kunststoff look and feel.
+     */
     private static LnfSetter kunststoffLnfSetter = new LnfSetter() {
         public void setLnf() throws Exception {
-            final Class kunststoffClass = Class.forName(KUNSTSTOFF_CLASSNAME);
+            final Class kunststoffClass = Class.forName( KUNSTSTOFF_CLASSNAME );
             final Object kunststoffLnF = kunststoffClass.newInstance();
-            final Class themeClass = Class.forName(KUNSTSTOFF_THEME_CLASSNAME);
-            final Object theme = themeClass.newInstance();
-            kunststoffClass.getMethod("setCurrentTheme", new Class[] {MetalTheme.class}).invoke(kunststoffLnF,
-                                                                                                new Object[] {theme});
-            UIManager.setLookAndFeel((LookAndFeel)kunststoffLnF);
+            try {
+                final Class themeClass = Class.forName( KUNSTSTOFF_THEME_CLASSNAME );
+                final Object theme = themeClass.newInstance();
+                kunststoffClass.getMethod( "setCurrentTheme", new Class[]{MetalTheme.class} ).invoke( kunststoffLnF,
+                                                                                                      new Object[]{theme} );
+            } catch ( Exception e ) {
+                // eat it, themes not make one great
+            }
+            UIManager.setLookAndFeel( (LookAndFeel) kunststoffLnF );
         }
     };
 
-    /** Try to set the Windows look and feel. */
+    /**
+     * Try to set the Windows look and feel.
+     */
     private static LnfSetter windowsLnfSetter = new LnfSetter() {
         public void setLnf() throws Exception {
             UIManager.LookAndFeelInfo[] feels = UIManager.getInstalledLookAndFeels();
-            for (int i = 0; i < feels.length; i++) {
+            for ( int i = 0; i < feels.length; i++ ) {
                 UIManager.LookAndFeelInfo feel = feels[i];
-                if (feel.getName().indexOf("indows") >= 0) {
-                    UIManager.setLookAndFeel(feel.getClassName());
+                if ( feel.getName().indexOf( "indows" ) >= 0 ) {
+                    UIManager.setLookAndFeel( feel.getClassName() );
                     break;
                 }
             }
@@ -113,19 +124,28 @@ public class Gui {
     };
 
     /**
+     * Otherwise, system look and feel.
+     */
+    private static LnfSetter systemLnfSetter = new LnfSetter() {
+        public void setLnf() throws Exception {
+            UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
+        }
+    };
+
+    /**
      * Initialize the Gui.
      */
-    private Gui(ClientProxy clientProxy, SsgManager ssgManager) {
+    private Gui( ClientProxy clientProxy, SsgManager ssgManager ) {
         this.clientProxy = clientProxy;
         this.ssgManager = ssgManager;
 
-        boolean haveXpLnf = JavaVersionChecker.isJavaVersionAtLeast(new int[] {1, 4, 2});
-        LnfSetter[] order = haveXpLnf ? new LnfSetter[] { windowsLnfSetter, kunststoffLnfSetter }
-                                      : new LnfSetter[] { kunststoffLnfSetter, windowsLnfSetter };
-        for (int i = 0; i < order.length; i++) {
+        boolean haveXpLnf = JavaVersionChecker.isJavaVersionAtLeast( new int[]{1, 4, 2} );
+        LnfSetter[] order = haveXpLnf ? new LnfSetter[]{windowsLnfSetter, kunststoffLnfSetter, systemLnfSetter}
+                            : new LnfSetter[]{kunststoffLnfSetter, windowsLnfSetter, systemLnfSetter};
+        for ( int i = 0; i < order.length; i++ ) {
             try {
                 order[i].setLnf();
-            } catch (Exception e) {
+            } catch ( Exception e ) {
                 continue;
             }
             break;
@@ -133,55 +153,60 @@ public class Gui {
 
         try {
             // incors.org Kunststoff faq says we need the following line if we want to use Java Web Start:
-            UIManager.getLookAndFeelDefaults().put("ClassLoader", getClass().getClassLoader());
-        } catch (Exception e) {
-            log.warn(e);
+            UIManager.getLookAndFeelDefaults().put( "ClassLoader", getClass().getClassLoader() );
+        } catch ( Exception e ) {
+            log.warn( e );
         }
 
         initSystemTray();
     }
 
     private void initSystemTray() {
-        if (!SysTrayMenu.isAvailable() || sysTrayMenu != null)
+        if ( !SysTrayMenu.isAvailable() || sysTrayMenu != null )
             return;
 
-        URL si = getClass().getClassLoader().getResource(SYSTRAY_ICON + SysTrayMenuIcon.getExtension());
-        if (si == null)
+        URL si = getClass().getClassLoader().getResource( SYSTRAY_ICON + SysTrayMenuIcon.getExtension() );
+        if ( si == null )
             return;
 
-        SysTrayMenuIcon systrayMenuIcon = new SysTrayMenuIcon(si);
+        SysTrayMenuIcon systrayMenuIcon = new SysTrayMenuIcon( si );
 
-        systrayMenuIcon.setActionCommand("show");
+        systrayMenuIcon.setActionCommand( "show" );
         SysTrayMenuListener systrayListener = new SysTrayMenuListener() {
-            public void iconLeftClicked(SysTrayMenuEvent e) { doShow(); }
-            public void iconLeftDoubleClicked(SysTrayMenuEvent e) { doShow(); }
+            public void iconLeftClicked( SysTrayMenuEvent e ) {
+                doShow();
+            }
 
-            public void menuItemSelected(SysTrayMenuEvent e) {
-                log.info("System tray menu item selected.  Command=" + e.getActionCommand());
-                if ("show".equals(e.getActionCommand())) {
+            public void iconLeftDoubleClicked( SysTrayMenuEvent e ) {
+                doShow();
+            }
+
+            public void menuItemSelected( SysTrayMenuEvent e ) {
+                log.info( "System tray menu item selected.  Command=" + e.getActionCommand() );
+                if ( "show".equals( e.getActionCommand() ) ) {
                     doShow();
-                } else if ("exit".equals(e.getActionCommand())) {
+                } else if ( "exit".equals( e.getActionCommand() ) ) {
                     Gui.this.closeFrame();
                 }
             }
 
             private void doShow() {
                 Gui.this.getFrame().show();
-                Gui.this.getFrame().setState(Frame.NORMAL);
+                Gui.this.getFrame().setState( Frame.NORMAL );
                 Gui.this.getFrame().toFront();
             }
         };
-        systrayMenuIcon.addSysTrayMenuListener(systrayListener);
+        systrayMenuIcon.addSysTrayMenuListener( systrayListener );
 
-        SysTrayMenuItem smExit = new SysTrayMenuItem("Exit", "exit");
-        smExit.addSysTrayMenuListener(systrayListener);
-        SysTrayMenuItem smShow = new SysTrayMenuItem("Show Agent window", "show");
-        smShow.addSysTrayMenuListener(systrayListener);
+        SysTrayMenuItem smExit = new SysTrayMenuItem( "Exit", "exit" );
+        smExit.addSysTrayMenuListener( systrayListener );
+        SysTrayMenuItem smShow = new SysTrayMenuItem( "Show Agent window", "show" );
+        smShow.addSysTrayMenuListener( systrayListener );
 
-        sysTrayMenu = new SysTrayMenu(systrayMenuIcon, SYSTRAY_TOOLTIP);
-        sysTrayMenu.addItem(smExit);
+        sysTrayMenu = new SysTrayMenu( systrayMenuIcon, SYSTRAY_TOOLTIP );
+        sysTrayMenu.addItem( smExit );
         sysTrayMenu.addSeparator();
-        sysTrayMenu.addItem(smShow);
+        sysTrayMenu.addItem( smShow );
         sysTrayMenu.showIcon();
     }
 
@@ -198,180 +223,195 @@ public class Gui {
      * Shut down the GUI.  The actual shutdown will occur asynchronously, on the Swing thread.
      */
     public void stop() {
-        SwingUtilities.invokeLater(new Runnable() {
+        SwingUtilities.invokeLater( new Runnable() {
             public void run() {
                 closeFrame();
             }
-        });
+        } );
     }
 
-    /** Shut down the GUI. */
+    /**
+     * Shut down the GUI.
+     */
     private void closeFrame() {
-        if (messageViewer != null) {
+        if ( messageViewer != null ) {
             messageViewer.dispose();
             messageViewer = null;
         }
-        if (sysTrayMenu != null)
+        if ( sysTrayMenu != null )
             sysTrayMenu.hideIcon();
         frame.dispose();
         frame = null;
         started = false;
-        if (ShutdownListener != null)
+        if ( ShutdownListener != null )
             ShutdownListener.guiShutdown();
     }
 
     /**
      * Connect us to someone who wants to know when the GUI is exiting.
-     * @param guiShutdownListener
      */
-    public void setShutdownListener(final ShutdownListener guiShutdownListener) {
+    public void setShutdownListener( final ShutdownListener guiShutdownListener ) {
         this.ShutdownListener = guiShutdownListener;
     }
 
-    /** Create the Message Viewer. */
+    /**
+     * Create the Message Viewer.
+     */
     private MessageViewer getMessageViewer() {
-        if (messageViewer == null) {
-            messageViewer = new MessageViewer(MESSAGE_WINDOW_TITLE);
-            messageViewer.addWindowListener(new WindowAdapter() {
-                public void windowClosing(final WindowEvent e) {
-                    showMessages.setSelected(false);
+        if ( messageViewer == null ) {
+            messageViewer = new MessageViewer( MESSAGE_WINDOW_TITLE );
+            messageViewer.addWindowListener( new WindowAdapter() {
+                public void windowClosing( final WindowEvent e ) {
+                    showMessages.setSelected( false );
                 }
 
-                public void windowStateChanged(final WindowEvent e) {
-                    showMessages.setSelected(messageViewer.isShowing());
+                public void windowStateChanged( final WindowEvent e ) {
+                    showMessages.setSelected( messageViewer.isShowing() );
                 }
-            });
+            } );
         }
         return messageViewer;
     }
 
-    /** Get the main frame. */
+    /**
+     * Get the main frame.
+     */
     public JFrame getFrame() {
-        if (frame == null) {
-            frame = new JFrame(WINDOW_TITLE);
-            frame.setIconImage(IconManager.getAppImage());
-            frame.addWindowListener(new WindowAdapter() {
+        if ( frame == null ) {
+            frame = new JFrame( WINDOW_TITLE );
+            frame.setIconImage( IconManager.getAppImage() );
+            frame.addWindowListener( new WindowAdapter() {
 
-                public void windowIconified(WindowEvent e) {
-                    if (sysTrayMenu != null) {
+                public void windowIconified( WindowEvent e ) {
+                    if ( sysTrayMenu != null ) {
                         frame.hide();
-                        frame.setState(Frame.NORMAL);
+                        frame.setState( Frame.NORMAL );
                         sysTrayMenu.showIcon();
                     }
                 }
 
-                public void windowClosing(final WindowEvent e) {
-                    if (sysTrayMenu != null) {
+                public void windowClosing( final WindowEvent e ) {
+                    if ( sysTrayMenu != null ) {
                         frame.hide();
-                        frame.setState(Frame.NORMAL);
+                        frame.setState( Frame.NORMAL );
                         sysTrayMenu.showIcon();
                     } else
                         closeFrame();
                 }
-            });
+            } );
 
             final JMenuBar menus = makeMenus();
-            frame.setJMenuBar(menus);
-            frame.setContentPane(getSsgListPanel());
+            frame.setJMenuBar( menus );
+            frame.setContentPane( getSsgListPanel() );
             frame.pack();
-            Utilities.centerOnScreen(frame);
+            Utilities.centerOnScreen( frame );
         }
 
         return frame;
     }
 
     private SsgListPanel getSsgListPanel() {
-        if (ssgListPanel == null)
-            ssgListPanel = new SsgListPanel(clientProxy, ssgManager);
+        if ( ssgListPanel == null )
+            ssgListPanel = new SsgListPanel( clientProxy, ssgManager );
         return ssgListPanel;
     }
 
-    /** Build the menu bar. */
+    /**
+     * Build the menu bar.
+     */
     private JMenuBar makeMenus() {
         final ActionListener menuActionListener = new ActionListener() {
-            public void actionPerformed(final ActionEvent e) {
-                action(e);
+            public void actionPerformed( final ActionEvent e ) {
+                action( e );
             }
         };
 
         final JMenuBar menus = new JMenuBar();
-        final JMenu fileMenu = new JMenu(MENU_FILE);
-        fileMenu.setMnemonic(KeyEvent.VK_F);
+        final JMenu fileMenu = new JMenu( MENU_FILE );
+        fileMenu.setMnemonic( KeyEvent.VK_F );
 
-        fileMenu.add(new JMenuItem(getSsgListPanel().getActionNewSsg()));
-        fileMenu.add(new JMenuItem(getSsgListPanel().getActionEditSsg()));
-        fileMenu.add(new JMenuItem(getSsgListPanel().getActionSetDefaultSsg()));
-        fileMenu.add(new JMenuItem(getSsgListPanel().getActionDeleteSsg()));
-        fileMenu.add(new JSeparator());
-        fileMenu.add(new JMenuItem(getSsgListPanel().getActionEmptyCookieCache()));
-        fileMenu.add(new JSeparator());
+        fileMenu.add( new JMenuItem( getSsgListPanel().getActionNewSsg() ) );
+        fileMenu.add( new JMenuItem( getSsgListPanel().getActionEditSsg() ) );
+        fileMenu.add( new JMenuItem( getSsgListPanel().getActionSetDefaultSsg() ) );
+        fileMenu.add( new JMenuItem( getSsgListPanel().getActionDeleteSsg() ) );
+        fileMenu.add( new JSeparator() );
+        fileMenu.add( new JMenuItem( getSsgListPanel().getActionEmptyCookieCache() ) );
+        fileMenu.add( new JSeparator() );
 
-        final JMenuItem fileQuit = new JMenuItem(MENU_FILE_QUIT);
-        fileQuit.setMnemonic(KeyEvent.VK_X);
-        fileQuit.addActionListener(menuActionListener);
-        fileMenu.add(fileQuit);
+        final JMenuItem fileQuit = new JMenuItem( MENU_FILE_QUIT );
+        fileQuit.setMnemonic( KeyEvent.VK_X );
+        fileQuit.addActionListener( menuActionListener );
+        fileMenu.add( fileQuit );
 
-        menus.add(fileMenu);
+        menus.add( fileMenu );
 
-        final JMenu windowMenu = new JMenu(MENU_WINDOW);
-        windowMenu.setMnemonic(KeyEvent.VK_W);
+        final JMenu windowMenu = new JMenu( MENU_WINDOW );
+        windowMenu.setMnemonic( KeyEvent.VK_W );
 
-        showMessages = new JCheckBoxMenuItem(MENU_MESSAGES, false);
-        showMessages.addActionListener(menuActionListener);
-        showMessages.setMnemonic(KeyEvent.VK_M);
-        windowMenu.add(showMessages);
+        showMessages = new JCheckBoxMenuItem( MENU_MESSAGES, false );
+        showMessages.addActionListener( menuActionListener );
+        showMessages.setMnemonic( KeyEvent.VK_M );
+        windowMenu.add( showMessages );
 
-        menus.add(windowMenu);
+        menus.add( windowMenu );
 
-        final JMenu aboutMenu = new JMenu(MENU_HELP);
-        aboutMenu.setMnemonic(KeyEvent.VK_H);
-        final JMenuItem aboutMenuItem = new JMenuItem(MENU_HELP_ABOUT);
-        aboutMenuItem.setMnemonic(KeyEvent.VK_A);
-        aboutMenuItem.addActionListener(menuActionListener);
-        aboutMenu.add(aboutMenuItem);
-        menus.add(aboutMenu);
+        final JMenu aboutMenu = new JMenu( MENU_HELP );
+        aboutMenu.setMnemonic( KeyEvent.VK_H );
+        final JMenuItem aboutMenuItem = new JMenuItem( MENU_HELP_ABOUT );
+        aboutMenuItem.setMnemonic( KeyEvent.VK_A );
+        aboutMenuItem.addActionListener( menuActionListener );
+        aboutMenu.add( aboutMenuItem );
+        menus.add( aboutMenu );
 
         return menus;
     }
 
-    /** Respond to a menu command. */
-    private void action(final ActionEvent e) {
-        if (MENU_FILE_QUIT.equals(e.getActionCommand())) {
+    /**
+     * Respond to a menu command.
+     */
+    private void action( final ActionEvent e ) {
+        if ( MENU_FILE_QUIT.equals( e.getActionCommand() ) ) {
             closeFrame();
-        } else if (MENU_MESSAGES.equals(e.getActionCommand())) {
-            if (showMessages.isSelected()) {
+        } else if ( MENU_MESSAGES.equals( e.getActionCommand() ) ) {
+            if ( showMessages.isSelected() ) {
                 getMessageViewer().show();
             } else {
                 getMessageViewer().hide();
             }
-        } else if (MENU_HELP_ABOUT.equals(e.getActionCommand())) {
+        } else if ( MENU_HELP_ABOUT.equals( e.getActionCommand() ) ) {
             new AgentAboutBox().show();
         }
     }
 
-    /** Notification that the Message Viewer window has been shown or hidden. */
+    /**
+     * Notification that the Message Viewer window has been shown or hidden.
+     */
     public void updateMessageViewerStatus() {
-        showMessages.setSelected(getMessageViewer().isVisible());
+        showMessages.setSelected( getMessageViewer().isVisible() );
     }
 
-    /** Get the RequestInterceptor attached to the Message Viewer window. */
+    /**
+     * Get the RequestInterceptor attached to the Message Viewer window.
+     */
     public RequestInterceptor getRequestInterceptor() {
         return getMessageViewer().getMessageViewerModel();
     }
 
-    /** Start the GUI. */
+    /**
+     * Start the GUI.
+     */
     public void start() throws IllegalStateException {
-        if (started)
-            throw new IllegalStateException("Gui has already been started");
+        if ( started )
+            throw new IllegalStateException( "Gui has already been started" );
 
-        if (sysTrayMenu != null) {
+        if ( sysTrayMenu != null ) {
             getFrame().hide();
             sysTrayMenu.showIcon();
         } else
             getFrame().show();
 
-        if (getSsgListPanel().getNumSsgs() < 1)
-            getSsgListPanel().getActionNewSsg().actionPerformed(new ActionEvent(this, 1, "NewDefault"));
+        if ( getSsgListPanel().getNumSsgs() < 1 )
+            getSsgListPanel().getActionNewSsg().actionPerformed( new ActionEvent( this, 1, "NewDefault" ) );
         else
             getSsgListPanel().selectDefaultSsg();
     }
@@ -381,22 +421,18 @@ public class Gui {
      *
      * @param msg the error message to display
      */
-    public static void errorMessage(final String msg) {
-        JOptionPane.showMessageDialog(getInstance().getFrame(), msg, "Unable to proceed", JOptionPane.ERROR_MESSAGE);
+    public static void errorMessage( final String msg ) {
+        JOptionPane.showMessageDialog( getInstance().getFrame(), msg, "Unable to proceed", JOptionPane.ERROR_MESSAGE );
     }
 
     /**
      * Display an error message based on a caught exception.
-     *
-     * @param title
-     * @param message
-     * @param t
      */
-    public static void errorMessage(String title, String message, Throwable t) {
-        ExceptionDialog d = new ExceptionDialog(getInstance().getFrame(), title, message, t, Level.SEVERE);
-        d.setModal(true);
+    public static void errorMessage( String title, String message, Throwable t ) {
+        ExceptionDialog d = new ExceptionDialog( getInstance().getFrame(), title, message, t, Level.SEVERE );
+        d.setModal( true );
         d.pack();
-        Utilities.centerOnScreen(d);
+        Utilities.centerOnScreen( d );
         d.show();
     }
 }
