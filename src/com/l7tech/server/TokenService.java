@@ -37,13 +37,26 @@ public class TokenService {
         User authenticate(LoginCredentials creds);
     }
 
+    public class TokenServiceException extends Exception {
+        public TokenServiceException(Throwable cause) {
+            super(cause);
+        }
+        public TokenServiceException(String message) {
+            super(message);
+        }
+        public TokenServiceException(String msg, Throwable cause) {
+            super(msg, cause);
+        }
+    }
+
     /**
      * Handles the request for a security token (either secure conversation context or saml thing).
      * @param request the request for the secure conversation context
      * @param authenticator resolved credentials such as an X509Certificate to an actual user to associate the context with
      * @return
      */
-    public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator) throws InvalidDocumentFormatException {
+    public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator)
+                                                    throws InvalidDocumentFormatException, TokenServiceException {
         // Pass request to the trogdorminator!
         WssProcessor trogdor = new WssProcessorImpl();
         X509Certificate serverSSLcert = null;
