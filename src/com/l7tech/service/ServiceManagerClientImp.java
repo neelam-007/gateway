@@ -82,13 +82,27 @@ public class ServiceManagerClientImp implements ServiceManager {
     }
 
     public long save(PublishedService service) throws SaveException {
-        return 0;
+        try {
+            return getStub().savePublishedService(service);
+        } catch (RemoteException e) {
+            throw new SaveException(e.getMessage(), e);
+        }
     }
 
     public void update(PublishedService service) throws UpdateException {
+        try {
+            getStub().savePublishedService(service);
+        } catch (RemoteException e) {
+            throw new UpdateException(e.getMessage(), e);
+        }
     }
 
     public void delete(PublishedService service) throws DeleteException {
+        try {
+            getStub().deletePublishedService(service.getOid());
+        } catch (RemoteException e) {
+            throw new DeleteException(e.getMessage(), e);
+        }
     }
 
     public PublishedService resolveService(Request request) throws ServiceResolutionException {
@@ -99,6 +113,7 @@ public class ServiceManagerClientImp implements ServiceManager {
     // PRIVATES
     // ************************************************
 
+    /*
     public static void main(String[] args) throws Exception {
         com.l7tech.adminws.ClientCredentialManager.setCachedUsername("ssgadmin");
         com.l7tech.adminws.ClientCredentialManager.setCachedPasswd("ssgadminpasswd");
@@ -109,7 +124,11 @@ public class ServiceManagerClientImp implements ServiceManager {
         System.out.println(res.toString());
         res = me.findAll(21, 654);
         System.out.println(res.toString());
+        me.save(me.findByPrimaryKey(555));
+        me.delete(me.findByPrimaryKey(555));
+        System.out.println("done");
     }
+    */
 
     private Client getStub() throws java.rmi.RemoteException {
         if (localStub == null) {
