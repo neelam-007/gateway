@@ -78,17 +78,17 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
 
     // accessors
 
-    /** @return   the namespace URI, or null if there isn't one */
+    /** @return   the namespace URI.  May be empty, but never null. */
     public String getUri() {
         return uri;
     }
 
-    /** @return  the soapAction, or null if there isn't one */
+    /** @return  the soapAction.  May be empty, but never null.  */
     public String getSoapAction() {
         return soapAction;
     }
 
-    /** @return the local part of the original local URL for this request (see URL.getFile()) */
+    /** @return the local part of the original local URL for this request (see URL.getFile()). May be empty but never null. */
     public String getProxyUri() {
         return proxyUri;
     }
