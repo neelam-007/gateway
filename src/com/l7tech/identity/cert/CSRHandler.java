@@ -9,7 +9,6 @@ import com.l7tech.util.Locator;
 import com.l7tech.util.KeystoreUtils;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 
@@ -194,12 +193,8 @@ public class CSRHandler extends HttpServlet {
         tmpUser.setLogin(login);
         PrincipalCredentials creds = new PrincipalCredentials(tmpUser, clearTextPasswd.getBytes());
 
-        if (identityProviderConfigManager == null) {
-            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
-        }
-
         try {
-            if (identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds)) {
+            if (getConfigManager().getInternalIdentityProvider().authenticate(creds)) {
                 return creds.getUser();
             }
             else {
@@ -213,23 +208,6 @@ public class CSRHandler extends HttpServlet {
                 logger.log(Level.SEVERE, "error closing context", e);
                 throw new FindException("cannot close context", e);
             }
-        }
-    }
-
-    /**
-     * returns null if user does not exist
-     */
-    private User findUserByLogin(String login) throws FindException {
-        try {
-            User output = getConfigManager().getInternalIdentityProvider().getUserManager().findByLogin(login);
-            PersistenceContext.getCurrent().close();
-            return output;
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "exception closing context", e);
-            throw new FindException(e.getMessage(), e);
-        } catch (ObjectModelException e) {
-            logger.log(Level.SEVERE, "exception closing context", e);
-            throw new FindException(e.getMessage(), e);
         }
     }
 
@@ -250,12 +228,12 @@ public class CSRHandler extends HttpServlet {
     }
 
     private boolean keystorePresent() {
-        // todo, implement this
+        // todo, implement this for cluster configs
         return true;
     }
 
     private void proxyRequestToSsgThatHasRootKStore(HttpServletRequest request, HttpServletResponse response) {
-        // todo, implement this
+        // todo, implement this for cluster configs
         return;
     }
 
