@@ -44,7 +44,7 @@ public class TypeTranslator {
         int count = 0;
         while (iter.hasNext()) {
             EntityHeader colMember = (EntityHeader)iter.next();
-            ret[count] = new com.l7tech.adminws.identity.Header(colMember.getOid(), colMember.getType().toString(), colMember.getName());
+            ret[count] = new com.l7tech.adminws.identity.Header(colMember.getOid(), colMember.getType().getName(), colMember.getName());
             ++count;
         }
         return ret;
