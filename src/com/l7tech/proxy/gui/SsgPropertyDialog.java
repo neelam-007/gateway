@@ -1,22 +1,19 @@
 package com.l7tech.proxy.gui;
 
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreeModel;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
