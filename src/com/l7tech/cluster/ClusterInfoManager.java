@@ -89,6 +89,27 @@ public class ClusterInfoManager {
         }
     }
 
+    public void renameNode(String nodeid, String newnodename) throws UpdateException {
+        ClusterNodeInfo node = getNodeStatusFromDB(nodeid);
+        if (node == null) {
+            String msg = "that node cannot be retrieved";
+            logger.log(Level.WARNING, msg);
+            throw new UpdateException(msg);
+        }
+        node.setName(newnodename);
+        try {
+            recordNodeInDB(node);
+        } catch (SQLException e) {
+            String msg = "error saving node's new name";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        } catch (HibernateException e) {
+            String msg = "error saving node's new name";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        }
+    }
+
     /**
      * allows a node to update its boot timestamp in the cluster_info table
      */
