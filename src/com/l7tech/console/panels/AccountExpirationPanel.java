@@ -71,7 +71,7 @@ public class AccountExpirationPanel extends JDialog {
 
     private void initialize(long initialValue) {
         setContentPane(mainPanel);
-        setTitle("Account expiration");
+        setTitle("Account Expiration");
         canceled = false;
 
         okbutton.addActionListener(new ActionListener() {

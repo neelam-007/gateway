@@ -305,7 +305,7 @@ public class GenericUserPanel extends UserPanel {
 
         if (config.type().equals(IdentityProviderType.INTERNAL)) {
             // add account expiration here
-            detailsPanel.add(new JLabel("Account expiration:"),
+            detailsPanel.add(new JLabel("Account Expiration:"),
                              new GridBagConstraints(0, 13, 1, 1, 0.0, 0.0,
                              GridBagConstraints.WEST,
                              GridBagConstraints.NONE,
@@ -530,7 +530,7 @@ public class GenericUserPanel extends UserPanel {
 
     private JButton getSetExpirationButton() {
         if (setExpirationButton == null) {
-            setExpirationButton = new JButton("never");
+            setExpirationButton = new JButton("Never");
             setExpirationButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     InternalUser iu = (InternalUser)user; // at this point, this type should already be confirmed
@@ -561,7 +561,7 @@ public class GenericUserPanel extends UserPanel {
 
     private void displayExpirationValue(long value) {
         // refresh button with new value
-        String newExpiration = "never";
+        String newExpiration = "Never";
         if (value > -1) {
             newExpiration = DateFormat.getInstance().format(new Date(value));
         }

@@ -56,11 +56,11 @@
       </grid>
       <component id="51001" class="javax.swing.JRadioButton" binding="noexpireradio">
         <constraints>
-          <xy x="5" y="5" width="165" height="23"/>
+          <xy x="5" y="5" width="157" height="23"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="Account does not expire"/>
+          <text value="Account never expires"/>
         </properties>
       </component>
       <component id="aa351" class="javax.swing.JRadioButton" binding="expireradio">
