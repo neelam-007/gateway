@@ -21,13 +21,9 @@ public class BuildInfo {
     private static final String BUILD_USER = "BUILD_USER";  // ie, alex
     private static final String BUILD_MACHINE = "BUILD_MACHINE"; // ie, locutus.l7tech.com
 
-    // This is maintained by CVS.
-    private static final String BUILD_TAG = "$Name$";
-
     public static String getLongBuildString() {
         StringBuffer string = new StringBuffer();
         string.append( getBuildString() );
-        string.append( " (" ).append( getBuildTag() ).append( ")" );
         string.append( ", built " ).append( getBuildDate() ).append( getBuildTime() );
         string.append( " by " ).append( getBuildUser() ).append(" at ").append( getBuildMachine() );
         return string.toString();
@@ -72,12 +68,6 @@ public class BuildInfo {
 
     public static String getBuildTime() {
         return BUILD_TIME;
-    }
-
-    public static String getBuildTag() {
-        String tag = stripCvsCrap( BUILD_TAG );
-        if ( tag.length() == 0 ) tag = "HEAD";
-        return tag;
     }
 
     private static String stripCvsCrap( String crappy ) {
