@@ -4,7 +4,7 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.ProviderNode;
+import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -99,7 +99,7 @@ public class DeleteEntityAction extends SecureAction {
         deleted = Actions.deleteEntity(node, config);
         if (deleted) {
             JTree tree = null;
-            if (node instanceof ProviderNode) {
+            if (node instanceof IdentityProviderNode) {
                 tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
                 DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                 model.removeNodeFromParent(node);

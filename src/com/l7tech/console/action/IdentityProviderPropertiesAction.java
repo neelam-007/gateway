@@ -5,7 +5,7 @@ import com.l7tech.console.event.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.ProviderNode;
+import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityAdmin;
@@ -31,8 +31,8 @@ import java.util.logging.Level;
 public class IdentityProviderPropertiesAction extends NodeAction {
     private EventListenerList listenerList = new EventListenerList();
 
-    public IdentityProviderPropertiesAction(ProviderNode node) {
-        super(node);
+    public IdentityProviderPropertiesAction(IdentityProviderNode nodeIdentity) {
+        super(nodeIdentity);
     }
 
     /**
@@ -90,10 +90,8 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                             w = new EditIdentityProviderWizard(f, configPanel, iProvider);
 
                         } else if (iProvider.type() == IdentityProviderType.FEDERATED) {
-                             configPanel = new FederatedIPGeneralPanel(
-                                               new FederatedIPSamlPanel(
-                                               new FederatedIPTrustedCertsPanel(null)));
-                             w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig) iProvider);
+                            configPanel = new FederatedIPGeneralPanel(new FederatedIPSamlPanel(new FederatedIPTrustedCertsPanel(null)));
+                            w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig)iProvider);
 
 
                         } else {
@@ -168,7 +166,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
             Wizard w = (Wizard)we.getSource();
             final IdentityProviderConfig iProvider = (IdentityProviderConfig)w.getCollectedInformation();
 
-            if (iProvider != null  && iProvider.type() != IdentityProviderType.INTERNAL) {
+            if (iProvider != null && iProvider.type() != IdentityProviderType.INTERNAL) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
 

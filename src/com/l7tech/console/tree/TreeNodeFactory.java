@@ -11,7 +11,6 @@ import java.util.Enumeration;
  * class that creates <code>TreeNode</code> instances that
  * are placed in <code>TreeModel.</code>.
  *
- *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
@@ -34,7 +33,7 @@ public class TreeNodeFactory {
             throw new NullPointerException("entity");
         }
         if (EntityType.ID_PROVIDER_CONFIG.equals(entity.getType())) {
-            return new ProviderNode(entity);
+            return new IdentityProviderNode(entity);
         } else if (EntityType.GROUP.equals(entity.getType())) {
             return new GroupNode(entity);
         } else if (EntityType.USER.equals(entity.getType())) {
@@ -49,7 +48,7 @@ public class TreeNodeFactory {
     /**
      * returns an TreeNodeEnumeration for a given Enumeration
      *
-     * @param en     the enumeration that the TreeNodeEnumeration encapsulates
+     * @param en the enumeration that the TreeNodeEnumeration encapsulates
      * @return the TreeNodeEnumeration instance for a given Enumeration
      */
     public static Enumeration getTreeNodeEnumeration(Enumeration en) {
@@ -72,7 +71,7 @@ public class TreeNodeFactory {
          * construct thhe TreeNodeEnumeraion instance with a given
          * <CODE>Enumeration</CODE>
          *
-         * @param en     the enumeraiton used as a source
+         * @param en the enumeraiton used as a source
          */
         TreeNodeEnumeration(Enumeration en) {
             nodes = en;
@@ -81,9 +80,9 @@ public class TreeNodeFactory {
         /**
          * Tests if this enumeration contains more elements.
          *
-         * @return  <code>true</code> if and only if this enumeration object
-         *           contains at least one more element to provide;
-         *          <code>false</code> otherwise.
+         * @return <code>true</code> if and only if this enumeration object
+         *         contains at least one more element to provide;
+         *         <code>false</code> otherwise.
          */
         public boolean hasMoreElements() {
             return nodes.hasMoreElements();
@@ -93,7 +92,7 @@ public class TreeNodeFactory {
          * Returns the next element of this enumeration if this enumeration
          * object has at least one more element to provide.
          *
-         * @return     the next element of this enumeration.
+         * @return the next element of this enumeration.
          */
         public Object nextElement() {
             return getEnumerationElement(nodes.nextElement());
@@ -109,7 +108,7 @@ public class TreeNodeFactory {
          */
         private Object getEnumerationElement(Object element) {
             if (element instanceof EntityHeader) {
-                return TreeNodeFactory.asTreeNode((EntityHeader) element);
+                return TreeNodeFactory.asTreeNode((EntityHeader)element);
             }
             return element;
         }

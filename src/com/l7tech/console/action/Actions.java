@@ -9,8 +9,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.CannotDeleteAdminAccountException;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,8 +40,8 @@ public class Actions {
             return deleteUser((UserNode)bn, config);
         } else if (bn instanceof GroupNode) {
             return deleteGroup((GroupNode)bn, config);
-        } else if (bn instanceof ProviderNode) {
-            return deleteProvider((ProviderNode)bn);
+        } else if (bn instanceof IdentityProviderNode) {
+            return deleteProvider((IdentityProviderNode)bn);
         }
         return false;
     }
@@ -116,7 +116,8 @@ public class Actions {
             DeleteException de = getDeleteException(e);
             if (de != null) {
                 msg = de.getMessage();
-            } else msg = "Error encountered while deleting " + node.getName() + ". Please try again later.";
+            } else
+                msg = "Error encountered while deleting " + node.getName() + ". Please try again later.";
             JOptionPane.showMessageDialog(getMainWindow(), msg, "Delete Group", JOptionPane.ERROR_MESSAGE);
         }
         return false;
@@ -130,11 +131,11 @@ public class Actions {
 
 
     // Deletes the given user
-    private static boolean deleteProvider(ProviderNode node) {
+    private static boolean deleteProvider(IdentityProviderNode nodeIdentity) {
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
           "Are you sure you want to delete " +
-          node.getName() + "?",
+          nodeIdentity.getName() + "?",
           "Delete Provider",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
             return false;
@@ -142,7 +143,7 @@ public class Actions {
 
         // Delete the  node and update the tree
         try {
-            EntityHeader eh = node.getEntityHeader();
+            EntityHeader eh = nodeIdentity.getEntityHeader();
             Registry.getDefault().getIdentityAdmin().deleteIdentityProviderConfig(eh.getOid());
             return true;
         } catch (Exception e) {
@@ -150,7 +151,7 @@ public class Actions {
             // Error deleting realm - display error msg
             JOptionPane.showMessageDialog(getMainWindow(),
               "Error encountered while deleting " +
-              node.getName() +
+              nodeIdentity.getName() +
               ". Please try again later.",
               "Delete Provider",
               JOptionPane.ERROR_MESSAGE);
@@ -163,7 +164,7 @@ public class Actions {
     static boolean deleteService(ServiceNode node) {
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
-          "Are you sure you want to delete the " + node.getName() +  " service?",
+          "Are you sure you want to delete the " + node.getName() + " service?",
           "Delete Service",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
             return false;
@@ -249,7 +250,7 @@ public class Actions {
     /**
      * Update the input map of the JDialog's <code>JLayeredPane</code> so
      * the ESC keystroke  invoke dispose on the dialog.
-     *  
+     *
      * @param d the dialog
      */
     public static void setEscKeyStrokeDisposes(final JDialog d) {
@@ -265,7 +266,7 @@ public class Actions {
           });
     }
 
-      /**
+    /**
      * Update the input map of the JFrame's <code>JLayeredPane</code> so
      * the ESC keystroke nvoke dispose on the frame.
      *

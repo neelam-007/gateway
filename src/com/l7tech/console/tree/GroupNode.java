@@ -1,11 +1,11 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.GroupPropertiesAction;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.Group;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ public class GroupNode extends EntityHeaderNode {
     }
 
 
-     /**
+    /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
      *
@@ -54,29 +54,32 @@ public class GroupNode extends EntityHeaderNode {
         //groupPropertiesAction.setEnabled(isInternal());
         list.add(groupPropertiesAction);
         list.addAll(Arrays.asList(super.getActions()));
-        
-        return (Action[]) list.toArray(new Action[]{});
+
+        return (Action[])list.toArray(new Action[]{});
     }
 
     /**
      * test whether the node can be deleted. Only the internal
      * nodes can be deleted.
+     *
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
         if (isInternal() &&
-            (getEntityHeader().getName().equals(Group.ADMIN_GROUP_NAME) ||
-             getEntityHeader().getName().equals(Group.OPERATOR_GROUP_NAME))) {
+          (getEntityHeader().getName().equals(Group.ADMIN_GROUP_NAME) ||
+          getEntityHeader().getName().equals(Group.OPERATOR_GROUP_NAME))) {
             return false;
-        } else return true;
+        } else
+            return true;
     }
 
     /**
      * test whether the node belongs to the internal provider
+     *
      * @return true if the node is internal, false otherwise
      */
     protected final boolean isInternal() {
-        ProviderNode parent = (ProviderNode)getParent();
+        IdentityProviderNode parent = (IdentityProviderNode)getParent();
         return parent.getEntityHeader().getOid() == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
     }
 
@@ -87,7 +90,7 @@ public class GroupNode extends EntityHeaderNode {
      * @return the popup menu
      */
     public Assertion asAssertion() {
-        ProviderNode parent = (ProviderNode)getParent();
+        IdentityProviderNode parent = (IdentityProviderNode)getParent();
         EntityHeader e = getEntityHeader();
         MemberOfGroup memberOfGroup = new MemberOfGroup(parent.getEntityHeader().getOid(), e.getName(), e.getStrId());
         // check
@@ -98,6 +101,7 @@ public class GroupNode extends EntityHeaderNode {
 
     /**
      * Gets the default action for this node.
+     *
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {

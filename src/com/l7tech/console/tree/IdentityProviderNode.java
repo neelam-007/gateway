@@ -18,7 +18,7 @@ import java.util.Iterator;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
-public class ProviderNode extends EntityHeaderNode {
+public class IdentityProviderNode extends EntityHeaderNode {
     /**
      * construct the <CODE>ProviderNode</CODE> instance for
      * a given entity.
@@ -28,7 +28,7 @@ public class ProviderNode extends EntityHeaderNode {
      * @param e the Entry instance, must be provider
      * @throws IllegalArgumentException thrown if the entity instance is not a provider
      */
-    public ProviderNode(EntityHeader e) {
+    public IdentityProviderNode(EntityHeader e) {
         super(e);
         if (e == null) {
             throw new IllegalArgumentException("entity == null");
@@ -110,27 +110,6 @@ public class ProviderNode extends EntityHeaderNode {
         return new IdentityProviderPropertiesAction(this);
     }
 
-    /**
-     * subclasses override this method
-     */
-    protected void loadChildren() {
-        /*
-        try {
-            long oid = getEntityHeader().getOid();
-            IdentityProviderConfig ipc = // TODO BOGUS
-              Registry.getDefault().getProviderConfigManager().getIdentityProvider(oid);
-            final IdentityEntitiesCollection collection =
-              new IdentityEntitiesCollection(ip, new EntityType[]{EntityType.USER, EntityType.GROUP});
-            Enumeration en = TreeNodeFactory.getTreeNodeEnumeration(new EntitiesEnumeration(collection));
-            int index = 0;
-            children = null;
-            for (; en.hasMoreElements();) {
-                insert((MutableTreeNode)en.nextElement(), index++);
-            }
-        } catch (FindException e) {
-            logger.log(Level.SEVERE, "Error obtaining identity provider " + getEntityHeader().getName(), e);
-        } */
-    }
 
     /**
      * Returns true if the receiver is a leaf.
