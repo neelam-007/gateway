@@ -139,11 +139,6 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         assertTrue(count == 5);
 
         Set paths = result.paths();
-
         // TODO -- check for duplicated path subcomponents
-        for (Iterator i = paths.iterator(); i.hasNext();) {
-            Object o = (Object)i.next();
-            System.out.println(o);
-        }
+
     }
-}
