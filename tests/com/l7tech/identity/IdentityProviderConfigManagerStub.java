@@ -31,6 +31,10 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
         return makeProvider(conf);
     }
 
+    public void test(IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException {
+        throw new InvalidIdProviderCfgException("not implemented");
+    }
+
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
         long oid = dataStore.nextObjectId();
         identityProviderConfig.setOid(oid);
