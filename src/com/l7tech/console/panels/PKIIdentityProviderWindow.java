@@ -7,9 +7,12 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.event.*;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SaveException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -19,6 +22,7 @@ import java.util.ResourceBundle;
 import java.util.Locale;
 import java.util.EventListener;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -149,17 +153,19 @@ public class PKIIdentityProviderWindow extends JDialog {
                      EntityHeader header = new EntityHeader();
                      header.setName(providerConfig.getName());
                      header.setType(EntityType.ID_PROVIDER_CONFIG);
-/*                try {
-                    header.setOid(getProviderConfigManager().save(iProvider));
-                } catch (SaveException e) {
-                    ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
-                    header = null;
-                }*/
+
+                     //todo: comment out this until the server side is ready
+/*                     try {
+                         header.setOid(getProviderConfigManager().save(providerConfig));
+                     } catch (SaveException e) {
+                         ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
+                         header = null;
+                     }*/
                      fireEventEntityAdded(header);
 
                  }
 
-                dispose();
+                 dispose();
              }
          });
 
@@ -178,6 +184,7 @@ public class PKIIdentityProviderWindow extends JDialog {
             providerConfig.setName(providerNameTextField.getText().trim());
         }
     }
+
     /**
      * Retrieve the object reference of the Trusted Cert Admin service
      *
@@ -193,6 +200,18 @@ public class PKIIdentityProviderWindow extends JDialog {
         }
 
         return tca;
+    }
+
+    private IdentityProviderConfigManager getProviderConfigManager()
+            throws RuntimeException {
+        IdentityProviderConfigManager ipc =
+                (IdentityProviderConfigManager) Locator.
+                getDefault().lookup(IdentityProviderConfigManager.class);
+        if (ipc == null) {
+            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+        }
+
+        return ipc;
     }
 
     /**
