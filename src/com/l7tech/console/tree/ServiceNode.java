@@ -96,6 +96,7 @@ public class ServiceNode extends EntityHeaderNode {
             return new Action[]{
                 new EditServicePolicyAction(this),
                 new ViewServiceWsdlAction(this),
+                new FeedNewWSDLToPublishedServiceAction(this),
                 new EditServiceNameAction(this),
                 ea,
                 da,
