@@ -15,6 +15,8 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.File;
 import java.io.IOException;
+import java.awt.*;
+import java.awt.event.KeyEvent;
 
 /**
  * Supporting class for actions.
@@ -172,8 +174,8 @@ public class Actions {
         // Delete the  node and update the tree
         try {
             Registry.getDefault().
-                    getServiceManager().
-                    deletePublishedService(node.getPublishedService().getOid());
+              getServiceManager().
+              deletePublishedService(node.getPublishedService().getOid());
             return true;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting service", e);
@@ -215,14 +217,14 @@ public class Actions {
           node.getName() + "?",
           "Delete Policy Template",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
-          return false;
+            return false;
         }
-         // Delete the  node and update the tree
+        // Delete the  node and update the tree
         try {
             File file = node.getFile();
             if (file.exists()) {
                 if (!file.delete()) {
-                    throw new IOException("Error deleting file "+file.getName());
+                    throw new IOException("Error deleting file " + file.getName());
                 }
             }
             return true;
@@ -231,5 +233,27 @@ public class Actions {
               notify(Level.WARNING, e, "Error deleting policy template");
         }
         return false;
+    }
+
+    /**
+     * invoke help programatically the F1 - help
+     * @param c the event source component
+     */
+    public static void invokeHelp(Component c) {
+        final KeyEvent ke =
+          new KeyEvent(
+            c,
+            KeyEvent.KEY_PRESSED,
+            0,
+            0,
+            KeyEvent.VK_F1, KeyEvent.CHAR_UNDEFINED);
+
+        Runnable r = new Runnable() {
+            public void run() {
+                KeyboardFocusManager.
+                  getCurrentKeyboardFocusManager().dispatchKeyEvent(ke);
+            }
+        };
+        SwingUtilities.invokeLater(r);
     }
 }
