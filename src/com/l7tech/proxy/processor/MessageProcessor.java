@@ -648,8 +648,15 @@ public class MessageProcessor {
             if (policyUrlHeader != null) {
                 log.info("Gateway response contained a PolicyUrl header: " + policyUrlHeader.getValue());
                 // Have we already updated a policy while processing this request?
-                if (context.isPolicyUpdated())
+                if (context.isPolicyUpdated()) {
+                    InputStream rStream = postMethod.getResponseBodyAsStream();
+                    byte[] output = null;
+                    if (rStream != null) {
+                        output = HexUtils.slurpStream(rStream);
+                    }
+                    log.warning("Gateway returning error with content: " + new String(output));
                     throw new ConfigurationException("Policy was updated, but Gateway says it's still out-of-date");
+                }
                 String serviceid = null;
                 try {
                     URL policyUrl = new URL(policyUrlHeader.getValue());
