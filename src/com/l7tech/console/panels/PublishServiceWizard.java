@@ -5,6 +5,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -27,12 +28,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import javax.wsdl.WSDLException;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EventListener;
@@ -285,6 +281,11 @@ public class PublishServiceWizard extends JDialog {
         panelButtons.add(cancelButton);
 
         buttonHelp.setText("Help");
+        buttonHelp.addActionListener( new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+               Actions.invokeHelp(PublishServiceWizard.this);
+            }
+        });
         panelButtons.add(buttonHelp);
 
         mainjPanel.add(panelButtons, BorderLayout.SOUTH);
