@@ -10,6 +10,9 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.policy.ClientPolicyFactory;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -28,6 +31,7 @@ public class PolicyManagerImpl implements PolicyManager {
     private static final Category log = Category.getInstance(PolicyManagerImpl.class);
     private static final PolicyManagerImpl INSTANCE = new PolicyManagerImpl();
     private static final Assertion nullPolicy = TrueAssertion.getInstance();
+    private static final ClientAssertion nullClientPolicy = new ClientTrueAssertion( TrueAssertion.getInstance() );
 
     private PolicyManagerImpl() {
     }
@@ -44,12 +48,12 @@ public class PolicyManagerImpl implements PolicyManager {
      * @param request the request whose policy is to be found
      * @return The root of policy Assertion tree.
      */
-    public Assertion getPolicy(PendingRequest request) {
-        Assertion policy = null;
+    public ClientAssertion getClientPolicy(PendingRequest request) {
+        ClientAssertion policy = null;
         if (policy == null && request.getSoapAction().length() > 0)
-            policy = request.getSsg().lookupPolicy(request.getUri(), request.getSoapAction());
+            policy = request.getSsg().lookupClientPolicy(request.getUri(), request.getSoapAction());
         log.info(policy != null ? "Located policy for this request" : "No policy found for this request");
-        return policy == null ? nullPolicy : policy;
+        return policy == null ? nullClientPolicy : policy;
     }
 
     /**

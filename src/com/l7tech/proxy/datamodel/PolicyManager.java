@@ -6,8 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
 import java.io.IOException;
 import java.net.URL;
@@ -26,7 +26,7 @@ public interface PolicyManager {
      * @param request the request whos policy is to be found
      * @return The root of policy Assertion tree.
      */
-    Assertion getPolicy(PendingRequest request);
+    ClientAssertion getClientPolicy(PendingRequest request);
 
     /**
      * Notify the PolicyManager that a policy may be out-of-date.

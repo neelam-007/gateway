@@ -6,19 +6,10 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.TransportMetadata;
-import com.l7tech.message.TransportProtocol;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.logging.LogManager;
-
-import java.util.Collections;
-import java.util.Set;
-import java.util.List;
 import java.util.Arrays;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author alex
@@ -92,46 +83,6 @@ public class SslAssertion extends ConfidentialityAssertion {
         _option = option;
     }
 
-    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
-        TransportMetadata tm = request.getTransportMetadata();
-        boolean ssl = (tm.getProtocol() == TransportProtocol.HTTPS);
-        AssertionStatus status;
-
-        String message;
-        Level level;
-        if (_option == REQUIRED) {
-            if (ssl) {
-                status = AssertionStatus.NONE;
-                message = "SSL required and present";
-                level = Level.FINE;
-            } else {
-                status = AssertionStatus.FALSIFIED;
-                message = "SSL required but not present";
-                level = Level.INFO;
-            }
-        } else if (_option == FORBIDDEN) {
-            if (ssl) {
-                status = AssertionStatus.FALSIFIED;
-                message = "SSL forbidden but present";
-                level = Level.INFO;
-            } else {
-                status = AssertionStatus.NONE;
-                message = "SSL forbidden and not present";
-                level = Level.FINE;
-            }
-        } else {
-            level = Level.FINE;
-            status = AssertionStatus.NONE;
-            message = ssl ? "SSL optional and present" : "SSL optional and not present";
-        }
-
-        _log.log(level, message);
-
-        if (status == AssertionStatus.FALSIFIED) response.setPolicyViolated(true);
-
-        return status;
-    }
-
     public void setOption(Option option) {
         _option = option;
     }
@@ -140,19 +91,6 @@ public class SslAssertion extends ConfidentialityAssertion {
         return _option;
     }
 
-    /**
-     * ClientProxy client-side processing of the given request.
-     * @param request    The request to decorate.
-     * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
-     * @throws PolicyAssertionException if processing should not continue due to a serious error
-     */
-    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
-        request.setSslRequired(true);
-        return AssertionStatus.NONE;
-    }
-
     protected Set _cipherSuites = Collections.EMPTY_SET;
     protected Option _option = REQUIRED;
-
-    protected transient Logger _log = LogManager.getInstance().getSystemLogger();
 }

@@ -83,7 +83,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * Ensure that this CompositeAssertion has at least one child.
      * @throws PolicyAssertionException if the children list is empty
      */
-    protected void mustHaveChildren() throws PolicyAssertionException {
+    public void mustHaveChildren() throws PolicyAssertionException {
         if (children.isEmpty())
             throw new PolicyAssertionException("CompositeAssertion has no children: " + this);
     }

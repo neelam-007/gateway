@@ -23,6 +23,11 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
+import com.l7tech.proxy.policy.assertion.ClientSslAssertion;
+import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
+import com.l7tech.proxy.policy.ClientPolicyFactory;
 import org.apache.axis.message.SOAPEnvelope;
 
 /**
@@ -51,7 +56,7 @@ public class ClientPolicyTest extends TestCase {
         Ssg ssg = new Ssg(1, "Foo Ssg", "http://foo");
         PendingRequest req = new PendingRequest(new SOAPEnvelope(), ssg, NullRequestInterceptor.INSTANCE);
 
-        Assertion policy = new TrueAssertion();
+        ClientAssertion policy = new ClientTrueAssertion( TrueAssertion.getInstance() );
 
         AssertionStatus result = policy.decorateRequest(req);
 
@@ -60,7 +65,7 @@ public class ClientPolicyTest extends TestCase {
 
     /** Test decoration of a message with an HTTP Basic policy. */
     public void testHttpBasicPolicy() throws Exception {
-        Assertion policy = new HttpBasic();
+        ClientAssertion policy = new ClientHttpBasic( new HttpBasic() );
         Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
         SOAPEnvelope env = new SOAPEnvelope();
         PendingRequest req;
@@ -96,7 +101,7 @@ public class ClientPolicyTest extends TestCase {
 
     /** Test decoration of a message with an SSL policy (specifying no certificates in particular). */
     public void testAnonymousSslPolicy() throws Exception {
-        Assertion policy = new SslAssertion();
+        ClientAssertion policy = new ClientSslAssertion( new SslAssertion() );
         Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
         SOAPEnvelope env = new SOAPEnvelope();
         PendingRequest req;
@@ -124,16 +129,18 @@ public class ClientPolicyTest extends TestCase {
                 new HttpDigest(),
             }));
 
+            ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
+
             ssg.setUsername("");
             ssg.setPassword("");
-            result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
+            result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
             assertFalse(AssertionStatus.NONE.equals(result));
 
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
             ssg.setPassword(PASS);
-            result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
+            result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
             assertTrue(AssertionStatus.NONE.equals(result));
             assertTrue(req.isSslRequired());
             assertFalse(req.isDigestAuthRequired());
@@ -152,16 +159,18 @@ public class ClientPolicyTest extends TestCase {
                 })),
             }));
 
+            ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
+
             ssg.setUsername("");
             ssg.setPassword("");
-            result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
+            result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
             assertFalse(AssertionStatus.NONE.equals(result));
 
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
             ssg.setPassword(PASS);
-            result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
+            result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
             assertTrue(AssertionStatus.NONE.equals(result));
             assertFalse(req.isSslRequired());
             assertFalse(req.isBasicAuthRequired());

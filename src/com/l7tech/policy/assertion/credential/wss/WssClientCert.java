@@ -20,11 +20,6 @@ import com.l7tech.proxy.datamodel.PendingRequest;
  * @version $Revision$
  */
 public class WssClientCert extends WssCredentialSourceAssertion {
-    public AssertionStatus checkCredentials(Request request, Response response) throws CredentialFinderException {
-        // FIXME: Implement
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
-    }
-
     public Class getCredentialFinderClass() {
         return WssClientCertCredentialFinder.class;
     }

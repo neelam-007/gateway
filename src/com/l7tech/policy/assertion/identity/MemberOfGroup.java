@@ -6,15 +6,6 @@
 
 package com.l7tech.policy.assertion.identity;
 
-import com.l7tech.identity.Group;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.User;
-import com.l7tech.logging.LogManager;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.AssertionStatus;
-
-import java.util.logging.Level;
-
 /**
  * Asserts that the requestor is a member of a particular group.
  *
@@ -37,39 +28,6 @@ public class MemberOfGroup extends IdentityAssertion {
     public MemberOfGroup(long providerOid, String groupName) {
         super(providerOid);
         _groupName = groupName;
-    }
-
-    /**
-     * Attempts to resolve a <code>Group</code> from the <code>groupOid</code> and <code>groupName</code> properties, in that order.
-     * @return
-     * @throws FindException
-     */
-    protected Group getGroup() throws FindException {
-        GroupManager gman = getIdentityProvider().getGroupManager();
-        if (_groupName != null) {
-            return gman.findByName(_groupName);
-        }
-        return null;
-    }
-
-    /**
-     * Returns <code>AssertionStatus.NONE</code> if the authenticated <code>User</code> is a member of the <code>Group</code> with which this assertion was initialized.
-     * @param user
-     * @return
-     */
-    public AssertionStatus doCheckUser(User user) {
-        try {
-            Group targetGroup = getGroup();
-            if ( targetGroup.getMembers().contains( user ) )
-                return AssertionStatus.NONE;
-            else {
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, "user not member of group");
-                return AssertionStatus.UNAUTHORIZED;
-            }
-        } catch (FindException fe) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
-            return AssertionStatus.FAILED;
-        }
     }
 
     protected String _groupName;

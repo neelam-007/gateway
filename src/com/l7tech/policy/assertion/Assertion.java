@@ -6,13 +6,8 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.proxy.datamodel.PendingRequest;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 
@@ -24,23 +19,6 @@ import java.util.*;
  */
 public abstract class Assertion implements Cloneable, Serializable {
     protected CompositeAssertion parent;
-
-    /**
-     * SSG Server-side processing of the given request.
-     * @param request       (In/Out) The request to check.  May be modified by processing.
-     * @param response      (Out) The response to send back.  May be replaced during processing.
-     * @return AssertionStatus.NONE if this Assertion did its business successfully; otherwise, some error code
-     * @throws PolicyAssertionException if processing should not continue due to a serious error
-     */
-    public abstract AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException;
-
-    /**
-     * ClientProxy client-side processing of the given request.
-     * @param request    The request to decorate.
-     * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
-     * @throws PolicyAssertionException if processing should not continue due to a serious error
-     */
-    public abstract AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException;
 
     public Assertion() {
         this.parent = null;

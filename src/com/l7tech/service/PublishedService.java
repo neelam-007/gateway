@@ -13,6 +13,9 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.SoapUtil;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.ServerFalseAssertion;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
@@ -27,13 +30,17 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class PublishedService extends NamedEntityImp {
-    public synchronized Assertion rootAssertion() throws IOException {
+    public synchronized ServerAssertion rootAssertion() throws IOException {
+        // TODO: Transform the abstract policy tree into the Server version!
         String policyXml = getPolicyXml();
         if ( policyXml == null || policyXml.length() == 0 ) {
             _log.warning( "Service " + _oid + " has an invalid or empty policy_xml field.  Using null policy." );
-            return FalseAssertion.getInstance();
+            return new ServerFalseAssertion( FalseAssertion.getInstance() );
         } else {
-            if ( _rootAssertion == null ) _rootAssertion = WspReader.parse( policyXml );
+            if ( _rootAssertion == null ) {
+                Assertion ass = WspReader.parse( policyXml );
+                _rootAssertion = ServerPolicyFactory.getInstance().makeServerPolicy( ass );
+            }
         }
 
         return _rootAssertion;
@@ -209,5 +216,5 @@ public class PublishedService extends NamedEntityImp {
     protected transient Wsdl _parsedWsdl;
     protected transient Port _wsdlPort;
     protected transient URL _serviceUrl;
-    protected transient Assertion _rootAssertion;
+    protected transient ServerAssertion _rootAssertion;
 }

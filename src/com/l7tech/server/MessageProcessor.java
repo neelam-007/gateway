@@ -16,6 +16,7 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.resolution.ServiceResolutionException;
 import com.l7tech.util.Locator;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -41,7 +42,7 @@ public class MessageProcessor {
             } else {
                 LogManager.getInstance().getSystemLogger().log(Level.FINER, "Service resolved" );
                 request.setParameter( Request.PARAM_SERVICE, service );
-                Assertion ass = service.rootAssertion();
+                ServerAssertion ass = service.rootAssertion();
 
                 status = ass.checkRequest( request, response );
 

@@ -18,6 +18,7 @@ import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpState;
@@ -77,7 +78,7 @@ public class MessageProcessor {
             throw new ConfigurationException("Unable to fulfil request after " + MAX_TRIES +
                                              " attempts to contact the SSG; giving up");
         Ssg ssg = pendingRequest.getSsg();
-        Assertion policy = policyManager.getPolicy(pendingRequest);
+        ClientAssertion policy = policyManager.getClientPolicy(pendingRequest);
         AssertionStatus result = policy.decorateRequest(pendingRequest);
         if (result != AssertionStatus.NONE) {
             if (pendingRequest.isCredentialsWouldHaveHelped()) {

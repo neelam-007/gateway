@@ -266,6 +266,8 @@
             <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.ClientPolicyTest" haltonfailure="no"/>
             <test name="com.l7tech.service.WsdlTest" haltonfailure="no"/>
+            <test name="com.l7tech.proxy.policy.ClientPolicyFactoryTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.policy.ServerPolicyFactoryTest" haltonfailure="no"/>
             <!--
              ** add policy tests into the com.l7tech.policy.AllTests class
             -->
@@ -314,7 +316,7 @@
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib"
-                 excludes="jh.jar, kunststoff.jar, servlet.jar, xercesImpl.jar, xml-apis.jar, catalina.jar">
+                 excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, xercesImpl.jar, xml-apis.jar, catalina.jar">
             </lib>
             <classes dir="${build.classes}"/>
 
@@ -404,6 +406,12 @@
             deprecation="on" depend="on" verbose="no">
             <classpath refid="project.class.path"/>
         </javac>
+        <copy todir="${build.classes}">
+            <fileset dir="${src.root}/src">
+                <!-- TODO: Emil, tell us why this is evil! -->
+                <include name="com/l7tech/util/locator/services.properties"/>
+            </fileset>
+        </copy>
     </target>
 
      <!--
