@@ -1,3 +1,33 @@
-This pre-release software should be considered confidential.  
+ADMINISTRATION CONSOLE SOFTWARE LICENSE AGREEMENT OF LAYER 7 TECHNOLOGIES.
 
-You may not use or distribute this software unless you possess written permission from Layer7 Technologies.
+THE SOFTWARE TO WHICH YOU ARE REQUESTING TO ACCESS IS THE PROPERTY OF LAYER 7 TECHNOLOGIES.  THE USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS OF THE AGREEMENT SET FORTH BELOW.  BY CLICKING "I AGREE" ON THIS SCREEN, YOU INDICATE THAT YOU AGREE TO BE BOUND BY THE TERMS AND CONDITIONS OF THAT AGREEMENT.   THEREFORE, PLEASE READ THE TERMS AND CONDITIONS CAREFULLY BEFORE CLICKING ON "I AGREE".  IF YOU DO NOT AGREE TO THE TERMS AND CONDITIONS OF THE AGREEMENT, CLICK "CANCEL" ON THIS SCREEN, IN WHICH CASE YOU WILL BE DENIED ACCESS TO THE SOFTWARE.
+
+Ownership of the Software
+
+1.  The software contained in the Layer 7 Technologies Administration Console ("the Software"), to which you are requesting access, is owned or licensed by Layer 7 Technologies and is protected by United States and Canada copyright laws, laws of other nations, and/or international treaties.
+
+Grant of License
+
+2. Layer 7 Technologies hereby grants to you the right to install and use the Software on a single computer, provided that this computer must use the Software only to connect to Layer 7 Technologies products, and subject to export restrictions in paragraph 4 hereof. The Software is licensed for use only with Layer 7 Technologies products, and for no other use.
+
+Restrictions on Use and Transfer
+
+3. You may not otherwise copy the Software, except that you may make one copy of the Software solely for backup or archival purposes. To this end, you may transfer the Software to a single set of removable media provided you keep the media solely for backup or archival purposes. You may not use the backup or archival copy of the Software except in conjunction with Layer 7 Technologies products.
+
+4.  You may not transfer the Software to any third party without the express written permission of Layer 7 Technologies.  For permitted transfers, you may not export or re-export, directly or indirectly, the Software to any country for which the U.S. Government requires an export license or other governmental approval, without first notifying Layer 7 and obtaining the required license or approval from the U.S. Government.
+
+5.  You may not modify, translate, decompile, disassemble, use for any competitive analysis, reverse engineer, distribute, or create derivative works from, the Software or any accompanying documentation or any copy thereof, in whole or in part.
+
+6.  The subject license will terminate immediately if you do not comply with any and all of the terms and conditions set forth herein. Upon termination for any reason, you (the licensee) must immediately destroy the Software, any accompanying documentation, and all copies thereof.  Layer 7 Technologies is not liable to you for damages in any form solely by reason of termination of this license.
+
+7.  You may not remove or alter any copyright, trade secret, patent, trademark, trade name, logo, product designation or other proprietary and/or other legal notices contained in or on the Software and any accompanying documentation.  These legal notices must be retained on any copies of the Software and accompanying documentation made pursuant to paragraphs 2 and 3 hereof.
+
+8.  You shall acquire no rights of any kind to any copyright, trade secret, patent, trademark, trade name, logo, or product designation contained in, or relating to, the Software or accompanying documentation and shall not make use thereof except as expressly authorized herein or otherwise authorized in writing by Layer 7 Technologies.
+
+Limitation Of Liabilities
+
+9.  INSTALLATION AND USE OF THE SOFTWARE IS ALSO GOVERNED BY A SEPARATE LICENSE AGREEMENT BETWEEN LAYER 7 TECHNOLOGIES AND THE PURCHASER OF THE SOFTWARE.  THAT SEPARATE LICENSE AGREEMENT CONTAINS A DESCRIPTION OF ALL WARRANTIES PROVIDED BY LAYER 7 TECHNOLOGIES FOR THE SOFTWARE.  LAYER 7 TECHNOLOGIES PROVIDES NO WARRANTIES FOR THE SOFTWARE OTHER THAN THOSE SET FORTH IN THAT AGREEMENT, AND ASSUMES NO LIABILITIES WITH RESPECT TO YOUR USE OF THE SOFTWARE.
+
+
+
+
