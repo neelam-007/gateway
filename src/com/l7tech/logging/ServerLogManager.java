@@ -11,6 +11,8 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.springframework.context.support.ApplicationObjectSupport;
+
 /**
  * SSG log manager that sets the right handlers to the root logger and
  * prepares the hibernate dumper when ready. This must be instantiated when
@@ -34,7 +36,7 @@ import java.util.Collections;
  * Date: Jul 3, 2003<br/>
  * Time: 11:42:08 AM<br/><br/>
  */
-public class ServerLogManager {
+public class ServerLogManager extends ApplicationObjectSupport {
 
     public static ServerLogManager getInstance() {
         return SingletonHolder.singleton;

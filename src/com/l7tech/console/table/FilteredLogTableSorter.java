@@ -3,12 +3,10 @@ package com.l7tech.console.table;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.LogRequest;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.logging.GenericLogAdmin;
-import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.LogMessage;
 
 import javax.swing.*;
@@ -31,7 +29,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private Object[] sortedData = null;
     private ClusterStatusAdmin clusterStatusAdmin = null;
     private GenericLogAdmin logAdmin = null;
-    private final Locator logAdminLocator;
     private boolean canceled;
     private LogPanel logPanel;
 
@@ -41,12 +38,11 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *
      * @param logPanel The panel of log browser.
      * @param model  A table model.
-     * @param logAdminLocator A {@link Locator} that only needs to know how to locate the correct kind of {@link LogAdmin} implementation.
      */
-    public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model, Locator logAdminLocator) {
+    public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model, GenericLogAdmin logAdmin) {
         this.logPanel = logPanel;
-        this.logAdminLocator = logAdminLocator;
         setModel(model);
+        this.logAdmin = logAdmin;
     }
 
     /**
@@ -343,8 +339,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * Initialize the variables when the connection with the cluster is established.
      */
     public void onConnect() {
-
-        logAdmin = Registry.getDefault().getLogAdmin();
         clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
 
         currentNodeList = new Hashtable();

@@ -11,13 +11,13 @@ import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.ServerConfig;
 import net.sf.hibernate.HibernateException;
+import org.springframework.beans.factory.InitializingBean;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class AuditAdminImpl extends RemoteService implements AuditAdmin {
+public class AuditAdminImpl extends RemoteService implements AuditAdmin, InitializingBean {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final long CONTEXT_TIMEOUT = 1000L * 60 * 5; // expire after 5 min of inactivity
     private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;
@@ -60,12 +60,16 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
         Background.schedule(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
     }
 
+    public void setAuditRecordManager(AuditRecordManager auditRecordManager) {
+        this.auditRecordManager = auditRecordManager;
+    }
+
 
     public AuditRecord findByPrimaryKey( final long oid ) throws FindException, RemoteException {
         try {
             return (AuditRecord) doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
-                    return getManager().findByPrimaryKey(oid);
+                    return auditRecordManager.findByPrimaryKey(oid);
                 }
             });
         } catch ( ObjectModelException e ) {
@@ -77,7 +81,7 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
         try {
             return (Collection)doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
-                    return getManager().find(criteria);
+                    return auditRecordManager.find(criteria);
                 }
             });
         } catch ( ObjectModelException e ) {
@@ -90,12 +94,22 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
         try {
             doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
-                    getManager().deleteOldAuditRecords();
+                    auditRecordManager.deleteOldAuditRecords();
                     return null;
                 }
             });
         } catch ( ObjectModelException e ) {
             throw new RemoteException("Couldn't find AuditRecords", e);
+        }
+    }
+
+    public void afterPropertiesSet() throws Exception {
+        checkAuditRecordManager();
+    }
+
+    private void checkAuditRecordManager() {
+        if (auditRecordManager == null) {
+            throw new IllegalArgumentException("audit record manager is required");
         }
     }
 
@@ -231,9 +245,10 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
 
     public SSGLogRecord[] getSystemLog(final String nodeid, final long startMsgNumber, final long endMsgNumber, final int size) throws RemoteException {
         try {
+            logger.finest("get audits interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
             Collection c = (Collection)doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
-                    return getManager().find(new AuditSearchCriteria(nodeid, startMsgNumber, endMsgNumber, size));
+                    return auditRecordManager.find(new AuditSearchCriteria(nodeid, startMsgNumber, endMsgNumber, size));
                 }
             });
             return (SSGLogRecord[])c.toArray(new SSGLogRecord[0]);
@@ -252,14 +267,6 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
         } finally {
             if (context != null) context.close();
         }
-    }
-
-    private AuditRecordManager getManager() {
-        if (auditRecordManager == null) {
-            auditRecordManager = (AuditRecordManager)Locator.getDefault().lookup(AuditRecordManager.class);
-            if (auditRecordManager == null) throw new IllegalStateException("Can't locate AuditRecordManager");
-        }
-        return auditRecordManager;
     }
 
     public Level serverMessageAuditThreshold() throws RemoteException {

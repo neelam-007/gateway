@@ -7,13 +7,16 @@ import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
+import org.springframework.beans.factory.InitializingBean;
+
 /**
  * <code>Log</code> service implementation.
  *
  * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version $Id$
  */
-public class LogAdminImpl extends RemoteService implements LogAdmin {
+public class LogAdminImpl extends RemoteService implements LogAdmin, InitializingBean {
+    private ServerLogManager serverLogManager;
 
     /**
      * Retrieve the system logs of a node in between the startMsgNumber and endMsgNumber specified
@@ -69,7 +72,8 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
      */
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         try {
-            return (SSGLogRecord[])ServerLogManager.getInstance().getLogRecords(nodeid, startMsgNumber, endMsgNumber, size).toArray(new SSGLogRecord[]{});
+            logger.finest("get server logs interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
+            return (SSGLogRecord[])serverLogManager.getLogRecords(nodeid, startMsgNumber, endMsgNumber, size).toArray(new SSGLogRecord[]{});
         } finally {
             try {
                 PersistenceContext.getCurrent().close();
@@ -79,8 +83,22 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
         }
     }
 
+    public void setServerLogManager(ServerLogManager serverLogManager) {
+        this.serverLogManager = serverLogManager;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+    public void afterPropertiesSet() throws Exception {
+        checkServerLogManagerSet();
+    }
+
+    private void checkServerLogManagerSet() {
+        if  (serverLogManager == null) {
+            throw new IllegalArgumentException("server log manager is required");
+        }
+    }
 }

@@ -24,6 +24,10 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.beans.BeansException;
+
 /**
  * Manages the finding and saving of {@link AuditRecord}s.
  *
@@ -32,7 +36,8 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager {
+public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager, ApplicationContextAware {
+    private ApplicationContext applicationCOntext;
 
     public AuditRecordManagerImpl() {
     }
@@ -153,5 +158,9 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
     public String getTableName() {
         return "audit";
+    }
+
+    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
+        applicationCOntext = ctx;
     }
 }

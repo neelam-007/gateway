@@ -18,6 +18,8 @@ import java.security.PrivilegedActionException;
 import java.security.Principal;
 import java.util.Set;
 import java.util.Iterator;
+import java.rmi.server.UnicastRemoteObject;
+import java.rmi.server.ServerNotActiveException;
 
 /**
  * @author emil
@@ -35,8 +37,14 @@ class AdminSessionRemoteInvocation extends RemoteInvocation {
     public Object invoke(final Object targetObject)
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         try {
+            String remoteAddress = "127.0.0.1";
+            try {
+                remoteAddress  = UnicastRemoteObject.getClientHost();
+            } catch (ServerNotActiveException e) {
+                logger.info("Unable to obtain admin IP address, assuming '"+remoteAddress+"'");
+            }
             if (logger.isTraceEnabled()) {
-                logger.trace("the subject is " + (subject == null ? "null" : "'"+extractPrincipalName(subject)+"'"));
+                logger.trace("the subject is " + (subject == null ? "null" : "'"+extractPrincipalName(subject)+"', from address '"+remoteAddress+"'"));
             }
             return
               Subject.doAs(subject, new PrivilegedExceptionAction() {

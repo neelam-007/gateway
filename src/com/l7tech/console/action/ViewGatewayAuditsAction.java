@@ -1,12 +1,11 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.locator.AbstractLocator;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.GatewayLogWindow;
 import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
+import com.l7tech.logging.GenericLogAdmin;
 
 import javax.swing.*;
 import java.awt.*;
@@ -81,12 +80,9 @@ public class ViewGatewayAuditsAction extends SecureAction {
         });
 
         gatewayAuditWindow = new GatewayLogWindow(new GatewayLogWindow.Strategy() {
-            public Locator getLogAdminLocator() {
-                return new AbstractLocator() {
-                    public Object lookup(Class clazz) {
-                        return Registry.getDefault().getAuditAdmin();
-                    }
-                };
+
+            public GenericLogAdmin getLogAdmin() {
+                return Registry.getDefault().getAuditAdmin();
             }
 
             public String getWindowTitle() {

@@ -11,11 +11,21 @@
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer">
     </bean>
 
+
     <!--
     * singleton using the factory method. This is transitional, as it is referrencef from
     * too many places.
     -->
     <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance" />
+
+
+    <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl">
+    </bean>
+
+    <bean id="serverLogManager" class="com.l7tech.logging.ServerLogManager">
+    </bean>
+
+
     <!-- ssl config for rmi/ssl -->
     <bean id="sslKeystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance" />
 
@@ -103,6 +113,7 @@
     </bean>
     <!--    log admin servant -->
     <bean id="logAdmin" class="com.l7tech.logging.LogAdminImpl">
+        <property name="serverLogManager"><ref bean="serverLogManager"/></property>
      </bean>
 
 
@@ -113,6 +124,7 @@
     </bean>
     <!--    audit admin servant -->
     <bean id="auditAdmin" class="com.l7tech.server.audit.AuditAdminImpl">
+        <property name="auditRecordManager"><ref bean="auditRecordManager"/></property>
     </bean>
 
     <!--    service admin exporter -->
@@ -159,4 +171,6 @@
       <!--    trusted cert admin servant -->
       <bean id="clusterStatusAdmin" class="com.l7tech.cluster.ClusterStatusAdminImp">
       </bean>
+
+
 </beans>

@@ -1,12 +1,12 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.logging.GenericLogAdmin;
 
 import javax.swing.*;
 import java.awt.*;
@@ -43,7 +43,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
       java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     public interface Strategy {
-        Locator getLogAdminLocator();
+        GenericLogAdmin getLogAdmin();
         String getWindowTitle();
         String getPanelTitle();
         Collection getExtraFileMenuActions();
@@ -233,7 +233,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     public LogPanel getLogPane() {
         if (logPane != null) return logPane;
 
-        logPane = new LogPanel(strategy.getLogAdminLocator());
+        logPane = new LogPanel(strategy.getLogAdmin());
         return logPane;
     }
 
