@@ -738,8 +738,6 @@ public class WspConstants {
         new AssertionMapping(new RequestWssSaml(), "RequestWssSaml"),
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
         new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
-        new AssertionMapping(new RequestAcceleratedXpathAssertion(), "RequestAcceleratedXpathAssertion"),
-        new AssertionMapping(new ResponseAcceleratedXpathAssertion(), "ResponseAcceleratedXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
         new AssertionMapping(new XslTransformation(), "XslTransformation"),
         new AssertionMapping(new TimeRange(), "TimeRange"),

@@ -1,13 +1,13 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.console.util.Registry;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 
+import java.rmi.RemoteException;
 import java.util.Iterator;
 import java.util.logging.Level;
-import java.rmi.RemoteException;
 
 /**
  * The class represents an gui node element in the TreeModel that
@@ -42,8 +42,6 @@ public class XmlFolderNode extends AbstractTreeNode {
         children = null;
         insert(new RequestXpathPaletteNode(), index++);
         insert(new ResponseXpathPaletteNode(), index++);
-        insert(new RequestAcceleratedXpathPaletteNode(), index++);
-        insert(new ResponseAcceleratedXpathPaletteNode(), index++);
         insert(new SchemaValidationPaletteNode(), index++);
         insert(new XslTransformationPaletteNode(), index++);
         insert(new RequestSwAAssertionPaletteNode(), index++);

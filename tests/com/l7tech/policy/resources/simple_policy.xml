@@ -150,17 +150,6 @@
                         <Actor stringValue=""/>
                     </RecipientContext>
                 </ResponseWssConfidentiality>
-                <RequestAcceleratedXpathAssertion>
-                    <XpathExpression xpathExpressionValue="included">
-                        <Expression stringValue="/soapenv:Envelope"/>
-                        <Namespaces mapValue="included">
-                            <entry>
-                                <key stringValue="soapenv"/>
-                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
-                            </entry>
-                        </Namespaces>
-                    </XpathExpression>
-                </RequestAcceleratedXpathAssertion>
                 <RequestXpathAssertion>
                     <XpathExpression xpathExpressionValue="included">
                         <Expression stringValue="/soapenv:Envelope"/>
@@ -172,17 +161,6 @@
                         </Namespaces>
                     </XpathExpression>
                 </RequestXpathAssertion>
-                <ResponseAcceleratedXpathAssertion>
-                    <XpathExpression xpathExpressionValue="included">
-                        <Expression stringValue="/soapenv:Envelope"/>
-                        <Namespaces mapValue="included">
-                            <entry>
-                                <key stringValue="soapenv"/>
-                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
-                            </entry>
-                        </Namespaces>
-                    </XpathExpression>
-                </ResponseAcceleratedXpathAssertion>
                 <ResponseXpathAssertion>
                     <XpathExpression xpathExpressionValue="included">
                         <Expression stringValue="/soapenv:Envelope"/>
@@ -284,8 +262,8 @@
                                     <ContentTypes stringArrayValue="included">
                                     <item stringValue="application/x-zip-compressed"/>
                                     </ContentTypes>
-                                    <Name stringValue="portfolioData"/>
                                     <MaxLength intValue="0"/>
+                                    <Name stringValue="portfolioData"/>
                                     </value>
                                     </entry>
                                     </Multipart>

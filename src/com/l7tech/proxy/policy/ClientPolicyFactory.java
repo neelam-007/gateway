@@ -52,12 +52,12 @@ public class ClientPolicyFactory extends PolicyFactory {
     }
 
     protected Object makeSpecificPolicy(Assertion genericAssertion) {
-        if (TarariLoader.getGlobalContext() == null) {
-            if (genericAssertion instanceof RequestAcceleratedXpathAssertion)
-                return new ClientRequestXpathAssertion((RequestXpathAssertion)genericAssertion);
+        if (TarariLoader.getGlobalContext() != null) {
+            if (genericAssertion instanceof RequestXpathAssertion)
+                return new ClientRequestAcceleratedXpathAssertion((RequestXpathAssertion)genericAssertion);
 
-            if (genericAssertion instanceof ResponseAcceleratedXpathAssertion)
-                return new ClientResponseXpathAssertion((ResponseXpathAssertion)genericAssertion);
+            if (genericAssertion instanceof ResponseXpathAssertion)
+                return new ClientResponseAcceleratedXpathAssertion((ResponseXpathAssertion)genericAssertion);
         }
         return super.makeSpecificPolicy(genericAssertion);
     }

@@ -12,9 +12,11 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.tarari.TarariMessageContextImpl;
+import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
@@ -24,11 +26,16 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.text.ParseException;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Superclass for hardware-accelerated XPaths in the policy application code.
+ * The "Accelerated" request and response xpath assertions are not "real" policy assertions; they are just
+ * alternate implementations of the request and response xpath assertions that use the hardware instead.  The
+ * ClientPolicyFactory instantiates the hardware-assisted versions if hardware support seems to be available.
  */
 public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
     private static final Logger logger = Logger.getLogger(ClientAcceleratedXpathAssertion.class.getName());
@@ -44,17 +51,25 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
      */
     protected ClientAcceleratedXpathAssertion(XpathBasedAssertion assertion, boolean isRequest, ClientAssertion softwareDelegate) {
         super(assertion, isRequest);
-        if (!(assertion instanceof RequestAcceleratedXpathAssertion) &&
-            !(assertion instanceof ResponseAcceleratedXpathAssertion))
+        if (!(assertion instanceof RequestXpathAssertion) &&
+            !(assertion instanceof ResponseXpathAssertion))
                 throw new IllegalArgumentException(); // can't happen
         this.softwareDelegate = softwareDelegate;
-        String expr = assertion.getXpathExpression().getExpression();
+        final XpathExpression xpathExpression = assertion.getXpathExpression();
+        Map nsmap = xpathExpression.getNamespaces();
+        String expr = xpathExpression.getExpression();
         try {
+            // Convert this Xpath into tarari format
+            expr = TarariXpathConverter.convertToTarariXpath(nsmap, expr);
+
             // Register this Xpath with the tarari hardware
             GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
             if (tarariContext != null)
                 tarariContext.add(expr);
         } catch (InvalidXpathException e) {
+            logger.log(Level.WARNING, "Assertion will always fail: Invalid Xpath expression: " + expr, e);
+            expr = null;
+        } catch (ParseException e) {
             logger.log(Level.WARNING, "Assertion will always fail: Invalid Xpath expression: " + expr, e);
             expr = null;
         }

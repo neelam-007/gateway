@@ -9,10 +9,12 @@ package com.l7tech.server.policy;
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.policy.PolicyFactory;
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.ResponseXpathAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
-import com.l7tech.server.policy.assertion.ServerResponseXpathAssertion;
+import com.l7tech.server.policy.assertion.ServerRequestAcceleratedXpathAssertion;
+import com.l7tech.server.policy.assertion.ServerResponseAcceleratedXpathAssertion;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -44,12 +46,12 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
         try {
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs
             // TODO find an abstraction for this assertion censorship
-            if (TarariLoader.getGlobalContext() == null) {
-                if (genericAssertion instanceof RequestAcceleratedXpathAssertion)
-                    return new ServerRequestXpathAssertion((RequestXpathAssertion)genericAssertion, applicationContext);
+            if (TarariLoader.getGlobalContext() != null) {
+                if (genericAssertion instanceof RequestXpathAssertion)
+                    return new ServerRequestAcceleratedXpathAssertion((RequestXpathAssertion)genericAssertion, applicationContext);
 
-                if (genericAssertion instanceof ResponseAcceleratedXpathAssertion)
-                    return new ServerResponseXpathAssertion((ResponseXpathAssertion)genericAssertion, applicationContext);
+                if (genericAssertion instanceof ResponseXpathAssertion)
+                    return new ServerResponseAcceleratedXpathAssertion((ResponseXpathAssertion)genericAssertion, applicationContext);
             }
 
             Class genericAssertionClass = genericAssertion.getClass();

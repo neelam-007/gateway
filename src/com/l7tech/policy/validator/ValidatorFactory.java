@@ -3,7 +3,10 @@ package com.l7tech.policy.validator;
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RequestSwAAssertion;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.ResponseXpathAssertion;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.service.PublishedService;
 
@@ -27,8 +30,6 @@ class ValidatorFactory {
     static {
         assertionMap.put(RequestXpathAssertion.class, XpathBasedAssertionValidator.class);
         assertionMap.put(ResponseXpathAssertion.class, XpathBasedAssertionValidator.class);
-        assertionMap.put(RequestAcceleratedXpathAssertion.class, XpathBasedAssertionValidator.class);
-        assertionMap.put(ResponseAcceleratedXpathAssertion.class, XpathBasedAssertionValidator.class);
         assertionMap.put(RequestWssIntegrity.class, XpathBasedAssertionValidator.class);
         assertionMap.put(RequestWssConfidentiality.class, XpathBasedAssertionValidator.class);
         assertionMap.put(ResponseWssIntegrity.class, XpathBasedAssertionValidator.class);
