@@ -16,8 +16,7 @@ public class TestIdentityProviderManager extends TestCase {
     }
 
     public void setUp() throws Exception {
-        PersistenceContext context = PersistenceManager.getContext();
-        _ipm = new IdentityProviderConfigManagerImp( context );
+        _ipm = new IdentityProviderConfigManagerImp();
     }
 
     private IdentityProviderConfigManager _ipm;
