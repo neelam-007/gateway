@@ -38,14 +38,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     public ServerJmsRoutingAssertion(JmsRoutingAssertion data) {
         this.data = data;
-        connectionManager = (JmsConnectionManager)Locator.getDefault().lookup( JmsConnectionManager.class );
-        endpointManager = (JmsEndpointManager)Locator.getDefault().lookup( JmsEndpointManager.class );
     }
 
     // TODO synchronized?
     public synchronized AssertionStatus checkRequest( Request request, Response response )
             throws IOException, PolicyAssertionException {
         request.setRoutingStatus( RoutingStatus.ATTEMPTED );
+        Destination jmsInboundDest = null;
 
         try {
             JmsBag bag = getJmsBag();
@@ -58,7 +57,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             Message jmsOutboundRequest = makeRequest( request );
 
             Destination jmsOutboundDest = getRoutedRequestDestination();
-            Destination jmsInboundDest = jmsOutboundRequest.getJMSReplyTo();
+            jmsInboundDest = jmsOutboundRequest.getJMSReplyTo();
 
             String corrId = jmsOutboundRequest.getJMSCorrelationID();
             String selector = corrId == null
@@ -68,13 +67,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             if ( jmsSession instanceof QueueSession ) {
                 if ( !(jmsOutboundDest instanceof Queue ) ) throw new PolicyAssertionException( "Destination/Session type mismatch" );
                 jmsProducer = ((QueueSession)jmsSession).createSender( (Queue)jmsOutboundDest );
-                jmsConsumer = ((QueueSession)jmsSession).createReceiver( (Queue)jmsInboundDest, selector );
+                jmsConsumer = ((QueueSession)jmsSession).createReceiver( (Queue)jmsInboundDest, null );
             } else if ( jmsSession instanceof TopicSession ) {
                 logger.log( Level.SEVERE, "Topics not supported!" );
                 return AssertionStatus.NOT_YET_IMPLEMENTED;
             } else {
                 jmsProducer = jmsSession.createProducer( jmsOutboundDest );
-                jmsConsumer = jmsSession.createConsumer( jmsInboundDest, selector );
+                jmsConsumer = jmsSession.createConsumer( jmsInboundDest, null );
             }
 
             jmsProducer.send( jmsOutboundRequest );
@@ -131,6 +130,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             String msg = "Invalid JMS configuration";
             logger.log( Level.SEVERE, msg, e );
             throw new PolicyAssertionException(msg, e);
+        } finally {
+            try {
+                if ( jmsInboundDest instanceof TemporaryQueue ) {
+                    logger.fine( "Deleting temporary queue" );
+                    ((TemporaryQueue)jmsInboundDest).delete();
+                }
+            } catch ( JMSException e ) {
+                logger.log( Level.WARNING, "Caught JMSException while attempting to delete temporary queue", e );
+            }
         }
     }
 
@@ -142,11 +150,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     private Queue getTemporaryResponseQueue() throws JMSException, NamingException,
                                                      JmsConfigException, FindException {
-        if ( tempResponseQueue == null ) {
-            JmsBag bag = getJmsBag();
-            tempResponseQueue = bag.getSession().createTemporaryQueue();
-        }
-        return tempResponseQueue;
+        return getJmsBag().getSession().createTemporaryQueue();
+//        if ( tempResponseQueue == null ) {
+//            JmsBag bag = getJmsBag();
+//            tempResponseQueue = bag.getSession().createTemporaryQueue();
+//        }
+//        return tempResponseQueue;
     }
 
     private Destination getResponseDestination( JmsEndpoint endpoint, Message request )
@@ -254,23 +263,27 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     }
 
     private JmsEndpoint getRoutedRequestEndpoint() throws FindException {
-        if ( routedRequestEndpoint == null )
-            routedRequestEndpoint = endpointManager.findByPrimaryKey(data.getEndpointOid().longValue());
-
+        if ( routedRequestEndpoint == null ) {
+            JmsEndpointManager mgr = (JmsEndpointManager)Locator.getDefault().lookup( JmsEndpointManager.class );
+            routedRequestEndpoint = mgr.findByPrimaryKey(data.getEndpointOid().longValue());
+        }
         return routedRequestEndpoint;
     }
 
     private JmsConnection getRoutedRequestConnection() throws FindException {
-        if ( routedRequestConnection == null )
-            routedRequestConnection = connectionManager.findConnectionByPrimaryKey(
-                    getRoutedRequestEndpoint().getConnectionOid() );
+        if ( routedRequestConnection == null ) {
+            JmsConnectionManager mgr = (JmsConnectionManager)Locator.getDefault().lookup( JmsConnectionManager.class );
+            routedRequestConnection = mgr.findConnectionByPrimaryKey( getRoutedRequestEndpoint().getConnectionOid() );
+        }
         return routedRequestConnection;
     }
 
     private JmsBag getJmsBag() throws FindException, JMSException, NamingException, JmsConfigException {
-        if ( bag == null )
+        if ( bag == null ) {
             bag = JmsUtil.connect( getRoutedRequestConnection(),
                                    getRoutedRequestEndpoint().getPasswordAuthentication() );
+            bag.getConnection().start();
+        }
         return bag;
     }
 
@@ -278,12 +291,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private JmsEndpoint routedRequestEndpoint;
     private JmsBag bag;
 
-    private final JmsConnectionManager connectionManager;
-    private final JmsEndpointManager endpointManager;
     private Logger logger = LogManager.getInstance().getSystemLogger();
     private Destination routedRequestDestination;
     private Destination endpointResponseDestination;
     private Queue tempResponseQueue;
-    public static final long RESPONSE_TIMEOUT = 10 * 1000;
+    public static final long RESPONSE_TIMEOUT = 10000; // 10000
     public static final int BUFFER_SIZE = 79; // TODO set to something reasonable when testing is finished
 }
