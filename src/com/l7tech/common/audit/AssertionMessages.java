@@ -1,7 +1,5 @@
 package com.l7tech.common.audit;
 
-import com.l7tech.policy.assertion.Regex;
-
 import java.util.logging.Level;
 
 /**
@@ -236,7 +234,7 @@ public class AssertionMessages extends Messages {
 
     //ServerRegex
     public static final M REGEX_PATTERN_INVALID = m(6300, Level.WARNING, "Regex pattern '{0}' compile error: {1}; assertion therefore fails.");
-    public static final M REGEX_TOO_BIG         = m(6301, Level.WARNING, "Regular expression cannot be evaluated; content is too large (>= " + Regex.MAX_LENGTH + " bytes)");
+    public static final M REGEX_TOO_BIG         = m(6301, Level.WARNING, "Regular expression cannot be evaluated; content is too large (>= " + 1024 * 512 + " bytes)");
     public static final M REGEX_NO_REPLACEMENT  = m(6302, Level.WARNING, "Replace requested, and no replace string specified (null).");
     public static final M REGEX_NO_SUCH_PART    = m(6303, Level.WARNING, "Cannot search or replace in nonexistent part #{0}");
 
