@@ -35,9 +35,9 @@ public class NonSoapServicePanel extends WizardStepPanel {
     public String getDescription() {
         return "Provide the SecureSpan Gateway basic information about the " +
                "non-soap xml application you are about to publish.<p>" +
-               "The field \"Service name:\" lets you define a name to refer to " +
+               "The field \"Service Name\" lets you define a name to refer to " +
                "this service in the SecureSpan Manager.<p>" +
-               "The field \"Target URL:\" lets you define an HTTP URL to which " +
+               "The field \"Target URL\" lets you define an HTTP URL to which " +
                "the SecureSpan Gateway will forward the incoming requests to. " +
                "This can later be changed by editing the resulting policy.<p>The field " +
                "\"SSG URL\" lets you customize the incoming HTTP URL on the SecureSpan Gateway " +
