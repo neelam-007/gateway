@@ -481,13 +481,23 @@ public class LogPanel extends JPanel {
         // retrieve the new logs
         ((FilteredLogTableModel) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel());
 
+        if(msgNumSelected != null){
+            setSelectedRow(msgNumSelected);
+        }
 
-        if (msgNumSelected != null) {
+        updateMsgTotal();
+
+        // find the new index of the message selected
+        getLogsRefreshTimer().start();
+    }
+
+    private void setSelectedRow(String msgNumber) {
+        if (msgNumber != null) {
             // keep the current row selection
             int rowCount = getMsgTable().getRowCount();
             boolean rowFound = false;
             for (int i = 0; i < rowCount; i++) {
-                if (getMsgTable().getValueAt(i, 0).toString().equals(msgNumSelected)) {
+                if (getMsgTable().getValueAt(i, 0).toString().equals(msgNumber)) {
                     getMsgTable().setRowSelectionInterval(i, i);
 
                     rowFound = true;
@@ -500,11 +510,6 @@ public class LogPanel extends JPanel {
                 getMsgDetails().setText("");
             }
         }
-
-        updateMsgTotal();
-
-        // find the new index of the message selected
-        getLogsRefreshTimer().start();
     }
 
     private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
@@ -527,11 +532,21 @@ public class LogPanel extends JPanel {
 
         if (msgFilterLevel != newFilterLevel) {
 
-            msgFilterLevel = newFilterLevel;
+            // get the selected row index
+            int selectedRowIndexOld = getMsgTable().getSelectedRow();
+            String msgNumSelected = null;
 
+            // save the number of selected message
+            if (selectedRowIndexOld >= 0) {
+                msgNumSelected = getMsgTable().getValueAt(selectedRowIndexOld, 0).toString();
+            }
+
+            msgFilterLevel = newFilterLevel;
             ((FilteredLogTableModel) getMsgTable().getModel()).applyNewMsgFilter(newFilterLevel);
 
-            getMsgDetails().setText("");
+            if (msgNumSelected != null) {
+                setSelectedRow(msgNumSelected);
+            }
 
             updateMsgTotal();
         }
