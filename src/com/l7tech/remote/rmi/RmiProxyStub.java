@@ -57,13 +57,7 @@ final class RmiProxyStub extends RmiClientInterceptor implements Serializable {
 
     /**
      * Saves its own fields by calling defaultWriteObject and then explicitly
-     * saves the fields of its supertype
-     *
-     * @serialData Store own serializable fields by calling defaultWriteObject
-     * and save supertype fields as optional data. Optional
-     * data is written in following sequence; author field
-     * is written as object, subject is an object and the
-     * yearwritten field is written as an integer.
+     * saves the fields of its superclass
      */
     private void writeObject(ObjectOutputStream out) throws IOException {
         RemoteInvocationFactory remoteInvocationFactory = getRemoteInvocationFactory();
@@ -83,7 +77,7 @@ final class RmiProxyStub extends RmiClientInterceptor implements Serializable {
 
     /**
      * Restores its own fields by calling defaultReadObject and then explicitly
-     * restores the fields of its supertype.
+     * restores the fields of its superclass.
      */
     private void readObject(ObjectInputStream in)
       throws IOException, ClassNotFoundException {
@@ -99,10 +93,6 @@ final class RmiProxyStub extends RmiClientInterceptor implements Serializable {
          * Since the superclass does not implement the Serializable
          * interface we explicitly do the restoring...
          */
-        /*
-            * Since the superclass does not implement the Serializable interface
-            * we explicitly do the saving...
-            */
         if (Serializable.class.isAssignableFrom(remoteInvocationFactoryClass)) {
             setRemoteInvocationFactory((RemoteInvocationFactory)in.readObject());
         }

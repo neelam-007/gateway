@@ -15,6 +15,8 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
+import javax.security.auth.login.FailedLoginException;
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.server.ServerNotActiveException;
@@ -37,7 +39,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport
     private IdentityProviderConfigManager identityProviderConfigManager;
 
     public AdminContext login(String username, String password)
-      throws RemoteException, SecurityException {
+      throws RemoteException, AccessControlException, LoginException {
         if (username == null || password == null) {
             throw new AccessControlException("Illegal username or password");
         }
@@ -45,7 +47,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport
             LoginCredentials creds = new LoginCredentials(username, password.toCharArray(), null);
             User user = identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds);
             if (user == null) {
-                throw new AccessControlException("'" + creds.getLogin() + "'" + " could not be found");
+                throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
             }
             String[] roles = getUserRoles(user);
             if (!hasPermission(user, roles)) {

@@ -1,13 +1,15 @@
 package com.l7tech.remote.rmi.ssl;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.Socket;
 import java.rmi.server.RMIClientSocketFactory;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.KeyStore;
 import java.util.StringTokenizer;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 
 /**
  * <p>An <code>SslRMIClientSocketFactory</code> instance is used by the RMI
@@ -46,6 +48,7 @@ import javax.net.ssl.SSLSocketFactory;
  */
 public class SslRMIClientSocketFactory
   implements RMIClientSocketFactory, Serializable {
+    private static SSLTrustFailureHandler trustFailureHandler;
 
     /**
      * <p>Creates a new <code>SslRMIClientSocketFactory</code>.</p>
@@ -130,8 +133,22 @@ public class SslRMIClientSocketFactory
             }
         }
         // Return the preconfigured SSLSocket
-        //
         return sslSocket;
+    }
+
+    /**
+     * Sets the <code>SSLFailureHandler</code> to be called if the server trust
+     * failed. If <b>null</b> clears the existing handler
+     *
+     * @param trustFailureHandler the new SSL failure handler
+     * @see SSLTrustFailureHandler
+     */
+    public static synchronized void setTrustFailureHandler(SSLTrustFailureHandler trustFailureHandler) {
+        SslRMIClientSocketFactory.trustFailureHandler = trustFailureHandler;
+    }
+
+    public static synchronized void resetSocketFactory() {
+        SslRMIClientSocketFactory.defaultSocketFactory = null;
     }
 
     /**
@@ -166,9 +183,97 @@ public class SslRMIClientSocketFactory
     private static SocketFactory defaultSocketFactory = null;
 
     private synchronized SocketFactory getDefaultClientSocketFactory() {
-        if (defaultSocketFactory == null)
-            defaultSocketFactory = SSLSocketFactory.getDefault();
+        if (defaultSocketFactory == null) {
+            String algorithm = TrustManagerFactory.getDefaultAlgorithm();
+            SSLContext sslContext = null;
+            try {
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance(algorithm);
+                tmf.init((KeyStore)null);
+                sslContext = SSLContext.getInstance("SSL");
+                sslContext.init(null, getTrustManagers(tmf), null);
+                defaultSocketFactory = sslContext.getSocketFactory();
+            } catch (Exception e) {
+                throw new RuntimeException("Error initializing the SSL socket factory", e);
+            }
+        }
         return defaultSocketFactory;
+    }
+
+
+    /**
+     * Update and return the array of the {@link TrustManager} instances created
+     * by the {@link TrustManagerFactory} where the first instance of a
+     * {@link X509TrustManager} is replaces with <code>SSLTrustManager</code>.
+     *
+     * @param tmf <b>non null</b> Trust Manager Factory
+     * @return the updated array of trust managers
+     */
+    private static TrustManager[] getTrustManagers(TrustManagerFactory tmf) {
+        TrustManager[] trustManagers = tmf.getTrustManagers();
+        for (int i = 0; i < trustManagers.length; i++) {
+            TrustManager trustManager = trustManagers[i];
+            if (trustManager instanceof X509TrustManager) {
+                trustManagers[i] = new SSLClientTrustManager((X509TrustManager)trustManager);
+                break;
+            }
+        }
+        return trustManagers;
+    }
+
+    /**
+     * The internal <code>X509TrustManager</code> that invokes the trust failure
+     * handler if it has been set
+     */
+    private static class SSLClientTrustManager implements X509TrustManager {
+        private X509TrustManager delegate;
+
+        /**
+         * Package subclassing
+         *
+         * @param delegate the delegating {@link X509TrustManager} instance. For example
+         *                 the {@link javax.net.ssl.TrustManagerFactory#getTrustManagers()}
+         */
+        SSLClientTrustManager(X509TrustManager delegate) {
+            if (delegate == null) {
+                throw new IllegalArgumentException("The X509 Trust Manager is required");
+            }
+            this.delegate = delegate;
+        }
+
+        /**
+         * @see javax.net.ssl.X509TrustManager#getAcceptedIssuers()
+         */
+        public X509Certificate[] getAcceptedIssuers() {
+            return delegate.getAcceptedIssuers();
+        }
+
+        /**
+         * @see javax.net.ssl.X509TrustManager#checkClientTrusted(java.security.cert.X509Certificate[], String)
+         */
+        public void checkClientTrusted(X509Certificate[] chain, String authType)
+          throws CertificateException {
+            delegate.checkClientTrusted(chain, authType);
+        }
+
+        /**
+         * @see javax.net.ssl.X509TrustManager#checkServerTrusted(java.security.cert.X509Certificate[], String)
+         */
+        public void checkServerTrusted(X509Certificate[] chain, String authType)
+          throws CertificateException {
+            SSLTrustFailureHandler trustFailureHandler = SslRMIClientSocketFactory.trustFailureHandler;
+
+            if (trustFailureHandler == null) {  // not specified
+                delegate.checkServerTrusted(chain, authType);
+            } else {
+                try {
+                    delegate.checkServerTrusted(chain, authType);
+                } catch (CertificateException e) {
+                    if (!trustFailureHandler.handle(e, chain, authType)) {
+                        throw e;
+                    }
+                }
+            }
+        }
     }
 
     private static final long serialVersionUID = -8310631444933958385L;

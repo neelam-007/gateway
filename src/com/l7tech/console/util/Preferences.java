@@ -5,6 +5,10 @@ import org.springframework.context.support.ApplicationObjectSupport;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.io.*;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.List;
 
@@ -22,7 +26,7 @@ import java.util.List;
  * <i>Migrate to JDK 1.4 Preferences.</i>
  * <p/>
  * The class is not synchronized.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @see java.beans.PropertyChangeSupport
  */
@@ -43,7 +47,7 @@ public class Preferences extends ApplicationObjectSupport {
 
     /**
      * get the Preferences instance
-     * 
+     *
      * @return the Preferences instance
      */
     public static Preferences getPreferences() {
@@ -68,7 +72,7 @@ public class Preferences extends ApplicationObjectSupport {
     /**
      * Update preferences from given properties, optionally
      * appending the properties
-     * 
+     *
      * @param p      the source properties
      * @param append true append or replace the property, false
      *               ignore unknown properties, and update the
@@ -100,7 +104,7 @@ public class Preferences extends ApplicationObjectSupport {
     /**
      * store the preferences.
      * This stores the preferences in the user home directory.
-     * 
+     *
      * @throws IOException thrown if an io error occurred
      */
     public void store() throws IOException {
@@ -132,14 +136,50 @@ public class Preferences extends ApplicationObjectSupport {
     }
 
     /**
+     * Get the trust store or create the new empty one
+     *
+     * @return the existing or new trust store.
+     *
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     * @throws CertificateException
+     */
+    public KeyStore getTrustStore()
+      throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        File storeFile = new File(TRUST_STORE_FILE);
+        String defaultKeystoreType = KeyStore.getDefaultType();
+        KeyStore ts = KeyStore.getInstance(defaultKeystoreType);
+        final char[] password = TRUST_STORE_PASSWORD.toCharArray();
+
+        if (!storeFile.exists()) {
+            ts.load(null, null);
+            FileOutputStream fo = null;
+            fo = new FileOutputStream(storeFile);
+            try {
+                ts.store(fo, password);
+            } finally {
+                fo.close();
+            }
+            logger.trace("Emtpy Internal Admin trustStore created - " + TRUST_STORE_FILE);
+            return ts;
+        }
+        final FileInputStream fis = new FileInputStream(storeFile);
+        try {
+            ts.load(fis, password);
+        } finally {
+            fis.close();
+        }
+        logger.trace("Internal admin trustStore opened - " + TRUST_STORE_FILE);
+        return ts;
+    }
+
+    /**
      * setup default application properties
      */
     private void setupDefaults() {
         prepare();
-        //copyResources();
         configureProperties();
-        sslIinitialize();
-        //logIinitialize();
     }
 
     private void prepare() {
@@ -159,12 +199,8 @@ public class Preferences extends ApplicationObjectSupport {
      * thrown if an I/O error occurs
      */
     private void configureProperties() {
-        // well known/predefined properties
-
         Map knownProps = new HashMap();
-        knownProps.put("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
-        knownProps.put("javax.net.ssl.trustStore",
-          new File(TRUST_STORE_FILE).getAbsolutePath());
+        knownProps.put("javax.net.ssl.trustStore", new File(TRUST_STORE_FILE).getAbsolutePath());
         knownProps.put("javax.net.ssl.trustStorePassword", TRUST_STORE_PASSWORD);
 
         Iterator keys = knownProps.keySet().iterator();
@@ -176,37 +212,11 @@ public class Preferences extends ApplicationObjectSupport {
         }
     }
 
-
-    /**
-     * initialize ssl
-     */
-    private void sslIinitialize() {
-        // JSSE SSLContext initialization on a separate thread,
-        // attempt to improve performance on app startup. The
-        // Sun SSL provider is hardcoded.
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    long start = System.currentTimeMillis();
-                    javax.net.ssl.SSLContext ctx =
-                      javax.net.ssl.SSLContext.getInstance("SSL", "SunJSSE");
-                    // SSL init with defaults
-                    ctx.init(null, null, null);
-                    long end = System.currentTimeMillis();
-                    Preferences.this.log("SSLContext.init() - finished took " + (end - start) + " ms");
-                } catch (java.security.GeneralSecurityException e) {
-                    Preferences.this.log("SSLContext.init()", e);
-                }
-            }
-        }).start();
-    }
-
-
     /**
      * Returns the value associated with the specified key
      * Returns the specified default if there is no value
      * associated with the key.
-     * 
+     *
      * @param key key whose associated value is to be returned.
      * @param def the value to be returned in the event that this
      *            preference key has no value
@@ -222,7 +232,7 @@ public class Preferences extends ApplicationObjectSupport {
 
     /**
      * Returns the value associated with the specified key
-     * 
+     *
      * @param key key whose associated value is to be returned.
      * @return the value associated with key, or null if no value is
      *         associated with key.
@@ -235,7 +245,7 @@ public class Preferences extends ApplicationObjectSupport {
 
     /**
      * retrieve the history property
-     * 
+     *
      * @param property the property to get the history
      * @return the <code>History</code> instance
      */
@@ -246,7 +256,7 @@ public class Preferences extends ApplicationObjectSupport {
     /**
      * Returns a pair of properties as a Dimension.
      * More of a convenience method.
-     * 
+     *
      * @param widthKey  the key where the width is stored
      * @param heightKey the key where the height is stored
      * @return the Dimension, or null.
@@ -266,7 +276,7 @@ public class Preferences extends ApplicationObjectSupport {
     /**
      * Set a pair of properties using values taken from a Dimension.
      * More of a convenience method.
-     * 
+     *
      * @param d the new width and height, or null to clear them
      */
     private void setDimension(String widthKey, String heightKey, Dimension d) {
@@ -331,7 +341,7 @@ public class Preferences extends ApplicationObjectSupport {
     /**
      * Associates the specified value with the specified key in this
      * preference node.
-     * 
+     *
      * @param key   key with which the specified value is to be associated.
      * @param value value to be associated with the specified key.
      * @throws NullPointerException if key or value is null.
@@ -348,7 +358,7 @@ public class Preferences extends ApplicationObjectSupport {
      * Removes the key (and its corresponding value) from this
      * preferences. This method does nothing if the key is not
      * in the preferences.
-     * 
+     *
      * @param key the key that needs to be removed.
      * @throws NullPointerException if key or value is null.
      */
@@ -362,7 +372,7 @@ public class Preferences extends ApplicationObjectSupport {
     /**
      * Returns the service url. This will typically be in the format
      * protocol://host:port.
-     * 
+     *
      * @return the service url.
      */
     public String getServiceUrl() {
@@ -371,7 +381,7 @@ public class Preferences extends ApplicationObjectSupport {
 
     /**
      * Returns the inactivity timeout value.
-     * 
+     *
      * @return the inactivity timeout value as an int.
      */
     public int getInactivityTimeout() {
@@ -385,7 +395,7 @@ public class Preferences extends ApplicationObjectSupport {
 
     /**
      * Returns the remeber login propery value.
-     * 
+     *
      * @return the 'remember login ID' value as boolean.
      */
     public boolean rememberLoginId() {
@@ -395,7 +405,7 @@ public class Preferences extends ApplicationObjectSupport {
 
     /**
      * Returns the shortcut bar  visible propery value.
-     * 
+     *
      * @return the shortcut bar visible value as boolean.
      */
     public boolean isStatusBarBarVisible() {
@@ -409,7 +419,7 @@ public class Preferences extends ApplicationObjectSupport {
 
     /**
      * Set the shortcut bar visible property value.
-     * 
+     *
      * @param b the shortcut bar visible
      */
     public void seStatusBarVisible(boolean b) {
@@ -443,7 +453,7 @@ public class Preferences extends ApplicationObjectSupport {
     /**
      * prints this property list out to the specified output
      * stream.
-     * 
+     *
      * @param ps an output stream.
      */
     public void list(PrintStream ps) {
@@ -484,7 +494,7 @@ public class Preferences extends ApplicationObjectSupport {
 
     /**
      * simple log (no log4j used here)
-     * 
+     *
      * @param msg the message to log
      */
     private void log(String msg) {
@@ -495,7 +505,7 @@ public class Preferences extends ApplicationObjectSupport {
 
     /**
      * simple log (no logger used here)
-     * 
+     *
      * @param msg       the message to log
      * @param throwable throwable to log
      */
@@ -519,7 +529,7 @@ public class Preferences extends ApplicationObjectSupport {
          * <p/>
          * Implementations may remove the older element of the History if
          * their maximum size is reached.
-         * 
+         *
          * @param o the object to add to the
          */
         public void add(Object o) {
@@ -580,7 +590,7 @@ public class Preferences extends ApplicationObjectSupport {
 
         /**
          * get the array of history entries.
-         * 
+         *
          * @return the array of history entries.
          */
         public Object[] getEntries() {
@@ -628,9 +638,6 @@ public class Preferences extends ApplicationObjectSupport {
     public static final String LAST_WINDOW_LOC_X = "last.window.location.x";
     public static final String LAST_WINDOW_LOC_Y = "last.window.location.y";
 
-    // Time formats
-    public static final String LONG_24_HOUR_TIME_FORMAT = "HH:mm:ss z";
-
 
     /**
      * the file name for the preferences
@@ -645,26 +652,4 @@ public class Preferences extends ApplicationObjectSupport {
 
     private final String TRUST_STORE_FILE = SSM_USER_HOME + File.separator + "trustStore";
     private final String TRUST_STORE_PASSWORD = "password";
-
-
-    private static final
-    String[] res =
-      new String[]
-      {
-          "trustStore"
-      };
-
-    public static void main(String[] args) {
-        try {
-            Preferences prefs = Preferences.getPreferences();
-            prefs.list(System.out);
-            prefs.putProperty(SERVICE_URL, "http://localhost:8080");
-            java.text.DateFormat df =
-              java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT);
-
-            prefs.store();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

@@ -147,7 +147,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     private List getUsers(HttpServletRequest req) throws FindException, IssuedCertNotPresentedException {
         List users = new ArrayList();
-        IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)applicationContext.getBean("identityProviderConfigManager");
+        IdentityProviderConfigManager configManager = getIdentityProviderConfigManager();
         Collection providers;
         providers = configManager.findAllIdentityProviders();
         LoginCredentials creds = findCredentialsBasic(req);
@@ -185,6 +185,10 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             throw new IssuedCertNotPresentedException(msg);
         }
         return users;
+    }
+
+    protected IdentityProviderConfigManager getIdentityProviderConfigManager() {
+        return (IdentityProviderConfigManager)applicationContext.getBean("identityProviderConfigManager");
     }
 
     /**
@@ -369,9 +373,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     protected synchronized void initialiseServiceManager() throws ClassCastException, RuntimeException {
         serviceManagerInstance = (ServiceManager)applicationContext.getBean("serviceManager");
-        if (serviceManagerInstance == null) {
-            throw new RuntimeException("Cannot instantiate the ServiceManager");
-        }
     }
 
     protected synchronized ServiceManager getServiceManagerAndBeginTransaction()

@@ -65,6 +65,8 @@ public class Main {
                 prefs.updateFromProperties(System.getProperties(), false);
                 /* so it is visible in help/about */
                 prefs.updateSystemProperties();
+                // ensure trust store exists
+                prefs.getTrustStore();
                 try {
                     copyResources(new String[]{"com/l7tech/console/resources/logger.dtd"}, prefs.getHomePath());
                 } catch (IOException e) {
@@ -193,7 +195,6 @@ public class Main {
 
                 public void checkPermission(Permission perm, Object context) {
                 }
-
             });
         }
     }
@@ -201,9 +202,7 @@ public class Main {
     private void setInitialEnvironment() {
         // AWT event dispatching thread error handler
         System.setProperty("sun.awt.exception.handler", "com.l7tech.console.logging.AwtErrorHandler");
-        //System.setProperty("java.security.policy", "etc/jini/policy.all");
-        System.setProperty("java.protocol.handler.pkgs", "com.l7tech.remote.jini");
-
+     
         // Build information
         System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
         System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());

@@ -29,7 +29,7 @@ public class SecurityProviderImpl extends SecurityProvider
      * Determines if the passed credentials will grant access to the admin service.
      * If successful, those credentials will be cached for future admin ws calls.
      */
-    public synchronized void login(PasswordAuthentication creds, String host)
+    public synchronized void login(PasswordAuthentication creds, String namingURL)
       throws LoginException, VersionException, RemoteException {
         boolean authenticated = false;
         resetCredentials();
@@ -37,7 +37,7 @@ public class SecurityProviderImpl extends SecurityProvider
 
         try {
             EditableRmiProxyFactoryBean bean = (EditableRmiProxyFactoryBean)applicationContext.getBean("&adminLogin");
-            bean.setServiceUrl("rmi://"+host+"/AdminLogin");
+            bean.setServiceUrl(namingURL);
             bean.resetStub();
             AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
             AdminContext context = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));

@@ -14,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -103,9 +104,18 @@ public class ImportCertificateAction extends SecureAction {
     }
 
     /**
+     * Import a certificate into our trust store using the cert subject DN as
+     * the cert alias.
+     */
+    public static void importSsgCertificate(X509Certificate cert)
+      throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException {
+        importSsgCertificate(cert, cert.getSubjectDN().getName());
+    }
+
+    /**
      * Import a certificate into our trust store.
      */
-    public static void importSsgCertificate(Certificate cert, String hostName)
+    public static void importSsgCertificate(X509Certificate cert, String hostName)
             throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException
     {
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -151,7 +161,12 @@ public class ImportCertificateAction extends SecureAction {
         Iterator i = c.iterator();
         if (i.hasNext()) {
             Certificate cert = (Certificate)i.next();
-            importSsgCertificate(cert, "ssg");
+            if (cert instanceof X509Certificate) {
+                X509Certificate x509Certificate = (X509Certificate)cert;
+                importSsgCertificate(x509Certificate, "ssg");
+            } else {
+                throw new CertificateException("The certificate is not of expected type. X509 expected, received "+cert.getClass().getName());
+            }
         }
 
         JOptionPane.showMessageDialog(getFrame(),
