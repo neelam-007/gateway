@@ -1,20 +1,9 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.DeleteServiceAction;
-import com.l7tech.console.action.ServicePolicyPropertiesAction;
-import com.l7tech.console.tree.wsdl.WsdlTreeNode;
-import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.service.PublishedService;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 
 import javax.swing.*;
-import javax.swing.tree.MutableTreeNode;
-import java.io.StringReader;
-import java.util.Enumeration;
 
 
 /**

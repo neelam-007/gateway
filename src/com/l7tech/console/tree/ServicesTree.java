@@ -1,7 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.DeleteServiceAction;
-import com.l7tech.console.action.ServicePolicyPropertiesAction;
+import com.l7tech.console.action.EditServicePolicyAction;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -65,7 +65,7 @@ public class ServicesTree extends JTree {
                     new DeleteServiceAction((ServiceNode)node).actionPerformed(null);
             } else if (keyCode == KeyEvent.VK_ENTER) {
                 if (node instanceof ServiceNode)
-                    new ServicePolicyPropertiesAction((ServiceNode)node).actionPerformed(null);
+                    new EditServicePolicyAction((ServiceNode)node).actionPerformed(null);
             }
         }
     }
@@ -83,7 +83,7 @@ public class ServicesTree extends JTree {
               (AbstractTreeNode)path.getLastPathComponent();
             if (node == null) return;
             if (node instanceof ServiceNode)
-                new ServicePolicyPropertiesAction((ServiceNode)node).actionPerformed(null);
+                new EditServicePolicyAction((ServiceNode)node).actionPerformed(null);
         }
 
         public void mousePressed(MouseEvent e) {

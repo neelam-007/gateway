@@ -97,6 +97,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return serviceNode;
     }
 
+    /**
+     * validate the service policy.
+     */
+    public void validatePolicy() {
+        PolicyValidatorResult result =
+          PolicyValidator.getDefault().validate(rootAssertion.asAssertion());
+        displayPolicyValidateResult(result);
+    }
 
     private void layoutComponents() {
         setLayout(new BorderLayout());
@@ -292,10 +300,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                  * Invoked when an action occurs.
                  */
                 public void actionPerformed(ActionEvent e) {
-                    PolicyValidatorResult result
-                      = PolicyValidator.getDefault().
-                      validate(rootAssertion.asAssertion());
-                    displayPolicyValidateResult(result);
+                    validatePolicy();
                 }
             });
 

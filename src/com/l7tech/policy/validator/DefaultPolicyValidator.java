@@ -18,6 +18,8 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -116,7 +118,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
             } else if (isAccessControl(a)) {
                 processAccessControl((IdentityAssertion)a);
             } else if (isRouting(a)) {
-                processRouting(a);
+                processRouting((RoutingAssertion)a);
             } else {
                 processUnknown(a);
             }
@@ -253,8 +255,24 @@ public class DefaultPolicyValidator extends PolicyValidator {
             seenPreconditions = true;
         }
 
-        private void processRouting(Assertion a) {
+        private void processRouting(RoutingAssertion a) {
             seenRouting = true;
+            String url = a.getProtectedServiceUrl();
+            if (url == null) {
+                result.addWarning(
+                  new PolicyValidatorResult.Warning(a,
+                    "The assertion might not work as configured." +
+                  "\nThe protected service url is empty.", null));
+            } else {
+                try {
+                    new URL(url);
+                } catch (MalformedURLException e) {
+                    result.addWarning(
+                  new PolicyValidatorResult.Warning(a,
+                    "The assertion might not work as configured." +
+                  "\nThe protected service url is malformed.", null));
+                }
+            }
         }
 
 
