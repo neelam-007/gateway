@@ -292,8 +292,7 @@ public class LogonDialog extends JDialog {
         dialog.setSize(300, 275);
 
         // service available attempt authenticating
-        PasswordAuthentication pw = null;
-        pw = dialog.getAuthentication();
+        PasswordAuthentication pw = dialog.getAuthentication();
         dialog.dispose();
         return pw;
     }
