@@ -133,7 +133,12 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             X509Certificate trustedCaCert = null;
             try {
                 caTrust = trustedCertManager.getCachedCertBySubjectDn(caDn, MAX_CACHE_AGE);
-                if (caTrust == null) throw new ClientCertManager.VetoSave("User's cert was not signed by any of this identity provider's trusted certs");
+                if (caTrust == null)
+                    throw new ClientCertManager.VetoSave("User's cert was not signed by a recognized trusted cert");
+                if (!certOidSet.contains(new Long(caTrust.getOid())))
+                    throw new ClientCertManager.VetoSave("User's cert was not signed by any of this identity provider's trusted certs");
+                if (!caTrust.isTrustedForSigningClientCerts())
+                    throw new ClientCertManager.VetoSave("User's cert was signed by an authority that is not trusted for signing client certs");
                 trustedCaCert = caTrust.getCertificate();
             } catch ( FindException e ) {
                 final String msg = "Couldn't find issuer cert";
