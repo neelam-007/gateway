@@ -1054,7 +1054,8 @@ public class MainWindow extends JFrame {
 
         String lfName = prefs.getString(Preferences.LOOK_AND_FEEL);
         if (lfName == null) {
-            setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            //setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } else {
             setLookAndFeel(lfName);
         }
