@@ -124,7 +124,7 @@ public class NewGroupDialog extends JDialog {
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 0, 0);
+        constraints.insets = new Insets(12, 16, 0, 0);
         panel.add(groupIdLabel, constraints);
 
         // group name text field

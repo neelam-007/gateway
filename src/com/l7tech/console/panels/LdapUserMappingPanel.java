@@ -551,7 +551,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         userAttributePanel.setMaximumSize(new java.awt.Dimension(800, 800));
         userAttributePanel.setMinimumSize(new java.awt.Dimension(300, 300));
         userAttributePanel.setPreferredSize(new java.awt.Dimension(350, 300));
-        attributeTitleLabel.setText("Attribute");
+        attributeTitleLabel.setText(resources.getString("attributeMappedNameTitle"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
@@ -689,7 +689,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
         userAttributePanel.add(passwordStrategyAttribute, gridBagConstraints);  */
 
-        valueTitleLabel.setText("Mapped to");
+        valueTitleLabel.setText(resources.getString("attributeMappedValueTitle"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 3;
@@ -698,7 +698,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         userAttributePanel.add(valueTitleLabel, gridBagConstraints);
 
         mappingTitleLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        mappingTitleLabel.setText("Attribute Mapping:");
+        mappingTitleLabel.setText(resources.getString("attributeMappingTitle"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;

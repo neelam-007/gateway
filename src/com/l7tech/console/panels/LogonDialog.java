@@ -219,7 +219,7 @@ public class LogonDialog extends JDialog {
         constraints.gridx = 0;
         constraints.gridy = 1;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(5, 5, 0, 0);
+        constraints.insets = new Insets(5, 10, 0, 0);
         contents.add(userNameLabel, constraints);
 
         // user name text field
@@ -287,7 +287,7 @@ public class LogonDialog extends JDialog {
         constraints.gridy = 2;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(5, 5, 0, 0);
+        constraints.insets = new Insets(5, 10, 0, 0);
 
         contents.add(passwordLabel, constraints);
 
@@ -326,7 +326,7 @@ public class LogonDialog extends JDialog {
         constraints.gridy = 3;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(20, 5, 0, 0);
+        constraints.insets = new Insets(20, 10, 0, 0);
         contents.add(serverLabel, constraints);
 
         // context field
