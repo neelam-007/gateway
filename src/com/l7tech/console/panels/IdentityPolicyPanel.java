@@ -18,6 +18,9 @@ import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.MutableTreeNode;
+import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -26,6 +29,8 @@ import java.awt.event.ItemEvent;
 import java.security.Principal;
 import java.util.*;
 import java.util.List;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * The <code>IdentityPolicyPanel</code> is the policy panel that allows
@@ -119,6 +124,20 @@ public class IdentityPolicyPanel extends JPanel {
                   (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(key);;
                 xmlSecOptions.setEnabled(ca instanceof XmlRequestSecurity);
 
+            }
+        });
+        defaultUrlButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    final URL url = service.serviceUrl(null);
+                    if (url !=null) {
+                        routeToUrlField.setText(url.toString());
+                    }
+                } catch (WSDLException e1) {
+                    // say to the user
+                } catch (MalformedURLException e1) {
+                    // say something to the user
+                }
             }
         });
         ComboBoxModel cm = new DefaultComboBoxModel(XML_SEC_OPTIONS);
@@ -259,24 +278,9 @@ public class IdentityPolicyPanel extends JPanel {
 
     private ActionListener updateIdentityPolicy = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
+            List replaceAssertions = new ArrayList();
             List removeAssertions = new ArrayList();
             List addAssertions = new ArrayList();
-
-            collectCredentialsAssertion();
-            if (newCredAssertion !=null) {
-                addAssertions.add(newCredAssertion);
-                if (existingCredAssertion !=null) {
-                    removeAssertions.add(existingCredAssertion);
-                }
-            }
-
-            collectRoutingAssertion();
-            if (newRoutingAssertion  !=null) {
-                addAssertions.add(newRoutingAssertion);
-                if (existingRoutingAssertion !=null) {
-                    removeAssertions.add(existingRoutingAssertion);
-                }
-            }
 
             if (sslCheckBox.isEnabled()) { // edit allowed
                 if (sslCheckBox.isSelected()) { // selected
@@ -290,6 +294,27 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
 
+            collectCredentialsAssertion();
+            if (newCredAssertion !=null) {
+                if (existingCredAssertion !=null) {
+                    replaceAssertions.add(new Assertion[] {existingCredAssertion, newCredAssertion});
+                } else {
+                    addAssertions.add(newCredAssertion);
+                }
+            }
+
+            collectRoutingAssertion();
+            if (newRoutingAssertion  !=null) {
+                if (existingRoutingAssertion !=null) {
+                    replaceAssertions.add(new Assertion[] {existingRoutingAssertion, newRoutingAssertion});
+                } else {
+                    addAssertions.add(newRoutingAssertion);
+                }
+            }
+            for (Iterator iterator = replaceAssertions.iterator(); iterator.hasNext();) {
+                Assertion[] assertions = (Assertion[])iterator.next();
+                replaceAssertion(assertions[0], assertions[1]);
+            }
             final Assertion[] aa = (Assertion[])addAssertions.toArray(new Assertion[]{});
             final Assertion[] ar = (Assertion[])removeAssertions.toArray(new Assertion[]{});
             addAsAssertionTreeNodes(aa);
@@ -336,6 +361,26 @@ public class IdentityPolicyPanel extends JPanel {
             }
         }
 
+        private void replaceAssertion(Assertion o, Assertion n) {
+            AssertionTreeNode outAssertion = null;
+
+            Enumeration e = rootAssertionTreeNode.preorderEnumeration();
+
+            while (e.hasMoreElements()) {
+                AssertionTreeNode an = (AssertionTreeNode)e.nextElement();
+                if (an.asAssertion().equals(o)) {
+                    outAssertion = an;
+                    break;
+                }
+            }
+            if (outAssertion == null) {
+                throw new IllegalArgumentException("Cannot find assertion "+o.getClass()+ " (bug).");
+            }
+            final MutableTreeNode parent = (MutableTreeNode)outAssertion.getParent();
+            int pos = parent.getIndex(outAssertion);
+            policyTreeModel.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(n), parent, pos);
+            policyTreeModel.removeNodeFromParent(outAssertion);
+        }
     };
 
     private void collectCredentialsAssertion() {
@@ -401,10 +446,10 @@ public class IdentityPolicyPanel extends JPanel {
         final JCheckBox _9;
         _9 = new JCheckBox();
         sslCheckBox = _9;
-        _9.setText("Require SSL/TLS encryption");
         _9.setContentAreaFilled(true);
         _9.setMargin(new Insets(2, 2, 2, 0));
         _9.setHorizontalTextPosition(10);
+        _9.setText("Require SSL/TLS encryption");
         _6.add(_9, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, 4, 0, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final JLabel _10;
         _10 = new JLabel();
