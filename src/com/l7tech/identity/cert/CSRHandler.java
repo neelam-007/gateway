@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import org.apache.axis.transport.http.HTTPConstants;
 import org.apache.axis.encoding.Base64;
 import org.apache.axis.AxisFault;
+import sun.security.x509.X500Name;
 
 
 /**
@@ -78,6 +79,7 @@ public class CSRHandler extends HttpServlet {
         if (authenticatedUser == null) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "failed authorization " + tmp);
+            return;
         }
         LogManager.getInstance().getSystemLogger().log(Level.INFO, "User " + authenticatedUser.getLogin() + " has authenticated for CSR");
 
@@ -113,6 +115,7 @@ public class CSRHandler extends HttpServlet {
         } catch (UpdateException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not record cert. " + e.getMessage());
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Could not record cert. " + e.getMessage(), e);
+            return;
         }
 
         /*// test verify that the cert is indeed retrieveable
@@ -123,6 +126,14 @@ public class CSRHandler extends HttpServlet {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not record cert. " + e.getMessage());
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Could not record cert. " + e.getMessage(), e);
         }*/
+
+        // verify that the CN in the subject equals the login name
+        X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
+        if (!x500name.getCommonName().equals(authenticatedUser.getLogin())) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "You cannot scr for a subject different than " + authenticatedUser.getLogin());
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "User " + authenticatedUser.getLogin() + " tried to csr for subject other than self (" + x500name.getCommonName() + ")");
+            return;
+        }
 
         // send cert back
         try {
