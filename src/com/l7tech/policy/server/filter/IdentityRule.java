@@ -42,7 +42,7 @@ public class IdentityRule extends Filter {
         requestor = policyRequestor;
         if (assertionTree == null) return null;
         applyRules(assertionTree);
-        if (anIdentityAssertionWasFound && !userPassedAtLeastOneIdentityAssertion) {
+        if (anIdentityAssertionWasFound && !userPassedAtLeastOneIdentityAssertion && requestor != null) {
             logger.severe("This user is not authorized to consume this service. Policy filter returning null.");
             return null;
         }
