@@ -70,6 +70,7 @@ public class ClusterBootProcess implements TransactionalComponent {
     public void init( ComponentConfig config ) throws LifecycleException {
         clusterInfoManager = ClusterInfoManager.getInstance();
         multicastAddress = config.getProperty(ServerConfig.PARAM_MULTICAST_ADDRESS);
+        if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
     }
 
     public void start() throws LifecycleException {
@@ -112,15 +113,37 @@ public class ClusterBootProcess implements TransactionalComponent {
                     myInfo.setMulticastAddress(addr);
                     clusterInfoManager.updateSelfStatus(myInfo);
                 }
-            } else {
-                try {
-                    this.channel = connectToChannel(multicastAddress);
-                } catch ( ChannelException e ) {
-                    final String msg = "Unable to connect to configured cluster communications channel on address "  + multicastAddress;
-                    logger.log( Level.SEVERE, msg, e );
-                    throw new LifecycleException(msg, e);
-                }
             }
+
+            try {
+                if ( channel == null ) channel = connectToChannel(multicastAddress);
+            } catch ( ChannelException e ) {
+                final String msg = "Unable to connect to configured cluster communications channel on address "  + multicastAddress;
+                logger.log( Level.SEVERE, msg, e );
+                throw new LifecycleException(msg, e);
+            }
+
+            channel.setChannelListener(new ChannelListener() {
+                public void channelConnected( Channel channel ) {
+                    logger.log(Level.INFO, "Connected to cluster communications channel" );
+                }
+
+                public void channelDisconnected( Channel channel ) {
+                    logger.log(Level.INFO, "Disconnected from cluster communications channel" );
+                }
+
+                public void channelClosed( Channel channel ) {
+                    logger.log(Level.INFO, "Cluster communications channel closed" );
+                }
+
+                public void channelShunned() {
+                    logger.log(Level.INFO, "Shunned from cluster communications channel" );
+                }
+
+                public void channelReconnected( Address address ) {
+                    logger.log(Level.INFO, "Reconnected to cluster communications channel" );
+                }
+            } );
 
             StatusUpdater.initialize();
         } catch (UpdateException e) {
@@ -147,7 +170,6 @@ public class ClusterBootProcess implements TransactionalComponent {
         return this.channel;
     }
 
-    private JChannel channel;
 
     public static final String CHANNEL_NAME = "com.l7tech.cluster.jgroupsChannel";
     public static final String PROPERTIES_PREFIX = "UDP(mcast_addr=";
@@ -166,6 +188,7 @@ public class ClusterBootProcess implements TransactionalComponent {
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
+    private JChannel channel;
     private ClusterInfoManager clusterInfoManager;
     private String multicastAddress;
 }
