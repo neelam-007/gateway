@@ -1,6 +1,6 @@
 package com.l7tech.common.security.xml;
 
-import com.ibm.xml.dsig.XSignatureException;
+import com.ibm.xml.dsig.*;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.ibm.xml.enc.DecryptionContext;
 import com.ibm.xml.enc.KeyInfoResolvingException;
@@ -24,8 +24,12 @@ import java.io.ByteArrayInputStream;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.PrivateKey;
+
+import java.security.PublicKey;
+
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
+
 import java.security.cert.CertificateException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -130,7 +134,7 @@ public class WssProcessorImpl implements WssProcessor {
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
                 processBinarySecurityToken(securityChildToProcess, cntx);
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SIGNATURE_EL_NAME)) {
-                processSignature(securityChildToProcess);
+                processSignature(securityChildToProcess, cntx);
             } else {
                 // Unhandled child elements of the Security Header
                 String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace, SoapUtil.MUSTUNDERSTAND_ATTR_NAME).trim();
@@ -538,9 +542,117 @@ public class WssProcessorImpl implements WssProcessor {
         cntx.securityTokens.add(rememberedSecToken);
     }
 
-    private void processSignature(Element signatureElement) {
-        logger.finest("Processing Signature");
+    private X509Certificate resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx){
+
+        // Looking for reference to a wsse:BinarySecurityToken
+        // 1. look for a wsse:SecurityTokenReference element
+        List secTokReferences = XmlUtil.findChildElementsByName(parentElement,
+                                                          SoapUtil.SECURITY_URIS_ARRAY,
+                                                          "SecurityTokenReference");
+        if (secTokReferences.size() > 0) {
+            // 2. Resolve the child reference
+            Element securityTokenReference = (Element)secTokReferences.get(0);
+            List references = XmlUtil.findChildElementsByName(securityTokenReference,
+                                                              SoapUtil.SECURITY_URIS_ARRAY,
+                                                              "Reference");
+            if (references.size() > 0) {
+                // get the URI
+                Element reference = (Element)references.get(0);
+                String uriAttr = reference.getAttribute("URI");
+                if (uriAttr == null || uriAttr.length() < 1) {
+                    // not the food additive
+                    String msg = "The Key info contains a reference but the URI attribute cannot be obtained";
+                    logger.warning(msg);
+
+                }
+                if (uriAttr.charAt(0) == '#') {
+                    uriAttr = uriAttr.substring(1);
+                }
+                // look for previous sec tokens with that same id
+                for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
+                    WssProcessor.SecurityToken token = (WssProcessor.SecurityToken)i.next();
+                    if (uriAttr.equals(SoapUtil.getElementId(token.asElement()))) {
+                        if (token.asObject() instanceof X509Certificate) {
+                            return (X509Certificate)token.asObject();
+                        } else {
+                            logger.warning("the corresponding token was found but is not a cert");
+                        }
+                    }
+                }
+            } else {
+                logger.warning("SecurityTokenReference does not contain any References");
+            }
+        }
+        return null;
+    }
+
+    private X509Certificate resolveEmbeddedCert(final Element parentElement,
+                                             ProcessingStatusHolder cntx) throws ProcessorException {
         // todo
+        return null;
+    }
+
+    private void processSignature(final Element signatureElement, ProcessingStatusHolder cntx) throws ProcessorException {
+        logger.finest("Processing Signature");
+
+        // normalize the signature
+        SoapMsgSigner.normalizeDoc(signatureElement.getOwnerDocument());
+
+        // 1st, process the KeyInfo
+        Element keyInfoElement = KeyInfo.searchForKeyInfo(signatureElement);
+        if (keyInfoElement == null) {
+            throw new ProcessorException("KeyInfo element not found in Signature Element");
+        }
+
+        // Try to resolve cert by reference
+        X509Certificate signingCert = resolveCertByRef(keyInfoElement, cntx);
+        // Try to resolve embedded cert
+        if (signingCert == null) {
+            signingCert = resolveEmbeddedCert(keyInfoElement, cntx);
+        }
+
+        if (signingCert == null) throw new ProcessorException("no cert to verify signature against.");
+
+        // Validate signature
+        PublicKey pubKey = signingCert.getPublicKey();
+        SignatureContext sigContext = new SignatureContext();
+        sigContext.setIDResolver(new IDResolver() {
+                                   public Element resolveID(Document doc, String s) {
+                                       return SoapUtil.getElementById(doc, s);
+                                   }
+                               });
+        Validity validity = sigContext.verify(signatureElement, pubKey);
+
+        if (!validity.getCoreValidity()) {
+            StringBuffer msg = new StringBuffer("Validity not achieved. " + validity.getSignedInfoMessage());
+            for (int i = 0; i < validity.getNumberOfReferences(); i++) {
+                msg.append("\n\tElement " + validity.getReferenceURI(i) + ": " + validity.getReferenceMessage(i));
+            }
+            logger.warning(msg.toString());
+            throw new ProcessorException(msg.toString());
+        }
+
+        // Remember which elements were covered
+        for (int i = 0; i < validity.getNumberOfReferences(); i++) {
+            // Resolve each elements one by one. Use original document as the elements signed might no longer exist
+            // once the document is completly processed (signature might cover elements in the Security header that
+            // will later be purged).
+            String elementCoveredURI = validity.getReferenceURI(i);
+            Element elementCovered = SoapUtil.getElementById(cntx.originalDocument, elementCoveredURI);
+            if (elementCovered == null) {
+                // i guess the element might be in the processed document (something decrypted was later signed)
+                elementCovered = SoapUtil.getElementById(signatureElement.getOwnerDocument(), elementCoveredURI);
+            }
+            if (elementCovered == null) {
+                String msg = "Element covered by signature cannot be found in original document nor in " +
+                             "processed document. URI: " + elementCoveredURI;
+                logger.warning(msg);
+                throw new ProcessorException(msg);
+            }
+            // make reference to this element
+            // todo
+            cntx.elementsThatWereSigned.add(elementCovered);
+        }
     }
 
     private WssProcessor.ProcessorResult produceResult(final ProcessingStatusHolder cntx) {
