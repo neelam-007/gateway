@@ -25,13 +25,15 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 
 /**
+ * Receives SOAP requests via HTTP POST, passes them into the <code>MessageProcessor</code>
+ * and formats the response as a reasonable approximation of an HTTP response.
  * @author alex
  * @version $Revision$
  */
 public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String POLICYURL_HEADER = "PolicyUrl";
     public static final String POLICYURL_TAG = "policy-url";
-    public static final String CONTENT_TYPE = "text/xml; charset=utf-8";
+    public static final String DEFAULT_CONTENT_TYPE = "text/xml; charset=utf-8";
     public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco.modulator?serviceoid=";
     public static final String ENCODING = "UTF-8";
@@ -66,7 +68,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 sresp.setHeadersIn( hresponse );
 
                 if ( status == AssertionStatus.NONE ) {
-                    hresponse.setContentType( CONTENT_TYPE );
+                    String ctype = (String)sresp.getParameter( Response.PARAM_HTTP_CONTENT_TYPE );
+                    if ( ctype == null || ctype.length() == 0 ) ctype = DEFAULT_CONTENT_TYPE;
+                    hresponse.setContentType( ctype );
 
                     String protRespXml = sresp.getResponseXml();
                     respWriter = new BufferedWriter( new OutputStreamWriter( hresponse.getOutputStream(), ENCODING ) );
@@ -123,7 +127,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         OutputStream responseStream = null;
 
         try {
-            hresp.setContentType( CONTENT_TYPE );
+            hresp.setContentType( DEFAULT_CONTENT_TYPE );
             hresp.setStatus( httpStatus );
 
             SOAPMessage msg = SoapUtil.makeMessage();
