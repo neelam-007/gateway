@@ -91,12 +91,12 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
      */
     public String getDescription() {
         return "<html>" +
-          "The root element in the WSDL document, the <i>definitions</i> element, contains" +
-          " child elements that define particular service. " +
-          "The target namespace distinguishes the definitions in this WSDL documents from" +
-          "definitions in other documents. " +
-          "Additional namspace declarations facilitate identification of types and elements." +
-          "</html>";
+               "The root element in the WSDL document, called the \"definition\" element, contains " +
+               "child elements that define a particular Web service. The \"Target Namespace\" element " +
+               "distinguishes the definitions in the WSDL document from definitions in other documents. " +
+               "Any additional namespace declarations facilitate the identification of the types and " +
+               "elements included in the Web service." +
+               "</html>";
     }
 
     /**
