@@ -96,11 +96,11 @@ public class SsgFinderImpl implements SsgFinder {
                 }
             }
         } catch (FileNotFoundException e) {
-            log.info("No SSG store found -- will create a new one");
+            log.info("No Gateway store found -- will create a new one");
         } catch (IOException e) {
             log.error(e);
         } catch (ClassCastException e) {
-            log.error("Badly formatted SSG store " + STORE_FILE, e);
+            log.error("Badly formatted Gateway store " + STORE_FILE, e);
         } finally {
             if (decoder != null)
                 decoder.close();
