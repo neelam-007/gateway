@@ -15,6 +15,7 @@
 # Command to explicitely declare the trustStore on the console:
 # System.setProperty("javax.net.ssl.trustStore", "somedirectory/client.keystore");
 #
+# when called by sslGen.sh, the ssl ks passwd is $1 and the root ca passwd is $2
 # -----------------------------------------------------------------------------
 #
 
@@ -45,12 +46,12 @@ if [ ! -e "$ROOT_KEY_STORE" ]; then
 fi
 
 # VERIFY THAT THE ROOT KSTORE PASSWORD IS PASSED. IF NOT, GET IT FROM CONSOLE
-if [ ! "$1" ]; then
+if [ ! "$2" ]; then
         # ax for the password
-        echo "Please type in the root keystore password"
+        echo "Please type in the ROOT (CA) keystore password"
         read -s ROOT_KSTORE_PASSWORD
 else
-        ROOT_KSTORE_PASSWORD=$1
+        ROOT_KSTORE_PASSWORD=$2
 fi
 
 # IF THE WAR FILE IS PRESENT BUT NOT YET EXPANDED, EXPAND IT
@@ -72,9 +73,14 @@ java -cp $CP com.l7tech.identity.cert.RSASigner $ROOT_KEY_STORE $ROOT_KSTORE_PAS
 # CHECK IF THE CERT WAS CREATED
 if [ -e "$CERTIFICATE_FILE" ]; then
         echo "importing ssl cert back into ssl keystore"
-        # ax for the SSL password
-        echo "Please type in the SSL keystore password"
-        read -s SSL_KSTORE_PASSWORD
+        # VERIFY THAT THE ROOT KSTORE PASSWORD IS PASSED. IF NOT, GET IT FROM CONSOLE
+        if [ ! "$1" ]; then
+                # ax for the password
+                echo "Please type in the SSL keystore password"
+                read -s SSL_KSTORE_PASSWORD
+        else
+                SSL_KSTORE_PASSWORD=$1
+        fi
         $KEYTOOL -import -file $CACERT -alias ssgroot -keystore $SSL_KEY_STORE -storepass $SSL_KSTORE_PASSWORD
         $KEYTOOL -import -file $CERTIFICATE_FILE -alias tomcat -keystore $SSL_KEY_STORE -storepass $SSL_KSTORE_PASSWORD
 else
