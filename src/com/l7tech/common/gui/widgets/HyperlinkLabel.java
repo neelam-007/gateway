@@ -27,7 +27,7 @@ public class HyperlinkLabel extends JLabel {
 
     public HyperlinkLabel(String text, Icon icon, String url, int horizontalAlignment)
          throws MalformedURLException {
-           super(makeHyperlink(text, url), horizontalAlignment);
+           super(makeHyperlink(text, url, horizontalAlignment), horizontalAlignment);
            this.setIcon(icon);
            this.url = new URL(url);
            addListeners();
@@ -68,7 +68,13 @@ public class HyperlinkLabel extends JLabel {
         }
     }
 
-    private static String makeHyperlink(String text, String url) {
-        return "<html><a href=\"+"+url+"\">"+  text  +"</a></html>";
+    private static String makeHyperlink(String text, String url, int ha) {
+        String openScenter = "";
+        String closeScenter = "";
+        if (ha == SwingConstants.CENTER) {
+            openScenter = "<center>";
+            closeScenter = "</center>";
+        }
+        return "<html>"+openScenter+"<a href=\"+"+url+"\">"+  text  +"</a>"+closeScenter+"</html>";
     }
 }
