@@ -21,6 +21,10 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
     public ServerSpecificUser( SpecificUser data ) {
         super( data );
         specificUser = data;
+
+        requiredLogin = specificUser.getUserLogin();
+        requiredUid = specificUser.getUserUid();
+        requiredProvider = specificUser.getIdentityProviderOid();
     }
 
     /**
@@ -30,10 +34,6 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
      * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      */
     public AssertionStatus checkUser(User requestingUser) {
-        String requiredLogin = specificUser.getUserLogin();
-        String requiredUid = specificUser.getUserUid();
-        long requiredProvider = specificUser.getIdentityProviderOid();
-
         if (specificUser == null || requiredLogin == null || requiredUid == null ) {
             String msg = "null assertion or SpecificUser has null login and uid.";
             logger.warning(msg);
@@ -41,12 +41,15 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
         }
 
         // check provider id and user login (start with provider as it's cheaper)
-        if (requestingUser.getProviderId() == requiredProvider) {
-            String requestingUserUid = requestingUser.getUniqueIdentifier();
+        long requestProvider = requestingUser.getProviderId();
+        String requestUid = requestingUser.getUniqueIdentifier();
+        String requestLogin = requestingUser.getLogin();
+
+        if (requestProvider == requiredProvider) {
             // Check uid first if present
-            if ( requiredUid == null || requiredUid.equals(requestingUserUid) ) {
+            if ( requiredUid == null || requiredUid.equals(requestUid) ) {
                 // They can't both be null (already checked) so this is safe
-                if ( requiredLogin == null || requiredLogin.equals(requestingUser.getLogin()) ) {
+                if ( requiredLogin == null || requiredLogin.equals(requestLogin) ) {
                     return AssertionStatus.NONE;
                 }
             }
@@ -56,5 +59,9 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
     }
 
     protected SpecificUser specificUser;
+    private final String requiredLogin;
+    private final String requiredUid;
+    private final long requiredProvider;
+
     protected final Logger logger = Logger.getLogger(getClass().getName());
 }
