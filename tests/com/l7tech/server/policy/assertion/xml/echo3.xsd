@@ -8,126 +8,6 @@
     xmlns:s0="http://qaschematest.layer7.com/"
     xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
     xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/">
-    <s:element name="EchoName">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="0" name="inName" type="s:string"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-    <s:element name="EchoNameResponse">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="0"
-                    name="EchoNameResult" type="s:string"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoGenda">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="0" name="inGenda" type="s:string"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoGendaResponse">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="0"
-                    name="EchoGendaResult" type="s:string"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoAge">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="1" name="inAge" type="s:int"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoAgeResponse">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="1"
-                    name="EchoAgeResult" type="s:int"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoDateTimeBorn">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="1"
-                    name="inDateTimeBorn" type="s:dateTime"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoDateTimeBornResponse">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="1"
-                    name="EchoDateTimeBornResult" type="s:dateTime"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoMarried">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="1" name="inMarried" type="s:boolean"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-    
-    <s:element name="EchoMarriedResponse">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="1"
-                    name="EchoMarriedResult" type="s:boolean"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoHomeAddress">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="0"
-                    name="inHomeAddress" type="s:string"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoHomeAddressResponse">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="0"
-                    name="EchoHomeAddressResult" type="s:string"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoHomePhoneNumber">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="1"
-                    name="inHomePhoneNumber" type="s:long"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="EchoHomePhoneNumberResponse">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="1"
-                    name="EchoHomePhoneNumberResult" type="s:long"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
 
     <s:element name="Echo">
         <s:complexType>
@@ -157,36 +37,10 @@
             </s:sequence>
         </s:complexType>
     </s:element>
-    
-     <s:group name="VacationInfoGroup">            
-            <s:sequence>
-                        <s:element name="From" type="s:string"/>
-        </s:sequence>
-    </s:group>
 
-    <s:complexType name="Vacation">
-        <s:sequence>
-            <s:group ref="s0:VacationInfoGroup"/>
-            <s:element name="Destination" type="s:string"/>
-        </s:sequence>
-    </s:complexType>
-
-    <s:element name="VacationInfo">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="0" name="inVacation" type="s0:Vacation"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
-
-    <s:element name="VacationInfoResponse">
-        <s:complexType>
-            <s:sequence>
-                <s:element maxOccurs="1" minOccurs="0"
-                    name="VacationInfoResult" type="s0:Vacation"/>
-            </s:sequence>
-        </s:complexType>
-    </s:element>
+    <s:element name="otherNameFOrPerson1" type="s0:Person" />
+    <s:element name="otherNameFOrPerson2" type="s0:Person" substitutionGroup="s0:otherNameFOrPerson1"/>
+    <s:element name="otherNameFOrPerson3" type="s0:Person" substitutionGroup="s0:otherNameFOrPerson1"/>
 
     <s:element name="string" nillable="true" type="s:string"/>
     <s:element name="int" type="s:int"/>
