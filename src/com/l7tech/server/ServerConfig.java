@@ -41,6 +41,7 @@ public class ServerConfig {
         try {
             InitialContext ic = new InitialContext();
             _logLevel = (String)(ic.lookup( JNDI_LOG_LEVEL ));
+            logger.info( "LogLevel = " + _logLevel );
             _serviceResolvers = (String)ic.lookup( JNDI_SERVICE_RESOLVERS );
             String sid = (String)ic.lookup( JNDI_SERVER_ID );
             if ( sid != null && sid.length() > 0 )
