@@ -37,7 +37,13 @@ public class SecureSpanConstants {
 
         /**
          * This header is returned by the ssg with value "invalid" when a client cert used for authentication was
-         * no longer valid
+         * no longer valid.
+         *
+         * <h3>Usages:<ul>
+         * <li>Returned by the Gateway to the Agent in reply to any request whose body was signed by an invalid
+         * client certificate, or that was made over SSL and presented an invalid client certificate during
+         * the SSL handshake.
+         * </ul>
          */
         public static final String CERT_STATUS = "l7-cert-status";
 
