@@ -2,15 +2,12 @@ package com.l7tech.identity.cert;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.logging.LogManager;
+import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.server.AuthenticatableHttpServlet;
 
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
@@ -20,10 +17,8 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
 import java.sql.SQLException;
-import org.apache.axis.transport.http.HTTPConstants;
-import org.apache.axis.encoding.Base64;
 import sun.security.x509.X500Name;
 
 
@@ -36,17 +31,19 @@ import sun.security.x509.X500Name;
  * through ssl and must contain valid credentials embedded in basic auth header.
  *
  */
-public class CSRHandler extends HttpServlet {
+public class CSRHandler extends AuthenticatableHttpServlet {
 
     public void init( ServletConfig config ) throws ServletException {
         super.init(config);
-        logger = LogManager.getInstance().getSystemLogger();
+
         String tmp = getServletConfig().getInitParameter("RootKeyStore");
         if (tmp == null || tmp.length() < 1) tmp = "../../kstores/ssgroot";
         rootkstore = KeystoreUtils.getInstance().getRootKeystorePath();
         rootkstorepasswd = KeystoreUtils.getInstance().getRootKeystorePasswd();
         if (rootkstorepasswd == null || rootkstorepasswd.length() < 1) {
-            logger.log(Level.SEVERE, "Key store password not found (root CA).");
+            String msg = "Key store password not found (root CA).";
+            logger.log(Level.SEVERE, msg);
+            throw new ServletException(msg);
         }
     }
 
@@ -64,29 +61,31 @@ public class CSRHandler extends HttpServlet {
             return;
         }
 
-        // Process the Auth stuff in the headers
-        String tmp = request.getHeader(HTTPConstants.HEADER_AUTHORIZATION);
-        if (tmp != null ) tmp = tmp.trim();
-        User authenticatedUser = null;
-        // TRY BASIC AUTHENTICATION
-        if (tmp != null && tmp.startsWith("Basic ")) {
-            String decodedAuthValue = new String(Base64.decode(tmp.substring(6)));
-            if (decodedAuthValue == null) {
-                throw new ServletException("cannot decode basic header");
-            }
-            try {
-                authenticatedUser = authenticateBasicToken(decodedAuthValue);
-            } catch (FindException e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                throw new IOException(e.getMessage());
-            }
-        }
-        if (authenticatedUser == null) {
+        // Authentication
+        List users = null;
+        try {
+            users = authenticateRequestBasic(request);
+        } catch (IOException e) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "authentication error");
+            logger.log(Level.SEVERE, "Failed authentication", e);
+            return;
+        } catch (BadCredentialsException e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
-            logger.log(Level.SEVERE, "Failed authorization");
+            logger.log(Level.SEVERE, "Failed authentication", e);
             return;
         }
-        logger.info("User " + authenticatedUser.getLogin() + " has authenticated for CSR");
+        if (users == null || users.size() < 1) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
+            logger.warning("CSR Handler called without credentials");
+            return;
+        } else if (users.size() > 1) {
+            String msg = "Ambiguous authentication - credentials valid in more than one identity provider.";
+            response.sendError(HttpServletResponse.SC_CONFLICT, msg);
+            logger.warning(msg);
+            return;
+        }
+        User authenticatedUser = null;
+        authenticatedUser = (User)users.get(0);
 
         ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
         if (!man.userCanGenCert(authenticatedUser)) {
@@ -196,50 +195,6 @@ public class CSRHandler extends HttpServlet {
         return cert;
     }
 
-    private User authenticateBasicToken(String value) throws FindException {
-        String login = null;
-        String clearTextPasswd = null;
-
-        int i = value.indexOf( ':' );
-        if (i == -1) {
-            throw new FindException("invalid basic credentials " + value);
-        }
-        else {
-            login = value.substring(0, i);
-            clearTextPasswd = value.substring(i+1);
-        }
-
-        User tmpUser = new User();
-        tmpUser.setLogin(login);
-        PrincipalCredentials creds = new PrincipalCredentials(tmpUser, clearTextPasswd.getBytes());
-
-        try {
-            try {
-                // todo, extend so that ldap and msad users now can do that too
-                getConfigManager().getInternalIdentityProvider().authenticate(creds);
-                return creds.getUser();
-            } catch (AuthenticationException e) {
-                logger.log(Level.SEVERE, "authentication failed for " + login, e);
-                return null;
-            }
-        } finally {
-            try {
-                PersistenceContext.getCurrent().close();
-            } catch (SQLException e) {
-                logger.log(Level.SEVERE, "error closing context", e);
-                throw new FindException("cannot close context", e);
-            }
-        }
-    }
-
-    private synchronized IdentityProviderConfigManager getConfigManager() {
-        if (identityProviderConfigManager == null) {
-            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().
-                                             lookup(IdentityProviderConfigManager.class);
-        }
-        return identityProviderConfigManager;
-    }
-
     private RSASigner getSigner() {
         return new RSASigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd);
     }
@@ -254,8 +209,6 @@ public class CSRHandler extends HttpServlet {
         return;
     }
 
-    private IdentityProviderConfigManager identityProviderConfigManager = null;
     private String rootkstore = null;
     private String rootkstorepasswd = null;
-    private Logger logger = null;
 }
