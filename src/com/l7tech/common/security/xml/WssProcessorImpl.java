@@ -33,7 +33,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import x0Assertion.oasisNamesTcSAML1.AssertionType;
+//import x0Assertion.oasisNamesTcSAML1.AssertionType;
 
 /**
  * An implementation of the WssProcessor for use in both the SSG and the SSA.
@@ -1135,6 +1135,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
+    /*
     private static class SamlSecurityTokenImpl implements SamlSecurityToken {
         public SamlSecurityTokenImpl(Element element, AssertionType assertion) {
             this.element = element;
@@ -1152,6 +1153,7 @@ public class WssProcessorImpl implements WssProcessor {
         private Element element;
         private AssertionType assertion;
     }
+    */
 
 
     private static class TimestampImpl implements WssProcessor.Timestamp {
