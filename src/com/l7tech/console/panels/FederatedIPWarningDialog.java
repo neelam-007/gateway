@@ -137,7 +137,7 @@ public class FederatedIPWarningDialog extends JDialog {
         panel1.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         mainPanel.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(600, 350), null));
         headerLabel1 = new JLabel();
-        headerLabel1.setText("No trusted certificates have been selected. Certain limitations are enfored for this federated identity provider.");
+        headerLabel1.setText("No trusted certificates have been selected. Certain limitations are enforced for this federated identity provider.");
         panel1.add(headerLabel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(3, 2, new Insets(0, 0, 0, 0), -1, -1));

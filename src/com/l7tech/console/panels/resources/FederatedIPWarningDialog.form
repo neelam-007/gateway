@@ -26,7 +26,7 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="No trusted certificates have been selected. Certain limitations are enfored for this federated identity provider."/>
+              <text value="No trusted certificates have been selected. Certain limitations are enforced for this federated identity provider."/>
             </properties>
           </component>
           <grid id="1a18d" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
