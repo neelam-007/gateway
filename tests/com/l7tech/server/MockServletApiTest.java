@@ -78,7 +78,7 @@ public class MockServletApiTest extends TestCase {
 
     public void testInvokeMessageProcessingServlet() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
-            MockServletApi servletApi = MockServletApi.defaultMessageProcessor();
+            MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi());
             SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
             servletApi.setPublishedService(publishedService);
             servletApi.setSoapRequest(soapRequest.getSOAPMessage(), soapRequest.getSOAPAction());

@@ -102,7 +102,7 @@ public class SamlPolicyTest extends TestCase {
 
     public void testSecurityElementCheck() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
-            MockServletApi servletApi = MockServletApi.defaultMessageProcessor();
+            MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
             SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
             prepareServicePolicy(new SamlSecurity());
             servletApi.setPublishedService(publishedService);
