@@ -286,10 +286,17 @@ public class SoapUtil {
      * @return
      */
     public static Element makeSecurityElement(Document soapMsg) {
+        return makeSecurityElement(soapMsg, SECURITY_NAMESPACE);
+    }
+
+    /**
+     * Same as other makeSecurityElement but specifies a preferred security namesapce.
+     */
+    public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace) {
         Element header = getOrMakeHeader(soapMsg);
-        Element securityEl = soapMsg.createElementNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
+        Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
-        securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, SECURITY_NAMESPACE);
+        securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
         setSoapAttr(soapMsg, securityEl, MUSTUNDERSTAND_ATTR_NAME, "true");
 
         Element existing = XmlUtil.findFirstChildElement(header);
