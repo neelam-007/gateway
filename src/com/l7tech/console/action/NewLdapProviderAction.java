@@ -1,36 +1,41 @@
 package com.l7tech.console.action;
 
+
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.Locator;
+import com.l7tech.console.event.*;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
-import com.l7tech.console.panels.*;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.event.*;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SaveException;
 
 import javax.swing.*;
-import javax.swing.tree.TreePath;
+import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
-import java.util.logging.Logger;
+import javax.swing.tree.TreePath;
+import java.util.EventListener;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 /**
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
- * <p> @author fpang </p>
- * $Id$
+ * The <code>NewLdapProviderAction</code> action adds the new provider.
+ *
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @version 1.0
  */
+public class NewLdapProviderAction extends NewProviderAction {
+    static final Logger log = Logger.getLogger(NewUserAction.class.getName());
 
-public class NewFederatedIdentityProviderAction extends NewProviderAction {
-    static final Logger log = Logger.getLogger(NewFederatedIdentityProviderAction.class.getName());
-
-
-    public NewFederatedIdentityProviderAction(AbstractTreeNode node) {
+    public NewLdapProviderAction(AbstractTreeNode node) {
         super(node);
     }
 
@@ -38,14 +43,14 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
      * @return the action name
      */
     public String getName() {
-        return "Create Federated Identity Provider";
+        return "Create LDAP Identity Provider";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Create a new Federated Identity Provider";
+        return "Create a new External Identity Provider";
     }
 
     /**
@@ -67,19 +72,22 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
+                LdapIdentityProviderConfigPanel configPanel = (
+                            new LdapIdentityProviderConfigPanel (
+                                new LdapGroupMappingPanel (
+                                    new LdapUserMappingPanel(null)
+                ), true));
+
+
                 JFrame f = TopComponents.getInstance().getMainWindow();
-
-                FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(new FederatedIPX509CertPanel(new FederatedIPSamlPanel(new FederatedIPTrustedCertsPanel(null))));
-                CreateFederatedIPWizard w = new CreateFederatedIPWizard(f, configPanel);
-                //FederatedIdentityProviderWindow w = new FederatedIdentityProviderWindow(f);
-
-                // register itself to listen to the addEvent
+                Wizard w = new CreateIdentityProviderWizard(f, configPanel);
                 w.addWizardListener(wizardListener);
 
                 // register itself to listen to the addEvent
                 addEntityListener(listener);
 
-                w.setSize(820, 500);
+                w.pack();
+                w.setSize(780, 560);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
 
@@ -102,20 +110,21 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
 
             if (iProvider != null) {
 
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        EntityHeader header = new EntityHeader();
-                        header.setName(iProvider.getName());
-                        header.setType(EntityType.ID_PROVIDER_CONFIG);
-                        try {
-                            header.setOid(getProviderConfigManager().save(iProvider));
-                        } catch (SaveException e) {
-                            ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
-                            header = null;
-                        }
-                        if (header != null) fireEventProviderAdded(header);
-                    }
-                });
+                SwingUtilities.invokeLater(
+                        new Runnable() {
+                            public void run() {
+                                EntityHeader header = new EntityHeader();
+                                header.setName(iProvider.getName());
+                                header.setType(EntityType.ID_PROVIDER_CONFIG);
+                                try {
+                                    header.setOid(getProviderConfigManager().save(iProvider));
+                                } catch (SaveException e) {
+                                    ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
+                                    header = null;
+                                }
+                                if (header != null) fireEventProviderAdded(header);
+                            }
+                        });
             }
         }
 
@@ -134,14 +143,14 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
             }
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    EntityHeader eh = (EntityHeader) ev.getEntity();
-                    JTree tree = (JTree) TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+                    EntityHeader eh = (EntityHeader)ev.getEntity();
+                    JTree tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
                     if (tree == null) {
                         log.log(Level.WARNING, "Unable to reach the identity tree.");
                         return;
                     }
                     if (tree.hasBeenExpanded(new TreePath(node.getPath()))) {
-                        DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
 
                         final AbstractTreeNode newChildNode = TreeNodeFactory.asTreeNode(eh);
                         model.insertNodeInto(newChildNode, node, node.getInsertPosition(newChildNode));
