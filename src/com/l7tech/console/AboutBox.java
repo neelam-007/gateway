@@ -28,7 +28,7 @@ public class AboutBox extends JDialog implements ActionListener {
     JLabel logoLabel =
       new JLabel(new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/" + LOGO_IMAGE)), JLabel.CENTER);
     JLabel resLabel = new JLabel("", JLabel.CENTER);
-    JLabel urlLabel = new JLabel("HomePage -- http://www.layer7tech.com", JLabel.CENTER);
+    JLabel urlLabel = new JLabel("Home Page -- http://www.layer7tech.com", JLabel.CENTER);
 
     JPanel infoPanel = new JPanel(new GridBagLayout());
     String product = "SecureSpan Manager";
@@ -70,7 +70,7 @@ public class AboutBox extends JDialog implements ActionListener {
         Insets ins = new Insets(1, 1, 1, 1);
         JScrollPane jsp = new JScrollPane(systemProperties);
 
-        this.setTitle("About the" + product /*+ " " + "Version" + " " + version*/);
+        this.setTitle("About the " + product /*+ " " + "Version" + " " + version*/);
         this.getContentPane().add(tabPanel, BorderLayout.CENTER);
         infoPanel.add(new JLabel("Product: " + product),
           new GridBagConstraints(0, 1, 1, 1, 0d, 0d,
@@ -91,7 +91,7 @@ public class AboutBox extends JDialog implements ActionListener {
             GridBagConstraints.HORIZONTAL, ins, 0, 0));
 
 
-        infoPanel.add(new JLabel("System Properties", JLabel.CENTER),
+        infoPanel.add(new JLabel("System Properties:", JLabel.LEFT),
           new GridBagConstraints(0, 3, 3, 1, 1d, 0d,
             GridBagConstraints.CENTER,
             GridBagConstraints.HORIZONTAL, ins, 0, 0));
