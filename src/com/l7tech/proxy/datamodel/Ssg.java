@@ -1,7 +1,11 @@
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.policy.assertion.Assertion;
 import org.apache.log4j.Category;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.l7tech.policy.assertion.Assertion;
 
 /**
  * In-core representation of an SSG.
@@ -10,7 +14,7 @@ import org.apache.log4j.Category;
  * Time: 11:09:04 AM
  */
 public class Ssg implements Cloneable, Comparable {
-    private static Category log = Category.getInstance(Ssg.class);
+    private static final Category log = Category.getInstance(Ssg.class);
 
     private long id = 0;
     private String name = "";
@@ -20,7 +24,8 @@ public class Ssg implements Cloneable, Comparable {
     private String username = null;
     private String password = null;
     private String keyStorePath = null;
-    private Assertion policy = null;   // null = no policy set
+    private HashMap policiesByUri = new HashMap();
+    private HashMap policiesBySoapAction = new HashMap();
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -68,8 +73,8 @@ public class Ssg implements Cloneable, Comparable {
 
     public Object clone() throws CloneNotSupportedException {
         Ssg ssg = (Ssg)super.clone();
-        if (policy != null)
-            ssg.setPolicy((Assertion)getPolicy().clone());
+        ssg.policiesByUri = (HashMap)this.policiesByUri.clone();
+        ssg.policiesBySoapAction = (HashMap)this.policiesBySoapAction.clone();
         return ssg;
     }
 
@@ -102,6 +107,50 @@ public class Ssg implements Cloneable, Comparable {
     public String toString() {
         return getName();
     }
+
+    /**
+     * Attach (or update) a policy for this SSG.  The policy will be filed
+     * under the specified URI and/or SOAPAction, at least one of which must
+     * be provided.
+     * @param uri
+     * @param soapAction
+     * @param policy
+     * @throws IllegalArgumentException if neither uri nor soapAction is specified, or policy is null
+     */
+    public void attachPolicy(String uri, String soapAction, Assertion policy)
+            throws IllegalArgumentException
+    {
+        boolean haveUri = uri != null && uri.length() > 0;
+        boolean haveSoapAction = soapAction != null && soapAction.length() > 0;
+        if (!haveUri && !haveSoapAction)
+            throw new IllegalArgumentException("Must specify either uri or soapAction");
+        if (policy == null)
+            throw new IllegalArgumentException("No policy was specified");
+        if (haveUri)
+            policiesByUri.put(uri, policy);
+        if (haveSoapAction)
+            policiesBySoapAction.put(soapAction, policy);
+    }
+
+    /**
+     * Look up a policy by URI.
+     * @param uri The namespace of the first element within the SOAP message body.
+     * @return A policy if found, or null
+     */
+    public Assertion getPolicyByUri(String uri) {
+        return (Assertion)policiesByUri.get(uri);
+    }
+
+    /**
+     * Look up a policy by SoapAction.
+     * @param soapAction The operation (minus fragment, if any) specified in the SOAPAction: header.
+     * @return A policy if found, or null
+     */
+    public Assertion getPolicyBySoapAction(String soapAction) {
+        return (Assertion)policiesBySoapAction.get(soapAction);
+    }
+
+    /* generated getters and setters */
 
     public long getId() {
         return id;
@@ -167,11 +216,37 @@ public class Ssg implements Cloneable, Comparable {
         this.sslPort = sslPort;
     }
 
-    public Assertion getPolicy() {
-        return policy;
+    /**
+     * Directly obtain our lookup map.
+     * This is here for javax.beans.XMLWriter to use; please do not call this directly.
+     * @return
+     */
+    public HashMap getPoliciesByUri() {
+        return policiesByUri;
     }
 
-    public void setPolicy(Assertion policy) {
-        this.policy = policy;
+    /**
+     * Directly update our lookup map.
+     * This is here for javax.beans.XMLWriter to use; please do not call this directly.
+     */
+    public void setPoliciesByUri(HashMap policiesByUri) {
+        this.policiesByUri = policiesByUri;
+    }
+
+    /**
+     * Directly obtain our lookup map.
+     * This is here for javax.beans.XMLWriter to use; please do not call this directly.
+     * @return
+     */
+    public HashMap getPoliciesBySoapAction() {
+        return policiesBySoapAction;
+    }
+
+    /**
+     * Directly update our lookup map.
+     * This is here for javax.beans.XMLWriter to use; please do not call this directly.
+     */
+    public void setPoliciesBySoapAction(HashMap policiesBySoapAction) {
+        this.policiesBySoapAction = policiesBySoapAction;
     }
 }

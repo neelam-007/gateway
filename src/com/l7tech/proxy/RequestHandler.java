@@ -11,9 +11,17 @@ import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
+import org.mortbay.util.LineInput;
 import org.xml.sax.SAXException;
+import org.w3c.dom.Element;
 
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.Name;
+import javax.xml.soap.SOAPElement;
 import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Iterator;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -37,6 +45,37 @@ public class RequestHandler extends AbstractHttpHandler {
     public RequestHandler(final SsgFinder ssgFinder, final MessageProcessor messageProcessor) {
         this.ssgFinder = ssgFinder;
         this.messageProcessor = messageProcessor;
+    }
+
+    /**
+     * Construct a PendingRequest from the given request.
+     * @param request
+     * @return
+     */
+    private PendingRequest gatherRequest(HttpRequest request,
+                                         SOAPEnvelope requestEnvelope,
+                                         Ssg ssg)
+            throws SOAPException
+    {
+        PendingRequest pr = new PendingRequest(requestEnvelope, ssg);
+        String sa = request.getField("SOAPAction");
+        if (sa != null)
+            pr.setSoapAction(sa);
+        SOAPBody soapBody = requestEnvelope.getBody();
+        if (soapBody != null) {
+            Iterator kids = soapBody.getChildElements();
+            if (kids.hasNext()) {
+                SOAPElement elm = (SOAPElement) kids.next();
+                Name bodyName = elm.getElementName();
+                if (bodyName != null) {
+                    String uri = bodyName.getURI();
+                    if (uri != null)
+                        pr.setUri(uri);
+                }
+            }
+        }
+        log.info("Request SOAPAction=" + pr.getSoapAction() + "   BodyURI=" + pr.getUri());
+        return pr;
     }
 
     /**
@@ -64,7 +103,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
         final SOAPEnvelope requestEnvelope = getRequestEnvelope(request);
 
-        final SOAPEnvelope responseEnvelope = getServerResponse(ssg, requestEnvelope);
+        final SOAPEnvelope responseEnvelope = getServerResponse(request, ssg, requestEnvelope);
 
         transmitResponse(response, responseEnvelope);
     }
@@ -78,7 +117,6 @@ public class RequestHandler extends AbstractHttpHandler {
     private void transmitResponse(final HttpResponse response, final SOAPEnvelope responseEnvelope) throws IOException {
         try {
             response.addField("Content-Type", "text/xml");
-            response.commitHeader();
             response.getOutputStream().write(responseEnvelope.toString().getBytes());
             response.commit();
         } catch (IOException e) {
@@ -148,11 +186,15 @@ public class RequestHandler extends AbstractHttpHandler {
      * @return                  the response it sends back
      * @throws HttpException    if there was Trouble
      */
-    private SOAPEnvelope getServerResponse(final Ssg ssg, final SOAPEnvelope requestEnvelope) throws HttpException {
+    private SOAPEnvelope getServerResponse(final HttpRequest request,
+                                           final Ssg ssg,
+                                           final SOAPEnvelope requestEnvelope)
+            throws HttpException
+    {
         log.info("Processing message to SSG " + ssg.getName());
 
-        PendingRequest pendingRequest = new PendingRequest(requestEnvelope, ssg);
         try {
+            PendingRequest pendingRequest = gatherRequest(request, requestEnvelope, ssg);
             SOAPEnvelope reply = messageProcessor.processMessage(pendingRequest);
             interceptor.onReceiveReply(reply);
             log.info("Returning result");
@@ -163,6 +205,9 @@ public class RequestHandler extends AbstractHttpHandler {
         } catch (PolicyAssertionException e) {
             interceptor.onReplyError(e);
             throw new HttpException(500, "Unable to obtain response from server: " + e.toString());
+        } catch (SOAPException e) {
+            interceptor.onMessageError(e);
+            throw new HttpException(500, "Unable to find request body: " + e.toString());
         }
     }
 

@@ -80,10 +80,12 @@ public class MessageProcessor {
             try {
                 result = call.invoke(pendingRequest.getSoapEnvelope());
             } catch (RemoteException e) {
-                log.error("callSsg(): Got back a RemoteException: ");
+                // TODO: check for specially-formatted SOAP fault and download policy if needed
+                log.error("callSsg(): Got back a RemoteException: " + e.toString());
                 log.error(e);
                 throw e;
             }
+            // TODO: check for specially-formatted SOAP fault and download policy if needed
             return result;
         } catch (MalformedURLException e) {
             throw new HttpException(500, "Client Proxy: this SSG has an invalid server url: " + ssg.getServerUrl());

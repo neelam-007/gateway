@@ -103,7 +103,7 @@ class SsgManagerImpl implements SsgManager {
      *  1    -         -        -     Newly created store file       (>newFile) => curFile
      *  2    -         -        +     Create was interrupted         -newFile; (do #1)
      *  3    -         +        -     Normal operation               curFile => oldFile; (do #1); -oldFile
-     *  4    -         +        +     Invalid; can't happen          -newFile; (do #3)
+     *  4    -         +        +     Update was interrupted         -newFile; (do #3)
      *  5    +         -        -     Update was interrupted         oldFile => curFile; (do #3)
      *  6    +         -        +     Update was interrupted         -newFile; (do #5)
      *  7    +         +        -     Update was interrupted         -oldFile; (do #3)
@@ -112,7 +112,7 @@ class SsgManagerImpl implements SsgManager {
      *  We guarantee to end up in state #3 if we complete successfully.
      */
     public synchronized void save() throws IOException {
-        // TODO: add lockfile so multiple Client Proxy instances can share a data store
+        // TODO: add lockfile so multiple Client Proxy instances can safely share a data store
 
         FileOutputStream out = null;
         XMLEncoder encoder = null;
@@ -125,15 +125,21 @@ class SsgManagerImpl implements SsgManager {
             File curFile = new File(STORE_FILE);
             File newFile = new File(STORE_FILE_NEW);
 
-            if (!curFile.exists())
-                if (oldFile.exists())
-                    oldFile.renameTo(curFile);
+            // At start: any state is possible
+
+            if (oldFile.exists() && !curFile.exists())
+                oldFile.renameTo(curFile);
+            // States 5 and 6 now ruled out
+
             if (newFile.exists())
                 newFile.delete();
+            // States 2, 4, 6 and 8 now ruled out
+
             if (oldFile.exists())
                 oldFile.delete();
-            if (curFile.exists())
-                curFile.renameTo(oldFile);
+            // States 5, 6, 7, and 8 now ruled out
+
+            // We are now in either State 1 or State 3
 
             out = new FileOutputStream(newFile);
             encoder = new XMLEncoder(out);
@@ -142,8 +148,25 @@ class SsgManagerImpl implements SsgManager {
             encoder = null;
             out = null;
 
-            if (newFile.renameTo(curFile))
-                oldFile.delete();
+            // If interrupted here, we end up in State 4 (or State 2 if no existing file)
+
+            if (curFile.exists())
+                if (!curFile.renameTo(oldFile))
+                    // If we need to do this, it has to succeed
+                    throw new IOException("Unable to rename " + curFile + " to " + oldFile);
+
+            // If interrupted here, we end up in State 6 (or State 2 if was no existing file)
+
+            if (!newFile.renameTo(curFile))
+                // This must succeed in order for the update to complete
+                throw new IOException("Unable to rename " + newFile + " to " + curFile);
+
+            // If interrupted here, we end up in State 7 (or State 3 if was no existing file)
+
+            oldFile.delete();
+
+            // We are now in State 3 (invariant)
+
         } finally {
             if (encoder != null)
                 encoder.close();

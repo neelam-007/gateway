@@ -27,14 +27,19 @@ public class PolicyManagerImpl implements PolicyManager {
     }
 
     /**
-     * Obtain the policy for this SSG, possibly by downloading it over the network.
-     * TODO: This currently assumes only one service per Ssg object.  fix this
+     * Look up any cached policy for this request+SSG.  If we don't know it, or if our
+     * cached copy is out-of-date, no sweat: we'll get a SOAP fault from the server telling
+     * us to download a new policy.
      *
      * @param request the request whose policy is to be found
      * @return The root of policy Assertion tree.
      */
     public Assertion getPolicy(PendingRequest request) {
-        Assertion policy = request.getSsg().getPolicy();
+        Assertion policy = null;
+        if (policy == null && request.getSoapAction().length() > 0)
+            policy = request.getSsg().getPolicyBySoapAction(request.getSoapAction());
+        if (policy == null && request.getUri().length() > 0)
+            policy = request.getSsg().getPolicyByUri(request.getUri());
         return policy == null ? nullPolicy : policy;
     }
 }

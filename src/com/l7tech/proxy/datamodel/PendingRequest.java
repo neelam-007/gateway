@@ -19,6 +19,8 @@ import java.security.Principal;
 public class PendingRequest {
     private SOAPEnvelope soapEnvelope;
     private Ssg ssg;
+    private String soapAction = "";
+    private String uri = "";
     private boolean isSslRequired = false;
     private boolean isBasicAuthRequired = false;
     private String httpBasicUsername = "";
@@ -27,13 +29,11 @@ public class PendingRequest {
     private String httpDigestUsername = "";
     private String httpDigestPassword = "";
 
-
     /** Construct a PendingRequest around the given SOAPEnvelope going to the given SSG. */
     public PendingRequest(SOAPEnvelope soapEnvelope, Ssg ssg) {
         this.soapEnvelope = soapEnvelope;
         this.ssg = ssg;
     }
-
 
     // Getters and setters
 
@@ -43,6 +43,22 @@ public class PendingRequest {
 
     public Ssg getSsg() {
         return ssg;
+    }
+
+    public String getSoapAction() {
+        return soapAction;
+    }
+
+    public void setSoapAction(String soapAction) {
+        this.soapAction = soapAction;
+    }
+
+    public String getUri() {
+        return uri;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
     }
 
     public boolean isSslRequired() {
