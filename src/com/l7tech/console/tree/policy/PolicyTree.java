@@ -91,6 +91,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
         setCellRenderer(new EntityTreeCellRenderer());
+
+        ToolTipManager.sharedInstance().registerComponent(this);
     }
 
     public void setPolicyEditor(PolicyEditorPanel pe) {
@@ -682,10 +684,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
 	
     private static final int AUTOSCROLL_MARGIN = 12;
 
-// Ok, we’ve been told to scroll because the mouse cursor is in our
+// Ok, weï¿½ve been told to scroll because the mouse cursor is in our
 // scroll zone.
     public void autoscroll(Point pt) {
-        // Figure out which row we’re on.
+        // Figure out which row weï¿½re on.
         int nRow = getRowForLocation(pt.x, pt.y);
 		
 // If we are not on a row then ignore this autoscroll request
@@ -695,7 +697,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         Rectangle raOuter = getBounds();
 // Now decide if the row is at the top of the screen or at the
 // bottom. We do this to make the previous row (or the next
-// row) visible as appropriate. If we’re at the absolute top or
+// row) visible as appropriate. If weï¿½re at the absolute top or
 // bottom, just return the first or last row respectively.
 		
         nRow = (pt.y + raOuter.y <= AUTOSCROLL_MARGIN)			// Is row at top of screen? 

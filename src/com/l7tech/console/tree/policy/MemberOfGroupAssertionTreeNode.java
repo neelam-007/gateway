@@ -26,6 +26,14 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
         if (assertion == null) {
             throw new IllegalArgumentException();
         }
+        // assume that the strid is a valuable piece of information if it;s something else than a number
+        String strid = assertion.getGroupId();
+        try {
+            Long.parseLong(strid);
+            tooltip = null;
+        } catch (NumberFormatException nfe) {
+            tooltip = strid;
+        }
     }
 
     /**
@@ -75,4 +83,10 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
         return "Group membership " + ((MemberOfGroup)getUserObject()).getGroupName() +
           " [" + idProviderName() + "]";
     }
+
+    public String getTooltipText() {
+        return tooltip;
+    }
+
+    private String tooltip = null;
 }
