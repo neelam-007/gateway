@@ -7,6 +7,8 @@
 package com.l7tech.service.resolution;
 
 import com.l7tech.message.Request;
+import com.l7tech.service.ServiceListener;
+import com.l7tech.service.PublishedService;
 
 import java.util.*;
 
@@ -14,18 +16,33 @@ import java.util.*;
  * @author alex
  * @version $Revision$
  */
-public abstract class ServiceResolver implements Comparable {
+public abstract class ServiceResolver implements Comparable, ServiceListener {
     public static final int FAST = 0;
     public static final int SLOW = 100;
 
     /**
      * Sets the <code>Collection</code> of services in the system.  Concrete implementations should override this method and invalidate any caches based on this Collection whenever this method is called.
-     * @param services A Collection of all the services in the system.
+     * @param services A Set of all the services in the system.
      */
     public synchronized void setServices( Set services ) {
         _services = services;
         doSetServices(services);
     }
+
+    public void serviceDeleted( PublishedService service ) {
+        _services.remove( service );
+        doSetServices( _services );
+    }
+
+    public void serviceUpdated( PublishedService service ) {
+        doSetServices( _services );
+    }
+
+    public void serviceCreated( PublishedService service ) {
+        _services.add( service );
+        doSetServices( _services );
+    }
+
 
     public synchronized Set resolve( Request request, Set set ) throws ServiceResolutionException {
         if ( set == null ) return Collections.EMPTY_SET;
@@ -52,5 +69,5 @@ public abstract class ServiceResolver implements Comparable {
             return -1;
     }
 
-    protected Collection _services;
+    protected Set _services;
 }
