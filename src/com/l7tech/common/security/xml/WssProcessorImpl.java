@@ -69,18 +69,6 @@ public class WssProcessorImpl implements WssProcessor {
                                                           PrivateKey recipientKey)
             throws WssProcessor.ProcessorException
     {
-        try {
-            return doUndecorateMessage(soapMsg, recipientCert, recipientKey);
-        } catch (XmlUtil.MultipleChildElementsException e) {
-            throw new ProcessorException(e);
-        }
-    }
-    
-    private WssProcessor.ProcessorResult doUndecorateMessage(Document soapMsg,
-                                                          X509Certificate recipientCert,
-                                                          PrivateKey recipientKey)
-            throws WssProcessor.ProcessorException, XmlUtil.MultipleChildElementsException
-    {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
         cntx.processedDocument = (Document)soapMsg.cloneNode(true);
@@ -94,7 +82,11 @@ public class WssProcessorImpl implements WssProcessor {
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
 
         // Resolve the relevent Security header
-        cntx.releventSecurityHeader = SoapUtil.getSecurityElement(soapMsg);
+        try {
+            cntx.releventSecurityHeader = SoapUtil.getSecurityElement(cntx.processedDocument);
+        } catch (XmlUtil.MultipleChildElementsException e) {
+            throw new ProcessorException(e);
+        }
 
         // maybe there are no security headers at all in which case, there is nothing to process
         if (cntx.releventSecurityHeader == null) {
@@ -117,12 +109,17 @@ public class WssProcessorImpl implements WssProcessor {
             } else if (securityChildToProcess.getLocalName().equals("Signature")) {
                 processSignature(securityChildToProcess);
             } else {
+                // Unhandled child elements of the Security Header
                 String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace, SoapUtil.MUSTUNDERSTAND_EL_NAME).trim();
-                if ("1".equals(mu) || "true".equalsIgnoreCase(mu))
-                        throw new ProcessorException("Unrecognized element in default Security header: " +
-                                                     securityChildToProcess.getNodeName() +
-                                                     " with mustUnderstand=\"true\"; rejecting message");
-                logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
+                if ("1".equals(mu) || "true".equalsIgnoreCase(mu)) {
+                    String msg = "Unrecognized element in default Security header: " +
+                                 securityChildToProcess.getNodeName() +
+                                 " with mustUnderstand=\"true\"; rejecting message";
+                    logger.warning(msg);
+                    throw new ProcessorException(msg);
+                } else {
+                    logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
+                }
             }
         }
 
