@@ -52,6 +52,7 @@ public class PendingRequest {
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
+        private Policy activePolicy= null; // the policy that we most recently started applying to this request, if any
         private boolean isSslRequired = false;
         private boolean sslForbidden = false;  // ssl is forbidden for this request
         private boolean isBasicAuthRequired = false;
@@ -278,7 +279,7 @@ public class PendingRequest {
         if (session != null)
             return session;
 
-        session = SsgSessionManager.getOrCreateSession(getSsg());
+        session = SsgSessionManager.getOrCreateSession(getSsg(), getActivePolicy().getVersion());
         setSession(session);
         return session;
     }
@@ -326,5 +327,15 @@ public class PendingRequest {
 
     public ClientSidePolicy getClientSidePolicy() {
         return clientSidePolicy;
+    }
+
+    /** @return the policy we are currently applying to this request, or null if we don't know or don't have one. */
+    public Policy getActivePolicy() {
+        return this.policySettings.activePolicy;
+    }
+
+    /** Set the policy we are going to apply to this request. */
+    public void setActivePolicy(Policy policy) {
+        this.policySettings.activePolicy = policy;
     }
 }

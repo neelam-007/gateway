@@ -62,9 +62,10 @@ public class SsgSessionManager {
     /**
      * Get a session with the specified Ssg.  If no session currently exists, one will be created.
      * @param ssg
-     * @return
+     * @param serviceId the identifier of the published service whose policy is requiring us to get a session.
+     * @return the Session, which may or may have been newly (re)established.
      */
-    public static Session getOrCreateSession(Ssg ssg)
+    public static Session getOrCreateSession(Ssg ssg, String serviceId)
             throws OperationCanceledException, IOException,
             ServerCertificateUntrustedException, BadCredentialsException
     {
@@ -79,7 +80,7 @@ public class SsgSessionManager {
             if (session != null)
                 return session;
 
-            session = establishNewSession(ssg, pw);
+            session = establishNewSession(ssg, pw, serviceId);
             ssg.session(session);
             return session;
         }
@@ -92,7 +93,18 @@ public class SsgSessionManager {
         return header.getValue();
     }
 
-    private static Session establishNewSession(Ssg ssg, PasswordAuthentication pw)
+    /**
+     *
+     * @param ssg   the Gateway with which to establish the session.
+     * @param pw    the username and password to use.
+     * @param serviceId  the identifier of the published service whose policy required us to establish the session.
+     * @return the newly-established Session.  Any old session that may have existed with the Gateway is no longer valid.
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws ServerCertificateUntrustedException
+     * @throws BadCredentialsException
+     */
+    private static Session establishNewSession(Ssg ssg, PasswordAuthentication pw, String serviceId)
             throws MalformedURLException, IOException,
             ServerCertificateUntrustedException, BadCredentialsException
     {
@@ -104,7 +116,9 @@ public class SsgSessionManager {
         HttpMethod getMethod = new GetMethod(new URL("https",
                                                      ssg.getSsgAddress(),
                                                      ssg.getSslPort(),
-                                                     SecureSpanConstants.SESSION_SERVICE_FILE).toString());
+                                                     SecureSpanConstants.SESSION_SERVICE_FILE + "?" +
+                                                     SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" +
+                                                     serviceId).toString());
         getMethod.setDoAuthentication(true);
         try {
             int status = client.executeMethod(getMethod);

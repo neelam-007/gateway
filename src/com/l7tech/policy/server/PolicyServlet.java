@@ -56,10 +56,6 @@ import java.util.logging.Level;
  * Date: Jun 11, 2003
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
-    public static final String PARAM_SERVICEOID = "serviceoid";
-    public static final String PARAM_GETCERT = "getcert";
-    public static final String PARAM_USERNAME = "username";
-    public static final String PARAM_NONCE = "nonce";
     // format is policyId|policyVersion (seperated with char '|')
 
     public void init(ServletConfig config) throws ServletException {
@@ -71,10 +67,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         PersistenceContext pc = null;
         try {
             // GET THE PARAMETERS PASSED
-            String str_oid = httpServletRequest.getParameter(PARAM_SERVICEOID);
-            String getCert = httpServletRequest.getParameter(PARAM_GETCERT);
-            String username = httpServletRequest.getParameter(PARAM_USERNAME);
-            String nonce = httpServletRequest.getParameter(PARAM_NONCE);
+            String str_oid = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
+            String getCert = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_GETCERT);
+            String username = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_USERNAME);
+            String nonce = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_NONCE);
 
             pc = PersistenceContext.getCurrent();
 
@@ -96,7 +92,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             // RESOLVE THE PUBLISHED SERVICE
             PublishedService targetService = null;
             if (str_oid == null || str_oid.length() == 0) {
-                String err = PARAM_SERVICEOID + " parameter is required";
+                String err = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + " parameter is required";
                 logger.warning(err);
                 httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, err);
                 return;

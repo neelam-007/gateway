@@ -67,7 +67,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        String serviceId = req.getParameter(PARAM_SERVICEOID);
+        String serviceId = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
 
         // let's see if we can get credentials...
         List users;
@@ -191,7 +191,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         int port = req.getServerPort();
         if (port == 8443) port = 8080;
         else if (port == 443) port = 80;
-        URL ssgurl = new URL("http" + "://" + req.getServerName() + ":" + port + SOAP_PROCESSING_SERVLET_URI + "?" + PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));
+        URL ssgurl = new URL("http" + "://" + req.getServerName() + ":" + port + SOAP_PROCESSING_SERVLET_URI + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));
         output.setPortUrl(output.getSoapPort(), ssgurl);
 
         // output the wsdl
@@ -331,7 +331,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             outDoc.append("\t\t<abstract>" + svc.getName() + "</abstract>\n");
             outDoc.append("\t\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
             outDoc.append("location=\"");
-            String query = PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
+            String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
             outDoc.append(protocol + "://" + host + ":" + port + uri + "?" + query);
             outDoc.append("\"/>\n");
             outDoc.append("\t</service>\n");
@@ -339,6 +339,4 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         outDoc.append("</inspection>");
         return outDoc.toString();
     }
-
-    private static final String PARAM_SERVICEOID = "serviceoid";
 }

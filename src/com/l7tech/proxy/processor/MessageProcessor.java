@@ -118,9 +118,9 @@ public class MessageProcessor {
             try {
                 try {
                     try {
-                        Policy appliedPolicy = enforcePolicy(req);
-                        SsgResponse res = obtainResponse(req, appliedPolicy);
-                        undecorateResponse(req, res, appliedPolicy);
+                        enforcePolicy(req);
+                        SsgResponse res = obtainResponse(req);
+                        undecorateResponse(req, res);
                         return res;
                     } catch (SSLException e) {
                         handleSslException(e, req);
@@ -247,13 +247,14 @@ public class MessageProcessor {
 
     /**
      * Massage the provided PendingRequest so it conforms to the policy for this operation for the
-     * associated Ssg.
+     * associated Ssg.  On return, the PendingRequest's activePolicy will be set to the policy
+     * we applied.
      *
      * @param req   the PendingRequest to decorate
      * @throws OperationCanceledException   if the user declined to provide a username and password
      * @throws ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
-    private Policy enforcePolicy(PendingRequest req)
+    private void enforcePolicy(PendingRequest req)
             throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException
     {
         Policy policy = policyManager.getPolicy(req);
@@ -261,12 +262,16 @@ public class MessageProcessor {
             if (policy != null)
                 log.warn("Ignoring this policy -- it's thrown PolicyAssertionException before");
             if (req.getSsg().isUseSslByDefault()) {
-                // Create a fake policy requiring SSL.
+                // Use a default policy requiring SSL.
                 policy = SSL_POLICY;
-            } else
-                return null;
+            } else {
+                // No policy found for this request.
+                req.setActivePolicy(null);
+                return;
+            }
         }
 
+        req.setActivePolicy(policy);
         AssertionStatus result;
         ClientAssertion rootAssertion = policy.getClientAssertion();
         if (rootAssertion != null) {
@@ -280,22 +285,21 @@ public class MessageProcessor {
             if (result != AssertionStatus.NONE)
                 log.warn("Policy evaluated with an error: " + result + "; will attempt to continue anyway.");
         }
-        return policy;
     }
 
     /**
      * Process the response from the SSG, stripping any stuff the end user client doesn't care about or shouldn't
      * see, according to the dictates of the policy for this request.
      *
-     * @param req
-     * @param res
-     * @param appliedPolicy                 the policy that was applied to the original request.
+     * @param req  the request we are processing
+     * @param res  the reply we received from the Gateway
      */
-    private void undecorateResponse(PendingRequest req, SsgResponse res, Policy appliedPolicy)
+    private void undecorateResponse(PendingRequest req, SsgResponse res)
             throws OperationCanceledException,
                    GeneralSecurityException, BadCredentialsException, IOException,
                    ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException
     {
+        Policy appliedPolicy = req.getActivePolicy();
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
         if (appliedPolicy == null)
             return;
@@ -341,7 +345,7 @@ public class MessageProcessor {
     /**
      * Call the Ssg and obtain its response to the current message.
      *
-     * @param req the PendingRequest to process
+     * @param req the PendingRequest to process.  If a policy was applied, the request's activePolicy must point at it.
      * @return the SsgResponse from the SSG
      * @throws ConfigurationException if the SSG url is invalid
      * @throws ConfigurationException if the we downloaded a new policy for this request, but we are still being told
@@ -360,7 +364,7 @@ public class MessageProcessor {
      *                                    the keystore.
      * @throws BadCredentialsException if the SSG rejected our SSG username and/or password.
      */
-    private SsgResponse obtainResponse(PendingRequest req, Policy policy)
+    private SsgResponse obtainResponse(PendingRequest req)
             throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
             OperationCanceledException, ClientCertificateException, BadCredentialsException, KeyStoreCorruptException, HttpChallengeRequiredException
     {
@@ -390,6 +394,9 @@ public class MessageProcessor {
             if (req.getSession() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME,
                                             Long.toString(req.getSession().getId()));
+
+            // Let the Gateway know what policy version we used for the request.
+            Policy policy = req.getActivePolicy();
             if (policy != null && policy.getVersion() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 

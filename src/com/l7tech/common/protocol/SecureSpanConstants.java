@@ -28,10 +28,15 @@ public class SecureSpanConstants {
     public static final String SSG_FILE = "/ssg/soap";
 
     /**
-     * The  filename portion of the URL of the certificate discovery server on the Gateway.
-     * This is the service that clients (Agent or Console) can use to download the Gateway's CA cert
-     * over unencrypted HTTP, while remaining confident that it arrived unmodified and was
+     * The  filename portion of the URL of the policy servlet and the certificate discovery server on the Gateway.
+     * <p>
+     * The policy servlet is the service that client can use to look up the policy that must be followed in order
+     * to access a particular server.
+     * <p>
+     * The certificate discovery servlet is the service that clients (Agent or Console) can use to download
+     * the Gateway's CA cert over unencrypted HTTP, while remaining confident that it arrived unmodified and was
      * transmitted by someone able to prove that they know the client's password.
+     * TODO: This is a total mess; cert discovery should be a different servlet, not piggyback on policy servlet
      */
     public static final String CERT_PATH = "/ssg/policy/disco.modulator";
 
@@ -74,6 +79,64 @@ public class SecureSpanConstants {
      */
     public static final String ADMIN_PROTOCOL_VERSION = "20031212";
 
+    /**
+     * Special HTTP query parameters used by the protocol used between the SecureSpanAgent and the SecureSpanGateway.
+     */
+    public static class HttpQueryParameters {
+        /**
+         * Contains the OID of the published service whose policy the Agent is attempting to obey.
+         *
+         * <h3>Usages:<ul>
+         * <li>Sent by the Agent to the policy servlet as part of the policy URL.  See POLICYURL_HEADER in {@link HttpHeaders}.
+         * <li>Sent by the Agent to the Gateway's WSDL proxy servlet when a specified WSDL is requested.
+         * <li>Sent by the Agent to the XML security session servlet to provide context for XML security sessions.
+         *     Note that, after this initial session setup, the session can be reused for requests involving completely
+         *     different services as long as they are from the same Agent instance and sent to the same Gateway.
+         * </ul>
+         */
+        public static final String PARAM_SERVICEOID = "serviceoid";
+
+        /**
+         * Contains a nonzero value if the Agent desires to perform certificate discovery.
+         * TODO: This is a total mess; cert discovery should be a different servlet, not piggyback on policy servlet
+         *
+         * <h3>Usages:<ul>
+         * <li>Sent by the Agent to the policy servlet to indicate that it actually wants to talk to the certificate discovery servlet.
+         *     Note that this is not the same as the CSR (certificate signing) servlet: the certificate discovery servlet is used
+         *     by the Agent to discover the Gateway's server certificate, while the CSR servlet is used by the Agent to apply
+         *     for a client certificate.
+         * </ul>
+         */
+        public static final String PARAM_GETCERT = "getcert";
+
+        /**
+         * Holds the username making a certificate discovery request.
+         *
+         * <h3>Usages:<ul>
+         * <li>Sent by the Agent to the certificate discovery servlet (inside the policy servlet).  The Gateway
+         *     then provides hashes of the returned certificate hashed with the passwords of each user with a
+         *     matching username from each known ID provider, and the Agent can thereby verify that the certificate
+         *     was provided unmodified and by a Gateway that knows his password.  See CERT_CHECK_PREFIX in {@link HttpHeaders}.
+         * </ul>
+         */
+        public static final String PARAM_USERNAME = "username";
+
+        /**
+         * Holds a random nonce value used to make it harder to cheat during certificate discovery.
+         *
+         * <h3>Usages:<ul>
+         * <li>Sent by the Agent to the certificate discovery servlet (inside the policy servlet).  The gateway includes
+         *     this nonce in its protective hashes of the returned certificate with the users password(s).  This makes
+         *     it infeasible for a hostile Gateway-impersonator to precompute hashes of its certificate with likely passwords.
+         *     See CERT_CHECK_PREFIX in {@link HttpHeaders}.
+         * </ul>
+         */
+        public static final String PARAM_NONCE = "nonce";
+    }
+
+    /**
+     * Special HTTP headers used by the protocol used between the SecureSpanAgent and the SecureSpanGateway.
+     */
     public static class HttpHeaders {
         /**
          * Contains the version number of the policy used and/or expected by the entity providing the header.
@@ -138,7 +201,7 @@ public class SecureSpanConstants {
          * <h3>Usages:<ul>
          * <li>Returned by the Gateway to the Agent in every response to a request that contained a Session-ID
          * header referencing a missing or expired session.
-         * </ul>
+         * </ul>                             f
          */
         public static final String SESSION_STATUS_HTTP_HEADER = "l7-session-status";
 

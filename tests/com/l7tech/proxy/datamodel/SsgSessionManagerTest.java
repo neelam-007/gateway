@@ -171,7 +171,7 @@ public class SsgSessionManagerTest extends TestCase {
         ssg.setSsgAddress(getSsgUrl().getHost());
         ssg.setSslPort(getSsgUrl().getPort());
 
-        Session session = SsgSessionManager.getOrCreateSession(ssg);
+        Session session = SsgSessionManager.getOrCreateSession(ssg, "123");
 
         assertTrue(session != null);
         assertTrue(session.getId() != 0);
