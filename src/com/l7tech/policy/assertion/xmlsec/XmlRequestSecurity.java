@@ -32,23 +32,10 @@ public class XmlRequestSecurity extends CredentialSourceAssertion implements Xml
 
     /**
      * Test if this assertion can be considered as a credential source.
-     * The assertion is a credential source if it signs the nevelope.
-     * <p/>
-     * The <code>CredentialSourceAssertion<code> is left as superclass
-     * for a moment. It sould be removed, at the moment it will impact
-     * many things.
-     *
-     * @return true if this instance is credential source, false otherwise
+     * This now always returns true.
      */
     public boolean hasAuthenticationElement() {
-        for (int i = 0; i < elements.length; i++) {
-            ElementSecurity elementSecurity = elements[i];
-            // authenticated if Xpath points to envelope
-            if (ElementSecurity.isEnvelope(elementSecurity)) {
-                return true;
-            }
-        }
-        return false;
+        return true;
     }
 
     /**
