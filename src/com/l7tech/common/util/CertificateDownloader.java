@@ -144,15 +144,18 @@ public class CertificateDownloader {
      * and validating the result with the specified password.
      *
      * @return true if the downloaded certificate checked out OK.  Use getCertificate() to get it either way.
-     * @throws NoSuchAlgorithmException if SHA1PRNG is not found (can't happen)
      * @throws IOException in case of network trouble
      * @throws CertificateException if the returned certificate can't be parsed
      */
-    public boolean downloadCertificate() throws NoSuchAlgorithmException, IOException, CertificateException {
+    public boolean downloadCertificate() throws IOException, CertificateException {
         if (ssgUrl == null)
             throw new IllegalStateException("No SSG url is set");
 
-        nonce = String.valueOf(Math.abs(SecureRandom.getInstance("SHA1PRNG").nextLong()));
+        try {
+            nonce = String.valueOf(Math.abs(SecureRandom.getInstance("SHA1PRNG").nextLong()));
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // can't happen
+        }
         String uri = ssgUrl.getPath() + "?" + "getcert=1&nonce=" + nonce;
         if (username != null)
             uri += "&username=" + URLEncoder.encode(username, "UTF-8");
@@ -196,7 +199,7 @@ public class CertificateDownloader {
     }
 
     /**
-     * Check whether the currently cert validates given the current password, given the username
+     * Check whether the currently-downloaded cert validates given the current password, given the username
      * used to download it.
      *
      * This checks the password against every Cert-Check-NNN: header present when the cert was downloaded.
