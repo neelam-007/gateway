@@ -18,7 +18,6 @@ import java.util.logging.Logger;
  */
 public abstract class SecureAction extends BaseAction implements LogonListener {
     static final Logger logger = Logger.getLogger(SecureAction.class.getName());
-    private SecurityProvider securityProvider;
 
     protected SecureAction() {
     }
@@ -87,10 +86,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
     }
 
     protected final SecurityProvider getSecurityProvider() {
-        if (securityProvider != null) return securityProvider;
-
-        securityProvider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
-        return securityProvider;
+        return (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
     }
 
     /**

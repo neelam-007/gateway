@@ -148,4 +148,7 @@ public class HomeAction extends BaseAction {
     private static final String ADD_LDAP_ID_PROVIDER = "file://add.ldap.identity.provider";
     private static final String ADD_FEDERATED_ID_PROVIDER = "file://add.federated.identity.provider";
     private static final String SEARCH_ID_PROVIDER = "file://search.identity.provider";
+
+    private static final String ANALYZE_GATEWAY_LOG = "file://analyze.gateway.log";
+    private static final String VIEW_CLUSTER_STATUS = "file://view.cluster.status";
 }

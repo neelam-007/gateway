@@ -97,8 +97,8 @@ public class MainWindow extends JFrame {
     private Action togglePolicyMessageArea = null;
     private PublishServiceAction publishServiceAction = null;
     private CreateServiceWsdlAction createServiceAction = null;
-    private Action toggleGatewayLogWindowAction = null;
-    private Action toggleClusterStatusWindowAction = null;
+    private ViewGatewayLogsAction viewGatewayLogWindowAction = null;
+    private ViewClusterStatusAction viewClusterStatusAction = null;
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
     private JPanel statusBarPane = null;
@@ -129,8 +129,6 @@ public class MainWindow extends JFrame {
     private NewFederatedIdentityProviderAction newPKIProviderAction;
     private HomeAction homeAction = new HomeAction();
     Action monitorAction = null;
-    private ClusterStatusWindow clusterStatusWindow = null;
-    private GatewayLogWindow gatewayLogWindow = null;
     private Action manageJmsEndpointsAction = null;
     private Action manageCertificatesAction = null;
     private String connectionContext = "";
@@ -1124,57 +1122,6 @@ public class MainWindow extends JFrame {
     }
 
 
-    private ClusterStatusWindow getClusterStatusWindow() {
-        if (clusterStatusWindow != null) return clusterStatusWindow;
-
-        clusterStatusWindow = new ClusterStatusWindow(resapplication.getString("SSG") + " - " + resapplication.getString("ClusterStatusWindowTitle"));
-        clusterStatusWindow.addWindowListener(new WindowAdapter() {
-            public void windowClosed(final WindowEvent e) {
-                statMenuItem.setSelected(false);
-
-                clusterStatusWindow = null;
-            }
-
-            public void windowClosing(final WindowEvent e) {
-                statMenuItem.setSelected(false);
-
-                clusterStatusWindow.dispose();
-                clusterStatusWindow = null;
-            }
-        });
-        addLogonListener(clusterStatusWindow);
-        Utilities.centerOnScreen(clusterStatusWindow);
-        return clusterStatusWindow;
-    }
-
-    private GatewayLogWindow getGatewayLogWindow() {
-        if (gatewayLogWindow != null) return gatewayLogWindow;
-
-        gatewayLogWindow = new GatewayLogWindow(resapplication.getString("SSG") + " - " + resapplication.getString("LogBrowserWindowTitle"));
-        gatewayLogWindow.addWindowListener(new WindowAdapter() {
-            public void windowClosing(final WindowEvent e) {
-                destroyGatewayLogWindow();
-            }
-
-            public void windowClosed(final WindowEvent e) {
-                destroyGatewayLogWindow();
-            }
-
-        });
-        addLogonListener(gatewayLogWindow);
-        Utilities.centerOnScreen(gatewayLogWindow);
-        return gatewayLogWindow;
-    }
-
-    private void destroyGatewayLogWindow() {
-        if (gatewayLogWindow == null)
-            return;
-        getLogMenuItem().setSelected(false);
-        gatewayLogWindow.dispose();
-        removeLogonListener(gatewayLogWindow);
-        gatewayLogWindow = null;
-    }
-
     private Action getManageJmsEndpointsAction() {
         if (manageJmsEndpointsAction != null)
             return manageJmsEndpointsAction;
@@ -1244,22 +1191,11 @@ public class MainWindow extends JFrame {
     }
 
     private Action getGatewayLogWindowAction() {
-        if (toggleGatewayLogWindowAction != null) return toggleGatewayLogWindowAction;
-
-        String actionName = resapplication.getString("toggle.gateway.log.display.action.name");
-        String actionDesc = resapplication.getString("toggle.gateway.log.display.action.desc");
-        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/ServerLogs.gif"));
-
-        toggleGatewayLogWindowAction = new AbstractAction(actionName, icon) {
-            public void actionPerformed(ActionEvent event) {
-                getGatewayLogWindow().show();
-                getGatewayLogWindow().setState(Frame.NORMAL);
-            }
-        };
-        toggleGatewayLogWindowAction.putValue(Action.SHORT_DESCRIPTION, actionDesc);
-        toggleGatewayLogWindowAction.setEnabled(false);
-        enableActionWhileConnected(toggleGatewayLogWindowAction);
-        return toggleGatewayLogWindowAction;
+        if (viewGatewayLogWindowAction != null) return viewGatewayLogWindowAction;
+        viewGatewayLogWindowAction = new ViewGatewayLogsAction();
+        viewGatewayLogWindowAction.setEnabled(false);
+        this.addLogonListener(viewGatewayLogWindowAction);
+        return viewGatewayLogWindowAction;
     }
 
     /**
@@ -1281,29 +1217,12 @@ public class MainWindow extends JFrame {
         addLogonListener(myListener);
     }
 
-    private Action getClusterStatusWindowAction() {
-        if (toggleClusterStatusWindowAction != null) return toggleClusterStatusWindowAction;
-
-        String actionName = resapplication.getString("toggle.cluster.status.display.action.name");
-        String actionDesc = resapplication.getString("toggle.cluster.status.display.action.desc");
-        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/ClusterServers.gif"));
-
-        toggleClusterStatusWindowAction = new AbstractAction(actionName, icon) {
-            /**
-             * Invoked when an action occurs.
-             *
-             * @param event the event that occured
-             * @see Action#removePropertyChangeListener
-             */
-            public void actionPerformed(ActionEvent event) {
-                getClusterStatusWindow().show();
-                getClusterStatusWindow().setState(Frame.NORMAL);
-            }
-        };
-        toggleClusterStatusWindowAction.putValue(Action.SHORT_DESCRIPTION, actionDesc);
-        toggleClusterStatusWindowAction.setEnabled(false);
-        enableActionWhileConnected(toggleClusterStatusWindowAction);
-        return toggleClusterStatusWindowAction;
+    private Action getClusterStatusAction() {
+        if (viewClusterStatusAction != null) return viewClusterStatusAction;
+        viewClusterStatusAction = new ViewClusterStatusAction();
+        viewClusterStatusAction.setEnabled(false);
+        this.addLogonListener(viewClusterStatusAction);
+        return viewClusterStatusAction;
     }
 
     /**
@@ -1642,8 +1561,6 @@ public class MainWindow extends JFrame {
             }
         }
 
-        if (clusterStatusWindow != null) clusterStatusWindow.dispose();
-
         this.dispose();
     }
 
@@ -1660,19 +1577,11 @@ public class MainWindow extends JFrame {
              *            event source and the property that has changed.
              */
             public void propertyChange(PropertyChangeEvent evt) {
-                MainWindow.log.info("preferences have been updated");
+                MainWindow.log.finest("preferences have been updated");
                 MainWindow.this.setLookAndFeel(prefs.getString(Preferences.LOOK_AND_FEEL));
                 MainWindow.this.setInactivitiyTimeout(prefs.getInactivityTimeout());
             }
         });
-        securityProvider =
-          (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
-        if (securityProvider == null) {
-            log.log(Level.WARNING, "Cannot obtain current SSM security provider");
-        } else {
-            log.log(Level.FINEST, "Registering the connection listener " + securityProvider.getClass());
-            addLogonListener(securityProvider);
-        }
 
 
         // exitMenuItem listener
@@ -1717,6 +1626,7 @@ public class MainWindow extends JFrame {
      * Initialize the class.
      */
     private void initialize() {
+
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
@@ -1862,7 +1772,6 @@ public class MainWindow extends JFrame {
               new AWTEventListener() {
                   public void eventDispatched(AWTEvent e) {
                       lastStamp = System.currentTimeMillis();
-                      // MainWindow.this.log.debug("listener invoked");
                   }
               };
             // all events we know about
@@ -2005,7 +1914,7 @@ public class MainWindow extends JFrame {
     public JMenuItem getStatMenuItem() {
 
         if (statMenuItem != null) return statMenuItem;
-        statMenuItem = new JMenuItem(getClusterStatusWindowAction());
+        statMenuItem = new JMenuItem(getClusterStatusAction());
 
         return statMenuItem;
     }
@@ -2055,6 +1964,14 @@ public class MainWindow extends JFrame {
                   }
               } catch (IOException e) {
                   log.log(Level.WARNING, "onAuthSuccess()", e);
+              }
+              
+              securityProvider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+              if (securityProvider == null) {
+                  log.log(Level.WARNING, "Cannot obtain current SSM security provider");
+              } else {
+                  log.log(Level.FINEST, "Registering the connection listener " + securityProvider.getClass());
+                  addLogonListener(securityProvider);
               }
 
               ClusterStatusAdmin clusterStatusAdmin = (ClusterStatusAdmin)Locator.getDefault().lookup(ClusterStatusAdmin.class);

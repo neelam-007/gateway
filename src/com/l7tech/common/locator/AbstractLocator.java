@@ -194,8 +194,10 @@ public abstract class AbstractLocator extends Locator {
                     Object instance;
                     WeakReference ref = (WeakReference)instancesCache.get(this);
                     if (ref == null) {
-                        logger.finest("Cache lookup failed '"+itemInterface.getName()+"', creating new instance - type " + itemImplementation.getName());
                         Object o = createInstance();
+                        logger.finest("Cache lookup failed '"+itemInterface.getName()+"'" +
+                          "\nin " + instancesCache +
+                          "\ncreating new instance  " + o);
                         instancesCache.put(this, new WeakReference(o));
                         instance = o;
                     } else {
@@ -205,7 +207,7 @@ public abstract class AbstractLocator extends Locator {
                             instancesCache.remove(this);
                             return getInstance();
                         }
-//                        logger.finest("Cache lookup success, returns instance " +o);
+                        logger.finest("Cache lookup success, returns instance " +o);
                         instance = o;
                     }
                     return instance;
