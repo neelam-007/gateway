@@ -50,6 +50,8 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
             long res = getStub().saveGroup(config.getOid(), group);
             if (res > 0) group.setOid(res);
             return res;
+        } catch (UpdateException e) {
+            throw new SaveException(e.getMessage(), e);
         } catch (RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
@@ -58,6 +60,8 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
     public void update(Group group) throws UpdateException {
         try {
             getStub().saveGroup(config.getOid(), group);
+        } catch (SaveException e) {
+            throw new UpdateException(e.getMessage(), e);
         } catch (RemoteException e) {
             throw new UpdateException(e.getMessage(), e);
         }

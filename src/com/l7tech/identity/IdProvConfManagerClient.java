@@ -42,6 +42,8 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
             long res = getStub().saveIdentityProviderConfig(identityProviderConfig);
             identityProviderConfig.setOid(res);
             return res;
+        } catch (UpdateException e) {
+            throw new SaveException(e.getMessage(), e);
         } catch (RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }

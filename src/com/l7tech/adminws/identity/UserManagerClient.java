@@ -63,6 +63,8 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
             long res = getStub().saveUser(config.getOid(), user);
             if (res > 0) user.setOid(res);
             return res;
+        } catch (UpdateException e) { // because the stub uses same method for save and update
+            throw new SaveException(e.getMessage(), e);
         } catch (RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
@@ -72,6 +74,8 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         try {
             getStub().saveUser(config.getOid(), user);
         } catch (RemoteException e) {
+            throw new UpdateException(e.getMessage(), e);
+        } catch (SaveException e) { // because the stub uses same method for save and update
             throw new UpdateException(e.getMessage(), e);
         }
     }

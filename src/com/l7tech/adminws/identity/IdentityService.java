@@ -1,11 +1,13 @@
 package com.l7tech.adminws.identity;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.*;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.User;
+import com.l7tech.identity.InvalidIdProviderCfgException;
 
 import java.rmi.RemoteException;
 import java.rmi.Remote;
+import java.security.cert.CertificateEncodingException;
 
 /**
  * Class IdentityService.
@@ -14,41 +16,51 @@ import java.rmi.Remote;
 public interface IdentityService  extends Remote {
     String echoVersion() throws RemoteException;
 
-    EntityHeader[] findAllIdentityProviderConfig() throws RemoteException;
+    EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException;
 
-    EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize) throws RemoteException;
+    EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize)
+                                throws RemoteException, FindException;
 
-    IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws RemoteException;
+    IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws RemoteException, FindException;
 
-    long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig) throws RemoteException;
+    long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
+                                throws RemoteException, SaveException, UpdateException;
 
-    void deleteIdentityProviderConfig(long oid) throws RemoteException;
+    void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException;
 
-    EntityHeader[] findAllUsers(long identityProviderConfigId) throws RemoteException;
+    EntityHeader[] findAllUsers(long idProvCfgId) throws RemoteException, FindException;
 
-    EntityHeader[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize) throws RemoteException;
+    EntityHeader[] findAllUsersByOffset(long idProvCfgId, int offset, int windowSize)
+                                throws RemoteException, FindException;
 
-    EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern) throws RemoteException;
+    EntityHeader[] searchIdentities(long idProvCfgId, EntityType[] types, String pattern)
+                                throws RemoteException, FindException;
 
-    com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws RemoteException;
+    com.l7tech.identity.User findUserByPrimaryKey(long idProvCfgId, String userId)
+                                throws RemoteException, FindException;
 
-    void deleteUser(long identityProviderConfigId, String userId) throws RemoteException;
+    void deleteUser(long idProvCfgId, String userId) throws RemoteException, DeleteException;
 
-    long saveUser(long identityProviderConfigId, com.l7tech.identity.User user) throws RemoteException;
+    long saveUser(long idProvCfgId, User user) throws RemoteException, SaveException, UpdateException;
 
-    EntityHeader[] findAllGroups(long identityProviderConfigId) throws RemoteException;
+    EntityHeader[] findAllGroups(long idProvCfgId) throws RemoteException, FindException;
 
-    EntityHeader[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize) throws RemoteException;
+    EntityHeader[] findAllGroupsByOffset(long idProvCfgId, int offset, int windowSize)
+                                throws RemoteException, FindException;
 
-    com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, String groupId) throws RemoteException;
+    com.l7tech.identity.Group findGroupByPrimaryKey(long idProvCfgId, String groupId)
+                                throws RemoteException, FindException;
 
-    void deleteGroup(long identityProviderConfigId, String groupId) throws RemoteException;
+    void deleteGroup(long idProvCfgId, String groupId) throws RemoteException, DeleteException;
 
-    long saveGroup(long identityProviderConfigId, com.l7tech.identity.Group group) throws RemoteException;
+    long saveGroup(long idProvCfgId, com.l7tech.identity.Group group)
+                                throws RemoteException, SaveException, UpdateException;
 
-    String getUserCert(long identityProviderConfigId, String userId) throws RemoteException;
+    String getUserCert(long idProvCfgId, String userId)
+                                throws RemoteException, FindException, CertificateEncodingException;
 
-    void revokeCert(long identityProviderConfigId, String userId) throws RemoteException;
+    void revokeCert(long idProvCfgId, String userId) throws RemoteException, UpdateException;
 
-    void testIdProviderConfig(IdentityProviderConfig identityProviderConfig) throws RemoteException;
+    void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)
+                                throws RemoteException, InvalidIdProviderCfgException;
 }
