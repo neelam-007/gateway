@@ -19,10 +19,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.*;
 
 /**
  * @author alex
@@ -119,6 +116,7 @@ public class AllAssertions {
         new TrueAssertion(),
         new MemberOfGroup(),
         new SpecificUser(),
+        new RequestWssX509Cert(),
         new RequestWssIntegrity(),
         new RequestWssConfidentiality(),
         new ResponseWssIntegrity(),
