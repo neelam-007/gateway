@@ -20,6 +20,17 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
         return (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(new Long(oid));
     }
 
+    /**
+     * @param oid the identity provider id to look for
+     * @return the identoty provider for a given id, or <code>null</code>
+     * @throws FindException if there was an persistence error 
+     */
+    public IdentityProvider getIdentityProvider(long oid) throws FindException {
+        IdentityProviderConfig conf = findByPrimaryKey(oid);
+        if (conf == null) return null;
+        return makeProvider(conf);
+    }
+
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
         long oid = dataStore.nextObjectId();
         identityProviderConfig.setOid(oid);
@@ -54,7 +65,7 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
         while (i.hasNext()) {
             IdentityProviderConfig
               config = (IdentityProviderConfig)i.next();
-              providers.add(makeProvider(config));
+            providers.add(makeProvider(config));
         }
         return Collections.unmodifiableList(providers);
     }

@@ -9,6 +9,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.util.Enumeration;
+import java.util.logging.Logger;
 import java.beans.PropertyChangeListener;
 
 /**
@@ -16,6 +17,7 @@ import java.beans.PropertyChangeListener;
  * @version 1.0
  */
 public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
+    static Logger logger = Logger.getLogger(AbstractTreeNode.class.getName());
     protected boolean hasLoadedChildren;
     protected WeakPropertyChangeSupport propChangeSupport = new WeakPropertyChangeSupport();
 

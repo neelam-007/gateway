@@ -79,6 +79,19 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
         return output;
     }
 
+    /**
+     * @param oid the identity provider id to look for
+     * @return the identoty provider for a given id, or <code>null</code>
+     * @throws FindException if there was an persistence error
+     */
+    public IdentityProvider getIdentityProvider(long oid) throws FindException {
+        IdentityProviderConfig conf = findByPrimaryKey(oid);
+        if (conf == null) return null;
+        IdentityProvider provider = new IdentityProviderClient();
+        provider.initialize(conf);
+        return provider;
+    }
+
     public Collection findAllHeaders() throws FindException {
         com.l7tech.objectmodel.EntityHeader[] array = null;
         try {

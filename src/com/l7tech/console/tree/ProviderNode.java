@@ -1,11 +1,16 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.console.action.IdentityProviderPropertiesAction;
 import com.l7tech.console.action.FindIdentityAction;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityProvider;
 
 import javax.swing.*;
+import javax.swing.tree.MutableTreeNode;
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * The class represents an tree node gui node element that
@@ -45,7 +50,7 @@ public class ProviderNode extends EntityHeaderNode {
         list.add(new FindIdentityAction());
         list.addAll(Arrays.asList(super.getActions()));
 
-        return (Action[]) list.toArray(new Action[]{});
+        return (Action[])list.toArray(new Action[]{});
     }
 
     /**
@@ -57,14 +62,40 @@ public class ProviderNode extends EntityHeaderNode {
     }
 
     /**
-     * Returns the children of the reciever as an Enumeration.
-     *
-     * @return the Enumeration of the child nodes.
+     * Populates the children of the node.
      */
-    public Enumeration children() {
-        List list =
-          Arrays.asList(new AbstractTreeNode[]{});
-        return Collections.enumeration(list);
+    protected void loadChildren() {
+        long oid = getEntityHeader().getOid();
+        try {
+            IdentityProvider ip =
+              Registry.getDefault().getProviderConfigManager().getIdentityProvider(oid);
+            Enumeration children = Collections.enumeration(Collections.EMPTY_LIST);
+            if (ip == null) {
+                logger.warning("Error obtaining identity provider " + oid);
+            } else {
+                List list =
+                  Arrays.asList(new AbstractTreeNode[]{
+                      new UserFolderNode(ip.getUserManager(), oid, "Users"),
+                      new GroupFolderNode(ip.getGroupManager(), oid, "Groups")
+                  });
+                children = Collections.enumeration(list);
+            }
+            int index = 0;
+            for (; children.hasMoreElements();) {
+                insert((MutableTreeNode)children.nextElement(), index++);
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Error obtaining identity provider " + oid, e);
+        }
+    }
+
+    /**
+     * Returns true if the receiver is a leaf.
+     *
+     * @return true if leaf, false otherwise
+     */
+    public boolean isLeaf() {
+        return false;
     }
 
     public boolean getAllowsChildren() {

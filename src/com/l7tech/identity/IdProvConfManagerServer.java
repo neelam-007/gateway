@@ -1,12 +1,12 @@
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.*;
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.identity.ldap.LdapIdentityProviderServer;
+import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
-import java.util.ArrayList;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Layer 7 Technologies, inc.
@@ -38,12 +38,25 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
     }
 
     public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
-        if (oid == INTERNALPROVIDER_SPECIAL_OID) return internalProvider.getConfig();
-        else try {
-            return (IdentityProviderConfig)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
-        } catch ( SQLException se ) {
-            throw new FindException( se.toString(), se );
-        }
+        if (oid == INTERNALPROVIDER_SPECIAL_OID)
+            return internalProvider.getConfig();
+        else
+            try {
+                return (IdentityProviderConfig)_manager.findByPrimaryKey(getContext(), getImpClass(), oid);
+            } catch (SQLException se) {
+                throw new FindException(se.toString(), se);
+            }
+    }
+
+    /**
+     * @param oid the identity provider id to look for
+     * @return the identoty provider for a given id, or <code>null</code>
+     * @throws FindException if there was an persistence error 
+     */
+    public IdentityProvider getIdentityProvider(long oid) throws FindException {
+        IdentityProviderConfig conf = findByPrimaryKey(oid);
+        if (conf == null) return null;
+        return IdentityProviderFactory.makeProvider(conf);
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
@@ -60,9 +73,9 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         // we should not accept saving an internal type
         if (identityProviderConfig.type() != IdentityProviderType.LDAP) throw new UpdateException("this type of config cannot be updated");
         try {
-            _manager.update( getContext(), identityProviderConfig );
-        } catch ( SQLException se ) {
-            throw new UpdateException( se.toString(), se );
+            _manager.update(getContext(), identityProviderConfig);
+        } catch (SQLException se) {
+            throw new UpdateException(se.toString(), se);
         }
     }
 
@@ -75,10 +88,10 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
                 LdapIdentityProviderServer ldapProvider = (LdapIdentityProviderServer)prov;
                 ldapProvider.invalidate();
             }
-            
-            _manager.delete( getContext(), identityProviderConfig );
-        } catch ( SQLException se ) {
-            throw new DeleteException( se.toString(), se );
+
+            _manager.delete(getContext(), identityProviderConfig);
+        } catch (SQLException se) {
+            throw new DeleteException(se.toString(), se);
         }
     }
 
@@ -96,7 +109,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         // return collection of ldap ones and add the internal one
-        Collection out = new ArrayList(super.findAllHeaders(offset, windowSize-1));
+        Collection out = new ArrayList(super.findAllHeaders(offset, windowSize - 1));
         out.add(headerFromConfig(internalProvider.getConfig()));
         return out;
     }
@@ -137,6 +150,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         out.setType(EntityType.ID_PROVIDER_CONFIG);
         return out;
     }
+
     protected InternalIdentityProviderServer internalProvider;
 
 }

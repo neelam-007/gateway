@@ -15,4 +15,11 @@ public interface IdentityProviderConfigManager extends EntityManager {
     void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException;
     void delete( IdentityProviderConfig identityProviderConfig ) throws DeleteException;
     Collection findAllIdentityProviders() throws FindException;
+
+    /**
+     * @param oid the identity provider id to look for
+     * @return the identoty provider for a given id, or <code>null</code>
+     * @throws FindException if there was an persistence error
+     */
+    IdentityProvider getIdentityProvider(long oid) throws FindException;
 }
