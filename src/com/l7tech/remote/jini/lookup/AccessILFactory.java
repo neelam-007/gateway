@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class AccessILFactory extends BasicILFactory {
-    private static final Logger logger = Logger.getLogger(WebAppAnnotationClassProvider.class.getName());
+    private static final Logger logger = Logger.getLogger(AccessILFactory.class.getName());
 
     /**
      * Creates an <code>AccessILFactory</code>instance with no server
