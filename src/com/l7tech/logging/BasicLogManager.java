@@ -16,10 +16,6 @@ public class BasicLogManager extends LogManager {
         return java.util.logging.Logger.global;
     }
 
-    public LogRecord[] getRecorded(int offset, int size) {
-        return new LogRecord[0];
-    }
-
    /**
      * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
      * up to the specified size.

@@ -1,18 +1,14 @@
 package com.l7tech.logging;
 
-import com.l7tech.objectmodel.HibernatePersistenceContext;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Properties;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.logging.*;
-import java.sql.SQLException;
 
 /**
  * Instance of the log manager that is meant to be used on the server-side.<br/><br/>
@@ -42,15 +38,6 @@ public class ServerLogManager extends LogManager {
 
     public Logger getSystemLogger() {
         return systemLogger;
-    }
-
-    /**
-     * retrieve recent log entries.
-     * this is reset when the system restarts
-     */
-    public LogRecord[] getRecorded(int offset, int size) {
-        // todo, remove this
-        return new LogRecord[0];
     }
 
     /**
@@ -124,14 +111,9 @@ public class ServerLogManager extends LogManager {
     }
 
     private void setLogHandlers(Logger logger) {
-        /*// add custom memory handler
-        if (systemLogMemHandler == null) {
-            systemLogMemHandler = new MemHandler();
-        }
-        logger.addHandler(systemLogMemHandler);*/
 
-        // add a file handler
         try {
+            // add a file handler
             String pattern = getLogFilesPath();
             if (pattern.charAt(pattern.length()-1) != File.separatorChar) {
                 pattern += File.separator;
@@ -140,62 +122,23 @@ public class ServerLogManager extends LogManager {
             FileHandler fileHandler = new FileHandler(pattern, getLogFilesSizeLimit(), getLogFileNr());
             fileHandler.setFormatter(new SimpleFormatter());
             logger.addHandler(fileHandler);
-            if (startDbHandler()) {
-                pluginServerLogHandler(logger);
-            }
+            // add a suscriber handler
+            logger.addHandler(suscriberHandler);
         } catch (Throwable e) {
             System.err.println("can't set special handlers " + e.getMessage());
         }
+
+
     }
 
-    private void pluginServerLogHandler(Logger logger) {
-        final Logger targetLogger = logger;
-        // let the initialization of the logger finish
-        Thread delayedOperation = new Thread() {
-            public void run() {
-                if (dbHandler != null) return;
-                dbHandler = new ServerLogHandler();
-                boolean initialized = false;
-                int i = 0;
-                while (!initialized) {
-                    try {
-                        sleep(3000);
-                    } catch (InterruptedException e) {
-                        System.err.println("sleep interrupted " + e.getMessage());
-                    }
-                    try {
-                        HibernatePersistenceContext context = null;
-                        try {
-                            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-                        } catch (SQLException e) {
-                            System.err.println("cannot get persistence context " + e.getMessage());
-                            initialized = false;
-                            continue;
-                        }
-                        context.beginTransaction();
-                        dbHandler.initialize();
-                        context.commitTransaction();
-                        context.close();
-                        initialized = true;
-                        break;
-                    } catch (IllegalStateException e) {
-                        System.err.println("error initializing trying again: " + e.getMessage());
-                        initialized = false;
-                    } catch (TransactionException e) {
-                        System.err.println("transaction exception: " + e.getMessage() +
-                                           " server log handler cannot be initialized");
-                        return;
-                    }
-                    ++i;
-                    if (i > 3) {
-                        // give up after a while
-                        return;
-                    }
-                }
-                targetLogger.addHandler(dbHandler);
-            }
-        };
-        delayedOperation.start();
+    /**
+     * this should only be called once hibernate is initialized
+     */
+    public void suscribeDBHandler() {
+        if (dbHandler != null) return;
+        dbHandler = new ServerLogHandler();
+        dbHandler.initialize();
+        suscriberHandler.suscribe(dbHandler);
     }
 
     private Level getLevel() {
@@ -226,12 +169,6 @@ public class ServerLogManager extends LogManager {
                                " instead");
         }
         return path;
-    }
-
-    private boolean startDbHandler() {
-        String val = getProps().getProperty(START_DBHANDLER_PROP);
-        if (val == null) return false;
-        return Boolean.valueOf(val).booleanValue();
     }
 
     private int getLogFilesSizeLimit() {
@@ -298,4 +235,32 @@ public class ServerLogManager extends LogManager {
     private static final String SYSTEM_LOGGER_NAME = "com.l7tech.server.log";
     private ServerLogHandler dbHandler = null;
     private Properties props = null;
+
+    private class SuscriberHandler extends Handler {
+        public void publish(LogRecord record) {
+            for (Iterator i = suckers.iterator(); i.hasNext(); ) {
+                ((Handler)i.next()).publish(record);
+            }
+        }
+
+        public void flush() {
+            for (Iterator i = suckers.iterator(); i.hasNext(); ) {
+                ((Handler)i.next()).flush();
+            }
+        }
+
+        public void close() throws SecurityException {
+            for (Iterator i = suckers.iterator(); i.hasNext(); ) {
+                ((Handler)i.next()).close();
+            }
+        }
+
+        public synchronized void suscribe(Handler sucker) {
+            if (!suckers.contains(sucker)) {
+                suckers.add(sucker);
+            }
+        }
+        private final ArrayList suckers = new ArrayList();
+    }
+    private final SuscriberHandler suscriberHandler = new SuscriberHandler();
 }

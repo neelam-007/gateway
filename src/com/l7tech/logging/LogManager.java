@@ -21,7 +21,6 @@ public abstract class LogManager {
         return SingletonHolder.singleton;
     }
     public abstract Logger getSystemLogger();
-    public abstract LogRecord[] getRecorded(int offset, int size);
 
 
   /**
