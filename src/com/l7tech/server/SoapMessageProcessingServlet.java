@@ -29,6 +29,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String CONTENT_TYPE = "text/xml; charset=utf-8";
     public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco.modulator?serviceoid=";
+    public static final String ENCODING = "UTF-8";
 
     public void init( ServletConfig config ) throws ServletException {
         super.init(config);
@@ -36,7 +37,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     public void doGet( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
         response.setContentType( "text/html" );
-        response.sendError( 501, "GET not supported" );
+        response.setStatus( HttpServletResponse.SC_METHOD_NOT_ALLOWED );
         PrintWriter out = response.getWriter();
         out.println( "<html>" );
         out.println( "<head><title>GET not supported!</title></head>" );
@@ -51,7 +52,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         // TODO: SOAP-with-attachments!
 
-        BufferedInputStream protRespStream = null;
+        BufferedWriter respWriter = null;
         OutputStream respStream = null;
         try {
             try {
@@ -63,16 +64,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, stat.getSoapFaultCode(), stat.getMessage() );
                 } else {
                     hresponse.setContentType( CONTENT_TYPE );
-                    protRespStream = new BufferedInputStream( sresp.getProtectedResponseStream() );
-                    respStream = hresponse.getOutputStream();
 
-                    byte[] buf = new byte[4096];
-                    int num;
+                    String protRespXml = sresp.getResponseXml();
+                    respWriter = new BufferedWriter( new OutputStreamWriter( hresponse.getOutputStream(), ENCODING ) );
 
-                    while ( ( num = protRespStream.read( buf ) ) != -1 )
-                        respStream.write( buf, 0, num );
+                    respWriter.write( protRespXml );
                 }
-
             } catch ( PolicyAssertionException pae ) {
                 _log.error( pae );
                 sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString() );
@@ -83,7 +80,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } catch ( SOAPException se ) {
             _log.error( se );
         } finally {
-            if ( protRespStream != null ) protRespStream.close();
+            if ( respWriter != null ) respWriter.close();
             if ( respStream != null ) respStream.close();
             if ( sresp != null ) sresp.close();
         }
