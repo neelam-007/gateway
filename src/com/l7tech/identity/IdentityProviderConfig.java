@@ -1,12 +1,11 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Set;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.Serializable;
-
 
 /**
  * User: flascell
