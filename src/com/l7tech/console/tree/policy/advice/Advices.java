@@ -52,7 +52,7 @@ public class Advices {
                 }
             }
             if (advices.isEmpty()) {
-                advices.add(new UnknonwnAssertion(assertion));
+                advices.add(new UnknonwnAssertion());
             }
             return (Advice[])advices.toArray(new Advice[]{});
         } catch (Exception e) {
@@ -65,10 +65,7 @@ public class Advices {
      * the class UnknonwnAssertionAdvice is a 'null object' advice
      */
     static class UnknonwnAssertion implements Advice {
-        private Assertion assertion;
-
-        public UnknonwnAssertion(Assertion assertion) {
-            this.assertion = assertion;
+        public UnknonwnAssertion() {
         }
 
         /**
