@@ -114,6 +114,14 @@ if [ -e "$WEB_XML_FILE" ]; then
         SUBSTITUTE_TO=$SUBSTITUTE_TO${KEYSTORE_PASSWORD}
         SUBSTITUTE_TO=$SUBSTITUTE_TO'\<\/param-value\>'
         perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$WEB_XML_FILE"
+        echo "Recording the location of the root cert in web.xml"
+        # fla: can anyone read this next line ? ;^) I am substituing the char '/' for '\/' because this is a path
+        CERT_FILE_WITH_SLASH_SUBSTITUTED=${CERTIFICATE_FILE_OSPATH//\//\\\/}
+        SUBSTITUTE_FROM='RootCertLocation\<\/env-entry-name\>\s*\<env-entry-value\>.*\<\/env-entry-value\>'
+        SUBSTITUTE_TO='RootCertLocation\<\/env-entry-name\>\<env-entry-value\>'
+        SUBSTITUTE_TO=$SUBSTITUTE_TO$CERT_FILE_WITH_SLASH_SUBSTITUTED
+        SUBSTITUTE_TO=$SUBSTITUTE_TO'\<\/env-entry-value\>'
+        perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$WEB_XML_FILE"
 else
 # INFORM THE USER OF THE FAILURE
         echo "ERROR"
