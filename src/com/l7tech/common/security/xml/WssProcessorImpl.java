@@ -169,6 +169,21 @@ public class WssProcessorImpl implements WssProcessor {
                     logger.info("Encountered DerivedKey element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
+            } else if (securityChildToProcess.getLocalName().equals("ReferenceList")) {
+                // In the case of a Secure Conversation the reference list is declared outside
+                // of the DerivedKeyToken
+                if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.XMLENC_NS)) {
+
+
+
+                    // todo
+                    throw new ProcessorException("ReferenceList handling not yet supported.");
+
+
+                } else {
+                    logger.info("Encountered ReferenceList element but not of expected namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ")");
+                }
             } else {
                 // Unhandled child elements of the Security Header
                 String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace,
