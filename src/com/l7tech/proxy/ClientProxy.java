@@ -35,7 +35,7 @@ public class ClientProxy {
      * Create a ClientProxy with the specified settings.
      * @param ssgFinder provides the list of SSGs to which we are proxying.
      */
-    ClientProxy(final SsgFinder ssgFinder, final MessageProcessor messageProcessor,
+    public ClientProxy(final SsgFinder ssgFinder, final MessageProcessor messageProcessor,
                 final int bindPort, final int minThreads, final int maxThreads) {
         this.ssgFinder = ssgFinder;
         this.messageProcessor = messageProcessor;
