@@ -477,7 +477,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               (PolicyValidatorResult.Error)iterator.next();
             appendToMessageArea(getValidateMessageIntro(pe)
               +
-              "</a>" + " Error :" + pe.getMessage() + "");
+              "</a>" + " Error: " + pe.getMessage() + "");
         }
         for (Iterator iterator = r.getWarnings().iterator();
              iterator.hasNext();) {
@@ -485,7 +485,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               (PolicyValidatorResult.Warning)iterator.next();
             appendToMessageArea(getValidateMessageIntro(pe)
               +
-              " Warning :" + pe.getMessage() + "");
+              " Warning: " + pe.getMessage() + "");
         }
         if (r.getErrors().isEmpty() && r.getWarnings().isEmpty()) {
             appendToMessageArea("<i>Policy validated ok.</i>");
@@ -532,7 +532,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private String getValidateMessageIntro(PolicyValidatorResult.Message pe) {
         String msg = null;
         if (pe.getAssertion() != null) {
-            msg = "Assertion : " +
+            msg = "Assertion: " +
               "<a href=\"file://assertion#" +
               pe.getAssertion().hashCode() + "\">" +
               Descriptions.getDescription(pe.getAssertion()).getShortDescription() + "</a>";
