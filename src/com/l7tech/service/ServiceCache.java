@@ -1,28 +1,26 @@
 package com.l7tech.service;
 
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
+import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.server.PeriodicExecutor;
-import com.l7tech.server.PeriodicTask;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.resolution.NameValueServiceResolver;
 import com.l7tech.service.resolution.ServiceResolutionException;
 import com.l7tech.service.resolution.SoapActionResolver;
 import com.l7tech.service.resolution.UrnResolver;
-import com.l7tech.common.util.Locator;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
-import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 
 /**
  * Contains cached services, with corresponding pre-parsed server-side policies and
@@ -39,7 +37,7 @@ import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
  * Date: Nov 26, 2003<br/>
  * $Id$
  */
-public class ServiceCache implements PeriodicTask {
+public class ServiceCache {
 
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
     //public static final long INTEGRITY_CHECK_FREQUENCY = 10;
@@ -51,10 +49,17 @@ public class ServiceCache implements PeriodicTask {
         return SingletonHolder.singleton;
     }
 
-    public ServiceCache() {
-        // uncomment next two lines to turn on the periodic cache integrity check
-        checker.setDaemon(true); // this thread should not prevent the VM from exiting
-        checker.start();
+    public synchronized void initiateIntegrityCheckProcess() {
+        if (!running) {
+            final ServiceCache tasker = this;
+            TimerTask task = new TimerTask() {
+                public void run() {
+                    tasker.checkIntegrity();
+                }
+            };
+            checker.schedule(task, INTEGRITY_CHECK_FREQUENCY, INTEGRITY_CHECK_FREQUENCY);
+            running = true;
+        }
     }
 
     /**
@@ -380,17 +385,10 @@ public class ServiceCache implements PeriodicTask {
     }
 
     public void destroy() {
-        checker.die();
+        checker.cancel();
     }
 
-    public long getFrequency() {
-        return INTEGRITY_CHECK_FREQUENCY;
-    }
-
-    /**
-     * this is called by the PeriodicExecutor thread
-     */
-    public void run() {
+    public void checkIntegrity() {
         Sync ciReadLock = rwlock.readLock();
         try {
             ciReadLock.acquire();
@@ -536,6 +534,8 @@ public class ServiceCache implements PeriodicTask {
 
     private final Logger logger = LogManager.getInstance().getSystemLogger();
 
-    private final PeriodicExecutor checker = new PeriodicExecutor( this );
+    //private final PeriodicExecutor checker = new PeriodicExecutor( this );
+    private final Timer checker = new Timer(true);
+    private boolean running = false;
     private ServiceManagerImp serviceManager;
 }
