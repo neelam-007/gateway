@@ -171,17 +171,12 @@ public class WssDecoratorImpl implements WssDecorator {
 
         CipherData cipherData = new CipherData();
         cipherData.setCipherValue(new CipherValue());
-        KeyInfo keyInfo = new KeyInfo();
-        KeyName kn = new KeyName();
-        kn.setName("thekey");
-        keyInfo.addKeyName(kn);
 
         EncryptionMethod encMethod = new EncryptionMethod();
         encMethod.setAlgorithm(EncryptionMethod.AES128_CBC);
         EncryptedData encData = new EncryptedData();
         encData.setCipherData(cipherData);
         encData.setEncryptionMethod(encMethod);
-        encData.setKeyInfo(keyInfo);
         Element encDataElement = null;
         try {
             encDataElement = encData.createElement(soapMsg, true);
@@ -210,7 +205,8 @@ public class WssDecoratorImpl implements WssDecorator {
             throw new CausedDecoratorException(e); // shouldn't happen
         }
 
-        return ec.getEncryptedTypeAsElement();
+        Element encryptedData = ec.getEncryptedTypeAsElement();
+        return encryptedData;
     }
 
     /**
