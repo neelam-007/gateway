@@ -1,25 +1,28 @@
 package com.l7tech.identity.cert;
 
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.identity.User;
-import com.l7tech.identity.BadCredentialsException;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.objectmodel.*;
+import com.l7tech.common.util.Locator;
+import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.AuthenticatableHttpServlet;
+import sun.security.x509.X500Name;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
-import javax.servlet.ServletConfig;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Level;
-import java.util.List;
 import java.sql.SQLException;
-import sun.security.x509.X500Name;
+import java.util.List;
+import java.util.logging.Level;
 
 
 /**
@@ -49,6 +52,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
         // make sure we come in through ssl
         if (!request.isSecure()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR requests must come through ssl port");
@@ -61,109 +65,116 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             return;
         }
 
-        // Authentication
-        List users = null;
+        PersistenceContext pc = null;
+
         try {
-            users = authenticateRequestBasic(request);
-        } catch (IOException e) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "authentication error");
-            logger.log(Level.SEVERE, "Failed authentication", e);
-            return;
-        } catch (BadCredentialsException e) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
-            logger.log(Level.SEVERE, "Failed authentication", e);
-            return;
-        }
-        if (users == null || users.size() < 1) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
-            logger.warning("CSR Handler called without credentials");
-            return;
-        } else if (users.size() > 1) {
-            String msg = "Ambiguous authentication - credentials valid in more than one identity provider.";
-            response.sendError(HttpServletResponse.SC_CONFLICT, msg);
-            logger.warning(msg);
-            return;
-        }
-        User authenticatedUser = null;
-        authenticatedUser = (User)users.get(0);
-
-        ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
-        if (!man.userCanGenCert(authenticatedUser)) {
-            logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
-                                        " Contact your administrator for more info.");
-            return;
-        }
-
-        byte[] csr = readCSRFromRequest(request);
-        Certificate cert = null;
-
-        // sign request
-        try {
-            cert = sign(csr);
-        } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            return;
-        }
-
-        // record new cert
-        try {
-            PersistenceContext.getCurrent().beginTransaction();
-            man.recordNewUserCert(authenticatedUser, cert);
-        } catch (UpdateException e) {
-            String msg = "Could not record cert. " + e.getMessage();
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
-            logger.log(Level.SEVERE, msg, e);
-            return;
-        } catch (SQLException e) {
-            String msg = "Could not record cert. " + e.getMessage();
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
-            logger.log(Level.SEVERE, msg, e);
-            return;
-        } catch (TransactionException e) {
-            String msg = "Could not record cert. " + e.getMessage();
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
-            logger.log(Level.SEVERE, msg, e);
-            return;
-        } finally {
+            // Authentication
+            List users = null;
             try {
-                PersistenceContext.getCurrent().flush();
-                PersistenceContext.getCurrent().close();
-            } catch (SQLException e) {
-                logger.log(Level.WARNING, "exception flushing context", e);
-            } catch (ObjectModelException e) {
-                logger.log(Level.WARNING, "exception flushing context", e);
+                pc = PersistenceContext.getCurrent();
+                users = authenticateRequestBasic(request);
+            } catch (IOException e) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "authentication error");
+                logger.log(Level.SEVERE, "Failed authentication", e);
+                return;
+            } catch (BadCredentialsException e) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
+                logger.log(Level.SEVERE, "Failed authentication", e);
+                return;
+            } catch ( SQLException se ) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "authentication error");
+                logger.log(Level.SEVERE, "Failed authentication", se);
+                return;
             }
-        }
 
-        // verify that the CN in the subject equals the login name
-        X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
-        if (!x500name.getCommonName().equals(authenticatedUser.getLogin())) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN,
-                               "You cannot scr for a subject different than " +
-                                authenticatedUser.getLogin());
-            logger.log(Level.SEVERE, "User " +
-                                     authenticatedUser.getLogin() +
-                                     " tried to csr for subject other than self (" +
-                                     x500name.getCommonName() + ")");
-            return;
-        }
+            if (users == null || users.size() < 1) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
+                logger.warning("CSR Handler called without credentials");
+                return;
+            } else if (users.size() > 1) {
+                String msg = "Ambiguous authentication - credentials valid in more than one identity provider.";
+                response.sendError(HttpServletResponse.SC_CONFLICT, msg);
+                logger.warning(msg);
+                return;
+            }
 
-        // send cert back
-        try {
-            byte[] certbytes = cert.getEncoded();
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.setContentType("application/x-x509-ca-cert");
-            response.setContentLength(certbytes.length);
-            response.getOutputStream().write(certbytes);
-            response.flushBuffer();
-            logger.fine("sent new cert to user " + authenticatedUser.getLogin() +
-                        ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
-        } catch (CertificateEncodingException e) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            return;
+            User authenticatedUser = null;
+            authenticatedUser = (User)users.get(0);
+
+            ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+            if (!man.userCanGenCert(authenticatedUser)) {
+                logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
+                                            " Contact your administrator for more info.");
+                return;
+            }
+
+            byte[] csr = readCSRFromRequest(request);
+            Certificate cert = null;
+
+            // sign request
+            try {
+                cert = sign(csr);
+            } catch (Exception e) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                return;
+            }
+
+            // record new cert
+            try {
+                pc.beginTransaction();
+                man.recordNewUserCert(authenticatedUser, cert);
+            } catch (UpdateException e) {
+                String msg = "Could not record cert. " + e.getMessage();
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+                logger.log(Level.SEVERE, msg, e);
+                return;
+            } catch (TransactionException e) {
+                String msg = "Could not record cert. " + e.getMessage();
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+                logger.log(Level.SEVERE, msg, e);
+                return;
+            } finally {
+                try {
+                    pc.commitTransaction();
+                } catch (TransactionException te) {
+                    logger.log(Level.WARNING, "exception committing new cert update", te);
+                } catch (ObjectModelException e) {
+                    logger.log(Level.WARNING, "exception committing cert update", e);
+                }
+            }
+
+            // verify that the CN in the subject equals the login name
+            X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
+            if (!x500name.getCommonName().equals(authenticatedUser.getLogin())) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                                   "You cannot scr for a subject different than " +
+                                    authenticatedUser.getLogin());
+                logger.log(Level.SEVERE, "User " +
+                                         authenticatedUser.getLogin() +
+                                         " tried to csr for subject other than self (" +
+                                         x500name.getCommonName() + ")");
+                return;
+            }
+
+            // send cert back
+            try {
+                byte[] certbytes = cert.getEncoded();
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentType("application/x-x509-ca-cert");
+                response.setContentLength(certbytes.length);
+                response.getOutputStream().write(certbytes);
+                response.flushBuffer();
+                logger.fine("sent new cert to user " + authenticatedUser.getLogin() +
+                            ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
+            } catch (CertificateEncodingException e) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                return;
+            }
+        } finally {
+            if ( pc != null ) pc.close();
         }
     }
 

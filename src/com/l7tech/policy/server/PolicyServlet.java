@@ -59,112 +59,128 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
             throws ServletException, IOException {
-        // GET THE PARAMETERS PASSED
-        String str_oid = httpServletRequest.getParameter(PARAM_SERVICEOID);
-        String getCert = httpServletRequest.getParameter(PARAM_GETCERT);
-        String username = httpServletRequest.getParameter(PARAM_USERNAME);
-        String nonce = httpServletRequest.getParameter(PARAM_NONCE);
-
-        // See if it's actually a certificate download request
-        if (getCert != null) {
-            if (nonce == null)
-                throw new ServletException("Unable to fulfil cert request: a nonce is required");
-            if (username == null)
-                throw new ServletException("Unable to fulfil cert request: a username is required");
-            try {
-                doCertDownload(httpServletResponse, username, nonce);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to fulfil certificate discovery request", e);
-                throw new ServletException("Unable to fulfil cert request", e);
-            }
-            return;
-        }
-
-        // RESOLVE THE PUBLISHED SERVICE
-        PublishedService targetService = null;
-        if ( str_oid == null || str_oid.length() == 0 ) {
-            String err = PARAM_SERVICEOID + " parameter is required";
-            logger.warning( err );
-            httpServletResponse.sendError( HttpServletResponse.SC_INTERNAL_SERVER_ERROR, err );
-            return;
-        } else {
-            targetService = resolveService(Long.parseLong(str_oid));
-        }
-
-        if (targetService == null) {
-            String err = "Incomplete request or service does not exist.";
-            logger.warning( err );
-            httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND, err );
-            return;
-        }
-
-        // BEFORE SENDING BACK THIS POLICY, WE NEED TO DECIDE IF THE REQUESTOR IS ALLOWED TO SEE IT
-        // if policy does not allow anonymous access, then it should not be accessible through http
-        boolean anonymousok = policyAllowAnonymous(targetService);
-        if (!anonymousok && !httpServletRequest.isSecure()) {
-            // send error back axing to come back through ssl
-            String newUrl = "https://"  + httpServletRequest.getServerName();
-            if (httpServletRequest.getServerPort() == 8080) newUrl += ":8443";
-            newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
-            httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
-            httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-                                          "Request must come through SSL. " + newUrl);
-            logger.info("Non-anonymous policy requested on in-secure channel (http). " +
-                        "Sending 401 back with secure URL to requestor: " + newUrl);
-            return;
-        }
-        // get credentials and check that they are valid for this policy
-        List users;
+        PersistenceContext pc = null;
         try {
-            users = authenticateRequestBasic(httpServletRequest);
-        } catch (BadCredentialsException e) {
-            logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
-            httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
-            return;
-        }
-        if (!anonymousok) {
-            if ( users == null || users.isEmpty() ) {
-                // send error back with a hint that credentials should be provided
-                String newUrl = "https://"  + httpServletRequest.getServerName();
-                if (httpServletRequest.getServerPort() == 8080 || httpServletRequest.getServerPort() == 8443) {
-                    newUrl += ":8443";
+            // GET THE PARAMETERS PASSED
+            String str_oid = httpServletRequest.getParameter(PARAM_SERVICEOID);
+            String getCert = httpServletRequest.getParameter(PARAM_GETCERT);
+            String username = httpServletRequest.getParameter(PARAM_USERNAME);
+            String nonce = httpServletRequest.getParameter(PARAM_NONCE);
+
+            pc = PersistenceContext.getCurrent();
+
+            // See if it's actually a certificate download request
+            if (getCert != null) {
+                if (nonce == null)
+                    throw new ServletException("Unable to fulfil cert request: a nonce is required");
+                if (username == null)
+                    throw new ServletException("Unable to fulfil cert request: a username is required");
+                try {
+                    doCertDownload(httpServletResponse, username, nonce);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Unable to fulfil certificate discovery request", e);
+                    throw new ServletException("Unable to fulfil cert request", e);
                 }
-                newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
-                httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
-                httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Must provide valid credentials.");
                 return;
             }
-        }
 
-        // THE POLICY SHOULD BE STRIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
-        // (this may be everything, if the user has no business seeing this policy)
-        try {
-            // finer, not logged by default. change log level in web.xml to see these
-            for (Iterator i = users.iterator(); i.hasNext();) {
-                User user = (User) i.next();
-
-                logger.finer("Policy before filtering: " + targetService.getPolicyXml());
-                targetService = FilterManager.getInstance().applyAllFilters(user, targetService);
-                // finer, not logged by default. change log level in web.xml to see these
-                logger.finer("Policy after filtering: " +
-                             ((targetService == null) ? "null" : targetService.getPolicyXml()));
-
-                if ( targetService != null ) break;
+            // RESOLVE THE PUBLISHED SERVICE
+            PublishedService targetService = null;
+            if ( str_oid == null || str_oid.length() == 0 ) {
+                String err = PARAM_SERVICEOID + " parameter is required";
+                logger.warning( err );
+                httpServletResponse.sendError( HttpServletResponse.SC_INTERNAL_SERVER_ERROR, err );
+                return;
+            } else {
+                targetService = resolveService(Long.parseLong(str_oid));
             }
 
             if (targetService == null) {
-                logger.warning("requestor tried to download policy that " +
-                               "he should not be allowed to see - will return error");
+                String err = "Incomplete request or service does not exist.";
+                logger.warning( err );
+                httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND, err );
+                return;
             }
-        } catch (FilteringException e) {
-            logger.log(Level.SEVERE, "Could not filter policy", e);
-            httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                                          "Could not process policy. Consult server logs.");
-            return;
-        }
 
-        // OUTPUT THE POLICY
-        outputPublishedServicePolicy(targetService, httpServletResponse);
+            // BEFORE SENDING BACK THIS POLICY, WE NEED TO DECIDE IF THE REQUESTOR IS ALLOWED TO SEE IT
+            // if policy does not allow anonymous access, then it should not be accessible through http
+            boolean anonymousok = policyAllowAnonymous(targetService);
+            if ( !anonymousok && !httpServletRequest.isSecure()) {
+                // send error back axing to come back through ssl
+                String newUrl = "https://"  + httpServletRequest.getServerName();
+                if (httpServletRequest.getServerPort() == 8080) newUrl += ":8443";
+                newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
+                httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
+                httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+                                              "Request must come through SSL. " + newUrl);
+                logger.info("Non-anonymous policy requested on in-secure channel (http). " +
+                            "Sending 401 back with secure URL to requestor: " + newUrl);
+                return;
+            }
+
+            // get credentials and check that they are valid for this policy
+            List users;
+            try {
+                users = authenticateRequestBasic(httpServletRequest);
+            } catch (BadCredentialsException e) {
+                logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
+                httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+                return;
+            }
+
+            if (!anonymousok) {
+                if ( users == null || users.isEmpty() ) {
+                    // send error back with a hint that credentials should be provided
+                    String newUrl = "https://"  + httpServletRequest.getServerName();
+                    if (httpServletRequest.getServerPort() == 8080 || httpServletRequest.getServerPort() == 8443) {
+                        newUrl += ":8443";
+                    }
+                    newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
+                    httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
+                    httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Must provide valid credentials.");
+                    return;
+                }
+            }
+
+            // THE POLICY SHOULD BE STRIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
+            // (this may be everything, if the user has no business seeing this policy)
+            try {
+                if ( !anonymousok ) {
+                    for (Iterator i = users.iterator(); i.hasNext();) {
+                        User user = (User) i.next();
+
+                        // finer, not logged by default. change log level in web.xml to see these
+                        logger.finer("Policy before filtering: " + targetService.getPolicyXml());
+                        PublishedService tempService = FilterManager.getInstance().applyAllFilters(user, targetService);
+                        // finer, not logged by default. change log level in web.xml to see these
+                        logger.finer("Policy after filtering: " +
+                                     ((tempService == null) ? "null" : tempService.getPolicyXml()));
+
+                        if ( tempService != null ) {
+                            targetService = tempService;
+                            break;
+                        }
+                    }
+
+                    if (targetService == null) {
+                        logger.warning("requestor tried to download policy that " +
+                                       "he should not be allowed to see - will return error");
+                    }
+                }
+            } catch (FilteringException e) {
+                logger.log(Level.SEVERE, "Could not filter policy", e);
+                httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                                              "Could not process policy. Consult server logs.");
+                return;
+            }
+
+            // OUTPUT THE POLICY
+            outputPublishedServicePolicy(targetService, httpServletResponse);
+        } catch (SQLException e) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+        } finally {
+            if ( pc != null ) pc.close();
+        }
     }
 
     /**
