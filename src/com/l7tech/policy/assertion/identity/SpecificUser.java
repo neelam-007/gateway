@@ -23,7 +23,7 @@ import org.apache.log4j.Category;
  */
 public class SpecificUser extends IdentityAssertion {
     public SpecificUser( IdentityProvider provider, Principal user ) {
-        super( provider );
+        super( provider.getConfig().getOid() );
         _user = user;
     }
 
