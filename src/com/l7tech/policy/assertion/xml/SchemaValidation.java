@@ -46,11 +46,7 @@ public class SchemaValidation extends Assertion {
         Element schemaEl = extractSchemaElementFromWsdl(wsdl);
         if (schemaEl == null) throw new IllegalArgumentException("this wsdl document does not contain a" +
                                                                  "schema to validate against");
-        try {
-            schema = XmlUtil.elementToXml(schemaEl);
-        } catch (ParserConfigurationException e) {
-            throw new IOException("could not serialize the schema in the wsdl " + e.getMessage());
-        }
+        schema = XmlUtil.elementToXml(schemaEl);
     }
 
     private Element extractSchemaElementFromWsdl(Document wsdl)  {
