@@ -93,6 +93,7 @@ public abstract class PropertyDialog extends JDialog {
                                                     GridBagConstraints.NONE,
                                                     new Insets(0, 5, 5, 5),
                                                     0, 0));
+        getRootPane().setDefaultButton(getOkButton());
     }
 
     /** Get the OK button. */
