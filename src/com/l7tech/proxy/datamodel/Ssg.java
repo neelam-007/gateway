@@ -2,6 +2,7 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.common.security.xml.Session;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -28,17 +29,15 @@ import java.lang.ref.WeakReference;
 public class Ssg implements Serializable, Cloneable, Comparable {
     private static final Category log = Category.getInstance(Ssg.class);
     private static final String SSG_PROTOCOL = "http";
-    private static final String SSG_FILE = "/ssg/servlet/soap";
     private static final int SSG_SSL_PORT = 8443;
     private static final int SSG_PORT = 8080;
     private static final String KEY_FILE = ClientProxy.PROXY_CONFIG + File.separator + "keyStore";
-    private static final String CERT_REQUEST_FILE = "/ssg/csr";
 
     private long id = 0;
     private String localEndpoint = null;
     private String ssgAddress = "";
     private int ssgPort = SSG_PORT;
-    private String ssgFile = SSG_FILE;
+    private String ssgFile = SecureSpanConstants.SSG_FILE;
     private int sslPort = SSG_SSL_PORT;
     private String username = null;
     private boolean defaultSsg = false;
@@ -329,7 +328,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     public URL getServerCertRequestUrl() {
         URL url = null;
         try {
-            url = new URL("https", getSsgAddress(), getSslPort(), CERT_REQUEST_FILE);
+            url = new URL("https", getSsgAddress(), getSslPort(), SecureSpanConstants.CERT_REQUEST_FILE);
         } catch (MalformedURLException e) {
             log.error(e);
             try {

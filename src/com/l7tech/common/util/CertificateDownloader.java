@@ -64,8 +64,6 @@ import java.util.Map;
  */
 public class CertificateDownloader {
     public static final Category log = Category.getInstance(CertificateDownloader.class);
-    public static final String CERT_PATH = "/ssg/policy/disco.modulator";
-
     private static final int CHECK_PREFIX_LENGTH = SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX.length();
 
     private String username = null;
@@ -111,7 +109,7 @@ public class CertificateDownloader {
 
     public void setSsgUrl(URL ssgUrl) {
         try {
-            this.ssgUrl = new URL(ssgUrl.getProtocol(), ssgUrl.getHost(), ssgUrl.getPort(), CERT_PATH);
+            this.ssgUrl = new URL(ssgUrl.getProtocol(), ssgUrl.getHost(), ssgUrl.getPort(), SecureSpanConstants.CERT_PATH);
         } catch (MalformedURLException e) {
             // can't happen
         }

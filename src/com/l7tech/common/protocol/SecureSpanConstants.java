@@ -7,6 +7,8 @@
 package com.l7tech.common.protocol;
 
 /**
+ * Holds the constants needed for communication between Agent, Console and Gateway, and provides some
+ * documentation of the protocols used.
  *
  * User: mike
  * Date: Sep 2, 2003
@@ -14,11 +16,35 @@ package com.l7tech.common.protocol;
  */
 public class SecureSpanConstants {
 
-    /** The HTTP user agent sent by the current version of the Client Proxy. */
+    /** The HTTP user agent sent by the current version of the Agent. */
     public static final String USER_AGENT = "L7 Agent; Protocol v1.0";
 
     /** The MIME type of the X.509 certificate sent by the certificate discovery server. */
     public static final String CERTIFICATE_MIME_TYPE = "application/x-x509-ca-cert";
+
+    /**
+     * The filename portion of the URL of the message processing service on the Gateway.
+     */
+    public static final String SSG_FILE = "/ssg/servlet/soap";
+
+    /**
+     * The  filename portion of the URL of the certificate discovery server on the Gateway.
+     * This is the service that clients (Agent or Console) can use to download the Gateway's CA cert
+     * over unencrypted HTTP, while remaining confident that it arrived unmodified and was
+     * transmitted by someone able to prove that they know the client's password.
+     */
+    public static final String CERT_PATH = "/ssg/policy/disco.modulator";
+
+    /**
+     * The filename portion of the URL of the certificate signing service on the Gateway.
+     * This is the service that clients (currently just the Agent) can use to obtain a new client certificate.
+     * The client must post an encoded PKCS10CertificationRequest to this url, over SSL, and providing
+     * a valid username and password using HTTP Basic authentication.  After verifying that the credentials
+     * are correct, the user is permitted to obtain a certificate, and that the CSR is in the correct format
+     * (with the proper username), this service will sign the CSR and return the new client certificate in
+     * the response.
+     */
+    public static final String CERT_REQUEST_FILE = "/ssg/csr";
 
     public static class HttpHeaders {
         /**
