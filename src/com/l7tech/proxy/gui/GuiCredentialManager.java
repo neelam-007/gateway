@@ -9,14 +9,17 @@ package com.l7tech.proxy.gui;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.gui.dialogs.LogonDialog;
+import com.l7tech.proxy.gui.dialogs.PleaseWaitDialog;
+import com.l7tech.proxy.gui.dialogs.TrustCertificateDialog;
 import com.l7tech.proxy.util.ClientLogger;
 
-import javax.swing.*;
 import javax.security.auth.x500.X500Principal;
+import javax.swing.*;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.PasswordAuthentication;
@@ -273,6 +276,22 @@ public class GuiCredentialManager extends CredentialManager {
 
             }
         });
+    }
+
+    public void notifySsgCertificateUntrusted(Ssg ssg, final X509Certificate certificate) throws OperationCanceledException {
+        String mess = "The authenticity of this Gateway server certificate could not be verified using the " +
+                "current username and password.  Do you wish to trust the Gateway using this server certificate?  " +
+                "If you don't know, click Cancel.";
+        final TrustCertificateDialog tcd = new TrustCertificateDialog(certificate,
+                                                                      "Trust this Gateway certificate?",
+                                                                      mess);
+        invokeDialog(new Runnable() {
+            public void run() {
+                tcd.show();
+            }
+        });
+        if (!tcd.isTrusted())
+            throw new OperationCanceledException("The downloaded Gateway server certificate could not be verified with the current username and password.");
     }
 
     private PleaseWaitDialog getPleaseWaitDialog() {

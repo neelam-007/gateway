@@ -359,12 +359,17 @@ public class ClientProxy {
                                                              pw.getUserName(),
                                                              pw.getPassword());
 
-        if (cd.downloadCertificate()) {
-            SsgKeyStoreManager.saveSsgCertificate(ssg, (X509Certificate) cd.getCertificate());
-            return; // Success.
+        boolean isValidated = cd.downloadCertificate();
+        if (!isValidated) {
+            if (cd.isUserUnknown()) {
+                // We got no cert-check headers, so this might be an LDAP user.  Prompt for manual
+                // certificate verification.
+                Managers.getCredentialManager().notifySsgCertificateUntrusted(ssg, cd.getCertificate());
+            } else
+                throw new BadCredentialsException("The downloaded Gateway server certificate could not be verified with the current username and password.");
         }
 
-        throw new BadCredentialsException("Unable to verify server certificate with the current username and password for Gateway " + ssg);
+        SsgKeyStoreManager.saveSsgCertificate(ssg, cd.getCertificate());
     }
 }
 

@@ -7,6 +7,7 @@ import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.proxy.gui.dialogs.AgentAboutBox;
 import com.l7tech.proxy.util.JavaVersionChecker;
 import com.l7tech.proxy.util.ClientLogger;
 import snoozesoft.systray4j.SysTrayMenu;
@@ -35,6 +36,7 @@ public class Gui {
     private static final ClientLogger log = ClientLogger.getInstance(Gui.class);
     public static final String RESOURCE_PATH = "com/l7tech/proxy/resources";
     public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/proxy.hs";
+    public static final String APP_NAME = "SecureSpan Agent";
 
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
     private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
@@ -46,7 +48,6 @@ public class Gui {
     private JFrame frame;
     private MessageViewer messageViewer;
 
-    static final String APP_NAME = "SecureSpan Agent";
     private static final String SYSTRAY_TOOLTIP = "SecureSpan Agent";
     private static final String WINDOW_TITLE = APP_NAME;
     private static final String MESSAGE_WINDOW_TITLE = "Message Window";

@@ -218,6 +218,7 @@ public class MessageProcessor {
                                                              req.getUsername(),
                                                              req.getPassword());
         try {
+            // TODO: remove this stupid hack.  it doesn't help LDAP users anyway
             boolean worked = cd.downloadCertificate();
             ssg.passwordWorkedWithSsg(worked);
             return worked;

@@ -4,11 +4,12 @@
  * $Id$
  */
 
-package com.l7tech.proxy.gui;
+package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.proxy.gui.Gui;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;

@@ -7,6 +7,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.gui.dialogs.LogonDialog;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
 import org.apache.log4j.Category;

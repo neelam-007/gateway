@@ -1,4 +1,4 @@
-package com.l7tech.proxy.gui;
+package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.gui.IntegerField;
 import com.l7tech.common.gui.util.Utilities;
@@ -18,6 +18,8 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
+import com.l7tech.proxy.gui.dialogs.PropertyDialog;
+import com.l7tech.proxy.gui.Gui;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;

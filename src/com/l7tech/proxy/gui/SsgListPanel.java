@@ -7,6 +7,7 @@ import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.common.gui.util.FontUtil;

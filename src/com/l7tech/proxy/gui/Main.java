@@ -23,8 +23,6 @@ public class Main {
     private static final int MIN_THREADS = 4;
     private static final int MAX_THREADS = 20;
 
-    private static ClientProxy clientProxy;
-
     private static int getIntProperty(String name, int def) {
         try {
             String p = System.getProperty(name);
@@ -46,11 +44,11 @@ public class Main {
         int minThreads = getIntProperty("com.l7tech.proxy.listener.minthreads", MIN_THREADS);
         int maxThreads = getIntProperty("com.l7tech.proxy.listener.maxthreads", MAX_THREADS);
 
-        clientProxy = new ClientProxy(ssgManager,
-                                      new MessageProcessor(Managers.getPolicyManager()),
-                                      port,
-                                      minThreads,
-                                      maxThreads);
+        final ClientProxy clientProxy = new ClientProxy(ssgManager,
+                                                        new MessageProcessor(Managers.getPolicyManager()),
+                                                        port,
+                                                        minThreads,
+                                                        maxThreads);
 
         // Set up the GUI
         Gui.setInstance(Gui.createGui(clientProxy, ssgManager));

@@ -113,7 +113,7 @@ public class CertificateDownloader {
         }
     }
 
-    public Certificate getCertificate() {
+    public X509Certificate getCertificate() {
         return cert;
     }
 

@@ -9,6 +9,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 
 import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
 
 /**
  * Get usernames and passwords from somewhere.  The caller of the manager interface will then
@@ -99,4 +100,13 @@ public abstract class CredentialManager {
      * @param whatWeGotInstead  the hostname in the peer's certificate
      */
     public abstract void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead);
+
+    /**
+     * Notify the user that the discovered server certificate could not be trusted automatically.
+     * The user may elect to trust it anyway, or to cancel.
+     *
+     * @param ssg
+     * @param certificate
+     */
+    public abstract void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException;
 }

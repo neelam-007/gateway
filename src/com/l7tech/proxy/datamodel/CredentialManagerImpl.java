@@ -10,6 +10,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.util.ClientLogger;
 
 import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
 
 /**
  * Default CredentialManager implementation.  This version requires that the credentials already be
@@ -79,5 +80,9 @@ public class CredentialManagerImpl extends CredentialManager {
      */
     public void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead) {
         log.error("Gateway hostname " + whatWeWanted + " does not match hostname in peer certificate: \"" + whatWeGotInstead + "\"");
+    }
+
+    public void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
+        throw new OperationCanceledException("The downloaded Gateway server certificate could not be verified with the current username and password.");
     }
 }

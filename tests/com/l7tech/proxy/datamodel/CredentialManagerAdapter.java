@@ -9,6 +9,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 
 import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
 
 /**
  * A dummy credential manager that obtains no credentials and presents no notifications to the user.
@@ -85,5 +86,9 @@ public class CredentialManagerAdapter extends CredentialManager {
      * @param whatWeGotInstead  the hostname in the peer's certificate
      */
     public void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead) {
+    }
+
+    public void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
+        throw new OperationCanceledException("Unable to authorize trusting a server certificate that cannot be validated");
     }
 }
