@@ -93,10 +93,6 @@ public abstract class Registry {
             return null;
         }
 
-        public IdentityProvider getIdentityProvider(long idProviderOid) {
-            return null;
-        }
-
         public IdentityProviderConfig getInternalProviderConfig() {
             return null;
         }
