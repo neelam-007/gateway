@@ -3,14 +3,13 @@ package com.l7tech.proxy;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.message.Message;
+import com.l7tech.message.MultipartMessageReader;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.processor.MessageProcessor;
-import com.l7tech.message.MultipartMessageReader;
-import com.l7tech.message.Message;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
@@ -67,7 +66,8 @@ public class RequestHandler extends AbstractHttpHandler {
      */
     private PendingRequest gatherRequest(final HttpRequest request,
                                          Document requestEnvelope,
-                                         Ssg ssg) throws InvalidDocumentFormatException {
+                                         Ssg ssg)
+    {
         HttpHeaders headers = new HttpHeaders(request.getFieldNames(), new HttpHeaders.ValueProvider() {
             public String getHeaderValue(String headerName) {
                 StringBuffer sb = new StringBuffer();
@@ -93,7 +93,8 @@ public class RequestHandler extends AbstractHttpHandler {
             pr.setSoapAction(sa);
 
         pr.setUri(SoapUtil.getNamespaceUri(requestEnvelope));
-        log.finer("Request SOAPAction=" + pr.getSoapAction() + "   BodyURI=" + pr.getUri());
+        pr.setSoapRequest(SoapUtil.isSoapMessage(requestEnvelope));
+        log.finer("Request SOAPAction=" + pr.getSoapAction() + "   BodyURI=" + pr.getUri() + "   isSoapRequest=" + pr.isSoapRequest());
         return pr;
     }
 

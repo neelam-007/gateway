@@ -10,6 +10,7 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.xml.ElementAlreadyExistsException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.TooManyChildElementsException;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -22,13 +23,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class SoapUtil {
-
+    public static final Logger log = Logger.getLogger(SoapUtil.class.getName());
     public static final List ENVELOPE_URIS = new ArrayList();
 
     static {
@@ -226,14 +228,35 @@ public class SoapUtil {
     }
 
     /**
-     * Find the Namespace URI of the given document, which is assumed to contain a SOAP Envelope.
+     * Find the Namespace URI of the given document, which might contain a SOAP Envelope.
      *
-     * @param request the SOAP envelope to examine
-     * @return the body's namespace URI, or null if not found or the document isn't SOAP.
+     * @param request the Document to examine
+     * @return the body's namespace URI if it's a SOAP Envelope and has one, or null if not found, or the document isn't valid SOAP.
      */
-    public static String getNamespaceUri(Document request) throws InvalidDocumentFormatException {
-        Element body = SoapUtil.getBodyElement(request);
-        if (body == null) return null;
+    public static String getNamespaceUri(Document request) {
+        Element env = request.getDocumentElement();
+        if (!ENVELOPE_EL_NAME.equals(env.getLocalName())) {
+            log.finer("Request document element not " + ENVELOPE_EL_NAME + "; assuming non-SOAP request");
+            return null; // not soap
+        }
+        if (!SoapUtil.ENVELOPE_URIS.contains(env.getNamespaceURI())) {
+            log.finer("Request document element not in recognized SOAP namespace; assuming non-SOAP request");
+            return null; // not soap
+        }
+
+        Element body;
+        try {
+            body = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), BODY_EL_NAME);
+        } catch (TooManyChildElementsException e) {
+            log.info("Request is not a valid SOAP message (too many " + e.getName() + " elements); assuming non-SOAP request");
+            return null;
+        }
+
+        if (body == null) {
+            log.finer("Request does not contain a SOAP body; assuming non-SOAP request");
+            return null;
+        }
+
         Node n = body.getFirstChild();
         while (n != null) {
             if (n.getNodeType() == Node.ELEMENT_NODE)

@@ -360,9 +360,12 @@ public class MessageProcessor {
                             SoapUtil.setL7aMessageId(req.getDecoratedSoapEnvelope(), req.getL7aMessageId());
 
                     // Do all WSS processing all at once
-                    log.info("Running pending request through WS-Security decorator");
-                    req.getWssRequirements().setTimestampCreatedDate(req.getSsg().dateTranslatorToSsg().translate(new Date()));
-                    wssDecorator.decorateMessage(req.getDecoratedSoapEnvelope(), req.getWssRequirements());
+                    if (req.isSoapRequest()) {
+                        log.info("Running pending request through WS-Security decorator");
+                        req.getWssRequirements().setTimestampCreatedDate(req.getSsg().dateTranslatorToSsg().translate(new Date()));
+                        wssDecorator.decorateMessage(req.getDecoratedSoapEnvelope(), req.getWssRequirements());
+                    } else
+                        log.info("Request isn't SOAP; skipping WS-Security decoration");
                 }
 
             } catch (PolicyAssertionException e) {

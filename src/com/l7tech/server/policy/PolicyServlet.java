@@ -120,7 +120,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             HttpSoapRequest sreq = new HttpSoapRequest(htm);
             sreq.setDocument(payload);
             HttpSoapResponse sres = new HttpSoapResponse(htm);
-            service.respondToPolicyDownloadRequest(sreq, sres, !req.isSecure(), normalPolicyGetter());
+            //boolean signResponse = !req.isSecure(); // TODO figure out why this is failing to sign when SSL not used
+            boolean signResponse = true;
+            service.respondToPolicyDownloadRequest(sreq, sres, signResponse, normalPolicyGetter());
 
             Document response = null;
             try {

@@ -61,6 +61,7 @@ public class PendingRequest {
     private Calendar secureConversationExpiryDate = null;
     private boolean multipart = false;
     private MultipartMessageReader multipartReader = null;
+    private boolean isSoapRequest = false;
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
@@ -582,5 +583,13 @@ public class PendingRequest {
         ssg.samlHolderOfKeyAssertion(s);
         samlHolderOfKeyAssertion = s;
         return samlHolderOfKeyAssertion;
+    }
+
+    public boolean isSoapRequest() {
+        return isSoapRequest;
+    }
+
+    public void setSoapRequest(boolean soapRequest) {
+        isSoapRequest = soapRequest;
     }
 }
