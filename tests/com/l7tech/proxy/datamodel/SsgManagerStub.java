@@ -13,8 +13,8 @@ import java.io.IOException;
  */
 public class SsgManagerStub implements SsgManager {
     List ssgs = new ArrayList(Arrays.asList(new Ssg[] {
-        new Ssg(0, "Default SSG", "SSG0", "http://127.0.0.1:5555"),
-        new Ssg(1, "Alternate SSG", "SSG1", "http://127.0.0.1:5556")
+        new Ssg(0, "Default SSG", "http://127.0.0.1:5555"),
+        new Ssg(1, "Alternate SSG", "http://127.0.0.1:5556")
     }));
     private long nextId = 2;
 

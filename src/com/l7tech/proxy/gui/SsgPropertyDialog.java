@@ -39,7 +39,7 @@ public class SsgPropertyDialog extends PropertyDialog {
 
     private JComponent generalPane;
     private JTextField fieldName;
-    private JTextField fieldLocalEndpoint;
+    private JLabel fieldLocalEndpoint;
     private JTextField fieldServerUrl;
     private JTextField fieldKeyStorePath;
     private JTextField fieldUsername;
@@ -223,15 +223,15 @@ public class SsgPropertyDialog extends PropertyDialog {
             pane.add(new JLabel("Name:"), gbcLabel());
             pane.add(fieldName, gbc());
 
-            fieldLocalEndpoint = new JTextField();
-            fieldLocalEndpoint.setPreferredSize(new Dimension(200, 20));
-            pane.add(new JLabel("Endpoint:"), gbcLabel());
-            pane.add(fieldLocalEndpoint, gbc());
-
             fieldServerUrl = new JTextField();
             fieldServerUrl.setPreferredSize(new Dimension(250, 20));
             pane.add(new JLabel("SSG URL:"), gbcLabel());
             pane.add(fieldServerUrl, gbc());
+
+            fieldLocalEndpoint = new JLabel("");
+            fieldLocalEndpoint.setPreferredSize(new Dimension(200, 20));
+            pane.add(new JLabel("Endpoint:"), gbcLabel());
+            pane.add(fieldLocalEndpoint, gbc());
 
             fieldKeyStorePath = new JTextField();
             fieldKeyStorePath.setPreferredSize(new Dimension(200, 20));
@@ -291,7 +291,7 @@ public class SsgPropertyDialog extends PropertyDialog {
         this.ssg = ssg;
 
         fieldName.setText(ssg.getName());
-        fieldLocalEndpoint.setText(ssg.getLocalEndpoint());
+        fieldLocalEndpoint.setText("/" + ssg.getLocalEndpoint());
         fieldServerUrl.setText(ssg.getServerUrl());
         fieldKeyStorePath.setText(ssg.getKeyStorePath());
         fieldUsername.setText(ssg.getUsername());
@@ -324,7 +324,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     }
 
     public static void main(String[] argv) {
-        Ssg ssg = new Ssg(1, "Test SSG", "ssg", "http://blah.bloof.com");
+        Ssg ssg = new Ssg(1, "Test SSG", "http://blah.bloof.com");
         log.info("SSG prompt bit: " + ssg.isPromptForUsernameAndPassword());
         ssg.attachPolicy("http://example.com/Quoter", null, new TrueAssertion());
         ssg.attachPolicy("http://blah", null, new AllAssertion(Arrays.asList(new Assertion[] {

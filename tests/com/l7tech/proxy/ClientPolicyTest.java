@@ -48,7 +48,7 @@ public class ClientPolicyTest extends TestCase {
 
     /** Decorate a message with an empty policy. */
     public void testNullPolicy() throws Exception {
-        Ssg ssg = new Ssg(1, "Foo Ssg", "/foo", "http://foo");
+        Ssg ssg = new Ssg(1, "Foo Ssg", "http://foo");
         PendingRequest req = new PendingRequest(new SOAPEnvelope(), ssg);
 
         Assertion policy = new TrueAssertion();
@@ -61,7 +61,7 @@ public class ClientPolicyTest extends TestCase {
     /** Test decoration of a message with an HTTP Basic policy. */
     public void testHttpBasicPolicy() throws Exception {
         Assertion policy = new HttpBasic();
-        Ssg ssg = new Ssg(1, "Foo ssg", "/foo", "http://foo");
+        Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
         SOAPEnvelope env = new SOAPEnvelope();
         PendingRequest req;
         AssertionStatus result;
@@ -97,7 +97,7 @@ public class ClientPolicyTest extends TestCase {
     /** Test decoration of a message with an SSL policy (specifying no certificates in particular). */
     public void testAnonymousSslPolicy() throws Exception {
         Assertion policy = new SslAssertion();
-        Ssg ssg = new Ssg(1, "Foo ssg", "/foo", "http://foo");
+        Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
         SOAPEnvelope env = new SOAPEnvelope();
         PendingRequest req;
         AssertionStatus result;
@@ -109,7 +109,7 @@ public class ClientPolicyTest extends TestCase {
 
     /** Test a composite policy. */
     public void testCompositePolicy() throws Exception {
-        Ssg ssg = new Ssg(1, "Foo ssg", "/foo", "http://foo");
+        Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
         SOAPEnvelope env = new SOAPEnvelope();
         PendingRequest req;
         AssertionStatus result;

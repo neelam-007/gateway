@@ -6,7 +6,6 @@ import org.apache.log4j.Category;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.Collections;
 import java.util.TreeSet;
 
 /**
@@ -20,7 +19,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     private long id = 0;
     private String name = "";
-    private String localEndpoint = "";
+    private String localEndpoint = null;
     private String serverUrl = "";
     private int sslPort = 8443;
     private String username = null;
@@ -64,14 +63,14 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     /**
      * Create a new Ssg instance with the given field contents.
-     * @param name
-     * @param localEndpoint
-     * @param serverUrl
+     * @param id        assigned by the SsgManager.  Unique number for identifying this Ssg instance.
+     * @param name      human-readable name of the Ssg.
+     * @param serverUrl URL of the associated SSG.
      */
-    public Ssg(long id, final String name, final String localEndpoint, final String serverUrl) {
+    public Ssg(long id, final String name, final String serverUrl) {
         this(id);
         this.name = name;
-        this.localEndpoint = localEndpoint;
+        this.localEndpoint = null;
         this.serverUrl = serverUrl;
     }
 
@@ -190,10 +189,16 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     public String getLocalEndpoint() {
+        if (localEndpoint == null)
+            localEndpoint = "ssg" + getId();
         return localEndpoint;
     }
 
-    public void setLocalEndpoint(final String localEndpoint) {
+    public void setLocalEndpoint(String localEndpoint) {
+        if (localEndpoint == null)
+            throw new IllegalArgumentException("localEndpoint may not be null");
+        if (localEndpoint.length() > 1 && "/".equals(localEndpoint.substring(0, 1)))
+            localEndpoint = localEndpoint.substring(1);
         this.localEndpoint = localEndpoint;
     }
 
