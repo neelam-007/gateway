@@ -125,4 +125,24 @@ public class FileUtils {
         return in;
     }
 
+    /**
+     * Ensure that path is deleted, along with any .OLD or .NEW files that might be laying around.
+     * The actual file will be deleted last, guaranteeing that the delete will be atomic (ie, no future call
+     * to loadFileSafely() will recover an out-of-date version of the file if we are interrupted in mid-delete).
+     *
+     * @param path  the path to delete
+     * @return  true if some files were deleted, or false if none were found
+     */
+    public static boolean deleteFileSafely(String path) {
+        boolean deletes = false;
+        if (new File(path + ".OLD").delete())
+            deletes = true;
+        if (new File(path + ".NEW").delete())
+            deletes = true;
+        if (new File(path).delete())
+            deletes = true;
+        return deletes;
+    }
+
+
 }
