@@ -9,24 +9,33 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.*;
-import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import net.sf.nachocalendar.components.DateField;
+import net.sf.nachocalendar.components.DefaultDayRenderer;
+import net.sf.nachocalendar.components.DefaultHeaderRenderer;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.text.DateFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.util.NoSuchElementException;
+import java.text.DateFormat;
 import java.util.Date;
+import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.DateFormat;
 
 /**
  * GenericUserPanel - edits the <CODE>Generic User/CODE> instances. This includes internal users, LDAP users.
@@ -67,10 +76,8 @@ public class GenericUserPanel extends UserPanel {
     private JLabel emailLabel;
     private JTextField emailTextField;
     private JButton changePassButton;
-    private JButton setExpirationButton;
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
-    private long tmpExpirationValue;
-    private Long tempExpiration = null;
+    private DateField expireDateField;
 
     public GenericUserPanel() {
         super();
@@ -95,11 +102,11 @@ public class GenericUserPanel extends UserPanel {
     protected void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
         securityFormAuthorizationPreparer.prepare(new Component[]{
-            emailTextField,
-            changePassButton,
-            firstNameTextField,
-            lastNameTextField
-        });
+                emailTextField,
+                changePassButton,
+                firstNameTextField,
+                lastNameTextField
+              });
     }
 
 
@@ -115,16 +122,16 @@ public class GenericUserPanel extends UserPanel {
             // Here is where we would use the node context to retrieve Panel content
             if (!(object instanceof EntityHeader)) {
                 throw new IllegalArgumentException("Invalid argument type: "
-                  + "\nExpected: EntityHeader"
-                  + "\nReceived: " + object.getClass().getName());
+                    + "\nExpected: EntityHeader"
+                    + "\nReceived: " + object.getClass().getName());
             }
 
             userHeader = (EntityHeader)object;
 
             if (!EntityType.USER.equals(userHeader.getType())) {
                 throw new IllegalArgumentException("Invalid argument type: "
-                  + "\nExpected: User "
-                  + "\nReceived: " + userHeader.getType());
+                    + "\nExpected: User "
+                    + "\nReceived: " + userHeader.getType());
             }
 
             if (config == null) {
@@ -304,32 +311,26 @@ public class GenericUserPanel extends UserPanel {
             GridBagConstraints.NONE,
             new Insets(15, 10, 0, 10), 0, 0));
 
-        if (config.type().equals(IdentityProviderType.INTERNAL)) {
+        if (IdentityProviderType.INTERNAL.equals(config.type())) {
             // add account expiration here
-            detailsPanel.add(new JLabel("Account Expiration:"),
-                             new GridBagConstraints(0, 13, 1, 1, 0.0, 0.0,
-                             GridBagConstraints.WEST,
-                             GridBagConstraints.NONE,
-                             new Insets(0, 10, 0, 10), 0, 0));
-
-            detailsPanel.add(getSetExpirationButton(),
-                             new GridBagConstraints(1, 13, 1, 1, 1.0, 0.0,
-                             GridBagConstraints.EAST,
-                             GridBagConstraints.NONE,
-                             new Insets(0, 10, 0, 10), 0, 0));
+            detailsPanel.add(getExpirationPanel(),
+              new GridBagConstraints(0, 13, 2, 1, 1.0, 0.0,
+                GridBagConstraints.WEST,
+                GridBagConstraints.NONE,
+                new Insets(0, 10, 0, 10), 0, 0));
         }
 
-        Component strut = Box.createVerticalStrut(8);
+        Component strut = Box.createGlue();
 
         detailsPanel.add(strut,
-          new GridBagConstraints(0, 13, 2, 1, 1.0, 1.0,
+          new GridBagConstraints(0, 14, 2, 1, 1.0, 1.0,
             GridBagConstraints.CENTER,
             GridBagConstraints.BOTH,
             new Insets(10, 0, 0, 0), 0, 0));
 
         Utilities.equalizeLabelSizes(new JLabel[]{
-            getLastNameLabel(),
-        });
+                getLastNameLabel(),
+              });
 
         // Return panel
         return detailsPanel;
@@ -491,9 +492,9 @@ public class GenericUserPanel extends UserPanel {
 
             JButton buttons[] = new JButton[]
             {
-                getOKButton(),
-                getCancelButton()
-            };
+                  getOKButton(),
+                  getCancelButton()
+                };
             Utilities.equalizeButtonSizes(buttons);
         }
         return buttonPanel;
@@ -503,7 +504,7 @@ public class GenericUserPanel extends UserPanel {
      * Returns okButton
      */
     private JButton getOKButton() {
-// If button not already created
+        // If button not already created
         if (null == okButton) {
             // Create button
             okButton = new JButton(new OkAction());
@@ -529,50 +530,52 @@ public class GenericUserPanel extends UserPanel {
         return cancelButton;
     }
 
-    private JButton getSetExpirationButton() {
-        if (setExpirationButton == null) {
-            setExpirationButton = new JButton("Never");
-            setExpirationButton.addActionListener(new ActionListener() {
+    private JPanel getExpirationPanel() {
+        JPanel expirationPanel = new JPanel();
+        if (IdentityProviderType.INTERNAL.equals(config.type())) {
+            InternalUser iu = (InternalUser)user;
+            expirationPanel.setLayout(new GridBagLayout());
+            final JCheckBox cb = new JCheckBox("Account Never Expires");
+            GridBagConstraints c = new GridBagConstraints();
+            c.anchor = GridBagConstraints.WEST;
+            expirationPanel.add(cb, c);
+            final JLabel expiresLabel = new JLabel("Expires on:");
+            cb.addChangeListener(new ChangeListener() {
+                public void stateChanged(ChangeEvent e) {
+                    final boolean enable = !cb.isSelected();
+                    expireDateField.setEnabled(enable);
+                    expiresLabel.setEnabled(enable);
+                }
+            });
+            JPanel expireOndatePanel = new JPanel();
+            expireOndatePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+            expireOndatePanel.add(expiresLabel);
+            expireDateField = new DateField(new DateFormatter(DateFormat.getDateInstance(DateFormat.MEDIUM)));
+            expireDateField.setRenderer(new DefaultDayRenderer());
+            expireDateField.setHeaderRenderer(new DefaultHeaderRenderer());
+            expireOndatePanel.add(expireDateField);
+            c.gridx++;
+            expirationPanel.add(expireOndatePanel, c);
+            final boolean neverExpires = iu.getExpiration() == -1;
+            if (!neverExpires) {
+                expireDateField.setValue(new Date(iu.getExpiration()));
+            }
+            cb.setSelected(neverExpires);
+
+            cb.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    InternalUser iu = (InternalUser)user; // at this point, this type should already be confirmed
-                    // get parent dialog
-                    JDialog parent = null;
-                    Container container = GenericUserPanel.this.getParent();
-                    while (container != null) {
-                        if (container instanceof JDialog) {
-                            parent = (JDialog)container;
-                            break;
-                        }
-                        container = container.getParent();
-                    }
-                    long initialvalue = iu.getExpiration();
-                    if (tempExpiration != null) {
-                        initialvalue = tempExpiration.longValue();
-                    }
-                    AccountExpirationPanel exirationChooser = new AccountExpirationPanel(parent, initialvalue);
-                    exirationChooser.pack();
-                    Utilities.centerOnScreen(exirationChooser);
-                    exirationChooser.show();
-                    if (!exirationChooser.wasCancelled()) {
-                        long newvalue = exirationChooser.getExpirationValue();
-                        displayExpirationValue(newvalue);
-                        setModified(true);
-                        tempExpiration = new Long(newvalue);
-                    }
+                    setModified(true);
+                }
+            });
+
+            expireDateField.addChangeListener(new ChangeListener() {
+                public void stateChanged(ChangeEvent e) {
+                    setModified(true);
                 }
             });
         }
-        return setExpirationButton;
-    }
 
-    private void displayExpirationValue(long value) {
-        // refresh button with new value
-        String newExpiration = "Never";
-        if (value > -1) {
-            newExpiration = DateFormat.getInstance().format(new Date(value));
-        }
-        getSetExpirationButton().setText(newExpiration);
-        tmpExpirationValue = value; // to avoid parsing back
+        return expirationPanel;
     }
 
     /**
@@ -585,13 +588,13 @@ public class GenericUserPanel extends UserPanel {
             changePassButton = new JButton(CHANGE_PASSWORD_LABEL);
 
             changePassButton.
-              addActionListener(new ActionListener() {
-                  public void actionPerformed(ActionEvent e) {
-                      new PasswordDialog(mainWindow, userPanel,
-                                         user.getUserBean(), passwordChangeListener).show();
-                      // Refresh the panel (since the Bridge's cert might have been revoked)
-                  }
-              });
+            addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    new PasswordDialog(mainWindow, userPanel,
+                      user.getUserBean(), passwordChangeListener).show();
+                    // Refresh the panel (since the Bridge's cert might have been revoked)
+                }
+            });
 
         }
         changePassButton.setEnabled(config.isWritable());
@@ -599,26 +602,26 @@ public class GenericUserPanel extends UserPanel {
     }
 
     private EntityListener
-      passwordChangeListener = new EntityListenerAdapter() {
-          /**
-           * Fired when an set of children is updated.
-           *
-           * @param ev event describing the action
-           */
-          public void entityUpdated(EntityEvent ev) {
-              try {
-                  user =
-                    getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId());
-                  user = collectChanges();
-                  boolean b = formModified;
-                  setData(user);
-                  setModified(b);
-              } catch (Exception ex) {
-                  ErrorManager.getDefault().notify(Level.WARNING, ex, "Error retrieving the user " + userHeader.getStrId());
-              }
+    passwordChangeListener = new EntityListenerAdapter() {
+        /**
+         * Fired when an set of children is updated.
+         *
+         * @param ev event describing the action
+         */
+        public void entityUpdated(EntityEvent ev) {
+            try {
+                user =
+                getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId());
+                user = collectChanges();
+                boolean b = formModified;
+                setData(user);
+                setModified(b);
+            } catch (Exception ex) {
+                ErrorManager.getDefault().notify(Level.WARNING, ex, "Error retrieving the user " + userHeader.getStrId());
+            }
 
-          }
-      };
+        }
+    };
 
     public boolean certExist() {
         return certPanel.certExist();
@@ -626,6 +629,7 @@ public class GenericUserPanel extends UserPanel {
 
     /**
      * Populates the form from the user bean
+     *
      * @param user
      */
     private void setData(User user) {
@@ -634,15 +638,13 @@ public class GenericUserPanel extends UserPanel {
         getFirstNameTextField().setText(user.getFirstName());
         getLastNameTextField().setText(user.getLastName());
         getEmailTextField().setText(user.getEmail());
-        if (user instanceof InternalUser) {
-            displayExpirationValue(((InternalUser)user).getExpiration());
-        }
         setModified(false);
     }
 
 
     /**
      * Collect changes from the form into the user instance.
+     *
      * @return User the instance with changes applied
      */
     private User collectChanges() {
@@ -651,7 +653,11 @@ public class GenericUserPanel extends UserPanel {
             iu.setLastName(this.getLastNameTextField().getText());
             iu.setFirstName(this.getFirstNameTextField().getText());
             iu.setEmail(getEmailTextField().getText());
-            iu.setExpiration(tmpExpirationValue);
+            if (!expireDateField.isEnabled()) {
+                iu.setExpiration(-1);
+            } else {
+                iu.setExpiration(((Date)expireDateField.getValue()).getTime());
+            }
         } else if (user instanceof LdapUser) {
             LdapUser lu = (LdapUser)user;
             lu.setLastName(this.getLastNameTextField().getText());
@@ -774,7 +780,7 @@ public class GenericUserPanel extends UserPanel {
         return true;
     }
 
-// debug
+    // debug
     public static void main(String[] args) {
 
         GenericUserPanel panel = new GenericUserPanel();
@@ -791,28 +797,27 @@ public class GenericUserPanel extends UserPanel {
     }
 
 
-// hierarchy listener
-    private final
-    HierarchyListener hierarchyListener =
+    // hierarchy listener
+    private final HierarchyListener hierarchyListener =
       new HierarchyListener() {
-          /**
-           * Called when the hierarchy has been changed.
-           */
-          public void hierarchyChanged(HierarchyEvent e) {
-              int eID = e.getID();
-              long flags = e.getChangeFlags();
+        /**
+         * Called when the hierarchy has been changed.
+         */
+        public void hierarchyChanged(HierarchyEvent e) {
+            int eID = e.getID();
+            long flags = e.getChangeFlags();
 
-              if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
-                ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
-                  if (GenericUserPanel.this.isDisplayable()) {
-                      JDialog d = (JDialog)SwingUtilities.windowForComponent(GenericUserPanel.this);
-                      if (d != null) {
-                          d.setTitle(userHeader.getName() + " Properties");
-                      }
-                  }
-              }
-          }
-      };
+            if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
+              ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
+                if (GenericUserPanel.this.isDisplayable()) {
+                    JDialog d = (JDialog)SwingUtilities.windowForComponent(GenericUserPanel.this);
+                    if (d != null) {
+                        d.setTitle(userHeader.getName() + " Properties");
+                    }
+                }
+            }
+        }
+    };
 
 
 }
