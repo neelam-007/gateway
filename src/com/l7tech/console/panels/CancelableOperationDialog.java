@@ -19,8 +19,17 @@ import java.awt.event.ActionListener;
  * @version 1.0
  */
 public class CancelableOperationDialog extends JDialog {
+    public CancelableOperationDialog(Frame owner, String title, String message, JProgressBar progressBar) {
+        super(owner, title, true);
+        doInit(message, progressBar);
+    }
+
     public CancelableOperationDialog(Dialog parent, String title, String message) {
         super(parent, title, true);
+        doInit(message, null);
+    }
+
+    private void doInit(String message, JProgressBar progressBar) {
         Container p = getContentPane();
         p.setLayout(new GridBagLayout());
         p.add(new JLabel(message),
@@ -35,10 +44,18 @@ public class CancelableOperationDialog extends JDialog {
             }
         });
         p.add(cancelButton,
-              new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
+              new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
                                      GridBagConstraints.EAST,
                                      GridBagConstraints.NONE,
                                      new Insets(0, 0, 5, 5), 0, 0));
+        if (progressBar != null) {
+            p.add(progressBar,
+                  new GridBagConstraints(1, 2, GridBagConstraints.REMAINDER, 1, 1000.0, 0.0,
+                                         GridBagConstraints.CENTER,
+                                         GridBagConstraints.HORIZONTAL,
+                                         new Insets(5, 15, 5, 15), 0, 0));
+        }
+
         pack();
         Utilities.centerOnScreen(this);
     }

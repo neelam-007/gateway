@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 public class AuditAdminImpl extends RemoteService implements AuditAdmin {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final long CONTEXT_TIMEOUT = 1000L * 60 * 5; // expire after 5 min of inactivity
+    private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;
     private static Map downloadContexts = Collections.synchronizedMap(new HashMap());
     private static TimerTask downloadReaperTask = new TimerTask() {
         public void run() {
@@ -111,9 +112,9 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
         private final Thread producerThread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    auditExporter = AuditExporter.exportAuditsAsZipFile(pos,
-                                                                        sslCert,
-                                                                        sslPrivateKey);
+                    auditExporter.exportAuditsAsZipFile(pos,
+                                                        sslCert,
+                                                        sslPrivateKey);
                 } catch (SQLException e) {
                     producerException = e;
                 } catch (IOException e) {
@@ -130,12 +131,14 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
             }
         });
 
-        private AuditExporter auditExporter = null;
-        private byte[] chunk = new byte[8192];
+        private final AuditExporter auditExporter = new AuditExporter();
+        private final byte[] chunk;
         private Throwable producerException = null;
         private long lastUsed = System.currentTimeMillis();
 
-        private DownloadContext () throws KeyStoreException, IOException, CertificateException {
+        private DownloadContext(int chunkLength) throws KeyStoreException, IOException, CertificateException {
+            if (chunkLength < 1) chunkLength = DEFAULT_DOWNLOAD_CHUNK_LENGTH;
+            chunk = new byte[chunkLength];
             sslCert = KeystoreUtils.getInstance().getSslCert();
             sslPrivateKey = KeystoreUtils.getInstance().getSSLPrivateKey();
             producerThread.start();
@@ -168,6 +171,7 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
                     approxTotalAudits = auditExporter.getApproxNumToExport();
                     auditsDownloaded = auditExporter.getNumExportedSoFar();
                 }
+                lastUsed = System.currentTimeMillis();
                 return new DownloadChunk(auditsDownloaded, approxTotalAudits, got);
             } catch (IOException e) {
                 close();
@@ -175,7 +179,7 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
             }
         }
 
-        public synchronized void close() {
+        public void close() {
             logger.log(Level.INFO, "Closing audit download context " + this);
             downloadContexts.remove(this.getOpaqueId());
             try { producerThread.interrupt(); } catch (Exception e) { /* ignored */ }
@@ -203,11 +207,11 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
         }
     }
 
-    public OpaqueId downloadAllAudits() throws RemoteException {
+    public OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException {
         enforceAdminRole();
         try {
             final DownloadContext downloadContext;
-            downloadContext = new DownloadContext();
+            downloadContext = new DownloadContext(0);
             downloadContexts.put(downloadContext.getOpaqueId(), downloadContext);
             return downloadContext.getOpaqueId();
         } catch (KeyStoreException e) {

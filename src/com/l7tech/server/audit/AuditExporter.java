@@ -27,6 +27,7 @@ import java.io.PrintStream;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.sql.*;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -35,6 +36,8 @@ import java.util.zip.ZipOutputStream;
  * Simple command line utility to export signed audit records.
  */
 public class AuditExporter {
+    private static final Logger logger = Logger.getLogger(AuditExporter.class.getName());
+
     private static final String SQL = "select * from audit_main left ou" +
             "ter join audit_admin on audit_main.objectid=audit_admin.objectid left outer join audit_message on audit_main." +
             "objectid=audit_message.objectid left outer join audit_system on audit_main.objectid=audit_system.objecti" +
@@ -48,21 +51,23 @@ public class AuditExporter {
     private long numExportedSoFar = 0;
     private long approxNumToExport = 1;
 
-    private AuditExporter() {}
+    public AuditExporter() {
+
+    }
 
     static String quoteMeta(String raw) {
         return badCharPattern.matcher(raw).replaceAll("\\\\$1");
     }
 
-    public long getHighestTime() {
+    public synchronized long getHighestTime() {
         return highestTime;
     }
 
-    public long getNumExportedSoFar() {
+    public synchronized long getNumExportedSoFar() {
         return numExportedSoFar;
     }
 
-    public long getApproxNumToExport() {
+    public synchronized long getApproxNumToExport() {
         return approxNumToExport;
     }
 
@@ -103,9 +108,11 @@ public class AuditExporter {
 
             if (rs == null) throw new SQLException("Unable to obtain audit count with query: " + COUNT_SQL);
             rs.next();
-            approxNumToExport = rs.getLong(1);
+            final long ante = rs.getLong(1);
+            logger.warning("Total audits: " + ante);
             rs.close();
             rs = null;
+            synchronized (this) { approxNumToExport = ante; }
 
             rs = st.executeQuery(SQL);
             if (rs == null) throw new SQLException("Unable to obtain audits with query: " + SQL);
@@ -126,8 +133,9 @@ public class AuditExporter {
             long highestId = Long.MIN_VALUE;
             long lowestTime = Long.MAX_VALUE;
             long highestTime = Long.MIN_VALUE;
-            numExportedSoFar = 0;
+            synchronized (this) { numExportedSoFar = 0; }
             while (rs.next()) {
+                synchronized (this) { numExportedSoFar++; }
                 if (Thread.currentThread().isInterrupted())
                     throw new InterruptedException();
                 for (int i = 1; i <= columns; ++i) {
@@ -151,7 +159,6 @@ public class AuditExporter {
                     if (i < columns) out.print(DELIM);
                 }
                 out.print("\n");
-                numExportedSoFar++;
             }
 
             out.flush();
@@ -233,18 +240,8 @@ public class AuditExporter {
     /**
      * Export all audit events from the database to the specified OutputStream as a Zip file, including a signature.
      * @param fileOut OutputStream to which the Zip file will be written.
-     * @return the time in milliseconds of the most-recent audit record exported.
      */
-    public static AuditExporter exportAuditsAsZipFile(OutputStream fileOut,
-                                             X509Certificate signingCert,
-                                             PrivateKey signingKey)
-            throws IOException, SQLException, HibernateException, SignatureException, InterruptedException
-    {
-        AuditExporter ae = new AuditExporter();
-        return ae.instanceExportAuditsAsZipFile(fileOut, signingCert, signingKey);
-    }
-
-    private AuditExporter instanceExportAuditsAsZipFile(OutputStream fileOut,
+    public void exportAuditsAsZipFile(OutputStream fileOut,
                                              X509Certificate signingCert,
                                              PrivateKey signingKey)
             throws IOException, SQLException, HibernateException, SignatureException, InterruptedException
@@ -307,8 +304,9 @@ public class AuditExporter {
             XmlUtil.nodeToOutputStream(d, zipOut);
             zipOut.close();
             zipOut = null;
-            this.highestTime = highestTime;
-            return this;
+            synchronized (this) { this.highestTime = highestTime; }
+            return;
+            
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SignatureStructureException e) {

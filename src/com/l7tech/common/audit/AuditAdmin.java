@@ -45,10 +45,11 @@ public interface AuditAdmin extends GenericLogAdmin {
 
     /**
      * Create a context for downloading audit IDs.  The context will expire after ten minutes of inactivity.
+     * @param chunkSizeInBytes number of bytes per download chunk.  If zero, default of 8192 will be used.
      * @return a OpaqueId for passing to downloadNextChunk().  never null.
      * @throws RemoteException if there is a problem preparing the download context.
      */
-    OpaqueId downloadAllAudits() throws RemoteException;
+    OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException;
 
     /** Represents a chunk of audits being downloaded. */
     public static final class DownloadChunk implements Serializable {

@@ -5,12 +5,12 @@ import com.l7tech.common.gui.util.FontUtil;
 import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.xml.Wsdl;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -25,6 +25,8 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -32,6 +34,8 @@ import java.rmi.RemoteException;
  * @version 1.2
  */
 public class ServicePanel extends WizardStepPanel {
+    private static final Logger logger = Logger.getLogger(ServicePanel.class.getName());
+
     // local service copy
     private PublishedService service = new PublishedService();
     private Wsdl wsdl;
@@ -177,12 +181,14 @@ public class ServicePanel extends WizardStepPanel {
                 // canceled
                 return false;
             if (!(result instanceof String)) {
-                if (result instanceof Throwable)
-                    ((Throwable) result).printStackTrace();
+                final String msg = "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() + "'\n";
+                if (result instanceof Throwable) {
+                    logger.log(Level.WARNING, msg, (Throwable)result);
+                }
                 JOptionPane.showMessageDialog(null,
-                  "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() + "'\n",
-                  "Error",
-                  JOptionPane.ERROR_MESSAGE);
+                                              msg,
+                                              "Error",
+                                              JOptionPane.ERROR_MESSAGE);
                 return false;
             }
             String wsdlXml = (String) result;

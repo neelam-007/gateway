@@ -35,7 +35,7 @@ public class AuditAdminStub implements AuditAdmin {
 
     }
 
-    public OpaqueId downloadAllAudits() throws RemoteException {
+    public OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
