@@ -3,6 +3,8 @@ package com.l7tech.server;
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.logging.LogManager;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -13,6 +15,9 @@ import java.io.PrintWriter;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.sql.SQLException;
 
 /**
  * A servlet that sends status information for use by failover.
@@ -32,10 +37,21 @@ public class StatusPingServlet extends HttpServlet {
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         Collection allStatuses = null;
+
+        PersistenceContext context = null;
+        try {
+            context = PersistenceContext.getCurrent();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "error getting persistence context. ", e);
+            return;
+        }
         try {
             allStatuses = ClusterInfoManager.getInstance().retrieveClusterStatus();
         } catch (FindException e) {
+            logger.log(Level.SEVERE, "error getting status ", e);
             outputError(res, e.getMessage());
+        } finally {
+            context.close();
         }
         if (allStatuses == null || allStatuses.isEmpty()) {
             outputError(res, "can't get server status");
@@ -95,4 +111,6 @@ public class StatusPingServlet extends HttpServlet {
         if (val < 10) return "0" + val;
         else return "" + val;
     }
+
+    private final Logger logger = LogManager.getInstance().getSystemLogger();
 }
