@@ -6,6 +6,7 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -93,6 +94,10 @@ public class EditServicePolicyAction extends NodeAction {
             wpanel.addWorkspaceContainerListener(pep);
         } catch (ActionVetoException e) {
             // action vetoed
+        } catch (FindException e) {
+            // refresh the service list
+            JOptionPane.showMessageDialog(null, "Unable to retrieve service. " +
+                                                "Try refreshing Services tree.");
         } catch (Exception e) {
             ErrorManager.getDefault().
               notify(Level.SEVERE, e, "Unable to retrieve service properties " + serviceNode.getName());
