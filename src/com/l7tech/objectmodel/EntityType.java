@@ -16,11 +16,10 @@ public class EntityType {
     public static final EntityType UNDEFINED = new EntityType(-1);
 
     public static EntityType fromInterface(Class interfaceType) throws IllegalArgumentException {
-        if (interfaceType.equals(com.l7tech.identity.IdentityProviderConfig.class))
-            return ID_PROVIDER_CONFIG;
-        else if (interfaceType.equals(com.l7tech.identity.User.class))
-            return USER;
+        if (interfaceType.equals(com.l7tech.identity.IdentityProviderConfig.class)) return ID_PROVIDER_CONFIG;
+        else if (interfaceType.equals(com.l7tech.identity.User.class)) return USER;
         else if (interfaceType.equals(com.l7tech.identity.Group.class)) return GROUP;
+        else if (interfaceType.equals(com.l7tech.service.PublishedService.class)) return SERVICE;
         throw new IllegalArgumentException("no EntityType for interface " + interfaceType.getName());
     }
 
