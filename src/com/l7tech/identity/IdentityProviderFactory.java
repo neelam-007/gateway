@@ -46,4 +46,6 @@ public class IdentityProviderFactory {
 
     // note these need to be singletons so that they can be invalidates in case of deletion
     private static HashMap providers = null;
+
+    public static final int MAX_AGE = 60 * 1000;
 }
