@@ -51,7 +51,7 @@ public class IdentityPolicyPanel extends JPanel {
     private JButton helpButton;
     private JButton defaultUrlButton;
     private JComboBox authMethodComboBox;
-    private JComboBox xmlSecOptions;
+    //private JComboBox xmlSecOptions;
     private JCheckBox sslCheckBox;
     private JTextField routeToUrlField;
     private JTextField userRouteField;
@@ -145,17 +145,17 @@ public class IdentityPolicyPanel extends JPanel {
         okButton.addActionListener(updateIdentityPolicy);
         Utilities.equalizeButtonSizes(new JButton[]{cancelButton, okButton, helpButton});
         authMethodComboBox.setModel(CredentialsLocation.getCredentialsLocationComboBoxModelNonAnonymous(true));
-        authMethodComboBox.addItemListener(new ItemListener() {
+        /*authMethodComboBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 Object key = e.getItem();
                 CredentialSourceAssertion ca =
                   (CredentialSourceAssertion) credentialsLocationMap.get(key);
-                xmlSecOptions.setEnabled(ca instanceof RequestWssX509Cert);
+                //xmlSecOptions.setEnabled(ca instanceof RequestWssX509Cert);
             }
-        });
+        });*/
         
         // Bugzilla #821 - the default is disabled since the default setting of Authentication Method is HTTP Basic
-        xmlSecOptions.setEnabled(false);
+        //xmlSecOptions.setEnabled(false);
 
         defaultUrlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -171,8 +171,8 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
         });
-        ComboBoxModel cm = new DefaultComboBoxModel(XML_SEC_OPTIONS);
-        xmlSecOptions.setModel(cm);
+        //ComboBoxModel cm = new DefaultComboBoxModel(XML_SEC_OPTIONS);
+        //xmlSecOptions.setModel(cm);
         principalAssertionPaths = IdentityPath.forIdentity(principal, rootAssertion);
         otherPaths = IdentityPath.getPaths(rootAssertion);
         Collection remove = new ArrayList();
@@ -250,12 +250,12 @@ public class IdentityPolicyPanel extends JPanel {
             if (othersCredAssertions.contains(existingCredAssertion))
                 canmod = false;
 
-            if (xmlSec != null) {
+            /*if (xmlSec != null) {
                 xmlSecOptions.setEnabled(canmod);
                 boolean isXmlEncrypted = false; // TODO this no longer makes sense
                 xmlSecOptions.setSelectedIndex(isXmlEncrypted ? 1 : 0);
             } else
-                xmlSecOptions.setEnabled(false);
+                xmlSecOptions.setEnabled(false);*/
         }
 
         authMethodComboBox.setEnabled(canmod);
