@@ -70,6 +70,7 @@ public class GenericUserPanel extends UserPanel {
     private JButton setExpirationButton;
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
     private long tmpExpirationValue;
+    private Long tempExpiration = null;
 
     public GenericUserPanel() {
         super();
@@ -313,8 +314,8 @@ public class GenericUserPanel extends UserPanel {
 
             detailsPanel.add(getSetExpirationButton(),
                              new GridBagConstraints(1, 13, 1, 1, 1.0, 0.0,
-                             GridBagConstraints.WEST,
-                             GridBagConstraints.HORIZONTAL,
+                             GridBagConstraints.EAST,
+                             GridBagConstraints.NONE,
                              new Insets(0, 10, 0, 10), 0, 0));
         }
 
@@ -544,7 +545,11 @@ public class GenericUserPanel extends UserPanel {
                         }
                         container = container.getParent();
                     }
-                    AccountExpirationPanel exirationChooser = new AccountExpirationPanel(parent, iu.getExpiration());
+                    long initialvalue = iu.getExpiration();
+                    if (tempExpiration != null) {
+                        initialvalue = tempExpiration.longValue();
+                    }
+                    AccountExpirationPanel exirationChooser = new AccountExpirationPanel(parent, initialvalue);
                     exirationChooser.pack();
                     Utilities.centerOnScreen(exirationChooser);
                     exirationChooser.show();
@@ -552,6 +557,7 @@ public class GenericUserPanel extends UserPanel {
                         long newvalue = exirationChooser.getExpirationValue();
                         displayExpirationValue(newvalue);
                         setModified(true);
+                        tempExpiration = new Long(newvalue);
                     }
                 }
             });
