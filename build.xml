@@ -34,11 +34,11 @@
     -->
 
     <!-- project classpath -->
-    <path id="project.class.path">
+    <path id="project.classpath">
         <pathelement location="src"/>
         <fileset dir="lib">
             <include name="**/*.jar"/>
-	        <include name="**/*.zip"/>
+            <include name="**/*.zip"/>
             <!--
                * Issue with multiple parsers.
                * JDK 1.4 ships it's own parses and contributes to the
@@ -56,8 +56,21 @@
             <include name="*.zip"/>
         </fileset>
     </path>
-    <property name="test.class.path" refid="project.class.path"/>
+    <property name="test.class.path" refid="project.classpath"/>
 
+
+
+    <path id="uidesigner.classpath">
+        <fileset dir="lib/tools">
+            <include name="jdom.jar"/>
+            <include name="bcel.jar"/>
+            <include name="javac2.jar"/>
+        </fileset>
+    </path>
+
+    <taskdef name="javac2"
+        classname="com.intellij.uiDesigner.ant.Javac2"
+        classpathref="uidesigner.classpath"/>
     <!--
        * jars that go in $TOMCAT_HOME/common/lib
        * currently in ant this is used in conjunction with
@@ -136,7 +149,7 @@
             optimize="off"
             includes="**/*${compile.pattern}*" deprecation="on" depend="on"
             verbose="no">
-            <classpath refid="project.class.path"/>
+            <classpath refid="project.classpath"/>
         </javac>
     </target>
 
@@ -177,22 +190,22 @@
             </fileset>
 
             <fileset dir="${src.root}/lib">
-<!--                <include name="jta.jar"/>-->
+                <!--                <include name="jta.jar"/>-->
                 <include name="webapp-rmiannotation.jar"/>
-<!--                <include name="commons-logging-1.0.4.jar"/>-->
-<!--                <include name="oswego-concurrent.jar"/>-->
+                <!--                <include name="commons-logging-1.0.4.jar"/>-->
+                <!--                <include name="oswego-concurrent.jar"/>-->
             </fileset>
 
-<!--
-            <fileset dir="${src.root}/lib/gateway/cluster">
-                <include name="jgroups.jar"/>
-                <include name="jta.jar"/>
-                <include name="jboss-cache.jar"/>
-                <include name="jboss-common.jar"/>
-                <include name="jboss-system.jar"/>
-                <include name="jboss-jmx.jar"/>
-            </fileset>
--->
+            <!--
+                        <fileset dir="${src.root}/lib/gateway/cluster">
+                            <include name="jgroups.jar"/>
+                            <include name="jta.jar"/>
+                            <include name="jboss-cache.jar"/>
+                            <include name="jboss-common.jar"/>
+                            <include name="jboss-system.jar"/>
+                            <include name="jboss-jmx.jar"/>
+                        </fileset>
+            -->
         </copy>
 
         <!--
@@ -251,7 +264,7 @@
             <test name="com.l7tech.common.security.xml.WssProcessorTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.xml.WssRoundTripTest" haltonfailure="no"/>
             <test name="com.l7tech.server.TokenServiceTest" haltonfailure="no"/>
-            <test name="com.l7tech.server.policy.PolicyServiceTest" haltonfailure="no" />
+            <test name="com.l7tech.server.policy.PolicyServiceTest" haltonfailure="no"/>
 
             <!--
              ** add policy tests into the com.l7tech.policy.AllTests class
@@ -292,7 +305,7 @@
         </delete>
         <delete includeEmptyDirs="true">
             <fileset dir="${src.root}/">
-                <include name="TEST*"/>             
+                <include name="TEST*"/>
             </fileset>
         </delete>
         <delete includeEmptyDirs="true">
@@ -306,9 +319,9 @@
         <delete dir="${javadoc.home}"/>
         <delete includeEmptyDirs="true">
             <fileset dir="${src.root}">
-            <include name="WspWriter*"/>
-            <include name="stubdata*"/>
-          </fileset>
+                <include name="WspWriter*"/>
+                <include name="stubdata*"/>
+            </fileset>
         </delete>
         <delete file="${src.root}/src/com/l7tech/util/Version.java"/>
         <delete file="${src.root}/tools/com/l7tech/tools/JarChecker.class"/>
@@ -318,7 +331,7 @@
     <target name="javadoc" depends="prepare">
         <javadoc packagenames="com.*" sourcepath="src"
             destdir="${javadoc.home}">
-            <classpath refid="project.class.path"/>
+            <classpath refid="project.classpath"/>
         </javadoc>
     </target>
 
@@ -425,14 +438,14 @@
             <zipfileset dir="${src.root}/etc/jini" includes="PREFERRED.LIST" prefix="WEB-INF/classes/META-INF"/>
         </war>
 
-<!--    * keep prebuilt version in src.root/lib
+        <!--    * keep prebuilt version in src.root/lib
 
-        <jar jarfile="${build.dir}/webapp-rmiannotation.jar">
-            <fileset dir="${build.dir}/classes">
-            <include name="com/l7tech/remote/jini/export/WebAppAnnotationClassProvider*.class"/>
-            </fileset>
-        </jar>
--->
+                <jar jarfile="${build.dir}/webapp-rmiannotation.jar">
+                    <fileset dir="${build.dir}/classes">
+                    <include name="com/l7tech/remote/jini/export/WebAppAnnotationClassProvider*.class"/>
+                    </fileset>
+                </jar>
+        -->
 
     </target>
 
@@ -445,7 +458,7 @@
                 <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
-                <exclude name="com/l7tech/common/security/TrustedCert**" />
+                <exclude name="com/l7tech/common/security/TrustedCert**"/>
 
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <exclude name="com/l7tech/policy/exporter/**/*"/>
@@ -471,7 +484,7 @@
                 <exclude name="com/l7tech/common/security/prov/**/*"/>
                 <exclude name="com/l7tech/common/security/saml/**/*"/>
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
-                <include name="com/l7tech/common/security/TrustedCert*.class" />
+                <include name="com/l7tech/common/security/TrustedCert*.class"/>
                 <exclude name="com/l7tech/common/security/AesKey.class"/>
                 <exclude name="com/l7tech/common/security/Cert*.class"/>
                 <exclude name="com/l7tech/common/security/Jce*.class"/>
@@ -490,7 +503,7 @@
                 <include name="com/l7tech/remote/jini/lookup/*ServiceLookup*"/>
                 <include name="com/l7tech/remote/jini/lookup/ServiceFactory.class"/>
                 <include name="com/l7tech/remote/jini/lookup/AccessILFactory*.class"/>
-                <include name="com/l7tech/remote/jini/export/RemoteService.class" />
+                <include name="com/l7tech/remote/jini/export/RemoteService.class"/>
                 <include name="com/l7tech/logging/**/*"/>
                 <!-- <include name="com/l7tech/message/**/*"/> -->
                 <include name="com/l7tech/message/Message.class"/>
@@ -613,9 +626,9 @@
     <target name="prepare.jms.openjms" if="include.jms.openjms">
         <echo>Copying OpenJMS jars from ${src.root}/lib/gateway/jms/openjms to ${build.lib}...</echo>
         <copy todir="${build.lib}">
-             <fileset dir="${src.root}/lib/gateway/jms/openjms">
-                 <include name="*.jar"/>
-             </fileset>
+            <fileset dir="${src.root}/lib/gateway/jms/openjms">
+                <include name="*.jar"/>
+            </fileset>
         </copy>
     </target>
 
@@ -694,7 +707,7 @@
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib">
                 <include name="*.jar"/>
-		        <include name="*.zip"/>
+                <include name="*.zip"/>
                 <exclude name="**/CVS/*"/>
                 <exclude name="**/**ant*"/>
                 <exclude name="**/optional.jar"/>
@@ -715,8 +728,8 @@
         <!-- the web.xml -->
         <copy todir="${build.etc}">
             <fileset dir="${src.root}/etc">
-		<include name="web.xml"/>
-	    </fileset>
+                <include name="web.xml"/>
+            </fileset>
         </copy>
 
         <!-- Resources -->
@@ -733,7 +746,7 @@
             <fileset dir="${src.root}/etc">
                 <include name="keystore.properties" if="dev.build"/>
                 <include name="ssglog.properties"/>
-		        <include name="spring.xml"/>
+                <include name="spring.xml"/>
                 <include name="treecache-service.xml"/>
             </fileset>
 
@@ -760,7 +773,7 @@
                 <include name="com/l7tech/remote/jini/lookup/*.config"/>
             </fileset>
         </copy>
-        
+
         <antcall target="prepare.jms"/>
         <antcall target="prepare.db"/>
 
@@ -792,10 +805,10 @@
     <!--
       ** main compile target
       -->
-    <target name="compile" depends="prepare, configure_properties" unless="compile.pattern">
+    <target name="compile" depends="prepare, configure_properties, compile.forms" unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
             deprecation="on" depend="on" verbose="no">
-            <classpath refid="project.class.path"/>
+            <classpath refid="project.classpath"/>
         </javac>
         <copy todir="${build.classes}">
             <fileset dir="${src.root}/src">
@@ -806,6 +819,11 @@
                 <include name="serverconfig.properties"/>
             </fileset>
         </copy>
+    </target>
+
+    <target name="compile.forms">
+        <javac2 srcdir="src" destdir="${build.classes}"
+            classpathref="project.classpath"/>
     </target>
 
     <target name="db.properties" depends="db.properties.mysql, db.properties.postgres, db.properties.oracle8, db.properties.oracle9, db.properties.oracle10"/>
@@ -886,7 +904,7 @@
     <target name="compile-tests" depends="compile">
         <javac srcdir="tests" destdir="${build.classes}" debug="on" optimize="off"
             deprecation="on" depend="on" verbose="no">
-            <classpath refid="project.class.path"/>
+            <classpath refid="project.classpath"/>
         </javac>
         <copy todir="${build.classes}">
             <fileset dir="tests">
@@ -1012,7 +1030,7 @@ cakeys = '${install.pass.ca.keystore}'
 sslkeys = '${install.pass.ssl.keystore}'
 ssgadmin = '${install.pass.ssgadmin}'
 ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
-</echo>
+        </echo>
     </target>
 
     <target name="INTERNAL-ssg-install-properties-full" if="install.full">
@@ -1045,7 +1063,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
 
     <target name="INTERNAL-ssg-install-properties-upgrade" unless="install.full">
         <!-- Delete stock server.xml, catalina.policy & hibernate.properties so as not to replace in-place ones -->
-        <delete file="${install.src.tomcat}/conf/server.xml"/> 
+        <delete file="${install.src.tomcat}/conf/server.xml"/>
         <delete file="${install.src.tomcat}/conf/catalina.policy"/>
         <delete file="${install.src.conf}/hibernate.properties"/>
 
@@ -1132,8 +1150,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <arg line="-genkey"/>
             <arg line="-alias ${install.alias.ssl.keystore}"/>
             <arg line="-dname cn=${install.ssg.hostname}"/>
-<!--            <arg line="-keyalg RSA"/>-->
-<!--            <arg line="-sigalg SHA1withRSA"/>-->
+            <!--            <arg line="-keyalg RSA"/>-->
+            <!--            <arg line="-sigalg SHA1withRSA"/>-->
             <arg line="-keypass ${install.pass.ssl.keystore}"/>
             <arg line="-storepass ${install.pass.ssl.keystore}"/>
         </java>
@@ -1409,7 +1427,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <buildnumber/>
 
         <antcall target="clean"/>
-        <antcall target="INTERNAL-buildinfo" />
+        <antcall target="INTERNAL-buildinfo"/>
         <antcall target="package"/>
         <antcall target="ssm-webstart"/>
         <antcall target="testpackage"/>
