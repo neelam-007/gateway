@@ -212,7 +212,10 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 return false;
 
             } catch (IOException ioe) {
-                logger.warning("Unable to retrieve certificate via SSL connection: " + urlConnTextField.getText().trim());
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.url.io.error") + "\n" +
+                                       urlConnTextField.getText().trim() + "\nPlease ensure the URL is correct.",
+                                       resources.getString("view.error.title"),
+                                       JOptionPane.ERROR_MESSAGE);
                 return false;
             }
 
@@ -232,8 +235,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                         "<html>The hostname in URL does not match with the certificate's subject name. " +
                         "<br>" + "Hostname in URL: " + hostnameURL + "</br>" +
                         "<br>" + "Subject DN in Certificate: " + cn + "</br>" +
-                        "<br>" + "Do you still want to view the certificate?" + "</br></html>",
-                        "Hostname mismatch",
+                        "<br>" + "Do you want to accept the certificate?" + "</br></html>",
+                        "Hostname Mismatch",
                         0, JOptionPane.WARNING_MESSAGE,
                         null, options, options[1]);
 
@@ -389,8 +392,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         _4 = new JRadioButton();
         fileRadioButton = _4;
         _4.setText("Import from a File");
-        _4.setEnabled(true);
         _4.setSelected(false);
+        _4.setEnabled(true);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;
         _5 = new JRadioButton();
