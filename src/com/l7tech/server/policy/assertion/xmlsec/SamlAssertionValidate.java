@@ -93,7 +93,7 @@ public class SamlAssertionValidate {
             validationResults.add(new Error("No SAML assertion found in security Header", soapMessageDoc, null, null));
             return;
         } else {
-            if (!assertion.isSigned()) {
+            if (!assertion.hasEmbeddedIssuerSignature()) {
                 validationResults.add(new Error("Unsigned SAML assertion found in security Header", soapMessageDoc, null, null));
                 return;
 

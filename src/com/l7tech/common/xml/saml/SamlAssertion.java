@@ -194,7 +194,7 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
         return assertionId;
     }
 
-    public boolean isSigned() {
+    public boolean hasEmbeddedIssuerSignature() {
         return isSigned;
     }
 

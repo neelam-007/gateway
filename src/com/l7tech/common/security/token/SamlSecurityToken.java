@@ -35,7 +35,7 @@ public interface SamlSecurityToken extends SigningSecurityToken {
 
     String getAssertionId();
 
-    boolean isSigned();
+    boolean hasEmbeddedIssuerSignature();
 
     /** Check signature of this saml assertion.  May only be called if isSigned() returns true. */
     void verifyIssuerSignature() throws SignatureException;

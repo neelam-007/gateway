@@ -165,7 +165,7 @@ public class TokenServiceTest extends TestCase {
                                                                                   issuerCertificate);
         assertTrue("Token obtained must be SAML", responseObj instanceof SamlAssertion);
         SamlAssertion token = (SamlAssertion)responseObj;
-        assertTrue("Obtained saml token must be signed", token.isSigned());
+        assertTrue("Obtained saml token must be signed", token.hasEmbeddedIssuerSignature());
         assertTrue("Obtained saml token must be holder-of-key", token.isHolderOfKey());
         assertTrue("Obtained saml token must have non-null assertion ID", token.getAssertionId() != null);
         assertTrue("Obtained saml token must have non-empty assertion ID", token.getAssertionId().length() > 0);
