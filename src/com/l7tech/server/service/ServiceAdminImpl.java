@@ -2,22 +2,26 @@ package com.l7tech.server.service;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.*;
-import com.l7tech.remote.jini.export.RemoteService;
-import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.service.ResolutionParameterTooLongException;
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.policy.validator.ServerPolicyValidator;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ResolutionParameterTooLongException;
+import com.l7tech.service.ServiceAdmin;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpState;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.methods.GetMethod;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -42,20 +46,40 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
     public String resolveWsdlTarget(String url) throws RemoteException {
         try {
             URL urltarget = new URL(url);
-            URLConnection connection = urltarget.openConnection();
-            InputStream in = connection.getInputStream();
-            byte[] buffer = new byte[2048];
-            int read = in.read(buffer);
-            StringBuffer out = new StringBuffer();
-            while (read > 0) {
-                out.append(new String(buffer, 0, read));
-                read = in.read(buffer);
+            HttpClient client = new HttpClient();
+            GetMethod get = new GetMethod(url);
+            // support for passing username and password in the url from the ssm
+            String userinfo = urltarget.getUserInfo();
+            if (userinfo != null && userinfo.indexOf(':') > -1) {
+                String login = userinfo.substring(0, userinfo.indexOf(':'));
+                String passwd = userinfo.substring(userinfo.indexOf(':')+1, userinfo.length());
+                HttpState state = client.getState();
+                get.setDoAuthentication(true);
+                state.setAuthenticationPreemptive(true);
+                state.setCredentials(null, null, new UsernamePasswordCredentials(login, passwd));
             }
-            return out.toString();
-        } catch (IOException e) {
-            String msg = "Cannot resolve WSDL target " + url;
+            int ret = client.executeMethod(get);
+            byte[] body = null;
+            if (ret == 200) {
+                body = get.getResponseBody();
+                return new String(body);
+            } else {
+                String msg = "The URL " + url + " is returning code " + ret;
+                logger.info(msg);
+                throw new RemoteException(msg);
+            }
+        } catch (MalformedURLException e) {
+            String msg = "Bad url: " + url;
             logger.log(Level.WARNING, msg, e);
-            throw new RemoteException(msg + e.getMessage(), e);
+            throw new RemoteException(msg, e);
+        } catch (HttpException e) {
+            String msg = "Http error getting " + url;
+            logger.log(Level.WARNING, msg, e);
+            throw new RemoteException(msg, e);
+        } catch (IOException e) {
+            String msg = "Error getting " + url;
+            logger.log(Level.WARNING, msg, e);
+            throw new RemoteException(msg, e);
         }
     }
 
