@@ -8,6 +8,15 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.util.ThreadLocalHttpClient;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.log4j.Category;
+
+import java.io.IOException;
+import java.net.URL;
 
 /**
  * The ClientProxy's default PolicyManager.  Loads policies from the SSG on-demand
@@ -16,6 +25,7 @@ import com.l7tech.policy.assertion.TrueAssertion;
  * Time: 10:22:35 AM
  */
 public class PolicyManagerImpl implements PolicyManager {
+    private static final Category log = Category.getInstance(PolicyManagerImpl.class);
     private static final PolicyManagerImpl INSTANCE = new PolicyManagerImpl();
     private static final Assertion nullPolicy = TrueAssertion.getInstance();
 
@@ -41,5 +51,31 @@ public class PolicyManagerImpl implements PolicyManager {
         if (policy == null && request.getUri().length() > 0)
             policy = request.getSsg().getPolicyByUri(request.getUri());
         return policy == null ? nullPolicy : policy;
+    }
+
+    /**
+     * Notify the PolicyManager that a policy may be out-of-date.
+     * The PolicyManager should attempt to update the policy if it needs to do so.
+     * @param request The request that failed in a way suggestive that its policy may be out-of-date.
+     * @param policyUrl The URL to fetch the policy from
+     * @throws ConfigurationException if a policy update was already attempted for this request
+     * @throws IOException if the policy could not be read from the SSG
+     */
+    public void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException {
+        HttpClient client = ThreadLocalHttpClient.getHttpClient();
+        client.getState().setAuthenticationPreemptive(false);
+        client.getState().setCredentials(null, null, null);
+        GetMethod getMethod = new GetMethod(policyUrl.toString());
+        getMethod.setDoAuthentication(false); // TODO: will authentication be required to download a policy?
+        try {
+            int status = client.executeMethod(getMethod);
+            Assertion policy = WspReader.parse(getMethod.getResponseBodyAsStream());
+            request.getSsg().attachPolicy(request.getUri(), request.getSoapAction(), policy);
+        } catch (IllegalArgumentException e) {
+            throw new ConfigurationException(
+                    "Client request must have either a SOAPAction header or a valid SOAP body namespace URI");
+        } finally {
+            getMethod.releaseConnection();
+        }
     }
 }
