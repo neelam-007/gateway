@@ -12,6 +12,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.Collection;
 import java.util.TreeSet;
+import java.security.cert.Certificate;
 
 /**
  * Layer 7 Technologies, inc.
@@ -53,7 +54,12 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                 String dbPassHash = dbUser.getPassword();
                 String authPassHash;
 
-                if ( pc.getFormat() == CredentialFormat.CLEARTEXT )
+                if (pc.getFormat() == CredentialFormat.CLIENTCERT ||  pc.getFormat() == CredentialFormat.CLIENTCERT_X509_ASN1_DER) {
+                    Certificate localcert = userManager.retrieveUserCert(Long.toString(dbUser.getOid()));
+                    // todo, compare cert
+                    return true;
+                }
+                else if ( pc.getFormat() == CredentialFormat.CLEARTEXT )
                     authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ) );
                 else
                     authPassHash = new String( credentials, ENCODING );
