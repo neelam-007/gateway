@@ -68,6 +68,12 @@ public class SecureSpanConstants {
      */
     public static final String SESSION_SERVICE_FILE = "/ssg/xmlencsession";
 
+    /**
+     * The console compares this value with the value returned by IdentityAdmin.echoVersion()
+     * this ensures that the console can talk to the server.
+     */
+    public static final String ADMIN_PROTOCOL_VERSION = "20031021";
+
     public static class HttpHeaders {
         /**
          * Contains the version number of the policy used and/or expected by the entity providing the header.
@@ -227,11 +233,5 @@ public class SecureSpanConstants {
          * </ul>
          */
         public static final String HEADER_KEYRES = "keyres";
-
-        /**
-         * The console compares this value with the value returned by IdentityAdmin.echoVersion()
-         * this ensures that the console can talk to the server.
-         */
-        public static final String ADMIN_PROTOCOL_VERSION = "20031021";
     }
 }
