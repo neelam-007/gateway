@@ -68,7 +68,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
      */
     public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion a, ServiceNode sn) {
         super(owner, true);
-        setTitle("HTTP Routing Properties");
+        setTitle("HTTP(S) Routing Properties");
         assertion = a;
         this.service = sn;
         initComponents();
