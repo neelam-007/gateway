@@ -18,7 +18,6 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.logging.LogManager;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.Keys;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.ServerConfig;
@@ -136,10 +135,10 @@ public class ServerRoutingAssertion implements ServerAssertion {
             if (_data.isAttachSamlSenderVouches()) {
                 Document document = XmlUtil.stringToDocument(requestXml);
                 SamlAssertionGenerator ag = new SamlAssertionGenerator();
-                SignerInfo si = new Keys().asSignerInfo("CN="+ServerConfig.getInstance().getHostname());
+//                SignerInfo si = new com.l7tech.common.security.Keys().asSignerInfo("CN="+ServerConfig.getInstance().getHostname());
                 UserBean ub = new UserBean();
                 ub.setName("CN=fred");
-                ag.attachSenderVouches(document, ub, si);
+//                ag.attachSenderVouches(document, ub, si);
                 requestXml = XmlUtil.documentToString(document);
 System.out.println(requestXml);
             }
@@ -185,18 +184,6 @@ System.out.println(requestXml);
             logger.log(Level.SEVERE, null, ioe);
             return AssertionStatus.FAILED;
         } catch (SAXException e) {
-            logger.log(Level.SEVERE, null, e);
-            return AssertionStatus.FAILED;
-        } catch (NoSuchAlgorithmException e) {
-            logger.log(Level.SEVERE, null, e);
-            return AssertionStatus.FAILED;
-        } catch (SignatureException e) {
-            logger.log(Level.SEVERE, null, e);
-            return AssertionStatus.FAILED;
-        } catch (InvalidAlgorithmParameterException e) {
-            logger.log(Level.SEVERE, null, e);
-            return AssertionStatus.FAILED;
-        } catch (InvalidKeyException e) {
             logger.log(Level.SEVERE, null, e);
             return AssertionStatus.FAILED;
         } finally {
