@@ -88,7 +88,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                         // Authentication failure
                         status = AssertionStatus.AUTH_FAILED;
                         response.setAuthenticationMissing(true);
-                        _log.log(Level.FINER, "Authentication failed for " + user.getLogin() );
+                        _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
                     }
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
