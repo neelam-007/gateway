@@ -45,7 +45,7 @@ or die "Couldn't get DB connection: " . DBI->errstr;
 
 my $dt= (time - ($days * 24 * 60 * 60) ) * 1000 ;
  
-my $sql="DELETE FROM ssg_log WHERE millis < $dt" ;
+my $sql="DELETE FROM ssg.ssg_logs WHERE millis < $dt" ;
 
 # connect , or reuse $dbh, prepare and execute
 
