@@ -6,12 +6,14 @@
 
 package com.l7tech.common.util;
 
-import org.apache.log4j.Category;
+import com.l7tech.logging.LogManager;
 
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Run the system's "uptime" utility in a background thread.
@@ -21,7 +23,7 @@ import java.io.InputStream;
  * Time: 5:45:56 PM
  */
 public class UptimeMonitor {
-    private static final Category log = Category.getInstance(UptimeMonitor.class);
+    private static final Logger logger = LogManager.getInstance().getSystemLogger();
     private static final int REFRESH_DELAY = 1000 * 30;
     private static final String[] UPTIME_PATHS = new String[] {
         "/usr/bin/uptime",
@@ -67,7 +69,7 @@ public class UptimeMonitor {
                 Process up = Runtime.getRuntime().exec(uptimePath);
                 up.waitFor();
                 found = uptimePath;
-                log.info("Using uptime executable: " + found);
+                logger.info("Using uptime executable: " + found);
                 break;
             } catch (IOException e) {
                 // loop around and try the next one
@@ -134,7 +136,7 @@ public class UptimeMonitor {
      * Runs in own thread.  Gather uptime information every 30 seconds.
      */
     private void runMonitorThread() {
-        log.info("Uptime monitor thread is starting");
+        logger.info("Uptime monitor thread is starting");
         for (;;) {
             Process up;
             try {
@@ -148,9 +150,9 @@ public class UptimeMonitor {
                     this.result = snapshot;
                 }
             } catch (IOException e) {
-                log.warn("Unable to get system uptime from the uptime executable", e);
+                logger.log(Level.WARNING, "Unable to get system uptime from the uptime executable", e);
             } catch (InterruptedException e) {
-                log.info("Uptime monitor thread is shutting down");
+                logger.info("Uptime monitor thread is shutting down");
                 return;
             }
 
@@ -158,7 +160,7 @@ public class UptimeMonitor {
             try {
                 Thread.sleep(REFRESH_DELAY);
             } catch (InterruptedException e) {
-                log.info("Uptime monitor thread is shutting down");
+                logger.info("Uptime monitor thread is shutting down");
                 return;
             }
         }
