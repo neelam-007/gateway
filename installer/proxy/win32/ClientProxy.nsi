@@ -6,7 +6,7 @@
 !define J2RE_PATH "C:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !define COMPANY "Layer7 Technologies"
 !define MUI_PRODUCT "Layer7 Client Proxy" ;Define your own software name here
-!define MUI_VERSION "0.9b" ;Define your own software version here
+!define MUI_VERSION "0.91b" ;Define your own software version here
 !define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
 
 !include "MUI.nsh"
