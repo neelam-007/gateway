@@ -121,6 +121,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         this.firePropertyChange("name", oldName, name);
     }
 
+    public PolicyTree getPolicyTree() {
+        return policyTree;
+    }
 
     /**
      * Get the service node that thids panel is editing

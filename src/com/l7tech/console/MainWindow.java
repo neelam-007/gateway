@@ -25,6 +25,7 @@ import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeSelectionEvent;
@@ -39,9 +40,7 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.util.EventListener;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -152,6 +151,8 @@ public class MainWindow extends JFrame {
     private JMenuItem saveMenuItem;
     private boolean disconnected = false;
     private String ssgURL;
+    private IdentitiesRootNode identitiesRootNode;
+    private ServicesFolderNode servicesRootNode;
 
     /**
      * MainWindow constructor comment.
@@ -711,6 +712,28 @@ public class MainWindow extends JFrame {
                * @see Action#removePropertyChangeListener
                */
               public void actionPerformed(ActionEvent event) {
+                  Collection alreadyRefreshed = new ArrayList();
+                  // no matter what, if id provider tree exists, always refresh it
+                  if (identityProvidersTree != null) {
+                      identityProvidersTree.refresh(identitiesRootNode);
+                      alreadyRefreshed.add(identityProvidersTree);
+                  }
+                  // no matter what, if service tree exists, always refresh it
+                  if (servicesTree != null) {
+                      servicesTree.refresh(servicesRootNode);
+                      alreadyRefreshed.add(servicesTree);
+                  }
+                  // no matter what, always refresh the policy editor panel if it is showing
+                  final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
+                  final JComponent jc = cw.getComponent();
+                  if (jc != null && jc instanceof PolicyEditorPanel) {
+                      PolicyEditorPanel pep = (PolicyEditorPanel)jc;
+                      if (pep.getPolicyTree() != null) {
+                          alreadyRefreshed.add(pep.getPolicyTree());
+                          pep.getPolicyTree().refresh();
+                          alreadyRefreshed.add(pep.getPolicyTree());
+                      }
+                  }
                   final KeyboardFocusManager kbm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
                   final Component c = kbm.getFocusOwner();
                   log.finest("the focus owner is " + c.getClass());
@@ -718,9 +741,11 @@ public class MainWindow extends JFrame {
 
                       try {
                           Refreshable r = (Refreshable)c;
-                          if (r.canRefresh()) {
-                              log.finest("Invoke refresh on " + c.getClass());
-                              r.refresh();
+                          if (!alreadyRefreshed.contains(r)) {
+                              if (r.canRefresh()) {
+                                  log.finest("Invoke refresh on " + c.getClass());
+                                  r.refresh();
+                              }
                           }
                       } finally {
                           SwingUtilities.invokeLater(new Runnable() {
@@ -1038,7 +1063,7 @@ public class MainWindow extends JFrame {
         TreePath path = new TreePath(paletteRootNode.getPath());
         assertionPaletteTree.setSelectionPath(path);
 
-        final AbstractTreeNode identitiesRootNode = new IdentitiesRootNode("Identity Providers");
+        identitiesRootNode = new IdentitiesRootNode("Identity Providers");
         treeModel = new FilteredTreeModel(null);
         treeModel.setRoot(identitiesRootNode);
 
@@ -1050,8 +1075,7 @@ public class MainWindow extends JFrame {
         rootTitle +=
           Preferences.getPreferences().getString(Preferences.SERVICE_URL);
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
-        final AbstractTreeNode servicesRootNode =
-          new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
+        servicesRootNode = new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
         servicesTreeModel.setRoot(servicesRootNode);
 
         getServicesTree().setRootVisible(true);

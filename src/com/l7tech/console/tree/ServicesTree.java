@@ -56,9 +56,15 @@ public class ServicesTree extends JTree implements Refreshable {
     }
 
     public void refresh() {
+        refresh(null);
+    }
+
+    public void refresh(AbstractTreeNode n) {
         TreePath path = getSelectionPath();
-        if (path != null) {
-            AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
+        if (n == null && path != null) {
+            n = (AbstractTreeNode)path.getLastPathComponent();
+        }
+        if (n != null) {
             final Action[] actions = n.getActions(RefreshAction.class);
             if (actions.length == 0) {
                 log.finer("No refresh action found");
@@ -66,7 +72,7 @@ public class ServicesTree extends JTree implements Refreshable {
                 ((NodeAction)actions[0]).setTree(this);
                 ActionManager.getInstance().invokeAction(actions[0]);
             }
-            setSelectionPath(path);
+            if (path != null) setSelectionPath(path);
         }
     }
 

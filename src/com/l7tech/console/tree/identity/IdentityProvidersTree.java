@@ -116,10 +116,14 @@ public class IdentityProvidersTree extends JTree implements DragGestureListener,
         return null;
     }
 
-    public void refresh() {
-        TreePath path = getSelectionPath();
-        if (path != null) {
-            AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
+    public void refresh(AbstractTreeNode n) {
+        if (n == null) {
+            TreePath path = getSelectionPath();
+            if (path != null) {
+                n = (AbstractTreeNode)path.getLastPathComponent();
+            }
+        }
+        if (n != null) {
             final Action[] actions = n.getActions(RefreshAction.class);
             if (actions.length == 0) {
                 log.warning("No refresh action found");
@@ -128,6 +132,10 @@ public class IdentityProvidersTree extends JTree implements DragGestureListener,
                 ActionManager.getInstance().invokeAction(actions[0]);
             }
         }
+    }
+
+    public void refresh() {
+        refresh(null);
     }
 
     /**
