@@ -29,7 +29,12 @@ public class XslTransformationTreeNode extends LeafAssertionTreeNode {
     }
 
     public String getName() {
-        return "[Transform soap message]";
+        if (nodeAssertion != null) {
+            String nodeName = "XSL transform ";
+            if (nodeAssertion.getDirection() == XslTransformation.APPLY_TO_REQUEST) nodeName += "request messages";
+            else if (nodeAssertion.getDirection() == XslTransformation.APPLY_TO_RESPONSE) nodeName += "response messages";
+            return nodeName;
+        } else return "XSL Transform";
     }
 
     protected String iconResource(boolean open) {
