@@ -26,12 +26,17 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
     public ClientRequestWssX509Cert(RequestWssX509Cert subject) {
     }
     
-    public AssertionStatus decorateRequest(PendingRequest request) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest request) throws BadCredentialsException,
+            OperationCanceledException, GeneralSecurityException, ClientCertificateException,
+            IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException,
+            PolicyRetryableException, PolicyAssertionException {
         //todo
         return null;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws BadCredentialsException,
+            OperationCanceledException, GeneralSecurityException, IOException, SAXException,
+            ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
         //todo
         return null;
     }
