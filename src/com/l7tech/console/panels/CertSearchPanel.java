@@ -6,19 +6,19 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
+import com.l7tech.console.event.CertListener;
+import com.l7tech.console.event.CertEvent;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.TableModelListener;
-import javax.swing.event.TableModelEvent;
+import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.ResourceBundle;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.EventListener;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
 
@@ -39,6 +39,7 @@ public class CertSearchPanel extends JDialog {
     private JPanel mainPanel;
     private JScrollPane certScrollPane;
     private TrustedCertsTable trustedCertTable = null;
+    private EventListenerList listenerList = new EventListenerList();
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertSearchPanel.class.getName());
@@ -113,8 +114,16 @@ public class CertSearchPanel extends JDialog {
 
         selectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                int row = trustedCertTable.getSelectedRow();
+                TrustedCert tc;
+                if (row >= 0) {
+                    tc = (TrustedCert) trustedCertTable.getTableSorter().getData(row);
+                    fireEventCertSelected(tc);
+                }
 
+                dispose();
             }
+
         });
 
         viewButton.addActionListener(new ActionListener() {
@@ -152,6 +161,48 @@ public class CertSearchPanel extends JDialog {
         }
         viewButton.setEnabled(viewEnabled);
         selectButton.setEnabled(selectEnabled);
+    }
+
+    /**
+     * add the CertListener
+     *
+     * @param listener the CertListener
+     */
+    public void addCertListener(CertListener listener) {
+        listenerList.add(CertListener.class, listener);
+    }
+
+    /**
+     * remove the the CertListener
+     *
+     * @param listener the CertListener
+     */
+    public void removeCertListener(CertListener listener) {
+        listenerList.remove(CertListener.class, listener);
+    }
+
+    /**
+     * notfy the listeners
+     *
+     * @param cert the trusted cert
+     */
+    private void fireEventCertSelected(final TrustedCert cert) {
+        SwingUtilities.invokeLater(
+          new Runnable() {
+              public void run() {
+                  TrustedCert tc = null;
+                  try {
+                      tc = (TrustedCert) cert.clone();
+                  } catch (CloneNotSupportedException e) {
+                      //todo:
+                  }
+                  CertEvent event = new CertEvent(this, tc);
+                  EventListener[] listeners = listenerList.getListeners(CertListener.class);
+                  for (int i = 0; i < listeners.length; i++) {
+                      ((CertListener)listeners[i]).certSelected(event);
+                  }
+              }
+          });
     }
 
     /**
