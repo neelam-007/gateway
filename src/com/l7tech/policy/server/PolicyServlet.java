@@ -124,6 +124,7 @@ public class PolicyServlet extends HttpServlet {
         response.setContentLength(cert.length);
         response.getOutputStream().write(cert);
         response.flushBuffer();
+        LogManager.getInstance().getSystemLogger().log(Level.INFO, "Sent ssl cert: " + gotpath);
     }
 
     private PublishedService resolveService(long oid) {
