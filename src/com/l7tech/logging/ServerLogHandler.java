@@ -564,11 +564,6 @@ public class ServerLogHandler extends Handler {
         }
     }
 
-    /**
-     * during initialization, this class requires the use of ClusterInfoManager
-     * in turn, that class uses the LogManager.getInstance(). therefore, this manager
-     * should not be initialized at part of LogManager.getInstance().
-     */
     public synchronized void initialize() throws IllegalStateException {
         nodeid = ClusterInfoManager.getInstance().thisNodeId();
         // start the deamon
