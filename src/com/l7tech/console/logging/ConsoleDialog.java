@@ -160,9 +160,11 @@ public class ConsoleDialog extends JFrame {
                   Document doc = logTextArea.getDocument();
                   try {
                       if (doc.getLength() >= MAX_LOG_SIZE) {
-                        doc.remove(0, msg.length());
+                          //todo: extend the Document as the default
+                          // one is super slow for what we want
+                        doc.remove(0, MAX_LOG_SIZE/2);
                       }
-                      doc.insertString(0, msg, null);
+                      doc.insertString(doc.getLength(), msg, null);
                   } catch (BadLocationException e) {
                       e.printStackTrace(System.err);
                   }
