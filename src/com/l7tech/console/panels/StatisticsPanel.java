@@ -17,6 +17,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.Vector;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 
 /*
@@ -54,6 +55,7 @@ public class StatisticsPanel extends JPanel {
     private HashMap lastMinuteCompletedCountsCache;
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
+    static Logger logger = Logger.getLogger(StatisticsPanel.class.getName());
 
     public StatisticsPanel() {
         setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
@@ -303,6 +305,19 @@ public class StatisticsPanel extends JPanel {
             else{
                lastMinuteCounts.remove(0);
                lastMinuteCounts.add(new Long(completedCount));
+            }
+
+            if (lastMinuteCounts.size() > 2) {
+                // check if the new count is smaller than the previous count
+                if (((Long) lastMinuteCounts.get(lastMinuteCounts.size() - 1)).longValue()
+                        - ((Long) lastMinuteCounts.get(lastMinuteCounts.size() - 2)).longValue() < 0) {
+
+                    // this could happen when a node is removed from the cluster
+                    logger.warning("New total completed count is less than the previous count. Service Name: " + serviceName);
+
+                    // should clean up the cache
+                    lastMinuteCounts.removeAllElements();
+                }
             }
         } else {
             Vector newList = new Vector();
