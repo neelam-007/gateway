@@ -7,7 +7,6 @@
 package com.l7tech.service.resolution;
 
 import com.l7tech.message.Request;
-import com.l7tech.service.ServiceListener;
 import com.l7tech.service.PublishedService;
 
 import java.util.*;
