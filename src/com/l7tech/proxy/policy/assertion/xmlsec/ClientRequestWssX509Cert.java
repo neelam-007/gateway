@@ -30,6 +30,7 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
             OperationCanceledException, GeneralSecurityException, ClientCertificateException,
             IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException,
             PolicyRetryableException, PolicyAssertionException {
+        PendingRequest.WssDecoratorRequirements wssReqs = request.getWssRequirements(); 
         //todo
         return null;
     }
@@ -37,17 +38,15 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws BadCredentialsException,
             OperationCanceledException, GeneralSecurityException, IOException, SAXException,
             ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
-        //todo
-        return null;
+        // no action on response
+        return AssertionStatus.NONE;
     }
 
     public String getName() {
-        //todo
-        return null;
+        return "WSS Sign SOAP Request";
     }
 
     public String iconResource(boolean open) {
-        //todo
-        return null;
+        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 }
