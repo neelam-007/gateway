@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 public class HibernatePersistenceContext extends PersistenceContext {
-    public static final int MAXRETRIES = 5;
+    public static final int MAXRETRIES = 2;
     public static final int RETRYTIME = 250;
 
     public HibernatePersistenceContext(Session mainSession, Session auditSession) {
