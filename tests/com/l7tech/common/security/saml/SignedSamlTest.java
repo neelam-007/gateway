@@ -154,10 +154,13 @@ public class SignedSamlTest extends TestCase {
         xmlOptions.setSaveAggresiveNamespaces();
         xmlOptions.setSaveSuggestedPrefixes(prefixMap);
 
+        //todo: just a heads up, the 4 lines below could be replaced by:
+        //  final Document assertionDoc = samlAssertion.newdomNode();
         StringWriter stringWriter = new StringWriter();
         samlAssertion.save(stringWriter, xmlOptions);
         String s = stringWriter.toString();
         final Document assertionDoc = XmlUtil.stringToDocument(s);
+
         String s2 = XmlUtil.nodeToFormattedString(assertionDoc);
         System.out.println("Before signing: " + s2);
         stringWriter.close();
