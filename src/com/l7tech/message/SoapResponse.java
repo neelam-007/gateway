@@ -37,7 +37,10 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
     }
 
     public synchronized String getResponseXml() throws IOException {
-        if ( _responseXml == null ) {
+        if (_responseXml == null && _document != null) {
+            // serialize the document
+            _responseXml = serializeDoc(_document);
+        } else if ( _responseXml == null ) {
             // TODO: Encoding?
             BufferedReader br = new BufferedReader( new InputStreamReader( getProtectedResponseStream(), ENCODING ) );
             StringBuffer result = new StringBuffer();
@@ -48,6 +51,11 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
             _responseXml = result.toString();
         }
         return _responseXml;
+    }
+
+    public void setDocument(Document doc) {
+        _document = doc;
+        _responseXml = null;
     }
 
     public synchronized Document getDocument() throws IOException, SAXException {

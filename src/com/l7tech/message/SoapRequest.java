@@ -5,10 +5,13 @@ import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.RequestIdGenerator;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xml.serialize.OutputFormat;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.math.BigInteger;
 
 /**
@@ -21,6 +24,14 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         super( metadata );
         _id = RequestIdGenerator.next();
         MessageProcessor.setCurrentRequest(this);
+    }
+
+    /**
+     * the new valid xml payload for this request
+     */
+    public void setDocument(Document doc) {
+        _document = doc;
+        _requestXml = null;
     }
 
     /**
@@ -45,7 +56,10 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
 
     public String getRequestXml() throws IOException {
         // TODO: Attachments
-        if ( _requestXml == null ) {
+        if (_requestXml == null && _document != null) {
+            // serialize the document
+            _requestXml = serializeDoc(_document);
+        } else if ( _requestXml == null ) {
             BufferedReader reader = new BufferedReader( getRequestReader() );
             StringBuffer xml = new StringBuffer();
             String line;
