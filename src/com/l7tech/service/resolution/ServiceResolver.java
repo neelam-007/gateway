@@ -21,7 +21,7 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
     public static final int SLOW = 100;
 
     /**
-     * Sets the <code>Collection</code> of services in the system.  Concrete implementations should override this method and invalidate any caches based on this Collection whenever this method is called.
+     * Sets the <code>Set</code> of services in the system.  Concrete implementations should implement doSetServices and invalidate any caches based on this Set whenever it is called.
      * @param services A Set of all the services in the system.
      */
     public synchronized void setServices( Set services ) {
@@ -50,8 +50,8 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
         return doResolve( request, set );
     }
 
-    abstract void doSetServices( Set services );
-    abstract Set doResolve( Request request, Set set ) throws ServiceResolutionException;
+    protected abstract void doSetServices( Set services );
+    protected abstract Set doResolve( Request request, Set set ) throws ServiceResolutionException;
     public abstract int getSpeed();
 
     /**
