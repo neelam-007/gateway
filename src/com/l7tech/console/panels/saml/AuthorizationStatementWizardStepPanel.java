@@ -83,7 +83,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
         if (statement == null) {
             return;
         }
-  
+
         textFieldAction.setText(statement.getAction());
         textFieldActionNamespace.setText(statement.getActionNamespace());
         textFieldResource.setText(statement.getResource());
@@ -137,7 +137,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      */
     public boolean canAdvance() {
         String resource = textFieldResource.getText();
-        return (resource != null && !"".equals(resource));
+        return (resource != null && !"".equals(resource.trim()));
     }
 
     /**
