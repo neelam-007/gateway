@@ -59,6 +59,17 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
     protected abstract String doGetGroupMembershipFilter( LdapUser user );
 
     public Set getGroupHeaders( User user ) throws FindException {
+        Collection allgroups = findAll();
+        Set output = new HashSet();
+        for (Iterator i = allgroups.iterator(); i.hasNext();) {
+            Group agrp = (Group)i.next();
+            if (isMember(user, agrp)) {
+                output.add(new EntityHeader(agrp.getUniqueIdentifier(), EntityType.GROUP, agrp.getName(), agrp.getDescription()));
+            }
+        }
+        return output;
+        /*
+        logger.finest("getGroupHeaders " + user.getClass().getName() + " " + ((LdapUser)user).getDn());
         LdapUser userImp = (LdapUser)user;
         AbstractLdapConstants constants = getConstants();
         NamingEnumeration answer = null;
@@ -100,7 +111,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
                 throw new FindException( ne.getMessage(), ne );
             }
         }
-        return headers;
+        return headers;*/
     }
 
 
