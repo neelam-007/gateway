@@ -57,6 +57,11 @@
     </servlet>
 
     <servlet>
+        <servlet-name>SnmpQueryServlet</servlet-name>
+        <servlet-class>com.l7tech.server.SnmpQueryServlet</servlet-class>
+    </servlet>
+
+    <servlet>
         <servlet-name>PolicyServlet</servlet-name>
         <servlet-class>com.l7tech.server.policy.PolicyServlet</servlet-class>
     </servlet>
@@ -135,6 +140,11 @@
     <servlet-mapping>
         <servlet-name>ping</servlet-name>
         <url-pattern>/ssg/ping</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>SnmpQueryServlet</servlet-name>
+        <url-pattern>/ssg/management/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>

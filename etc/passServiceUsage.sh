@@ -3,11 +3,23 @@
 # layer 7 technologies, inc
 # this belongs in /ssg/etc/bin
 #
-# todo, replace hard coded results with call to database
- 
+
 PATH=$path:/bin:/usr/bin
  
 PLACE=".1.3.6.1.4.1.17304.7.1"
+
+if [ "$1" = "-g" ]; then
+    VERB="get";
+else if [ "$1" = "-n" ]; then
+    VERB="getnext";
+else if [ "$1" = "-s" ]; then
+    VERB="set";
+fi
+
+RET=`wget -q -O- http://127.0.0.1:8080/ssg/management/$VERB/$2`
+echo $RET
+exit 0
+
 REQ="$2"
  
 if [ "$1" = "-n" ]; then
