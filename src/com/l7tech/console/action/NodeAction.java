@@ -1,8 +1,11 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.util.Cookie;
 
 import javax.swing.*;
+import java.util.Iterator;
 
 /**
  * The <code>NodeAction</code> is the action that is
@@ -50,6 +53,17 @@ public abstract class NodeAction extends BaseAction {
         JTree ot = tree;
         this.tree = tree;
         this.firePropertyChange("tree", ot, tree);
+    }
+
+    /**
+     * @return the published service cookie or null if not founds
+     */
+    protected ServiceNode getServiceNodeCookie() {
+        for (Iterator i = ((AbstractTreeNode)node.getRoot()).cookies(); i.hasNext(); ) {
+            Object value = ((Cookie)i.next()).getValue();
+            if (value instanceof ServiceNode) return (ServiceNode)value;
+        }
+        return null;
     }
 
 }
