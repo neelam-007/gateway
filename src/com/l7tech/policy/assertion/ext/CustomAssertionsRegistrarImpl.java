@@ -1,19 +1,18 @@
 package com.l7tech.policy.assertion.ext;
 
-import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.common.util.Locator;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.ComponentConfig;
-import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
-import com.l7tech.common.util.Locator;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -37,13 +36,8 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
     public CustomAssertionsRegistrarImpl(String[] options, LifeCycle lifeCycle)
       throws ConfigurationException, IOException {
         super(options, lifeCycle);
-        try {
-            // todo: pass the server config in ctor - em
-            init(ServerConfig.getInstance());
-            start();
-        } catch (LifecycleException e) {
-            logger.log(Level.WARNING, "Error loading custom assertions", e);
-        }
+        // todo: pass the server config in ctor - em
+        init(ServerConfig.getInstance());
     }
 
     /**
@@ -79,7 +73,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
     public Assertion resolvePolicy(EntityHeader eh)
       throws RemoteException, ObjectNotFoundException {
         if (!EntityType.SERVICE.equals(eh.getType())) {
-            throw new IllegalArgumentException("type "+eh.getType());
+            throw new IllegalArgumentException("type " + eh.getType());
         }
         ServiceManager sm = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
         if (sm == null) {
@@ -88,15 +82,15 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
         try {
             PublishedService svc = sm.findByPrimaryKey(eh.getOid());
             if (svc == null) {
-                throw new ObjectNotFoundException("service not found, "+eh); 
+                throw new ObjectNotFoundException("service not found, " + eh);
             }
             return WspReader.parse(svc.getPolicyXml());
         } catch (FindException e) {
-            ServerException se = new  ServerException("Internal server error "+e.getMessage());
+            ServerException se = new ServerException("Internal server error " + e.getMessage());
             se.initCause(e);
             throw se;
         } catch (IOException e) {
-            ServerException se = new  ServerException("Internal server error "+e.getMessage());
+            ServerException se = new ServerException("Internal server error " + e.getMessage());
             se.initCause(e);
             throw se;
         }
@@ -119,20 +113,13 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
         return result;
     }
 
-
     //-------------- custom assertion loading stuff -------------------------
-
-    public void init(ComponentConfig config) throws LifecycleException {
+    private void init(ComponentConfig config) {
         fileName = config.getProperty(KEY_CONFIG_FILE);
         if (fileName == null) {
             logger.info("'" + KEY_CONFIG_FILE + "' not specified");
+            return;
         }
-    }
-
-    /**
-     *
-     */
-    public void start() {
         if (fileName == null) return;
         InputStream in = null;
 
@@ -143,7 +130,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
             }
             loadCustomAssertions(in);
         } catch (FileNotFoundException e) {
-            logger.warning("Custom assertions config file '" + fileName + "'not found");
+            logger.info("Custom assertions config file '" + fileName + "'not present\nNo custom assertions will be loaded");
         } catch (IOException e) {
             logger.log(Level.WARNING, "I/O error reading config file '" + fileName + "'", e);
         } finally {

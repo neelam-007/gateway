@@ -46,22 +46,21 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
     protected Logger logger = LogManager.getInstance().getSystemLogger();
 
     final protected CustomAssertion customAssertion;
-    final protected CustomAssertionDescriptor descriptor;
 
     public ServerCustomAssertionHolder(CustomAssertionHolder ca) {
         if (ca == null || ca.getCustomAssertion() == null) {
             throw new IllegalArgumentException();
         }
         customAssertion = ca.getCustomAssertion(); // ignore hoder
-        descriptor = CustomAssertions.getDescriptor(customAssertion.getClass());
-        checkDescriptor();
     }
 
     public AssertionStatus checkRequest(final Request request, final Response response) throws IOException, PolicyAssertionException {
         logger.entering(ServerCustomAssertionHolder.class.getName(), "checkRequest");
         try {
             PublishedService service = (PublishedService)request.getParameter(Request.PARAM_SERVICE);
-            if (!checkDescriptor()) {
+            final CustomAssertionDescriptor descriptor = CustomAssertions.getDescriptor(customAssertion.getClass());
+
+            if (!checkDescriptor(descriptor)) {
                 throw new PolicyAssertionException("Custom assertion is misconfigured, service '" + service.getName() + "'");
             }
             Subject subject = new Subject();
@@ -118,7 +117,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
     /**
      * check if descriptor is valid, log if invalid
      */
-    private boolean checkDescriptor() {
+    private boolean checkDescriptor(CustomAssertionDescriptor descriptor) {
         if (descriptor == null || descriptor.getServerAssertion() == null) {
             logger.warning("Invalid custom assertion descriptor detected for '" + customAssertion.getClass() + "'\n" +
               " this policy element is misconfigured and will cause the policy to fail.");

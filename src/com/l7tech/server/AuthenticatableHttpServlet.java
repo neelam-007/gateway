@@ -28,67 +28,50 @@ import java.util.logging.Logger;
 /**
  * Base class for servlets that share the capability of authenticating requests against
  * id providers registered in this ssg server.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- *
+ * <p/>
  * User: flascell<br/>
  * Date: Sep 15, 2003<br/>
  * $Id$
  */
 public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
-    public void init( ServletConfig config ) throws ServletException {
+    public void init(ServletConfig config) throws ServletException {
         logger = LogManager.getInstance().getSystemLogger();
-        super.init( config );
+        super.init(config);
     }
 
     /**
      * Look for basic creds in the request and authenticate them against id providers available in this ssg.
      * If credentials are provided but they are invalid, this will throw a BadCredentialsException
+     *
      * @return the authenticated user, null if no creds provided
      */
     protected List authenticateRequestBasic(HttpServletRequest req) throws IOException, BadCredentialsException {
         // get the credentials
         List users = new ArrayList();
-
-        String authorizationHeader = req.getHeader("Authorization");
-        if (authorizationHeader == null || authorizationHeader.length() < 1) {
-            logger.warning("No authorization header found.");
-            return null;
-        }
-
-        ServerHttpBasic httpBasic = new ServerHttpBasic( new HttpBasic() );
-        LoginCredentials creds = null;
-        try {
-            creds = httpBasic.findCredentials(authorizationHeader);
-        } catch (CredentialFinderException e) {
-            logger.log(Level.SEVERE, "Exception looking for exception.", e);
-            return null;
-        }
-        if (creds == null) {
-            logger.warning("No credentials found.");
-            return null;
-        }
         // we have credentials, attempt to authenticate them
         IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
         Collection providers = null;
         try {
             providers = configManager.findAllIdentityProviders();
+            LoginCredentials creds = findCredentialsBasic(req);
             for (Iterator i = providers.iterator(); i.hasNext();) {
-                IdentityProvider provider = (IdentityProvider) i.next();
+                IdentityProvider provider = (IdentityProvider)i.next();
                 try {
                     User u = provider.authenticate(creds);
                     logger.fine("Authentication success for user " + creds.getLogin() + " on identity provider: " + provider.getConfig().getName());
-                    users.add( u );
+                    users.add(u);
                 } catch (AuthenticationException e) {
                     logger.fine("Authentication failed for user " + creds.getLogin() +
-                                " on identity provider: " + provider.getConfig().getName());
+                      " on identity provider: " + provider.getConfig().getName());
                     continue;
                 }
             }
 
-            if ( users.isEmpty() ) {
+            if (users.isEmpty()) {
                 String msg = "Creds do not authenticate against any registered id provider.";
                 logger.warning(msg);
                 throw new BadCredentialsException(msg);
@@ -97,8 +80,37 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             return users;
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Exception getting id providers.", e);
+            return users;
+        }
+    }
+
+    /**
+     * Find the credentials using http basic method.
+     *
+     * @param req the servlet request
+     * @return the <code>LoginCredentials</code> or null if not found
+     */
+    protected LoginCredentials findCredentialsBasic(HttpServletRequest req) {
+        String authorizationHeader = req.getHeader("Authorization");
+        if (authorizationHeader == null || authorizationHeader.length() < 1) {
+            logger.warning("No authorization header found.");
             return null;
         }
+
+        ServerHttpBasic httpBasic = new ServerHttpBasic(new HttpBasic());
+        LoginCredentials creds = null;
+        try {
+            creds = httpBasic.findCredentials(authorizationHeader);
+            if (creds == null) {
+                logger.warning("No credentials found.");
+            }
+            return creds;
+        } catch (CredentialFinderException e) {
+            logger.log(Level.SEVERE, "Exception looking for exception.", e);
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Exception looking for exception.", e);
+        }
+        return null;
     }
 
     /**

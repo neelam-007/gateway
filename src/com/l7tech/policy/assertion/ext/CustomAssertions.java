@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion.ext;
 
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -21,6 +23,18 @@ public class CustomAssertions {
         logger.fine("registering " + eh);
         assertions.put(eh.getName(), eh);
     }
+
+    /**
+     * Return the <code>CustomAssertionDescriptor</code> for a given CustomAssertionHolder or
+     * <b>null<b>
+     *
+     * @param ch the custom assertion holder
+     * @return the server assertion class or <b>null</b>
+     */
+    public static CustomAssertionDescriptor getDescriptor(CustomAssertionHolder ch) {
+        return getDescriptor(ch.getCustomAssertion().getClass());
+    }
+
 
     /**
      * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
