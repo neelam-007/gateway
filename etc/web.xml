@@ -11,12 +11,17 @@
     <filter>
         <filter-name>namespace</filter-name>
         <filter-class>com.l7tech.server.transport.http.HttpNamespaceFilter</filter-class>
+        <init-param>
+            <param-name>passthroughPrefixes</param-name>
+            <param-value>/, /ssg, /classserver, /index.html, result.xml</param-value>
+        </init-param>
+
     </filter>
 
     <filter-mapping>
         <filter-name>namespace</filter-name>
         <url-pattern>/*</url-pattern>
-    </filter-mapping>
+    </filter-mapping>                                            
 
     <!-- class servlet registered frst, in case boot process requires it -->
     <servlet>
@@ -55,11 +60,6 @@
             <param-name>PolicyServletUri</param-name>
             <param-value>/ssg/policy/disco.modulator?serviceoid=</param-value>
         </init-param>
-    </servlet>
-
-    <servlet>
-        <servlet-name>XMLEncSessionRequestHandler</servlet-name>
-        <servlet-class>com.l7tech.server.XMLEncSessionServlet</servlet-class>
     </servlet>
 
     <servlet>
@@ -145,16 +145,6 @@
     <servlet-mapping>
         <servlet-name>CSRServlet</servlet-name>
         <url-pattern>/ssg/csr/*</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>XMLEncSessionRequestHandler</servlet-name>
-        <url-pattern>/ssg/xmlencsession</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>XMLEncSessionRequestHandler</servlet-name>
-        <url-pattern>/ssg/xmlencsession</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
