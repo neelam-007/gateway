@@ -37,6 +37,6 @@ public class CodeURLConnection extends URLConnection {
 
     public InputStream getInputStream() throws IOException {
         connect();
-        return new ByteArrayInputStream(codeServer.geResource(url.getFile()));
+        return new ByteArrayInputStream(codeServer.getResource(url.getFile()));
     }
 }

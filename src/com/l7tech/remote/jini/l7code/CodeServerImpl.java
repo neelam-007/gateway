@@ -27,7 +27,7 @@ public class CodeServerImpl extends RemoteService implements CodeServer {
         super(options, lifeCycle);
     }
 
-    public byte[] geResource(String resource) throws IOException {
+    public byte[] getResource(String resource) throws IOException {
         logger.fine("Resource lookup "+resource);
         InputStream in = getClass().getClassLoader().getResourceAsStream(resource);
         if (in == null) {

@@ -10,5 +10,5 @@ import java.rmi.Remote;
  * @version 24-Mar-2004
  */
 public interface CodeServer extends Remote {
-    public byte[] geResource(String resource) throws IOException;
+    public byte[] getResource(String resource) throws IOException;
 }
