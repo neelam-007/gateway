@@ -79,6 +79,15 @@ public class Session {
         return ++nrRequestsUsed;
     }
 
+    /**
+     * Used on the client for sequence numbers for signed requests within this session.
+     * @return the next sequence number
+     */
+    public synchronized long nextSequenceNumber() {
+        // TODO: if sequence number gets too big, could invalidate on client side rather than wait for the SSG to do so
+        return ++highestSeq;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
