@@ -14,6 +14,10 @@
     <servlet>
         <servlet-name>PolicyServlet</servlet-name>
         <servlet-class>com.l7tech.policy.server.PolicyServlet</servlet-class>
+        <init-param>
+            <param-name>CertPath</param-name>
+            <param-value>../../kstores/ssg.cer</param-value>
+        </init-param>
     </servlet>
 
     <servlet>
