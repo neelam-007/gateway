@@ -8,6 +8,7 @@ import com.l7tech.console.table.LogTableModel;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ClusterInfo;
 import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.console.icons.ArrowIcon;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.Locator;
@@ -430,17 +431,16 @@ public class ClusterStatusWindow extends JFrame {
             System.out.println("Number of node is: " + cluster.length);
         }
 
+        GatewayStatus node1 = new GatewayStatus(cluster[0]);
+        GatewayStatus node2 = new GatewayStatus(cluster[1]);
+        GatewayStatus node3 = new GatewayStatus(cluster[2]);
+        GatewayStatus node4 = new GatewayStatus(cluster[3]);
+        GatewayStatus node5 = new GatewayStatus(cluster[4]);
+        GatewayStatus node6 = new GatewayStatus(cluster[5]);
+        GatewayStatus node7 = new GatewayStatus(cluster[6]);
+        GatewayStatus node8 = new GatewayStatus(cluster[7]);
+
         Vector dummyData = new Vector();
-
-        GatewayStatus node1 = new GatewayStatus(cluster[0], 1,  20, 5);
-        GatewayStatus node2 = new GatewayStatus(cluster[1], 1,  23, 10);
-        GatewayStatus node3 = new GatewayStatus(cluster[2], 0,  0, 0);
-        GatewayStatus node4 = new GatewayStatus(cluster[3], 1,  17, 3);
-        GatewayStatus node5 = new GatewayStatus(cluster[4], 1,  18, 8);
-        GatewayStatus node6 = new GatewayStatus(cluster[5], 1,  22, 5);
-        GatewayStatus node7 = new GatewayStatus(cluster[6], 0,  0, 0);
-        GatewayStatus node8 = new GatewayStatus(cluster[7], 0,  0, 0);
-
         dummyData.add(node1);
         dummyData.add(node2);
         dummyData.add(node3);
@@ -449,6 +449,47 @@ public class ClusterStatusWindow extends JFrame {
         dummyData.add(node6);
         dummyData.add(node7);
         dummyData.add(node8);
+
+        ServiceUsage[] serviceStat = clusterStatusService.getServiceUsage();
+        if (serviceStat != null) {
+             System.out.println("Number of service statistics is: " + serviceStat.length);
+        }
+
+        long totalClusterRequest = 0;
+        for (int i = 0; i < serviceStat.length; i++) {
+            totalClusterRequest += serviceStat[i].getRequests();
+        }
+
+
+
+        long totalRequest;
+        long totalCompleted;
+
+        for (int i = 0; i < dummyData.size(); i++) {
+            GatewayStatus gatewayStatus = (GatewayStatus) dummyData.elementAt(i);
+
+            totalRequest = 0;
+            totalCompleted = 0;
+            for (int j = 0; j < serviceStat.length; j++) {
+                if(gatewayStatus.getName().equals(serviceStat[j].getNodeid())){
+                  totalRequest += serviceStat[j].getRequests();
+                  totalCompleted += serviceStat[j].getCompleted();
+                }
+            }
+
+            if(totalRequest > 0)
+            {
+                gatewayStatus.setLoadSharing((new Long(totalRequest*100/totalClusterRequest)).intValue());
+                gatewayStatus.setRequestFailure((new Long((totalRequest - totalCompleted)*100/ totalRequest)).intValue());
+            }
+            else
+            {
+                gatewayStatus.setLoadSharing(0);
+                gatewayStatus.setRequestFailure(0);
+            }
+            gatewayStatus.setStatus(1);
+
+        }
 
         return dummyData;
     }

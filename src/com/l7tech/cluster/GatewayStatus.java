@@ -10,65 +10,83 @@ package com.l7tech.cluster;
 
 public class GatewayStatus {
 
-    public GatewayStatus(ClusterInfo clusterInfo, int status, int loadSharing, int requestFailure) {
+    public GatewayStatus(ClusterInfo clusterInfo) {
         this.clusterInfo = clusterInfo;
-        this.status = status;
-        this.loadSharing = loadSharing;
-        this.requestFailure = requestFailure;
     }
 
    /**
-     * node name
+     * Get node name
      */
     public String getName() {
         return clusterInfo.getName();
     }
 
    /**
-     * node status
+     * Get node status
      */
    public int getStatus() {
         return status;
     }
 
    /**
-     * load sharing (%)
+     * Get load sharing (%)
      */
     public int getLoadSharing() {
         return loadSharing;
     }
 
    /**
-     * Request Failure (%)
+     * Get request failure (%)
      */
     public int getRequestFailure() {
         return requestFailure;
     }
 
    /**
-     * Load Average for the last minute
+     * Get load average for the last minute
      */
     public double getAvgLoad() {
         return clusterInfo.getAvgLoad();
     }
 
    /**
-     * timestamp of when the node last booted
+     * Get timestamp of when the node last booted
      */
     public long getUptime() {
         return clusterInfo.getUptime();
     }
 
    /**
-     * direct ip address of this node
+     * Get direct ip address of this node
      */
     public String getAddress() {
         return clusterInfo.getAddress();
     }
 
 
+    /**
+      * Set node status
+      */
+    public void setStatus(int status) {
+         this.status = status;
+     }
+
+    /**
+      * Set load sharing (%)
+      */
+     public void setLoadSharing(int loadSharing) {
+         this.loadSharing = loadSharing;
+     }
+
+    /**
+      * Set request failure (%)
+      */
+     public void setRequestFailure(int requestFailure) {
+         this.requestFailure = requestFailure;
+     }
+
     private final ClusterInfo clusterInfo;
-    private final int status;
-    private final int loadSharing;
-    private final int requestFailure;
+    private int status;
+    private int loadSharing;
+    private int requestFailure;
 }
