@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.BridgeRoutingAssertionPropertiesDialog">
+  <grid id="a9e4" binding="rootPanel" row-count="16" column-count="9" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="0">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="88" y="15" width="550" height="393"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <vspacer id="c9cee">
+        <constraints>
+          <xy x="534" y="329" width="11" height="20"/>
+          <grid row="13" column="8" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="12"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <component id="1bb9f" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="20" y="23" width="162" height="14"/>
+          <grid row="1" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Protected Service SSL Certificate:"/>
+        </properties>
+      </component>
+      <hspacer id="f5bf6">
+        <constraints>
+          <xy x="530" y="24" width="20" height="11"/>
+          <grid row="1" column="8" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="12" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <component id="41422" class="javax.swing.JRadioButton" binding="rbServerCertAutoDisco">
+        <constraints>
+          <xy x="40" y="40" width="132" height="22"/>
+          <grid row="2" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <selected value="true"/>
+          <text value="Discover automatically"/>
+        </properties>
+      </component>
+      <component id="915fe" class="javax.swing.JRadioButton" binding="rbServerCertManual">
+        <constraints>
+          <xy x="40" y="63" width="108" height="22"/>
+          <grid row="3" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <enabled value="false"/>
+          <text value="Manually specify:"/>
+        </properties>
+      </component>
+      <component id="932a5" class="javax.swing.JLabel" binding="labelServerCertManual">
+        <constraints>
+          <xy x="60" y="74" width="0" height="0"/>
+          <grid row="3" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value=""/>
+        </properties>
+      </component>
+      <component id="1c3fe" class="javax.swing.JButton" binding="buttonServerCertImport">
+        <constraints>
+          <xy x="251" y="62" width="66" height="24"/>
+          <grid row="3" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+        </constraints>
+        <properties>
+          <enabled value="false"/>
+          <text value="Import"/>
+        </properties>
+      </component>
+      <component id="360c1" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="20" y="109" width="84" height="14"/>
+          <grid row="5" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Client Certificate:"/>
+        </properties>
+      </component>
+      <component id="59d1a" class="javax.swing.JRadioButton" binding="rbClientCertUseGatewaySsl">
+        <constraints>
+          <xy x="40" y="126" width="160" height="22"/>
+          <grid row="6" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <selected value="true"/>
+          <text value="Use Gateway SSL certificate"/>
+        </properties>
+      </component>
+      <component id="bd37e" class="javax.swing.JRadioButton" binding="rbClientCertManual">
+        <constraints>
+          <xy x="40" y="149" width="108" height="22"/>
+          <grid row="7" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <enabled value="false"/>
+          <text value="Manually specify:"/>
+        </properties>
+      </component>
+      <component id="ae3ac" class="javax.swing.JButton" binding="buttonClientCertImport">
+        <constraints>
+          <xy x="251" y="148" width="66" height="24"/>
+          <grid row="7" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+        </constraints>
+        <properties>
+          <enabled value="false"/>
+          <text value="Import"/>
+        </properties>
+      </component>
+      <component id="f36e6" class="javax.swing.JLabel" binding="labelClientCertManual">
+        <constraints>
+          <xy x="60" y="160" width="0" height="0"/>
+          <grid row="7" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value=""/>
+        </properties>
+      </component>
+      <component id="d0607" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="20" y="195" width="69" height="14"/>
+          <grid row="9" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Service Policy:"/>
+        </properties>
+      </component>
+      <component id="7977c" class="javax.swing.JRadioButton" binding="rbPolicyAutoDisco">
+        <constraints>
+          <xy x="40" y="212" width="132" height="22"/>
+          <grid row="10" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <selected value="true"/>
+          <text value="Discover automatically"/>
+        </properties>
+      </component>
+      <component id="191d9" class="javax.swing.JRadioButton" binding="rbPolicyManual">
+        <constraints>
+          <xy x="40" y="234" width="108" height="22"/>
+          <grid row="11" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Manually specify:"/>
+        </properties>
+      </component>
+      <hspacer id="435dd">
+        <constraints>
+          <xy x="20" y="45" width="20" height="11"/>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="12" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <vspacer id="ac5b8">
+        <constraints>
+          <xy x="24" y="86" width="11" height="20"/>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="12"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <vspacer id="a7475">
+        <constraints>
+          <xy x="24" y="172" width="11" height="20"/>
+          <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="12"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <component id="f6080" class="javax.swing.JButton" binding="buttonCancel">
+        <constraints>
+          <xy x="464" y="349" width="66" height="24"/>
+          <grid row="14" column="7" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+        </constraints>
+        <properties>
+          <text value="Cancel"/>
+        </properties>
+      </component>
+      <component id="51eb4" class="javax.swing.JButton" binding="buttonOk">
+        <constraints>
+          <xy x="417" y="349" width="47" height="24"/>
+          <grid row="14" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+        </constraints>
+        <properties>
+          <text value="Ok"/>
+        </properties>
+      </component>
+      <component id="b33dd" class="javax.swing.JButton" binding="buttonHttpProperties">
+        <constraints>
+          <xy x="20" y="349" width="140" height="24"/>
+          <grid row="14" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="1">
+            <maximum-size width="140" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <horizontalAlignment value="0"/>
+          <text value="HTTP Properties"/>
+        </properties>
+      </component>
+      <vspacer id="243c4">
+        <constraints>
+          <xy x="534" y="373" width="11" height="20"/>
+          <grid row="15" column="8" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="12"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <hspacer id="89365">
+        <constraints>
+          <xy x="0" y="45" width="20" height="11"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="12" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <vspacer id="af17a">
+        <constraints>
+          <xy x="534" y="0" width="11" height="20"/>
+          <grid row="0" column="8" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="12"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <scrollpane id="65b89">
+        <constraints>
+          <xy x="60" y="256" width="470" height="73"/>
+          <grid row="12" column="3" row-span="1" col-span="5" vsize-policy="7" hsize-policy="0" anchor="8" fill="3">
+            <maximum-size width="500" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="77e11" class="javax.swing.JTextArea" binding="policyXmlText">
+            <constraints/>
+            <properties>
+              <columns value="40"/>
+              <rows value="12"/>
+              <text value=""/>
+              <wrapStyleWord value="false"/>
+            </properties>
+          </component>
+        </children>
+      </scrollpane>
+      <hspacer id="b2445">
+        <constraints>
+          <xy x="317" y="68" width="213" height="11"/>
+          <grid row="3" column="5" row-span="1" col-span="3" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+        </constraints>
+      </hspacer>
+      <hspacer id="720ee">
+        <constraints>
+          <xy x="40" y="333" width="20" height="12"/>
+          <grid row="13" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="16" height="12"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <hspacer id="d071">
+        <constraints>
+          <xy x="317" y="355" width="100" height="11"/>
+          <grid row="14" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+        </constraints>
+      </hspacer>
+      <hspacer id="7ab9">
+        <constraints>
+          <xy x="60" y="333" width="191" height="11"/>
+          <grid row="13" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+        </constraints>
+      </hspacer>
+    </children>
+  </grid>
+</form>

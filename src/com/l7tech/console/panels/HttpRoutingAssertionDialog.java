@@ -2,17 +2,17 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -22,14 +22,14 @@ import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.Iterator;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
-import java.net.URL;
-import java.net.MalformedURLException;
 
 /**
  * <code>HttpRoutingAssertionDialog</code> is the protected service
@@ -39,7 +39,7 @@ import java.net.MalformedURLException;
  * @version 1.0
  */
 public class HttpRoutingAssertionDialog extends JDialog {
-    static final Logger log = Logger.getLogger(LogonDialog.class.getName());
+    private static final Logger log = Logger.getLogger(HttpRoutingAssertionDialog.class.getName());
     private HttpRoutingAssertion assertion;
     private JButton cancelButton;
     private JPanel buttonPanel;
