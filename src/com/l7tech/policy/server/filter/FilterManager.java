@@ -95,9 +95,11 @@ public class FilterManager {
 
     protected synchronized void loadFilterTypes() {
         // todo, load this from some config file
-        filterTypes = new Class[2];
-        filterTypes[0] = IdentityRule.class;
-        filterTypes[1] = HideRoutingTarget.class;
+        filterTypes = new Class[] {
+            IdentityRule.class,
+            HideRoutingTarget.class,
+            HideUnsupportedClientAssertions.class,
+        };
         logger = LogManager.getInstance().getSystemLogger();
     }
 

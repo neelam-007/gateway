@@ -10,6 +10,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -58,6 +59,7 @@ public class FilterTest extends TestCase {
                 new SpecificUser(providerid, "bob"),
                 new MemberOfGroup(providerid, "sales", "666")
             })),
+            new SamlSecurity(),
             new RoutingAssertion()
         }));
 
