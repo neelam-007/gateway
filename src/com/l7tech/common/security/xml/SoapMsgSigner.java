@@ -294,8 +294,12 @@ public final class SoapMsgSigner {
                                                       final Element sigElement)
       throws SignatureNotFoundException, InvalidSignatureException {
         SignatureContext sigContext = new SignatureContext();
-        AdHocIDResolver idResolver = new AdHocIDResolver(soapMsg);
-        sigContext.setIDResolver(idResolver);
+        sigContext.setIDResolver(new IDResolver() {
+                                                       public Element resolveID(Document doc, String s) {
+                                                           return SoapUtil.getElementById(doc, s);
+                                                       }
+                                                   });
+
 
         // Find KeyInfo element, and extract certificate from this
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
