@@ -3,6 +3,7 @@ package com.l7tech.server.identity.ldap;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.ldap.*;
 import com.l7tech.objectmodel.*;
 
@@ -25,11 +26,15 @@ import java.util.logging.Logger;
  */
 public class LdapGroupManager implements GroupManager {
 
-    public LdapGroupManager(LdapIdentityProvider identityProvider) {
+    public LdapGroupManager(IdentityProvider identityProvider) {
         if (identityProvider == null) {
             throw new IllegalArgumentException("Identity Provider is required");
         }
-        this.identityProvider = identityProvider;
+        if (!(identityProvider instanceof LdapIdentityProvider)) {
+            throw new IllegalArgumentException("LDAP Identity Provider is required");
+        }
+
+        this.identityProvider = (LdapIdentityProvider)identityProvider;
         ldapIdentityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
     }
 

@@ -2,6 +2,7 @@ package com.l7tech.server.identity.ldap;
 
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
@@ -24,19 +25,23 @@ import java.util.logging.Logger;
  */
 public class LdapUserManager implements UserManager {
 
-    public LdapUserManager(LdapIdentityProvider identityProvider) {
+    public LdapUserManager(IdentityProvider identityProvider) {
         if (identityProvider == null) {
             throw new IllegalArgumentException("Identity Provider is required");
         }
-        this.identityProvider = identityProvider;
+        if (!(identityProvider instanceof LdapIdentityProvider)) {
+            throw new IllegalArgumentException("LDAP Identity Provider is required");
+        }
+
+        this.identityProvider = (LdapIdentityProvider)identityProvider;
         ldapIdentityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
     }
 
     /**
-       * fo subclasing and class proxying
-       */
-      protected LdapUserManager() {
-      }
+     * fo subclasing and class proxying
+     */
+    protected LdapUserManager() {
+    }
 
     /**
      * find user based on dn

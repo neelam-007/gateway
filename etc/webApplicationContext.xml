@@ -78,7 +78,8 @@
       </property>
   </bean>
 
-    <bean id="federatedUserManager" class="com.l7tech.server.identity.fed.FederatedUserManager" singleton="false">
+    <bean id="federatedUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
+        class="com.l7tech.server.identity.fed.FederatedUserManager" singleton="false">
         <property name="clientCertManager">
             <ref bean="clientCertManager"/>
         </property>
@@ -87,7 +88,8 @@
         </property>
     </bean>
 
-    <bean id="federatedGroupManager" class="com.l7tech.server.identity.fed.FederatedGroupManager" singleton="false">
+    <bean id="federatedGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
+        class="com.l7tech.server.identity.fed.FederatedGroupManager" singleton="false">
         <property name="identityProvider">
             <ref bean="federatedIdentityProvider"/>
         </property>
@@ -97,31 +99,25 @@
     </bean>
 
     <!-- LDAP Identity Provider -->
-  <bean id="ldapIdentityProvider" factory-bean="identityProviderFactory" factory-method="makeProvider"
+  <bean id="ldapIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
       class="com.l7tech.server.identity.ldap.LdapIdentityProvider" singleton="false">
       <property name="clientCertManager">
           <ref local="clientCertManager"/>
-      </property>
-      <property name="userManager">
-          <!-- LDAP UserManager -->
-         <bean class="com.l7tech.server.identity.ldap.LdapUserManager" singleton="false">
-             <property name="identityProvider">
-                 <ref bean="ldapIdentityProvider"/>
-             </property>
-         </bean>
-      </property>
-      <property name="groupManager">
-          <!-- LDAP GroupManager -->
-       <bean class="com.l7tech.server.identity.ldap.LdapGroupManager" singleton="false">
-           <property name="identityProvider">
-               <ref bean="ldapIdentityProvider"/>
-           </property>
-       </bean>
       </property>
       <property name="serverConfig">
           <ref local="serverConfig"/>
       </property>
   </bean>
+
+    <!-- LDAP UserManager -->
+  <bean id="ldapUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
+      class="com.l7tech.server.identity.ldap.LdapUserManager" singleton="false">
+  </bean>
+
+    <!-- LDAP GroupManager -->
+ <bean id="ldapGroupManager"  factory-bean="identityProviderFactory" factory-method="createManagerInstance"
+     class="com.l7tech.server.identity.ldap.LdapGroupManager" singleton="false">
+ </bean>
 
     <!-- server side log manager -->
  <bean id="serverLogManager" class="com.l7tech.logging.ServerLogManager">
