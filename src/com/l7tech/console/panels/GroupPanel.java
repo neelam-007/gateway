@@ -54,7 +54,7 @@ public class GroupPanel extends EntityEditorPanel {
 
     private static final String OK_BUTTON = "OK";
     private static final String CANCEL_BUTTON = "Cancel";
-
+    private boolean formModified;
 
     /**
      * default constructor
@@ -76,7 +76,7 @@ public class GroupPanel extends EntityEditorPanel {
      */
     void setModified(boolean b) {
         // If entity not already changed
-        getOKButton().setEnabled(b);
+        formModified = true;
 
     }
 
@@ -427,6 +427,7 @@ public class GroupPanel extends EntityEditorPanel {
      */
     private boolean collectAndSaveChanges() {
         boolean result = true;
+        if (!formModified) return true;
 
         // Perform final validations
         if (!validateForm()) {

@@ -91,10 +91,7 @@ public class UserPanel extends EntityEditorPanel {
      * on whether or not data on the form has been changed
      */
     void setModified(boolean b) {
-        // If entity not already changed
         formModified = b;
-        getOKButton().setEnabled(b);
-        formModified = true;
     }
 
 
@@ -578,6 +575,7 @@ public class UserPanel extends EntityEditorPanel {
      */
     private boolean collectAndSaveChanges() {
         boolean result = true;
+        if (!formModified) return true;
 
         // Perform final validations
         if (!validateForm()) {
