@@ -78,26 +78,6 @@ public class UserMappingConfig implements Serializable {
         this.passwdType = passwdType;
     }
 
-    public static class PasswdStrategy implements Serializable {
-        public boolean equals(Object obj) {
-            if (!(obj instanceof PasswdStrategy)) return false;
-            PasswdStrategy otherone = (PasswdStrategy)obj;
-            if (otherone.val == this.val) return true;
-            return false;
-        }
-
-        public int hashCode() {
-            return val;
-        }
-
-        private PasswdStrategy(int val) {
-            this.val = val;
-        }
-        private int val;
-    }
-    public static final PasswdStrategy CLEAR = new PasswdStrategy(0);
-    public static final PasswdStrategy HASHED = new PasswdStrategy(1);
-
     private String objClass;
     private String nameAttrName;
     private String loginAttrName;
@@ -105,5 +85,5 @@ public class UserMappingConfig implements Serializable {
     private String firstNameAttrName;
     private String lastNameAttrName;
     private String emailNameAttrName;
-    private PasswdStrategy passwdType;
+    private PasswdStrategy passwdType = null;
 }
