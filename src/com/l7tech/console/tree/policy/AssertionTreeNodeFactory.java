@@ -109,7 +109,7 @@ public class AssertionTreeNodeFactory {
             return "com/l7tech/console/resources/unknown.gif";
         }
 
-        public String toStirng() {
+        public String getName() {
             return "Unknown assertion " + getUserObject().getClass();
         }
     }

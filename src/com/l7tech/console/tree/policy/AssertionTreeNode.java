@@ -26,9 +26,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     /**
      * @return the node name that is displayed
      */
-    public String getName() {
-        return this.toString();
-    }
+    abstract public String getName();
 
     /**
      * Get the set of actions associated with this node.
@@ -109,7 +107,7 @@ abstract class LeafAssertionTreeNode extends AssertionTreeNode {
 /**
  * Composite policy nodes extend this node
  */
-class CompositeAssertionTreeNode extends AssertionTreeNode {
+abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
     public CompositeAssertionTreeNode(CompositeAssertion assertion) {
         super(assertion);
         if (assertion == null) {

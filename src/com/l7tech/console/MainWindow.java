@@ -101,8 +101,9 @@ public class MainWindow extends JFrame {
     public static final String ASSERTION_PALETTE = "assertion.palette";
     public static final String SERVICES_TREE = "services.treee";
     public static final String TITLE = "SSG console";
-     public static final String NAME = "main.window"; // registered
+    public static final String NAME = "main.window"; // registered
     private JTree policyTree;
+    private Action savePolicyAction;
 
     /**
      * MainWindow constructor comment.
@@ -373,6 +374,18 @@ public class MainWindow extends JFrame {
           };
         disconnectAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return disconnectAction;
+    }
+
+    /**
+     * create the save policy Action
+     *
+     * @return the save policy <CODE>Action</CODE> implementation
+     */
+    private Action getSavePolicyAction() {
+        if (savePolicyAction !=null) return savePolicyAction;
+        savePolicyAction = new SavePolicyAction();
+        savePolicyAction.setEnabled(false);
+        return savePolicyAction;
     }
 
     /**
@@ -692,31 +705,32 @@ public class MainWindow extends JFrame {
         mainJSplitPane.add(getMainLeftJPanel(), "left");
         mainJSplitPane.setDividerSize(2);
         addWindowListener(new WindowAdapter() {
-                                /** Invoked when a window has been opened. */
-                                public void windowOpened(WindowEvent e) {
-                                    try {
-                                        Preferences prefs = Preferences.getPreferences();
-                                        String s = prefs.getString("main.split.divider.location");
-                                        if (s !=null) {
-                                           int l = Integer.parseInt(s);
-                                           mainJSplitPane.setDividerLocation(l);
-                                        }
-                                    } catch (IOException e1) {
+            /** Invoked when a window has been opened. */
+            public void windowOpened(WindowEvent e) {
+                try {
+                    Preferences prefs = Preferences.getPreferences();
+                    String s = prefs.getString("main.split.divider.location");
+                    if (s != null) {
+                        int l = Integer.parseInt(s);
+                        mainJSplitPane.setDividerLocation(l);
+                    }
+                } catch (IOException e1) {
 
-                                    } catch (NumberFormatException e1) {
-                                    }
-                                }
-                                /** Invoked when a window has been closed. */
-                                public void windowClosed(WindowEvent e) {
-                                    try {
-                                        Preferences prefs = Preferences.getPreferences();
-                                        int l = mainJSplitPane.getDividerLocation();
-                                        prefs.putProperty("main.split.divider.location", Integer.toString(l));
-                                    } catch (IOException e1) {
-                                    } catch (NullPointerException e1) {
-                                    }
-                                }
-                            });
+                } catch (NumberFormatException e1) {
+                }
+            }
+
+            /** Invoked when a window has been closed. */
+            public void windowClosed(WindowEvent e) {
+                try {
+                    Preferences prefs = Preferences.getPreferences();
+                    int l = mainJSplitPane.getDividerLocation();
+                    prefs.putProperty("main.split.divider.location", Integer.toString(l));
+                } catch (IOException e1) {
+                } catch (NullPointerException e1) {
+                }
+            }
+        });
 
         return mainJSplitPane;
     }
@@ -804,6 +818,7 @@ public class MainWindow extends JFrame {
         toolBarPane = new JToolBar();
 
         toolBarPane.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
+
         JButton b = toolBarPane.add(getConnectAction());
         b.setFont(new Font("Dialog", 1, 10));
         b.setText((String)getConnectAction().getValue(Action.NAME));
@@ -815,6 +830,13 @@ public class MainWindow extends JFrame {
         b.setText((String)getDisconnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
+
+        b = toolBarPane.add(getSavePolicyAction());
+        b.setFont(new Font("Dialog", 1, 10));
+        b.setText((String)getSavePolicyAction().getValue(Action.NAME));
+        b.setMargin(new Insets(0, 0, 0, 0));
+        b.setHorizontalTextPosition(SwingConstants.RIGHT);
+
 
         b = toolBarPane.add(getRefreshAction());
         b.setFont(new Font("Dialog", 1, 10));
@@ -838,6 +860,7 @@ public class MainWindow extends JFrame {
 
         return toolBarPane;
     }
+
 
     /**
      * Return the ToolBarPane property value.
@@ -877,31 +900,32 @@ public class MainWindow extends JFrame {
 
         final JSplitPane sections = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         addWindowListener(new WindowAdapter() {
-                                      /** Invoked when a window has been opened. */
-                                      public void windowOpened(WindowEvent e) {
-                                          try {
-                                              Preferences prefs = Preferences.getPreferences();
-                                              String s = prefs.getString("tree.split.divider.location");
-                                              if (s !=null) {
-                                                 int l = Integer.parseInt(s);
-                                                 sections.setDividerLocation(l);
-                                              }
-                                          } catch (IOException e1) {
+            /** Invoked when a window has been opened. */
+            public void windowOpened(WindowEvent e) {
+                try {
+                    Preferences prefs = Preferences.getPreferences();
+                    String s = prefs.getString("tree.split.divider.location");
+                    if (s != null) {
+                        int l = Integer.parseInt(s);
+                        sections.setDividerLocation(l);
+                    }
+                } catch (IOException e1) {
 
-                                          } catch (NumberFormatException e1) {
-                                          }
-                                      }
-                                      /** Invoked when a window has been closed. */
-                                      public void windowClosed(WindowEvent e) {
-                                          try {
-                                              Preferences prefs = Preferences.getPreferences();
-                                              int l = sections.getDividerLocation();
-                                              prefs.putProperty("tree.split.divider.location", Integer.toString(l));
-                                          } catch (IOException e1) {
-                                          } catch (NullPointerException e1) {
-                                          }
-                                      }
-                                  });
+                } catch (NumberFormatException e1) {
+                }
+            }
+
+            /** Invoked when a window has been closed. */
+            public void windowClosed(WindowEvent e) {
+                try {
+                    Preferences prefs = Preferences.getPreferences();
+                    int l = sections.getDividerLocation();
+                    prefs.putProperty("tree.split.divider.location", Integer.toString(l));
+                } catch (IOException e1) {
+                } catch (NullPointerException e1) {
+                }
+            }
+        });
 
 
         sections.setTopComponent(js);
@@ -929,8 +953,6 @@ public class MainWindow extends JFrame {
         mainLeftJPanel.add(getPolicyToolBar(), BorderLayout.EAST);
         return mainLeftJPanel;
     }
-
-
 
 
     /**

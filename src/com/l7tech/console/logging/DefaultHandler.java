@@ -36,7 +36,7 @@ public class DefaultHandler extends Handler {
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
-            reportError(null, ex, ErrorManager.FORMAT_FAILURE);
+            reportError(null, ex, java.util.logging.ErrorManager.FORMAT_FAILURE);
             return;
         }
 
@@ -49,7 +49,7 @@ public class DefaultHandler extends Handler {
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
-            reportError(null, ex, ErrorManager.WRITE_FAILURE);
+            reportError(null, ex, java.util.logging.ErrorManager.WRITE_FAILURE);
         }
     }
 
