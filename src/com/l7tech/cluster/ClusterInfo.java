@@ -63,8 +63,17 @@ public class ClusterInfo {
         this.lastUpdateTimeStamp = lastUpdateTimeStamp;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     private String mac;
     private String address;
+    private String name;
     private boolean isMaster;
     private long uptime;
     private double avgLoad;
