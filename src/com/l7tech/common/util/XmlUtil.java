@@ -8,10 +8,7 @@ package com.l7tech.common.util;
 
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -129,6 +126,54 @@ public class XmlUtil {
                 return (Element)n;
         }
         return null;
+    }
+
+    /**
+     * Finds one and only one child {@link Element} of a parent {@link Element}
+     * with the specified name that is in the specified namespace.
+     *
+     * The parent must belong to a DOM produced by a namespace-aware parser,
+     * and the name must be undecorated.
+     *
+     * @param parent the {@link Element} in which to search for children. Must be non-null.
+     * @param nsuri the URI of the namespace to which the child must belong, NOT THE PREFIX!  Must be non-null.
+     * @param name the name of the element to find. Must be non-null.
+     * @return First matching child {@link Element} or null if the specified parent contains no matching elements
+     * @throws MultipleChildElementsException if multiple matching child nodes are found
+     */
+    public static Element findOnlyOneChildElementByName( Element parent, String nsuri, String name ) throws MultipleChildElementsException {
+        if ( nsuri == null || name == null ) throw new IllegalArgumentException( "nsuri and name must be non-null!" );
+        NodeList children = parent.getChildNodes();
+        Element result = null;
+        for ( int i = 0; i < children.getLength(); i++ ) {
+            Node n = children.item(i);
+            if ( n.getNodeType() == Node.ELEMENT_NODE &&
+                 name.equals( n.getLocalName()) &&
+                 nsuri.equals( n.getNamespaceURI() ) ) {
+                if ( result != null ) throw new MultipleChildElementsException( nsuri, name );
+                result = (Element)n;
+            }
+        }
+        return result;
+    }
+
+    public static class MultipleChildElementsException extends Exception {
+        public MultipleChildElementsException( String nsuri, String name ) {
+            super( "Multiple matching child elements found" );
+            this.nsuri = nsuri;
+            this.name = name;
+        }
+
+        public String getNsUri() {
+            return nsuri;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        private String nsuri;
+        private String name;
     }
 
     /**
