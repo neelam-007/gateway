@@ -46,10 +46,12 @@ public class BootServlet extends HttpServlet {
                 logger.severe("Could not instantiate the ServiceManager");
             }
 
+            /*
             ClusterInfoManager man = new ClusterInfoManager();
             if (man.isCluster()) {
                 logger.finest("cluster");
             } else logger.finest("not cluster");
+            */
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "SQL ERROR IN BOOT SERVLET", e);
             throw new ServletException(e);
