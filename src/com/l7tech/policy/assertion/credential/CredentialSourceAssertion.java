@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Asserts that the requester's credentials were found, and using a particular authentication mechanism.
@@ -53,20 +54,20 @@ public abstract class CredentialSourceAssertion extends Assertion {
 
             if ( pc == null ) {
                 response.setAuthenticationMissing( true );
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, AssertionStatus.AUTH_REQUIRED.getMessage());
+                _log.log(Level.INFO, AssertionStatus.AUTH_REQUIRED.getMessage());
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
                 request.setPrincipalCredentials( pc );
-                return doCheckRequest( request, response );
+                return checkCredentials( request, response );
             }
         } catch ( CredentialFinderException cfe ) {
             AssertionStatus status = cfe.getStatus();
             if ( status == null ) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, cfe.getMessage(), cfe);
+                _log.log(Level.SEVERE, cfe.getMessage(), cfe);
                 throw new PolicyAssertionException( cfe.getMessage(), cfe );
             } else {
                 response.addResult( new AssertionResult( this, request, status, cfe.getMessage() ) );
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, cfe.getMessage(), cfe);
+                _log.log(Level.INFO, cfe.getMessage(), cfe);
                 if ( status == AssertionStatus.AUTH_REQUIRED )
                     response.setAuthenticationMissing(true);
                 else
@@ -75,16 +76,17 @@ public abstract class CredentialSourceAssertion extends Assertion {
                 return status;
             }
         } catch ( IllegalAccessException iae ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, iae.getMessage(), iae);
+            _log.log(Level.SEVERE, iae.getMessage(), iae);
             throw new PolicyAssertionException( iae.getMessage(), iae );
         } catch ( InstantiationException ie ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, ie);
+            _log.log(Level.SEVERE, null, ie);
             throw new PolicyAssertionException( ie.getMessage(), ie );
         }
     }
 
-    public abstract AssertionStatus doCheckRequest( Request request, Response response ) throws CredentialFinderException;
-    public abstract Class getCredentialFinderClass();
+    protected abstract Class getCredentialFinderClass();
+    protected abstract AssertionStatus checkCredentials( Request request, Response response ) throws CredentialFinderException;
 
+    protected Logger _log = LogManager.getInstance().getSystemLogger();
     protected transient Map _credentialFinders = new HashMap();
 }
