@@ -111,10 +111,15 @@ public class SecureSpanConstants {
          * this header) + H(A1), where H(A1) is the MD5 of "username:realm:password".  The hex digest
          * will be followed by a semicolon, a space, and the realm name.
          *
-         * <p>Here is a complete example:  <pre>L7-Cert-Check--1: 249d90d691cdd6fdb480c80aeaddbaa3; myrealm</pre>
+         * <p>Here is a complete example:  <pre>L7-Cert-Check--1: de615f787075c54bd19ba64da4128553; myrealm</pre>
          *
          * <p>This means it's the cert check header for auth provider -1 (the builtin provider).  The large hex
-         * number is the MD5 of "TheseAreSomeCertificateBytes" + "alice:myrealm:secret".  The username was
+         * number is the MD5 of the example client-provided nonce value "484736327827227" +
+         * the identity provider ID "-1"  +
+         * the certificate bytes "TheseAreSomeCertificateBytes" +
+         * the H(A1) MD5("alice:myrealm:secret").
+         *
+         * <p>The username was
          * provided to the certificate server with the request and is thus already known to the client.
          * The realm is returned in plaintext since the client does not know it in advance.
          * "secret" is the password that the client is supposed to know already; if both client and server agree

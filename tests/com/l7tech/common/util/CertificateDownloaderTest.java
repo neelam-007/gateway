@@ -37,7 +37,7 @@ public class CertificateDownloaderTest extends TestCase {
     }
 
     public void testUserUnknown() throws Exception {
-        CertificateDownloader cd = new CertificateDownloader(new URL("http://localhost:8080"),
+        CertificateDownloader cd = new CertificateDownloader(new URL("http://sybok:8080"),
                                                              "tesasdfasdftuser",
                                                              "testpagergassword".toCharArray());
         assertFalse(cd.downloadCertificate());
@@ -46,9 +46,9 @@ public class CertificateDownloaderTest extends TestCase {
   }
 
     public void testSuccess() throws Exception {
-        CertificateDownloader cd = new CertificateDownloader(new URL("http://localhost:8080"),
-                                                             "testuser",
-                                                             "testpassword".toCharArray());
+        CertificateDownloader cd = new CertificateDownloader(new URL("http://sybok:8080"),
+                                                             "mike",
+                                                             "asdfasdf".toCharArray());
         assertTrue(cd.downloadCertificate());
         assertTrue(cd.getCertificate() != null);
         assertFalse(cd.isUserUnknown());

@@ -28,6 +28,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
+
 /**
  * Download a certificate from the SSG, check it for validity, and import it.
  *
@@ -67,6 +69,8 @@ public class CertificateDownloader {
     public static final Category log = Category.getInstance(CertificateDownloader.class);
     public static final String CERT_PATH = "/ssg/policy/disco.modulator";
 
+    private static final int CHECK_PREFIX_LENGTH = SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX.length();
+
     private String username = null;
     private char[] password = null;
     private URL ssgUrl = null;
@@ -92,10 +96,12 @@ public class CertificateDownloader {
         this.password = password;
     }
 
-    private String getHa1() {
+    private String getHa1(String realm) {
         MessageDigest md5 = getMd5();
         md5.reset();
         md5.update((username == null ? "" : username).getBytes());
+        md5.update(":".getBytes());
+        md5.update((realm == null ? "" : realm).getBytes());
         md5.update(":".getBytes());
         md5.update((password == null ? "" : new String(password)).getBytes());
         return HexUtils.encodeMd5Digest(md5.digest());
@@ -116,14 +122,16 @@ public class CertificateDownloader {
     private class CheckInfo {
         public String oid;
         public String digest;
+        public String realm;
 
-        public CheckInfo(String oid, String digest) {
+        public CheckInfo(String oid, String digest, String realm) {
             this.oid = oid;
             this.digest = digest;
-            log.info("CheckInfo: oid=" + oid + "  digest=" + digest);
+            this.realm = realm;
+            log.info("CheckInfo: oid=" + oid + "  digest=" + digest + "  realm=" + realm);
         }
 
-        public boolean checkCert(String nonce, String ha1) {
+        public boolean checkCert() {
             MessageDigest md5 = getMd5();
             md5.reset();
             md5.update(nonce.getBytes());
@@ -133,8 +141,10 @@ public class CertificateDownloader {
             } catch (CertificateEncodingException e) {
                 throw new RuntimeException(e); // can't happen
             }
-            md5.update(ha1.getBytes());
+            md5.update(getHa1(realm).getBytes());
             String desiredValue = HexUtils.encodeMd5Digest(md5.digest());
+            log.info("Computed HA1 = " + getHa1(realm));
+            log.info("Computed check for nonce=" + nonce + "  username=" + username + "  realm=" + realm + ": " + desiredValue);
             return desiredValue.equals(digest);
         }
     }
@@ -150,12 +160,7 @@ public class CertificateDownloader {
     public boolean downloadCertificate() throws IOException, CertificateException {
         if (ssgUrl == null)
             throw new IllegalStateException("No SSG url is set");
-
-        try {
-            nonce = String.valueOf(Math.abs(SecureRandom.getInstance("SHA1PRNG").nextLong()));
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e); // can't happen
-        }
+        nonce = String.valueOf(Math.abs(new SecureRandom().nextLong()));
         String uri = ssgUrl.getPath() + "?" + "getcert=1&nonce=" + nonce;
         if (username != null)
             uri += "&username=" + URLEncoder.encode(username, "UTF-8");
@@ -181,11 +186,23 @@ public class CertificateDownloader {
             for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
                 String key = (String) i.next();
                 List list = (List) headers.get(key);
-                if (key == null || key.length() < 12 || !key.substring(0, 11).equals("Cert-Check-"))
+                log.info("Found header " + key + "=" + list.get(0));
+                if (key == null || key.length() <= CHECK_PREFIX_LENGTH ||
+                        !key.substring(0, CHECK_PREFIX_LENGTH).equals(
+                                SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX))
                     continue;
                 String idp = key.substring(11);
                 String value = (String) list.get(0);
-                checks.add(new CheckInfo(idp, value));
+                int semiPos = value.indexOf(';');
+                if (semiPos < 0) {
+                    log.error("Cert check header from SSG was badly formatted: " + key + ":" + value);
+                    continue;
+                }
+                String hash = value.substring(0, semiPos);
+                String realm = value.substring(semiPos + 1);
+                if (realm.substring(0, 1).equals(" "))
+                    realm = realm.substring(1);
+                checks.add(new CheckInfo(idp, hash, realm));
             }
             log.info("Got back " + checks.size() + " Cert-Check: headers.");
         } catch (MalformedURLException e) {
@@ -207,10 +224,9 @@ public class CertificateDownloader {
      * @return true if the cert checks out.
      */
     public boolean isValidCert() {
-        String ha1 = getHa1();
         for (Iterator i = checks.iterator(); i.hasNext();) {
             CheckInfo checkInfo = (CheckInfo) i.next();
-            if (checkInfo.checkCert(nonce, ha1))
+            if (checkInfo.checkCert())
                 return true;
         }
         return false;

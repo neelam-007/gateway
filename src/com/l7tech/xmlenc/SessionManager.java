@@ -78,15 +78,8 @@ public class SessionManager {
     }
 
     protected SecureRandom getRand() {
-        if (rand == null) {
-            try {
-                rand = SecureRandom.getInstance("SHA1PRNG");
-            } catch (NoSuchAlgorithmException e) {
-                // wont happen
-                logger.log(Level.SEVERE, "can't happen", e);
-                throw new RuntimeException(e);
-            }
-        }
+        if (rand == null)
+            rand = new SecureRandom();
         return rand;
     }
 

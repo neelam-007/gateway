@@ -133,7 +133,7 @@ public class ClientCertSslClient {
     private static class MySocketFactory implements SecureProtocolSocketFactory {
         private SSLContext sslContext;
 
-        MySocketFactory(SSLContext ctx) {
+        private MySocketFactory(SSLContext ctx) {
             this.sslContext = ctx;
         }
 
@@ -172,7 +172,7 @@ public class ClientCertSslClient {
         }
     }
 
-    public static void doMain()
+    private static void doMain()
             throws NoSuchProviderException, NoSuchAlgorithmException,
                    KeyManagementException, IOException, HttpException
     {

@@ -69,11 +69,7 @@ public class PendingRequest {
 
     public long getNonce() {
         if (nonce == null)
-            try {
-                nonce = new Long(SecureRandom.getInstance("SHA1PRNG").nextLong());
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("misconfigured VM", e);  // can't happen
-            }
+            nonce = new Long(new SecureRandom().nextLong());
         return nonce.longValue();
    }
 

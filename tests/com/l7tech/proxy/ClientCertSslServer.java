@@ -49,9 +49,9 @@ import java.util.Collection;
  * Time: 3:02:31 PM
  */
 public class ClientCertSslServer {
-    public static final Category log = Category.getInstance(ClientCertSslServer.class);
-    public static final String KEYSTORE = "C:/tomcatSsl";
-    public static final String KEYPASS = "tralala";
+    private static final Category log = Category.getInstance(ClientCertSslServer.class);
+    private static final String KEYSTORE = "C:/tomcatSsl";
+    private static final String KEYPASS = "tralala";
     private static final String KEYNAME = "tomcat";
     private static final int PORT = 5443;
 
@@ -178,7 +178,7 @@ public class ClientCertSslServer {
     }
 
     // Entry point for using Jetty.
-    public static void mainw(String[] args) throws IOException, MultiException {
+    private static void mainw(String[] args) throws IOException, MultiException {
         HttpServer httpServer = new HttpServer();
         SunJsseListener jl = new SunJsseListener(getInetAddrPort());
         jl.setKeystore(KEYSTORE);

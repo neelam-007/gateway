@@ -110,7 +110,7 @@ public class SsgFaker {
     /**
      * Stop the test SSG.
      */
-    public synchronized void stop() {
+    private synchronized void stop() {
         if (destroyed)
             throw new IllegalStateException("this SsgFaker is no more");
         try {

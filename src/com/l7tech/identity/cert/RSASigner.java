@@ -527,7 +527,7 @@ public class RSASigner {
         }*/
 
         // Init random number generator for random serialnumbers
-        random = SecureRandom.getInstance("SHA1PRNG");
+        random = new SecureRandom();
         // Using this seed we should get a different seed every time.
         // We are not concerned about the security of the random bits, only that they are different every time.
         // Extracting 64 bit random numbers out of this should give us 2^32 (4 294 967 296) serialnumbers before
