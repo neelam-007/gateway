@@ -2,7 +2,6 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import org.apache.log4j.Category;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,8 +20,6 @@ import java.util.Map;
  * Time: 4:06:17 PM
  */
 public class WspWriter {
-    private static final Category log = Category.getInstance(WspWriter.class);
-
     private OutputStream output;
     private int indent = 0;
 
@@ -168,10 +165,8 @@ public class WspWriter {
             if (getter == null)
                 throw new InvalidPolicyTreeException("Assertion failed"); // can't happen
             Method setter = (Method) setters.get(parm + ":" + getter.getReturnType());
-            if (setter == null) {
-                log.warn("WspWriter: Warning: Assertion " + assertion.getClass() + ": no setter found for parameter " + parm);
-                continue;
-            }
+            if (setter == null)
+                throw new InvalidPolicyTreeException("WspWriter: Warning: Assertion " + assertion.getClass() + ": no setter found for parameter " + parm);
             Class returnType = getter.getReturnType();
             if (!setter.getParameterTypes()[0].equals(returnType))
                 throw new InvalidPolicyTreeException("Assertion has getter and setter for " + parm + " which disagree about its type");
