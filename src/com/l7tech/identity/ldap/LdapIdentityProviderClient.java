@@ -14,7 +14,10 @@ import java.security.Principal;
  */
 public class LdapIdentityProviderClient implements com.l7tech.identity.IdentityProvider {
     public void initialize(IdentityProviderConfig config) {
+        if (!(config instanceof LdapIdentityProviderConfig)) throw new IllegalArgumentException("Expecting LdapIdentityProviderConfig in LdapIdentityProviderServer.initialize");
         this.config = (LdapIdentityProviderConfig)config;
+        userManager = new LdapUserManagerClient(this.config);
+        groupManager = new LdapGroupManagerClient(this.config);
     }
 
     public IdentityProviderConfig getConfig() {
@@ -22,11 +25,11 @@ public class LdapIdentityProviderClient implements com.l7tech.identity.IdentityP
     }
 
     public UserManager getUserManager() {
-        return null;
+        return userManager;
     }
 
     public GroupManager getGroupManager() {
-        return null;
+        return groupManager;
     }
 
     public boolean authenticate(Principal user, byte[] credentials) {
@@ -40,4 +43,6 @@ public class LdapIdentityProviderClient implements com.l7tech.identity.IdentityP
     // ************************************************
 
     private LdapIdentityProviderConfig config;
+    private LdapUserManagerClient userManager;
+    private LdapGroupManagerClient groupManager;
 }
