@@ -109,6 +109,10 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
     }
     private String getServiceURL() throws IOException {
         String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
+        if (prefUrl == null || prefUrl.length() < 1) {
+            System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
+            prefUrl = "http://localhost:8080/ssg";
+        }
         prefUrl += "/services/identities";
         return prefUrl;
         //return "http://localhost:8080/UneasyRooster/services/identities";
