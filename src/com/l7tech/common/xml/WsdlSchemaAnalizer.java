@@ -72,18 +72,6 @@ public class WsdlSchemaAnalizer {
         inputSchemas = removeQnamesFromSchemas(outputQnames);
     }
 
-    /*public static Document getWsdlSample() throws Exception {
-        return XmlUtil.getDocumentBuilder().parse(getRes(WAREHOUSE_WSDL_PATH));
-    }
-
-    private static InputSource getRes(String path) throws IOException {
-        InputStream is = WsdlSchemaAnalizer.class.getResourceAsStream(path);
-        if (is == null) {
-            throw new IOException("\ncannot load resource " + path + ".\ncheck your runtime properties.\n");
-        }
-        return new InputSource(is);
-    }*/
-
     private Collection getMessagePartsElementNames(String messageName) {
         if (messages == null) {
             messages = wsdl.getElementsByTagNameNS(WSDL_NS, "message");
@@ -223,8 +211,6 @@ public class WsdlSchemaAnalizer {
         return ouputSchemas;
     }
 
-    private static final String RESOURCE_PATH = "/com/l7tech/server/policy/assertion/xml/";
-    //private static final String WAREHOUSE_WSDL_PATH = RESOURCE_PATH + "warehouse.wsdl";
     public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
     public static final String WSDL_TYPES_ELNAME = "types";
     public static final String TOP_SCHEMA_ELNAME = "schema";
