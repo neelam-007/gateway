@@ -248,6 +248,9 @@ public class LogonDialog extends JDialog {
             }
         });
         panel.add(cancelButton);
+        Utilities.runActionOnEscapeKey(getRootPane(), new AbstractAction() {
+            public void actionPerformed(ActionEvent e) { windowAction(CMD_CANCEL); }
+        });
 
         Utilities.
           equalizeButtonSizes(new JButton[]{cancelButton, loginButton});

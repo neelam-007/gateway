@@ -106,12 +106,15 @@ public class MessageViewer extends JFrame {
             }
         });
         final JButton hideButton = new JButton("Hide");
-        hideButton.addActionListener(new ActionListener() {
-            public void actionPerformed(final ActionEvent e) {
-                MessageViewer.this.setVisible(false);
-                Gui.getInstance().updateMessageViewerStatus(); // TODO: clean up this hack somehow
-            }
-        });
+        final Action hideAction = new AbstractAction() {
+                    public void actionPerformed(final ActionEvent e) {
+                        MessageViewer.this.setVisible(false);
+                        Gui.getInstance().updateMessageViewerStatus(); // TODO: clean up this hack somehow
+                    }
+                };
+        hideButton.addActionListener(hideAction);
+        Utilities.runActionOnEscapeKey(getRootPane(), hideAction);
+        getRootPane().setDefaultButton(hideButton);
         final JPanel buttonPanel = new JPanel();
         buttonPanel.add(clearButton);
         buttonPanel.add(hideButton);

@@ -70,15 +70,7 @@ public abstract class PropertyDialog extends JDialog {
                                               new Insets(5, 0, 0, 0),
                                               0, 0));
 
-        cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(new ActionListener() {
-            public void actionPerformed(final ActionEvent e) {
-                userClickedOk = false;
-                PropertyDialog.this.hide();
-                PropertyDialog.this.dispose();
-            }
-        });
-        buttonPane.add(cancelButton,
+        buttonPane.add(getCancelButton(),
                        new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
                                               GridBagConstraints.EAST,
                                               GridBagConstraints.NONE,
@@ -94,6 +86,27 @@ public abstract class PropertyDialog extends JDialog {
                                                     new Insets(0, 5, 5, 5),
                                                     0, 0));
         getRootPane().setDefaultButton(getOkButton());
+        Utilities.runActionOnEscapeKey(getRootPane(), new AbstractAction() {
+            public void actionPerformed(ActionEvent e) { doCancel(); }
+        });
+    }
+
+    private void doCancel() {
+        userClickedOk = false;
+        PropertyDialog.this.hide();
+        PropertyDialog.this.dispose();
+    }
+
+    private JButton getCancelButton() {
+        if (cancelButton == null) {
+            cancelButton = new JButton("Cancel");
+            cancelButton.addActionListener(new ActionListener() {
+                public void actionPerformed(final ActionEvent e) {
+                    doCancel();
+                }
+            });
+        }
+        return cancelButton;
     }
 
     /** Get the OK button. */

@@ -76,6 +76,12 @@ public class PasswordDialog extends JDialog {
                     hide();
                 }
             });
+            Utilities.runActionOnEscapeKey(getRootPane(), new AbstractAction() {
+                public void actionPerformed(ActionEvent e) {
+                    passwordValid = false;
+                    hide();
+                }
+            });
         }
         return buttonCancel;
     }

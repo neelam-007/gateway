@@ -8,14 +8,13 @@ package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.gui.Gui;
+import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  *
@@ -45,11 +44,15 @@ public class AgentAboutBox extends JDialog {
                                         new Insets(0, 20, 8, 0), 0, 0));
 
         JButton okButton = new JButton(" Close ");
-        okButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                AgentAboutBox.this.dispose();
-            }
-        });
+        getRootPane().setDefaultButton(okButton);
+
+        final Action closeAction = new AbstractAction() {
+                    public void actionPerformed(ActionEvent e) {
+                        AgentAboutBox.this.dispose();
+                    }
+                };
+        okButton.addActionListener(closeAction);
+        Utilities.runActionOnEscapeKey(getRootPane(), closeAction);
         pane.add(okButton,
                  new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0,
                                         GridBagConstraints.SOUTHEAST,

@@ -74,8 +74,8 @@ public class TrustCertificateDialog extends JDialog {
         Utilities.centerOnScreen(this);
     }
 
-    private ActionListener getCancelListener() {
-        return new ActionListener() {
+    private Action getCancelAction() {
+        return new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 TrustCertificateDialog.this.hide();
                 TrustCertificateDialog.this.dispose();
@@ -85,13 +85,14 @@ public class TrustCertificateDialog extends JDialog {
 
     private JButton getCancelButton() {
         JButton cb = new JButton("Cancel");
-        cb.addActionListener(getCancelListener());
+        cb.addActionListener(getCancelAction());
+        Utilities.runActionOnEscapeKey(getRootPane(), getCancelAction());
         return cb;
     }
 
     private JButton getRejectButton() {
         JButton cb = new JButton("Reject");
-        cb.addActionListener(getCancelListener());
+        cb.addActionListener(getCancelAction());
         return cb;
     }
 

@@ -18,6 +18,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.KeyEvent;
 
 /**
  * Panel listing known SSGs and allowing create/edit/delete.
@@ -130,14 +131,14 @@ public class SsgListPanel extends JPanel {
 
     public Action getActionDeleteSsg() {
         if (actionDeleteSsg == null) {
-            actionDeleteSsg = new AbstractAction("Delete", IconManager.getRemove()) {
+            actionDeleteSsg = new AbstractAction("Remove", IconManager.getRemove()) {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg ssg = getSelectedSsg();
                     log.info("Removing Gateway " + ssg);
                     if (ssg == null)
                         return;
 
-                    Object[] options = { "Delete", "Cancel" };
+                    Object[] options = { "Remove", "Cancel" };
                     int result = JOptionPane.showOptionDialog(null,
                                                               "Are you sure you want to remove the " +
                                                               "registration for the Gateway " + ssg + "?\n" +
@@ -178,6 +179,7 @@ public class SsgListPanel extends JPanel {
                 }
             };
             actionDeleteSsg.putValue(Action.SHORT_DESCRIPTION, "Remove this Gateway registration");
+            actionDeleteSsg.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_R));
         }
         return actionDeleteSsg;
     }
@@ -199,6 +201,7 @@ public class SsgListPanel extends JPanel {
                 }
             };
             actionEditSsg.putValue(Action.SHORT_DESCRIPTION, "View or change properties associated with this Gateway");
+            actionEditSsg.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_P));
         }
         return actionEditSsg;
     }
@@ -218,6 +221,7 @@ public class SsgListPanel extends JPanel {
                 }
             };
             actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new Gateway with this Agent");
+            actionNewSsg.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_N));
         }
         return actionNewSsg;
     }
@@ -236,6 +240,7 @@ public class SsgListPanel extends JPanel {
                 }
             };
             actionSetDefaultSsg.putValue(Action.SHORT_DESCRIPTION, "Set this Gateway as the default");
+            actionSetDefaultSsg.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_D));
         }
         return actionSetDefaultSsg;
     }

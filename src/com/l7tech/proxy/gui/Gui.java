@@ -22,6 +22,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.KeyEvent;
 import java.awt.*;
 import java.util.logging.Level;
 import java.net.URL;
@@ -52,7 +53,7 @@ public class Gui {
     private static final String WINDOW_TITLE = APP_NAME;
     private static final String MESSAGE_WINDOW_TITLE = "Message Window";
     private static final String MENU_FILE = "File";
-    private static final String MENU_FILE_QUIT = "Quit";
+    private static final String MENU_FILE_QUIT = "Exit";
     private static final String MENU_WINDOW = "Window";
     private static final String MENU_MESSAGES = "Message Window";
     private static final String MENU_HELP = "Help";
@@ -295,6 +296,7 @@ public class Gui {
 
         final JMenuBar menus = new JMenuBar();
         final JMenu fileMenu = new JMenu(MENU_FILE);
+        fileMenu.setMnemonic(KeyEvent.VK_F);
 
         fileMenu.add(new JMenuItem(getSsgListPanel().getActionNewSsg()));
         fileMenu.add(new JMenuItem(getSsgListPanel().getActionEditSsg()));
@@ -303,21 +305,26 @@ public class Gui {
         fileMenu.add(new JSeparator());
 
         final JMenuItem fileQuit = new JMenuItem(MENU_FILE_QUIT);
+        fileQuit.setMnemonic(KeyEvent.VK_X);
         fileQuit.addActionListener(menuActionListener);
         fileMenu.add(fileQuit);
 
         menus.add(fileMenu);
 
         final JMenu windowMenu = new JMenu(MENU_WINDOW);
+        windowMenu.setMnemonic(KeyEvent.VK_W);
 
         showMessages = new JCheckBoxMenuItem(MENU_MESSAGES, false);
         showMessages.addActionListener(menuActionListener);
+        showMessages.setMnemonic(KeyEvent.VK_M);
         windowMenu.add(showMessages);
 
         menus.add(windowMenu);
 
         final JMenu aboutMenu = new JMenu(MENU_HELP);
+        aboutMenu.setMnemonic(KeyEvent.VK_H);
         final JMenuItem aboutMenuItem = new JMenuItem(MENU_HELP_ABOUT);
+        aboutMenuItem.setMnemonic(KeyEvent.VK_A);
         aboutMenuItem.addActionListener(menuActionListener);
         aboutMenu.add(aboutMenuItem);
         menus.add(aboutMenu);
