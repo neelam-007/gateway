@@ -35,14 +35,14 @@ public class InternalGroupManagerServer extends PersistentGroupManager {
         return GroupMembership.class;
     }
 
-    protected void preDelete( Group group ) throws DeleteException {
+    protected void preDelete( PersistentGroup group ) throws DeleteException {
         if ( Group.ADMIN_GROUP_NAME.equals( group.getName() ) ) {
             logger.severe("an attempt to delete the admin group was made.");
             throw new DeleteException("Cannot delete administrator group.");
         }
     }
 
-    protected void preUpdate( Group group ) throws FindException, UpdateException {
+    protected void preUpdate( PersistentGroup group ) throws FindException, UpdateException {
         if (Group.ADMIN_GROUP_NAME.equals(group.getName())) {
             Set oldAdminUserHeaders = getUserHeaders( group );
             if (oldAdminUserHeaders.size() < 1) {
