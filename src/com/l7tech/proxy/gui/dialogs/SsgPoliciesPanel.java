@@ -6,20 +6,30 @@
 
 package com.l7tech.proxy.gui.dialogs;
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.PolicyManager;
+import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,6 +41,7 @@ class SsgPoliciesPanel extends JPanel {
     private static final Logger log = Logger.getLogger(SsgPoliciesPanel.class.getName());
 
     private PolicyManager policyCache; // transient policies
+    private PolicyAttachmentKey lastSelectedPolicy = null;
 
     //   View for Service Policies pane
     private JTree policyTree;
@@ -38,6 +49,10 @@ class SsgPoliciesPanel extends JPanel {
     private ArrayList displayPolicies;
     private DisplayPolicyTableModel displayPolicyTableModel;
     private JButton buttonFlushPolicies;
+    private JButton importButton;
+    private JButton exportButton;
+    private JButton changeButton;
+    private JButton deleteButton;
 
     public SsgPoliciesPanel() {
         init();
@@ -55,16 +70,10 @@ class SsgPoliciesPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder());
 
         pane.add(new JLabel("<HTML><h4>Service Policies Being Cached by Bridge</h4></HTML>"),
-                 new GridBagConstraints(0, y++, 1, 1, 0.0, 0.0,
+                 new GridBagConstraints(0, y, 1, 1, 1.0, 0.0,
                                         GridBagConstraints.NORTHWEST,
-                                        GridBagConstraints.BOTH,
-                                        new Insets(14, 6, 6, 6), 3, 3));
-
-        pane.add(new JLabel("Web Services with Cached Policies:"),
-                 new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
-                                        GridBagConstraints.CENTER,
-                                        GridBagConstraints.BOTH,
-                                        new Insets(6, 6, 0, 6), 3, 3));
+                                        GridBagConstraints.HORIZONTAL,
+                                        new Insets(14, 6, 0, 6), 0, 0));
 
         buttonFlushPolicies = new JButton("Clear Policy Cache");
         buttonFlushPolicies.addActionListener(new ActionListener() {
@@ -73,11 +82,27 @@ class SsgPoliciesPanel extends JPanel {
                 updatePolicyPanel();
             }
         });
+        pane.add(Box.createGlue(),
+                 new GridBagConstraints(1, y, 1, 1, 0.0, 0.0,
+                                        GridBagConstraints.EAST,
+                                        GridBagConstraints.HORIZONTAL,
+                                        new Insets(0, 0, 0, 6), 0, 0));
         pane.add(buttonFlushPolicies,
-                 new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                 new GridBagConstraints(2, y++, 2, 1, 0.0, 0.0,
                                         GridBagConstraints.EAST,
                                         GridBagConstraints.NONE,
                                         new Insets(14, 6, 0, 6), 0, 0));
+
+        pane.add(new JLabel("Web Services with Cached Policies:"),
+                 new GridBagConstraints(0, y, 2, 1, 0.0, 0.0,
+                                        GridBagConstraints.WEST,
+                                        GridBagConstraints.HORIZONTAL,
+                                        new Insets(6, 6, 0, 6), 0, 0));
+        pane.add(Box.createGlue(),
+                 new GridBagConstraints(2, y++, 1, 1, 1.0, 0.0,
+                                        GridBagConstraints.WEST,
+                                        GridBagConstraints.HORIZONTAL,
+                                        new Insets(6, 6, 0, 6), 0, 0));
 
         displayPolicies = new ArrayList();
         displayPolicyTableModel = new DisplayPolicyTableModel();
@@ -97,13 +122,29 @@ class SsgPoliciesPanel extends JPanel {
         JScrollPane policyTableSp = new JScrollPane(policyTable);
         policyTableSp.setPreferredSize(new Dimension(120, 120));
         pane.add(policyTableSp,
-                 new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
+                 new GridBagConstraints(0, y, 3, 1, 100.0, 1.0,
                                         GridBagConstraints.CENTER,
                                         GridBagConstraints.BOTH,
-                                        new Insets(0, 6, 3, 6), 0, 0));
+                                        new Insets(0, 6, 3, 3), 0, 0));
+        JPanel policyButtons = new JPanel();
+        policyButtons.setLayout(new BoxLayout(policyButtons, BoxLayout.Y_AXIS));
+        policyButtons.add(getChangeButton());
+        policyButtons.add(getExportButton());
+        policyButtons.add(getDeleteButton());
+        policyButtons.add(Box.createGlue());
+        policyButtons.add(getImportButton());
+        Utilities.equalizeButtonSizes(new AbstractButton[] { getImportButton(),
+                                                             getExportButton(),
+                                                             getChangeButton(),
+                                                             getDeleteButton() });
+        pane.add(policyButtons,
+                 new GridBagConstraints(3, y++, 1, 1, 0.0, 0.0,
+                                        GridBagConstraints.NORTHWEST,
+                                        GridBagConstraints.VERTICAL,
+                                        new Insets(0, 0, 3, 6), 0, 0));
 
         pane.add(new JLabel("Associated Policy:"),
-                 new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
+                 new GridBagConstraints(0, y++, GridBagConstraints.REMAINDER, 1, 0.0, 0.0,
                                         GridBagConstraints.CENTER,
                                         GridBagConstraints.BOTH,
                                         new Insets(4, 6, 0, 6), 0, 0));
@@ -113,7 +154,7 @@ class SsgPoliciesPanel extends JPanel {
         JScrollPane policyTreeSp = new JScrollPane(policyTree);
         policyTreeSp.setPreferredSize(new Dimension(120, 120));
         pane.add(policyTreeSp,
-                 new GridBagConstraints(0, y++, 2, 1, 100.0, 100.0,
+                 new GridBagConstraints(0, y++, GridBagConstraints.REMAINDER, 1, 100.0, 100.0,
                                         GridBagConstraints.CENTER,
                                         GridBagConstraints.BOTH,
                                         new Insets(2, 6, 6, 6), 3, 3));
@@ -123,6 +164,128 @@ class SsgPoliciesPanel extends JPanel {
                 displaySelectedPolicy();
             }
         });
+
+    }
+
+    public JButton getImportButton() {
+        if (importButton == null) {
+            importButton = new JButton("Import");
+            importButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    JFileChooser fc = Utilities.createJFileChooser();
+                    fc.setFileFilter(createPolicyFileFilter());
+                    fc.setDialogType(JFileChooser.OPEN_DIALOG);
+
+                    if (JFileChooser.APPROVE_OPTION == fc.showOpenDialog(getRootPane())) {
+                        File got = fc.getSelectedFile();
+                        FileInputStream policyIs = null;
+                        try {
+                            policyIs = new FileInputStream(got);
+                            Assertion rootAssertion = WspReader.parse(policyIs);
+                            policyIs.close();
+                            policyIs = null;
+
+                            // TODO filter out assertions that aren't implemented by the SSB
+                            Policy newPolicy = new Policy(rootAssertion, null);
+                            newPolicy.setPersistent(true);
+                            PolicyAttachmentKeyDialog pakDlg = new PolicyAttachmentKeyDialog(Gui.getInstance().getFrame(),
+                                                                                             "Import Policy: Policy Attachment Key",
+                                                                                             true);
+                            pakDlg.setPolicyAttachmentKey(getSelectedPolicy());
+                            pakDlg.show();
+                            PolicyAttachmentKey pak = pakDlg.getPolicyAttachmentKey();
+                            if (pak != null) {
+                                policyCache.setPolicy(pak, newPolicy);
+                                updatePolicyPanel();
+                            }
+                        } catch (NullPointerException nfe) {
+                        } catch (IOException e) {
+                            log.log(Level.WARNING, "Error importing policy", e);
+                            JOptionPane.showMessageDialog(getRootPane(),
+                              "Unable to import the specified file: " + e.getMessage(),
+                              "Unable to read file",
+                              JOptionPane.ERROR_MESSAGE);
+                        } finally {
+                            if (policyIs != null) try { policyIs.close(); } catch (IOException e) {}
+                        }
+                    }
+                }
+            });
+        }
+        return importButton;
+    }
+
+    public JButton getExportButton() {
+        if (exportButton == null) {
+            exportButton = new JButton("Export");
+            exportButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    PolicyAttachmentKey pak = getSelectedPolicy();
+                    if (pak == null) return;
+                    Policy policy = policyCache.getPolicy(pak);
+                    if (policy == null) return;
+
+                    JFileChooser fc = Utilities.createJFileChooser();
+                    fc.setFileFilter(createPolicyFileFilter());
+                    fc.setDialogType(JFileChooser.SAVE_DIALOG);
+
+                    if (JFileChooser.APPROVE_OPTION == fc.showSaveDialog(getRootPane())) {
+                        File got = fc.getSelectedFile();
+                        FileOutputStream os = null;
+                        try {
+                            os = new FileOutputStream(got);
+                            WspWriter.writePolicy(policy.getAssertion(), os);
+                            os.close();
+                            os = null;
+                        } catch (NullPointerException nfe) {
+                        } catch (IOException e) {
+                            log.log(Level.WARNING, "Error exporting policy", e);
+                            JOptionPane.showMessageDialog(getRootPane(),
+                              "Unable to export to the specified file: " + e.getMessage(),
+                              "Unable to export file",
+                              JOptionPane.ERROR_MESSAGE);
+                        } finally {
+                            if (os != null) try { os.close(); } catch (IOException e) { }
+                        }
+                    }
+                }
+            });
+        }
+        return exportButton;
+    }
+
+    private FileFilter createPolicyFileFilter() {
+        FileFilter filter = new FileFilter() {
+            public boolean accept(File f) {
+                if (f.isDirectory())
+                    return true;
+                String name = f.getName();
+                int dot = name.lastIndexOf('.');
+                if (dot < 0)
+                    return false;
+                String ext = name.substring(dot);
+                return ext.equalsIgnoreCase(".xml");
+            }
+
+            public String getDescription() {
+                return "Policy document (*.xml)";
+            }
+        };
+        return filter;
+    }
+
+    public JButton getChangeButton() {
+        if (changeButton == null) {
+            changeButton = new JButton("Edit");
+        }
+        return changeButton;
+    }
+
+    public JButton getDeleteButton() {
+        if (deleteButton == null) {
+            deleteButton = new JButton("Delete");
+        }
+        return deleteButton;
     }
 
     private class DisplayPolicyTableModel extends AbstractTableModel {
@@ -179,24 +342,46 @@ class SsgPoliciesPanel extends JPanel {
         }
     }
 
+    private PolicyAttachmentKey getSelectedPolicy() {
+        int row = policyTable.getSelectedRow();
+        if (row >= 0 && row < displayPolicies.size())
+            return (PolicyAttachmentKey)displayPolicies.get(row);
+        return null;
+    }
+
     private void displaySelectedPolicy() {
         // do this?    if (e.getValueIsAdjusting()) return;
         Policy policy = null;
         int row = policyTable.getSelectedRow();
-        if (row >= 0 && row < displayPolicies.size())
-            policy = policyCache.getPolicy((PolicyAttachmentKey)displayPolicies.get(row));
+        if (row >= 0 && row < displayPolicies.size()) {
+            lastSelectedPolicy = (PolicyAttachmentKey)displayPolicies.get(row);
+            if (lastSelectedPolicy != null)
+                policy = policyCache.getPolicy(lastSelectedPolicy);
+        }
         policyTree.setModel((policy == null || policy.getClientAssertion() == null) ? null : new PolicyTreeModel(policy.getClientAssertion()));
         int erow = 0;
         while (erow < policyTree.getRowCount()) {
             policyTree.expandRow(erow++);
         }
+        boolean havePak = policy != null;
+        getChangeButton().setEnabled(havePak);
+        getDeleteButton().setEnabled(havePak);
+        getExportButton().setEnabled(havePak);
     }
 
     /** Update the policy display panel with information from the Ssg bean. */
     public void updatePolicyPanel() {
+        PolicyAttachmentKey lastPak = lastSelectedPolicy;
         displayPolicies.clear();
         displayPolicies = new ArrayList(policyCache.getPolicyAttachmentKeys());
         displayPolicyTableModel.fireTableDataChanged();
+        if (lastPak != null) {
+            for (int i = 0; i < displayPolicies.size(); i++) {
+                PolicyAttachmentKey pak = (PolicyAttachmentKey)displayPolicies.get(i);
+                if (lastPak == pak)
+                    policyTable.getSelectionModel().setSelectionInterval(i, i);
+            }
+        }
         displaySelectedPolicy();
     }
 }

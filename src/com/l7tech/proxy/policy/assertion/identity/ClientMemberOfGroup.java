@@ -15,8 +15,6 @@ import com.l7tech.proxy.policy.assertion.UnimplementedClientAssertion;
  */
 public class ClientMemberOfGroup extends UnimplementedClientAssertion {
     public ClientMemberOfGroup( MemberOfGroup data ) {
-        this.data = data;
+        super(data);
     }
-
-    protected MemberOfGroup data;
 }

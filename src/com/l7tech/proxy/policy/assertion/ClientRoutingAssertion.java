@@ -6,16 +6,17 @@
 
 package com.l7tech.proxy.policy.assertion;
 
-import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.Assertion;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientRoutingAssertion extends UnimplementedClientAssertion {
-    public ClientRoutingAssertion( RoutingAssertion data ) {
-        this.data = data;
+    public ClientRoutingAssertion() {
     }
 
-    protected RoutingAssertion data;
+    public ClientRoutingAssertion(Assertion source) {
+        super(source);
+    }
 }

@@ -6,16 +6,16 @@
 
 package com.l7tech.server.policy;
 
+import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.policy.PolicyFactory;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.common.util.ConstructorInvocation;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
 import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
@@ -53,6 +53,8 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
         } catch (InvocationTargetException ite) {
             throw new RuntimeException("Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ite);
         } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", e);
+        } catch (UnimplementedAssertionException e) {
             throw new RuntimeException("Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", e);
         }
     }

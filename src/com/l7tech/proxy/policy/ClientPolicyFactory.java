@@ -56,6 +56,10 @@ public class ClientPolicyFactory extends PolicyFactory {
         return "Client";
     }
 
+    protected Object makeUnknownAssertion(Assertion genericAssertion) {
+        return new ClientUnknownAssertion(genericAssertion);
+    }
+
     private static ClientPolicyFactory _instance;
 
     // Insert references to dynamically loaded classes that will be used by this factory,

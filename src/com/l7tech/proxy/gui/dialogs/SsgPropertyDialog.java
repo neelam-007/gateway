@@ -256,7 +256,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             identityPane.getUserPasswordField().setText(new String(ssgPass));
         }
 
-        JFileChooser fc = new JFileChooser();
+        JFileChooser fc = Utilities.createJFileChooser();
         fc.setDialogTitle("Select client certificate");
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         FileFilter fileFilter = new FileFilter() {

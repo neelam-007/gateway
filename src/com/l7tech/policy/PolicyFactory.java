@@ -11,7 +11,9 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author alex
@@ -42,12 +44,29 @@ public abstract class PolicyFactory {
         return result;
     }
 
-    protected Constructor getConstructor(Class genericAssertionClass) {
+    protected static class UnimplementedAssertionException extends Exception {
+        public UnimplementedAssertionException() {
+        }
+
+        public UnimplementedAssertionException(String message) {
+            super(message);
+        }
+
+        public UnimplementedAssertionException(Throwable cause) {
+            super(cause);
+        }
+
+        public UnimplementedAssertionException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    protected Constructor getConstructor(Class genericAssertionClass) throws UnimplementedAssertionException {
         try {
             Class specificClass = resolveProductClass(genericAssertionClass);
             return specificClass.getConstructor(new Class[]{genericAssertionClass});
         } catch (ClassNotFoundException cnfe) {
-            throw new RuntimeException(cnfe);
+            throw new UnimplementedAssertionException(cnfe);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
@@ -100,6 +119,21 @@ public abstract class PolicyFactory {
             throw new RuntimeException(iae);
         } catch (InvocationTargetException ite) {
             throw new RuntimeException(ite);
+        } catch (UnimplementedAssertionException e) {
+            Object o = makeUnknownAssertion(genericAssertion);
+            if (o == null) throw new RuntimeException(e);
+            return o;
         }
+    }
+
+    /**
+     * Create a specific policy assertion corresponding to the specified generic assertion, for which no
+     * exactly-matching specific assertion class was found.
+     * @param genericAssertion a generic policy assertion for which a local implementation could not be found.  Never null.
+     * @return a local assertion, possibly a placeholder, that can be used in place of the unimplemented assertion,
+     *         or null if a replacement could not be constructed (in which case the policy construction will fail).
+     */
+    protected Object makeUnknownAssertion(Assertion genericAssertion) {
+        return null;
     }
 }

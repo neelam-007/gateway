@@ -15,8 +15,6 @@ import com.l7tech.proxy.policy.assertion.UnimplementedClientAssertion;
  */
 public class ClientSpecificUser extends UnimplementedClientAssertion {
     public ClientSpecificUser( SpecificUser data ) {
-        this.data = data;
+        super(data);
     }
-
-    protected SpecificUser data;
 }
