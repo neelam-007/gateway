@@ -25,7 +25,7 @@ public class MessageProcessor {
         try {
             PublishedService service = _serviceManager.resolveService( request );
             request.setParameter( Request.PARAM_SERVICE, service );
-            Assertion ass = service.getRootAssertion();
+            Assertion ass = service.rootAssertion();
 
             AssertionStatus status = ass.checkRequest( request, response );
             if ( status == AssertionStatus.NONE ) {
