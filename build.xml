@@ -438,7 +438,7 @@
 
         <jar jarfile="${build.dir}/rmiannotation.jar">
             <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/spring/remoting/rmi/codebase/AnnotationClassProviderBean.class"/>
+                <include name="com/l7tech/spring/remoting/rmi/codebase/ClassSetAnnotation.class"/>
             </fileset>
             <zipfileset dir="${src.root}/src/com/l7tech/spring/remoting/rmi/codebase/"
                         includes="java.rmi.server.RMIClassLoaderSpi" prefix="META-INF/services"/>
