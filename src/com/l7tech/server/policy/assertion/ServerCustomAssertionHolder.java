@@ -244,17 +244,4 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             return context;
         }
     }
-
-    private static class CustomAssertionPrincipal implements Principal {
-        private String name;
-
-        public CustomAssertionPrincipal(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
 }
