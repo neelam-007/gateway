@@ -16,6 +16,9 @@ import java.sql.SQLException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import cirrus.hibernate.Query;
+import cirrus.hibernate.HibernateException;
+
 /**
  * LAYER 7 TECHNOLOGIES, INC
  *
@@ -61,14 +64,24 @@ public class ClientCertManagerImp implements ClientCertManager {
         }
         try {
             pc.beginTransaction();
+
             if (!userCanGenCert(user)) {
                 String msg = "this user is currently not allowed to generate a new cert: " + user.getLogin();
                 pc.rollbackTransaction();
                 throw new UpdateException(msg);
             }
             CertEntryRow userData = getFromTable(user);
-            userData.setResetCounter(userData.getResetCounter()+1);
+            // this could be new entry
+            boolean newentry = false;
+            if (userData == null) {
+                userData = new CertEntryRow();
+                userData.setProviderId(user.getProviderId());
+                userData.setUserLogin(user.getLogin());
+                userData.setResetCounter(0);
+                newentry = true;
+            }
 
+            userData.setResetCounter(userData.getResetCounter()+1);
             sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
             try {
                 String encodedcert = encoder.encode(cert.getEncoded());
@@ -79,9 +92,22 @@ public class ClientCertManagerImp implements ClientCertManager {
                 pc.rollbackTransaction();
                 throw new UpdateException(msg, e);
             }
+
+            if (newentry) {
+                manager.save(pc, user);
+            } else {
+                manager.update(pc, user);
+            }
+
             pc.commitTransaction();
+
+
         } catch (TransactionException e) {
             String msg = "Transaction exception recording cert";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        } catch (SaveException e) {
+            String msg = "Save exception recording cert";
             logger.log(Level.WARNING, msg, e);
             throw new UpdateException(msg, e);
         }
@@ -146,15 +172,19 @@ public class ClientCertManagerImp implements ClientCertManager {
      */
     private CertEntryRow getFromTable(User user) {
         String query = "from " + TABLE_NAME + " in class " + CertEntryRow.class.getName() +
-                       " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = " + Long.toString(user.getProviderId()) +
-                       " and " + TABLE_NAME + "." + PROVIDER_LOGIN + " = " + user.getLogin();
+                       " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
+                       " and " + TABLE_NAME + "." + PROVIDER_LOGIN + " = ?";
         List hibResults = null;
         try {
-            hibResults = manager.find(PersistenceContext.getCurrent(), query);
-        } catch (FindException e) {
+            HibernatePersistenceContext context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            Query q = context.getSession().createQuery(query);
+            q.setLong(0, user.getProviderId());
+            q.setString(1, user.getLogin());
+            hibResults = q.list();
+        } catch (SQLException e) {
             hibResults = Collections.EMPTY_LIST;
             logger.log(Level.WARNING, "hibernate error finding cert entry for " + user.getLogin(), e);
-        } catch (SQLException e) {
+        }  catch (HibernateException e) {
             hibResults = Collections.EMPTY_LIST;
             logger.log(Level.WARNING, "hibernate error finding cert entry for " + user.getLogin(), e);
         }
