@@ -19,6 +19,15 @@ public class InternalGroup extends NamedEntityImp implements Group {
         _groupBean = bean;
     }
 
+    public void setOid( long oid ) {
+        super.setOid(oid);
+        _groupBean.setUniqueIdentifier( Long.toString( oid ) );
+    }
+
+    public long getOid() {
+        return new Long( _groupBean.getUniqueIdentifier() ).longValue();
+    }
+
     public String getDescription() {
         return _groupBean.getDescription();
     }
@@ -139,22 +148,6 @@ public class InternalGroup extends NamedEntityImp implements Group {
         return ipc;
     }
 
-    private UserManager getUserManager() {
-        if ( _userManager == null ) {
-            IdentityProviderConfig config = null;
-            long providerId = _groupBean.getProviderId();
-            try {
-                config = getConfigManager().findByPrimaryKey( providerId );
-            } catch (FindException e) {
-                throw new IllegalStateException( "Group " + this._name + "'s IdentityProviderConfig (id = " + providerId + ") has ceased to exist!" );
-            }
-            IdentityProvider provider = IdentityProviderFactory.makeProvider( config );
-            _userManager = provider.getUserManager();
-        }
-        return _userManager;
-    }
-
     private GroupBean _groupBean;
     private GroupManager _groupManager;
-    private UserManager _userManager;
 }
