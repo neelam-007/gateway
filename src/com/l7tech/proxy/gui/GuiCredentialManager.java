@@ -195,6 +195,7 @@ public class GuiCredentialManager extends CredentialManager {
         }
 
         log.info("New credentials noted for Gateway " + ssg);
+        ssg.resetSslContext();
         return holder.pw;
     }
 

@@ -493,7 +493,7 @@ public class MessageProcessor {
         URL url = getUrl(req);
         final Ssg ssg = req.getSsg();
 
-        HttpClient client = new HttpClient();
+        HttpClient client = req.getSsg().httpClient();
         HttpState state = client.getState();
 
         // Forget any cached session cookies, for all services shared by this SSG        

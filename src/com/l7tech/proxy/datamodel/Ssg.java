@@ -8,6 +8,7 @@ import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import org.apache.commons.httpclient.Cookie;
+import org.apache.commons.httpclient.HttpClient;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
@@ -92,6 +93,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient Calendar secureConversationExpiryDate = null;
     private transient SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
     private transient long timeOffset = 0;
+
+    private transient ThreadLocal httpClient = new ThreadLocalHttpClient();
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -764,50 +767,45 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * or server certificates used during any SSL handshake, otherwise the implementation may cache
      * undesirable information.  (The cache is seperate from the session cache, too, so you can't just
      * flush the sessions to fix it.)
-     *
-     * @throws java.security.NoSuchAlgorithmException
-     * @throws java.security.NoSuchProviderException
-     * @throws java.security.KeyManagementException
      */
     private synchronized SSLContext createSslContext()
-            throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
     {
         log.info("Creating new SSL context for SSG " + toString());
         ClientProxyKeyManager keyManager = SslInstanceHolder.keyManager;
         ClientProxyTrustManager trustManager = trustManager();
-        SSLContext sslContext = SSLContext.getInstance("SSL", System.getProperty("com.l7tech.proxy.sslProvider",
-                                                                                 "SunJSSE"));
-        sslContext.init(new X509KeyManager[] {keyManager},
-                        new X509TrustManager[] {trustManager},
-                        null);
-        return sslContext;
+        SSLContext sslContext = null;
+        try {
+            sslContext = SSLContext.getInstance("SSL", System.getProperty("com.l7tech.proxy.sslProvider",
+                                                                                             "SunJSSE"));
+            sslContext.init(new X509KeyManager[] {keyManager},
+                            new X509TrustManager[] {trustManager},
+                            null);
+            return sslContext;
+        } catch (NoSuchAlgorithmException e) {
+            log.log(Level.SEVERE, "Unable to create SSL context", e);
+            throw new RuntimeException(e); // shouldn't happen
+        } catch (NoSuchProviderException e) {
+            log.log(Level.SEVERE, "Unable to create SSL context", e);
+            throw new RuntimeException(e); // shoudn't happen
+        } catch (KeyManagementException e) {
+            log.log(Level.SEVERE, "Unable to create SSL context", e);
+            throw new RuntimeException(e); // shouldn't happen
+        }
     }
 
     public synchronized SSLContext sslContext() {
-        if (sslContext == null) {
-            try {
-                sslContext = createSslContext();
-            } catch (NoSuchAlgorithmException e) {
-                log.log(Level.SEVERE, "Unable to create SSL context", e);
-                throw new RuntimeException(e);
-            } catch (NoSuchProviderException e) {
-                log.log(Level.SEVERE, "Unable to create SSL context", e);
-                throw new RuntimeException(e);
-            } catch (KeyManagementException e) {
-                log.log(Level.SEVERE, "Unable to create SSL context", e);
-                throw new RuntimeException(e);
-            }
-        }
+        if (sslContext == null)
+            sslContext = createSslContext();
         return sslContext;
     }
 
     /** Flush SSL context and cached certificates. */
     public synchronized void resetSslContext()
-            throws NoSuchProviderException, NoSuchAlgorithmException, KeyManagementException
     {
         sslContext = createSslContext();
         serverCert = null;
         clientCert = null;
+        httpClient = new ThreadLocalHttpClient();
     }
 
     /** Transient cached certificate for quicker access; only for use by SsgKeystoreManager. */
@@ -952,5 +950,16 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      */
     public DateTranslator dateTranslatorToSsg() {
         return toSsgDateTranslator;
+    }
+
+    public HttpClient httpClient() {
+        return (HttpClient)this.httpClient.get();
+    }
+
+    private static class ThreadLocalHttpClient extends ThreadLocal {
+        protected Object initialValue() {
+            HttpClient hc = new HttpClient();
+            return hc;
+        }
     }
 }
