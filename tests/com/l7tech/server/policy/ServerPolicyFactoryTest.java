@@ -2,10 +2,12 @@ package com.l7tech.server.policy;
 
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.xmlsec.ServerSamlSecurity;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -95,6 +97,7 @@ public class ServerPolicyFactoryTest extends TestCase {
             new Assertion[] {
                 new HttpBasic(),
                 new SpecificUser(),
+                new SamlSecurity(),
                 new RoutingAssertion()
             } ) );
 
