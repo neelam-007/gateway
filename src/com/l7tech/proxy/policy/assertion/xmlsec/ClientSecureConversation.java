@@ -29,7 +29,7 @@ public class ClientSecureConversation extends ClientAssertion {
     }
 
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException {
-        // todo
+        // todo, make sure the WssProcessor.Results contain a reference to the Secure Conversation
         return null;
     }
 
@@ -39,12 +39,12 @@ public class ClientSecureConversation extends ClientAssertion {
     }
 
     public String iconResource(boolean open) {
-        // todo
-        return null;
+        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 
     public AssertionStatus decorateRequest(PendingRequest request) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException {
-        // todo
+        // todo, establish a secure conversation through the token service if necessary
+        // todo, add the SecureConversationSession to the DecorationRequirements
         return null;
     }
 }
