@@ -105,7 +105,8 @@ public class SavePolicyTemplateAction extends BaseAction {
         System.out.println(name);
         int overwrite = JOptionPane.YES_OPTION;
         File policyFile = new File(name);
-        if (policyFile.exists()) {
+        final boolean policyFileExists = policyFile.exists();
+        if (policyFileExists) {
             overwrite =
               JOptionPane.showConfirmDialog(
                 Registry.getDefault().getWindowManager().getMainWindow(),
@@ -118,7 +119,9 @@ public class SavePolicyTemplateAction extends BaseAction {
         try {
             fo = new FileOutputStream(name, false);
             WspWriter.writePolicy(node.asAssertion(), fo);
-            updateAssertionTree(policyFile);
+            if (!policyFileExists) {
+                insertIntoAssertionTree(policyFile);
+            }
         } catch (FileNotFoundException e) {
             ErrorManager.getDefault().
               notify(Level.WARNING, e,
@@ -136,7 +139,7 @@ public class SavePolicyTemplateAction extends BaseAction {
         }
     }
 
-    private void updateAssertionTree(File policyFile) {
+    private void insertIntoAssertionTree(File policyFile) {
         JTree tree =
           (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
         if (tree != null) {
