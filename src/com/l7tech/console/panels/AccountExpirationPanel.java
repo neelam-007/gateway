@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
@@ -45,14 +44,14 @@ public class AccountExpirationPanel extends JDialog {
     private JLabel monthlabel;
     private JLabel yearlabel;
 
-    public AccountExpirationPanel(JDialog parent) {
+    public AccountExpirationPanel(JDialog parent, long initialValue) {
         super(parent, true);
-        initialize();
+        initialize(initialValue);
     }
 
-    public AccountExpirationPanel(Frame parent) {
+    public AccountExpirationPanel(Frame parent, long initialValue) {
         super(parent, true);
-        initialize();
+        initialize(initialValue);
     }
 
     /**
@@ -70,7 +69,7 @@ public class AccountExpirationPanel extends JDialog {
         return expirationValue;
     }
 
-    private void initialize() {
+    private void initialize(long initialValue) {
         setContentPane(mainPanel);
         setTitle("Account expiration");
         canceled = false;
@@ -101,27 +100,50 @@ public class AccountExpirationPanel extends JDialog {
         };
         noexpireradio.addActionListener(radiolistener);
         expireradio.addActionListener(radiolistener);
-        noexpireradio.setSelected(true);
+        if (initialValue == -1) {
+            noexpireradio.setSelected(true);
+        } else {
+            expireradio.setSelected(true);
+        }
         enableControls();
+
+        Calendar initialCalValue = Calendar.getInstance();
+        initialCalValue.setTimeInMillis(initialValue);
 
         // populate year spinner
         startYear = Calendar.getInstance().get(Calendar.YEAR);
         ArrayList yearlist = new ArrayList();
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 11; i++) {
             yearlist.add(Integer.toString(startYear+i));
         }
         SpinnerListModel ysm = new SpinnerListModel(yearlist);
-        ysm.setValue(yearlist.get(1));
+        if (initialValue == -1) {
+            ysm.setValue(yearlist.get(1));
+        } else {
+            int initYear = initialCalValue.get(Calendar.YEAR);
+            if (initYear < startYear) initYear = startYear;
+            if (initYear > startYear+10) initYear = startYear+10;
+            ysm.setValue(yearlist.get(initYear-startYear));
+        }
         yearspinner.setModel(ysm);
 
         // populate month spinner
         String[] dfsmonths = (new DateFormatSymbols()).getMonths();
         months = Arrays.asList(dfsmonths).subList(0, 12);
         SpinnerListModel msm = new SpinnerListModel(months);
-        msm.setValue(months.get(Calendar.getInstance().get(Calendar.MONTH)));
+        if (initialValue == -1) {
+            msm.setValue(months.get(Calendar.getInstance().get(Calendar.MONTH)));
+        } else {
+            int initMonth = initialCalValue.get(Calendar.MONTH);
+            msm.setValue(months.get(initMonth));
+        }
         monthspinner.setModel(msm);
 
-        dayNeverSet = true;
+        if (initialValue == -1) {
+            dayNeverSet = true;
+        } else {
+            dayspinner.setValue(new Integer(initialCalValue.get(Calendar.DAY_OF_MONTH)));
+        }
         populateDaySpinner();
 
         ChangeListener updateDaysOfMonthActionListener = new ChangeListener() {
@@ -231,11 +253,18 @@ public class AccountExpirationPanel extends JDialog {
         AccountExpirationPanel.this.dispose();
     }
 
-    // just for testing
+    /*// just for testing
     public static final void main(String[] args) throws Exception {
-        AccountExpirationPanel exirationChooser = new AccountExpirationPanel((Frame)null);
-        exirationChooser.pack();
-        Utilities.centerOnScreen(exirationChooser);
-        exirationChooser.show();
-    }
+        long value = -1;
+        for (int i = 0; i < 5; i++) {
+            AccountExpirationPanel exirationChooser = new AccountExpirationPanel((Frame)null, value);
+            exirationChooser.pack();
+            Utilities.centerOnScreen(exirationChooser);
+            exirationChooser.show();
+            if (!exirationChooser.wasCancelled()) {
+                value = exirationChooser.getExpirationValue();
+            }
+        }
+
+    }*/
 }
