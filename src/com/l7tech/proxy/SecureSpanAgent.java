@@ -20,6 +20,9 @@ import java.security.cert.X509Certificate;
  * @version 1.0
  */
 interface SecureSpanAgent {
+    /**
+     * This is the result returned from a call to send().
+     */
     interface Result {
         int getHttpStatus();
         Document getResponse() throws IOException, SAXException;
@@ -38,9 +41,16 @@ interface SecureSpanAgent {
     class CertificateAlreadyIssuedException extends Exception {}
 
     /**
+     * Send a message to the service through the Gateway.
+     * <p>
+     * If instructed by the Gateway, we will download and apply a security policy to the message and response.
+     * <p>
+     * The Gateway server certificate will be discovered if necessary.
+     * <p>
+     * We will apply for a client certificate if necessary.
      *
-     * @param soapAction
-     * @param message
+     * @param soapAction the SOAPAction header to use for this message, including surrounding double-quote characters
+     * @param message the SOAPEnvelope containing the message to send, as a DOM tree
      * @return
      * @throws SendException                if the operation failed due to one of the following problems:
      *      a client certificate was required but could not be obtained;
@@ -57,8 +67,8 @@ interface SecureSpanAgent {
     /**
      * As above, but takes the XML as a string.
      *
-     * @param soapAction
-     * @param message
+     * @param soapAction the SOAPAction header to use for this message, including surrounding double-quote characters
+     * @param message the SOAPEnvelope containing the message to send, as a String containing XML
      * @return
      * @throws SAXException if the provided message was not well-formed XML
      * @throws SendException @see #send
