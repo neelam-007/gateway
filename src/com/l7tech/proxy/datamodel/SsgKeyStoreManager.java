@@ -168,7 +168,7 @@ public class SsgKeyStoreManager {
                 log.error("impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
                 throw new RuntimeException("impossible exception", e);
             } catch (UnrecoverableKeyException e) {
-                log.error("Private key for client cert with ssg " + ssg + " is unrecoverable with the current password");
+                log.error("Private key for client cert with Gateway " + ssg + " is unrecoverable with the current password");
                 throw new BadCredentialsException(e);
             }
         }
@@ -218,9 +218,9 @@ public class SsgKeyStoreManager {
                     keyStore.load(fis, KEYSTORE_PASSWORD);
                 } catch (Exception e) {
                     if (e instanceof FileNotFoundException)
-                        log.info("Creating new key store " + ssg.getKeyStoreFile() + " for SSG " + ssg);
+                        log.info("Creating new key store " + ssg.getKeyStoreFile() + " for Gateway " + ssg);
                     else {
-                        log.error("Unable to load existing key store " + ssg.getKeyStoreFile() + " for SSG " + ssg + " -- will create new one", e);
+                        log.error("Unable to load existing key store " + ssg.getKeyStoreFile() + " for Gateway " + ssg + " -- will create new one", e);
                         throw new KeyStoreCorruptException(e);
                     }
                     try {
@@ -253,7 +253,7 @@ public class SsgKeyStoreManager {
     private static void saveKeyStore(final Ssg ssg) throws IllegalStateException, IOException {
         synchronized (ssg) {
             if (ssg.keyStore() == null)
-                throw new IllegalStateException("SSG " + ssg + " hasn't yet loaded its keystore");
+                throw new IllegalStateException("Gateway " + ssg + " hasn't yet loaded its keystore");
 
             FileUtils.saveFileSafely(ssg.getKeyStoreFile().getAbsolutePath(),
                                      new FileUtils.Saver() {
@@ -262,11 +262,11 @@ public class SsgKeyStoreManager {
                                                  ssg.keyStore().store(fos, KEYSTORE_PASSWORD);
                                                  fos.close();
                                              } catch (KeyStoreException e) {
-                                                 throw new IOException("Unable to write KeyStore for SSG " + ssg + ": " + e);
+                                                 throw new IOException("Unable to write KeyStore for Gateway " + ssg + ": " + e);
                                              } catch (NoSuchAlgorithmException e) {
-                                                 throw new IOException("Unable to write KeyStore for SSG " + ssg + ": " + e);
+                                                 throw new IOException("Unable to write KeyStore for Gateway " + ssg + ": " + e);
                                              } catch (CertificateException e) {
-                                                 throw new IOException("Unable to write KeyStore for SSG " + ssg + ": " + e);
+                                                 throw new IOException("Unable to write KeyStore for Gateway " + ssg + ": " + e);
                                              }
                                          }
                                      });
@@ -302,7 +302,7 @@ public class SsgKeyStoreManager {
             throws KeyStoreException, IOException, KeyStoreCorruptException
     {
         synchronized (ssg) {
-            log.info("Saving SSG certificate to disk");
+            log.info("Saving Gateway server certificate to disk");
             getKeyStore(ssg).setCertificateEntry(SSG_ALIAS, cert);
             saveKeyStore(ssg);
         }
@@ -329,7 +329,7 @@ public class SsgKeyStoreManager {
         try {
             pw = Managers.getCredentialManager().getCredentials(ssg);
         } catch (OperationCanceledException e) {
-            throw new IllegalArgumentException("Ssg " + ssg + " does not yet have credentials configured");
+            throw new IllegalArgumentException("Gateway " + ssg + " does not yet have credentials configured");
         }
         synchronized (ssg) {
             char[] password = pw.getPassword();

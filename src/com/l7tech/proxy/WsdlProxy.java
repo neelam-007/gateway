@@ -150,13 +150,13 @@ public class WsdlProxy {
                                                      null,
                                                      new UsernamePasswordCredentials(pw.getUserName(),
                                                                                      new String(pw.getPassword())));
-                log.info("WsdlProxy: Attempting download from SSG from URL: " + url);
+                log.info("WsdlProxy: Attempting download from Gateway from URL: " + url);
                 try {
                     status = httpClient.executeMethod(getMethod);
                 } catch (SSLHandshakeException e) {
                     if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {
                         try {
-                            log.info("Attempting to discover Ssg server certificate for " + ssg);
+                            log.info("Attempting to discover Gateway server certificate for " + ssg);
                             try {
                                 ClientProxy.installSsgServerCertificate(ssg);
                             } catch (KeyStoreCorruptException e1) {
@@ -180,7 +180,7 @@ public class WsdlProxy {
                 if (status == 200) {
                     return sr.readStream(getMethod.getResponseBodyAsStream());
                 } else if (status == 404) {
-                    throw new ServiceNotFoundException("No service was found on Ssg " + ssg + " with serviceoid " + serviceoid);
+                    throw new ServiceNotFoundException("No service was found on Gateway " + ssg + " with serviceoid " + serviceoid);
                 } else if (status == 401) {
                     pw = Managers.getCredentialManager().getNewCredentials(ssg);
                     // FALLTHROUGH - continue and try again with new password

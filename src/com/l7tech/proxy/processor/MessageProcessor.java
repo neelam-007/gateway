@@ -151,7 +151,7 @@ public class MessageProcessor {
                 log.error(message);
                 throw new ConfigurationException(message, e);
             }
-            log.error("The SSG password that was used to obtain this client cert is no longer valid -- deleting the client cert");
+            log.error("The Gateway password that was used to obtain this client cert is no longer valid -- deleting the client cert");
             try {
                 SsgKeyStoreManager.deleteClientCert(ssg);
             } catch (KeyStoreCorruptException e1) {
@@ -358,7 +358,7 @@ public class MessageProcessor {
 
             Header sessionStatus = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER);
             if (sessionStatus != null) {
-                log.info("SSG response contained a session status header: " + sessionStatus.getName() + ": " + sessionStatus.getValue());
+                log.info("Gateway response contained a session status header: " + sessionStatus.getName() + ": " + sessionStatus.getValue());
                 if (sessionStatus.getValue().equalsIgnoreCase("invalid")) {
                     log.info("sessionstatus:invalid header; will invalidate session and try again");
                     SsgSessionManager.invalidateSession(ssg);

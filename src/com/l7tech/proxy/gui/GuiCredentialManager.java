@@ -101,8 +101,8 @@ public class GuiCredentialManager extends CredentialManager {
 
         // If this SSG isn't supposed to be hassling us with dialog boxes, stop now
         if (!ssg.promptForUsernameAndPassword()) {
-            log.info("Logon prompts disabled for SSG " + ssg);
-            throw new OperationCanceledException("Logon prompts are disabled for SSG " + ssg);
+            log.info("Logon prompts disabled for Gateway " + ssg);
+            throw new OperationCanceledException("Logon prompts are disabled for Gateway " + ssg);
         }
 
         long now = System.currentTimeMillis();
@@ -125,7 +125,7 @@ public class GuiCredentialManager extends CredentialManager {
             }
         }
 
-        log.info("Displaying logon prompt for SSG " + ssg);
+        log.info("Displaying logon prompt for Gateway " + ssg);
         invokeDialog(new Runnable() {
             public void run() {
                 PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(),
@@ -160,11 +160,11 @@ public class GuiCredentialManager extends CredentialManager {
         });
 
         if (holder.pw == null) {
-            log.info("User canceled logon dialog for SSG " + ssg);
+            log.info("User canceled logon dialog for Gateway " + ssg);
             throw new OperationCanceledException("User canceled logon dialog");
         }
 
-        log.info("New credentials noted for SSG " + ssg);
+        log.info("New credentials noted for Gateway " + ssg);
         return holder.pw;
     }
 

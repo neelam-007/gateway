@@ -46,15 +46,15 @@ public class CredentialManagerImpl extends CredentialManager {
     }
 
     public void notifyLengthyOperationStarting(Ssg ssg, String message) {
-        log.info("Starting lengthy operation for Ssg " + ssg + ": " + message);
+        log.info("Starting lengthy operation for Gateway " + ssg + ": " + message);
     }
 
     public void notifyLengthyOperationFinished(Ssg ssg) {
-        log.info("Lengthy operation for Ssg " + ssg + " has completed");
+        log.info("Lengthy operation for Gateway " + ssg + " has completed");
     }
 
     public void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException {
-        log.error("Key store for Ssg " + ssg + " has been damaged -- aborting");
+        log.error("Key store for Gateway " + ssg + " has been damaged -- aborting");
         throw new OperationCanceledException("Unable to authorize deletion of corrupt keystore");
     }
 
@@ -66,7 +66,7 @@ public class CredentialManagerImpl extends CredentialManager {
      * @param ssg
      */
     public void notifyCertificateAlreadyIssued(Ssg ssg) {
-        log.error("Certificate has already been issued for this account on Ssg " + ssg + "; the server refuses to give us a new one until the Ssg admin revokes our old one");
+        log.error("Certificate has already been issued for this account on Gateway " + ssg + "; the server refuses to give us a new one until the Gateway admin revokes our old one");
     }
 
     /**
@@ -78,6 +78,6 @@ public class CredentialManagerImpl extends CredentialManager {
      * @param whatWeGotInstead  the hostname in the peer's certificate
      */
     public void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead) {
-        log.error("SSG hostname " + whatWeWanted + " does not match hostname in peer certificate: \"" + whatWeGotInstead + "\"");
+        log.error("Gateway hostname " + whatWeWanted + " does not match hostname in peer certificate: \"" + whatWeGotInstead + "\"");
     }
 }

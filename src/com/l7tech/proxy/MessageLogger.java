@@ -70,6 +70,6 @@ public class MessageLogger implements RequestInterceptor {
      * @param policy
      */
     public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy) {
-        log.info("Policy updated for SSG: " + ssg);
+        log.info("Policy updated for Gateway: " + ssg);
     }
 }

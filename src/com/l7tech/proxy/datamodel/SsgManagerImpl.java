@@ -77,7 +77,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
         if (!init)
             initialize();
         if (ssg.getId() == 0)
-            throw new IllegalArgumentException("Unable to register ssg: it has not been assigned an ID");
+            throw new IllegalArgumentException("Unable to register Gateway: it has not been assigned an ID");
         boolean result = ssgs.add(ssg);
         rebuildHostCache();
         return result;
@@ -95,7 +95,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
         if (!init)
             initialize();
         if (!ssgs.remove(ssg))
-            throw new SsgNotFoundException("The specified SSG was not found");
+            throw new SsgNotFoundException("The specified Gateway was not found");
         rebuildHostCache();
     }
 
@@ -118,7 +118,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
             }
         }
         if (!found)
-            throw new SsgNotFoundException("The requested default SSG is not currently registered.");
+            throw new SsgNotFoundException("The requested default Gateway is not currently registered.");
         rebuildHostCache();
     }
 }

@@ -24,7 +24,7 @@ public class CannedSoapFaults {
             "   <faultcode>soapenv:Server</faultcode>\n" +
             "   <faultstring>Response wasn't XML</faultstring>\n" +
             "   <faultactor></faultactor>\n" +
-            "   <detail>The response from the SSG was not text/xml.</detail>\n" +
+            "   <detail>The response from the Gateway was not text/xml.</detail>\n" +
             "  </soapenv:Fault>\n" +
             " </soapenv:Body>\n" +
             "</soapenv:Envelope>\n";
@@ -70,7 +70,7 @@ public class CannedSoapFaults {
             "   <faultcode>soapenv:Server</faultcode>\n" +
             "   <faultstring>Response Smells</faultstring>\n" +
             "   <faultactor></faultactor>\n" +
-            "   <detail>The response from the SSG smelled like week-old mackerel.</detail>\n" +
+            "   <detail>The response from the Gateway smelled like week-old mackerel.</detail>\n" +
             "  </soapenv:Fault>\n" +
             " </soapenv:Body>\n" +
             "</soapenv:Envelope>\n";

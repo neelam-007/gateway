@@ -104,10 +104,10 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         try {
             long responsenonce = SecureConversationTokenHandler.readNonceFromDocument(doc);
             if (responsenonce != request.getNonce())
-                throw new ResponseValidationException("Response from SSG contained the wrong nonce value");
+                throw new ResponseValidationException("Response from Gateway contained the wrong nonce value");
         } catch (XMLSecurityElementNotFoundException e) {
             // if the nonce is not there, we should note that this is subject to repeat attack
-            throw new ResponseValidationException("Response from SSG did not contain a nonce", e);
+            throw new ResponseValidationException("Response from Gateway did not contain a nonce", e);
         }
 
         // VERIFY SIGNATURE OF ENVELOPE
@@ -123,17 +123,17 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             serverCert = dsigHelper.validateSignature(doc);
             serverCert.verify(caCert.getPublicKey());
         } catch (SignatureNotFoundException e) {
-            throw new ResponseValidationException("Response from SSG did not contain a signature as required by policy", e);
+            throw new ResponseValidationException("Response from Gateway did not contain a signature as required by policy", e);
         } catch (InvalidSignatureException e) {
-            throw new ResponseValidationException("Response from SSG contained an invalid signature", e);
+            throw new ResponseValidationException("Response from Gateway contained an invalid signature", e);
         } catch (SignatureException e) {
-            throw new ResponseValidationException("Response from SSG was signed, but not by the SSG CA key we expected", e);
+            throw new ResponseValidationException("Response from Gateway was signed, but not by the Gateway CA key we expected", e);
         } catch (CertificateException e) {
-            throw new ResponseValidationException("Signature on response from SSG contained an invalid certificate", e);
+            throw new ResponseValidationException("Signature on response from Gateway contained an invalid certificate", e);
         } catch (NoSuchAlgorithmException e) {
-            throw new ResponseValidationException("Signature on response from SSG required an unsupported algorithm", e);
+            throw new ResponseValidationException("Signature on response from Gateway required an unsupported algorithm", e);
         } catch (InvalidKeyException e) {
-            throw new ResponseValidationException("Our copy of the SSG public key is corrupt", e); // can't happen
+            throw new ResponseValidationException("Our copy of the Gateway public key is corrupt", e); // can't happen
         } catch (NoSuchProviderException e) {
             throw new RuntimeException("VM is misconfigured", e); // can't happen
         }

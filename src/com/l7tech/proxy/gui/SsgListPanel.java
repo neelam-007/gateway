@@ -207,7 +207,7 @@ public class SsgListPanel extends JPanel {
             actionNewSsg = new AbstractAction("New", IconManager.getAdd()) {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg newSsg = ssgTableModel.createSsg();
-                    log.info("Creating new SSG " + newSsg);
+                    log.info("Creating new Gateway registration " + newSsg);
                     if (ssgTableModel.getRowCount() < 1)
                         newSsg.setDefaultSsg(true);
                         if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, newSsg).runDialog())
@@ -224,7 +224,7 @@ public class SsgListPanel extends JPanel {
             actionSetDefaultSsg = new AbstractAction("Set Default", IconManager.getDefault()) {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg ssg = getSelectedSsg();
-                    log.info("Setting default ssg to " + ssg);
+                    log.info("Setting default Gateway to " + ssg);
                     if (ssg != null)
                         ssgTableModel.setDefaultSsg(ssg);
                     ssgTableModel.editedSsg();

@@ -35,7 +35,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
         // Find our current ssg
         Ssg ssg = CurrentRequest.getCurrentSsg();
         if (ssg == null)
-            throw new IllegalStateException("No current Ssg is available in this thread");
+            throw new IllegalStateException("No current Gateway is available in this thread");
 
         X509Certificate ssgCert = null;
         try {
@@ -58,7 +58,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
         // Find our current ssg
         Ssg ssg = CurrentRequest.getCurrentSsg();
         if (ssg == null)
-            throw new IllegalStateException("No current Ssg is available in this thread");
+            throw new IllegalStateException("No current Gateway is available in this thread");
 
         // Verify the hostname
         String expectedHostname = ssg.getSsgAddress();
@@ -85,7 +85,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
             throw new RuntimeException(e);
         }
         if (trustedCert == null)
-            throw new ServerCertificateUntrustedException("We have not yet discovered this SSG's server certificate");
+            throw new ServerCertificateUntrustedException("We have not yet discovered this Gateway's server certificate");
 
         for (int i = 0; i < x509Certificates.length; i++) {
             X509Certificate cert = x509Certificates[i];
@@ -104,7 +104,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
             if (cert.getIssuerDN().equals(trustedDN)) {
                 try {
                     cert.verify(trustedCert.getPublicKey());
-                    log.info("Peer certificate was signed by a trusted SSG.");
+                    log.info("Peer certificate was signed by a trusted Gateway.");
                     return;
                 } catch (Exception e) {
                     log.error("Unable to verify peer certificate with trusted cert", e);
@@ -113,7 +113,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
                 }
             } else if (cert.getSubjectDN().equals(trustedDN)) {
                 if (cert.equals(trustedCert)) {
-                    log.info("Peer certificate exactly matched that of a trusted SSG.");
+                    log.info("Peer certificate exactly matched that of a trusted Gateway.");
                     return;
                 }
             }

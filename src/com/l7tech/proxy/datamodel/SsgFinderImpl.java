@@ -135,7 +135,7 @@ public class SsgFinderImpl implements SsgFinder {
             if (id == ssg.getId())
                 return ssg;
         }
-        throw new SsgNotFoundException("No SSG is registered with the id " + id);
+        throw new SsgNotFoundException("No Gateway is registered with the id " + id);
     }
 
     /**
@@ -154,7 +154,7 @@ public class SsgFinderImpl implements SsgFinder {
             if (endpoint.equals(ssg.getLocalEndpoint()))
                 return ssg;
         }
-        throw new SsgNotFoundException("No SSG is registered with the local endpoint " + endpoint);
+        throw new SsgNotFoundException("No Gateway is registered with the local endpoint " + endpoint);
     }
 
     /**
@@ -175,7 +175,7 @@ public class SsgFinderImpl implements SsgFinder {
                     return ssg;
                 }
             }
-            throw new SsgNotFoundException("No SSG was found with the specified hostname.");
+            throw new SsgNotFoundException("No Gateway was found with the specified hostname.");
         }
         return ssg;
     }
@@ -192,7 +192,7 @@ public class SsgFinderImpl implements SsgFinder {
             if (ssg.isDefaultSsg())
                 return ssg;
         }
-        throw new SsgNotFoundException("No default SSG is currently registered.");
+        throw new SsgNotFoundException("No default Gateway is currently registered.");
     }
 
     /**

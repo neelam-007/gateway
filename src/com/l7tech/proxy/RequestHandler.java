@@ -141,7 +141,7 @@ public class RequestHandler extends AbstractHttpHandler {
         }
 
         final Ssg ssg = getDesiredSsg(endpoint);
-        log.info("Mapped to SSG: " + ssg);
+        log.info("Mapped to Gateway: " + ssg);
         CurrentRequest.setCurrentSsg(ssg);
 
         if (isWsdl) {
@@ -248,7 +248,7 @@ public class RequestHandler extends AbstractHttpHandler {
             }
         } catch (SsgNotFoundException e) {
             HttpException t = new HttpException(404,
-                                                "This Client Proxy has no SSG mapped to the endpoint " + endpoint);
+                                                "This Client Proxy has no Gateway mapped to the endpoint " + endpoint);
             interceptor.onMessageError(t);
             throw t;
         }
@@ -263,7 +263,7 @@ public class RequestHandler extends AbstractHttpHandler {
     private SsgResponse getServerResponse(PendingRequest request)
             throws HttpException
     {
-        log.info("Processing message to SSG " + request.getSsg());
+        log.info("Processing message to Gateway " + request.getSsg());
 
         try {
             SsgResponse reply = messageProcessor.processMessage(request);

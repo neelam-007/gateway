@@ -119,11 +119,11 @@ public class SsgSessionManager {
             BASE64Decoder b64decoder = new BASE64Decoder();
             byte[] keyreq = b64decoder.decodeBuffer(b64keyreq);
             if (keyreq == null)
-                throw new IOException("SSG sent invalid request key in session: base64 keyreq=" + b64keyreq);
+                throw new IOException("Gateway sent invalid request key in session: base64 keyreq=" + b64keyreq);
             String b64keyres = header(getMethod, SecureSpanConstants.HttpHeaders.HEADER_KEYRES);
             byte[] keyres = b64decoder.decodeBuffer(b64keyres);
             if (keyres == null)
-                throw new IOException("SSG sent invalid response key in session: base64 keyres=" + b64keyres);
+                throw new IOException("Gateway sent invalid response key in session: base64 keyres=" + b64keyres);
 
             return new Session(Long.parseLong(idstr), System.currentTimeMillis(), keyreq, keyres, 0);
         } catch (SSLHandshakeException e) {
@@ -131,7 +131,7 @@ public class SsgSessionManager {
                 throw (ServerCertificateUntrustedException) e.getCause();
             throw e;
         } catch (NumberFormatException e) {
-            throw new InvalidSessionIdException("SSG sent invalid session ID", e);
+            throw new InvalidSessionIdException("Gateway sent invalid session ID", e);
         } finally {
             getMethod.releaseConnection();
         }

@@ -37,7 +37,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
             // Find our current request
             Ssg ssg = CurrentRequest.getCurrentSsg();
             if (ssg == null)
-                throw new IllegalStateException("No current Ssg is available in this thread");
+                throw new IllegalStateException("No current Gateway is available in this thread");
             PrivateKey pk = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
             log.info("Returning PrivateKey: " + (pk == null ? "NULL" : "<it's a real key; numbers not shown>"));
             return pk;
@@ -60,7 +60,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
         log.info("ClientProxyKeyManager: getCertificateChain for " + s);
         Ssg ssg = CurrentRequest.getCurrentSsg();
         if (ssg == null)
-            throw new IllegalStateException("No current Ssg is available in this thread");
+            throw new IllegalStateException("No current Gateway is available in this thread");
         X509Certificate[] certs = new X509Certificate[0];
         try {
             certs = SsgKeyStoreManager.getClientCertificateChain(ssg);
@@ -68,7 +68,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
             log.error(e);
             throw new ClientProxySslException(e);
         }
-        log.info("Found " + certs.length + " client certificates with SSG " + ssg);
+        log.info("Found " + certs.length + " client certificates with Gateway " + ssg);
         if (certs.length < 1) {
             log.info("*** About to return NULL certificate array..");
             return null;
@@ -93,10 +93,10 @@ public class ClientProxyKeyManager implements X509KeyManager {
     }
 
     public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
-        log.info("ClientProxyKeyManager: SSG is asking for our client certificate");
+        log.info("ClientProxyKeyManager: Gateway is asking for our client certificate");
         Ssg ssg = CurrentRequest.getCurrentSsg();
         if (ssg == null)
-            throw new IllegalStateException("No current Ssg is available in this thread");
+            throw new IllegalStateException("No current Gateway is available in this thread");
         String hostname = ssg.getSsgAddress();
         try {
             if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
@@ -110,7 +110,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // can't happen
         } catch (BadCredentialsException e) {
-            log.info("Private key for client cert for Ssg " + ssg + " is currently unrecoverable; won't bother to present this cert");
+            log.info("Private key for client cert for Gateway " + ssg + " is currently unrecoverable; won't bother to present this cert");
             return null;
         } catch (OperationCanceledException e) {
             throw new RuntimeException(e);

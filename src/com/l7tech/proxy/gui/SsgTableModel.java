@@ -112,7 +112,7 @@ public class SsgTableModel extends AbstractTableModel {
         } catch (IOException e1) {
             JOptionPane.showMessageDialog(
                 Gui.getInstance().getFrame(),
-                "The system reported an error while saving the SSG list.\n" +
+                "The system reported an error while saving the Gateway list.\n" +
                 "The reported error was: " + e1,
                 "Unable to save changes",
                 JOptionPane.OK_OPTION,

@@ -364,7 +364,7 @@ public class ClientProxy {
             return; // Success.
         }
 
-        throw new BadCredentialsException("Unable to verify server certificate with the current username and password for SSG " + ssg);
+        throw new BadCredentialsException("Unable to verify server certificate with the current username and password for Gateway " + ssg);
     }
 }
 
