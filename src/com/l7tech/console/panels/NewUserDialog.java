@@ -493,7 +493,7 @@ public class NewUserDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.USER);
+                                EntityEditorPanel panel = new UserPanel();
                                 if (panel == null) return;
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.USER);

@@ -365,7 +365,7 @@ public class NewGroupDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.GROUP);
+                                EntityEditorPanel panel = new GroupPanel();
                                 if (panel == null) return;
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.GROUP);
