@@ -1,10 +1,10 @@
 package com.l7tech.server;
 
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.message.Message;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.message.Message;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.util.XmlUtil;
 import com.mockobjects.dynamic.C;
 import com.mockobjects.dynamic.Mock;
 
@@ -75,6 +75,7 @@ public class MockServletApi {
                 servletRequestMock.matchAndReturn("getServerName", InetAddress.getLocalHost().getHostName());
                 servletRequestMock.matchAndReturn("getServerPort", 8080);
                 servletRequestMock.matchAndReturn("getRemoteAddr", InetAddress.getLocalHost().getHostAddress());
+                servletRequestMock.matchAndReturn("getRequestURL", new StringBuffer("/ssg/soap"));
 
                 servletRequestMock.matchAndReturn("getContextPath", "/ssg");
 
