@@ -5,12 +5,9 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 
 import javax.swing.*;
-import javax.xml.soap.SOAPConstants;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -44,7 +41,7 @@ public class CredentialsLocation {
      * @return the <code>ComboBoxModel</code> with credentials location list
      */
     static ComboBoxModel getCredentialsLocationComboBoxModel() {
-        Object[] values = newCredentialsLocationMap().keySet().toArray();
+        Object[] values = newCredentialsLocationMap(true).keySet().toArray();
         ComboBoxModel cbm = new DefaultComboBoxModel(values);
         cbm.setSelectedItem("HTTP digest");
         return cbm;
@@ -53,8 +50,8 @@ public class CredentialsLocation {
     /**
      * create the credentials location (http, ws message) combobox model, not including "Anonymous".
      */
-    static ComboBoxModel getCredentialsLocationComboBoxModelNonAnonymous() {
-        Object[] values = newCredentialsLocationMap().keySet().toArray();
+    static ComboBoxModel getCredentialsLocationComboBoxModelNonAnonymous(boolean soap) {
+        Object[] values = newCredentialsLocationMap(soap).keySet().toArray();
         Object[] newValues = new Object[values.length - 1];
         System.arraycopy(values, 1, newValues, 0, values.length - 1);
         ComboBoxModel cbm = new DefaultComboBoxModel(newValues);
@@ -69,23 +66,22 @@ public class CredentialsLocation {
      *
      * @return the new credentials location map
      */
-    static Map newCredentialsLocationMap() {
+    static Map newCredentialsLocationMap(boolean soap) {
         Map credentialsLocationMap = new TreeMap();
         credentialsLocationMap.put("Anonymous", new TrueAssertion());
 
         credentialsLocationMap.put("HTTP Basic", new HttpBasic());
         credentialsLocationMap.put("HTTP Digest", new HttpDigest());
         credentialsLocationMap.put("HTTP Client Certificate", new HttpClientCert());
-
-        credentialsLocationMap.put("WS Token Basic", new WssBasic());
+        if (soap) credentialsLocationMap.put("WS Token Basic", new WssBasic());
         // credentialsLocationMap.put("WS Token Digest", new WssDigest());
 
-        RequestWssIntegrity xmlRequestSecurity = new RequestWssIntegrity();
-        Map namespaces = new HashMap();
-        namespaces.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
-        namespaces.put("SOAP-ENV", SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        //RequestWssIntegrity xmlRequestSecurity = new RequestWssIntegrity();
+        //Map namespaces = new HashMap();
+        //namespaces.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        //namespaces.put("SOAP-ENV", SOAPConstants.URI_NS_SOAP_ENVELOPE);
 
-        credentialsLocationMap.put("XML Digital Signature", new RequestWssX509Cert());
+        if (soap) credentialsLocationMap.put("XML Digital Signature", new RequestWssX509Cert());
 
         return credentialsLocationMap;
     }

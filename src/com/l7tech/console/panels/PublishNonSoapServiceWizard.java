@@ -13,7 +13,7 @@ import java.awt.*;
  */
 public class PublishNonSoapServiceWizard extends Wizard {
     public static PublishNonSoapServiceWizard getInstance(Frame parent) {
-        WizardStepPanel panel2 = new IdentityProviderWizardPanel();
+        WizardStepPanel panel2 = new IdentityProviderWizardPanel(false);
         WizardStepPanel panel1 = new NonSoapServicePanel(panel2);
         return new PublishNonSoapServiceWizard(parent, panel1);
     }

@@ -79,7 +79,7 @@ public class IdentityPolicyPanel extends JPanel {
     private PolicyTreeModel policyTreeModel;
     private AssertionTreeNode rootAssertionTreeNode;
     private static final String[] XML_SEC_OPTIONS = new String[]{"sign only", "sign and encrypt"};
-    private Map credentialsLocationMap = CredentialsLocation.newCredentialsLocationMap();
+    private Map credentialsLocationMap = CredentialsLocation.newCredentialsLocationMap(true);
 
     /**
      * Create the identity policy panel for a given identity and service
@@ -144,7 +144,7 @@ public class IdentityPolicyPanel extends JPanel {
         });
         okButton.addActionListener(updateIdentityPolicy);
         Utilities.equalizeButtonSizes(new JButton[]{cancelButton, okButton, helpButton});
-        authMethodComboBox.setModel(CredentialsLocation.getCredentialsLocationComboBoxModelNonAnonymous());
+        authMethodComboBox.setModel(CredentialsLocation.getCredentialsLocationComboBoxModelNonAnonymous(true));
         authMethodComboBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 Object key = e.getItem();
