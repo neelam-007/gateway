@@ -98,21 +98,7 @@ public class SecureConversationTokenHandler {
         if (secContxTokEl == null) {
             throw new XMLSecurityElementNotFoundException(SECURITY_CONTEXT_TOKEN_EL_NAME + " element not present.");
         }
-
-        NodeList listIdentifierElements = secContxTokEl.getElementsByTagNameNS(WSU_NAMESPACE, IDENTIFIER_EL_NAME);
-        if (listIdentifierElements.getLength() < 1) {
-            throw new XMLSecurityElementNotFoundException(IDENTIFIER_EL_NAME + " element not present.");
-        }
-        Element identifier = (Element)listIdentifierElements.item(0);
-        NodeList children = identifier.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node kid = children.item(i);
-            if (kid.getNodeType() == Node.TEXT_NODE) {
-                String value = kid.getNodeValue();
-                return Long.parseLong(value);
-            }
-        }
-        throw new XMLSecurityElementNotFoundException(IDENTIFIER_EL_NAME + " element does not contain nonce value.");
+        return Long.parseLong(readIdentifierValueFromSecurityContextToken(secContxTokEl));
     }
 
     public void appendSessIdAndSeqNrToDocument(Document soapmsg, long sessId, long seqNr) {
@@ -121,14 +107,52 @@ public class SecureConversationTokenHandler {
         writeL7SeqElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(seqNr));
     }
 
-    public long readSessIdFromDocument(Document soapmsg) {
-        // todo
-        return -1;
+    public long readSessIdFromDocument(Document soapmsg) throws XMLSecurityElementNotFoundException {
+        Element secContxTokEl = getSecurityContextTokenElement(soapmsg);
+        if (secContxTokEl == null) {
+            throw new XMLSecurityElementNotFoundException(SECURITY_CONTEXT_TOKEN_EL_NAME + " element not present.");
+        }
+        return Long.parseLong(readIdentifierValueFromSecurityContextToken(secContxTokEl));
     }
 
-    public long readSeqNrFromDocument(Document soapmsg) {
-        // todo
-        return -1;
+    public long readSeqNrFromDocument(Document soapmsg) throws XMLSecurityElementNotFoundException {
+        Element secContxTokEl = getSecurityContextTokenElement(soapmsg);
+        if (secContxTokEl == null) {
+            throw new XMLSecurityElementNotFoundException(SECURITY_CONTEXT_TOKEN_EL_NAME + " element not present.");
+        }
+        return Long.parseLong(readSeqNrValueFromSecurityContextToken(secContxTokEl));
+    }
+
+    private String readSeqNrValueFromSecurityContextToken(Element securityContextTokenEl) throws XMLSecurityElementNotFoundException {
+        NodeList listIdentifierElements = securityContextTokenEl.getElementsByTagNameNS(L7_NAMESPACE, SEQ_EL_NAME);
+        if (listIdentifierElements.getLength() < 1) {
+            throw new XMLSecurityElementNotFoundException(SEQ_EL_NAME + " element not present.");
+        }
+        Element identifier = (Element)listIdentifierElements.item(0);
+        NodeList children = identifier.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node kid = children.item(i);
+            if (kid.getNodeType() == Node.TEXT_NODE) {
+                return kid.getNodeValue();
+            }
+        }
+        throw new XMLSecurityElementNotFoundException(SEQ_EL_NAME + " element does not contain value.");
+    }
+
+    private String readIdentifierValueFromSecurityContextToken(Element securityContextTokenEl) throws XMLSecurityElementNotFoundException {
+        NodeList listIdentifierElements = securityContextTokenEl.getElementsByTagNameNS(WSU_NAMESPACE, IDENTIFIER_EL_NAME);
+        if (listIdentifierElements.getLength() < 1) {
+            throw new XMLSecurityElementNotFoundException(IDENTIFIER_EL_NAME + " element not present.");
+        }
+        Element identifier = (Element)listIdentifierElements.item(0);
+        NodeList children = identifier.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node kid = children.item(i);
+            if (kid.getNodeType() == Node.TEXT_NODE) {
+                return kid.getNodeValue();
+            }
+        }
+        throw new XMLSecurityElementNotFoundException(IDENTIFIER_EL_NAME + " element does not contain value.");
     }
 
     private void writeIdentifierElementToSecurityContextTokenElement(Element securityContextTokenEl, String value) {
