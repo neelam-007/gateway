@@ -108,8 +108,6 @@ public class DistributedMessageIdManager implements MessageIdManager {
                 h.commit();
                 h = null;
                 return;
-            } else {
-                throw new DuplicateMessageIdException();
             }
         } catch ( Exception e ) {
             final String msg = "Failed to determine whether a MessageId is a replay";
@@ -118,6 +116,8 @@ public class DistributedMessageIdManager implements MessageIdManager {
         } finally {
             if (h != null) h.rollback();
         }
+        // We must have either returned or thrown by now
+        throw new DuplicateMessageIdException();
     }
 
     private final TransactionalHashtable hash;
