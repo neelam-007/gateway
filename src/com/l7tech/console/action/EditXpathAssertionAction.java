@@ -118,6 +118,7 @@ public class EditXpathAssertionAction extends BaseAction {
             xpathAssertion.getPattern());
         if ((s != null) && (s.length() > 0)) {
             xpathAssertion.setPattern(s);
+            xpathAssertion.setNamespaceMap(namespaceMap);
             assertionChanged();
         }
     }
