@@ -260,8 +260,7 @@
     </target>
 
     <!--
-      ** Non 'build' targets from this point; just various helper
-  targets.
+      ** Non 'build' targets from this point; just various helper targets.
       ** Please do not invoke below targets as main targets.
     -->
 
@@ -535,6 +534,9 @@
             <fileset dir="${src.root}/src">
                 <!-- TODO: Emil, tell us why this is evil! -->
                 <include name="com/l7tech/common/locator/services.properties"/>
+            </fileset>
+            <fileset dir="${src.root}/etc">
+                <include name="serverconfig.properties"/>
             </fileset>
         </copy>
     </target>
