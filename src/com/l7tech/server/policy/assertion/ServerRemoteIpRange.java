@@ -33,12 +33,12 @@ public class ServerRemoteIpRange implements ServerAssertion {
         String remoteAddress = (String)req.getParameter(Request.PARAM_REMOTE_ADDR);
         if (!RemoteIpRange.checkIPAddressFormat(remoteAddress)) {
             logger.warning("The remote address " + remoteAddress + " is null or not in expected format.");
-            return AssertionStatus.FAILED;
+            return AssertionStatus.FALSIFIED;
         }
         // check assertion with this address
         if (assertAddress(remoteAddress)) {
             return AssertionStatus.NONE;
-        } else return AssertionStatus.FAILED;
+        } else return AssertionStatus.FALSIFIED;
     }
 
     /**
