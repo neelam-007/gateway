@@ -12,20 +12,14 @@ import com.l7tech.policy.assertion.ConfidentialityAssertion;
  *
  * Assertion that enforces xml digital signature on the soap envelope and potentially xml encryption on the soap body
  */
-public abstract class XmlSecurityAssertion extends ConfidentialityAssertion {
+public interface XmlSecurityAssertion {
     /**
      * This property describes whether or not the body should be encrypted as opposed to only signed
      */
-    public boolean isEncryption() {
-        return encryption;
-    }
+    abstract boolean isEncryption();
 
     /**
      * This property describes whether or not the body should be encrypted as opposed to only signed
      */
-    public void setEncryption(boolean encryption) {
-        this.encryption = encryption;
-    }
-
-    private boolean encryption = false;
+    abstract void setEncryption(boolean encryption);
 }

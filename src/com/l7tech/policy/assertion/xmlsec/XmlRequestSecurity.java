@@ -15,7 +15,7 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
  *
  * Whether XML encryption is used depends on the property encryption
  */
-public class XmlRequestSecurity extends CredentialSourceAssertion {
+public class XmlRequestSecurity extends CredentialSourceAssertion implements XmlSecurityAssertion {
     public static final String SESSION_STATUS_HTTP_HEADER = "l7-session-status";
     /**
      * This property describes whether or not the body should be encrypted as opposed to only signed

@@ -15,7 +15,7 @@ import com.l7tech.policy.assertion.Assertion;
  *
  * Whether XML encryption is used depends on the property encryption
  */
-public class XmlResponseSecurity extends Assertion {
+public class XmlResponseSecurity extends Assertion implements XmlSecurityAssertion {
     public static final String XML_SESSID_HEADER_NAME = "L7-Session-Id";
     public static final String XML_NONCE_HEADER_NAME = "L7-Nonce";
     /**
