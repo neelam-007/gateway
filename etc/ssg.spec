@@ -59,6 +59,7 @@ rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
 
 
 %pre
+/ssg/bin/upgrade.sh getFromRelease
 if [ `grep ^gateway: /etc/passwd` ]
 then
   echo "user/group gateway already existed"
@@ -69,7 +70,8 @@ fi
 %post
 # Check for existence of install crumbs left by install.pl
 if [ -e /etc/SSG_INSTALL ]; then 
-	echo "**Run interactive /ssg/bin/upgrade.sh to continue on upgrade specification of this system**"
+	echo "Running upgrade script"
+	/ssg/bin/upgrade.sh doUpgrade
 else 
 	echo "**Run interactive /ssg/bin/install.pl to configure this system**"
 fi
