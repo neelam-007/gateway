@@ -18,7 +18,6 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.SamlConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
