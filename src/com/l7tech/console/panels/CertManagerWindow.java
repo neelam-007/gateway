@@ -1,30 +1,30 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.event.*;
+import com.l7tech.console.event.WizardAdapter;
+import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.util.Locator;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.*;
-import java.util.ResourceBundle;
+import java.rmi.RemoteException;
+import java.security.cert.CertificateExpiredException;
 import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.Vector;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 
 /**
@@ -287,9 +287,15 @@ public class CertManagerWindow extends JDialog {
                                 loadTrustedCerts();
 
                             } catch (SaveException e) {
-                                JOptionPane.showMessageDialog(instance, resources.getString("cert.save.error"),
+                                if (embeddedCertificateExpiredException(e) != null) {
+                                    JOptionPane.showMessageDialog(instance, resources.getString("cert.expired.error"),
                                         resources.getString("save.error.title"),
                                         JOptionPane.ERROR_MESSAGE);
+                                } else {
+                                    JOptionPane.showMessageDialog(instance, resources.getString("cert.save.error"),
+                                            resources.getString("save.error.title"),
+                                            JOptionPane.ERROR_MESSAGE);
+                                }
                             } catch (RemoteException e) {
                                 JOptionPane.showMessageDialog(instance, resources.getString("cert.remote.exception"),
                                         resources.getString("save.error.title"),
@@ -299,9 +305,15 @@ public class CertManagerWindow extends JDialog {
                                         resources.getString("save.error.title"),
                                         JOptionPane.ERROR_MESSAGE);
                             } catch (UpdateException e) {
-                                 JOptionPane.showMessageDialog(instance, resources.getString("cert.update.error"),
+                                if (embeddedCertificateExpiredException(e) != null) {
+                                    JOptionPane.showMessageDialog(instance, resources.getString("cert.expired.error"),
                                         resources.getString("save.error.title"),
                                         JOptionPane.ERROR_MESSAGE);
+                                } else {
+                                     JOptionPane.showMessageDialog(instance, resources.getString("cert.update.error"),
+                                            resources.getString("save.error.title"),
+                                            JOptionPane.ERROR_MESSAGE);
+                                }
                             }
                         }
                     });
@@ -310,6 +322,20 @@ public class CertManagerWindow extends JDialog {
         }
 
     };
+
+    private Throwable embeddedCertificateExpiredException(Exception e) {
+        if (e instanceof CertificateExpiredException) {
+            return e;
+        }
+        Throwable t = e.getCause();
+        while (t != null) {
+            t = t.getCause();
+            if (t instanceof CertificateExpiredException) {
+                return t;
+            }
+        }
+        return null;
+    }
 
     /**
      * Retrieve the object reference of the Trusted Cert Admin service
