@@ -55,7 +55,7 @@ public class PolicyExporter {
         Document doc = exportToDocument(rootAssertion);
         // write doc to file
         FileOutputStream fos = new FileOutputStream(outputFile);
-        fos.write(XmlUtil.nodeToString(doc).getBytes());
+        fos.write(XmlUtil.nodeToFormattedString(doc).getBytes());
         fos.close();
     }
 
