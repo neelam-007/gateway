@@ -4,7 +4,7 @@
  * User: flascell<br/>
  * Date: Feb 16, 2005<br/>
  */
-package com.l7tech.skunkworks;
+package com.l7tech.server;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.PartIterator;

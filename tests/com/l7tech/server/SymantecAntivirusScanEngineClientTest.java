@@ -12,7 +12,6 @@ import junit.framework.TestSuite;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.skunkworks.SymantecAntivirusScanEngineClient;
 
 import java.io.ByteArrayInputStream;
 
