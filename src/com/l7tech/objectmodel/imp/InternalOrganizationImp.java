@@ -5,8 +5,8 @@ package com.l7tech.objectmodel.imp;
 
 import java.util.Collection;
 
-import com.l7tech.objectmodel.Address;
-import com.l7tech.objectmodel.InternalOrganization;
+import com.l7tech.identity.provider.internal.Address;
+import com.l7tech.identity.provider.internal.InternalOrganization;
 
 /**
  * @author alex

@@ -5,7 +5,7 @@ package com.l7tech.objectmodel.imp;
 
 import java.util.Collection;
 
-import com.l7tech.objectmodel.InternalGroup;
+import com.l7tech.identity.provider.internal.InternalGroup;
 
 /**
  * @author alex

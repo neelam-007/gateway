@@ -3,7 +3,7 @@
  */
 package com.l7tech.objectmodel.imp;
 
-import com.l7tech.objectmodel.Country;
+import com.l7tech.identity.provider.internal.Country;
 
 /**
  * @author alex
