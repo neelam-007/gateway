@@ -6,7 +6,7 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.audit.MessageSummaryAuditRecord;
+import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.identity.User;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;

@@ -6,7 +6,7 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.audit.AdminAuditRecord;
+import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.event.Created;
 import com.l7tech.objectmodel.event.Deleted;
