@@ -62,7 +62,7 @@ public class ClientSamlAuthenticationStatement extends ClientAssertion {
                     } else {
                         wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
                     }
-                    wssReqs.setSignTimestamp(true);
+                    wssReqs.setSignTimestamp(true); //todo: timestamp should not be signed (only saml token and the body).
                     wssReqs.setSenderSamlToken(ass.asElement());
                     wssReqs.setSenderPrivateKey(privateKey);
                     return AssertionStatus.NONE;
