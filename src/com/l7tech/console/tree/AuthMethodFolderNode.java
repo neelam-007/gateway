@@ -5,19 +5,19 @@ import java.util.Enumeration;
 
 
 /**
- * The class represents a node element in the TreeModel.
- * It represents the folder with policies.
+ * The class represents a node element in the palette assertion tree.
+ * It represents the folder with transport layer securitry.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class PoliciesFolderNode extends AbstractTreeNode {
+public class AuthMethodFolderNode extends AbstractTreeNode {
     /**
      * construct the <CODE>PoliciesFolderNode</CODE> instance for
      * a given entry.
      *
      */
-    public PoliciesFolderNode() {
+    public AuthMethodFolderNode() {
         super(null);
     }
 
@@ -49,7 +49,7 @@ public class PoliciesFolderNode extends AbstractTreeNode {
      * @return the name as a String
      */
     public String getName() {
-        return "Policy templates";
+        return "Authentication methods";
     }
 
     /**

@@ -8,13 +8,16 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Supporting class for actions.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Actions {
+    static Logger log = Logger.getLogger(Actions.class.getName());
 
     /**
      * Deletes the given EntityTreeNode
@@ -60,6 +63,7 @@ public class Actions {
             Registry.getDefault().getInternalUserManager().delete(u);
             return true;
         } catch (Exception e) {
+             log.log(Level.SEVERE, "Error deleting user", e);
             // Error deleting realm - display error msg
             JOptionPane.showMessageDialog(
               getMainWindow(),
@@ -90,7 +94,7 @@ public class Actions {
             Registry.getDefault().getServiceManager().delete(node.getPublishedService());
             return true;
         } catch (Exception e) {
-            // Error deleting realm - display error msg
+            log.log(Level.SEVERE, "Error deleting service", e);
             JOptionPane.showMessageDialog(
               getMainWindow(),
               "Error encountered while deleting " +

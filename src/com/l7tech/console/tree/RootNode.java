@@ -3,8 +3,9 @@ package com.l7tech.console.tree;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * The class represents an entry gui node element that
@@ -14,19 +15,16 @@ import java.util.*;
  * @version 1.1
  */
 public class RootNode extends AbstractTreeNode {
-    private DefaultTreeModel model;
 
     /**
      * construct the <CODE>RootNode</CODE> instance
      */
-    public RootNode(String title, DefaultTreeModel model)
+    public RootNode(String title)
       throws IllegalArgumentException {
         super(null);
         if (title == null)
             throw new IllegalArgumentException();
         label = title;
-
-        this.model = model;
     }
 
     /**
@@ -56,7 +54,9 @@ public class RootNode extends AbstractTreeNode {
                 new UserFolderNode(r.getInternalUserManager()),
                 new GroupFolderNode(r.getInternalGroupManager()),
                 new ProvidersFolderNode(),
-                new PoliciesFolderNode()
+                new PoliciesFolderNode(),
+                new AuthMethodFolderNode(),
+                new TransportLayerSecurityFolderNode()
             });
         int index = 0;
         for (Iterator i = list.iterator(); i.hasNext();) {

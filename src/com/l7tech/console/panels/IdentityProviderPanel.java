@@ -3,9 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -32,6 +30,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
+import java.security.Principal;
 
 
 /**
@@ -58,38 +57,34 @@ public class IdentityProviderPanel extends WizardStepPanel {
      * initialize the form.
      */
     private void initComponents() {
-        providerSelectorjPanel = new JPanel();
-        selecProviderjLabel = new JLabel();
-        providersjComboBox = new JComboBox();
+        providerSelectorPanel = new JPanel();
+        providersComboBox = new JComboBox();
         identitiesPanel = new JPanel();
         identitiesjPanel = new JPanel();
-        identitiesOutjScrollPane = new JScrollPane();
-        identitiesOutjTable = new JTable();
-        usersLabeljPanel = new JPanel();
-        jButtonAdd = new JButton();
-        jButtonAddAll = new JButton();
-        jButtonRemove = new JButton();
-        jButtonRemoveAll = new JButton();
-        identitiesInjScrollPane = new JScrollPane();
-        identitiesInjTable = new JTable();
-        buttonjPanel = new JPanel();
-        credentialsAndTransportjPanel = new JPanel();
+        identitiesOutScrollPane = new JScrollPane();
+        identitiesOutTable = new JTable();
+        usersLabelPanel = new JPanel();
+        buttonAdd = new JButton();
+        buttonAddAll = new JButton();
+        buttonRemove = new JButton();
+        buttonRemoveAll = new JButton();
+        identitiesInScrollPane = new JScrollPane();
+        identitiesInTable = new JTable();
+        buttonPanel = new JPanel();
+        credentialsAndTransportPanel = new JPanel();
         credentialsLocationjPanel = new JPanel();
-        credentialsLocationjComboBox = new JComboBox();
-        ssljCheckBox = new JCheckBox();
-        ssljPanel = new JPanel();
+        credentialsLocationComboBox = new JComboBox();
+        sslCheckBox = new JCheckBox();
+        sslPanel = new JPanel();
         anonymousAccessCheckBox = new JCheckBox();
 
         setLayout(new BorderLayout());
 
-        providerSelectorjPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        selecProviderjLabel.setText("Select the identity provider:");
-        selecProviderjLabel.setBorder(new EmptyBorder(new java.awt.Insets(2, 2, 2, 2)));
-        providerSelectorjPanel.add(selecProviderjLabel);
+        providerSelectorPanel.setLayout(new BorderLayout());
 
 
-        providersjComboBox.setModel(getProvidersComboBoxModel());
-        providersjComboBox.setRenderer(new ListCellRenderer() {
+        providersComboBox.setModel(getProvidersComboBoxModel());
+        providersComboBox.setRenderer(new ListCellRenderer() {
             public Component getListCellRendererComponent(
               JList list,
               Object value,
@@ -100,12 +95,20 @@ public class IdentityProviderPanel extends WizardStepPanel {
                 return new JLabel(ip.getConfig().getDescription());
             }
         });
-        providersjComboBox.addActionListener(new ActionListener() {
+        providersComboBox.addActionListener(new ActionListener() {
             /** Invoked when an action occurs.  */
             public void actionPerformed(ActionEvent e) {
-                e.getSource();
                 try {
                     IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
+                    if (ip == NO_PROVIDER) {
+                        DefaultTableModel modelIn = getIdentitiesInTableModel();
+                        DefaultTableModel modelOut = getIdentitiesOutTableModel();
+                        modelIn.getDataVector().clear();
+                        modelOut.getDataVector().clear();
+                        getIdentitiesOutTableModel().fireTableDataChanged();
+                        getIdentitiesInTableModel().fireTableDataChanged();
+                        return;
+                    }
                     DefaultTableModel modelOut = getIdentitiesOutTableModel();
                     modelOut.getDataVector().clear();
 
@@ -127,7 +130,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
             }
         });
 
-        providerSelectorjPanel.add(providersjComboBox);
+        providerSelectorPanel.add(providersComboBox, BorderLayout.WEST);
         anonymousAccessCheckBox.setText("Anonymous access");
         anonymousAccessCheckBox.setHorizontalTextPosition(SwingConstants.TRAILING);
         anonymousAccessCheckBox.
@@ -136,21 +139,21 @@ public class IdentityProviderPanel extends WizardStepPanel {
               public void actionPerformed(ActionEvent e) {
                   JCheckBox cb = (JCheckBox)e.getSource();
                   boolean enable = !cb.isSelected();
-                  jButtonAdd.setEnabled(enable);
-                  jButtonAddAll.setEnabled(enable);
-                  jButtonRemove.setEnabled(enable);
-                  jButtonRemoveAll.setEnabled(enable);
-                  identitiesInjTable.setEnabled(enable);
-                  identitiesInjTable.tableChanged(null);
-                  identitiesOutjTable.setEnabled(enable);
-                  identitiesOutjTable.tableChanged(null);
-                  credentialsLocationjComboBox.setEnabled(enable);
-                  providersjComboBox.setEnabled(enable);
+                  buttonAdd.setEnabled(enable);
+                  buttonAddAll.setEnabled(enable);
+                  buttonRemove.setEnabled(enable);
+                  buttonRemoveAll.setEnabled(enable);
+                  identitiesInTable.setEnabled(enable);
+                  identitiesInTable.tableChanged(null);
+                  identitiesOutTable.setEnabled(enable);
+                  identitiesOutTable.tableChanged(null);
+                  credentialsLocationComboBox.setEnabled(enable);
+                  providersComboBox.setEnabled(enable);
               }
           });
-        providerSelectorjPanel.add(anonymousAccessCheckBox);
+        providerSelectorPanel.add(anonymousAccessCheckBox, BorderLayout.EAST);
 
-        add(providerSelectorjPanel, BorderLayout.NORTH);
+        add(providerSelectorPanel, BorderLayout.NORTH);
 
 
         identitiesPanel.setLayout(new BorderLayout());
@@ -158,30 +161,30 @@ public class IdentityProviderPanel extends WizardStepPanel {
         identitiesjPanel.setLayout(new BoxLayout(identitiesjPanel, BoxLayout.X_AXIS));
 
         identitiesjPanel.setBorder(new EmptyBorder(new Insets(20, 5, 10, 5)));
-        identitiesOutjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        identitiesOutjScrollPane.setPreferredSize(new java.awt.Dimension(150, 50));
-        identitiesOutjTable.setModel(getIdentitiesOutTableModel());
+        identitiesOutScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        identitiesOutScrollPane.setPreferredSize(new java.awt.Dimension(150, 50));
+        identitiesOutTable.setModel(getIdentitiesOutTableModel());
 
-        identitiesOutjTable.setShowHorizontalLines(false);
-        identitiesOutjTable.setShowVerticalLines(false);
-        identitiesOutjTable.setDefaultRenderer(Object.class, tableRenderer);
-        identitiesOutjScrollPane.getViewport().setBackground(identitiesOutjTable.getBackground());
-        identitiesOutjScrollPane.setViewportView(identitiesOutjTable);
+        identitiesOutTable.setShowHorizontalLines(false);
+        identitiesOutTable.setShowVerticalLines(false);
+        identitiesOutTable.setDefaultRenderer(Object.class, tableRenderer);
+        identitiesOutScrollPane.getViewport().setBackground(identitiesOutTable.getBackground());
+        identitiesOutScrollPane.setViewportView(identitiesOutTable);
 
-        identitiesjPanel.add(identitiesOutjScrollPane);
+        identitiesjPanel.add(identitiesOutScrollPane);
 
-        usersLabeljPanel.setLayout(new BoxLayout(usersLabeljPanel, BoxLayout.Y_AXIS));
+        usersLabelPanel.setLayout(new BoxLayout(usersLabelPanel, BoxLayout.Y_AXIS));
 
-        usersLabeljPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
-        jButtonAdd.setText("Add");
-        jButtonAdd.setHorizontalTextPosition(SwingConstants.RIGHT);
-        jButtonAdd.setHorizontalAlignment(SwingConstants.RIGHT);
-        jButtonAdd.setIcon(IconManager.getInstance().getIconAdd());
+        usersLabelPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
+        buttonAdd.setText("Add");
+        buttonAdd.setHorizontalTextPosition(SwingConstants.RIGHT);
+        buttonAdd.setHorizontalAlignment(SwingConstants.RIGHT);
+        buttonAdd.setIcon(IconManager.getInstance().getIconAdd());
 
-        jButtonAdd.addActionListener(new ActionListener() {
+        buttonAdd.addActionListener(new ActionListener() {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
-                int[] rows = identitiesOutjTable.getSelectedRows();
+                int[] rows = identitiesOutTable.getSelectedRows();
                 Collection toAdd = new ArrayList();
                 java.util.List listOut = getIdentitiesOutTableModel().getDataVector();
 
@@ -195,14 +198,14 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
             }
         });
-        usersLabeljPanel.add(jButtonAdd);
+        usersLabelPanel.add(buttonAdd);
 
-        jButtonAddAll.setText("Add All");
-        jButtonAddAll.setHorizontalTextPosition(SwingConstants.RIGHT);
-        jButtonAddAll.setHorizontalAlignment(SwingConstants.RIGHT);
-        jButtonAddAll.setIcon(IconManager.getInstance().getIconAddAll());
+        buttonAddAll.setText("Add All");
+        buttonAddAll.setHorizontalTextPosition(SwingConstants.RIGHT);
+        buttonAddAll.setHorizontalAlignment(SwingConstants.RIGHT);
+        buttonAddAll.setIcon(IconManager.getInstance().getIconAddAll());
 
-        jButtonAddAll.addActionListener(new ActionListener() {
+        buttonAddAll.addActionListener(new ActionListener() {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
                 java.util.List listOut = getIdentitiesOutTableModel().getDataVector();
@@ -214,17 +217,17 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
             }
         });
-        usersLabeljPanel.add(jButtonAddAll);
+        usersLabelPanel.add(buttonAddAll);
 
-        jButtonRemove.setText("Remove");
-        jButtonRemove.setHorizontalTextPosition(SwingConstants.RIGHT);
-        jButtonRemove.setHorizontalAlignment(SwingConstants.RIGHT);
-        jButtonRemove.setIcon(IconManager.getInstance().getIconRemove());
+        buttonRemove.setText("Remove");
+        buttonRemove.setHorizontalTextPosition(SwingConstants.RIGHT);
+        buttonRemove.setHorizontalAlignment(SwingConstants.RIGHT);
+        buttonRemove.setIcon(IconManager.getInstance().getIconRemove());
 
-        jButtonRemove.addActionListener(new ActionListener() {
+        buttonRemove.addActionListener(new ActionListener() {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
-                int[] rows = identitiesInjTable.getSelectedRows();
+                int[] rows = identitiesInTable.getSelectedRows();
                 Collection toRemove = new ArrayList();
                 java.util.List listIn = getIdentitiesInTableModel().getDataVector();
 
@@ -238,14 +241,14 @@ public class IdentityProviderPanel extends WizardStepPanel {
             }
         });
 
-        usersLabeljPanel.add(jButtonRemove);
+        usersLabelPanel.add(buttonRemove);
 
-        jButtonRemoveAll.setText("Remove all");
-        jButtonRemoveAll.setHorizontalTextPosition(SwingConstants.RIGHT);
-        jButtonRemoveAll.setHorizontalAlignment(SwingConstants.RIGHT);
-        jButtonRemoveAll.setIcon(IconManager.getInstance().getIconRemoveAll());
+        buttonRemoveAll.setText("Remove all");
+        buttonRemoveAll.setHorizontalTextPosition(SwingConstants.RIGHT);
+        buttonRemoveAll.setHorizontalAlignment(SwingConstants.RIGHT);
+        buttonRemoveAll.setIcon(IconManager.getInstance().getIconRemoveAll());
 
-        jButtonRemoveAll.addActionListener(new ActionListener() {
+        buttonRemoveAll.addActionListener(new ActionListener() {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
                 java.util.List listIn = getIdentitiesInTableModel().getDataVector();
@@ -257,51 +260,56 @@ public class IdentityProviderPanel extends WizardStepPanel {
             }
         });
 
-        usersLabeljPanel.add(jButtonRemoveAll);
+        usersLabelPanel.add(buttonRemoveAll);
 
-        identitiesjPanel.add(usersLabeljPanel);
+        identitiesjPanel.add(usersLabelPanel);
 
-        identitiesInjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        identitiesInjScrollPane.setPreferredSize(new java.awt.Dimension(150, 50));
-        identitiesInjTable.setModel(getIdentitiesInTableModel());
+        identitiesInScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        identitiesInScrollPane.setPreferredSize(new java.awt.Dimension(150, 50));
+        identitiesInTable.setModel(getIdentitiesInTableModel());
 
-        identitiesInjTable.setShowHorizontalLines(false);
-        identitiesInjTable.setShowVerticalLines(false);
-        identitiesInjTable.setDefaultRenderer(Object.class, tableRenderer);
-        identitiesInjScrollPane.getViewport().setBackground(identitiesInjTable.getBackground());
-        identitiesInjScrollPane.setViewportView(identitiesInjTable);
+        identitiesInTable.setShowHorizontalLines(false);
+        identitiesInTable.setShowVerticalLines(false);
+        identitiesInTable.setDefaultRenderer(Object.class, tableRenderer);
+        identitiesInScrollPane.getViewport().setBackground(identitiesInTable.getBackground());
+        identitiesInScrollPane.setViewportView(identitiesInTable);
 
-        identitiesjPanel.add(identitiesInjScrollPane);
+        identitiesjPanel.add(identitiesInScrollPane);
 
-        buttonjPanel.setLayout(new BoxLayout(buttonjPanel, BoxLayout.Y_AXIS));
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
 
-        identitiesjPanel.add(buttonjPanel);
+        identitiesjPanel.add(buttonPanel);
 
-        identitiesPanel.add(identitiesjPanel, java.awt.BorderLayout.EAST);
+        identitiesPanel.add(identitiesjPanel, BorderLayout.EAST);
 
         add(identitiesPanel, BorderLayout.WEST);
-        credentialsAndTransportjPanel.setLayout(new BoxLayout(credentialsAndTransportjPanel, BoxLayout.Y_AXIS));
+        credentialsAndTransportPanel.setLayout(new BoxLayout(credentialsAndTransportPanel, BoxLayout.Y_AXIS));
 
-        credentialsAndTransportjPanel.setBorder(new TitledBorder("Credentials/transport"));
+        credentialsAndTransportPanel.setBorder(new TitledBorder("Credentials/transport"));
         credentialsLocationjPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        ssljPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        credentialsLocationjComboBox.setModel(getCredentialsLocationComboBoxModel());
+        sslPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        credentialsLocationComboBox.setModel(getCredentialsLocationComboBoxModel());
 
-        credentialsLocationjPanel.add(credentialsLocationjComboBox);
-        credentialsAndTransportjPanel.add(credentialsLocationjPanel);
+        credentialsLocationjPanel.add(credentialsLocationComboBox);
+        credentialsAndTransportPanel.add(credentialsLocationjPanel);
 
-        ssljCheckBox.setText("SSL/TLS");
-        ssljCheckBox.setHorizontalTextPosition(SwingConstants.LEADING);
-        ssljPanel.add(ssljCheckBox);
-        credentialsAndTransportjPanel.add(ssljPanel);
+        sslCheckBox.setText("SSL/TLS");
+        sslCheckBox.setHorizontalTextPosition(SwingConstants.LEADING);
+        sslPanel.add(sslCheckBox);
+        credentialsAndTransportPanel.add(sslPanel);
         JPanel ra = new JPanel();
         ra.setLayout(new BorderLayout());
         ra.add(Box.createGlue());
-        credentialsAndTransportjPanel.add(ra);
+        credentialsAndTransportPanel.add(ra);
 
-        add(credentialsAndTransportjPanel, java.awt.BorderLayout.CENTER);
+        add(credentialsAndTransportPanel, java.awt.BorderLayout.CENTER);
     }
 
+    /**
+     * create the credentials location (http, ws message) locaiton combo model
+     *
+     * @return the <code>ComboBoxModel</code> with credentials location list
+     */
     private ComboBoxModel getCredentialsLocationComboBoxModel() {
         if (credentialsLocationComboBoxModel != null)
             return credentialsLocationComboBoxModel;
@@ -320,6 +328,8 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
         providersComboBoxModel = new DefaultComboBoxModel();
         try {
+
+            providersComboBoxModel.addElement(NO_PROVIDER);
             providersComboBoxModel.addElement(Registry.getDefault().getInternalProvider());
             Iterator providers =
               Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
@@ -405,7 +415,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
                 }
             }
             // crenedtials location, safe
-            Object o = credentialsLocationjComboBox.getSelectedItem();
+            Object o = credentialsLocationComboBox.getSelectedItem();
             if (o != null) {
                 CredentialSourceAssertion ca =
                   (CredentialSourceAssertion)credentialsLocationMap.get(o);
@@ -415,7 +425,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
         }
 
 
-        if (ssljCheckBox.isSelected()) {
+        if (sslCheckBox.isSelected()) {
             allAssertions.add(new SslAssertion());
         }
 
@@ -432,10 +442,10 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
     private void equalizeButtons() {
         JButton buttons[] = new JButton[]{
-            jButtonAdd,
-            jButtonAddAll,
-            jButtonRemove,
-            jButtonRemoveAll
+            buttonAdd,
+            buttonAddAll,
+            buttonRemove,
+            buttonRemoveAll
         };
         Utilities.equalizeComponentSizes(buttons);
     }
@@ -485,7 +495,6 @@ public class IdentityProviderPanel extends WizardStepPanel {
         if (type == null) {
             throw new NullPointerException("type");
         }
-        ClassLoader cl = type.getClass().getClassLoader();
         if (type.equals(EntityType.GROUP)) {
             return new ImageIcon(IconManager2.getInstance().getIcon(GroupPanel.GROUP_ICON_RESOURCE));
         } else if (type.equals(EntityType.USER)) {
@@ -507,29 +516,54 @@ public class IdentityProviderPanel extends WizardStepPanel {
         // credentialsLocationMap.put("WSS client cert", new WssClientCert());
     }
 
-    private JTable identitiesInjTable;
-    private JTable identitiesOutjTable;
+    /**
+     * the <b>no provider</b> anonymous class, used for combo selection tghat
+     * indicates no provder is selected
+     */
+    private static final IdentityProvider
+      NO_PROVIDER = new IdentityProvider() {
+          public void initialize(IdentityProviderConfig config) {
+          }
+
+          public IdentityProviderConfig getConfig() { return config; }
+
+          public UserManager getUserManager() { return null; }
+
+          public GroupManager getGroupManager() { return null; }
+
+          public boolean authenticate(Principal user, byte[] credentials) { return false; }
+
+          public boolean isReadOnly() { return true; }
+
+          IdentityProviderConfig config = new IdentityProviderConfig();
+
+          {
+              config.setDescription("No provider selected ");
+          }
+
+      };
+    private JTable identitiesInTable;
+    private JTable identitiesOutTable;
     private DefaultTableModel identitiesInTableModel;
     private DefaultTableModel identitiesOutTableModel;
 
-    private JScrollPane identitiesOutjScrollPane;
-    private JPanel ssljPanel;
+    private JScrollPane identitiesOutScrollPane;
+    private JPanel sslPanel;
 
-    private JLabel selecProviderjLabel;
-    private JButton jButtonAddAll;
+    private JButton buttonAddAll;
     private JPanel identitiesjPanel;
     private JPanel credentialsLocationjPanel;
-    private JButton jButtonRemove;
-    private JPanel providerSelectorjPanel;
+    private JButton buttonRemove;
+    private JPanel providerSelectorPanel;
     private JPanel identitiesPanel;
-    private JButton jButtonRemoveAll;
-    private JComboBox providersjComboBox;
-    private JScrollPane identitiesInjScrollPane;
-    private JButton jButtonAdd;
-    private JComboBox credentialsLocationjComboBox;
-    private JPanel credentialsAndTransportjPanel;
-    private JPanel buttonjPanel;
-    private JPanel usersLabeljPanel;
+    private JButton buttonRemoveAll;
+    private JComboBox providersComboBox;
+    private JScrollPane identitiesInScrollPane;
+    private JButton buttonAdd;
+    private JComboBox credentialsLocationComboBox;
+    private JPanel credentialsAndTransportPanel;
+    private JPanel buttonPanel;
+    private JPanel usersLabelPanel;
 
-    private JCheckBox ssljCheckBox;
+    private JCheckBox sslCheckBox;
 }
