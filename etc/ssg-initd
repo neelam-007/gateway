@@ -12,7 +12,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-if [ -z "$TOMCAT_HOME"]; then 
+if [ -z "$TOMCAT_HOME" ]; then 
 	TOMCAT_HOME="/ssg/tomcat/"
 	echo "Setting TOMCAT_HOME to /ssg/tomcat"
 fi
