@@ -72,7 +72,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
 
         // the element is not there so there is nothing to check
         if (selectedNodes.isEmpty()) {
-            log.fine("The element " + responseWssConfidentiality.getXpathExpression().getExpression() + " is not present in this response. " +
+            log.info("The element " + responseWssConfidentiality.getXpathExpression().getExpression() + " is not present in this response. " +
                         "the assertion therefore succeeds.");
             return AssertionStatus.NONE;
         }
