@@ -13,6 +13,7 @@ import com.l7tech.logging.LogManager;
 import javax.wsdl.*;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -38,11 +39,12 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
                 }
             }
         } catch ( WSDLException we ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, we);
+            logger.log(Level.SEVERE, null, we);
         }
 
         return values.toArray();
     }
 
     protected abstract String getTargetValue( BindingOperation operation );
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }
