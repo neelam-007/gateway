@@ -62,6 +62,7 @@ public abstract class PersistenceManager {
         _instance.doDelete( context, obj );
     }
 
+    /*
     public static void beginTransaction( PersistenceContext context ) throws TransactionException {
         checkInstance();
         _instance.doBeginTransaction( context );
@@ -76,6 +77,7 @@ public abstract class PersistenceManager {
         checkInstance();
         _instance.doRollbackTransaction( context );
     }
+    */
 
     public static PersistenceContext makeContext() throws SQLException {
         checkInstance();
@@ -92,9 +94,11 @@ public abstract class PersistenceManager {
         if ( _instance == null ) throw new IllegalStateException( "A concrete PersistenceManager has not yet been initialized!");
     }
 
+    /*
     abstract void doBeginTransaction( PersistenceContext context ) throws TransactionException;
     abstract void doCommitTransaction( PersistenceContext context ) throws TransactionException;
     abstract void doRollbackTransaction( PersistenceContext context ) throws TransactionException;
+    */
     abstract List doFind( PersistenceContext context, String query ) throws FindException;
     abstract List doFind( PersistenceContext context, String query, Object param, Class paramClass ) throws FindException;
     abstract List doFind( PersistenceContext context, String query, Object[] params, Class[] paramClasses ) throws FindException;
