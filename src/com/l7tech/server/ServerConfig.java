@@ -200,7 +200,7 @@ public class ServerConfig {
                         ip = (InetAddress)ips.nextElement();
                         if ( ( ip.getAddress()[0] & 0xff ) != 127 ) {
                             // Ignore localhost for autoconfigured IPs
-                            logger.info( "Automatically found IP address " + print(ip) + " on network interface interface " + net.getName() );
+                            logger.info( "Automatically found IP address " + print(ip) + " on network interface " + net.getName() );
                             localIps.add( ip );
                         }
                     }
