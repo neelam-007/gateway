@@ -1,5 +1,6 @@
 package com.l7tech.server.saml;
 
+import com.l7tech.common.security.saml.Constants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.common.security.xml.WssDecoratorImpl;
@@ -8,10 +9,10 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.XpathEvaluator;
 import org.apache.xmlbeans.XmlOptions;
+import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import org.jaxen.JaxenException;
 import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
 import x0Protocol.oasisNamesTcSAML1.ResponseType;
 import x0Protocol.oasisNamesTcSAML1.StatusCodeType;
@@ -24,8 +25,8 @@ import javax.xml.soap.SOAPMessage;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Package private class that contains method for creating responses, precanned responses

@@ -1,27 +1,28 @@
 package com.l7tech.server.saml;
 
+import com.ibm.xml.dsig.*;
+import com.ibm.xml.dsig.util.AdHocIDResolver;
+import com.l7tech.common.security.saml.Constants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.User;
-import com.ibm.xml.dsig.*;
-import com.ibm.xml.dsig.util.AdHocIDResolver;
 import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import x0Assertion.oasisNamesTcSAML1.*;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
-import java.security.SignatureException;
 import java.security.PrivateKey;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.DSAPrivateKey;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAPrivateKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;

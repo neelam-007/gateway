@@ -1,14 +1,15 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.security.Keys;
+import com.l7tech.common.security.saml.Constants;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import junit.extensions.TestSetup;
 import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

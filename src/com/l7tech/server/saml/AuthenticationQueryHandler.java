@@ -1,16 +1,14 @@
 package com.l7tech.server.saml;
 
-import x0Protocol.oasisNamesTcSAML1.*;
-
-import javax.xml.namespace.QName;
-
+import com.l7tech.common.security.saml.Constants;
+import org.apache.xmlbeans.XmlOptions;
 import x0Assertion.oasisNamesTcSAML1.*;
+import x0Protocol.oasisNamesTcSAML1.RequestDocument;
+import x0Protocol.oasisNamesTcSAML1.RequestType;
+import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
+import x0Protocol.oasisNamesTcSAML1.ResponseType;
 
 import java.util.Calendar;
-import java.io.IOException;
-
-import com.l7tech.common.util.XmlUtil;
-import org.apache.xmlbeans.XmlOptions;
 
 /**
  * @author emil
