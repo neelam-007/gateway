@@ -5,6 +5,7 @@ import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -13,6 +14,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.AssertionMessages;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -35,9 +37,11 @@ public class ServerSecureConversation implements ServerAssertion {
     }
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         ProcessorResult wssResults;
+
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             if (!context.getRequest().isSoap()) {
-                logger.info("Request not SOAP; unable to check for WS-SecureConversation token");
+                auditor.logAndAudit(AssertionMessages.SC_REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
             wssResults = context.getRequest().getXmlKnob().getProcessorResult();
@@ -46,7 +50,7 @@ public class ServerSecureConversation implements ServerAssertion {
         }
 
         if (wssResults == null) {
-            logger.info("This request did not contain any WSS level security.");
+            auditor.logAndAudit(AssertionMessages.SC_NO_WSS_LEVEL_SECURITY);
             context.setAuthenticationMissing();
             context.setRequestPolicyViolated();
             return AssertionStatus.FALSIFIED;
@@ -58,14 +62,13 @@ public class ServerSecureConversation implements ServerAssertion {
             if (token instanceof SecurityContextToken) {
                 SecurityContextToken secConTok = (SecurityContextToken)token;
                 if (!secConTok.isPossessionProved()) {
-                    logger.log(Level.FINE, "Ignoring SecurityContextToken with no proof-of-possession");
+                    auditor.logAndAudit(AssertionMessages.SC_NO_PROOF_OF_POSSESSION);
                     continue;
                 }
                 String contextId = secConTok.getContextIdentifier();
                 SecureConversationSession session = SecureConversationContextManager.getInstance().getSession(contextId);
                 if (session == null) {
-                    logger.warning("The request referred to a SecureConversation token that is not recognized " +
-                                   "on this server. Perhaps the session has expired. Returning AUTH_FAILED.");
+                    auditor.logAndAudit(AssertionMessages.SC_TOKEN_INVALID);
                     context.setRequestPolicyViolated();
                     return AssertionStatus.AUTH_FAILED;
                 }
@@ -73,11 +76,11 @@ public class ServerSecureConversation implements ServerAssertion {
                 context.setAuthenticated(true);
                 context.setAuthenticatedUser(authenticatedUser);
                 context.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
-                logger.fine("Secure Conversation session recognized for user " + authenticatedUser.getLogin());
+                auditor.logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, new String[] {authenticatedUser.getLogin()});
                 return AssertionStatus.NONE;
             }
         }
-        logger.info("This request did not seem to refer to a Secure Conversation token.");
+        auditor.logAndAudit(AssertionMessages.SC_REQUEST_NOT_REFER_TO_SC_TOKEN);
         context.setAuthenticationMissing();
         context.setRequestPolicyViolated();
         return AssertionStatus.AUTH_REQUIRED;
@@ -87,9 +90,11 @@ public class ServerSecureConversation implements ServerAssertion {
         return new ServerAssertion() {
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
                 DecorationRequirements wssReq;
+
+                Auditor auditor = new Auditor(context.getAuditContext(), logger);
                 try {
                     if (!context.getResponse().isSoap()) {
-                        logger.warning("Response not SOAP; unable to attach WS-SecureConversation token");
+                        auditor.logAndAudit(AssertionMessages.SC_UNABLE_TO_ATTACH_SC_TOKEN);
                         return AssertionStatus.NOT_APPLICABLE;
                     }
                     wssReq = context.getResponse().getXmlKnob().getOrMakeDecorationRequirements();

@@ -34,49 +34,59 @@ public class AssertionMessages extends Messages {
 
 
     // ServerCredentialSourceAssertion messages
-    public static final M AUTH_REQUIRED                        = m(4050, Level.INFO, "Authentication Required");
+    public static final M AUTH_REQUIRED                        = m(4100, Level.INFO, "Authentication Required");
 
     // ServerIdentityAssertion
-    public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4100, Level.WARNING, "Request is authenticated but request has no LoginCredentials!");
-    public static final M CREDENTIALS_NOT_FOUND                   = m(4101, Level.INFO, "No credentials found!");
-    public static final M ALREADY_AUTHENTICATED                   = m(4102, Level.FINEST, "Request already authenticated");
-    public static final M ID_PROVIDER_ID_NOT_SET                  = m(4103, Level.SEVERE, "Can't call checkRequest() when no valid identityProviderOid has been set!");
-    public static final M ID_PROVIDER_NOT_FOUND                   = m(4104, Level.SEVERE, "Couldn't find identity provider!");
-    public static final M ID_PROVIDER_NOT_EXIST                   = m(4105, Level.WARNING, "id assertion refers to an id provider which does not exist anymore");
-    public static final M AUTHENTICATED                           = m(4106, Level.FINEST, "Authenticated {0}");
-    public static final M INVALID_CERT                            = m(4107, Level.INFO, "Invalid client cert for {0}");
-    public static final M AUTHENTICATION_FAILED                   = m(4108, Level.SEVERE, "Authentication failed for {0}");
+    public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4200, Level.WARNING, "Request is authenticated but request has no LoginCredentials!");
+    public static final M CREDENTIALS_NOT_FOUND                   = m(4201, Level.INFO, "No credentials found!");
+    public static final M ALREADY_AUTHENTICATED                   = m(4202, Level.FINEST, "Request already authenticated");
+    public static final M ID_PROVIDER_ID_NOT_SET                  = m(4203, Level.SEVERE, "Can't call checkRequest() when no valid identityProviderOid has been set!");
+    public static final M ID_PROVIDER_NOT_FOUND                   = m(4204, Level.SEVERE, "Couldn't find identity provider!");
+    public static final M ID_PROVIDER_NOT_EXIST                   = m(4205, Level.WARNING, "id assertion refers to an id provider which does not exist anymore");
+    public static final M AUTHENTICATED                           = m(4206, Level.FINEST, "Authenticated {0}");
+    public static final M INVALID_CERT                            = m(4207, Level.INFO, "Invalid client cert for {0}");
+    public static final M AUTHENTICATION_FAILED                   = m(4208, Level.SEVERE, "Authentication failed for {0}");
 
     // ServerRequestWssOperation messages
-    public static final M NOTHING_TO_VALIDATE                     = m(4150, Level.FINE, "This is intended for another recipient, there is nothing to validate here.");
-    public static final M CANNOT_VERIFY_WS_SECURITY               = m(4151, Level.INFO, "Request not SOAP; cannot verify WS-Security contents");
-    public static final M NO_WSS_LEVEL_SECURITY                   = m(4152, Level.INFO, "This request did not contain any WSS level security.");
+    public static final M NOTHING_TO_VALIDATE                     = m(4300, Level.FINE, "This is intended for another recipient, there is nothing to validate here.");
+    public static final M CANNOT_VERIFY_WS_SECURITY               = m(4301, Level.INFO, "Request not SOAP; cannot verify WS-Security contents");
+    public static final M NO_WSS_LEVEL_SECURITY                   = m(4302, Level.INFO, "This request did not contain any WSS level security.");
 
     // ServerRequestSwAAssertion messages
-    public static final M REQUEST_NOT_SOAP                        = m(4200, Level.INFO, "Request not SOAP; cannot validate attachments");
-    public static final M NOT_MULTIPART_MESSAGE                   = m(4201, Level.INFO, "The request does not contain attachment or is not a mulitipart message");
-    public static final M OPERATION_NOT_FOUND                     = m(4202, Level.FINEST, "Operation not found in the request. Xpath expression is: {0}");
-    public static final M SAME_OPERATION_APPEARS_MORE_THAN_ONCE   = m(4203, Level.INFO, "Same operation appears more than once in the request. Xpath expression is: {0}");
-    public static final M OPERATION_IS_NON_ELEMENT_NODE           = m(4204, Level.INFO, "XPath pattern {0} found non-element node '{1}'");
-    public static final M PARAMETER_IS_NON_ELEMENT_NODE           = m(4205, Level.INFO, "XPath pattern {0}/{1} found non-element node '{2}'");
-    public static final M OPERATION_FOUND                         = m(4206, Level.FINEST, "The operation {0} is found in the request");
-    public static final M MIME_PART_NOT_FOUND                     = m(4207, Level.FINE, "MIME Part not found in the request. Xpath expression is: {0}/{1})");
-    public static final M SAME_MIME_PART_APPEARS_MORE_THAN_ONCE   = m(4208, Level.FINE, "Same MIME Part appears more than once in the request. Xpath expression is: {0}/{1}");
-    public static final M PARAMETER_FOUND                         = m(4209, Level.FINEST, "Parameter {0} is found in the request");
-    public static final M REFERENCE_NOT_FOUND                     = m(4210, Level.INFO, "The reference (href) of the {0} is found in the request");
-    public static final M REFERENCE_FOUND                         = m(4211, Level.FINEST, "The href of the parameter {0} is found in the request, value={1}");
-    public static final M INVALID_CONTENT_ID_URL                  = m(4212, Level.INFO, "Invalid Content-ID URL {0}");
-    public static final M MUST_BE_ONE_OF_CONTENT_TYPES            = m(4213, Level.INFO, "The content type of the attachment {0} must be one of the types: {1}");
-    public static final M INCORRECT_CONTENT_TYPE                  = m(4214, Level.INFO, "The content type of the attachment {0} must be: {1}");
-    public static final M TOTAL_LENGTH_LIMIT_EXCEEDED             = m(4215, Level.INFO, "The parameter [{0}] has {1} attachments. The total length exceeds the limit: {2} K bytes");
-    public static final M INDIVIDUAL_LENGTH_LIMIT_EXCEEDED        = m(4216, Level.INFO, "The length of the attachment {0} exceeds the limit: {1} K bytes");
-    public static final M ATTACHMENT_NOT_FOUND                    = m(4217, Level.INFO, "The required attachment {0} is not found in the request");
-    public static final M UNEXPECTED_ATTACHMENT_FOUND             = m(4218, Level.INFO, "Unexpected attachment {0} found in the request.");
-    public static final M INVALID_OPERATION                       = m(4219, Level.INFO, "The operation specified in the request is invalid.");
+    public static final M REQUEST_NOT_SOAP                        = m(4400, Level.INFO, "Request not SOAP; cannot validate attachments");
+    public static final M NOT_MULTIPART_MESSAGE                   = m(4401, Level.INFO, "The request does not contain attachment or is not a mulitipart message");
+    public static final M OPERATION_NOT_FOUND                     = m(4402, Level.FINEST, "Operation not found in the request. Xpath expression is: {0}");
+    public static final M SAME_OPERATION_APPEARS_MORE_THAN_ONCE   = m(4403, Level.INFO, "Same operation appears more than once in the request. Xpath expression is: {0}");
+    public static final M OPERATION_IS_NON_ELEMENT_NODE           = m(4404, Level.INFO, "XPath pattern {0} found non-element node '{1}'");
+    public static final M PARAMETER_IS_NON_ELEMENT_NODE           = m(4405, Level.INFO, "XPath pattern {0}/{1} found non-element node '{2}'");
+    public static final M OPERATION_FOUND                         = m(4406, Level.FINEST, "The operation {0} is found in the request");
+    public static final M MIME_PART_NOT_FOUND                     = m(4407, Level.FINE, "MIME Part not found in the request. Xpath expression is: {0}/{1})");
+    public static final M SAME_MIME_PART_APPEARS_MORE_THAN_ONCE   = m(4408, Level.FINE, "Same MIME Part appears more than once in the request. Xpath expression is: {0}/{1}");
+    public static final M PARAMETER_FOUND                         = m(4409, Level.FINEST, "Parameter {0} is found in the request");
+    public static final M REFERENCE_NOT_FOUND                     = m(4410, Level.INFO, "The reference (href) of the {0} is found in the request");
+    public static final M REFERENCE_FOUND                         = m(4411, Level.FINEST, "The href of the parameter {0} is found in the request, value={1}");
+    public static final M INVALID_CONTENT_ID_URL                  = m(4412, Level.INFO, "Invalid Content-ID URL {0}");
+    public static final M MUST_BE_ONE_OF_CONTENT_TYPES            = m(4413, Level.INFO, "The content type of the attachment {0} must be one of the types: {1}");
+    public static final M INCORRECT_CONTENT_TYPE                  = m(4414, Level.INFO, "The content type of the attachment {0} must be: {1}");
+    public static final M TOTAL_LENGTH_LIMIT_EXCEEDED             = m(4415, Level.INFO, "The parameter [{0}] has {1} attachments. The total length exceeds the limit: {2} K bytes");
+    public static final M INDIVIDUAL_LENGTH_LIMIT_EXCEEDED        = m(4416, Level.INFO, "The length of the attachment {0} exceeds the limit: {1} K bytes");
+    public static final M ATTACHMENT_NOT_FOUND                    = m(4417, Level.INFO, "The required attachment {0} is not found in the request");
+    public static final M UNEXPECTED_ATTACHMENT_FOUND             = m(4418, Level.INFO, "Unexpected attachment {0} found in the request.");
+    public static final M INVALID_OPERATION                       = m(4419, Level.INFO, "The operation specified in the request is invalid.");
 
     // ServerRemoteIpRange messages
-    public static final M CANNOT_VALIDATE_IP_ADDRESS              = m(4250, Level.INFO, "Request was not received via TCP; cannot validate remote IP address");
-    public static final M REMOTE_ADDRESS_INVALID                  = m(4251, Level.INFO, "The remote address {0} is null or not in expected format.");
-    public static final M REQUESTOR_ADDRESS_ACCEPTED              = m(4252, Level.FINEST, "Requestor address {0} is accepted.");
-    public static final M REQUESTOR_ADDRESS_REJECTED              = m(4253, Level.INFO,  "Requestor address {0} is not allowed");
+    public static final M CANNOT_VALIDATE_IP_ADDRESS              = m(4500, Level.INFO, "Request was not received via TCP; cannot validate remote IP address");
+    public static final M REMOTE_ADDRESS_INVALID                  = m(4501, Level.INFO, "The remote address {0} is null or not in expected format.");
+    public static final M REQUESTOR_ADDRESS_ACCEPTED              = m(4502, Level.FINEST, "Requestor address {0} is accepted.");
+    public static final M REQUESTOR_ADDRESS_REJECTED              = m(4503, Level.INFO,  "Requestor address {0} is not allowed");
+
+    // ServerSecureConversation
+    public static final M SC_REQUEST_NOT_SOAP                     = m(4600, Level.INFO, "Request not SOAP; unable to check for WS-SecureConversation token");
+    public static final M SC_NO_WSS_LEVEL_SECURITY                = m(4601, Level.INFO, "This request did not contain any WSS level security.");
+    public static final M SC_NO_PROOF_OF_POSSESSION               = m(4602, Level.FINE, "Ignoring SecurityContextToken with no proof-of-possession");
+    public static final M SC_TOKEN_INVALID                        = m(4603, Level.WARNING, "The request referred to a SecureConversation token that is not recognized on this server. Perhaps the session has expired. Returning AUTH_FAILED.");
+    public static final M SC_SESSION_FOR_USER                     = m(4604, Level.FINE, "Secure Conversation session recognized for user {0}");
+    public static final M SC_REQUEST_NOT_REFER_TO_SC_TOKEN        = m(4605, Level.INFO, "This request did not seem to refer to a Secure Conversation token.");
+    public static final M SC_UNABLE_TO_ATTACH_SC_TOKEN            = m(4606, Level.WARNING, "Response not SOAP; unable to attach WS-SecureConversation token");
+
 }
