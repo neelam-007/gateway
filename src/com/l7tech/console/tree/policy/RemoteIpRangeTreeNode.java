@@ -28,11 +28,11 @@ public class RemoteIpRangeTreeNode extends LeafAssertionTreeNode {
               RemoteIpRange.class.getName());
     }
     public String getName() {
-        String nodeName = "IP address";
+        String nodeName = "IP Address";
         if (nodeAssertion != null) {
             if (nodeAssertion.isAllowRange()) {
-                nodeName += " within";
-            } else nodeName += " outside";
+                nodeName += " Allowed";
+            } else nodeName += " Forbidden";
             nodeName += " [" + nodeAssertion.getStartIp() + "/" + nodeAssertion.getNetworkMask() + "]";
         }
         return nodeName;
