@@ -11,7 +11,7 @@
     <children>
       <component id="7ce71" class="javax.swing.JLabel">
         <constraints>
-          <xy x="8" y="63" width="69" height="14"/>
+          <xy x="8" y="63" width="82" height="15"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0"/>
         </constraints>
         <properties>
@@ -20,17 +20,17 @@
       </component>
       <component id="ebe4e" class="javax.swing.JLabel">
         <constraints>
-          <xy x="8" y="285" width="69" height="14"/>
+          <xy x="8" y="284" width="79" height="15"/>
           <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0"/>
         </constraints>
         <properties>
           <text value="Gateway URL:"/>
-          <toolTipText value="The URL on the SSG where this will be routed"/>
+          <toolTipText value=""/>
         </properties>
       </component>
       <component id="fe0f1" class="javax.swing.JLabel">
         <constraints>
-          <xy x="8" y="174" width="58" height="14"/>
+          <xy x="8" y="174" width="68" height="15"/>
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0"/>
         </constraints>
         <properties>
@@ -39,38 +39,41 @@
       </component>
       <component id="74fbe" class="javax.swing.JTextField" binding="serviceName">
         <constraints>
-          <xy x="87" y="63" width="687" height="21"/>
+          <xy x="100" y="63" width="674" height="22"/>
           <grid row="1" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="9" fill="1">
             <preferred-size width="150" height="-1"/>
           </grid>
         </constraints>
         <properties>
-          <toolTipText value="The name of the service as it appears in the manager"/>
+          <toolTipText value="Enter the name of the non-SOAP application you want to publish"/>
         </properties>
       </component>
       <component id="8f39c" class="javax.swing.JTextField" binding="targetURL">
         <constraints>
-          <xy x="87" y="174" width="687" height="21"/>
+          <xy x="100" y="174" width="674" height="22"/>
           <grid row="3" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="9" fill="1">
             <preferred-size width="150" height="-1"/>
           </grid>
         </constraints>
         <properties>
-          <toolTipText value="The URL where the SSG will route these xml requests"/>
+          <toolTipText value="Enter the HTTP URL that the SecureSpan Gateway should forward requests to"/>
         </properties>
       </component>
       <component id="f6b23" class="javax.swing.JTextField" binding="ssgURLSuffix">
         <constraints>
-          <xy x="277" y="285" width="497" height="21"/>
+          <xy x="332" y="284" width="442" height="22"/>
           <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="9" fill="1">
             <preferred-size width="150" height="-1"/>
           </grid>
         </constraints>
-        <properties/>
+        <properties>
+          <text value=""/>
+          <toolTipText value="Complete the SecureSpan Gateway URL that will receive service requests"/>
+        </properties>
       </component>
       <component id="15cae" class="javax.swing.JLabel" binding="prefixURL">
         <constraints>
-          <xy x="87" y="285" width="180" height="14"/>
+          <xy x="100" y="284" width="222" height="15"/>
           <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0"/>
         </constraints>
         <properties>
@@ -80,7 +83,7 @@
       </component>
       <component id="a26ce" class="javax.swing.JLabel">
         <constraints>
-          <xy x="8" y="26" width="313" height="14"/>
+          <xy x="8" y="25" width="374" height="15"/>
           <grid row="0" column="0" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
@@ -89,7 +92,7 @@
       </component>
       <component id="7df2b" class="javax.swing.JLabel">
         <constraints>
-          <xy x="8" y="137" width="380" height="14"/>
+          <xy x="8" y="137" width="449" height="15"/>
           <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
@@ -98,11 +101,11 @@
       </component>
       <component id="f27c4" class="javax.swing.JLabel">
         <constraints>
-          <xy x="8" y="248" width="343" height="14"/>
+          <xy x="8" y="247" width="421" height="15"/>
           <grid row="4" column="0" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="Complete the SecureSpan Gateway URL that will receive requests to this service:"/>
+          <text value="Complete the SecureSpan Gateway URL that will receive service requests:"/>
         </properties>
       </component>
     </children>

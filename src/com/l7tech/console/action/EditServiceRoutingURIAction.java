@@ -34,7 +34,7 @@ public class EditServiceRoutingURIAction extends NodeAction {
     }
 
     public String getName() {
-        return "View Routing URL";
+        return "View Gateway URL";
     }
 
     public String getDescription() {
@@ -57,8 +57,8 @@ public class EditServiceRoutingURIAction extends NodeAction {
             String prefix = mw.ssgURL() + NonSoapServicePanel.DEF_PREFIX;
 
             String res = (String) JOptionPane.showInputDialog(mw,
-                    "View or edit the Gateway URL that will receive service requests:\n" + prefix,
-                    "View Routing URL",
+                    "View or edit the SecureSpan Gateway URL that receives service requests:\n" + prefix,
+                    "View Gateway URL",
                     JOptionPane.PLAIN_MESSAGE,
                     null,
                     null,
