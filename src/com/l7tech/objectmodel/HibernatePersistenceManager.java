@@ -9,8 +9,6 @@ package com.l7tech.objectmodel;
 import cirrus.hibernate.*;
 import cirrus.hibernate.type.Type;
 
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
@@ -21,19 +19,21 @@ import java.io.*;
  * @version $Revision$
  */
 public class HibernatePersistenceManager extends PersistenceManager {
-    public static String DATASOURCE_URL_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.datasourceurl";
-    public static String SESSIONFACTORY_URL_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.sessionfactoryurl";
-    public static String DEFAULT_PROPERTIES_RESOURCEPATH = "com/l7tech/objectmodel/hibernatepersistence.properties";
-    public static String PROPERTIES_RESOURCEPATH_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.properties.resourcepath";
-    public static String DEFAULT_HIBERNATE_RESOURCEPATH = "com/l7tech/objectmodel/hibernate.cfg.xml";
+    public static final String DATASOURCE_URL_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.datasourceurl";
+    public static final String SESSIONFACTORY_URL_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.sessionfactoryurl";
+    public static final String DEFAULT_PROPERTIES_RESOURCEPATH = "com/l7tech/objectmodel/hibernatepersistence.properties";
+    public static final String PROPERTIES_RESOURCEPATH_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.properties.resourcepath";
+//    public static final String DEFAULT_HIBERNATE_RESOURCEPATH = "hibernate.cfg.xml";
+    public static final String DEFAULT_HIBERNATE_RESOURCEPATH = "SSG.hbm.xml";
+    public static final String HIBERNATE_RESOURCEPATH_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.hibernateconfigxml";
 
-    public static void initialize() throws IOException, SQLException, NamingException {
+    public static void initialize() throws IOException, SQLException {
         HibernatePersistenceManager me = new HibernatePersistenceManager();
         PersistenceManager.setInstance( me );
     }
 
-    private HibernatePersistenceManager() throws IOException, SQLException, NamingException {
-        _initialContext = new InitialContext();
+    private HibernatePersistenceManager() throws IOException, SQLException {
+        //_initialContext = new InitialContext();
 
         Properties props = new Properties();
 
@@ -41,13 +41,21 @@ public class HibernatePersistenceManager extends PersistenceManager {
         if ( resourcePath == null || resourcePath.length() == 0 )
             resourcePath = DEFAULT_PROPERTIES_RESOURCEPATH;
 
+        String hibernateXmlResourcePath = System.getProperty( HIBERNATE_RESOURCEPATH_PROPERTY );
+        if ( hibernateXmlResourcePath == null || hibernateXmlResourcePath.length() == 0 )
+            hibernateXmlResourcePath = DEFAULT_HIBERNATE_RESOURCEPATH;
+
         InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath);
         props.load( is );
-        String sessionFactoryUrl = props.getProperty( SESSIONFACTORY_URL_PROPERTY );
+        //String sessionFactoryUrl = props.getProperty( SESSIONFACTORY_URL_PROPERTY );
 
         try {
-            Hibernate.configure();
-            _sessionFactory = (SessionFactory)_initialContext.lookup( sessionFactoryUrl );
+            //Hibernate.configure();
+            //_sessionFactory = (SessionFactory)_initialContext.lookup( sessionFactoryUrl );
+
+            Datastore ds = Hibernate.createDatastore();
+            ds.storeResource( hibernateXmlResourcePath, getClass().getClassLoader() );
+            _sessionFactory = ds.buildSessionFactory();
         } catch ( HibernateException he ) {
             he.printStackTrace();
             throw new SQLException( he.toString() );
@@ -71,7 +79,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
     }
 
     private SessionFactory _sessionFactory;
-    private InitialContext _initialContext;
+    // private InitialContext _initialContext;
 
     class ContextHolder {
         HibernatePersistenceContext _context;
