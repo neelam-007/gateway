@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUserManagerServer;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.logging.LogManager;
 
 import java.rmi.RemoteException;
@@ -23,7 +24,6 @@ import java.security.cert.CertificateEncodingException;
  */
 public class IdentityAdminImpl implements IdentityAdmin {
 
-    public static final String VERSION = "20031017";
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
 
     public IdentityAdminImpl() {
@@ -35,7 +35,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
      * @throws RemoteException
      */
     public String echoVersion() throws RemoteException {
-        return VERSION;
+        return SecureSpanConstants.ADMIN_PROTOCOL_VERSION;
     }
     /**
      *

@@ -3,6 +3,7 @@ package com.l7tech.adminws;
 import com.l7tech.jini.lookup.ServiceLookup;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.VersionException;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
@@ -11,7 +12,6 @@ import java.rmi.ConnectException;
 
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.ws.IdentityAdminImpl;
 
 /**
  * Default <code>ClientCredentialManager</code> implementaiton that validates
@@ -35,8 +35,8 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
             throw new ConnectException("Unable to connect to the remote service");
         }
         String remoteVersion = is.echoVersion();
-        if (!IdentityAdminImpl.VERSION.equals(remoteVersion)) {
-            throw new VersionException(IdentityAdminImpl.VERSION, remoteVersion);
+        if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
+            throw new VersionException(SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
         }
         serviceLookup =
           (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
