@@ -277,6 +277,10 @@ public class LdapUserManager implements UserManager {
     }
 
     public boolean authenticateBasic(String dn, String passwd) {
+        if (passwd == null || passwd.length() < 1) {
+            logger.info("User: " + dn + " refused authentication because empty password provided.");
+            return false;
+        }
         String ldapurl = identityProvider.getLastWorkingLdapUrl();
         if (ldapurl == null) {
             ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
