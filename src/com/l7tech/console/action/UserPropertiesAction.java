@@ -1,14 +1,14 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.AssertionsTree;
-import com.l7tech.console.tree.UserNode;
-import com.l7tech.console.panels.GenericUserPanel;
-import com.l7tech.console.panels.EditorDialog;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.console.panels.EditorDialog;
+import com.l7tech.console.panels.GenericUserPanel;
+import com.l7tech.console.tree.AssertionsTree;
+import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.UserNode;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -56,15 +56,15 @@ public class UserPropertiesAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                if (idProvider == null) {
-                    idProvider = getIdentityProvider((EntityHeaderNode) node);
+                if (config == null) {
+                    config = getIdentityProviderConfig((EntityHeaderNode) node);
                 }
                 EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
                 GenericUserPanel panel = new GenericUserPanel();
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 EditorDialog dialog = new EditorDialog(f, panel);
                 try {
-                    panel.edit(header, idProvider);
+                    panel.edit(header, config);
                     dialog.pack();
                     Utilities.centerOnScreen(dialog);
                     dialog.show();
@@ -77,8 +77,8 @@ public class UserPropertiesAction extends NodeAction {
     }
 
 
-    public void setIdProvider(IdentityProvider idProvider) {
-        this.idProvider = idProvider;
+    public void setIdProviderConfig(IdentityProviderConfig config) {
+        this.config = config;
     }
 
     private void removeUserFromTree(EntityHeader header) {
@@ -87,5 +87,5 @@ public class UserPropertiesAction extends NodeAction {
         model.removeNodeFromParent(node);
     }
 
-    private IdentityProvider idProvider;
+    private IdentityProviderConfig config;
 }

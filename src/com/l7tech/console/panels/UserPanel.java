@@ -1,15 +1,15 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.identity.UserBean;
-import com.l7tech.identity.IdentityProvider;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.UserBean;
+import com.l7tech.objectmodel.EntityHeader;
 
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
-import java.util.Set;
+import javax.swing.event.DocumentListener;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A abstract class for handling common tasks of User Panel. A subclass derived from this
@@ -29,7 +29,7 @@ abstract public class UserPanel extends EntityEditorPanel {
     protected Set userGroups;
 
     protected boolean formModified;
-    protected IdentityProvider idProvider;
+    protected IdentityProviderConfig config;
     protected final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
 
     abstract public boolean certExist();
@@ -46,10 +46,10 @@ abstract public class UserPanel extends EntityEditorPanel {
      * Constructs the panel
      *
      * @param userHeader
-     * @param idProvider
+     * @param config
      */
-    public void edit(EntityHeader userHeader, IdentityProvider idProvider) {
-        this.idProvider = idProvider;
+    public void edit(EntityHeader userHeader, IdentityProviderConfig config) {
+        this.config = config;
         edit(userHeader);
     }
 
@@ -69,8 +69,8 @@ abstract public class UserPanel extends EntityEditorPanel {
         return userGroups;
     }
 
-    public IdentityProvider getProvider() {
-        return idProvider;
+    public IdentityProviderConfig getProviderConfig() {
+        return config;
     }
 
 

@@ -7,8 +7,7 @@ import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.identity.IdentityProviderConfig;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -29,16 +28,16 @@ public class DeleteEntityAction extends BaseAction {
     private EventListenerList listenerList = new WeakEventListenerList();
 
     EntityHeaderNode node;
-    private IdentityProvider provider;
+    private IdentityProviderConfig config;
 
     /**
      * create the acciton that deletes
      *
      * @param en the node to deleteEntity
      */
-    public DeleteEntityAction(EntityHeaderNode en, IdentityProvider ip) {
+    public DeleteEntityAction(EntityHeaderNode en, IdentityProviderConfig ip) {
         node = en;
-        provider = ip;
+        config = ip;
     }
 
     /**
@@ -89,14 +88,7 @@ public class DeleteEntityAction extends BaseAction {
      */
     public void performAction() {
         boolean deleted = false;
-        try {
-            deleted = Actions.deleteEntity(node, provider);
-        } catch (ObjectNotFoundException e) {
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getMainWindow(),
-              "The '" + node.getEntityHeader().getName() + "' Identity Provider no longer exists",
-              "Warning", JOptionPane.WARNING_MESSAGE);
-            deleted = true;
-        }
+        deleted = Actions.deleteEntity(node, config);
         if (deleted) {
             JTree tree = null;
             if (node instanceof ProviderNode) {

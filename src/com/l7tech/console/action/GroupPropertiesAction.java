@@ -7,7 +7,7 @@ import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.GroupNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -57,15 +57,15 @@ public class GroupPropertiesAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                if (idProvider == null) {
-                    idProvider = getIdentityProvider((EntityHeaderNode)node);
+                if (config == null) {
+                    config = getIdentityProviderConfig((EntityHeaderNode)node);
                 }
                 GroupPanel panel = new GroupPanel();
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 final EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 EditorDialog dialog = new EditorDialog(f, panel);
                 try {
-                    panel.edit(header, idProvider);
+                    panel.edit(header, config);
                     dialog.pack();
                     Utilities.centerOnScreen(dialog);
                     dialog.show();
@@ -77,8 +77,8 @@ public class GroupPropertiesAction extends NodeAction {
         });
     }
 
-    public void setIdProvider(IdentityProvider idProvider) {
-        this.idProvider = idProvider;
+    public void setIdProviderConfig(IdentityProviderConfig config) {
+        this.config = config;
     }
 
     private void removeGroupTreeNode(EntityHeader header) {
@@ -87,5 +87,5 @@ public class GroupPropertiesAction extends NodeAction {
         model.removeNodeFromParent(node);
     }
 
-    private IdentityProvider idProvider;
+    private IdentityProviderConfig config;
 }

@@ -5,6 +5,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -338,7 +339,8 @@ public class PasswordDialog extends JDialog {
             }
 
             user.setPassword(new String(newPass));
-            Registry.getDefault().getInternalUserManager().update(user);
+            Registry.getDefault().getIdentityAdmin().saveUser(
+                    IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, user, null); // TODO make sure passing null here won't clear group memberships
             dispose();
             if (listener != null) {
                 EntityHeader eh = new EntityHeader();

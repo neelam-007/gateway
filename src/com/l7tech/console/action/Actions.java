@@ -1,21 +1,20 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.CannotDeleteAdminAccountException;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -35,11 +34,11 @@ public class Actions {
      * @param bn - the node to be deleted
      * @return true if deleted, false otherwise
      */
-    static boolean deleteEntity(EntityHeaderNode bn, IdentityProvider provider) throws ObjectNotFoundException {
+    static boolean deleteEntity(EntityHeaderNode bn, IdentityProviderConfig config) {
         if (bn instanceof UserNode) {
-            return deleteUser((UserNode)bn, provider);
+            return deleteUser((UserNode)bn, config);
         } else if (bn instanceof GroupNode) {
-            return deleteGroup((GroupNode)bn, provider);
+            return deleteGroup((GroupNode)bn, config);
         } else if (bn instanceof ProviderNode) {
             return deleteProvider((ProviderNode)bn);
         }
@@ -47,8 +46,8 @@ public class Actions {
     }
 
     // Deletes the given user
-    private static boolean deleteUser(UserNode node, IdentityProvider provider) throws ObjectNotFoundException {
-        if (provider.isReadOnly()) return false;
+    private static boolean deleteUser(UserNode node, IdentityProviderConfig config) {
+        if (!config.isWritable()) return false;
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
           "Are you sure you want to delete " +
@@ -61,7 +60,8 @@ public class Actions {
         // Delete the  node and update the tree
         try {
             EntityHeader eh = node.getEntityHeader();
-            provider.getUserManager().delete(eh.getStrId());
+            IdentityAdmin admin = getIdentityAdmin();
+            admin.deleteUser(config.getOid(), eh.getStrId());
             return true;
         } catch (CannotDeleteAdminAccountException e) {
             log.log(Level.SEVERE, "Error deleting user", e);
@@ -72,7 +72,7 @@ public class Actions {
               " is an administrator, and cannot be deleted.",
               "Delete User",
               JOptionPane.ERROR_MESSAGE);
-        } catch (DeleteException e) {
+        } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting user", e);
             // Error deleting realm - display error msg
             JOptionPane.showMessageDialog(getMainWindow(),
@@ -85,10 +85,14 @@ public class Actions {
         return false;
     }
 
+    private static IdentityAdmin getIdentityAdmin() {
+        return (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
+    }
+
 
     // Deletes the given user
-    private static boolean deleteGroup(GroupNode node, IdentityProvider provider) throws ObjectNotFoundException {
-        if (provider.isReadOnly()) return false;
+    private static boolean deleteGroup(GroupNode node, IdentityProviderConfig config) {
+        if (!config.isWritable()) return false;
 
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
@@ -102,9 +106,9 @@ public class Actions {
         // Delete the  node and update the tree
         try {
             EntityHeader eh = node.getEntityHeader();
-            provider.getGroupManager().delete(eh.getStrId());
+            getIdentityAdmin().deleteGroup(config.getOid(), eh.getStrId());
             return true;
-        } catch (DeleteException e) {
+        } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting group", e);
             // Error deleting realm - display error msg
             JOptionPane.showMessageDialog(getMainWindow(),
@@ -132,11 +136,9 @@ public class Actions {
         // Delete the  node and update the tree
         try {
             EntityHeader eh = node.getEntityHeader();
-            IdentityProviderConfig ic = new IdentityProviderConfig();
-            ic.setOid(eh.getOid());
-            Registry.getDefault().getProviderConfigManager().delete(ic);
+            Registry.getDefault().getIdentityAdmin().deleteIdentityProviderConfig(eh.getOid());
             return true;
-        } catch (DeleteException e) {
+        } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting provider", e);
             // Error deleting realm - display error msg
             JOptionPane.showMessageDialog(getMainWindow(),

@@ -1,13 +1,14 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.action.Actions;
 import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -330,7 +331,7 @@ public class NewGroupDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.GROUP);
                             header.setName(group.getName());
-                            group.setUniqueIdentifier(Registry.getDefault().getInternalGroupManager().save(group, null ));
+                            group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, group, null ));
                             header.setStrId(group.getUniqueIdentifier());
                             NewGroupDialog.this.fireEventGroupAdded(header);
                             insertSuccess = true;
@@ -375,7 +376,11 @@ public class NewGroupDialog extends JDialog {
                                 header.setType(EntityType.GROUP);
                                 header.setName(group.getName());
                                 header.setStrId(group.getUniqueIdentifier());
-                                panel.edit(header, Registry.getDefault().getInternalProvider());
+                                try {
+                                    panel.edit(header, Registry.getDefault().getInternalProviderConfig());
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
                                 EditorDialog dialog = new EditorDialog(parent, panel);
                                 dialog.pack();
                                 Utilities.centerOnScreen(dialog);

@@ -4,12 +4,16 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.objectmodel.*;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -19,6 +23,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.rmi.RemoteException;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -64,7 +69,7 @@ public class GroupPanel extends EntityEditorPanel {
     private static final String CANCEL_BUTTON = "Cancel";
     private boolean formModified;
 
-    private IdentityProvider idProvider;
+    private IdentityProviderConfig config;
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
     private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
     private final ActionListener closeDlgListener = new ActionListener() {
@@ -105,10 +110,10 @@ public class GroupPanel extends EntityEditorPanel {
      * Constructs the panel
      * 
      * @param grpHeader  
-     * @param idProvider 
+     * @param config
      */
-    public void edit(EntityHeader grpHeader, IdentityProvider idProvider) {
-        this.idProvider = idProvider;
+    public void edit(EntityHeader grpHeader, IdentityProviderConfig config) {
+        this.config = config;
         edit(grpHeader);
     }
 
@@ -135,7 +140,7 @@ public class GroupPanel extends EntityEditorPanel {
                   + "\nReceived: " + groupHeader.getType());
             }
 
-            if (idProvider == null) {
+            if (config == null) {
                 throw new RuntimeException("Group edit operation without specified identity provider.");
             }
 
@@ -145,13 +150,14 @@ public class GroupPanel extends EntityEditorPanel {
                 group.setName(groupHeader.getName());
                 groupMembers = null;
             } else {
-                Group g = idProvider.getGroupManager().findByPrimaryKey(groupHeader.getStrId());
+                final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+                Group g = admin.findGroupByPrimaryKey(config.getOid(), groupHeader.getStrId());
                 if (g == null) {
                     JOptionPane.showMessageDialog(mainWindow, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + groupHeader.getOid());
                 }
                 group = g.getGroupBean();
-                groupMembers = idProvider.getGroupManager().getUserHeaders(group.getUniqueIdentifier());
+                groupMembers = admin.getUserHeaders(config.getOid(), group.getUniqueIdentifier());
 
             }
             initialize();
@@ -159,7 +165,8 @@ public class GroupPanel extends EntityEditorPanel {
             setData(group);
         } catch (FindException e) {
             ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + groupHeader.getName());
-
+        } catch ( RemoteException e ) {
+            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + groupHeader.getName());
         }
     }
 
@@ -174,8 +181,8 @@ public class GroupPanel extends EntityEditorPanel {
         return group;
     }
 
-    IdentityProvider getIdProvider() {
-        return idProvider;
+    IdentityProviderConfig getIdProviderConfig() {
+        return config;
     }
 
 
@@ -362,7 +369,7 @@ public class GroupPanel extends EntityEditorPanel {
             descriptionTextField.getDocument().addDocumentListener(documentListener);
         }
 
-        if (idProvider.isReadOnly()) descriptionTextField.setEnabled(false);
+        descriptionTextField.setEnabled(config.isWritable());
 
         // Return text field
         return descriptionTextField;
@@ -419,9 +426,7 @@ public class GroupPanel extends EntityEditorPanel {
 
             // Register listener
 
-            if (idProvider.isReadOnly()) {
-                okButton.addActionListener(closeDlgListener);
-            } else {
+            if (config.isWritable()) {
                 okButton.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         // Apply changes if possible
@@ -434,6 +439,8 @@ public class GroupPanel extends EntityEditorPanel {
                         dlg.dispose();
                     }
                 });
+            } else {
+                okButton.addActionListener(closeDlgListener);
             }
         }
 
@@ -505,19 +512,19 @@ public class GroupPanel extends EntityEditorPanel {
 
         // Try adding/updating the Group
         try {
-            GroupManager gman = idProvider.getGroupManager();
+            IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
             String id;
             if (groupHeader.getStrId() != null) {
-                gman.update(group, groupMembers);
+                admin.saveGroup(config.getOid(), group, groupMembers);
                 id = group.getUniqueIdentifier();
             } else {
-                id = gman.save(group, groupMembers);
+                id = admin.saveGroup(config.getOid(), group, groupMembers);
                 groupHeader.setStrId(id);
             }
         } catch (ObjectNotFoundException e) {
             JOptionPane.showMessageDialog(mainWindow, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
             result = true;
-        } catch (ObjectModelException e) {
+        } catch (Exception e) {
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("Group ").append(groupHeader.getName()).append(".\n");

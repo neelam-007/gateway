@@ -1,16 +1,14 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.UserManager;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.service.ServiceAdmin;
 
 
 
@@ -37,40 +35,27 @@ public class RegistryImpl extends Registry {
     }
 
     /**
+     * @return the {@link IdentityAdmin} implementation
+     */
+    public IdentityAdmin getIdentityAdmin() {
+        IdentityAdmin admin = (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
+        if (admin == null) throw new RuntimeException("Could not get " + IdentityAdmin.class);
+        return admin;
+    }
+
+    /**
      * @return the internal identity provider
      */
-    public IdentityProvider getInternalProvider() {
-        IdentityProviderConfigManager ipc = getProviderConfigManager();
-        if (ipc == null) {
-            throw new RuntimeException("Could not get " + IdentityProviderConfigManager.class);
+    public IdentityProviderConfig getInternalProviderConfig() {
+        IdentityAdmin admin = getIdentityAdmin();
+        if (admin == null) {
+            throw new RuntimeException("Could not get " + IdentityAdmin.class);
         }
-        return ipc.getInternalIdentityProvider();
-    }
-
-    /**
-      * @return the identity provider given the oid of the identity provider
-      */
-     public IdentityProvider getIdentityProvider(long idProviderOid) {
-         IdentityProviderConfigManager ipc = getProviderConfigManager();
-         try {
-             return ipc.getIdentityProvider(idProviderOid);
-         } catch (FindException e) {
-             throw new RuntimeException("could not find identity provider for oid "+idProviderOid, e);
-         }
-     }
-
-    /**
-     * @return the internal user manager
-     */
-    public UserManager getInternalUserManager() {
-        return getInternalProvider().getUserManager();
-    }
-
-    /**
-     * @return the internal group manager
-     */
-    public GroupManager getInternalGroupManager() {
-        return getInternalProvider().getGroupManager();
+        try {
+            return admin.findIdentityProviderConfigByPrimaryKey(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        } catch (Exception e ) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

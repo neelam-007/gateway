@@ -2,29 +2,26 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.util.HashSet;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -115,7 +112,7 @@ public class GenericUserPanel extends UserPanel {
                         + "\nReceived: " + userHeader.getType());
             }
 
-            if (idProvider == null) {
+            if (config == null) {
                 throw new RuntimeException("User edit operation without specified identity provider.");
             }
 
@@ -125,20 +122,24 @@ public class GenericUserPanel extends UserPanel {
                 user.setName(userHeader.getName());
                 userGroups = null;
             } else {
-                User u = idProvider.getUserManager().findByPrimaryKey(userHeader.getStrId());
+                User u = getIdentityAdmin().findUserByPrimaryKey(config.getOid(), userHeader.getStrId());
                 if (u == null) {
                     JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
                 }
                 user = u.getUserBean();
-                userGroups = idProvider.getGroupManager().getGroupHeaders(u.getUniqueIdentifier());
+                userGroups = getIdentityAdmin().getGroupHeaders(config.getOid(), u.getUniqueIdentifier());
             }
             // Populate the form for insert/update
             initialize();
             setData(user);
-        } catch (FindException e) {
+        } catch (Exception e) {
             ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + userHeader.getName());
         }
+    }
+
+    private IdentityAdmin getIdentityAdmin() {
+        return Registry.getDefault().getIdentityAdmin();
     }
 
     /**
@@ -345,7 +346,7 @@ public class GenericUserPanel extends UserPanel {
             firstNameTextField.getDocument().addDocumentListener(documentListener);
         }
 
-        if (idProvider.isReadOnly()) firstNameTextField.setEnabled(false);
+        firstNameTextField.setEnabled(config.isWritable());
 
         // Return text field
         return firstNameTextField;
@@ -383,7 +384,7 @@ public class GenericUserPanel extends UserPanel {
             lastNameTextField.getDocument().addDocumentListener(documentListener);
         }
 
-        if (idProvider.isReadOnly()) lastNameTextField.setEnabled(false);
+        lastNameTextField.setEnabled(config.isWritable());
 
         // Return text field
         return lastNameTextField;
@@ -421,7 +422,7 @@ public class GenericUserPanel extends UserPanel {
             emailTextField.getDocument().addDocumentListener(documentListener);
         }
 
-        if (idProvider.isReadOnly()) emailTextField.setEnabled(false);
+        emailTextField.setEnabled(config.isWritable());
 
         // Return text field
         return emailTextField;
@@ -474,9 +475,7 @@ public class GenericUserPanel extends UserPanel {
             okButton = new JButton(OK_BUTTON);
 
             // Register listener
-            if (idProvider.isReadOnly()) {
-                okButton.addActionListener(closeDlgListener);
-            } else {
+            if (config.isWritable()) {
                 okButton.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         // Apply changes if possible
@@ -489,6 +488,8 @@ public class GenericUserPanel extends UserPanel {
                         dlg.dispose();
                     }
                 });
+            } else {
+                okButton.addActionListener(closeDlgListener);
             }
         }
         return okButton;
@@ -531,7 +532,7 @@ public class GenericUserPanel extends UserPanel {
                     });
 
         }
-        if (idProvider.isReadOnly()) changePassButton.setEnabled(false);
+        changePassButton.setEnabled(config.isWritable());
         return changePassButton;
     }
 
@@ -545,7 +546,7 @@ public class GenericUserPanel extends UserPanel {
                 public void entityUpdated(EntityEvent ev) {
                     try {
                         user =
-                                idProvider.getUserManager().findByPrimaryKey(userHeader.getStrId()).getUserBean();
+                                getIdentityAdmin().findUserByPrimaryKey(config.getOid(), userHeader.getStrId()).getUserBean();
                         user = collectChanges();
                         boolean b = formModified;
                         setData(user);
@@ -613,9 +614,9 @@ public class GenericUserPanel extends UserPanel {
             String id;
             if (userHeader.getStrId() != null) {
                 id = user.getUniqueIdentifier();
-                idProvider.getUserManager().update(user, userGroups);
+                getIdentityAdmin().saveUser(config.getOid(), user, userGroups);
             } else {
-                id = idProvider.getUserManager().save(user, userGroups);
+                id = getIdentityAdmin().saveUser(config.getOid(), user, userGroups);
                 userHeader.setStrId(id);
             }
 
@@ -624,7 +625,7 @@ public class GenericUserPanel extends UserPanel {
         } catch (ObjectNotFoundException e) {
             JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
             result = false;
-        } catch (ObjectModelException e) {
+        } catch (Exception e) {
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("User ").append(userHeader.getName()).append(".\n");

@@ -1,11 +1,11 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.FilterListModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -204,14 +204,14 @@ public class NewGroupMemberDialog extends JDialog {
                     Set set = parent.getCurrentUsers();
                     if (set !=null) currentUsers.addAll(set);
 
-                    Collection nonMembers = Registry.getDefault().getInternalUserManager().findAllHeaders();
+                    Collection nonMembers = Arrays.asList(Registry.getDefault().getIdentityAdmin().findAllUsers(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID));
 
                     for(Iterator i = nonMembers.iterator();i.hasNext();) {
                         EntityHeader eh = (EntityHeader)i.next();
                         if (!currentUsers.contains(eh)) sl.add(eh);
                     }
 
-                } catch (FindException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     throw new RuntimeException(e);
                 }

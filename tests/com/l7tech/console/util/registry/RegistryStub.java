@@ -23,37 +23,17 @@ public class RegistryStub extends Registry {
      */
     public RegistryStub() {
     }
-    /**
-     * @return the identity provider config manager
-     */
-    public IdentityProviderConfigManager getProviderConfigManager() {
-        return identityProviderConfigManager;
+
+    public IdentityAdmin getIdentityAdmin() {
+        return identityAdmin;
     }
 
-    /**
-     * @return the internal identity provider
-     */
-    public IdentityProvider getInternalProvider() {
-        return identityProviderConfigManager.getInternalIdentityProvider();
-    }
-
-    public IdentityProvider getIdentityProvider(long idProviderOid) {
-       // todo, does the stub mode support anything other than the internal id provider?
-        return identityProviderConfigManager.getInternalIdentityProvider();
-    }
-
-    /**
-     * @return the internal user manager
-     */
-    public UserManager getInternalUserManager() {
-     return userManager;
-    }
-
-    /**
-     * @return the internal group manager
-     */
-    public GroupManager getInternalGroupManager() {
-        return groupManager;
+    public IdentityProviderConfig getInternalProviderConfig() {
+        try {
+            return identityAdmin.findIdentityProviderConfigByPrimaryKey(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        } catch ( Exception e ) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -83,9 +63,7 @@ public class RegistryStub extends Registry {
 
     StubDataStore dataStore = StubDataStore.defaultStore();
 
-    private IdentityProviderConfigManager identityProviderConfigManager = new IdentityProviderConfigManagerStub();
-    private UserManager userManager = new UserManagerStub(dataStore);
-    private GroupManager groupManager = new GroupManagerStub(dataStore);
+    private IdentityAdmin identityAdmin = new IdentityAdminStub();
     private ServiceAdmin serviceManager = new ServiceAdminStub();
     private JmsAdmin jmsAdmin = new JmsAdminStub();
     private CustomAssertionsRegistrar customAssertionsRegistrar = new CustomAssertionsRegistrarStub();

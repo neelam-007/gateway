@@ -1,7 +1,7 @@
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.objectmodel.*;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -42,6 +42,9 @@ public interface IdentityAdmin extends Remote {
       throws RemoteException, FindException;
 
     User findUserByPrimaryKey(long idProvCfgId, String userId)
+      throws RemoteException, FindException;
+
+    User findUserByLogin(long idProvCfgId, String login)
       throws RemoteException, FindException;
 
     void deleteUser(long idProvCfgId, String userId)

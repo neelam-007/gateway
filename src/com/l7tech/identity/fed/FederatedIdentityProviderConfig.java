@@ -18,6 +18,10 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         super(IdentityProviderType.FEDERATED);
     }
 
+    public boolean isWritable() {
+        return true;
+    }
+
     public boolean isSamlSupported() {
         return getBooleanProperty(PROP_SAML_SUPPORTED, false);
     }

@@ -3,15 +3,11 @@ package com.l7tech.console.panels;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -104,14 +100,14 @@ class CertificatePanel extends JPanel {
             revokeCertButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
                     String msg = null;
-                    if (userPanel.getProvider().isReadOnly()) {
-                        msg = "<html><center><b>Please confirm certificate revoke " +
-                              "for user '" + user.getLogin() + "'<br>Contact the directory administrator to" +
-                              " revoke the corresponding password.</b></center></html>";
-                    } else {
+                    if (userPanel.getProviderConfig().isWritable()) {
                         msg = "<html><center><b>Please confirm certificate revoke " +
                               "for user '" + user.getLogin() + "'<br>This will also" +
                               " revoke the user's password.</b></center></html>";
+                    } else {
+                        msg = "<html><center><b>Please confirm certificate revoke " +
+                              "for user '" + user.getLogin() + "'<br>Contact the directory administrator to" +
+                              " revoke the corresponding password.</b></center></html>";
                     }
                     int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getMainWindow(),
                                                                 msg, "Revoke User Certificate",

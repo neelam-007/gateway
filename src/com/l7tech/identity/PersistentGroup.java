@@ -12,9 +12,8 @@ import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -31,31 +30,23 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         this.bean = bean;
     }
 
-    public void setXmlProperties(String xml) {
+    public void setXmlProperties(String xml) throws IOException {
         if (xml != null && xml.equals(xmlProperties)) return;
         this.xmlProperties = xml;
         if ( xml != null && xml.length() > 0 ) {
-            try {
-                XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
-                bean.setProperties((Map)xd.readObject());
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Corrupted XML properties", e);
-            }
+            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+            bean.setProperties((Map)xd.readObject());
         }
     }
 
-    public String getXmlProperties() {
+    public String getXmlProperties() throws IOException {
         if ( xmlProperties == null ) {
-            try {
-                Map properties = bean.getProperties();
-                if ( properties == null ) return null;
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                XMLEncoder xe = new XMLEncoder(baos);
-                xe.writeObject(properties);
-                xmlProperties = baos.toString(PROPERTIES_ENCODING);
-            } catch (Exception e) {
-                logger.log( Level.WARNING, "Corrupted XML properties", e );
-            }
+            Map properties = bean.getProperties();
+            if ( properties == null ) return null;
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            XMLEncoder xe = new XMLEncoder(baos);
+            xe.writeObject(properties);
+            xmlProperties = baos.toString(PROPERTIES_ENCODING);
         }
         return xmlProperties;
     }
@@ -143,6 +134,4 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
 
     protected GroupBean bean;
     protected String xmlProperties;
-
-    private final Logger logger = Logger.getLogger(getClass().getName());
 }

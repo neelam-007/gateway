@@ -9,8 +9,9 @@
 package com.l7tech.objectmodel;
 
 
-import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.User;
 import com.l7tech.service.PublishedService;
 
 import java.io.Serializable;
@@ -80,6 +81,14 @@ public class EntityHeader implements Serializable {
           return new EntityHeader(s.getOid(),EntityType.SERVICE, s.getName(), "");
       }
 
+    public static EntityHeader fromIdentityProviderConfig(IdentityProviderConfig config) {
+        EntityHeader out = new EntityHeader();
+        out.setDescription(config.getDescription());
+        out.setName(config.getName());
+        out.setOid(config.getOid());
+        out.setType(EntityType.ID_PROVIDER_CONFIG);
+        return out;
+    }
 
     public EntityHeader() {
         type = EntityType.UNDEFINED;

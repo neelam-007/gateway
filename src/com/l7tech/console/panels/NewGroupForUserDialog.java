@@ -4,8 +4,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.FilterListModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -204,14 +204,13 @@ public class NewGroupForUserDialog extends JDialog {
                     Set set = parent.getCurrentGroups();
                     if (set !=null) currentGroups.addAll(set);
 
-                    Collection nonMemberOf = Registry.getDefault().getInternalGroupManager().findAllHeaders();
+                    EntityHeader[] headers = Registry.getDefault().getIdentityAdmin().findAllGroups(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
 
-                    for(Iterator i = nonMemberOf.iterator();i.hasNext();) {
-                        EntityHeader eh = (EntityHeader)i.next();
-                        if (!currentGroups.contains(eh)) sl.add(eh);
+                    for ( int i = 0; i < headers.length; i++ ) {
+                        EntityHeader header = headers[i];
+                        if (!currentGroups.contains(header)) sl.add(header);
                     }
-
-                } catch (FindException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     throw new RuntimeException(e);
                 }

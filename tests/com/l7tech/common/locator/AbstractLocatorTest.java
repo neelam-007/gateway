@@ -1,7 +1,7 @@
 package com.l7tech.common.locator;
 
 import com.l7tech.common.util.Locator;
-import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.StubDataStore;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -91,7 +91,7 @@ public class AbstractLocatorTest extends TestCase {
         LocatorStub.recycle();
         logger.info(Locator.getDefault().toString());
         Object result =
-          Locator.getDefault().lookup(IdentityProviderConfigManager.class);
+          Locator.getDefault().lookup(IdentityAdmin.class);
         if (result == null) {
             fail("Exptected successfull lookup.");
         }

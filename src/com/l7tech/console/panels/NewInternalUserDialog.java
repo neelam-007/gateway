@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
@@ -10,6 +10,7 @@ import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -481,7 +482,11 @@ public class NewInternalUserDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.USER);
                             header.setName(user.getName());
-                            header.setStrId(Registry.getDefault().getInternalUserManager().save(user, null));
+                            final String userId =
+                                    Registry.getDefault().getIdentityAdmin().saveUser(
+                                            IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID,
+                                            user, null);
+                            header.setStrId( userId);
                             user.setUniqueIdentifier(header.getStrId());
                             fireEventUserAdded(header);
                             insertSuccess = true;
@@ -520,7 +525,7 @@ public class NewInternalUserDialog extends JDialog {
                                 GenericUserPropertiesAction ua =
                                   new GenericUserPropertiesAction((UserNode)TreeNodeFactory.asTreeNode(header));
                                 // only internal provider currently
-                                ua.setIdProvider(Registry.getDefault().getInternalProvider());
+                                ua.setIdProviderConfig(Registry.getDefault().getInternalProviderConfig());
                                 ua.performAction();
                                 insertSuccess = false;
                             }

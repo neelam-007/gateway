@@ -201,6 +201,18 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         }
     }
 
+    public User findUserByLogin( long idProvCfgId, String login ) throws RemoteException, FindException {
+        try {
+            IdentityProvider provider = IdentityProviderFactory.getProvider(idProvCfgId);
+            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+            UserManager userManager = provider.getUserManager();
+
+            return userManager.findByLogin(login);
+        } finally {
+            closeContext();
+        }
+    }
+
     public void deleteUser(long cfgid, String userId)
       throws RemoteException, DeleteException, ObjectNotFoundException {
         beginTransaction();

@@ -287,7 +287,7 @@ class UserGroupsPanel extends JPanel {
      * enable/disable add/remove buttons
      */
     private void setAddRemoveButtons() {
-        if (!userPanel.getProvider().isReadOnly()) {
+        if (userPanel.getProviderConfig().isWritable()) {
             getGroupRemove().setEnabled(listInModel.getSize() > 0);
         }
     }
@@ -359,7 +359,7 @@ class UserGroupsPanel extends JPanel {
                 }
             });
         }
-        if (userPanel.getProvider().isReadOnly()) groupAdd.setEnabled(false);
+        groupAdd.setEnabled(userPanel.getProviderConfig().isWritable());
         return groupAdd;
     }
 
@@ -387,7 +387,7 @@ class UserGroupsPanel extends JPanel {
                 }
             });
         }
-        if (userPanel.getProvider().isReadOnly()) groupRemove.setEnabled(false);
+        groupRemove.setEnabled(userPanel.getProviderConfig().isWritable());
         return groupRemove;
     }
 

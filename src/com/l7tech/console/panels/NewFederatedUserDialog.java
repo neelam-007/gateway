@@ -2,29 +2,29 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.action.UserPropertiesAction;
 import com.l7tech.console.action.GenericUserPropertiesAction;
-import com.l7tech.console.tree.UserNode;
-import com.l7tech.console.tree.TreeNodeFactory;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.action.UserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.UserNode;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.identity.UserBean;
 
 import javax.swing.*;
-import javax.swing.text.Document;
-import javax.swing.event.EventListenerList;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.EventListenerList;
+import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ResourceBundle;
-import java.util.Locale;
 import java.util.EventListener;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 
 /**
@@ -194,8 +194,12 @@ public class NewFederatedUserDialog extends JDialog {
                                 new GenericUserPropertiesAction((UserNode) TreeNodeFactory.asTreeNode(header));
                         // only internal provider currently
                         //todo:
-                         ua.setIdProvider(Registry.getDefault().getInternalProvider());
-                         ua.performAction();
+                        try {
+                            ua.setIdProviderConfig(Registry.getDefault().getInternalProviderConfig());
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                        ua.performAction();
                         insertSuccess = false;
                     }
                 });

@@ -1,18 +1,15 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.exporter.IdProviderReference;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -96,25 +93,26 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
 
     private void populateIdProviders() {
         // populate provider selector
-        IdentityProviderConfigManager manager = null;
+        IdentityAdmin admin = null;
         //manager = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
-        manager = Registry.getDefault().getProviderConfigManager();
-        if (manager == null) {
-            logger.severe("Cannot get the IdentityProviderConfigManager");
+        admin = Registry.getDefault().getIdentityAdmin();
+        if (admin == null) {
+            logger.severe("Cannot get the IdentityAdmin");
             return;
         }
-        Collection providerHeaders = null;
+        EntityHeader[] providerHeaders = null;
         try {
-            providerHeaders = manager.findAllHeaders();
-        } catch (FindException e) {
+            providerHeaders = admin.findAllIdentityProviderConfig();
+        } catch (Exception e) {
             logger.log(Level.SEVERE, "Cannot get the id provider headers.", e);
             return;
         }
         DefaultComboBoxModel idprovidermodel = new DefaultComboBoxModel();
-        for (Iterator iterator = providerHeaders.iterator(); iterator.hasNext();) {
-            EntityHeader entityHeader = (EntityHeader) iterator.next();
+        for ( int i = 0; i < providerHeaders.length; i++ ) {
+            EntityHeader entityHeader = providerHeaders[i];
             idprovidermodel.addElement(entityHeader.getName());
         }
+
         //DefaultComboBoxModel idprovidermodel = new DefaultComboBoxModel(new String[] {"blah", "bluh"});
         providerSelector.setModel(idprovidermodel);
     }

@@ -3,11 +3,10 @@ package com.l7tech.identity.ldap;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 
-import java.util.HashMap;
-import java.util.Collection;
-import java.util.Iterator;
 import java.io.Serializable;
-import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * General LDAP connector config.
@@ -23,7 +22,7 @@ import java.io.IOException;
  */
 public class LdapIdentityProviderConfig extends IdentityProviderConfig implements Serializable {
 
-    public LdapIdentityProviderConfig(IdentityProviderConfig toto) throws IOException {
+    public LdapIdentityProviderConfig(IdentityProviderConfig toto) {
         super(IdentityProviderType.LDAP);
         this._version = toto.getVersion();
 	    this._oid = toto.getOid();
@@ -32,6 +31,10 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
 
     public LdapIdentityProviderConfig() {
         super(IdentityProviderType.LDAP);
+    }
+
+    public boolean isWritable() {
+        return false;
     }
 
     /**

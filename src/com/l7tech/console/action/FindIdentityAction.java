@@ -9,15 +9,16 @@ import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import java.awt.*;
 import java.security.Principal;
-import java.util.logging.Logger;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -117,13 +118,19 @@ public class FindIdentityAction extends BaseAction {
         AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
         final BaseAction a = (BaseAction)an.getPreferredAction();
         if (a == null) return;
-        IdentityProvider ip = Registry.getDefault().getIdentityProvider(providerId);
-        if (ip == null) return;
+        IdentityProviderConfig config = null;
+        try {
+            config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(providerId);
+        } catch ( Exception e ) {
+            log.log( Level.WARNING, "Couldn't find Identity Provider " + providerId, e );
+            return;
+        }
+        if (config == null) return;
 
         if (a instanceof UserPropertiesAction) {
-            ((UserPropertiesAction)a).setIdProvider(ip);
+            ((UserPropertiesAction)a).setIdProviderConfig(config);
         } else if (a instanceof GroupPropertiesAction) {
-            ((GroupPropertiesAction)a).setIdProvider(ip);
+            ((GroupPropertiesAction)a).setIdProviderConfig(config);
         }
 
         SwingUtilities.invokeLater(new Runnable() {

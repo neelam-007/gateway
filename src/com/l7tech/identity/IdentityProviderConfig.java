@@ -39,6 +39,10 @@ public class IdentityProviderConfig extends NamedEntityImp {
      */
     public IdentityProviderType type() {return type;}
 
+    public boolean isWritable() {
+        return true; // Internal is writable and there's no InternalIdentityProviderConfig
+    }
+
     public String getDescription() {
         return description;
     }

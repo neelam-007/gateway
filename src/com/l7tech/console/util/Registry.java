@@ -3,10 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.Locator;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.UserManager;
+import com.l7tech.identity.*;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 
@@ -51,29 +48,14 @@ public abstract class Registry {
     }
 
     /**
-     * @return the identity provider config manager
+     * @return the {@link IdentityAdmin} implementation
      */
-    abstract public IdentityProviderConfigManager getProviderConfigManager();
+    public abstract IdentityAdmin getIdentityAdmin();
 
     /**
-     * @return the internal identity provider
+     * @return the {@link IdentityProviderConfig} object for the internal identity provider
      */
-    abstract public IdentityProvider getInternalProvider();
-
-    /**
-     * @return the identity provider given the oid of the identity provider
-     */
-    abstract public IdentityProvider getIdentityProvider(long idProviderOid);
-
-    /**
-     * @return the internal user manager
-     */
-    abstract public UserManager getInternalUserManager();
-
-    /**
-     * @return the internal group manager
-     */
-    abstract public GroupManager getInternalGroupManager();
+    abstract public IdentityProviderConfig getInternalProviderConfig();
 
     /**
      * @return the service managerr
@@ -86,7 +68,6 @@ public abstract class Registry {
     abstract public JmsAdmin getJmsManager();
 
     abstract public TrustedCertAdmin getTrustedCertManager();
-
     /**
      * @return the custome assertions registrar
      */
@@ -107,11 +88,16 @@ public abstract class Registry {
             return null;
         }
 
+
+        public IdentityAdmin getIdentityAdmin() {
+            return null;
+        }
+
         public IdentityProvider getIdentityProvider(long idProviderOid) {
             return null;
         }
 
-        public IdentityProvider getInternalProvider() {
+        public IdentityProviderConfig getInternalProviderConfig() {
             return null;
         }
 

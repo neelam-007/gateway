@@ -28,7 +28,7 @@ public class VirtualGroup extends FederatedGroup {
         super(bean);
     }
 
-    public String getSamlEmailPattern() {
+    public String getSamlEmailPattern() { 
         return (String)bean.getProperties().get(PROP_SAML_EMAIL_PATTERN);
     }
 

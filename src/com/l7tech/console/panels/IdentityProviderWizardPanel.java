@@ -8,7 +8,6 @@ import com.l7tech.console.util.SortedSingleColumnTableModel;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
@@ -24,11 +23,8 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
 import java.security.Principal;
+import java.util.*;
 
 
 /**
@@ -89,8 +85,8 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                                                           boolean isSelected,
                                                           boolean cellHasFocus) {
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                IdentityProvider ip = (IdentityProvider)value;
-                setText(ip.getConfig().getName());
+                IdentityProviderConfig ipc = (IdentityProviderConfig)value;
+                setText(ipc.getName());
                 return c;
             }
         });
@@ -301,17 +297,19 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         }
 
         try {
-            IdentityProvider ip = (IdentityProvider)getProvidersComboBoxModel().getSelectedItem();
+            IdentityProviderConfig ipc = (IdentityProviderConfig)getProvidersComboBoxModel().getSelectedItem();
             SortedSingleColumnTableModel modelOut = getIdentitiesOutTableModel();
             modelOut.clearDataSet();
 
-            Iterator i = ip.getUserManager().findAllHeaders().iterator();
+            IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+            Iterator i = Arrays.asList(admin.findAllUsers(ipc.getOid())).iterator();
             while (i.hasNext()) {
-                modelOut.addRow(fromHeader((EntityHeader)i.next(), ip));
+                modelOut.addRow(fromHeader((EntityHeader)i.next(), ipc));
             }
-            i = ip.getGroupManager().findAllHeaders().iterator();
+
+            i = Arrays.asList(admin.findAllGroups(ipc.getOid())).iterator();
             while (i.hasNext()) {
-                modelOut.addRow(fromHeader((EntityHeader)i.next(), ip));
+                modelOut.addRow(fromHeader((EntityHeader)i.next(), ipc));
             }
 
             SortedSingleColumnTableModel modelIn = getIdentitiesInTableModel();
@@ -319,7 +317,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
             getIdentitiesOutTableModel().fireTableDataChanged();
             getIdentitiesInTableModel().fireTableDataChanged();
-        } catch (FindException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();  //todo: fix this with better, general exception management
         }
     }
@@ -356,13 +354,13 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         providersComboBoxModel = new DefaultComboBoxModel();
         try {
-            Iterator providers =
-              Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
-            while (providers.hasNext()) {
-                Object o = providers.next();
-                providersComboBoxModel.addElement(o);
+            final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+            EntityHeader[] headers = admin.findAllIdentityProviderConfig();
+            for ( int i = 0; i < headers.length; i++ ) {
+                EntityHeader header = headers[i];
+                providersComboBoxModel.addElement(admin.findIdentityProviderConfigByPrimaryKey(header.getOid()));
             }
-        } catch (FindException e) {
+        } catch (Exception e) {
             e.printStackTrace();  //todo: fix this with better, general exception management
         }
         return providersComboBoxModel;
@@ -445,8 +443,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     private void applySharedPolicySettings(PublishServiceWizard.ServiceAndAssertion pa) {
-        IdentityProvider ip = (IdentityProvider)getProvidersComboBoxModel().getSelectedItem();
-
         java.util.List allAssertions = new ArrayList();
         java.util.List identityAssertions = new ArrayList();
         pa.setSharedPolicy(true);
@@ -492,7 +488,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     private void applyIndividualPolicySettings(PublishServiceWizard.ServiceAndAssertion pa) {
-        IdentityProvider ip = (IdentityProvider)getProvidersComboBoxModel().getSelectedItem();
         pa.setSharedPolicy(false);
         java.util.List allAssertions = new ArrayList();
 
@@ -628,19 +623,19 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         return null;
     }
 
-    private Principal fromHeader(EntityHeader h, IdentityProvider ip) {
+    private Principal fromHeader(EntityHeader h, IdentityProviderConfig ipc) {
         if (EntityType.GROUP.equals(h.getType())) {
             GroupBean g = new GroupBean();
             g.setName(h.getName());
             g.getName();
-            g.setProviderId(ip.getConfig().getOid());
+            g.setProviderId(ipc.getOid());
             g.setUniqueIdentifier(h.getStrId());
             return g;
         } else if (EntityType.USER.equals(h.getType())) {
             UserBean u = new UserBean();
             u.setName(h.getName());
             u.setLogin(h.getName());
-            u.setProviderId(ip.getConfig().getOid());
+            u.setProviderId(ipc.getOid());
             u.setUniqueIdentifier(h.getStrId());
             return u;
         }

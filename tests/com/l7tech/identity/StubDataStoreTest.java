@@ -3,14 +3,13 @@ package com.l7tech.identity;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.registry.RegistryStub;
 import com.l7tech.identity.internal.InternalGroup;
-import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.EntityHeader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -49,90 +48,93 @@ public class StubDataStoreTest extends TestCase {
     }
 
     public void testIntegrity() throws Exception {
-        UserManager um = registry.getInternalUserManager();
-        GroupManager gm = registry.getInternalGroupManager();
-        IdentityProvider ip = registry.getInternalProvider();
-        final long providerConfigOid = ip.getConfig().getOid();
+        IdentityAdmin admin = registry.getIdentityAdmin();
+        IdentityProviderConfig ipc = registry.getInternalProviderConfig();
+        final long providerConfigOid = ipc.getOid();
 
-        Iterator it = um.findAll().iterator();
-        for (; it.hasNext();) {
-            User u = (User)it.next();
+        EntityHeader[] headers = admin.findAllUsers(providerConfigOid);
+        for ( int i = 0; i < headers.length; i++ ) {
+            EntityHeader header = headers[i];
+            User u = admin.findUserByPrimaryKey(providerConfigOid, header.getStrId());
             assertTrue("Expected provider " + providerConfigOid +
               " received " + u.getProviderId(), u.getProviderId() == providerConfigOid);
         }
 
-        it = gm.findAll().iterator();
-        for (; it.hasNext();) {
-            Group g = (Group)it.next();
+        headers = admin.findAllGroups(providerConfigOid);
+        for ( int j = 0; j < headers.length; j++ ) {
+            EntityHeader header = headers[j];
+            Group g = admin.findGroupByPrimaryKey(providerConfigOid, header.getStrId());
             assertTrue("Expected provider " + providerConfigOid +
               " received " + g.getProviderId(), g.getProviderId() == providerConfigOid);
         }
     }
 
     public void testAddAndUpdateUser() throws Exception {
-        UserManager um = registry.getInternalUserManager();
+        long provider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        IdentityAdmin admin = registry.getIdentityAdmin();
         UserBean user = new UserBean();
         user.setLogin("mgreen");
         user.setName(user.getLogin());
         user.setFirstName("Mary");
         user.setLastName("Green");
         user.setEmail("mgreen@one.com");
-        String uid = um.save(user);
-        User found = um.findByPrimaryKey(uid);
+        String uid = admin.saveUser(provider, user, null);
+        User found = admin.findUserByPrimaryKey(provider, uid);
         assertTrue("Expected user could not be found " + uid, found != null);
 
         found.getUserBean().setLastName("Red");
-        um.update(found);
-        User updated = um.findByPrimaryKey(uid);
+        admin.saveUser(provider, found, null);
+        User updated = admin.findUserByPrimaryKey(provider, uid);
         assertTrue("Expected user could not be found " + uid, updated != null);
 
         assertTrue("Expected updated user " + uid, "Red".equals(updated.getLastName()));
 
-        User bylogin = um.findByLogin("mgreen");
+        User bylogin = admin.findUserByLogin(provider, "mgreen");
         assertTrue("Expected user " + uid, bylogin !=null);
 
     }
 
     public void testAddAndUpdateGroup() throws Exception {
-        GroupManager gm = registry.getInternalGroupManager();
+        long provider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        IdentityAdmin admin = registry.getIdentityAdmin();
         InternalGroup group = new InternalGroup();
         group.setName("26-floor");
         group.setDescription("people at 26th floor");
-        String gid = gm.save(group);
-        Group found = gm.findByPrimaryKey(gid);
+        String gid = admin.saveGroup(provider, group, null);
+        Group found = admin.findGroupByPrimaryKey(provider, gid);
         assertTrue("Expected group could not be found " + gid, found != null);
 
         found.getGroupBean().setDescription("none");
-        gm.update(found);
-        Group updated = gm.findByPrimaryKey(gid);
+        admin.saveGroup(provider, found, null);
+        Group updated = admin.findGroupByPrimaryKey(provider, gid);
         assertTrue("Expected group could not be found " + gid, updated != null);
         assertTrue("Expected updated group " + gid, "none".equals(updated.getDescription()));
     }
 
     public void testAddAndUpdateUserGroups() throws Exception {
-        UserManager um = registry.getInternalUserManager();
-        GroupManager gm = registry.getInternalGroupManager();
+        long provider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        IdentityAdmin admin = registry.getIdentityAdmin();
 
         testAddAndUpdateUser();
-        User user = um.findByLogin("mgreen");
+        User user = admin.findUserByLogin(provider, "mgreen");
         assertTrue("Expected non null user ", user !=null);
 
         Set newGroupHeaders = new HashSet();
-        newGroupHeaders.addAll(gm.findAllHeaders());
+        newGroupHeaders.addAll(Arrays.asList(admin.findAllGroups(provider)));
         int allGroupsSize = newGroupHeaders.size();
 
-        gm.setGroupHeaders(user, newGroupHeaders);
-        Set headers = gm.getGroupHeaders(user);
+        admin.saveUser(provider, user, newGroupHeaders);
+        Set headers = admin.getGroupHeaders(provider, user.getUniqueIdentifier());
         assertTrue("Expected number of groups "+allGroupsSize, headers.size() == allGroupsSize);
 
         if (allGroupsSize == 0) return;
 
-        EntityHeader eh = (EntityHeader)gm.findAllHeaders().iterator().next();
+        EntityHeader eh = (EntityHeader)admin.findAllGroups(provider)[0];
         newGroupHeaders = new HashSet();
         newGroupHeaders.add(eh);
-        gm.setGroupHeaders(user, newGroupHeaders);
+        admin.saveUser(provider, user, newGroupHeaders);
 
-        headers = gm.getGroupHeaders(user);
+        headers = admin.getGroupHeaders(provider, user.getUniqueIdentifier());
         assertTrue("Expected number of groups is 1", headers.size() == 1);
     }
 

@@ -253,7 +253,7 @@ public class StubDataStore {
           (Group)groups.values().iterator().next();
         List identities = new ArrayList();
 
-        long providerId = makeProvider(pc).getConfig().getOid();
+        long providerId = pc.getOid();
 
         MemberOfGroup memberOfGroup = new MemberOfGroup(providerId, g.getName(), g.getUniqueIdentifier());
         memberOfGroup.setGroupName(g.getName());
@@ -266,11 +266,6 @@ public class StubDataStore {
         AllAssertion assertion =
           new AllAssertion(Arrays.asList(new Assertion[]{new HttpBasic(), oom}));
         return assertion;
-    }
-
-    private IdentityProvider makeProvider(IdentityProviderConfig pc) {
-        IdentityProvider provider = new IdentityProviderStub(pc);
-        return provider;
     }
 
     private void reconstituteFrom(String path)

@@ -6,12 +6,10 @@
 
 package com.l7tech.skunkworks;
 
-import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.HexUtils;
 
 import java.io.FileInputStream;
 import java.security.KeyStore;
-import java.security.Provider;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
@@ -24,12 +22,13 @@ import java.util.logging.Logger;
 public class JceSignaturePlayground {
     public static void main( String[] args ) throws Exception {
         if ( args.length < 3 ) throw new Exception("args: keystore storepass keypass count threads [kstype]");
-        String keystore = args[0];
-        String storepass = args[1];
-        String keypass = args[2];
-        String scount = args[3];
-        String sthreads = args[4];
-        String kstype = args.length >= 6 ? args[5] : "JKS";
+        final String keystore = args[0];
+        final String storepass = args[1];
+        final String keypass = args[2];
+        final String scount = args[3];
+        final String sthreads = args[4];
+        final String kstype = args.length >= 6 ? args[5] : "JKS";
+        final String provider = args.length >= 7 ? args[6] : null;
 
         int count = Integer.valueOf(scount).intValue();
         int threads = Integer.valueOf(sthreads).intValue();
@@ -50,15 +49,23 @@ public class JceSignaturePlayground {
         final X509Certificate cert = (X509Certificate)ks.getCertificate(alias);
         final RSAPrivateKey privateKey = (RSAPrivateKey)ks.getKey(alias,keypass.toCharArray());
 
-        final Provider aprov = JceProvider.getAsymmetricJceProvider();
-        log.info( "Using asymmetric crypto provider " + aprov );
+        if ( provider == null ) {
+            log.info("Using default provider for signature algorithm");
+        } else {
+            log.info("Using specified crypto provider '" + provider + "' for signature algorithm");
+        }
 
         final String cleartext = KEYINFO;
         final byte[] clearBytes = cleartext.getBytes("UTF-8");
         final byte[] signature;
 
         try {
-            Signature signer = Signature.getInstance( SIG_ALG, aprov );
+            Signature signer;
+            if ( provider == null )
+                signer = Signature.getInstance(SIG_ALG);
+            else
+                signer = Signature.getInstance(SIG_ALG, provider);
+
             signer.initSign( privateKey );
             signer.update( clearBytes );
             signature = signer.sign();
@@ -70,7 +77,11 @@ public class JceSignaturePlayground {
             public void run() {
                 Signature signer = null;
                 try {
-                    signer = Signature.getInstance( SIG_ALG, aprov );
+                    if (provider == null)
+                        signer = Signature.getInstance(SIG_ALG);
+                    else
+                        signer = Signature.getInstance(SIG_ALG, provider);
+
                     signer.initSign( privateKey );
                     signer.update( clearBytes );
                     signer.sign();
@@ -85,7 +96,11 @@ public class JceSignaturePlayground {
         Runnable verify = new Runnable() {
             public void run() {
                 try {
-                    Signature verifier = Signature.getInstance( SIG_ALG, aprov );
+                    Signature verifier;
+                    if ( provider == null )
+                        verifier = Signature.getInstance(SIG_ALG);
+                    else
+                        verifier = Signature.getInstance(SIG_ALG, provider);
                     verifier.initVerify( cert );
                     verifier.update( clearBytes );
                     byte[] signature2 = HexUtils.decodeBase64( base64Signature );
@@ -100,7 +115,11 @@ public class JceSignaturePlayground {
         Runnable verify2 = new Runnable() {
             public void run() {
                 try {
-                    Signature verifier = Signature.getInstance( SIG_ALG, aprov );
+                    Signature verifier;
+                    if ( provider == null )
+                        verifier = Signature.getInstance(SIG_ALG);
+                    else
+                        verifier = Signature.getInstance(SIG_ALG, provider);
                     verifier.initVerify( cert );
                     verifier.update( clearBytes );
                     if ( !verifier.verify( signature ) )

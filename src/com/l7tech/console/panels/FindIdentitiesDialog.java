@@ -6,12 +6,14 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.table.DynamicTableModel;
-import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -349,17 +351,17 @@ public class FindIdentitiesDialog extends JDialog {
                                                           boolean isSelected,
                                                           boolean cellHasFocus) {
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                IdentityProvider ip = (IdentityProvider)value;
-                setText(ip.getConfig().getName());
+                IdentityProviderConfig ipc = (IdentityProviderConfig)value;
+                setText(ipc.getName());
                 return c;
             }
         });
         final ComboBoxModel cbModel = providersComboBox.getModel();
         int size = cbModel.getSize();
         for (int i = 0; i < size; i++) {
-            IdentityProvider ip = (IdentityProvider)cbModel.getElementAt(i);
-            if (options.initialProviderOid == ip.getConfig().getOid()) {
-                cbModel.setSelectedItem(ip);
+            IdentityProviderConfig ipc = (IdentityProviderConfig)cbModel.getElementAt(i);
+            if (options.initialProviderOid == ipc.getOid()) {
+                cbModel.setSelectedItem(ipc);
                 break;
             }
         }
@@ -544,11 +546,15 @@ public class FindIdentitiesDialog extends JDialog {
         searchInfo.setSearchName(name, "equals".equals(option));
         String key = (String)searchType.getSelectedItem();
         searchInfo.setSearchType((SearchType)oTypes.get(key));
-        searchInfo.setProvider((IdentityProvider)providersComboBox.getSelectedItem());
+        searchInfo.setProviderConfig((IdentityProviderConfig)providersComboBox.getSelectedItem());
 
         return true;
     }
 
+
+    private IdentityAdmin getIdentityAdmin() {
+        return Registry.getDefault().getIdentityAdmin();
+    }
 
     /**
      * show the result table. Display and layout the
@@ -564,7 +570,10 @@ public class FindIdentitiesDialog extends JDialog {
             searchName = "*";
         }
         try {
-            setTableModel(Collections.enumeration(info.getProvider().search(types, searchName)));
+            final EntityHeader[] headers =
+                    getIdentityAdmin().searchIdentities( searchInfo.getProviderConfig().getOid(),
+                                                         types, searchName);
+            setTableModel(Collections.enumeration(Arrays.asList(headers)));
         } catch (Exception e) {
             setTableModel(Collections.enumeration(Collections.EMPTY_LIST));
             ErrorManager.getDefault().
@@ -666,8 +675,8 @@ public class FindIdentitiesDialog extends JDialog {
                       deleteButton.setEnabled(false);
                   } else {
                       selectButton.setEnabled(true);
-                      IdentityProvider ip = (IdentityProvider)providersComboBox.getSelectedItem();
-                      deleteButton.setEnabled(!ip.isReadOnly());
+                      IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBox.getSelectedItem();
+                      deleteButton.setEnabled(ipc.isWritable());
                   }
               }
           });
@@ -839,7 +848,7 @@ public class FindIdentitiesDialog extends JDialog {
             // null in the case of UserNode
             if (action == null) {
                 if (eh.getType() == EntityType.USER) {
-                    if (searchInfo.getProvider().getConfig().type() == IdentityProviderType.FEDERATED) {
+                    if (searchInfo.getProviderConfig().type() == IdentityProviderType.FEDERATED) {
                         action = new FederatedUserPropertiesAction((UserNode) an);
                     } else {
                         action = new GenericUserPropertiesAction((UserNode) an);
@@ -856,9 +865,9 @@ public class FindIdentitiesDialog extends JDialog {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     if (a instanceof UserPropertiesAction) {
-                        ((UserPropertiesAction)a).setIdProvider(searchInfo.getProvider());
+                        ((UserPropertiesAction)a).setIdProviderConfig(searchInfo.getProviderConfig());
                     } else if (a instanceof GroupPropertiesAction) {
-                        ((GroupPropertiesAction)a).setIdProvider(searchInfo.getProvider());
+                        ((GroupPropertiesAction)a).setIdProviderConfig(searchInfo.getProviderConfig());
                     }
                     a.performAction();
                 }
@@ -881,7 +890,7 @@ public class FindIdentitiesDialog extends JDialog {
      */
     private void deleteEntity(EntityHeader eh, final int row) {
         AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
-        final IdentityProvider ip = (IdentityProvider)providersComboBox.getSelectedItem();
+        final IdentityProviderConfig ip = (IdentityProviderConfig)providersComboBox.getSelectedItem();
         DeleteEntityAction da = new DeleteEntityAction((EntityHeaderNode)an, ip);
         final EntityListenerAdapter listener = new EntityListenerAdapter() {
             public void entityRemoved(EntityEvent ev) {
@@ -944,13 +953,15 @@ public class FindIdentitiesDialog extends JDialog {
 
         providersComboBoxModel = new DefaultComboBoxModel();
         try {
-            Iterator providers =
-              Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
-            while (providers.hasNext()) {
-                Object o = providers.next();
-                providersComboBoxModel.addElement(o);
+            final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+            EntityHeader[] headers =
+              admin.findAllIdentityProviderConfig();
+            for ( int i = 0; i < headers.length; i++ ) {
+                EntityHeader header = headers[i];
+                IdentityProviderConfig config = admin.findIdentityProviderConfigByPrimaryKey(header.getOid());
+                providersComboBoxModel.addElement(config);
             }
-        } catch (FindException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return providersComboBoxModel;
@@ -961,7 +972,7 @@ public class FindIdentitiesDialog extends JDialog {
      * the class instances keep the search info.
      */
     private class SearchInfo {
-        IdentityProvider provider;
+        IdentityProviderConfig providerConfig;
         String searchName;
         boolean exactName;
         SearchType searchType;
@@ -974,12 +985,12 @@ public class FindIdentitiesDialog extends JDialog {
             exactName = b;
         }
 
-        public IdentityProvider getProvider() {
-            return provider;
+        public IdentityProviderConfig getProviderConfig() {
+            return providerConfig;
         }
 
-        public void setProvider(IdentityProvider provider) {
-            this.provider = provider;
+        public void setProviderConfig(IdentityProviderConfig config) {
+            this.providerConfig = config;
         }
 
         public String getSearchName() {
@@ -1029,18 +1040,18 @@ public class FindIdentitiesDialog extends JDialog {
     }
 
     private Principal headerToPrincipal(EntityHeader eh) {
-        IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
+        IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBoxModel.getSelectedItem();
         if (eh.getType() == EntityType.USER) {
             UserBean u = new UserBean();
             u.setName(eh.getName());
             u.setLogin(eh.getName());
-            u.setProviderId(ip.getConfig().getOid());
+            u.setProviderId(ipc.getOid());
             u.setUniqueIdentifier(eh.getStrId());
             return u;
         } else if (eh.getType() == EntityType.GROUP) {
             GroupBean g = new GroupBean();
             g.setName(eh.getName());
-            g.setProviderId(ip.getConfig().getOid());
+            g.setProviderId(ipc.getOid());
             g.setUniqueIdentifier(eh.getStrId());
             return g;
         }

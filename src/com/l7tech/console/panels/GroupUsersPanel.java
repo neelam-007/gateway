@@ -287,7 +287,7 @@ class GroupUsersPanel extends JPanel {
      */
     private void setAddRemoveButtons() {
         // if provider is not read only, enable remove button on user selection
-        if (!groupPanel.getIdProvider().isReadOnly())
+        if (groupPanel.getIdProviderConfig().isWritable())
             getGroupRemove().setEnabled(listInModel.getSize() > 0);
     }
 
@@ -357,7 +357,7 @@ class GroupUsersPanel extends JPanel {
                     setAddRemoveButtons();
                 }
             });
-            if (groupPanel.getIdProvider().isReadOnly()) groupAdd.setEnabled(false);
+            groupAdd.setEnabled(groupPanel.getIdProviderConfig().isWritable());
         }
         return groupAdd;
     }
@@ -403,7 +403,7 @@ class GroupUsersPanel extends JPanel {
                     setAddRemoveButtons();
                 }
             });
-            if (groupPanel.getIdProvider().isReadOnly()) groupRemove.setEnabled(false);
+            groupRemove.setEnabled(groupPanel.getIdProviderConfig().isWritable());
         }
         return groupRemove;
     }
