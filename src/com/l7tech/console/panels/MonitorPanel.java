@@ -90,6 +90,9 @@ public class MonitorPanel extends JTabbedPane {
 
                         getLogPane().setVisible(item.isSelected());
                         if (item.isSelected()) {
+
+                            // Note: the toggle action is allowed only when the connection is up
+                            getLogPane().onConnect();
                             restoreLogPane();
                             //validate();
                             //repaint();
@@ -125,6 +128,8 @@ public class MonitorPanel extends JTabbedPane {
 
                         getStatisticsPane().setVisible(item.isSelected());
                         if (item.isSelected()) {
+                            // Note:the toggle action is allowed only when the connection is up
+                            getStatisticsPane().onConnect();
                             restoreStatPane();
                         } else {
 
