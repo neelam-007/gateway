@@ -7,13 +7,15 @@
 package com.l7tech.server.identity.fed;
 
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceManager;
-import com.l7tech.server.identity.internal.InternalUserManagerServer;
+import com.l7tech.server.identity.PersistentUserManager;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -22,9 +24,10 @@ import java.util.List;
  * @author alex
  * @version $Revision$
  */
-public class FederatedUserManager extends InternalUserManagerServer {
+public class FederatedUserManager extends PersistentUserManager {
     public FederatedUserManager( IdentityProvider provider ) {
-        super(provider);
+        super();
+        this.provider = provider;
     }
 
     protected void preDelete( InternalUser user ) throws FindException, DeleteException {
@@ -37,6 +40,20 @@ public class FederatedUserManager extends InternalUserManagerServer {
 
     public Class getInterfaceClass() {
         return User.class;
+    }
+
+    protected PersistentUser cast( User user ) {
+        FederatedUser imp;
+        if ( user instanceof UserBean ) {
+            imp = new FederatedUser( (UserBean)user );
+        } else {
+            imp = (FederatedUser)user;
+        }
+        return imp;
+    }
+
+    protected void preDelete( PersistentUser user ) throws FindException, DeleteException {
+        // Don't care, because there's no admin group
     }
 
     public String getTableName() {
