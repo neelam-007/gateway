@@ -18,6 +18,8 @@ import java.io.IOException;
 
 import cirrus.hibernate.Query;
 import cirrus.hibernate.HibernateException;
+import cirrus.hibernate.Session;
+import cirrus.hibernate.Transaction;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -54,71 +56,55 @@ public class ClientCertManagerImp implements ClientCertManager {
 
     public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
         logger.finest("recordNewUserCert for " + user.getLogin());
-        HibernatePersistenceContext pc = null;
+
+        // check if operation is permitted
+        if (!userCanGenCert(user)) {
+            String msg = "this user is currently not allowed to generate a new cert: " + user.getLogin();
+            logger.info(msg);
+            throw new UpdateException(msg);
+        }
+        // prepare data
+        CertEntryRow userData = getFromTable(user);
+        // this could be new entry
+        boolean newentry = false;
+        if (userData == null) {
+            userData = new CertEntryRow();
+            userData.setProvider(user.getProviderId());
+            userData.setLogin(user.getLogin());
+            userData.setResetCounter(0);
+            newentry = true;
+        }
+        userData.setResetCounter(userData.getResetCounter()+1);
+        sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
         try {
-            pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-        } catch (SQLException e) {
-            String msg = "SQL exception getting context";
+            String encodedcert = encoder.encode(cert.getEncoded());
+            userData.setCert(encodedcert);
+        } catch (CertificateEncodingException e) {
+            String msg = "Certificate encoding exception recording cert";
             logger.log(Level.WARNING, msg, e);
             throw new UpdateException(msg, e);
         }
+
+        // record new data
         try {
-            pc.beginTransaction();
-
-            if (!userCanGenCert(user)) {
-                String msg = "this user is currently not allowed to generate a new cert: " + user.getLogin();
-                pc.rollbackTransaction();
-                logger.info(msg);
-                throw new UpdateException(msg);
-            }
-            CertEntryRow userData = getFromTable(user);
-            // this could be new entry
-            boolean newentry = false;
-            if (userData == null) {
-                userData = new CertEntryRow();
-                userData.setProvider(user.getProviderId());
-                userData.setLogin(user.getLogin());
-                userData.setResetCounter(0);
-                newentry = true;
-            }
-
-            userData.setResetCounter(userData.getResetCounter()+1);
-            sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
-            try {
-                String encodedcert = encoder.encode(cert.getEncoded());
-                userData.setCert(encodedcert);
-            } catch (CertificateEncodingException e) {
-                String msg = "Certificate encoding exception recording cert";
-                logger.log(Level.WARNING, msg, e);
-                pc.rollbackTransaction();
-                throw new UpdateException(msg, e);
-            }
-
+            HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            Session session = pc.getSession();
+            Transaction trans = session.beginTransaction();
             if (newentry) {
-                Object res = pc.getSession().save(userData);
+                Object res = session.save(userData);
                 logger.finest("saving cert entry " + res);
             } else {
                 logger.finest("updating cert entry");
-                pc.getSession().update(userData);
+                session.update(userData);
             }
-
-            pc.commitTransaction();
+            trans.commit();
             pc.close();
-
-        } catch (TransactionException e) {
-            String msg = "Transaction exception recording cert";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
         } catch (HibernateException e) {
             String msg = "Hibernate exception recording cert";
             logger.log(Level.WARNING, msg, e);
             throw new UpdateException(msg, e);
         } catch (SQLException e) {
             String msg = "SQL exception recording cert";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
-        } catch (Throwable e) {
-            String msg = "Unhandled exception recording cert";
             logger.log(Level.WARNING, msg, e);
             throw new UpdateException(msg, e);
         }
