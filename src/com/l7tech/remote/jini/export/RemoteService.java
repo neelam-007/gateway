@@ -23,7 +23,9 @@ import net.jini.lookup.JoinManager;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.net.URL;
 import java.rmi.Remote;
+import java.rmi.server.ExportException;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlException;
 import java.util.Collections;
@@ -40,11 +42,14 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public abstract class RemoteService implements Remote, ProxyAccessor {
-    private String[] configOptions;
     private final LifeCycle lifeCycle;
     private static final Logger logger = Logger.getLogger(RemoteService.class.getName());
-    private final String[] components = {getClass().getName(),
-                                         RemoteService.class.getName()};
+    private ExportConfiguration exportConfiguration;
+    /**
+     * Default services configuraiton file.
+     * When changing, note that is used by start-services.config
+     */
+    public static final String DEFAULT_CONFIG = "services.config";
 
     /**
      * If the impl gets GC'ed, then the server will be unexported.
@@ -52,8 +57,6 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
      */
     private static Set serverImpls = Collections.synchronizedSet(new HashSet());
 
-    /* The configuration to use for configuring the server */
-    protected final Configuration config;
 
     /**
      * The server proxy (for use by getProxyVerifier)
@@ -63,12 +66,10 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
 
     public RemoteService(String[] options, LifeCycle lifeCycle)
       throws ConfigurationException, IOException {
-        this.configOptions = options;
         this.lifeCycle = lifeCycle;
-        config = ConfigurationProvider.getInstance(configOptions);
-        init();
-        serverImpls.add(this);
-        logger.fine("The Service '" + getClass().getName() + "' is ready");
+        exportConfiguration = new ExportConfiguration(options, this.getClass());
+        exportAndRegister();
+
     }
 
     public static void unexportAll() {
@@ -84,29 +85,159 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
         }
     }
 
-    public static Exported export(Remote impl) {
-        throw new IllegalStateException("not implemented");
+    /**
+     * Exports the specified remote object and returns a <code>Exported</code>
+     * instance containing the proxy and the exporter.
+     * The exporter may be used to unexport object programatically {@link Exporter#unexport(boolean)}.
+     *
+     * @param impl      the remote object to export
+     * @param enableDGC if <code>true</code>, DGC is enabled to the object
+     *                  on this server endpoint
+     * @return
+     * @throws ConfigurationException on configuraton error
+     * @throws ExportException        on export error
+     */
+    public static Exported export(Remote impl, boolean enableDGC)
+      throws ConfigurationException, ExportException {
+        if (impl == null) {
+            throw new IllegalArgumentException();
+        }
+        URL url = RemoteService.class.getClassLoader().getResource(DEFAULT_CONFIG);
+        if (url == null) {
+            throw new ConfigurationException("'" + DEFAULT_CONFIG + "' not found");
+        }
+
+        ExportConfiguration cfg =
+          new ExportConfiguration(new String[]{url.toString()}, impl.getClass());
+        Exporter exporter = enableDGC ? cfg.getDGCExporter() : cfg.getExporter();
+        Remote proxy = exporter.export(impl);
+        return new Exported(exporter, proxy);
     }
 
     public static class Exported {
         private Exporter exporter;
-        private Object proxy;
+        private Remote proxy;
 
-        public Exported(Exporter exporter, Object proxy) {
+        Exported(Exporter exporter, Remote proxy) {
             this.exporter = exporter;
             this.proxy = proxy;
         }
 
+        public Exporter getExporter() {
+            return exporter;
+        }
+
+        public Remote getProxy() {
+            return proxy;
+        }
     }
 
-    protected DiscoveryManagement getDiscoveryManager()
-      throws ConfigurationException, IOException {
-        /* Get the discovery manager, for discovering lookup services */
-        return
-          (DiscoveryManagement)getConfigEntry("discoveryManager",
-            DiscoveryManagement.class,
-            new LookupDiscovery(new String[]{""}, config));
+    protected ExportConfiguration getExportConfiguration() {
+        return exportConfiguration;
     }
+
+    /**
+     * A single remote server export configuration.
+     */
+    protected static class ExportConfiguration {
+        /* The configuration to use for configuring the server */
+        private Configuration config;
+        private String[] configOptions;
+        private String[] components = {RemoteService.class.getName()};
+        private Exporter exporter = null;
+        private Exporter dgcEnabledexporter = null;
+        private DiscoveryManagement discoveryManager = null;
+
+        public ExportConfiguration(String[] configOptions, Class serviceClass)
+          throws ConfigurationException {
+            this.configOptions = configOptions;
+            config = ConfigurationProvider.getInstance(configOptions);
+            if (serviceClass != null) {
+                components = new String[]{serviceClass.getName(), RemoteService.class.getName()};
+            }
+        }
+
+        public Configuration getJiniConfig() {
+            return config;
+        }
+
+        public DiscoveryManagement getDiscoveryManager()
+          throws ConfigurationException, IOException {
+
+            if (discoveryManager != null) {
+                return discoveryManager;
+
+            }
+            /* Get the discovery manager, for discovering lookup services */
+            discoveryManager =
+              (DiscoveryManagement)getConfigEntry("discoveryManager",
+                DiscoveryManagement.class,
+                new LookupDiscovery(new String[]{""}, config));
+            return discoveryManager;
+        }
+
+        /**
+         * Returns the exporter for exporting the server.
+         *
+         * @throws ConfigurationException if a problem occurs getting the exporter
+         *                                from the configuration
+         */
+        public Exporter getDGCExporter() throws ConfigurationException {
+            if (dgcEnabledexporter != null) {
+                return dgcEnabledexporter;
+            }
+            dgcEnabledexporter =
+              (Exporter)getConfigEntry("serverDgcEnabledExporter", Exporter.class,
+                new BasicJeriExporter(TcpServerEndpoint.getInstance(0), new BasicILFactory()));
+            return dgcEnabledexporter;
+        }
+
+        /**
+         * Returns the DGC enabled exporter for exporting the server.
+         *
+         * @throws ConfigurationException if a problem occurs getting the exporter
+         *                                from the configuration
+         */
+        public Exporter getExporter() throws ConfigurationException {
+            if (exporter != null) {
+                return exporter;
+            }
+            exporter =
+              (Exporter)getConfigEntry("serverExporter", Exporter.class,
+                new BasicJeriExporter(TcpServerEndpoint.getInstance(0), new BasicILFactory()));
+            return exporter;
+        }
+
+
+        /**
+         * Searches the configuration entry in the <code>RemoteService</code> subclass section
+         * and the <code>RemoteService</code> section  in that order
+         *
+         * @param name  the configuration entry name
+         * @param clazz the confuguration entry class
+         * @param def   the default value in case the entry is not found
+         * @throws ConfigurationException if a problem occurs getting the exporter
+         *                                from the configuration
+         */
+        public final Object getConfigEntry(String name, Class clazz, Object def)
+          throws ConfigurationException {
+
+            Object result;
+            for (int i = 0; i < components.length; i++) {
+                String section = components[i];
+                try {
+                    result = config.getEntry(section, name, clazz);
+                    logger.fine("Found config entry " + result + " for name '" + name + "'");
+                    return result;
+                } catch (NoSuchEntryException e) {
+                    continue;
+                }
+            }
+            logger.fine("Returning default value " + def + " for name '" + name + "'");
+            return def;
+        }
+    }
+
 
     /**
      * Initializes the server, including exporting it and storing its proxy in
@@ -115,9 +246,9 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
      * @throws java.io.IOException    if a problem occurs
      * @throws ConfigurationException if a problem occurs
      */
-    protected void init() throws IOException, ConfigurationException {
+    protected void exportAndRegister() throws IOException, ConfigurationException {
         /* Export the server */
-        exporter = getExporter();
+        exporter = exportConfiguration.getExporter();
         serverProxy = exporter.export(this);
 
         /* Create the smart proxy */
@@ -127,47 +258,9 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
         /* Get the join manager, for joining lookup services */
         JoinManager joinManager =
           new JoinManager(serverProxy, null /* attrSets */, getServiceID(),
-            getDiscoveryManager(), null /* leaseMgr */, config);
-    }
-
-    /**
-     * Returns the exporter for exporting the server.
-     *
-     * @throws ConfigurationException if a problem occurs getting the exporter
-     *                                from the configuration
-     */
-    protected Exporter getExporter() throws ConfigurationException {
-        return
-          (Exporter)getConfigEntry("serverExporter", Exporter.class,
-            new BasicJeriExporter(TcpServerEndpoint.getInstance(0), new BasicILFactory()));
-    }
-
-    /**
-     * Searches the configuration entry in the <code>RemoteService</code> subclass section
-     * and the <code>RemoteService</code> section  in that order
-     *
-     * @param name  the configuration entry name
-     * @param clazz the confuguration entry class
-     * @param def   the default value in case the entry is not found
-     * @throws ConfigurationException if a problem occurs getting the exporter
-     *                                from the configuration
-     */
-    protected final Object getConfigEntry(String name, Class clazz, Object def)
-      throws ConfigurationException {
-
-        Object result;
-        for (int i = 0; i < components.length; i++) {
-            String section = components[i];
-            try {
-                result = config.getEntry(section, name, clazz);
-                logger.fine("Found config entry " + result + " for name '" + name + "'");
-                return result;
-            } catch (NoSuchEntryException e) {
-                continue;
-            }
-        }
-        logger.fine("Returning default value " + def + " for name '" + name + "'");
-        return def;
+            exportConfiguration.getDiscoveryManager(), null /* leaseMgr */, exportConfiguration.getJiniConfig());
+        serverImpls.add(this);
+        logger.fine("The Service '" + getClass().getName() + "' is exported.");
     }
 
 

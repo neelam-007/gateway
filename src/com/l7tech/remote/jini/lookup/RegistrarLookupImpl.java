@@ -45,9 +45,9 @@ public class RegistrarLookupImpl extends RemoteService implements RegistrarLooku
 
     private LookupLocator getLookupLocator() throws ConfigurationException, MalformedURLException {
         return
-          (LookupLocator)getConfigEntry("unicastLookupLocator",
-                                        LookupLocator.class,
-                                        new LookupLocator("jini://localhost"));
+          (LookupLocator)getExportConfiguration().getConfigEntry("unicastLookupLocator",
+            LookupLocator.class,
+            new LookupLocator("jini://localhost"));
     }
 
     /**
@@ -55,20 +55,20 @@ public class RegistrarLookupImpl extends RemoteService implements RegistrarLooku
      * same Uuid is always set, and the client resolves the service by uuid.
      *
      * @throws net.jini.config.ConfigurationException
-     *                                  if a problem occurs getting the exporter
-     *                                  from the configuration
+     *          if a problem occurs getting the exporter
+     *          from the configuration
      */
     protected Exporter getExporter() throws ConfigurationException {
-        Exporter configuredExporter = super.getExporter();
+        Exporter configuredExporter = getExportConfiguration().getExporter();
         if (configuredExporter instanceof BasicJeriExporter) {
             BasicJeriExporter be = (BasicJeriExporter)configuredExporter;
             BasicJeriExporter modExporter = new BasicJeriExporter(be.getServerEndpoint(),
-                                                                  be.getInvocationLayerFactory(),
-                                                                  be.getEnableDGC(),
-                                                                  be.getKeepAlive(),
-                                                                  UuidFactory.create(REGISTRAR_UUID));
+              be.getInvocationLayerFactory(),
+              be.getEnableDGC(),
+              be.getKeepAlive(),
+              UuidFactory.create(REGISTRAR_UUID));
             return modExporter;
         }
-        throw new IllegalArgumentException("Unknown exporter type "+configuredExporter.getClass());
+        throw new IllegalArgumentException("Unknown exporter type " + configuredExporter.getClass());
     }
 }
