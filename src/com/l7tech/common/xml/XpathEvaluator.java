@@ -34,7 +34,7 @@ public class XpathEvaluator {
 
     /**
      * Creates the new evaluator for a given XML document with namespace
-     * {prefix, URI} definitons.
+     * {prefix, URI} definitons specified in the <code>Map</code>.
      * <p/>
      *
      * @param doc        the DOM Documet
@@ -120,8 +120,8 @@ public class XpathEvaluator {
     }
 
     /**
-     * Select the nodes that ar eselectable with this expression against
-     * this evaluator DOM Document.
+     * Select the nodes that are eselectable with this expression against
+     * this evaluator's Document.
      *
      * @param expression the XPath expression
      * @return the nodes that are selectable by this XPath expression.
@@ -136,7 +136,7 @@ public class XpathEvaluator {
     }
 
     /**
-     * Evaluate the expression against this evaluator DOM Document.
+     * Evaluate the expression against this evaluator's Document.
      *
      * @param expression the XPath expression
      * @return the nodes that are selectable by this XPath expression.
