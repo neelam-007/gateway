@@ -181,7 +181,11 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         }
     }
 
-    private FederatedUser createFakeUserForVirtualGroup(String certSubjectDn, final String niFormat, final String niValue, final String niQualifier) throws BadCredentialsException {
+    private FederatedUser createFakeUserForVirtualGroup(String certSubjectDn, final String niFormat, final String niValue, final String niQualifier) 
+      throws BadCredentialsException {
+        if (niValue == null) {
+            throw new BadCredentialsException("Subject Name Identifier is required");
+        }
         FederatedUser u;
         // Make a fake user for virtual groups
         u = new FederatedUser();
@@ -193,7 +197,10 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                 || SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat)) {
             u.setLogin(niValue + niQualifier !=null ? niQualifier : "");
         } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
-            if (!certSubjectDn.equals(niValue)) {
+            if (certSubjectDn == null) {
+                  throw new BadCredentialsException("Name Identifier Format is "+SamlConstants.NAMEIDENTIFIER_X509_SUBJECT+" but the value is null");
+              }
+              if (!niValue.equals(certSubjectDn)) {
                 throw new BadCredentialsException("NameIdentifier '" + niValue +
                                                   "' was an X.509 SubjectName but did not match certificate's DN '" +
                                                   certSubjectDn + "'");
