@@ -18,7 +18,7 @@ public interface ServiceManager extends EntityManager {
      * @param url
      * @return a string containing the xml document
      */
-    public String resolveWsdlTarget(String url);
+    public String resolveWsdlTarget(String url) throws java.rmi.RemoteException;
 
     // NOTE:
     // add methods as they become necessary
