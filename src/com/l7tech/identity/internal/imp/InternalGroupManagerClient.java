@@ -8,6 +8,7 @@ import com.l7tech.adminws.translation.TypeTranslator;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.UpdateException;
 
 import java.util.Collection;
 import java.io.IOException;
@@ -48,6 +49,10 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
         } catch (java.rmi.RemoteException e) {
             throw new SaveException("RemoteException in save", e);
         }
+    }
+
+    public void update(Group group) throws UpdateException {
+        // todo (save)?
     }
 
     public void setIdentityProviderOid(long oid) {

@@ -7,10 +7,7 @@ import com.l7tech.adminws.identity.IdentityService;
 import com.l7tech.adminws.identity.IdentityServiceLocator;
 import com.l7tech.adminws.translation.TypeTranslator;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -59,6 +56,10 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
         } catch (RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
+    }
+
+    public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {
+        // todo (save?)
     }
 
     public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {

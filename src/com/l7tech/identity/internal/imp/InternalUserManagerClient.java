@@ -4,6 +4,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.adminws.identity.Identity;
 import com.l7tech.adminws.identity.IdentityService;
 import com.l7tech.adminws.identity.IdentityServiceLocator;
@@ -48,6 +49,10 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
         } catch (java.rmi.RemoteException e) {
             throw new SaveException("RemoteException in save", e);
         }
+    }
+
+    public void update(User user) throws UpdateException {
+        // todo (save?)
     }
 
     public void setIdentityProviderOid(long oid) {
