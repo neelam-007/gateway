@@ -90,6 +90,14 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         this._protectedServiceUrl = protectedServiceUrl;
     }
 
+    public String getUserAgent() {
+        return _userAgent;
+    }
+
+    public void setUserAgent(String userAgent) {
+        _userAgent = userAgent;
+    }
+
     public int requestCount() {
         return _requestCount;
     }
@@ -102,6 +110,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     protected String _login;
     protected String _password;
     protected String _realm;
+    protected String _userAgent;
     protected int _maxConnections;
 
     protected transient volatile int _requestCount = 0;
