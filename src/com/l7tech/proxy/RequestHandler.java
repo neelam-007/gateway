@@ -192,7 +192,8 @@ public class RequestHandler extends AbstractHttpHandler {
             // TODO: PERF: this XML parsing is causing a performance bottleneck
             boolean multipart = false;
 
-            if(request.getContentType().startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
+            final String contentType = request.getContentType();
+            if(contentType != null && contentType.startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
                 multipart = true;
             }
 
@@ -267,6 +268,7 @@ public class RequestHandler extends AbstractHttpHandler {
             int got;
             while ((got = ss.read(chunk)) > 0)
                 os.write(chunk, 0, got);
+            request.setHandled(true);
             response.commit();
             return;
         } catch (IOException e) {
