@@ -12,7 +12,7 @@ import java.awt.event.*;
  * User: mike
  * Date: May 22, 2003
  * Time: 1:47:04 PM
- * Revision: $ Revision $
+ * Revision: $Revision$
  */
 public class Gui {
     private static final Category log = Category.getInstance(Gui.class.getName());
