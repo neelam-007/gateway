@@ -329,6 +329,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
             okButton.setEnabled(false);
         }*/
         xmlTextArea.setCaretPosition(0);
+        xmlTextArea.setCaretVisible(false);
         xmldisplayPanel.add(xmlTextArea, BorderLayout.CENTER);
 
         // wrap this with border settings
