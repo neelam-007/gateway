@@ -62,7 +62,11 @@ public class HomeAction extends BaseAction {
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
-                  wpanel.setComponent(getHomePageComponent());
+                  try {
+                      wpanel.setComponent(getHomePageComponent());
+                  } catch (ActionVetoException e) {
+                      log.fine("workspace change vetoed");
+                  }
               }
           });
     }

@@ -10,6 +10,7 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.WeakEventListenerList;
+import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.PolicyToolBar;
@@ -1145,6 +1146,7 @@ public class MainWindow extends JFrame {
         if (policyToolBar != null) return policyToolBar;
         policyToolBar = new PolicyToolBar();
         policyToolBar.registerPaletteTree(getAssertionPaletteTree());
+        addConnectionListener(policyToolBar);
         return policyToolBar;
     }
 
@@ -1246,18 +1248,23 @@ public class MainWindow extends JFrame {
      * @param event  ActionEvent
      */
     private void disconnectHandler(ActionEvent event) {
-        fireDisconnected();
+        try {
+            getWorkSpacePanel().clearWorkspace();
+        } catch (ActionVetoException e) {
+            log.log(Level.FINE, "action vetoed ",e);
+            return;
+        }
         getStatusMsgLeft().setText("Disconnected");
         getStatusMsgRight().setText("");
-
         getAssertionPaletteTree().setModel(null);
         getMainSplitPaneRight().removeAll();
         getMainSplitPaneRight().validate();
         getMainSplitPaneRight().repaint();
         getServicesTree().setModel(null);
-        getWorkSpacePanel().clearWorskpace();
 
         updateActions(null);
+        fireDisconnected();
+
         // if inactivityTimer is running stop
         if (inactivityTimer.isRunning()) {
             inactivityTimer.stop();

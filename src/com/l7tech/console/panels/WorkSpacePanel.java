@@ -4,6 +4,7 @@ import com.l7tech.console.util.Preferences;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.event.VetoableContainerListener;
 import com.l7tech.console.event.ContainerVetoException;
+import com.l7tech.console.action.ActionVetoException;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -24,8 +25,13 @@ public class WorkSpacePanel extends JPanel {
     static public final String NAME = "workspace.panel";
     static final Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
     private final TabbedPane tabbedPane = new TabbedPane();
-    /* this class classloader */
 
+    /* this class classloader */
+    private static ThreadLocal containerVetoException = new ThreadLocal() {
+        protected synchronized Object initialValue() {
+            return null;
+        }
+    };
 
     /**
      * default constructor
@@ -35,15 +41,18 @@ public class WorkSpacePanel extends JPanel {
         initializePropertiesListener();
     }
 
-
     /**
      * Set the active component for the work space.
      *
      * @param jc the new component to host
      */
-    public void setComponent(JComponent jc) {
+    public void setComponent(JComponent jc) throws ActionVetoException {
         tabbedPane.removeAll();
-        if (tabbedPane.lastActionVetoed) return;
+        if (containerVetoException.get() !=null) {
+            ContainerVetoException cve =  (ContainerVetoException)containerVetoException.get();
+            containerVetoException.set(null);
+           throw new ActionVetoException(null, "workspace change vetoed", cve);
+        }
 
         tabbedPane.addTab(jc.getName(), jc);
         jc.addPropertyChangeListener(new PropertyChangeListener() {
@@ -64,8 +73,13 @@ public class WorkSpacePanel extends JPanel {
      * Remove the active component that the workspace.
      * The {@link JComponent#getName() } sets the tab name.
      */
-    public void clearWorskpace() {
+    public void clearWorkspace() throws ActionVetoException {
         tabbedPane.removeAll();
+        if (containerVetoException.get() !=null) {
+            ContainerVetoException cve =  (ContainerVetoException)containerVetoException.get();
+            containerVetoException.set(null);
+           throw new ActionVetoException(null, "workspace change vetoed", cve);
+        }
     }
 
 
@@ -154,7 +168,7 @@ public class WorkSpacePanel extends JPanel {
                 if (c instanceof ContainerListener) {
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
-                            log.fine("Removig container listener of type "+c.getClass());
+                            log.fine("Removig container listener of type " + c.getClass());
                             tabbedPane.
                               removeContainerListener((ContainerListener)c);
                         }
@@ -184,7 +198,6 @@ public class WorkSpacePanel extends JPanel {
      */
     private static class TabbedPane extends JTabbedPane {
         EventListenerList listenerList = new WeakEventListenerList();
-        boolean lastActionVetoed = false;
 
         public TabbedPane() {
         }
@@ -229,7 +242,7 @@ public class WorkSpacePanel extends JPanel {
          * @see #insertTab  
          */
         public void removeTabAt(int index) {
-            lastActionVetoed = false;
+            containerVetoException.set(null);
             EventListener[] listeners =
               listenerList.getListeners(VetoableContainerListener.class);
             ContainerEvent e =
@@ -243,7 +256,7 @@ public class WorkSpacePanel extends JPanel {
                 }
                 super.removeTabAt(index);
             } catch (ContainerVetoException e1) {
-                lastActionVetoed = true;
+                containerVetoException.set(e1);
             }
         }
 
@@ -257,8 +270,7 @@ public class WorkSpacePanel extends JPanel {
           icon, Component
           component, String
           tip, int index) {
-
-            lastActionVetoed = false;
+            containerVetoException.set(null);
             EventListener[] listeners =
               listenerList.getListeners(VetoableContainerListener.class);
             ContainerEvent e =
@@ -272,7 +284,7 @@ public class WorkSpacePanel extends JPanel {
                 }
                 super.insertTab(title, icon, component, tip, index);
             } catch (ContainerVetoException e1) {
-                lastActionVetoed = true;
+                containerVetoException.set(e1);
             }
         }
 

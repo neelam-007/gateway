@@ -37,6 +37,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
           },
           0
         );
+        portTypeNameField.setText("NewPortType");
         operationsTable.setModel(operationsModel);
         operationsTableScrollPane.getViewport().setBackground(operationsTable.getBackground());
         removeOperatonButton.setEnabled(false);

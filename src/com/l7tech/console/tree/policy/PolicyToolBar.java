@@ -5,6 +5,8 @@ import com.l7tech.console.action.AssertionMoveDownAction;
 import com.l7tech.console.action.AddAssertionAction;
 import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.event.ConnectionListener;
+import com.l7tech.console.event.ConnectionEvent;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -23,7 +25,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
-public class PolicyToolBar extends JToolBar {
+public class PolicyToolBar extends JToolBar  implements ConnectionListener {
     static Logger log = Logger.getLogger(PolicyToolBar.class.getName());
     public static final String NAME = "policy.toolbar";
     private AssertionMoveUpAction assertionMoveUpAction;
@@ -217,4 +219,28 @@ public class PolicyToolBar extends JToolBar {
     private AbstractTreeNode lastPaletteNode;
     private AssertionTreeNode lastAssertionNode;
 
+    /**
+     * Invoked on connection event
+     * @param e describing the connection event
+     */
+    public void onConnect(ConnectionEvent e) {
+    }
+
+    /**
+     * Invoked on disconnect
+     * @param e describing the dosconnect event
+     */
+    public void onDisconnect(ConnectionEvent e) {
+
+        Runnable r = new Runnable() {
+            public void run() {
+                log.fine("Policy Toolbar disconnect - disabling actions");
+                assertionMoveUpAction.setEnabled(false);
+                assertionMoveDownAction.setEnabled(false);
+                addAssertionAction.setEnabled(false);
+                deleteAssertionAction.setEnabled(false);
+            }
+        };
+        SwingUtilities.invokeLater(r);
+    }
 }

@@ -549,12 +549,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                   "Save Service policy",
                   JOptionPane.YES_NO_CANCEL_OPTION));
                 if (answer == JOptionPane.YES_OPTION) {
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            policyEditorToolbar.
-                              buttonSave.getAction().actionPerformed(null);
-                        }
-                    });
+                    policyEditorToolbar.
+                      buttonSave.getAction().actionPerformed(null);
                 } else if ((answer == JOptionPane.CANCEL_OPTION)) {
                     throw new ContainerVetoException(e, "User aborted");
                 }

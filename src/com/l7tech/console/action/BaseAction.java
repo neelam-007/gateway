@@ -7,6 +7,7 @@ import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.logging.Logger;
 
 /**
  * This class provides default implementations for the application
@@ -22,6 +23,8 @@ import java.awt.event.ActionListener;
  * @see AbstractAction
  */
 public abstract class BaseAction extends AbstractAction {
+    static final Logger log = Logger.getLogger(BaseAction.class.getName());
+
     public static final String LARGE_ICON = "LargeIcon";
     private EventListenerList listenerList = new EventListenerList();
 

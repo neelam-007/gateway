@@ -71,7 +71,7 @@ public class DeleteServiceAction extends BaseAction {
                 PublishedService svc = sn.getPublishedService();
                 // if currently edited service was deleted
                 if (node.getPublishedService().getOid() == svc.getOid()) {
-                    ComponentRegistry.getInstance().getCurrentWorkspace().clearWorskpace();
+                    ComponentRegistry.getInstance().getCurrentWorkspace().clearWorkspace();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
