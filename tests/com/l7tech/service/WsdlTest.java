@@ -1,6 +1,7 @@
 package com.l7tech.service;
 
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -19,10 +20,10 @@ import java.util.logging.Logger;
  */
 public class WsdlTest extends TestCase {
     private static final Logger log = Logger.getLogger(WsdlTest.class.getName());
-    public static final String WSDL = "com/l7tech/service/resources/StockQuoteService.wsdl";
-    public static final String WSDL2PORTS = "com/l7tech/service/resources/xmltoday-delayed-quotes-2ports.wsdl";
-    public static final String WSDL2SERVICES = "com/l7tech/service/resources/xmltoday-delayed-quotes-2services.wsdl";
-    public static final String WSDL_DOC_STYLE = "com/l7tech/service/resources/GeoServe.wsdl";
+    public static final String WSDL = TestDocuments.WSDL;
+    public static final String WSDL2PORTS = TestDocuments.WSDL2PORTS;
+    public static final String WSDL2SERVICES = TestDocuments.WSDL2SERVICES;
+    public static final String WSDL_DOC_STYLE = TestDocuments.WSDL_DOC_LITERAL;
 
     /**
      * test <code>AbstractLocatorTest</code> constructor
