@@ -439,7 +439,8 @@ public class Wizard extends JDialog {
             }
         });
         Dimension pd = stepDescriptionTextPane.getPreferredSize();
-        int fh = getFontMetrics(getFont()).getHeight();
+        int fh = 10;
+        if (getFont() != null) fh = getFontMetrics(getFont()).getHeight();
         stepDescriptionTextPane.setPreferredSize(new Dimension(pd.width, fh * 5));
         return stepDescriptionTextPane;
     }
