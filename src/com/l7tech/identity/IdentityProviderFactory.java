@@ -34,6 +34,8 @@ public class IdentityProviderFactory {
         try {
             Class interfaceClass = Class.forName( interfaceClassName );
             provider = (IdentityProvider)Locator.getDefault().lookup(interfaceClass);
+            if ( provider == null )
+                throw new IllegalArgumentException( "Couldn't locate an implementation of " + interfaceClassName + " for IdentityProviderConfig " + config.getName() + " (#" + config.getOid() + "): null" );
             provider.initialize( config );
             return provider;
         } catch ( Exception e ) {
