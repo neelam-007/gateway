@@ -48,19 +48,21 @@ public class LogonDialog extends JDialog {
     private static JFrame frame;
     private boolean badPasswordMessage;
     private boolean lockUsername;
+    private String ssgName;
 
     /**
      * Create a new LogonDialog
      */
-    public LogonDialog(JFrame parent, String title, String defaultUsername, boolean lockUsername, boolean badPasswordMessage) {
-        super(parent, title, true);
+    public LogonDialog(JFrame parent, String ssgName, String defaultUsername, boolean lockUsername, boolean badPasswordMessage) {
+        super(parent, ssgName, true);
+        this.ssgName = ssgName;
         this.frame = parent;   // XXX using a static for this is admittedly fugly
         this.badPasswordMessage = badPasswordMessage;
 
         // Mustn't lock an empty username
         this.lockUsername = defaultUsername != null && defaultUsername.length() > 0 ? lockUsername : false;
 
-        setTitle("Log on to Gateway " + title);
+        setTitle("Log on to Gateway");
         initComponents();
 
         if (defaultUsername != null)
@@ -127,6 +129,24 @@ public class LogonDialog extends JDialog {
         });
         userNameTextField.setEditable(!lockUsername);
 
+        // ssg name label
+        JLabel ssgNameLabel = new JLabel("Gateway:");
+        constraints.gridx = 1;
+        constraints.gridy = 1;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(7, 5, 5, 0);
+        contents.add(ssgNameLabel, constraints);
+
+        // ssg name
+        JLabel ssgNameContent = new JLabel(ssgName);
+        constraints.gridx = 2;
+        constraints.gridy = 1;
+        constraints.weightx = 1.0;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(7, 5, 5, 10);
+        contents.add(ssgNameContent, constraints);
+
         // user name label
         JLabel userNameLabel = new JLabel();
         userNameLabel.setDisplayedMnemonic('U');
@@ -134,14 +154,14 @@ public class LogonDialog extends JDialog {
         userNameLabel.setText("Username:");
 
         constraints.gridx = 1;
-        constraints.gridy = 1;
+        constraints.gridy = 2;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(5, 5, 0, 0);
         contents.add(userNameLabel, constraints);
 
         // user name text field
         constraints.gridx = 2;
-        constraints.gridy = 1;
+        constraints.gridy = 2;
         constraints.weightx = 1.0;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -157,7 +177,7 @@ public class LogonDialog extends JDialog {
         passwordLabel.setLabelFor(passwordField);
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
-        constraints.gridy = 2;
+        constraints.gridy = 3;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(5, 5, 0, 0);
@@ -168,7 +188,7 @@ public class LogonDialog extends JDialog {
 
         constraints = new GridBagConstraints();
         constraints.gridx = 2;
-        constraints.gridy = 2;
+        constraints.gridy = 3;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
         constraints.gridwidth = 2;
@@ -177,7 +197,7 @@ public class LogonDialog extends JDialog {
 
         constraints = new GridBagConstraints();
         constraints.gridx = 2;
-        constraints.gridy = 3;
+        constraints.gridy = 4;
         constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
