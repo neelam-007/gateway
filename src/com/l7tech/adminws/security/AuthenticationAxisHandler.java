@@ -8,9 +8,13 @@ import org.apache.axis.encoding.Base64;
 import org.apache.axis.transport.http.HTTPConstants;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Locator;
 
 import java.util.logging.Level;
+import java.util.Iterator;
 
 /**
  * Layer 7 Technologies, inc.
@@ -37,7 +41,7 @@ import java.util.logging.Level;
  *   </requestFlow>
  * </transport>
  */
-public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
+public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHandler {
     public static final long SESSION_MAX_LENGTH = 120000; // two minutes
 
     /**
@@ -107,7 +111,13 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
     // ************************************************
 
     private boolean authorizeAdminMembership(User adminUser) {
-        return userIsMemberOfGroup(adminUser.getOid(), Group.ADMIN_GROUP_NAME);
+        //return userIsMemberOfGroup(adminUser.getOid(), Group.ADMIN_GROUP_NAME);
+        if (adminUser == null || adminUser.getGroups() == null) return false;
+        for (Iterator i = adminUser.getGroups().iterator(); i.hasNext();) {
+            Group grp = (Group)i.next();
+            if (grp.getName() != null && grp.getName().equals(Group.ADMIN_GROUP_NAME)) return true;
+        }
+        return false;
     }
 
     private User authenticateBasicToken(String value) throws AxisFault {
@@ -115,7 +125,6 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
         int i = value.indexOf( ':' );
         if (i == -1) login = value;
         else login = value.substring( 0, i);
-        // messageContext.setUsername(login);
 
         // MD5 IT
         java.security.MessageDigest md5Helper = null;
@@ -128,7 +137,7 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
         String md5edDecodedAuthValue = encodeDigest(digest);
 
         // COMPARE TO THE VALUE IN INTERNAL DB
-        com.l7tech.identity.User internalUser = findUserByLoginAndRealm(login, null);
+        com.l7tech.identity.User internalUser = findUserByLogin(login);
         if (internalUser == null) {
             throw new AxisFault("User " + login + " not registered in internal id provider");
         }
@@ -136,7 +145,6 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
             throw new AxisFault("User " + login + "does not have a password");
         }
         if (internalUser.getPassword().equals(md5edDecodedAuthValue)) {
-
             // AUTHENTICATION SUCCESS, move on to authorization
             return internalUser;
         } else {
@@ -168,15 +176,23 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
         return new String(buffer);
     }
 
-    public static void main (String[] args) throws Exception {
-        // calculate the digest for a specific set of values
-        java.security.MessageDigest md5Helper = java.security.MessageDigest.getInstance("MD5");
-        String digestValue = "ssgadmin:ssgadminpasswd";
-        byte[] digest = md5Helper.digest(digestValue.getBytes());
-        System.out.println(encodeDigest(digest));
-
-        //result: 60189d5f68d564f9cb83e11bc2ae92e9 {for "ssgadmin::ssgadminpasswd"}
-        //result: 309b9c7ab4c3ee2144fce9b071acd440 {for "ssgadmin:ssgadminpasswd"}
-
+    /**
+     * returns null if user does not exist
+     */
+    protected com.l7tech.identity.User findUserByLogin(String login) {
+        try {
+            if (identityProviderConfigManager == null) {
+                identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+            }
+            return identityProviderConfigManager.getInternalIdentityProvider().getUserManager().findByLogin(login);
+        } catch (FindException e) {
+            // not throwing this on purpose, a FindException might just mean that the user does not exist,
+            // in which case null is a valid answer
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            return null;
+        }
     }
+
+    private static final String AUTHENTICATED_USER = "Authenticated_com.l7tech.identity.User";
+    IdentityProviderConfigManager identityProviderConfigManager = null;
 }
