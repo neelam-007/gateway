@@ -120,7 +120,7 @@ public class PublishedService extends NamedEntityImp {
 
         return _wsdlPort;
     }
-
+    // todo: What is the Request parameter doing here? It is also unused. em24102003
     public synchronized URL serviceUrl( Request request ) throws WSDLException, MalformedURLException {
         if ( _serviceUrl == null ) {
             Port wsdlPort = wsdlPort( request );
