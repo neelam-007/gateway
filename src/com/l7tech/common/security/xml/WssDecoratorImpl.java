@@ -134,14 +134,29 @@ public class WssDecoratorImpl implements WssDecorator {
         Element emptySignatureElement = template.getSignatureElement();
 
         // Include KeyInfo element in signature and embed cert into subordinate X509Data element
-        // todo, add following KeyInfo
-        String bstId = getOrCreateWsuId(c, binarySecurityToken);
+        // add following KeyInfo
         // <KeyInfo>
         //  <wsse:SecurityTokenReference>
         //      <wsse:Reference	URI="#bstId"
         //                      ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" />
         //      </wsse:SecurityTokenReference>
         // </KeyInfo>
+        // todo, fix hard coded strings
+        String bstId = getOrCreateWsuId(c, binarySecurityToken);
+        String wssePrefix = securityHeader.getPrefix();
+        Element keyInfoEl = securityHeader.getOwnerDocument().createElement("KeyInfo");
+        Element secTokRefEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
+                                                                                "SecurityTokenReference");
+        secTokRefEl.setPrefix(wssePrefix);
+        Element refEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
+                                                                          "Reference");
+        refEl.setPrefix(wssePrefix);
+        secTokRefEl.appendChild(refEl);
+        keyInfoEl.appendChild(secTokRefEl);
+        refEl.setAttribute("URI", "#" + bstId);
+        refEl.setAttribute("ValueType", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3");
+
+
 
         SignatureContext sigContext = new SignatureContext();
         sigContext.setIDResolver(new IDResolver() {
@@ -156,6 +171,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         Element signatureElement = (Element)securityHeader.appendChild(emptySignatureElement);
+        signatureElement.appendChild(keyInfoEl);
 
         return signatureElement;
     }
