@@ -56,7 +56,7 @@ public class FilterTest extends TestCase {
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
                 new SpecificUser(providerid, "alice"),
                 new SpecificUser(providerid, "bob"),
-                new MemberOfGroup(providerid, "sales")
+                new MemberOfGroup(providerid, "sales", "666")
             })),
             new RoutingAssertion()
         }));
