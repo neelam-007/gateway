@@ -112,8 +112,8 @@ CREATE TABLE published_service (
   policy_xml clob NOT NULL ,
   wsdl_url varchar(255) NOT NULL ,
   wsdl_xml clob NOT NULL ,
-  disabled char(1) NOT NULL DEFAULT 0,
-  soap char(1) NOT NULL DEFAULT 1,
+  disabled char(1) NOT NULL ,
+  soap char(1) NOT NULL,
   routing_uri varchar(128)
 );
 
@@ -205,7 +205,7 @@ drop table ssg_logs;
 CREATE TABLE ssg_logs (
   objectid number(38,0) NOT NULL ,
   nodeid varchar(18) NOT NULL ,
-  message varchar2(1024),
+  message clob,
   strlvl varchar(12),
   loggername varchar(128),
   millis number(38,0),
@@ -414,3 +414,4 @@ CREATE TABLE message_id (
   expires number(38,0) NOT NULL,
   PRIMARY KEY (messageid)
 );
+

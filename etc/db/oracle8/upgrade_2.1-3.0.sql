@@ -6,7 +6,7 @@ INSERT INTO internal_group VALUES (4,0,'Gateway Operators','SecureSpan Manager u
 
 ALTER TABLE internal_user DROP COLUMN title;
 UPDATE internal_user SET name=login WHERE name IS NULL;
-ALTER TABLE published_service ADD soap char(1) default 1; 
+ALTER TABLE published_service ADD soap char(1) NOT NULL; 
 ALTER TABLE published_service ADD routing_uri varchar(128);
 UPDATE published_service SET soap=1;
 
@@ -19,6 +19,10 @@ ALTER TABLE service_resolution ADD uri varchar(255) default '';
 -- Cannot find previous index name, so we'll leave it there
 -- And just make a new one
 CREATE INDEX soapaction_i ON service_resolution (soapaction,urn,uri);
+
+ALTER TABLE ssg_logs DROP COLUMN message;
+ALTER TABLE ssg_logs ADD message clob;
+
 
 CREATE INDEX i_s_l_rqid on ssg_logs (strrequestid);
 

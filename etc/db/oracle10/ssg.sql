@@ -112,8 +112,8 @@ CREATE TABLE published_service (
   policy_xml clob NOT NULL ,
   wsdl_url varchar(255) NOT NULL ,
   wsdl_xml clob NOT NULL ,
-  disabled char(1) NOT NULL DEFAULT 0 ,
-  soap char(1) NOT NULL DEFAULT 1 ,
+  disabled char(1) NOT NULL ,
+  soap char(1) NOT NULL,
   routing_uri varchar(128)
 );
 
@@ -205,7 +205,7 @@ drop table ssg_logs;
 CREATE TABLE ssg_logs (
   objectid number(38,0) NOT NULL ,
   nodeid varchar(18) NOT NULL ,
-  message varchar2(1024),
+  message clob,
   strlvl varchar(12),
   loggername varchar(128),
   millis number(38,0),
@@ -275,9 +275,10 @@ CREATE TABLE trusted_cert (
   trusted_for_client char(1) default '0',
   trusted_for_server char(1) default '0',
   trusted_for_saml char(1) default '0',
-  primary key(objectid),
-  unique(subject_dn)
+  primary key(objectid)
 );
+CREATE UNIQUE INDEX i_tc_sdn on trusted_cert (subject_dn);
+CREATE UNIQUE INDEX i_tc_n   on trusted_cert (name);
 
 DROP TABLE fed_user;
 CREATE TABLE fed_user (
@@ -381,7 +382,6 @@ CREATE TABLE audit_message (
   status varchar(32) NOT NULL,
   request_id varchar(40) NOT NULL,
   service_oid number(38,0),
-  service_name varchar(128),
   user_name varchar(64),
   authenticated char(1),
   provider_oid number(38,0),
@@ -414,3 +414,4 @@ CREATE TABLE message_id (
   expires number(38,0) NOT NULL,
   PRIMARY KEY (messageid)
 );
+
