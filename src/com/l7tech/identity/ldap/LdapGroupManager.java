@@ -358,6 +358,27 @@ public class LdapGroupManager implements GroupManager {
                 }
             }
         }
+        // look for sub-OU memberships
+        int pos = 0;
+        int res = dn.indexOf("ou", pos);
+        while (res >= 0) {
+            // is there a valid organizational unit there?
+            Group maybegrp = null;
+            try {
+                maybegrp = findByPrimaryKey(dn.substring(res));
+            } catch (FindException e) {
+                logger.finest("could not resolve this group " + e.getMessage());
+                maybegrp = null;
+            }
+            if (maybegrp != null) {
+                LdapGroup ldapgrp = (LdapGroup)maybegrp;
+                EntityHeader grpheader = new EntityHeader(ldapgrp.getDn(), EntityType.GROUP, ldapgrp.getCn(),
+                                            ldapgrp.getDescription());
+                output.add(grpheader);
+            }
+            pos = res+1;
+            res = dn.indexOf("ou", pos);
+        }
         return output;
     }
 
@@ -576,12 +597,33 @@ public class LdapGroupManager implements GroupManager {
         // use dn of group as base
         answer = context.search(dn, filter, sc);
         while (answer.hasMore()) {
-            String userdn = null;
+            String entitydn = null;
             SearchResult sr = (SearchResult)answer.next();
-            userdn = sr.getName() + "," + dn;
-            memberHeaders.add(parent.searchResultToHeader(sr, userdn));
+            entitydn = sr.getName() + "," + dn;
+            EntityHeader header = parent.searchResultToHeader(sr, entitydn);
+            memberHeaders.add(header);
         }
+        if (answer != null) answer.close();
 
+        filter = parent.groupSearchFilterWithParam("*");
+        // use dn of group as base
+        answer = context.search(dn, filter, sc);
+        while (answer.hasMore()) {
+            String entitydn = null;
+            SearchResult sr = (SearchResult)answer.next();
+            if (sr != null && sr.getName() != null && sr.getName().length() > 0) {
+                entitydn = sr.getName() + "," + dn;
+                try {
+                    Group subGroup = this.findByPrimaryKey(entitydn);
+                    if (subGroup != null) {
+                        Set subGroupMembers = getUserHeaders(subGroup);
+                        memberHeaders.addAll(subGroupMembers);
+                    }
+                } catch (FindException e) {
+                    logger.log(Level.FINE, "error looking for sub-group" + entitydn, e);
+                }
+            }
+        }
         if (answer != null) answer.close();
     }
 
