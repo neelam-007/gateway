@@ -55,7 +55,7 @@ public class Actions {
         if (provider.isReadOnly()) return false;
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
-          "Are you sure you wish to delete " +
+          "Are you sure you want to delete " +
           node.getName() + "?",
           "Delete User",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
@@ -96,7 +96,7 @@ public class Actions {
 
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
-          "Are you sure you wish to delete " +
+          "Are you sure you want to delete " +
           node.getName() + "?",
           "Delete Group",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
@@ -126,7 +126,7 @@ public class Actions {
     private static boolean deleteProvider(ProviderNode node) {
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
-          "Are you sure you wish to delete " +
+          "Are you sure you want to delete " +
           node.getName() + "?",
           "Delete Provider",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
@@ -158,7 +158,7 @@ public class Actions {
     static boolean deleteService(ServiceNode node) {
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
-          "Are you sure you wish to delete service " +
+          "Are you sure you want to delete service " +
           node.getName() + "?",
           "Delete Service",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
@@ -191,7 +191,7 @@ public class Actions {
     static boolean deleteAssertion(AssertionTreeNode node) {
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
-          "Are you sure you wish to delete assertion " +
+          "Are you sure you want to delete assertion " +
           node.getName() + "?",
           "Delete assertion",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
@@ -204,7 +204,7 @@ public class Actions {
     public static boolean deletePolicyTemplate(PolicyTemplateNode node) {
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
-          "Are you sure you wish to delete template " +
+          "Are you sure you want to delete template " +
           node.getName() + "?",
           "Delete Policy Template",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {

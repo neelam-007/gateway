@@ -849,7 +849,7 @@ public class ClusterStatusWindow extends JFrame {
                 // ask user to confirm                 // Make sure
                 if ((JOptionPane.showConfirmDialog(
                         getClusterStatusWindow(),
-                        "Are you sure you wish to delete " +
+                        "Are you sure you want to delete " +
                         nodeNameSelected + "?",
                         "Delete Stale Node",
                         JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION) {

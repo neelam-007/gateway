@@ -87,7 +87,7 @@ public class TreeNodeActions {
     private static boolean delete(ProviderNode node) {
         // Make sure
         if ((JOptionPane.showConfirmDialog(null,
-          "Are you sure you wish to delete " +
+          "Are you sure you want to delete " +
           node.getName() + "?",
           "Delete",
           JOptionPane.YES_NO_OPTION)) == 1) {

@@ -199,7 +199,7 @@ public class GuiCredentialManager extends CredentialManager {
         invokeDialog(new Runnable() {
             public void run() {
                 String msg = "The key store for the Gateway " + ssg + "\n is irrepairably damaged.\n\n" +
-                        "Do you wish to delete it and build a new one?";
+                        "Do you want to delete it and build a new one?";
 
                 Gui.getInstance().getFrame().toFront();
                 int result = JOptionPane.showOptionDialog(Gui.getInstance().getFrame(),
@@ -216,7 +216,7 @@ public class GuiCredentialManager extends CredentialManager {
         });
 
         if (!df.destroyKeystore)
-            throw new OperationCanceledException("KeyStore is corrupt, but user does not wish to delete it");
+            throw new OperationCanceledException("KeyStore is corrupt, but user does not want to delete it");
     }
 
     /**
@@ -280,7 +280,7 @@ public class GuiCredentialManager extends CredentialManager {
 
     public void notifySsgCertificateUntrusted(Ssg ssg, final X509Certificate certificate) throws OperationCanceledException {
         String mess = "The authenticity of this Gateway server certificate could not be verified using the " +
-                "current username and password.  Do you wish to trust the Gateway " + ssg + " using this server certificate?  " +
+                "current username and password.  Do you want to trust the Gateway " + ssg + " using this server certificate?  " +
                 "If you don't know, click Cancel.";
         final TrustCertificateDialog tcd = new TrustCertificateDialog(certificate,
                                                                       "Trust this Gateway certificate?",

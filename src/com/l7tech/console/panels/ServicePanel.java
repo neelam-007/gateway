@@ -55,7 +55,7 @@ public class ServicePanel extends WizardStepPanel {
         setLayout(new GridBagLayout());
 
         WrappingLabel splain = new WrappingLabel("Enter the URL of the WSDL that describes " +
-                                                 "the Web service you wish to publish.");
+                                                 "the Web service you want to publish.");
         add(splain,
             new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
                                    GridBagConstraints.CENTER,
