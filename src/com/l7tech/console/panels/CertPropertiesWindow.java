@@ -2,6 +2,11 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.util.Locator;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.VersionException;
+import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,6 +22,7 @@ import java.security.cert.CertificateException;
 import java.security.NoSuchAlgorithmException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.rmi.RemoteException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -26,10 +32,6 @@ import java.text.SimpleDateFormat;
 public class CertPropertiesWindow extends JDialog {
 
     private JPanel mainPanel;
-    private JPanel certGeneralPane;
-    private JPanel certDetailsPane;
-    private JPanel certUsagePane;
-    private JTabbedPane certTabbedPane;
     private JScrollPane certDetailsScrollPane;
     private JTextField certExpiredOnTextField;
     private JTextField certIssuedToTextField;
@@ -45,7 +47,7 @@ public class CertPropertiesWindow extends JDialog {
     private TrustedCert trustedCert = null;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.EditCertsDialog", Locale.getDefault());
-    private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
+    private static Logger logger = Logger.getLogger(CertPropertiesWindow.class.getName());
 
 
     public CertPropertiesWindow(Dialog owner, TrustedCert tc) {
@@ -69,13 +71,61 @@ public class CertPropertiesWindow extends JDialog {
 
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                //todo:
+                try {
+
+                    // create a new trusted cert
+                    TrustedCert tc = new TrustedCert();
+
+                    try {
+                        tc.setCertificate(trustedCert.getCertificate());
+                        tc.setSubjectDn(trustedCert.getSubjectDn());
+                    } catch (CertificateException e) {
+                        logger.severe("Internal error");
+                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
+                    } catch (IOException e) {
+                       logger.severe("Internal error");
+                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
+                    }
+
+                    updateTrustedCert(tc);
+                    getTrustedCertAdmin().saveCert(tc);
+                    dispose();
+
+                } catch (SaveException e) {
+                    logger.warning("Unable to save the trusted certificate in server");
+                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.save.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
+
+                } catch (RemoteException e) {
+                    logger.severe("Unable to execute remote call due to remote exception");
+                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.remote.exception"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
+                } catch (VersionException e) {
+                    logger.warning("Unable to save the trusted certificate: " + trustedCert.getName() + "; version exception.");
+                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.version.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
+                } catch (UpdateException e) {
+                    logger.warning("Unable to update the trusted certificate in server");
+                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.update.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
+                }
+
+                // suceeded, update the original trusted cert
+                updateTrustedCert(trustedCert);
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                hide();
+                //hide();
                 dispose();
             }
         });
@@ -90,9 +140,15 @@ public class CertPropertiesWindow extends JDialog {
         try {
             cert = trustedCert.getCertificate();
         } catch (CertificateException e) {
-            //todo:
+            logger.severe("Internal error");
+                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
         } catch (IOException e) {
-            //todo:
+            logger.severe("Internal error");
+                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
         }
 
         // populate the general data
@@ -149,6 +205,27 @@ public class CertPropertiesWindow extends JDialog {
         return certPanel;
     }
 
+    private void updateTrustedCert(TrustedCert tc) {
+        if(tc != null) {
+            tc.setName(certNameTextField.getText().trim());
+            tc.setTrustedForSigningClientCerts(signingClientCertCheckBox.isSelected());
+            tc.setTrustedForSigningSamlTokens(signingSAMLTokenCheckBox.isSelected());
+            tc.setTrustedForSigningServerCerts(signingServerCertCheckBox.isSelected());
+            tc.setTrustedForSsl(outboundSSLConnCheckBox.isSelected());
+        }
+    }
+
+    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
+        TrustedCertAdmin tca =
+                (TrustedCertAdmin) Locator.
+                getDefault().lookup(TrustedCertAdmin.class);
+        if (tca == null) {
+            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
+        }
+
+        return tca;
+    }
+
     {
 // GUI initializer generated by IntelliJ IDEA GUI Designer
 // >>> IMPORTANT!! <<<
@@ -185,11 +262,9 @@ public class CertPropertiesWindow extends JDialog {
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 6, 1, null, null, null));
         final JTabbedPane _6;
         _6 = new JTabbedPane();
-        certTabbedPane = _6;
         _1.add(_6, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, new Dimension(200, 200), null));
         final JPanel _7;
         _7 = new JPanel();
-        certGeneralPane = _7;
         _7.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(5, 2, new Insets(20, 10, 10, 10), -1, -1));
         _6.addTab("General", _7);
         final JLabel _8;
@@ -218,15 +293,18 @@ public class CertPropertiesWindow extends JDialog {
         final JTextField _14;
         _14 = new JTextField();
         certIssuedToTextField = _14;
+        _14.setEditable(false);
         _7.add(_14, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JTextField _15;
         _15 = new JTextField();
         certIssuedByTextField = _15;
+        _15.setEditable(false);
         _7.add(_15, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JTextField _16;
         _16 = new JTextField();
         certExpiredOnTextField = _16;
         _16.setText("");
+        _16.setEditable(false);
         _7.add(_16, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JScrollPane _17;
         _17 = new JScrollPane();
@@ -234,7 +312,6 @@ public class CertPropertiesWindow extends JDialog {
         _6.addTab("Details", _17);
         final JPanel _18;
         _18 = new JPanel();
-        certUsagePane = _18;
         _18.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         _6.addTab("Usage", _18);
         final JPanel _19;

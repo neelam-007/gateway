@@ -44,7 +44,7 @@
           </hspacer>
         </children>
       </grid>
-      <tabbedpane id="5f53c" binding="certTabbedPane">
+      <tabbedpane id="5f53c">
         <constraints>
           <xy x="10" y="10" width="531" height="281"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
@@ -54,7 +54,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <grid id="445ea" binding="certGeneralPane" row-count="5" column-count="2" hgap="-1" vgap="-1">
+          <grid id="445ea" row-count="5" column-count="2" hgap="-1" vgap="-1">
             <margin top="20" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="General"/>
@@ -157,7 +157,7 @@
             <border type="none"/>
             <children/>
           </scrollpane>
-          <grid id="b0e3f" binding="certUsagePane" row-count="2" column-count="1" hgap="-1" vgap="-1">
+          <grid id="b0e3f" row-count="2" column-count="1" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <tabbedpane title="Usage"/>
