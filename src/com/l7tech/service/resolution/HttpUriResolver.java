@@ -49,7 +49,7 @@ public class HttpUriResolver extends NameValueServiceResolver {
     }
 
     protected Object getRequestValue(Request request) throws ServiceResolutionException {
-        String originalUrl = (String)request.getParameter( Request.PARAM_HTTP_L7_ORIGINAL_URL );
+        String originalUrl = (String)request.getParameter( Request.PARAM_HTTP_ORIGINAL_URL );
         if ( originalUrl == null )
             return (String)request.getParameter( Request.PARAM_HTTP_REQUEST_URI );
         else {
