@@ -121,6 +121,7 @@ class WspConstants {
         return findAssertionMappingByTagName(supportedLeafAssertions, name);
     }
 
+    /** A reference that knows the nominal type of its target, even when it is null. */
     static class TypedReference {
         public Class type;
         public Object target;
