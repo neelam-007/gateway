@@ -236,15 +236,19 @@ public class TokenServiceClient {
                                                     X509Certificate clientCertificate,
                                                     PrivateKey clientPrivateKey,
                                                     RequestType requestType,
+                                                    SecurityTokenType tokenType,
                                                     SecurityToken base,
                                                     String appliesToAddress)
             throws IOException, GeneralSecurityException
     {
         if (timestampCreatedDate == null) timestampCreatedDate = new Date();
-        Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                null,
+        Document requestDoc = createRequestSecurityTokenMessage(clientCertificate,
+                                                                clientPrivateKey,
+                                                                tokenType,
                                                                 requestType,
-                                                                base, appliesToAddress, timestampCreatedDate);
+                                                                base,
+                                                                appliesToAddress,
+                                                                timestampCreatedDate);
         requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         Object result = obtainResponse(clientCertificate, url, sslPeer, requestDoc, clientPrivateKey, sslPeer.getServerCertificate());
 

@@ -96,10 +96,11 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
         SoapUtil.setWsuId(utElm, SoapUtil.WSU_NAMESPACE, "UsernameToken-1");
         s = TokenServiceClient.obtainSamlAssertion(url,
                                                    sslPeer,
-                                                   null,
-                                                   null,
-                                                   null,
+                                                   null, // not overriding timestamp created date
+                                                   null, // no client cert (not signing message)
+                                                   null, // no client private key (not signing message)
                                                    TokenServiceClient.RequestType.VALIDATE,
+                                                   null, // no token type (FIM doesn't like it)
                                                    usernameToken,
                                                    getAppliesTo());
         log.log(Level.INFO, "Obtained SAML assertion from WS-Trust server " + wsTrustUrl);
