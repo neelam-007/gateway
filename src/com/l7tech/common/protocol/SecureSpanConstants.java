@@ -194,6 +194,9 @@ public class SecureSpanConstants {
          * about the value of the password, the client can trust that the certificate bytes were provided by someone
          * that knows the H(A1) of his password and that they haven't been tampered with in transit.
          *
+         * <p>If the password for this user with this identitity provider is not available to the Gateway, it will
+         * return the string "NOPASS" instead of a valid hash.
+         *
          * <p><b>Bugs</b>: a hostile SSG could trick the client into accepting a bogus certificate simply by including
          * one L7-Cert-Check header in the response for every possible password value (or, more realistically,
          * just the top NNN most likely passwords, where NNN is some number chosen so that the client won't time
@@ -235,5 +238,10 @@ public class SecureSpanConstants {
         public static final String HEADER_KEYRES = "keyres";
     }
 
+    /**
+     * This is the value included as the Hash in a L7-Cert-Check-NNN: header when the real hash cannot be
+     * computed because the user's password is unavailable to the Gateway, perhaps because only a one-way
+     * hash of the password is stored in the database.
+     */
     public static final String NOPASS = "NOPASS";
 }
