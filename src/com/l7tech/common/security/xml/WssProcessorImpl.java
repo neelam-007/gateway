@@ -1,7 +1,6 @@
 package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.XSignatureException;
-import com.ibm.xml.dsig.KeyInfo;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.ibm.xml.enc.DecryptionContext;
 import com.ibm.xml.enc.KeyInfoResolvingException;
@@ -17,19 +16,17 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.bouncycastle.jce.provider.JDKX509CertificateFactory;
 
 import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -500,23 +497,16 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException(msg);
         }
 
-        byte[] decodedValue = HexUtils.decodeBase64(value);
+        byte[] decodedValue = HexUtils.decodeBase64(value, true); // must strip whitespace or base64 decoder misbehaves
         // create the x509 binary cert based on it
         X509Certificate referencedCert = null;
-
         try {
-            // todo this is a TOTAL MESS, just for testing we let xss4j decode the certs
-            String fakeKeyInfo = "<KeyInfo xmlns=\"" + SoapUtil.DIGSIG_URI + "\"><X509Data><X509Certificate>" + value
-                    + "</X509Certificate></X509Data></KeyInfo>";
             referencedCert =
-                    new KeyInfo(XmlUtil.stringToDocument(fakeKeyInfo).getDocumentElement()).getX509Data()[0].getCertificates()[0];
-
-        } catch (SAXException e) {
-            throw new ProcessorException(e); // can't happen
-        } catch (XSignatureException e) {
+                    (X509Certificate)CertificateFactory.getInstance("X.509").
+                        generateCertificate(new ByteArrayInputStream(decodedValue));
+        } catch (CertificateException e) {
             throw new ProcessorException(e);
         }
-
 
         // remember this cert
         final X509Certificate finalcert = referencedCert;
