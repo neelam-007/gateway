@@ -33,7 +33,22 @@ public abstract class MessageAdapter implements Message {
     public Object getParameter( String name ) {
         Object value = _transportMetadata.getParameter(name);
         if ( value == null ) value = _params.get( name );
-        return value;
+        if ( value instanceof Object[] )
+            return ((Object[])value)[0];
+        else
+            return value;
+    }
+
+    public Object[] getParameterValues( String name ) {
+        Object value = _transportMetadata.getParameter(name);
+        if ( value == null ) value = _params.get(name);
+        if ( value instanceof Object[] ) {
+            return (Object[])value;
+        } else if ( value == null ) {
+            return null;
+        } else {
+            return new Object[] { value };
+        }
     }
 
     public Iterator getParameterNames() {

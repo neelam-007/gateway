@@ -56,11 +56,12 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     }
 
     protected void challenge( Request request, Response response ) {
-        StringBuffer challengeHeader = new StringBuffer( scheme() );
+        String scheme = scheme();
+        StringBuffer challengeHeader = new StringBuffer( scheme );
         challengeHeader.append( " " );
         String realm = realm( request );
         if ( realm != null && realm.length() > 0 ) {
-            challengeHeader.append( _data.PARAM_REALM );
+            challengeHeader.append( HttpCredentialSourceAssertion.PARAM_REALM );
             challengeHeader.append( "=" );
             challengeHeader.append( quoted( realm ) );
         }
@@ -84,7 +85,22 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
         String challenge = challengeHeader.toString();
 
         logger.fine( "Sending WWW-Authenticate: " + challenge );
-        response.setParameterIfEmpty( Response.PARAM_HTTP_WWWAUTHENTICATE, challenge.toString() );
+        Object[] existingChallenges = response.getParameterValues(Response.PARAM_HTTP_WWWAUTHENTICATE);
+        if ( existingChallenges == null || existingChallenges.length == 0 ) {
+            response.setParameter( Response.PARAM_HTTP_WWWAUTHENTICATE, challenge.toString() );
+        } else {
+            String[] newChallenges = new String[existingChallenges.length+1];
+            if ( "Digest".equals(scheme) ) {
+                // Put Digest first
+                System.arraycopy( existingChallenges, 0, newChallenges, 1, existingChallenges.length );
+                newChallenges[0] = challenge.toString();
+            } else {
+                // Put anything else later
+                System.arraycopy( existingChallenges, 0, newChallenges, 0, existingChallenges.length );
+                newChallenges[newChallenges.length-1] = challenge.toString();
+            }
+            response.setParameter( Response.PARAM_HTTP_WWWAUTHENTICATE, newChallenges );
+        }
     }
 
     protected abstract String realm( Request request );

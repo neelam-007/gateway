@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Iterator;
 
 /**
- * Encapsulates a SOAP response using HTTP transport.
+ * Encapsulates a SOAP response using HTTP transport.  Not thread-safe.
  *
  * @author alex
  * @version $Revision$
@@ -37,19 +37,32 @@ public class HttpSoapResponse extends SoapResponse {
 
         hresponse.setStatus( routeStat );
 
-        String name, value;
+        String name;
+        Object ovalue;
         for (Iterator i = _params.keySet().iterator(); i.hasNext();) {
             name = (String)i.next();
             if ( name.startsWith( PREFIX_HTTP_HEADER ) ) {
-                value = (String)_params.get(name);
-
-                if ( name == null || value == null ) continue;
+                ovalue = _params.get(name);
+                if ( name == null || ovalue == null ) continue;
 
                 if ( PARAM_HTTP_CONTENT_TYPE.equals( name ) ) {
-                    hresponse.setContentType( value );
+                    hresponse.setContentType( (String)ovalue );
+                    continue;
+                }
+
+                String hname = name.substring( PREFIX_HTTP_HEADER.length() + 1 );
+
+                if ( ovalue instanceof String[] ) {
+                    String[] vals = (String[])ovalue;
+                    for ( int j = 0; j < vals.length; j++ ) {
+                        String val = vals[j];
+                        hresponse.addHeader( hname, val );
+                    }
+                } else if ( ovalue instanceof String ) {
+                    hresponse.setHeader( hname, (String)ovalue );
                 } else {
-                    String hname = name.substring( PREFIX_HTTP_HEADER.length() + 1 );
-                    hresponse.setHeader( hname, value );
+                    // Somebody else's problem, HTTP can't handle it.
+                    continue;
                 }
             }
         }
