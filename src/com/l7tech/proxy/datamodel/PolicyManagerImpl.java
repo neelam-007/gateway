@@ -63,10 +63,16 @@ public class PolicyManagerImpl implements PolicyManager {
      * The PolicyManager should attempt to update the policy if it needs to do so.
      * @param request The request that failed in a way suggestive that its policy may be out-of-date.
      * @param policyUrl The URL to fetch the policy from
-     * @throws ConfigurationException if a policy update was already attempted for this request
+     * @throws ConfigurationException if the PendingRequest did not contain enough information to construct a
+     *                                valid PolicyAttachmentKey
      * @throws IOException if the policy could not be read from the SSG
+     * @throws ServerCertificateUntrustedException if an SSL handshake with the SSG could not be established due to
+     *                                             the SSG's SSL certificate being unrecognized
+     * @throws OperationCanceledException if credentials were required, but the user canceled the logon dialog
      */
-    public void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException {
+    public void updatePolicy(PendingRequest request, URL policyUrl)
+            throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException
+    {
         HttpClient client = ThreadLocalHttpClient.getHttpClient();
         client.getState().setAuthenticationPreemptive(false);
         client.getState().setCredentials(null, null, null);
