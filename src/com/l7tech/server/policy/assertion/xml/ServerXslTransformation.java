@@ -39,7 +39,7 @@ import com.l7tech.logging.LogManager;
 public class ServerXslTransformation implements ServerAssertion {
 
     public ServerXslTransformation(XslTransformation assertion) {
-        if (subject == null) throw new IllegalArgumentException("must provide assertion");
+        if (assertion == null) throw new IllegalArgumentException("must provide assertion");
         subject = assertion;
     }
 
