@@ -4,7 +4,9 @@ import com.l7tech.policy.assertion.Assertion;
 
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.beans.XMLDecoder;
+import java.util.NoSuchElementException;
 
 /**
  * Build a policy tree from an XML document.
@@ -21,11 +23,17 @@ public class WspReader {
      * returns the corresponding policy tree.
      * @param wspStream the stream to read
      * @return          the policy tree it contained, or null
-     * @throws ArrayIndexOutOfBoundsException if the stream contains no objects (or no more objects)
+     * @throws IOException if the stream did not contain a valid policy
      */
-    public static Assertion parse(InputStream wspStream) throws ArrayIndexOutOfBoundsException {
+    public static Assertion parse(InputStream wspStream) throws IOException {
         XMLDecoder decoder = new XMLDecoder(wspStream);
-        return (Assertion)decoder.readObject();
+        try {
+            return (Assertion)decoder.readObject();
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new IOException("WspReader: Unable to read a valid policy from the provided stream: " + e.toString());
+        } catch (NoSuchElementException e) {
+            throw new IOException("WspReader: Unable to read a valid policy from the provided stream: " + e.toString());
+        }
     }
 
     /**
@@ -34,7 +42,7 @@ public class WspReader {
      * @return          the policy tree it contained, or null
      * @throws ArrayIndexOutOfBoundsException if the string contains no objects
      */
-    public static Assertion parse(String wspXml) throws ArrayIndexOutOfBoundsException {
+    public static Assertion parse(String wspXml) throws IOException {
         return parse(new ByteArrayInputStream(wspXml.getBytes()));
     }
 }
