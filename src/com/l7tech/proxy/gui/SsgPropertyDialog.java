@@ -253,10 +253,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                              GridBagConstraints.NONE,
                                              new Insets(5, 5, 5, 0), 0, 0));
             authp.add(fieldPassword,
-                              new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                                     GridBagConstraints.WEST,
-                                                     GridBagConstraints.HORIZONTAL,
-                                                     new Insets(5, 5, 5, 5), 0, 0));
+                      new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                             GridBagConstraints.WEST,
+                                             GridBagConstraints.HORIZONTAL,
+                                             new Insets(5, 5, 5, 5), 0, 0));
+
             gridY = oy;
 
             // Certificate buttons
