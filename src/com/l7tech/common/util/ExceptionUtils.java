@@ -16,6 +16,8 @@ package com.l7tech.common.util;
 public class ExceptionUtils {
     /**
      * Return true iff. a throable assignable to cause appears within suspect's getCase() chain.
+     * Example:  <code>if (e instanceof SSLException && ExceptionUtils.causedBy(e, IOException.class)
+     *              dealWithIOException(...);</code>
      *
      * @param suspect   The exception you wish to examine.
      * @param cause     The cause you wish to search for, which should be some Throwable class.
@@ -30,5 +32,4 @@ public class ExceptionUtils {
         }
         return false;
     }
-
 }
