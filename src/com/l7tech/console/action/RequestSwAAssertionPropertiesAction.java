@@ -74,9 +74,7 @@ public class RequestSwAAssertionPropertiesAction extends NodeAction {
                         if (!(servicenode.getPublishedService().isSoap())) {
                             JOptionPane.showMessageDialog(null, "This assertion is not supported by non-soap services.");
                         } else {
-                            RequestSwAAssertionDialog d = new RequestSwAAssertionDialog(f,
-                                                                                        (RequestSwAAssertion)node.asAssertion(),
-                                                                                        servicenode);
+                            RequestSwAAssertionDialog d = new RequestSwAAssertionDialog(f, (RequestSwAAssertion)node.asAssertion());
                             d.setModal(true);
                             d.pack();
                             Utilities.centerOnScreen(d);
