@@ -2,7 +2,6 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
-
 import java.util.Collection;
 import java.util.ArrayList;
 import java.sql.SQLException;
