@@ -23,6 +23,12 @@ if [ ! "$TOMCAT_HOME" ]; then
     exit
 fi
 
+# Under cygwin?.
+cygwin=false;
+case "`uname`" in
+  CYGWIN*) cygwin=true ;;
+esac
+
 KEYSTORE_DIR="$TOMCAT_HOME/kstores"
 KEYTOOL="$JAVA_HOME/bin/keytool"
 ROOT_KEYSTORE_FILE="$KEYSTORE_DIR/ca.ks"
@@ -36,6 +42,20 @@ WEBAPPS_ROOT="$TOMCAT_HOME/webapps/ROOT"
 ROOT_KEY_ALIAS=ssgroot
 SSL_CERT_FILE="$TOMCAT_HOME/kstores/ssl.cer"
 WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
+
+if $cygwin; then
+KEYSTORE_DIR=`cygpath --path --windows $KEYSTORE_DIR`
+ROOT_KEYSTORE_FILE=`cygpath --path --windows $ROOT_KEYSTORE_FILE`
+ROOT_CERT_FILE=`cygpath --path --windows $ROOT_CERT_FILE`
+SSL_KEYSTORE_FILE=`cygpath --path --windows $SSL_KEYSTORE_FILE`
+SSL_SELF_CERT_FILE=`cygpath --path --windows $SSL_SELF_CERT_FILE`
+SSL_CSR_FILE=`cygpath --path --windows $SSL_CSR_FILE`
+SERVER_XML_FILE=`cygpath --path --windows $SERVER_XML_FILE`
+KEYSTORE_PROPERTIES_FILE=`cygpath --path --windows $KEYSTORE_PROPERTIES_FILE`
+WEBAPPS_ROOT=`cygpath --path --windows $WEBAPPS_ROOT`
+SSL_CERT_FILE=`cygpath --path --windows $SSL_CERT_FILE`
+WAR_FILE=`cygpath --path --windows $WAR_FILE`
+fi
 
 # -----------------------------------------------------------------------------
 # FIND OUT WHAT THE USER WANTS TO DO
