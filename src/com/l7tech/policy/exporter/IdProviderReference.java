@@ -3,6 +3,7 @@ package com.l7tech.policy.exporter;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
@@ -48,6 +49,11 @@ public class IdProviderReference extends ExternalReference {
             }
         }
         setProviderId(providerId);
+    }
+
+    public static IdProviderReference parseFromElement(Element el) throws InvalidDocumentFormatException {
+        // todo
+        return null;
     }
 
     public void serializeToRefElement(Element referencesParentElement) {

@@ -2,6 +2,7 @@ package com.l7tech.policy.exporter;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 
 /**
  * A reference to a CustomAssertion type. This reference is exported alongside
@@ -18,6 +19,11 @@ import org.w3c.dom.Text;
 public class CustomAssertionReference extends ExternalReference {
     public CustomAssertionReference(String customAssertionName) {
         this.customAssertionName = customAssertionName;
+    }
+
+    public static CustomAssertionReference parseFromElement(Element el) throws InvalidDocumentFormatException {
+        // todo
+        return null;
     }
 
     public void serializeToRefElement(Element referencesParentElement) {
