@@ -1,11 +1,7 @@
 package com.l7tech.proxy;
 
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.message.Message;
-import com.l7tech.message.MultipartMessageReader;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
@@ -199,20 +195,20 @@ public class RequestHandler extends AbstractHttpHandler {
             MultipartMessageReader  multipartReader = null;
 
             String ctype = request.getField(XmlUtil.CONTENT_TYPE);
-            Message.HeaderValue contentTypeHeader = MultipartMessageReader.parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
+            MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
 
             if(ctype.startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
                 multipart = true;
 
-                String multipartBoundary = (String)contentTypeHeader.getParams().get(XmlUtil.MULTIPART_BOUNDARY);
+                String multipartBoundary = (String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY);
                 if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
 
-                String innerType = (String)contentTypeHeader.getParams().get(XmlUtil.MULTIPART_TYPE);
+                String innerType = (String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE);
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
                 multipartReader = new MultipartMessageReader(request.getInputStream(), multipartBoundary);
 
                 // get SOAP part
-                Message.Part soapPart = multipartReader.getSoapPart();
+                MultipartUtil.Part soapPart = multipartReader.getSoapPart();
                 if (!soapPart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
                 envelope = XmlUtil.stringToDocument(soapPart.getContent());

@@ -7,10 +7,10 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.util.MultipartMessageReader;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
-import com.l7tech.message.MultipartMessageReader;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;

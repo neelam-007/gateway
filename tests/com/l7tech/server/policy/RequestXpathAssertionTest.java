@@ -1,6 +1,8 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.RequestId;
+import com.l7tech.common.util.MultipartMessageReader;
+import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathEvaluator;
@@ -8,7 +10,6 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.identity.User;
 import com.l7tech.message.TransportMetadata;
 import com.l7tech.message.XmlRequest;
-import com.l7tech.message.MultipartMessageReader;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -107,11 +108,11 @@ public class RequestXpathAssertionTest extends TestCase {
             public Map getRequestAttachments() throws IOException {
                 return null;
             }
-            public Part getRequestAttachment(int position) throws IOException {
+            public MultipartUtil.Part getRequestAttachment(int position) throws IOException {
                 return null;
             }
             
-            public Part getSoapPart() throws IOException { return null; }
+            public MultipartUtil.Part getSoapPart() throws IOException { return null; }
 
             public boolean isMultipart() { return false; }
             public String getMultipartBoundary() { return null; }

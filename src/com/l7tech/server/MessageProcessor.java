@@ -14,6 +14,7 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -75,6 +76,12 @@ public class MessageProcessor {
                                                       serverSSLcert,
                                                       sslPrivateKey,
                                                       SecureConversationContextManager.getInstance());
+                // todo, refactor SoapRequest so that it keeps a hold on the original message
+                if (wssOutput.getUndecoratedMessage() != null) {
+                    req.setDocument(wssOutput.getUndecoratedMessage());
+                }
+            } catch (MessageNotSoapException e) {
+                
             } catch (ProcessorException e) {
                 logger.log(Level.SEVERE, "Error in WSS processing of request", e);
                 return AssertionStatus.SERVER_ERROR;
@@ -91,10 +98,6 @@ public class MessageProcessor {
                 logger.log(Level.SEVERE, "Error in WSS processing of request", e);
                 response.setFaultDetail(e);
                 return AssertionStatus.FAILED;
-            }
-            // todo, refactor SoapRequest so that it keeps a hold on the original message
-            if (wssOutput.getUndecoratedMessage() != null) {
-                req.setDocument(wssOutput.getUndecoratedMessage());
             }
             req.setWssProcessorOutput(wssOutput);
             logger.finest("WSS processing of request complete.");

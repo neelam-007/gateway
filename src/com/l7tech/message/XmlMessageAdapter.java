@@ -6,6 +6,8 @@
 
 package com.l7tech.message;
 
+import com.l7tech.common.util.MultipartMessageReader;
+import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.transport.jms.BytesMessageInputStream;
@@ -19,7 +21,6 @@ import org.xmlpull.v1.XmlPullParserException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
-import java.util.StringTokenizer;
 
 /**
  * @author alex
@@ -58,29 +59,29 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
      */
     protected String getMessageXml(InputStream is) throws IOException {
         String ctype = (String)getParameter(Message.PARAM_HTTP_CONTENT_TYPE);
-        HeaderValue contentTypeHeader = parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
+        MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
 
-        if (XmlUtil.MULTIPART_CONTENT_TYPE.equals(contentTypeHeader.value)) {
+        if (XmlUtil.MULTIPART_CONTENT_TYPE.equals(contentTypeHeader.getValue())) {
 
             multipart = true;
 
             if(!soapPartParsed) {
-                String multipartBoundary = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_BOUNDARY);
+                String multipartBoundary = (String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY);
                 if (multipartBoundary == null) throw new IOException("Multipart header '" + contentTypeHeader.getName() + "' did not contain a boundary");
 
-                String innerType = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_TYPE);
+                String innerType = (String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE);
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
                     multipartReader = new MultipartMessageReader(is, multipartBoundary);
 
-                    Message.Part part = multipartReader.getSoapPart();
-                    if (!part.getHeader(XmlUtil.CONTENT_TYPE).value.equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
+                    MultipartUtil.Part part = multipartReader.getSoapPart();
+                    if (!part.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
                     soapPartParsed = true;
-                    return part.content;
+                    return part.getContent();
                 } else throw new IOException("Expected first part of multipart message to be XML (was '" + innerType + "')");
             } else {
                 if(multipartReader != null) {
-                    return multipartReader.getSoapPart().content;
+                    return multipartReader.getSoapPart().getContent();
                 } else {
                     // should never happen
                     throw new IllegalStateException("The soap part was parsed once but the multipartReader is NULL.");
@@ -106,39 +107,6 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
             }
             return xml.toString();
         }
-    }
-
-    private Message.HeaderValue parseHeader(String header) throws IOException {
-        StringTokenizer stok = new StringTokenizer(header, ":; ", false);
-        Message.HeaderValue result = new Message.HeaderValue();
-        while (stok.hasMoreTokens()) {
-            String tok = stok.nextToken();
-            int epos = tok.indexOf("=");
-            if (epos == -1) {
-                if (result.name == null)
-                    result.name = tok;
-                else if (result.value == null)
-                    result.value = unquote(tok);
-                else
-                    throw new IOException("Encountered unexpected bare word '" + tok + "' in header");
-            } else if (epos > 0) {
-                String name = tok.substring(0,epos);
-                String value = tok.substring(epos+1);
-                value = unquote( value );
-
-                result.params.put(name,value);
-            } else throw new IOException("Invalid Content-Type header format ('=' at position " + epos + ")");
-        }
-        return result;
-    }
-
-    private String unquote( String value ) throws IOException {
-        if (value.startsWith("\"")) {
-            if (value.endsWith("\"")) {
-                value = value.substring(1,value.length()-1);
-            } else throw new IOException("Invalid header format (mismatched quotes in value)");
-        }
-        return value;
     }
 
     protected Document _document;

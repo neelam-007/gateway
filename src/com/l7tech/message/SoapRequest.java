@@ -3,6 +3,8 @@ package com.l7tech.message;
 import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.util.MultipartMessageReader;
+import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.User;
@@ -18,7 +20,6 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Map;
@@ -130,19 +131,19 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
          return multipartReader.getMessageAttachments();
     }
 
-    public Part getRequestAttachment(int position) throws IOException {
+    public MultipartUtil.Part getRequestAttachment(int position) throws IOException {
         if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
         return multipartReader.getMessagePart(position);
     }
 
-    public Part getSoapPart() throws IOException {
+    public MultipartUtil.Part getSoapPart() throws IOException {
         if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
         return multipartReader.getMessagePart(0);
     }
     
     public String getMultipartBoundary() {
         if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
-        return multipartReader.multipartBoundary;
+        return multipartReader.getMultipartBoundary();
     }
 
      public MultipartMessageReader getMultipartReader() {

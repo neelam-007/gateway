@@ -10,68 +10,12 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  * @author alex
  */
 public interface Message {
-    public static class HeaderValue {
-        protected String name;
-        protected String value;
-        protected Map params = new HashMap();
-
-        public String getName() {
-            return name;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public Map getParams() {
-            return params;
-        }
-
-        public String toString() {
-            StringBuffer strongbad = new StringBuffer();
-            strongbad.append(name).append(": ").append(value);
-            for ( Iterator i = params.keySet().iterator(); i.hasNext(); ) {
-                String key = (String)i.next();
-                String value = (String)params.get(key);
-                strongbad.append("; ").append(key).append("=\"").append(value).append("\"");
-            }
-            return strongbad.toString();
-        }
-    }
-
-    public static class Part {
-        public HeaderValue getHeader(String name) {
-            return (HeaderValue)headers.get(name);
-        }
-
-        public int getPosition() {
-            return position;
-        }
-
-        public void setPostion(int position) {
-            this.position = position;
-        }
-
-        public String getContent() {
-            return content;
-        }
-
-        public Map getHeaders() {
-            return headers;
-        }
-
-        protected String content;
-        protected Map headers = new HashMap();
-        protected int position;
-    }
 
     static final String PREFIX             = "com.l7tech.message";
     static final String PREFIX_HTTP        = PREFIX + ".http";

@@ -6,6 +6,9 @@
 
 package com.l7tech.message;
 
+import com.l7tech.common.util.MultipartMessageReader;
+import com.l7tech.common.util.MultipartUtil;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -40,13 +43,13 @@ public interface XmlRequest extends Request, XmlMessage {
 
     public Map getRequestAttachments() throws IOException;
 
-    public Part getRequestAttachment(int position) throws IOException;
+    public MultipartUtil.Part getRequestAttachment(int position) throws IOException;
 
     public String getMultipartBoundary();
 
     public MultipartMessageReader getMultipartReader();
 
-    public Part getSoapPart() throws IOException;
+    public MultipartUtil.Part getSoapPart() throws IOException;
 
     public boolean isMultipart();
 }

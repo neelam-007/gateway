@@ -1,11 +1,14 @@
-package com.l7tech.message;
-
-import com.l7tech.common.util.XmlUtil;
-
-import java.io.*;
-import java.util.*;
+package com.l7tech.common.util;
 
 import org.w3c.dom.Document;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -14,11 +17,11 @@ import org.w3c.dom.Document;
  */
 public class MultipartMessageReader {
 
-    protected Document _document;
-    protected boolean multipart;
-    protected String multipartBoundary;
-    protected PushbackInputStream pushbackInputStream = null;
-    protected Map multipartParts = new HashMap();
+    private Document _document;
+    private boolean multipart;
+    private String multipartBoundary;
+    private PushbackInputStream pushbackInputStream = null;
+    private Map multipartParts = new HashMap();
 
     public MultipartMessageReader(InputStream inputStream, String multipartBoundary) {
         pushbackInputStream = new PushbackInputStream(inputStream, 10000);
@@ -42,7 +45,7 @@ public class MultipartMessageReader {
      * @return the XML as a String
      * @throws java.io.IOException if a multipart message has an invalid format, or the content cannot be read
      */
-    public Message.Part getSoapPart() throws IOException {
+    public MultipartUtil.Part getSoapPart() throws IOException {
         return parseMultipart(0);
     }
 
@@ -58,10 +61,10 @@ public class MultipartMessageReader {
         while (itr.hasNext()) {
             Object o = (Object) itr.next();
             Object val  = (Object) multipartParts.get(o);
-            if(val instanceof Message.Part) {
-                Message.Part part = (Message.Part) val;
+            if(val instanceof MultipartUtil.Part) {
+                MultipartUtil.Part part = (MultipartUtil.Part) val;
                 if(part.getPosition() > 0) {
-                    attachments.put(part.getHeader(XmlUtil.CONTENT_ID).value, part);
+                    attachments.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
                 }
             } else {
                 throw new RuntimeException("The entry retrived from multipartParts object is not the type of com.l7tech.Message.Part");
@@ -70,7 +73,7 @@ public class MultipartMessageReader {
         return attachments;
     }
 
-    protected Message.Part getMessagePart(int position) throws IOException {
+    public MultipartUtil.Part getMessagePart(int position) throws IOException {
 
         if(multipartParts.size() < position) {
              return parseMultipart(position);
@@ -79,54 +82,21 @@ public class MultipartMessageReader {
         }
     }
 
-    private Message.Part getMessagePartFromMap(int position) {
+    private MultipartUtil.Part getMessagePartFromMap(int position) {
 
-        Message.Part part = null;
+        MultipartUtil.Part part = null;
 
         Set keys = multipartParts.keySet();
 
         Iterator itr = keys.iterator();
         while (itr.hasNext()) {
-            Message.Part currentPart = (Message.Part) multipartParts.get(itr.next());
+            MultipartUtil.Part currentPart = (MultipartUtil.Part) multipartParts.get(itr.next());
             if(currentPart.getPosition() == position) {
                 part = currentPart;
                 break;
             }
         }
         return part;
-    }
-
-    static public Message.HeaderValue parseHeader(String header) throws IOException {
-        StringTokenizer stok = new StringTokenizer(header, ":; ", false);
-        Message.HeaderValue result = new Message.HeaderValue();
-        while (stok.hasMoreTokens()) {
-            String tok = stok.nextToken();
-            int epos = tok.indexOf("=");
-            if (epos == -1) {
-                if (result.name == null)
-                    result.name = tok;
-                else if (result.value == null)
-                    result.value = unquote(tok);
-                else
-                    throw new IOException("Encountered unexpected bare word '" + tok + "' in header");
-            } else if (epos > 0) {
-                String name = tok.substring(0,epos);
-                String value = tok.substring(epos+1);
-                value = unquote( value );
-
-                result.params.put(name,value);
-            } else throw new IOException("Invalid Content-Type header format ('=' at position " + epos + ")");
-        }
-        return result;
-    }
-
-    static private String unquote( String value ) throws IOException {
-        if (value.startsWith("\"")) {
-            if (value.endsWith("\"")) {
-                value = value.substring(1,value.length()-1);
-            } else throw new IOException("Invalid header format (mismatched quotes in value)");
-        }
-        return value;
     }
 
     /**
@@ -136,10 +106,10 @@ public class MultipartMessageReader {
      * @return Part The part parsed
      * @throws IOException
      */
-    private Message.Part parseMultipart(int lastPart) throws IOException {
+    private MultipartUtil.Part parseMultipart(int lastPart) throws IOException {
 
         StringBuffer xml = new StringBuffer();
-        Message.Part part = null;
+        MultipartUtil.Part part = null;
 
         if(multipartParts.size() > 0 && multipartParts.size() > lastPart) {
             // the part to be retrived is already parsed
@@ -155,7 +125,7 @@ public class MultipartMessageReader {
 
         for (int i = 0; i <= lastPart; i++) {
 
-            part = new Message.Part();
+            part = new MultipartUtil.Part();
             String line;
             boolean headers = true;
             while ((line = readLine()) != null) {
@@ -164,8 +134,8 @@ public class MultipartMessageReader {
                         headers = false;
                         continue;
                     }
-                    Message.HeaderValue header = parseHeader(line);
-                    part.headers.put(header.name, header);
+                    MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
+                    part.headers.put(header.getName(), header);
                 } else {
                     if (line.startsWith("--" + multipartBoundary)) {
                         // The boundary is on a line by itself so the previous content doesn't actually contain the last \n
@@ -181,7 +151,7 @@ public class MultipartMessageReader {
             }
             part.content = xml.toString();
             part.setPostion(multipartParts.size());
-            multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).value, part);
+            multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
         }
         return part;
     }
@@ -225,11 +195,11 @@ public class MultipartMessageReader {
     private void parseAllMultiparts() throws IOException {
 
         StringBuffer xml = new StringBuffer();
-        Message.Part part = null;
+        MultipartUtil.Part part = null;
 
         String line;
         while ((line = readLine()) != null) {
-            part = new Message.Part();
+            part = new MultipartUtil.Part();
             boolean headers = true;
             do {
                 if (headers) {
@@ -237,8 +207,8 @@ public class MultipartMessageReader {
                         headers = false;
                         continue;
                     }
-                    Message.HeaderValue header = parseHeader(line);
-                    part.headers.put(header.name, header);
+                    MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
+                    part.headers.put(header.getName(), header);
                 } else {
                     if (line.startsWith("--" + multipartBoundary)) {
                         // The boundary is on a line by itself so the previous content doesn't actually contain the last \n
@@ -255,9 +225,7 @@ public class MultipartMessageReader {
 
             part.content = xml.toString();
             part.setPostion(multipartParts.size());
-            multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).value, part);
+            multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
         }
     }
-
-
 }
