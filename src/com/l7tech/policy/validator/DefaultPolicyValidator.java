@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 
 import java.util.Iterator;
@@ -139,6 +140,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         private void processPrecondition(Assertion a) {
             if (a instanceof SslAssertion) {
+                seenSsl = true;
                 if (seenRouting) {
                     result.addWarning(
                       new PolicyValidatorResult.Warning(a,
@@ -154,6 +156,15 @@ public class DefaultPolicyValidator extends PolicyValidator {
                        "\nXml Response Security must occur after routing.", null)
                     );
                 }
+            } else if (a instanceof HttpClientCert) {
+                if (!seenSsl) {
+                    result.addWarning(
+                      new PolicyValidatorResult.Warning(a,
+                        "The assertion might not work as configured." +
+                       "\nHttpClientCert requires to have SSL transport.", null)
+                    );
+                }
+                processCredentialSource(a);
             }
             seenPreconditions = true;
         }
@@ -180,7 +191,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         private boolean isPreconditionAssertion(Assertion a) {
             // check preconditions for both SslAssertion and  XmlResponseSecurity assertions - see processPrecondition()
-            if (a instanceof SslAssertion || a instanceof XmlResponseSecurity)
+            if (a instanceof SslAssertion || a instanceof XmlResponseSecurity || a instanceof HttpClientCert)
                 return true;
             return false;
         }
@@ -189,6 +200,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         boolean seenCredentials = false;
         boolean seenAccessControl = false;
         boolean seenRouting = false;
+        boolean seenSsl = false;
     }
 
 }
