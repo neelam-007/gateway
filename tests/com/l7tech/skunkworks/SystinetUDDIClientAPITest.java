@@ -225,9 +225,9 @@ public class SystinetUDDIClientAPITest {
         }
     }
 
-    public static List retrieveWsdlUrl(String serviceName) throws Exception {
+    public static Set retrieveWsdlUrl(String serviceName) throws Exception {
 
-        List wsdlList = new ArrayList();
+        HashSet wsdlList = new HashSet();
 
         System.out.println("Searching for service " + serviceName);
 
@@ -265,10 +265,12 @@ public class SystinetUDDIClientAPITest {
                         for (int m = 0; m < odal.size(); m++) {
                             OverviewDoc od = odal.get(m);
                             if (od.getOverviewURL() != null) {
-                                wsdlList.add(od.getOverviewURL().getValue());
+                                final String wsdlURL = od.getOverviewURL().getValue();
+                                if(!wsdlList.contains(wsdlURL)) {
+                                    wsdlList.add(wsdlURL);
+                                }
                             }
                         }
-
                     }
                 }
             }
@@ -277,16 +279,17 @@ public class SystinetUDDIClientAPITest {
         return wsdlList;
     }
 
-    public static void printWSDLs(List wsdlList) {
-
-        for(int i = 0; i < wsdlList.size(); i ++ ) {
-            System.out.println("[" + i + "]: " + wsdlList.get(i));
+    public static void printWSDLs(Set wsdlList) {
+        Iterator itr = wsdlList.iterator();
+        for(int i = 0; itr.hasNext(); i++) {
+            String wsdlURL = (String) itr.next();
+            System.out.println("[" + i + "]: " + wsdlURL);
         }
     }
 
     public static void main(String args[]) throws Exception {
-        String serviceName = "EmployeeList";
-        List wsdlList = retrieveWsdlUrl(serviceName);
+        String serviceName = "UDDIPublishService";
+        Set wsdlList = retrieveWsdlUrl(serviceName);
 
         System.out.println("The WSDL URL found:" );
         printWSDLs(wsdlList);
