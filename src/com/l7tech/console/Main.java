@@ -14,7 +14,6 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.SplashScreen;
 import net.jini.security.policy.DynamicPolicyProvider;
-import net.jini.security.policy.PolicyInitializationException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -85,10 +84,12 @@ public class Main {
             } finally {
                 screen.dispose();
             }
-        } catch (HeadlessException e) {
-            log.log(Level.SEVERE, "SSM Error", e);
-        } catch (PolicyInitializationException e) {
-            log.log(Level.SEVERE, "SSM Error", e);
+        } catch (final Exception e) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    throw new RuntimeException("Startup Error", e);
+                }
+            });
         }
     }
 
@@ -267,7 +268,11 @@ public class Main {
     }
 
     private static ApplicationContext createApplicationContext() {
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"com/l7tech/console/resources/beans-context.xml"});
+        String ctxName = System.getProperty("ssm.application.context");
+        if (ctxName == null) {
+            ctxName = "com/l7tech/console/resources/beans-context.xml";
+        }
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{ctxName});
         return context;
     }
 
