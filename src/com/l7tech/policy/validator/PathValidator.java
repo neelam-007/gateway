@@ -13,10 +13,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.*;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -195,6 +192,16 @@ class PathValidator {
             seenWssSignature = true;
         }
 
+        if (a instanceof SecureConversation) {
+            if (seenSecureConversation) {
+                result.addError(new PolicyValidatorResult.Error(a,
+                                                                assertionPath,
+                                                                "Secure Conversation already specified.",
+                                                                null));
+            }
+            seenSecureConversation = true;
+        }
+
         // Custom Assertion can only be used with HTTP Basic
         if (seenCustomAssertion && !seenHTTPBasic) {
             result.addError(new PolicyValidatorResult.
@@ -245,9 +252,9 @@ class PathValidator {
             // REASON FOR THIS RULE:
             // it makes no sense to validate that an element is signed if we dont validate
             // that the authorized user is the one who signed it.
-            if (!seenWssSignature) {
+            if (!seenWssSignature && !seenSecureConversation) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceeded by an WSS Signature assertion.", null));
+                  "This assertion should be preceeded by an WSS Signature assertion or a Secure Conversation.", null));
             }
             // REASON FOR THIS RULE:
             // it makes no sense to check something about the request after it's routed
@@ -267,9 +274,9 @@ class PathValidator {
             // the server needs to encrypt a symmetric key for the recipient
             // the server needs the client cert for this purpose. this ensures that
             // the client certis available from the request.
-            if (!seenWssSignature) {
+            if (!seenWssSignature && !seenSecureConversation) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceeded by a WSS Signature assertion.", null));
+                  "This assertion should be preceeded by a WSS Signature or Secure Conversation assertion.", null));
             }
         }
         seenPreconditions = true;
@@ -364,6 +371,7 @@ class PathValidator {
     boolean seenAccessControl = false;
     boolean seenRouting = false;
     boolean seenWssSignature = false;
+    boolean seenSecureConversation = false;
     boolean seenSsl = false;
     boolean sslForbidden = false;
     boolean seenCredAssertionThatRequiresClientCert = false;
