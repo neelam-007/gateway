@@ -77,6 +77,7 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
      * @param size  the max. number of messages retrieved
      * @return String[] the array of messages retrieved
      * @see com.l7tech.cluster.ClusterStatusAdmin#getClusterStatus
+     * 
      */
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         return delegate.getSystemLog(nodeid, startMsgNumber, endMsgNumber, size);
