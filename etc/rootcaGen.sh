@@ -30,6 +30,8 @@ KEYSTORE_DIR="$TOMCAT_HOME/kstores"
 KEYSTORE_DIR_OSPATH="$TOMCAT_HOME_OSPATH/kstores"
 KEYSTORE_FILE="$KEYSTORE_DIR/ssgroot"
 WEB_XML_FILE="$TOMCAT_HOME/webapps/ROOT/WEB-INF/web.xml"
+WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
+WEBAPPS_PATH="$TOMCAT_HOME/webapps"
 KEYSTORE_FILE_OSPATH="$KEYSTORE_DIR_OSPATH/ssgroot"
 CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssgroot.cer"
 CERTIFICATE_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ssgroot.cer"
@@ -99,14 +101,25 @@ else
 fi
 
 # REMEMBER THE KEYSTORE PASSWORD IN THE WEB.XML FILE
+
+# IF THE WAR FILE IS PRESENT BUT NOT YET EXPANDED, EXPAND IT
 if [ -e "$WEB_XML_FILE" ]; then
-        echo "recording the keystore password in web.xml"
-#  todo, make this substitution work
-#        perl -pi.bak -e s/'RootKeyStorePasswd\<\/param-name\>\<param-value\>.*\<\/param-value\>'/'RootKeyStorePasswd\<\/param-name\>\<param-value\>${KEYSTORE_PASSWORD}\<\/param-value\>'/ "$WEB_XML_FILE"
+        echo
+else
+        echo "expanding the war file so that web.xml can be updated with kstore password"
+        unzip $WAR_FILE -d $WEBAPPS_PATH/ROOT
+fi
 
-
+if [ -e "$WEB_XML_FILE" ]; then
+        echo "Recording the keystore password in web.xml"
+        SUBSTITUTE_FROM='RootKeyStorePasswd\<\/param-name\>\s*\<param-value\>.*\<\/param-value\>'
+        SUBSTITUTE_TO='RootKeyStorePasswd\<\/param-name\>\<param-value\>'
+        SUBSTITUTE_TO=$SUBSTITUTE_TO${KEYSTORE_PASSWORD}
+        SUBSTITUTE_TO=$SUBSTITUTE_TO'\<\/param-value\>'
+        perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$WEB_XML_FILE"
 else
 # INFORM THE USER OF THE FAILURE
+        echo "ERROR"
         echo "The root keystore password was not recorded in web.xml because the file was not found."
         echo "This should be done manually"
 fi
