@@ -1,30 +1,24 @@
 package com.l7tech.console.tree.wsdl;
 
-import com.l7tech.service.Wsdl;
-import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.service.Wsdl;
 
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import javax.swing.*;
 import javax.wsdl.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.awt.*;
 
 
 /**
  * the WSDL Tree Node represents the WSDL backed model.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
- * @see com.l7tech.console.tree.BasicTreeNode
+ * @see com.l7tech.console.tree.AbstractTreeNode
  */
 public abstract class WsdlTreeNode extends AbstractTreeNode {
-
-    protected boolean hasLoadedChildren = false;
 
     protected WsdlTreeNode(Object userObject) {
         super(userObject);
@@ -36,7 +30,7 @@ public abstract class WsdlTreeNode extends AbstractTreeNode {
      *
      * @param wsdl the tree node this node points to
      */
-    public static TreeNode newInstance(Wsdl wsdl) {
+    public static WsdlTreeNode newInstance(Wsdl wsdl) {
         if (wsdl == null) {
             throw new IllegalArgumentException();
         }
@@ -44,33 +38,19 @@ public abstract class WsdlTreeNode extends AbstractTreeNode {
     }
 
     /**
-     * Returns the number of children <code>TreeNode</code>s the receiver
-     * contains.
-     */
-    public int getChildCount() {
-        if (!hasLoadedChildren) {
-            loadChildren();
-        }
-        return super.getChildCount();
-    }
-
-    /**
-     * Find an icon for this node.
+     * Returns true if the receiver is a leaf.
      *
-     * @return icon to use to represent the node
+     * @return true if leaf, false otherwise
      */
-    public Image getIcon() {
-        return IconManager2.getInstance().getIcon(iconResource(false));
+    public boolean isLeaf() {
+        return false;
     }
 
     /**
-     * Finds an icon for this node when opened. This icon should
-     * represent the node only when it is opened (when it can have
-     * children).
-     * @return icon to use to represent the bean when opened
+     * Returns true if the receiver allows children.
      */
-    public Image getOpenedIcon() {
-        return IconManager2.getInstance().getIcon(iconResource(false));
+    public boolean getAllowsChildren() {
+        return true;
     }
 
     /**
@@ -79,30 +59,6 @@ public abstract class WsdlTreeNode extends AbstractTreeNode {
     public String getName() {
         return this.toString();
     }
-
-    /**
-     * subclasses override this method specifying the resource name
-     *
-     * @param open for nodes that can be opened, can have children
-     */
-    protected abstract String iconResource(boolean open);
-
-    /**
-     * subclasses override this method to load it's own children
-     */
-    protected abstract void loadChildren();
-
-    /**
-     * Returns true if the receiver allows children.
-     */
-    public boolean getAllowsChildren() {
-        return false;
-    }
-
-    /**
-     * Returns true if the receiver is a leaf.
-     */
-    public abstract boolean isLeaf();
 
     public interface FolderLister {
         List list();
@@ -142,7 +98,7 @@ class DefinitionsTreeNode extends WsdlTreeNode {
                   List list = new ArrayList();
                   Map messages = definition.getMessages();
                   for (Iterator i = messages.values().iterator(); i.hasNext();) {
-                      list.add(new MessageTreeNode((Message)i.next()));
+                      list.add(new MessageTreeNode((Message) i.next()));
                   }
                   return list;
               }
@@ -161,7 +117,7 @@ class DefinitionsTreeNode extends WsdlTreeNode {
                   List list = new ArrayList();
                   Map portTypes = definition.getPortTypes();
                   for (Iterator i = portTypes.values().iterator(); i.hasNext();) {
-                      list.add(new PortTypeTreeNode((PortType)i.next()));
+                      list.add(new PortTypeTreeNode((PortType) i.next()));
                   }
 
                   return list;
@@ -181,13 +137,14 @@ class DefinitionsTreeNode extends WsdlTreeNode {
                   List list = new ArrayList();
                   Map bindings = definition.getBindings();
                   for (Iterator i = bindings.values().iterator(); i.hasNext();) {
-                      list.add(new BindingTreeNode(null, (Binding)i.next()));
+                      list.add(new BindingTreeNode((Binding)i.next()));
                   }
                   return list;
               }
           });
 
         insert(bn, index++);
+
         FolderTreeNode svc = new FolderTreeNode(
           new FolderLister() {
               /** @return  a string representation of the object.  */
@@ -197,23 +154,15 @@ class DefinitionsTreeNode extends WsdlTreeNode {
 
               public List list() {
                   List list = new ArrayList();
-
-
                   Map services = definition.getServices();
                   for (Iterator i = services.values().iterator(); i.hasNext();) {
-                      list.add(new ServiceTreeNode(null, (Service)i.next()));
+                      list.add(new ServiceTreeNode((Service) i.next()));
                   }
                   return list;
               }
           });
 
         insert(svc, index++);
-        hasLoadedChildren = true;
-    }
-
-    /** Returns true if the receiver is a leaf */
-    public boolean isLeaf() {
-        return false;
     }
 
     /**
@@ -237,12 +186,6 @@ class FolderTreeNode extends WsdlTreeNode {
         for (Iterator i = lister.list().iterator(); i.hasNext();) {
             insert((MutableTreeNode)i.next(), index++);
         }
-        hasLoadedChildren = true;
-    }
-
-    /** Returns true if the receiver is a leaf */
-    public boolean isLeaf() {
-        return false;
     }
 
     /**
@@ -275,13 +218,20 @@ class MessageTreeNode extends WsdlTreeNode {
     }
 
     protected void loadChildren() {
-        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
     public boolean isLeaf() {
         return true;
     }
+
+    /**
+     * Returns true if the receiver allows children.
+     */
+    public boolean getAllowsChildren() {
+        return false;
+    }
+
 
     /**
      * subclasses override this method specifying the resource name
@@ -312,14 +262,8 @@ class PortTypeTreeNode extends WsdlTreeNode {
     protected void loadChildren() {
         int index = 0;
         for (Iterator i = portType.getOperations().iterator(); i.hasNext();) {
-            insert(new OperationTreeNode((Operation)i.next()), index++);
+            insert(new OperationTreeNode((Operation) i.next()), index++);
         }
-        hasLoadedChildren = true;
-    }
-
-    /** Returns true if the receiver is a leaf */
-    public boolean isLeaf() {
-        return false;
     }
 
     /**
@@ -341,22 +285,16 @@ class PortTypeTreeNode extends WsdlTreeNode {
 class BindingTreeNode extends WsdlTreeNode {
     private Binding binding;
 
-    BindingTreeNode(MutableTreeNode parent, Binding b) {
-        super(parent);
+    BindingTreeNode(Binding b) {
+        super(null);
         this.binding = b;
     }
 
     protected void loadChildren() {
         int index = 0;
         for (Iterator i = binding.getBindingOperations().iterator(); i.hasNext();) {
-            insert(new BindingOperationTreeNode((BindingOperation)i.next()), index++);
+            insert(new BindingOperationTreeNode((BindingOperation) i.next()), index++);
         }
-        hasLoadedChildren = true;
-    }
-
-    /** Returns true if the receiver is a leaf */
-    public boolean isLeaf() {
-        return false;
     }
 
     /**
@@ -373,7 +311,6 @@ class BindingTreeNode extends WsdlTreeNode {
     public String toString() {
         return binding.getQName().getLocalPart();
     }
-
 }
 
 class OperationTreeNode extends WsdlTreeNode {
@@ -385,12 +322,18 @@ class OperationTreeNode extends WsdlTreeNode {
     }
 
     protected void loadChildren() {
-        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
     public boolean isLeaf() {
         return true;
+    }
+
+    /**
+     * Returns true if the receiver allows children.
+     */
+    public boolean getAllowsChildren() {
+        return false;
     }
 
     /**
@@ -419,12 +362,18 @@ class BindingOperationTreeNode extends WsdlTreeNode {
     }
 
     protected void loadChildren() {
-        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
     public boolean isLeaf() {
         return true;
+    }
+
+    /**
+     * Returns true if the receiver allows children.
+     */
+    public boolean getAllowsChildren() {
+        return false;
     }
 
     /**
@@ -446,18 +395,24 @@ class BindingOperationTreeNode extends WsdlTreeNode {
 class ServiceTreeNode extends WsdlTreeNode {
     private Service service;
 
-    ServiceTreeNode(MutableTreeNode parent, Service s) {
+    ServiceTreeNode(Service s) {
         super(null);
         this.service = s;
     }
 
     protected void loadChildren() {
-        hasLoadedChildren = true;
     }
 
     /** Returns true if the receiver is a leaf */
     public boolean isLeaf() {
         return true;
+    }
+
+    /**
+     * Returns true if the receiver allows children.
+     */
+    public boolean getAllowsChildren() {
+        return false;
     }
 
     /**

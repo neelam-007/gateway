@@ -24,4 +24,13 @@ public class UserNode extends EntityHeaderNode {
         super(e);
     }
 
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/user16.png";
+    }
+
 }

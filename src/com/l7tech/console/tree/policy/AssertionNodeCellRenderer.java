@@ -38,8 +38,7 @@ public class AssertionNodeCellRenderer
         this.setBackgroundNonSelectionColor(tree.getBackground());
         Icon icon = null;
         AbstractTreeNode assertionTreeNode = ((AbstractTreeNode) value);
-        Assertion ass = (Assertion) assertionTreeNode.getUserObject();
-        setText(ass.getClass().getName());
+        setText(assertionTreeNode.getName());
         icon = expanded ?
           new ImageIcon(assertionTreeNode.getOpenedIcon()) :
           new ImageIcon(assertionTreeNode.getIcon());

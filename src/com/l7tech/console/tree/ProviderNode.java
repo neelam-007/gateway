@@ -36,10 +36,8 @@ public class ProviderNode extends EntityHeaderNode {
      * Returns the children of the reciever as an Enumeration.
      *
      * @return the Enumeration of the child nodes.
-     * @exception Exception thrown when an erro is encountered when
-     *                      retrieving child nodes.
      */
-    public Enumeration children() throws Exception {
+    public Enumeration children() {
         List list =
                 Arrays.asList(new BasicTreeNode[]{});
         return Collections.enumeration(list);
@@ -47,5 +45,14 @@ public class ProviderNode extends EntityHeaderNode {
 
     public boolean getAllowsChildren() {
         return false;
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/providers16.gif";
     }
 }

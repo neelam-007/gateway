@@ -6,13 +6,13 @@ import java.util.Collections;
 import java.util.Enumeration;
 
 /**
- * The class represents an Entry gui node element in the
+ * The class represents an entity gui node element in the
  * TreeModel.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class EntityHeaderNode implements BasicTreeNode {
+public abstract class EntityHeaderNode extends AbstractTreeNode {
     /**
      * construct the <CODE>EntityHeaderNode</CODE> instance for a given
      * <CODE>id</CODE>
@@ -20,7 +20,7 @@ public class EntityHeaderNode implements BasicTreeNode {
      * @param e  the e represented by this <CODE>EntityHeaderNode</CODE>
      */
     public EntityHeaderNode(EntityHeader e) {
-        this.entity = e;
+        super(e);
     }
 
     /**
@@ -30,14 +30,6 @@ public class EntityHeaderNode implements BasicTreeNode {
      */
     public boolean isLeaf() {
         return true;
-    }
-
-    /**
-     * Returns the children of the reciever as an Enumeration
-     * of EntryTreeNodes.
-     */
-    public Enumeration children() throws Exception {
-        return Collections.enumeration(Collections.EMPTY_LIST);
     }
 
     /**
@@ -53,12 +45,17 @@ public class EntityHeaderNode implements BasicTreeNode {
      * @return the <code>EntityHeader</code>
      */
     public EntityHeader getEntityHeader() {
-        return entity;
+        return (EntityHeader)getUserObject();
     }
 
+    /**
+     * subclasses override this method
+     */
+    protected void loadChildren() {
+    }
 
     public String getName() {
-        return entity.getName();
+        return getEntityHeader().getName();
     }
 
     /**
@@ -70,6 +67,4 @@ public class EntityHeaderNode implements BasicTreeNode {
                 append(super.toString());
         return sb.toString();
     }
-
-    private final EntityHeader entity;
 }

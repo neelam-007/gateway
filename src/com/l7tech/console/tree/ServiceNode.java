@@ -8,7 +8,10 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
 
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.MutableTreeNode;
+import javax.wsdl.WSDLException;
 import java.io.StringReader;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
 
@@ -20,7 +23,7 @@ import java.util.Enumeration;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
-public class ServiceNode extends EntityHeaderNode {
+public class ServiceNode extends AbstractTreeNode {
     private PublishedService svc;
 
     /**
@@ -38,7 +41,9 @@ public class ServiceNode extends EntityHeaderNode {
 
     public PublishedService getPublishedService() throws FindException {
         if (svc == null) {
-               svc = Registry.getDefault().getServiceManager().findByPrimaryKey(getEntityHeader().getOid());
+            EntityHeader eh = (EntityHeader)getUserObject();
+               svc = Registry.getDefault().
+                 getServiceManager().findByPrimaryKey(eh.getOid());
            }
         return svc;
     }
@@ -53,28 +58,50 @@ public class ServiceNode extends EntityHeaderNode {
     }
 
     /**
-     * Returns the children of the reciever as an Enumeration.
-     *
-     * @return the Enumeration of the child nodes.
-     * @exception Exception thrown when an erro is encountered when
-     *                      retrieving child nodes.
-     */
-    public Enumeration children() throws Exception {
-        PublishedService s = getPublishedService();
-        if (s != null) {
-            Wsdl wsdl = Wsdl.newInstance(null, new StringReader(svc.getWsdlXml()));
-            TreeNode node = WsdlTreeNode.newInstance(wsdl);
-            node.getChildCount();
-            return node.children();
-        }
-        return Collections.enumeration(Collections.EMPTY_LIST);
-    }
-
-    /**
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
         return true;
     }
 
+    /**
+     * subclasses override this method
+     */
+    protected void loadChildren() {
+        try {
+            PublishedService s = getPublishedService();
+            if (s != null) {
+                Wsdl wsdl = Wsdl.newInstance(null, new StringReader(svc.getWsdlXml()));
+                WsdlTreeNode node = WsdlTreeNode.newInstance(wsdl);
+                node.loadChildren();
+                int index = 0;
+                for (Enumeration e = node.children(); e.hasMoreElements();) {
+                    insert((MutableTreeNode) e.nextElement(), index++);
+                }
+            }
+        } catch (Exception e) {
+            // todo: log here, error manager or something
+        }
+    }
+
+    /**
+     * @return the node name that is displayed
+     */
+    public String getName() {
+        try {
+            return getPublishedService().getName();
+        } catch (FindException e) {
+            // todo: log here, error manager or something
+        }
+        return "Error Retreiving the service";
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/services16.png";
+    }
 }

@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.IconManager;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -34,19 +35,18 @@ public class EntityTreeCellRenderer
           sel, expanded,
           leaf, row, hasFocus);
 
+
         this.setBackgroundNonSelectionColor(tree.getBackground());
         Icon icon = null;
-        if (value instanceof EntityTreeNode) {
-            BasicTreeNode node = (BasicTreeNode)((EntityTreeNode)value).getUserObject();
-            setText(node.getName());
-            icon = IconManager.getInstance().getIcon(node);
+        if (!(value instanceof AbstractTreeNode)) return this;
 
-        } else if (value instanceof WsdlTreeNode) {
-            WsdlTreeNode node = (WsdlTreeNode)value;
-            setText(node.toString());
-            icon = new ImageIcon(node.getIcon());
-        }
-        if (icon !=null) {
+        AbstractTreeNode assertionTreeNode = ((AbstractTreeNode) value);
+        setText(assertionTreeNode.getName());
+        icon = expanded ?
+          new ImageIcon(assertionTreeNode.getOpenedIcon()) :
+          new ImageIcon(assertionTreeNode.getIcon());
+
+        if (icon != null) {
             setIcon(icon);
         }
         return this;

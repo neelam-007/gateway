@@ -29,7 +29,7 @@ public class TreeNodeFactory {
      *
      * @return the TreeNode for a given Entry
      */
-    public static BasicTreeNode asTreeNode(EntityHeader entity) {
+    public static AbstractTreeNode asTreeNode(EntityHeader entity) {
         if (entity == null) {
             throw new NullPointerException("entity");
         }
@@ -60,7 +60,7 @@ public class TreeNodeFactory {
     /**
      * The class <CODE>TreeNodeEnumeration</CODE> is a transparent
      * closure (Decorator pattern) over an Enumeration.
-     * It is used to create BasicTreeNode instances from enumerations
+     * It is used to create AbstractTreeNode instances from enumerations
      * of Entry instances.
      * For example the classes that are containers (ProvidersFolderNode,
      * CompanyFolderTreeNode etc) may use this class to create special

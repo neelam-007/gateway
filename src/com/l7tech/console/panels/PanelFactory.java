@@ -1,15 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.panels.EntityEditorPanel;
-import com.l7tech.console.panels.PanelListener;
-import com.l7tech.console.panels.GroupPanel;
-import com.l7tech.console.tree.BasicTreeNode;
-import com.l7tech.console.tree.EntityTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.User;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.console.tree.EntityTreeNode;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 

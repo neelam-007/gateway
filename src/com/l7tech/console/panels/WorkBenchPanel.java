@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.tree.BasicTreeNode;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Preferences;
 import org.apache.log4j.Category;
@@ -126,7 +126,7 @@ public class WorkBenchPanel extends JPanel {
      * Return the ToolBarForTable instance for a given node or null.
      * @return ToolBarForTable
      */
-    private ToolBarForTable getToolBar(BasicTreeNode bn) {
+    private ToolBarForTable getToolBar(AbstractTreeNode bn) {
         ToolBarForTable tb = new ToolBarForTable();
         tb.setFloatable(false);
         return tb;

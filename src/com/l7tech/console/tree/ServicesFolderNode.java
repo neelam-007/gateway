@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.service.ServiceManager;
 
+import javax.swing.tree.MutableTreeNode;
 import java.util.Enumeration;
 
 
@@ -12,7 +13,7 @@ import java.util.Enumeration;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class ServicesFolderNode implements BasicTreeNode {
+public class ServicesFolderNode extends AbstractTreeNode {
     private ServiceManager serviceManager;
     private String title;
 
@@ -22,6 +23,7 @@ public class ServicesFolderNode implements BasicTreeNode {
      * a given servcie manager with the name.
      */
     public ServicesFolderNode(ServiceManager sm, String name) {
+        super(null);
         serviceManager = sm;
         title = name;
     }
@@ -36,22 +38,24 @@ public class ServicesFolderNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the children of the reciever as an Enumeration.
-     *
-     * @return the Enumeration of the child nodes.
-     * @exception Exception thrown when an erro is encountered when
-     *                      retrieving child nodes.
-     */
-    public Enumeration children() throws Exception {
-        Enumeration e = new EntitiesEnumeration(new ServiceEntitiesCollection(serviceManager));
-        return TreeNodeFactory.getTreeNodeEnumeration(e);
-    }
-
-    /**
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
         return true;
+    }
+
+    /**
+     * load the service folder children
+     */
+    protected void loadChildren() {
+          Enumeration e =
+       TreeNodeFactory.
+         getTreeNodeEnumeration(
+           new EntitiesEnumeration(new ServiceEntitiesCollection(serviceManager)));
+       int index = 0;
+       for (; e.hasMoreElements();) {
+           insert((MutableTreeNode)e.nextElement(), index++);
+       }
     }
 
     /**
@@ -63,6 +67,18 @@ public class ServicesFolderNode implements BasicTreeNode {
      */
     public String getName() {
         return title;
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+            if (open)
+            return "com/l7tech/console/resources/folderOpen.gif";
+
+        return "com/l7tech/console/resources/folder.gif";
     }
 
 }

@@ -3,11 +3,10 @@ package com.l7tech.console.tree;
 import com.l7tech.console.util.IconManager2;
 
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.*;
 import java.awt.*;
 
 /**
- * todo: remove the BasicTreeNode interface from the
+ * todo: remove the BasicTreeNode interface
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
@@ -26,6 +25,7 @@ public abstract class AbstractTreeNode
     public int getChildCount() {
         if (!hasLoadedChildren) {
             loadChildren();
+            hasLoadedChildren = true;
         }
         return super.getChildCount();
     }

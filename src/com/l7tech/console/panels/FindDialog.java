@@ -600,9 +600,9 @@ public class FindDialog extends JDialog {
   }
 
   /**
-   * instantiate the dialog for given BasicTreeNode
+   * instantiate the dialog for given AbstractTreeNode
    *
-   * @param o   the <CODE>BasicTreeNode</CODE> instance
+   * @param o   the <CODE>AbstractTreeNode</CODE> instance
    */
   private void showEntryDialog(Object o) {
     JPanel panel = null; // PanelFactory.getPanel(o, pListener);

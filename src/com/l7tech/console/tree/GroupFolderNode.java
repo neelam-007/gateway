@@ -3,6 +3,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.identity.GroupManager;
 
+import javax.swing.tree.MutableTreeNode;
 import java.util.Enumeration;
 
 
@@ -13,7 +14,7 @@ import java.util.Enumeration;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class GroupFolderNode implements BasicTreeNode {
+public class GroupFolderNode extends AbstractTreeNode {
     private final GroupManager groupManager;
 
     /**
@@ -21,6 +22,7 @@ public class GroupFolderNode implements BasicTreeNode {
      * a given entry.
      */
     public GroupFolderNode(GroupManager gm) {
+        super(null);
         groupManager = gm;
 
     }
@@ -35,22 +37,24 @@ public class GroupFolderNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the children of the reciever as an Enumeration.
-     *
-     * @return the Enumeration of the child nodes.
-     * @exception Exception thrown when an erro is encountered when
-     *                      retrieving child nodes.
-     */
-    public Enumeration children() throws Exception {
-         Enumeration e = new EntitiesEnumeration(new GroupEntitiesCollection(groupManager));
-        return TreeNodeFactory.getTreeNodeEnumeration(e);
-    }
-
-    /**
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
         return true;
+    }
+
+    /**
+     * subclasses override this method
+     */
+    protected void loadChildren() {
+       Enumeration e =
+       TreeNodeFactory.
+         getTreeNodeEnumeration(
+           new EntitiesEnumeration(new GroupEntitiesCollection(groupManager)));
+       int index = 0;
+       for (; e.hasMoreElements();) {
+           insert((MutableTreeNode)e.nextElement(), index++);
+       }
     }
 
     /**
@@ -60,6 +64,18 @@ public class GroupFolderNode implements BasicTreeNode {
      */
     public String getName() {
         return "Groups";
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        if (open)
+            return "com/l7tech/console/resources/folderOpen.gif";
+
+        return "com/l7tech/console/resources/folder.gif";
     }
 
 }

@@ -41,7 +41,6 @@ abstract class LeafAssertionTreeNode extends AssertionTreeNode {
     }
 
     protected void loadChildren() {
-        hasLoadedChildren = true;
     }
 }
 
@@ -59,7 +58,6 @@ class CompositeAssertionTreeNode extends AssertionTreeNode {
         for (Iterator i = assertion.children(); i.hasNext();) {
             insert((AssertionTreeNodeFactory.asTreeNode((Assertion) i.next())), index++);
         }
-        hasLoadedChildren = true;
     }
 
     /**

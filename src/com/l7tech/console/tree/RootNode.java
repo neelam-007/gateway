@@ -2,10 +2,8 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.util.Registry;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
+import javax.swing.tree.MutableTreeNode;
+import java.util.*;
 
 /**
  * The class represents an entry gui node element that
@@ -14,12 +12,13 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class RootNode implements BasicTreeNode {
+public class RootNode extends AbstractTreeNode {
     /**
      * construct the <CODE>RootNode</CODE> instance
      */
     public RootNode(String title)
     throws IllegalArgumentException {
+        super(null);
         if (title == null)
             throw new IllegalArgumentException();
         label = title;
@@ -35,30 +34,29 @@ public class RootNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the children of the reciever as an Enumeration.
-     *
-     * @return the Enumeration of the child nodes.
-     * @exception Exception thrown when an erroR is encountered when
-     *                      retrieving child nodes.
+     * Returns true if the receiver allows children.
      */
-    public Enumeration children() throws Exception {
-        Registry r = Registry.getDefault();
+    public boolean getAllowsChildren() {
+        return true;
+    }
+
+    /**
+     * subclasses override this method
+     */
+    protected void loadChildren() {
+      Registry r = Registry.getDefault();
         List list =
                 Arrays.asList(
-                        new BasicTreeNode[]{
+                        new AbstractTreeNode[]{
                             new UserFolderNode(r.getInternalUserManager()),
                             new GroupFolderNode(r.getInternalGroupManager()),
                             new ProvidersFolderNode(),
                             new PoliciesFolderNode()
                         });
-        return Collections.enumeration(list);
-    }
-
-    /**
-     * Returns true if the receiver allows children.
-     */
-    public boolean getAllowsChildren() {
-        return true;
+       int index = 0;
+       for (Iterator i = list.iterator(); i.hasNext();) {
+           insert((MutableTreeNode)i.next(), index++);
+       }
     }
 
     /**
@@ -68,5 +66,15 @@ public class RootNode implements BasicTreeNode {
     public String getName() {
         return label;
     }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/root.gif";
+    }
+
     private String label;
 }

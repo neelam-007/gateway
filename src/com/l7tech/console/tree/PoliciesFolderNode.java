@@ -6,18 +6,19 @@ import java.util.Enumeration;
 
 /**
  * The class represents a node element in the TreeModel.
- * It represents the folder with policies for a provider.
+ * It represents the folder with policies.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class PoliciesFolderNode implements BasicTreeNode {
+public class PoliciesFolderNode extends AbstractTreeNode {
     /**
      * construct the <CODE>PoliciesFolderNode</CODE> instance for
      * a given entry.
      *
      */
     public PoliciesFolderNode() {
+        super(null);
     }
 
     /**
@@ -30,21 +31,16 @@ public class PoliciesFolderNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the children of the reciever as an Enumeration.
-     *
-     * @return the Enumeration of the child nodes.
-     * @exception Exception thrown when an error is encountered when
-     *                      retrieving child nodes.
-     */
-    public Enumeration children() throws Exception {
-        return Collections.enumeration(Collections.EMPTY_LIST);
-    }
-
-    /**
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
-        return false;
+        return true;
+    }
+
+    /**
+     * subclasses override this method
+     */
+    protected void loadChildren() {
     }
 
     /**
@@ -54,6 +50,18 @@ public class PoliciesFolderNode implements BasicTreeNode {
      */
     public String getName() {
         return "Policies";
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+         if (open)
+            return "com/l7tech/console/resources/folderOpen.gif";
+
+        return "com/l7tech/console/resources/folder.gif";
     }
 
 }

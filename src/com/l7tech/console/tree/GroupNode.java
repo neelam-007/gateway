@@ -22,4 +22,13 @@ public class GroupNode extends EntityHeaderNode {
       throws IllegalArgumentException {
         super(e);
     }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/group16.png";
+    }
 }

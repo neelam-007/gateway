@@ -2,12 +2,12 @@ package com.l7tech.console;
 
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
+import com.l7tech.console.action.*;
+import com.l7tech.console.factory.JComponentFactory;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.action.*;
-import com.l7tech.console.factory.JComponentFactory;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Locator;
@@ -17,7 +17,6 @@ import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
 import javax.swing.*;
-import javax.swing.text.html.HTMLDocument;
 import javax.swing.border.Border;
 import javax.swing.event.*;
 import javax.swing.tree.*;
@@ -830,8 +829,8 @@ public class MainWindow extends JFrame {
      */
     private void setJtreeRootNodes() {
         // palette tree paletteRootNode
-        final EntityTreeNode paletteRootNode =
-          new EntityTreeNode(new RootNode("Policy Assertions"));
+        final AbstractTreeNode paletteRootNode =
+          new RootNode("Policy Assertions");
 
         TreeModel treeModel = new FilteredTreeModel(paletteRootNode);
         getPaletteJTreeView().setRootVisible(true);
@@ -848,8 +847,8 @@ public class MainWindow extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        final EntityTreeNode servicesRootNode =
-          new EntityTreeNode(new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle));
+        final AbstractTreeNode servicesRootNode =
+          new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
 
         TreeModel servicesTreeModel = new FilteredTreeModel(servicesRootNode);
         getServicesTreeView().setRootVisible(true);
@@ -1284,7 +1283,7 @@ public class MainWindow extends JFrame {
            */
           public void onInsert(Object object) {
               EntityHeader entity = (EntityHeader)object;
-              BasicTreeNode newNode =
+              AbstractTreeNode newNode =
                 TreeNodeFactory.asTreeNode(entity);
               if (newNode.isLeaf()) return;
 
@@ -1317,13 +1316,8 @@ public class MainWindow extends JFrame {
            */
           public void onUpdate(Object object) {
               EntityHeader entity = (EntityHeader)object;
-              BasicTreeNode newNode =
+              AbstractTreeNode newNode =
                 TreeNodeFactory.asTreeNode(entity);
-
-              if (newNode.isLeaf() ||
-                !(newNode instanceof EntityHeader))
-                  return;
-              EntityHeader en = (EntityHeader)newNode;
 
               JTree tree;
               if (EntityType.SERVICE.equals(entity.getType())) {
@@ -1339,11 +1333,11 @@ public class MainWindow extends JFrame {
 
               DefaultMutableTreeNode node =
                 (DefaultMutableTreeNode)TreeNodeAction.
-                nodeByName(en.getName(), (DefaultMutableTreeNode)path.getLastPathComponent());
+                nodeByName(entity.getName(), (DefaultMutableTreeNode)path.getLastPathComponent());
 
               if (node == null) {
                   throw new
-                    IllegalStateException("Update of node that isn't in tree ( " + en.getName() + " )");
+                    IllegalStateException("Update of node that isn't in tree ( " + entity.getName() + " )");
               }
               node.setUserObject(newNode);
           }

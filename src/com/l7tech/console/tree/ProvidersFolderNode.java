@@ -14,11 +14,12 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class ProvidersFolderNode implements BasicTreeNode {
+public class ProvidersFolderNode extends AbstractTreeNode {
     /**
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
     public ProvidersFolderNode() {
+        super(null);
     }
 
     /**
@@ -30,28 +31,18 @@ public class ProvidersFolderNode implements BasicTreeNode {
         return false;
     }
 
-    /**
-     * Returns the children of the reciever as an Enumeration.
-     * That is, the enumeration of Realm entries.
-     *
-     * @return the Enumeration of the child nodes.
-     * @exception Exception thrown when an error is encountered when
-     *                      retrieving child nodes.
-     */
-    public Enumeration children() throws Exception {
-        EntityHeader[] res = new EntityHeader[0];
-        List list =  new ArrayList();
-        for (int i = 0;i<res.length;i++) {
-            list.add(new ProviderNode(res[i]));
-        }
-        return Collections.enumeration(list);
-    }
 
     /**
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
         return false;
+    }
+
+    /**
+     * subclasses override this method
+     */
+    protected void loadChildren() {
     }
 
     /**
@@ -63,6 +54,19 @@ public class ProvidersFolderNode implements BasicTreeNode {
      */
     public String getName() {
         return "Identity providers";
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+         if (open)
+            return "com/l7tech/console/resources/folderOpen.gif";
+
+        return "com/l7tech/console/resources/folder.gif";
+
     }
 
 }
