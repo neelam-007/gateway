@@ -8,7 +8,6 @@ import com.l7tech.util.Locator;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
-
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -18,7 +17,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.logging.Level;
 import java.sql.SQLException;
-
 import org.apache.axis.transport.http.HTTPConstants;
 import org.apache.axis.encoding.Base64;
 import org.apache.axis.AxisFault;
@@ -63,7 +61,14 @@ public class CSRHandler extends HttpServlet {
         // ClientCertManager.userCanGenCert ...
 
         byte[] csr = readCSRFromRequest(request);
-        Certificate cert = sign(csr);
+        Certificate cert = null;
+        try {
+            cert = sign(csr);
+        } catch (Exception e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+        }
+
         try {
             byte[] certbytes = cert.getEncoded();
             response.setStatus(HttpServletResponse.SC_OK);
@@ -87,9 +92,10 @@ public class CSRHandler extends HttpServlet {
         return tmpStr.substring(beggining, end).getBytes();
     }
 
-    private Certificate sign(byte[] csr) {
-        // todo, use RSA signer
-        return null;
+    private Certificate sign(byte[] csr) throws Exception {
+        RSASigner signer = getSigner();
+        // todo, refactor RSASigner to throw more precise exceptions
+        return signer.createCertificate(csr);
     }
 
     private User authenticateBasicToken(String value) throws AxisFault {
@@ -158,5 +164,13 @@ public class CSRHandler extends HttpServlet {
         return identityProviderConfigManager;
     }
 
+    private synchronized RSASigner getSigner() {
+        if (rsasigner == null) {
+            rsasigner = new RSASigner("/usr/java/jakarta-tomcat-4.1.24/kstores/ssgroot", "password", "ssgroot", "password");
+        }
+        return rsasigner;
+    }
+
     private IdentityProviderConfigManager identityProviderConfigManager = null;
+    private RSASigner rsasigner = null;
 }
