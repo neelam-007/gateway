@@ -6,23 +6,26 @@
 
 package com.l7tech.service;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.message.Request;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.FalseAssertion;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.SoapUtil;
+import org.apache.log4j.Category;
+import org.xml.sax.InputSource;
 
-import javax.wsdl.*;
+import javax.wsdl.Port;
+import javax.wsdl.Service;
+import javax.wsdl.WSDLException;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import java.io.*;
-import java.net.URL;
 import java.net.MalformedURLException;
-import java.util.*;
-
-import org.xml.sax.InputSource;
-import org.apache.log4j.Category;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author alex
@@ -32,7 +35,7 @@ public class PublishedService extends NamedEntityImp {
     public synchronized Assertion rootAssertion() throws IOException {
         String policyXml = getPolicyXml();
         if ( policyXml == null ) {
-            return new TrueAssertion();
+            return new FalseAssertion();
         } else {
             if ( _rootAssertion == null ) _rootAssertion = WspReader.parse( policyXml );
         }
