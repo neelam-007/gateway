@@ -8,9 +8,9 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import org.jaxen.JaxenException;
-import org.jaxen.dom.DOMXPath;
+import com.l7tech.policy.validator.AssertionValidator;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 /**
@@ -43,16 +43,19 @@ public class RequestXpathAssertion extends Assertion {
     }
 
     public void validate( PolicyValidatorResult result ) {
-        if ( _pattern == null ) {
-            result.addError( new PolicyValidatorResult.Error( this, "XPath pattern is missing", null ) );
-            return;
-        } else {
-            try {
-                DOMXPath temp = new DOMXPath(_pattern);
-            } catch (JaxenException e) {
-                result.addError( new PolicyValidatorResult.Error( this, "XPath pattern is not valid", e ) );
-                return;
-            }
+        try {
+            AssertionValidator validator = (AssertionValidator)
+                    Class.forName("com.l7tech.policy.validator.RequestXpathAssertionValidator").
+                                                            getConstructors()[0].newInstance(new Object[0]);
+            validator.validate(this, result);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e); // shouldn't happen
         }
     }
 
