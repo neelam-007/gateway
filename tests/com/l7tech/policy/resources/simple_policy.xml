@@ -25,12 +25,15 @@
                     <Option optionValue="Required"/>
                 </SslAssertion>
                 <RoutingAssertion>
-                    <Password stringValueNull="null"/>
-                    <Realm stringValueNull="null"/>
                     <UserAgent stringValueNull="null"/>
                     <ProtectedServiceUrl stringValueNull="null"/>
-                    <MaxConnections intValue="100"/>
                     <Login stringValueNull="null"/>
+                    <AttachSamlAssertion booleanValue="false"/>
+                    <GroupMembershipStatement booleanValue="false"/>
+                    <Password stringValueNull="null"/>
+                    <Realm stringValueNull="null"/>
+                    <MaxConnections intValue="100"/>
+                    <SamlAssertionExpiry intValue="5"/>
                 </RoutingAssertion>
                 <TrueAssertion/>
                 <MemberOfGroup>
@@ -62,12 +65,15 @@
             <TrueAssertion/>
             <FalseAssertion/>
             <RoutingAssertion>
-                <Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
-                <Realm stringValue=""/>
                 <UserAgent stringValueNull="null"/>
                 <ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
-                <MaxConnections intValue="-5"/>
                 <Login stringValue="bob&amp;joe"/>
+                <AttachSamlAssertion booleanValue="false"/>
+                <GroupMembershipStatement booleanValue="false"/>
+                <Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
+                <Realm stringValue=""/>
+                <MaxConnections intValue="-5"/>
+                <SamlAssertionExpiry intValue="5"/>
             </RoutingAssertion>
             <RequestXpathAssertion>
                 <NamespaceMap mapValue="included">
