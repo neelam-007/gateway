@@ -41,11 +41,6 @@ class SenderVouchesHelper {
     private User user;
     private SignerInfo signerInfo;
     private Document soapMessage;
-    private static final String CONFIRMATION_SENDER_VOUCHES = "urn:oasis:names:tc:SAML:1.0:cm:sender-vouches";
-    private static final String PASSWORD_AUTHENTICATION = "urn:oasis:names:tc:SAML:1.0:am:password";
-    //todo: add other authentication types (cert, signature etc)
-    private static final String NS_SAML = "urn:oasis:names:tc:SAML:1.0:assertion";
-    private static final String NS_SAML_PREFIX = "saml";
 
     /**
      * Instantiate the sender voucher helper
@@ -88,7 +83,7 @@ class SenderVouchesHelper {
                 throw new SAXException("Can't attach SAML token to non-SOAP message");
             }
             SoapUtil.importNode(soapMessage, doc, secElement);
-            NodeList list = secElement.getElementsByTagNameNS(NS_SAML, "Assertion");
+            NodeList list = secElement.getElementsByTagNameNS(Constants.NS_SAML, "Assertion");
             if (list.getLength() == 0) {
                 throw new IOException("Cannot locate the saml assertion in \n"+XmlUtil.nodeToString(soapMessage));
             }
@@ -263,13 +258,13 @@ class SenderVouchesHelper {
         assertion.setConditions(ct);
 
         AuthenticationStatementType at = assertion.addNewAuthenticationStatement();
-        at.setAuthenticationMethod(PASSWORD_AUTHENTICATION);
+        at.setAuthenticationMethod(Constants.PASSWORD_AUTHENTICATION);
         at.setAuthenticationInstant(now);
         SubjectType subject = at.addNewSubject();
         NameIdentifierType ni = subject.addNewNameIdentifier();
         ni.setStringValue(user.getName());
         SubjectConfirmationType st = subject.addNewSubjectConfirmation();
-        st.addConfirmationMethod(CONFIRMATION_SENDER_VOUCHES);
+        st.addConfirmationMethod(Constants.CONFIRMATION_SENDER_VOUCHES);
 
 
         StringWriter sw = new StringWriter();
@@ -277,7 +272,7 @@ class SenderVouchesHelper {
 
         XmlOptions xo = new XmlOptions();
         Map namespaces = new HashMap();
-        namespaces.put(NS_SAML, NS_SAML_PREFIX);
+        namespaces.put(Constants.NS_SAML, Constants.NS_SAML_PREFIX);
         xo.setSaveSuggestedPrefixes(namespaces);
         /*
         xo.setSavePrettyPrint();
