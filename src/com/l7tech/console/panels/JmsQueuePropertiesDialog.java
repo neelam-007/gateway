@@ -133,7 +133,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void init() {
-        setTitle(connection == null ? "New JMS Queue" : "JMS Queue Properties");
+        setTitle(connection == null ? "Add JMS Queue" : "JMS Queue Properties");
         Container c = getContentPane();
         c.setLayout(new GridBagLayout());
         JPanel p = new JPanel(new GridBagLayout());
