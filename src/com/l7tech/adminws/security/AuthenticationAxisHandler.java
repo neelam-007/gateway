@@ -9,13 +9,16 @@ import org.apache.axis.transport.http.HTTPConstants;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.Locator;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.Iterator;
 import java.sql.SQLException;
 
@@ -47,6 +50,10 @@ import java.sql.SQLException;
 public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHandler {
     public static final long SESSION_MAX_LENGTH = 120000; // two minutes
 
+    public AuthenticationAxisHandler() {
+        logger = LogManager.getInstance().getSystemLogger();
+    }
+
     /**
      * Invoked by the axis engine. if successful, will feed the messageContext with
      * a property whose key is AuthenticationAxisHandler.AUTHENTICATED_USER and whose
@@ -58,8 +65,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
         // get the HTTPRequest object
         HttpServletRequest servletrequest = (HttpServletRequest)messageContext.getProperty(HTTPConstants.MC_HTTP_SERVLETREQUEST);
         if (servletrequest == null) {
-
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "cannot retrieve servlet request from axis context");
+            logger.log(Level.SEVERE, "cannot retrieve servlet request from axis context");
         } else {
             // check out for a session
             HttpSession session = servletrequest.getSession(false);
@@ -101,10 +107,10 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
             HttpSession session = servletrequest.getSession(true);
             session.setAttribute(AUTHENTICATED_USER, authenticatedUser);
             session.setMaxInactiveInterval(30); // 30 seconds times you out
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "created admin session for user " + authenticatedUser.getLogin());
+            logger.log(Level.INFO, "created admin session for user " + authenticatedUser.getLogin());
         }
         else {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "authorization failure for user " + authenticatedUser.getLogin());
+            logger.log(Level.SEVERE, "authorization failure for user " + authenticatedUser.getLogin());
             throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthenticationAxisHandler failed", null, null );
         }
     }
@@ -125,35 +131,41 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
 
     private User authenticateBasicToken(String value) throws AxisFault {
         String login = null;
+        String clearTextPasswd = null;
+
         int i = value.indexOf( ':' );
-        if (i == -1) login = value;
-        else login = value.substring( 0, i);
+        if (i == -1) {
+            throw new AxisFault("invalid basic credentials " + value);
+        }
+        else {
+            login = value.substring(0, i);
+            clearTextPasswd = value.substring(i+1);
+        }
 
-        // MD5 IT
-        java.security.MessageDigest md5Helper = null;
+        User tmpUser = new User();
+        tmpUser.setLogin(login);
+        PrincipalCredentials creds = new PrincipalCredentials(tmpUser, clearTextPasswd.getBytes());
+
+        if (identityProviderConfigManager == null) {
+            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+        }
+        
         try {
-            md5Helper = java.security.MessageDigest.getInstance("MD5");
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new AxisFault(e.getMessage());
+            if (identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds)) {
+                return creds.getUser();
+            }
+            else {
+                logger.severe("authentication failed for " + login);
+                return null;
+            }
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.log(Level.SEVERE, "error closing context", e);
+                throw new AxisFault("", e);
+            }
         }
-        byte[] digest = md5Helper.digest(value.getBytes());
-        String md5edDecodedAuthValue = encodeDigest(digest);
-
-        // COMPARE TO THE VALUE IN INTERNAL DB
-        com.l7tech.identity.User internalUser = findUserByLogin(login);
-        if (internalUser == null) {
-            throw new AxisFault("User " + login + " not registered in internal id provider");
-        }
-        if (internalUser.getPassword() == null) {
-            throw new AxisFault("User " + login + "does not have a password");
-        }
-        if (internalUser.getPassword().equals(md5edDecodedAuthValue)) {
-            // AUTHENTICATION SUCCESS, move on to authorization
-            return internalUser;
-        } else {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "authentication failure for user " + login + " with credentials " + md5edDecodedAuthValue);
-        }
-        return null;
     }
 
     /**
@@ -193,21 +205,22 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
         } catch (FindException e) {
             // not throwing this on purpose, a FindException might just mean that the user does not exist,
             // in which case null is a valid answer
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception finding user by login", e);
+            logger.log(Level.SEVERE, "exception finding user by login", e);
             return null;
         } catch (SQLException e) {
             // not throwing this on purpose, a FindException might just mean that the user does not exist,
             // in which case null is a valid answer
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception closing context", e);
+            logger.log(Level.SEVERE, "exception closing context", e);
             return null;
         } catch (ObjectModelException e) {
             // not throwing this on purpose, a FindException might just mean that the user does not exist,
             // in which case null is a valid answer
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception closing context", e);
+            logger.log(Level.SEVERE, "exception closing context", e);
             return null;
         }
     }
 
     private static final String AUTHENTICATED_USER = "Authenticated_com.l7tech.identity.User";
     IdentityProviderConfigManager identityProviderConfigManager = null;
+    Logger logger = null;
 }
