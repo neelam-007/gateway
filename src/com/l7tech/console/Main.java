@@ -69,6 +69,9 @@ public class Main {
             /* so it is visible in help/about */
             prefs.updateSystemProperties();
 
+            System.setProperty("com.l7tech.util.locator.properties",
+                               "/com/l7tech/console/resources/services.properties");
+
             main = new MainWindow("SSG console");
             // Window listener
             main.addWindowListener(

@@ -37,7 +37,7 @@ public class DirectoryBrowser extends JTree {
   private void setDefaults() {
     setShowsRootHandles(true);
     setLargeModel(true);
-    setCellRenderer(new DirectoryTreeCellRenderer());
+    setCellRenderer(new EntityTreeCellRenderer());
     putClientProperty("JTree.lineStyle", "Angled");
     setUI(CustomTreeUI.getTreeUI());
   }

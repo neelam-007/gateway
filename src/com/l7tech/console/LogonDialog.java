@@ -459,7 +459,7 @@ public class LogonDialog extends JDialog {
   private static boolean isServiceAvailable(String serviceUrl) {
     boolean serviceAvailable;
     // try to connect and read the HTTP(S) code. We are ok if it
-    // is 200, 401, 403.
+    // is 200, 401, 403, 302.
     // if it is everything else we assume the connection cannot
     // be established
     HttpClient client = new HttpClient();
@@ -471,7 +471,7 @@ public class LogonDialog extends JDialog {
       method.setUseDisk(false);
       int code = client.executeMethod(method);
 
-      if (code == 403 || code == 401 || code == 200) {
+      if (code == 403 || code == 401 || code == 200 || code == 302) {
         serviceAvailable = true;
       } else {
         serviceAvailable = false;

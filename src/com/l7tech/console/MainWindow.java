@@ -578,7 +578,7 @@ public class MainWindow extends JFrame {
             treeDirectoryView = new JTree();
             treeDirectoryView.setShowsRootHandles(true);
             treeDirectoryView.setLargeModel(true);
-            treeDirectoryView.setCellRenderer(new DirectoryTreeCellRenderer());
+            treeDirectoryView.setCellRenderer(new EntityTreeCellRenderer());
             treeDirectoryView.putClientProperty("JTree.lineStyle", "Angled");
 
             TreeNode node = new DefaultMutableTreeNode("Disconnected");
@@ -787,26 +787,11 @@ public class MainWindow extends JFrame {
 
             // here is the sequece of commands adding buttons to specific folders
             // Folder "Internet"
-            outlook.addIcon("Shortcut Bar", "Services", RESOURCE_PATH + "/services32.gif", l);
+            outlook.addIcon("Shortcut Bar", "Services", RESOURCE_PATH + "/services32.png", l);
             outlook.addIcon("Shortcut Bar", "Policies", RESOURCE_PATH + "/policy32.gif", l);
             outlook.addIcon("Shortcut Bar", "Providers", RESOURCE_PATH + "/providers32.gif", l);
-
-
-
-//      // Folder "Business"
-//      outlook.addIcon("Business", "Contacts", "view.gif", l);
-//      outlook.addIcon("Business", "Reminder", "view.gif", l);
-//      outlook.addIcon("Business", "Tasks", "view.gif", l);
-//      outlook.addIcon("Business", "Expenses", "view.gif", l);
-//      // Folder "Bookmarks"
-//      outlook.addIcon("Bookmarks", "News", "view.gif", l);
-//      outlook.addIcon("Bookmarks", "Graphics", "view.gif", l);
-//      outlook.addIcon("Bookmarks", "Downloads", "view.gif", l);
-//      // Folder "Development"
-//      outlook.addIcon("Development", "Projects", "view.gif", l);
-//      outlook.addIcon("Development", "Projects", "view.gif", l);
-//      outlook.addIcon("Development", "Releases", "view.gif", l);
-//      outlook.addIcon("Development", "Versions", "view.gif", l);
+            outlook.addIcon("Shortcut Bar", "Users", RESOURCE_PATH + "/user32.png", l);
+            outlook.addIcon("Shortcut Bar", "Groups", RESOURCE_PATH + "/group32.png", l);
 
             JSplitPane sections = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, outlook, js);
             sections.setDividerLocation(150);
@@ -1411,7 +1396,7 @@ public class MainWindow extends JFrame {
 //    setContentPane(getJFrameContentPane());
         initializePreferences();
         initListeners();
-        new IconRepository().loadCommonImages();
+        // new IconManager().loadCommonImages();
         Preferences prefs = Preferences.getPreferences();
 
         String lfName = prefs.getString(Preferences.LOOK_AND_FEEL);

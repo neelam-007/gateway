@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.EditorDialog;
-import com.l7tech.console.IconRepository;
+import com.l7tech.console.IconManager;
 import com.l7tech.console.PanelFactory;
 import com.l7tech.console.table.ContextListTableModel;
 import com.l7tech.console.table.TableRowAction;
@@ -428,7 +428,7 @@ public class ContainerListPanel extends EditorPanel {
                     if (value instanceof EntityHeader) {
                         EntityHeader entry = (EntityHeader) value;
                         if (column == 0) {
-                            setIcon(IconRepository.getIcon(entry));
+                            setIcon(IconManager.getIcon(entry));
                             setText(entry.getName());
                         }
                     } else if (value instanceof String) {
@@ -441,7 +441,7 @@ public class ContainerListPanel extends EditorPanel {
                                 setIcon(UIManager.getIcon("Tree.closedIcon"));
                             } else {
                                 Icon icon;
-                                icon = IconRepository.getIcon(btn);
+                                icon = IconManager.getIcon(btn);
                                 if (icon == null) {
                                     icon = UIManager.getIcon("Tree.leafIcon");
                                 }
@@ -653,7 +653,7 @@ public class ContainerListPanel extends EditorPanel {
 
         private void initComponents() {
             buttonUp = new JButton();
-            buttonUp.setIcon(IconRepository.getUpOneLevelIcon());
+            buttonUp.setIcon(IconManager.getUpOneLevelIcon());
             buttonUp.setFont(new Font("Dialog", 1, 10));
             buttonUp.setText("Up");
             buttonUp.setMargin(new Insets(0, 0, 0, 0));
@@ -669,7 +669,7 @@ public class ContainerListPanel extends EditorPanel {
             buttonUp.setEnabled(!isParentRoot());
 
             buttonOpen = new JButton();
-            buttonOpen.setIcon(IconRepository.getOpenFolderIcon());
+            buttonOpen.setIcon(IconManager.getOpenFolderIcon());
             buttonOpen.setFont(new Font("Dialog", 1, 10));
             buttonOpen.setText("Open");
             buttonOpen.setMargin(new Insets(0, 0, 0, 0));
@@ -690,7 +690,7 @@ public class ContainerListPanel extends EditorPanel {
             buttonOpen.setEnabled(false);
 
             buttonNew = new JButton();
-            buttonNew.setIcon(IconRepository.getDefaultNewIcon());
+            buttonNew.setIcon(IconManager.getDefaultNewIcon());
             buttonNew.setFont(new Font("Dialog", 1, 10));
             buttonNew.setText("New");
             buttonNew.setMargin(new Insets(0, 0, 0, 0));
@@ -707,7 +707,7 @@ public class ContainerListPanel extends EditorPanel {
 
 
             buttonEdit = new JButton();
-            buttonEdit.setIcon(IconRepository.getDefaultEditIcon());
+            buttonEdit.setIcon(IconManager.getDefaultEditIcon());
             buttonEdit.setFont(new Font("Dialog", 1, 10));
             buttonEdit.setText("Edit");
             buttonEdit.setMargin(new Insets(0, 0, 0, 0));
@@ -727,7 +727,7 @@ public class ContainerListPanel extends EditorPanel {
             buttonEdit.setEnabled(false);
 
             buttonDelete = new JButton();
-            buttonDelete.setIcon(IconRepository.getDefaultDeleteIcon());
+            buttonDelete.setIcon(IconManager.getDefaultDeleteIcon());
             buttonDelete.setFont(new Font("Dialog", 1, 10));
             buttonDelete.setText("Delete");
             buttonDelete.setMargin(new Insets(0, 0, 0, 0));

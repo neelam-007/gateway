@@ -1,6 +1,6 @@
 package com.l7tech.console;
 
-import com.l7tech.console.tree.BasicTreeNode;
+import com.l7tech.console.tree.*;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -10,14 +10,14 @@ import javax.swing.*;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class IconRepository {
+public class IconManager {
   /* this class classloader */
   private final ClassLoader cl = getClass().getClassLoader();
 
   /**
    * default constructor
    */
-  protected IconRepository() {
+  protected IconManager() {
   }
 
   /**
@@ -30,7 +30,23 @@ public class IconRepository {
     if (node == null) {
       throw new NullPointerException("node");
     }
-     return null;
+    ClassLoader cl = node.getClass().getClassLoader();
+    Class clazz = node.getClass();
+    if (clazz.equals(ProvidersFolderNode.class)) {
+        return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH+"/providers16.gif"));
+    } else if (clazz.equals(PoliciesFolderNode.class)) {
+        return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH+"/policy16.gif"));
+    } else if (clazz.equals(ServicesFolderNode.class)) {
+        return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH+"/services16.png"));
+    } else if (clazz.equals(AdminFolderNode.class)) {
+        return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH+"/user16.png"));
+    } else if (clazz.equals(GroupFolderNode.class)) {
+        return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH+"/group16.png"));
+    } else if (clazz.equals(UserFolderNode.class)) {
+        return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH+"/user16.png"));
+    }
+
+    return null;
   }
 
 
@@ -46,17 +62,6 @@ public class IconRepository {
       }
        return null;
     }
-
-
-  /**
-   * Get the 32X32 Icon for the Entry passed.
-   *
-   * @param entry   the Entry instance
-   * @return ImageIcon for the given directory object
-   */
-  public static ImageIcon get32Icon(BasicTreeNode entry) {
-    return null;
-  }
 
 
   /**
@@ -80,7 +85,7 @@ public class IconRepository {
    *
    * @see java.lang.ClassLoader
    */
-  public void loadCommonImages() {
+  private void loadimages() {
 
     // icons for adding (all) and removing (all)
     iconAdd

@@ -2,8 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.imp.IdentityProviderTypeImp;
+import com.l7tech.util.Locator;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -287,6 +291,10 @@ public class NewProviderDialog extends JDialog {
     /** insert the provider */
     private void insertProvider() {
         iProvider.setName(providerNameTextField.getText());
+        IdentityProviderTypeImp ip = new IdentityProviderTypeImp();
+        ip.setClassName("bla");
+        iProvider.setType(ip);
+
         final EntityHeader header = new EntityHeaderImp();
 
         SwingUtilities.invokeLater(
@@ -294,7 +302,15 @@ public class NewProviderDialog extends JDialog {
                     public void run() {
                         header.setName(iProvider.getName());
                         header.setType(IdentityProviderConfig.class);
-                        listener.onInsert(header);
+                        try {
+                            getProviderConfigManager().save(iProvider);
+                            listener.onInsert(header);
+                        } catch (SaveException e) {
+                            e.printStackTrace();
+                        } catch (RuntimeException e) {
+                            e.printStackTrace();
+                        }
+                        NewProviderDialog.this.dispose();
                     }
                 });
     }
@@ -328,6 +344,16 @@ public class NewProviderDialog extends JDialog {
      */
     private boolean validateInput() {
         return true;
+    }
+
+    private IdentityProviderConfigManager getProviderConfigManager() throws RuntimeException {
+        IdentityProviderConfigManager ipc =
+        (IdentityProviderConfigManager)Locator.
+                getDefault().lookup(IdentityProviderConfigManager.class);
+        if (ipc == null) {
+            throw new RuntimeException("Could not find registered "+IdentityProviderConfigManager.class);
+        }
+        return ipc;
     }
 
     /**
