@@ -8,10 +8,7 @@ package com.l7tech.proxy.processor;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
-import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.security.xml.WssDecoratorImpl;
-import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.common.security.xml.WssProcessorImpl;
+import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -105,14 +102,14 @@ public class MessageProcessor {
      * @throws HttpChallengeRequiredException if an HTTP 401 should be sent back to the client
      * @throws InvalidDocumentFormatException if the request or the response from the SSG had a problem with its
      *                                        format that was too serious to ignore
-     * @throws WssProcessor.ProcessorException if there was a problem processing the wsse:Security header in the
+     * @throws com.l7tech.common.security.xml.ProcessorException if there was a problem processing the wsse:Security header in the
      *                                         response from the SSG 
      */
     public SsgResponse processMessage(PendingRequest req)
             throws ClientCertificateException, OperationCanceledException,
             ConfigurationException, GeneralSecurityException, IOException, SAXException,
             ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
-            InvalidDocumentFormatException, WssProcessor.ProcessorException, WssProcessor.BadContextException
+            InvalidDocumentFormatException, ProcessorException, WssProcessor.BadContextException
     {
         boolean succeeded = false;
         try {
@@ -449,13 +446,13 @@ public class MessageProcessor {
      * @throws BadCredentialsException if the SSG rejected our SSG username and/or password.
      * @throws NoSuchAlgorithmException if the client certificate key was not RSA
      * @throws InvalidDocumentFormatException if the response from the SSG was not a valid SOAP document
-     * @throws WssProcessor.ProcessorException if the response from the SSG could not be undecorated
+     * @throws com.l7tech.common.security.xml.ProcessorException if the response from the SSG could not be undecorated
      */
     private SsgResponse obtainResponse(final PendingRequest req)
             throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
             OperationCanceledException, ClientCertificateException, BadCredentialsException,
             KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
-            InvalidDocumentFormatException, WssProcessor.ProcessorException, WssProcessor.BadContextException
+            InvalidDocumentFormatException, ProcessorException, WssProcessor.BadContextException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();

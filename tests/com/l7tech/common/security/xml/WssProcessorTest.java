@@ -52,12 +52,12 @@ public class WssProcessorTest extends TestCase {
                                                                              testDocument.securityContextFinder);
         assertTrue(result != null);
 
-        Element[] encrypted = result.getElementsThatWereEncrypted();
+        WssProcessor.ParsedElement[] encrypted = result.getElementsThatWereEncrypted();
         assertTrue(encrypted != null);
         if (encrypted.length > 0) {
             log.info("The following elements were encrypted:");
             for (int j = 0; j < encrypted.length; j++) {
-                Element element = encrypted[j];
+                Element element = encrypted[j].asElement();
                 log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
             }
         } else

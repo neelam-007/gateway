@@ -50,7 +50,7 @@ public class WssProcessorImpl implements WssProcessor {
         JceProvider.init();
     }
 
-    private static class ProcessorException extends WssProcessor.ProcessorException {
+    private static class ProcessorException extends com.l7tech.common.security.xml.ProcessorException {
         public ProcessorException(Throwable cause) {
             super();
             initCause(cause);
@@ -59,6 +59,18 @@ public class WssProcessorImpl implements WssProcessor {
         public ProcessorException(String message) {
             super();
             initCause(new IllegalArgumentException(message));
+        }
+    }
+
+    private static class ParsedElementImpl implements ParsedElement {
+        private final Element element;
+
+        public ParsedElementImpl(Element element) {
+            this.element = element;
+        }
+
+        public Element asElement() {
+            return element;
         }
     }
 
@@ -78,7 +90,7 @@ public class WssProcessorImpl implements WssProcessor {
                                                           X509Certificate recipientCert,
                                                           PrivateKey recipientKey,
                                                           SecurityContextFinder securityContextFinder)
-            throws WssProcessor.ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadContextException
+            throws com.l7tech.common.security.xml.ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadContextException
     {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
@@ -583,7 +595,7 @@ public class WssProcessorImpl implements WssProcessor {
         if (onlyChild) {
             // All relevant content of the parent node was encrypted.
             logger.info("All of element '" + parentElement.getLocalName() + "' non-attribute contents were encrypted");
-            cntx.elementsThatWereEncrypted.add(parentElement);
+            cntx.elementsThatWereEncrypted.add(new ParsedElementImpl(parentElement));
         } else {
             // There was unencrypted stuff mixed in with the EncryptedData, so we can only record elements as
             // encrypted that were actually wholly inside the EncryptedData.
@@ -593,28 +605,23 @@ public class WssProcessorImpl implements WssProcessor {
             for (int i = 0; i < dataList.getLength(); i++) {
                 Node node = dataList.item(i);
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
-                    cntx.elementsThatWereEncrypted.add(node);
+                    cntx.elementsThatWereEncrypted.add(new ParsedElementImpl((Element)node));
                 }
             }
         }
     }
 
-    private static class TimestampDate implements WssProcessor.TimestampDate {
-        Element element;
+    private static class TimestampDate extends ParsedElementImpl implements WssProcessor.TimestampDate {
         Date date;
 
         TimestampDate(Element createdOrExpiresElement) throws ParseException {
-            element = createdOrExpiresElement;
-            String dateString = XmlUtil.getTextValue(element);
+            super(createdOrExpiresElement);
+            String dateString = XmlUtil.getTextValue(createdOrExpiresElement);
             date = ISO8601Date.parse(dateString);
         }
 
         public Date asDate() {
             return date;
-        }
-
-        public Element asElement() {
-            return element;
         }
     }
 
@@ -945,8 +952,8 @@ public class WssProcessorImpl implements WssProcessor {
                 return (WssProcessor.SignedElement[]) cntx.elementsThatWereSigned.toArray(PROTOTYPE_SIGNEDELEMENT_ARRAY);
             }
 
-            public Element[] getElementsThatWereEncrypted() {
-                return (Element[])cntx.elementsThatWereEncrypted.toArray(PROTOTYPE_ELEMENT_ARRAY);
+            public ParsedElement[] getElementsThatWereEncrypted() {
+                return (ParsedElement[])cntx.elementsThatWereEncrypted.toArray(PROTOTYPE_ELEMENT_ARRAY);
             }
 
             public WssProcessor.SecurityToken[] getSecurityTokens() {
@@ -986,6 +993,7 @@ public class WssProcessorImpl implements WssProcessor {
         private final Element binarySecurityTokenElement;
 
         public X509SecurityTokenImpl(X509Certificate finalcert, Element binarySecurityTokenElement) {
+            super(binarySecurityTokenElement);
             this.finalcert = finalcert;
             this.binarySecurityTokenElement = binarySecurityTokenElement;
         }
@@ -1012,7 +1020,7 @@ public class WssProcessorImpl implements WssProcessor {
 
     }
 
-    private static abstract class SigningSecurityTokenImpl implements SecurityToken {
+    private static abstract class SigningSecurityTokenImpl extends ParsedElementImpl implements SecurityToken {
         protected abstract X509Certificate getCertificate();
 
         public boolean isPossessionProved() {
@@ -1024,21 +1032,22 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         private boolean possessionProved = false;
+
+        protected SigningSecurityTokenImpl(Element element) {
+            super(element);
+        }
     }
 
     private static class SamlSecurityTokenImpl extends SigningSecurityTokenImpl implements SamlSecurityToken {
         SamlHolderOfKeyAssertion assertion;
 
         public SamlSecurityTokenImpl(Element element) throws InvalidDocumentFormatException {
+            super(element);
             try {
                 this.assertion = new SamlHolderOfKeyAssertion(element);
             } catch (SAXException e) {
                 throw new InvalidDocumentFormatException(e);
             }
-        }
-
-        public Element asElement() {
-            return assertion.asElement();
         }
 
         /**
@@ -1067,16 +1076,15 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
 
-    private static class TimestampImpl implements WssProcessor.Timestamp {
+    private static class TimestampImpl extends ParsedElementImpl implements WssProcessor.Timestamp {
         private final TimestampDate createdTimestampDate;
         private final TimestampDate expiresTimestampDate;
-        private final Element timestampElement;
         private SecurityToken signingToken = null;
 
         public TimestampImpl(TimestampDate createdTimestampDate, TimestampDate expiresTimestampDate, Element timestampElement) {
+            super(timestampElement);
             this.createdTimestampDate = createdTimestampDate;
             this.expiresTimestampDate = expiresTimestampDate;
-            this.timestampElement = timestampElement;
         }
 
         public WssProcessor.TimestampDate getCreated() {
@@ -1098,38 +1106,32 @@ public class WssProcessorImpl implements WssProcessor {
         private void setSigningSecurityToken(SecurityToken token) {
             this.signingToken = token;
         }
-
-        public Element asElement() {
-            return timestampElement;
-        }
     }
 
-    private static final Element[] PROTOTYPE_ELEMENT_ARRAY = new Element[0];
+    private static final ParsedElement[] PROTOTYPE_ELEMENT_ARRAY = new ParsedElement[0];
     private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
     private static final WssProcessor.SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new WssProcessor.SecurityToken[0];
 
-    private static class DerivedKeyTokenImpl implements SecurityToken {
-
-        private final Element dktel;
+    private static class DerivedKeyTokenImpl extends ParsedElementImpl implements SecurityToken {
         private final Key finalKey;
         private final SecurityContextTokenImpl sct;
+        private final String elementWsuId;
 
         public DerivedKeyTokenImpl(Element dktel, Key finalKey, SecurityContextTokenImpl sct) {
-            this.dktel = dktel;
+            super(dktel);
             this.finalKey = finalKey;
             this.sct = sct;
+            elementWsuId = SoapUtil.getElementWsuId(dktel);
         }
 
         public String getElementId() {
-            return SoapUtil.getElementWsuId(dktel);
+            return elementWsuId;
         }
 
         Key getComputedDerivedKey() {
             return finalKey;
         }
-        public Element asElement() {
-            return dktel;
-        }
+
         SecurityContextTokenImpl getSecurityContextToken() {
             return sct;
         }
@@ -1139,16 +1141,18 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private static class SecurityContextTokenImpl implements WssProcessor.SecurityContextToken {
+    private static class SecurityContextTokenImpl extends ParsedElementImpl implements WssProcessor.SecurityContextToken {
         private final WssProcessor.SecurityContext secContext;
-        private final Element secConTokEl;
         private final String identifier;
+        private final String elementWsuId;
+
         private boolean possessionProved = false;
 
         public SecurityContextTokenImpl(WssProcessor.SecurityContext secContext, Element secConTokEl, String identifier) {
+            super(secConTokEl);
             this.secContext = secContext;
-            this.secConTokEl = secConTokEl;
             this.identifier = identifier;
+            this.elementWsuId = SoapUtil.getElementWsuId(secConTokEl);
         }
 
         public WssProcessor.SecurityContext getSecurityContext() {
@@ -1156,11 +1160,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         public String getElementId() {
-            return SoapUtil.getElementWsuId(secConTokEl);
-        }
-
-        public Element asElement() {
-            return secConTokEl;
+            return elementWsuId;
         }
 
         public String getContextIdentifier() {

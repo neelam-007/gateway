@@ -216,7 +216,7 @@ public class WssRoundTripTest extends TestCase {
         Document undecorated = r.getUndecoratedMessage();
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(undecorated));
 
-        Element[] encrypted = r.getElementsThatWereEncrypted();
+        WssProcessor.ParsedElement[] encrypted = r.getElementsThatWereEncrypted();
         assertNotNull(encrypted);
         WssProcessor.SignedElement[] signed = r.getElementsThatWereSigned();
         assertNotNull(signed);
@@ -270,7 +270,7 @@ public class WssRoundTripTest extends TestCase {
 
             boolean wasEncrypted = false;
             for (int j = 0; j < encrypted.length; ++j) {
-                Element encryptedElement = encrypted[j];
+                Element encryptedElement = encrypted[j].asElement();
 
                 log.info("Checking if element matches: " + XmlUtil.nodeToString(encryptedElement));
                 if (localNamePathMatches(elementToEncrypt, encryptedElement)) {

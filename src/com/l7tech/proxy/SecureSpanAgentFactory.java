@@ -10,6 +10,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -130,7 +131,7 @@ public class SecureSpanAgentFactory {
                     throw new CausedSendException(e);
                 } catch (InvalidDocumentFormatException e) {
                     throw new CausedSendException(e);
-                } catch (WssProcessor.ProcessorException e) {
+                } catch (ProcessorException e) {
                     throw new CausedSendException(e);
                 } catch (WssProcessor.BadContextException e) {
                     throw new CausedSendException(e);

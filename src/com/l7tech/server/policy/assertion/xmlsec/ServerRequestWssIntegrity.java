@@ -1,22 +1,8 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.common.xml.XpathEvaluator;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import org.jaxen.JaxenException;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -27,68 +13,22 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: July 14, 2004<br/>
  */
-public class ServerRequestWssIntegrity implements ServerAssertion {
+public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
+    private static final Logger logger = Logger.getLogger(ServerRequestWssConfidentiality.class.getName());
+
     public ServerRequestWssIntegrity(RequestWssIntegrity data) {
-        this.data = data;
+        super(logger, data);
     }
 
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest)) {
-            logger.info("This type of assertion is only supported with SOAP type of messages");
-            return AssertionStatus.BAD_REQUEST;
-        }
-        SoapRequest soapreq = (SoapRequest)request;
-        WssProcessor.ProcessorResult wssResults = soapreq.getWssProcessorOutput();
-        if (wssResults == null) {
-            throw new IOException("This request was not processed for WSS level security.");
-        }
-
-        // get the document
-        Document soapmsg = null;
-        try {
-            soapmsg = soapreq.getDocument();
-        } catch (SAXException e) {
-            logger.log(Level.SEVERE, "Cannot get payload document.", e);
-            return AssertionStatus.BAD_REQUEST;
-        }
-
-        XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg, data.getXpathExpression().getNamespaces());
-        List selectedNodes = null;
-        try {
-            selectedNodes = evaluator.select(data.getXpathExpression().getExpression());
-        } catch (JaxenException e) {
-            // this is thrown when there is an error in the expression
-            // this is therefore a bad policy
-            throw new PolicyAssertionException(e);
-        }
-
-        // the element is not there so there is nothing to check
-        if (selectedNodes.isEmpty()) {
-            logger.fine("The element " + data.getXpathExpression().getExpression() + " is not present in this request. " +
-                        "the assertion therefore succeeds.");
-            return AssertionStatus.NONE;
-        }
-
-        // to assert this, i must make sure that at least one of these nodes is part of the nodes
-        // that were signed as per attesting the wss processor
-        for (Iterator i = selectedNodes.iterator(); i.hasNext();) {
-            Object node = i.next();
-            WssProcessor.SignedElement[] toto = wssResults.getElementsThatWereSigned();
-            for (int j = 0; j < toto.length; j++) {
-                if (toto[j].asElement() == node) {
-                    // we got the bugger!
-                    logger.fine("The element " + data.getXpathExpression().getExpression() + " was found in this " +
-                            "request. and is part of the elements that were signed as per the wss processor.");
-                    // TODO we currently short-circuit success as soon as ANY element is found.  We must check them all!
-                    return AssertionStatus.NONE;
-                }
-            }
-        }
-        logger.fine("The element was found in the request but does not appear to be signed. Returning FALSIFIED");
-        response.setPolicyViolated(true);
-        return AssertionStatus.FALSIFIED;
+    protected String getPastTenseOperationName() {
+        return "signed";
     }
 
-    protected RequestWssIntegrity data;
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    protected WssProcessor.ParsedElement[] getElementsFoundByProcessor(WssProcessor.ProcessorResult wssResults) {
+        return wssResults.getElementsThatWereSigned();
+    }
+
+    protected boolean isAllowIfEmpty() {
+        return false;
+    }
 }

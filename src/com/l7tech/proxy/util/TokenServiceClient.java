@@ -166,7 +166,7 @@ public class TokenServiceClient {
                                                        serverCertificate);
         } catch (InvalidDocumentFormatException e) {
             throw new CausedIOException("Unable to process response from token server", e);
-        } catch (WssProcessor.ProcessorException e) {
+        } catch (ProcessorException e) {
             throw new CausedIOException("Unable to obtain token from token server", e);
         }
         return result;
@@ -190,13 +190,13 @@ public class TokenServiceClient {
      *         HolderOfKeyAssertion or SecureConversationSession.  Never returns null; will either succeed or throw.
      * @throws InvalidDocumentFormatException  if there is a problem with the format of the response document
      * @throws GeneralSecurityException  if there is a problem with a certificate, key, or signature
-     * @throws WssProcessor.ProcessorException   if there is a problem undecorating the signed message
+     * @throws com.l7tech.common.security.xml.ProcessorException   if there is a problem undecorating the signed message
      */
     public static Object parseRequestSecurityTokenResponse(Document response,
                                                     X509Certificate clientCertificate,
                                                     PrivateKey clientPrivateKey,
                                                     X509Certificate serverCertificate)
-            throws InvalidDocumentFormatException, GeneralSecurityException, WssProcessor.ProcessorException
+            throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException
     {
         WssProcessor wssProcessor = new WssProcessorImpl();
         WssProcessor.ProcessorResult result = null;

@@ -1,29 +1,26 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
+import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.ProcessorResultUtil;
 import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
-import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Iterator;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +36,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     private static final Logger log = Logger.getLogger(ClientHttpClientCert.class.getName());
 
     public ClientResponseWssIntegrity(ResponseWssIntegrity data) {
-        responseWssIntegrity = data;
+        this.data = data;
         if (data == null) {
             throw new IllegalArgumentException("security elements is null");
         }
@@ -69,57 +66,46 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
      * @return
      */
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
-            throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, InvalidDocumentFormatException {
+            throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, InvalidDocumentFormatException, PolicyAssertionException {
         Document soapmsg = response.getResponseAsDocument();
-
-        WssProcessor.ProcessorResult wssResults = response.getProcessorResult();
-        if (wssResults == null) {
-            throw new IOException("This response was not processed for WSS level security.");
-        }
+        WssProcessor.ProcessorResult wssRes = response.getProcessorResult();
 
         String sentMessageId = request.getL7aMessageId();
-        if (sentMessageId == null)
-            throw new IllegalStateException("Internal error: processing signed response, but we recorded no sending message id");
-        String receivedRelatesTo = SoapUtil.getL7aRelatesTo(soapmsg);
-        log.log(Level.FINEST, "Response included L7a:RelatesTo of \"" + receivedRelatesTo + "\"");
-        if (receivedRelatesTo != null) {
-            if (!sentMessageId.equals(receivedRelatesTo.trim()))
-                throw new ResponseValidationException("Response does not include L7a:RelatesTo matching L7a:MessageID from request");
-            if (!wasElementSigned(wssResults, SoapUtil.getL7aRelatesToElement(soapmsg)))
-                throw new ResponseValidationException("Response included a matching L7a:RelatesTo, but it was not signed");
-        }
+        if (sentMessageId != null) {
+            String receivedRelatesTo = SoapUtil.getL7aRelatesTo(soapmsg);
+            log.log(Level.FINEST, "Response included L7a:RelatesTo of \"" + receivedRelatesTo + "\"");
+            if (receivedRelatesTo != null) {
+                if (!sentMessageId.equals(receivedRelatesTo.trim()))
+                    throw new ResponseValidationException("Response does not include L7a:RelatesTo matching L7a:MessageID from request");
+                if (!wasElementSigned(wssRes, SoapUtil.getL7aRelatesToElement(soapmsg)))
+                    throw new ResponseValidationException("Response included a matching L7a:RelatesTo, but it was not signed");
 
-        XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg, responseWssIntegrity.getXpathExpression().getNamespaces());
-        List selectedNodes = null;
-        try {
-            selectedNodes = evaluator.select(responseWssIntegrity.getXpathExpression().getExpression());
-        } catch (JaxenException e) {
-            // this is thrown when there is an error in the expression
-            // this is therefore a bad policy
-            throw new ResponseValidationException(e);
-        }
-
-        // the element is not there so there is nothing to check
-        if (selectedNodes.isEmpty()) {
-            log.info("The element " + responseWssIntegrity.getXpathExpression().getExpression() + " is not present in this response. " +
-                     "the assertion therefore succeeds.");
-            return AssertionStatus.NONE;
-        }
-
-        // to assert this, i must make sure that at least one of these nodes is part of the nodes
-        // that were signed as per attesting the wss processor
-        for (Iterator i = selectedNodes.iterator(); i.hasNext();) {
-            Node node = (Node)i.next();
-            if (wasElementSigned(wssResults, node)) {
-                // we got the bugger!
-                log.fine("The element " + responseWssIntegrity.getXpathExpression().getExpression() + " was found in this " +
-                         "response. and is part of the elements that were signed as per the wss processor.");
-                // TODO we currently short-circuit success as soon as ANY element is found.  We must check them all!
-                return AssertionStatus.NONE;
             }
+
+            // Skip this check on subsequent ResponseWssIntegrity assertions.
+            request.setL7aMessageId(null);
         }
-        log.info("The element was found in the response but does not appear to be signed. Returning FALSIFIED");
-        return AssertionStatus.FALSIFIED;
+
+        ProcessorResultUtil.SearchResult result = null;
+        try {
+            result = ProcessorResultUtil.searchInResult(log,
+                                                        soapmsg,
+                                                        data.getXpathExpression().getExpression(),
+                                                        data.getXpathExpression().getNamespaces(),
+                                                        false,
+                                                        wssRes.getElementsThatWereSigned(),
+                                                        "signed");
+        } catch (ProcessorException e) {
+            throw new PolicyAssertionException(e);
+        }
+        switch (result.getResultCode()) {
+            case ProcessorResultUtil.NO_ERROR:
+                return AssertionStatus.NONE;
+            case ProcessorResultUtil.FALSIFIED:
+                return AssertionStatus.FALSIFIED;
+            default:
+                return AssertionStatus.SERVER_ERROR;
+        }
     }
 
     private boolean wasElementSigned(WssProcessor.ProcessorResult wssResults, Node node) {
@@ -133,7 +119,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
 
     public String getName() {
         String str = "";
-        XpathExpression xpe = responseWssIntegrity.getXpathExpression();
+        XpathExpression xpe = data.getXpathExpression();
         if (xpe != null)
             str = " matching XPath expression \"" + xpe.getExpression() + "\"";
         return "Response WSS Integrity: sign elements" + str;
@@ -144,5 +130,5 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     }
 
 
-    private ResponseWssIntegrity responseWssIntegrity;
+    private ResponseWssIntegrity data;
 }

@@ -92,13 +92,11 @@ public interface WssProcessor {
     public interface ProcessorResult {
         Document getUndecoratedMessage();
         SignedElement[] getElementsThatWereSigned();
-        Element[] getElementsThatWereEncrypted();
+        ParsedElement[] getElementsThatWereEncrypted();
         SecurityToken[] getSecurityTokens();
         Timestamp getTimestamp();
         String getSecurityNS();
     }
-
-    public static class ProcessorException extends Exception {}
 
     public static class BadContextException extends Exception implements SoapFaultDetail {
         public BadContextException(String contextId) {

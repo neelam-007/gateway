@@ -6,10 +6,7 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.security.xml.WssDecoratorImpl;
-import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.common.security.xml.WssProcessorImpl;
+import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapUtil;
@@ -76,7 +73,7 @@ public class MessageProcessor {
                                                       serverSSLcert,
                                                       sslPrivateKey,
                                                       SecureConversationContextManager.getInstance());
-            } catch (WssProcessor.ProcessorException e) {
+            } catch (ProcessorException e) {
                 logger.log(Level.SEVERE, "Error in WSS processing of request", e);
                 return AssertionStatus.SERVER_ERROR;
             } catch (InvalidDocumentFormatException e) {
