@@ -244,6 +244,24 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     /**
+     * @return all decoration requirements (default at the end of course)
+     */
+    public DecorationRequirements[] getAllDecorationRequirements() {
+        Set keys = policySettings.downstreamRecipientWSSRequirements.keySet();
+        int size = 1;
+        size += keys.size();
+        DecorationRequirements[] output = new DecorationRequirements[size];
+        int i = 0;
+        for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+            String key = (String) iterator.next();
+            output[i] = (DecorationRequirements)policySettings.downstreamRecipientWSSRequirements.get(key);
+            i++;
+        }
+        output[size-1] = policySettings.defaultWSSRequirements;
+        return output;
+    }
+
+    /**
      * @return the Map of (assertion instance => ClientDecorator), containing deferred decorations to apply.
      */
     public Map getPendingDecorations() {

@@ -18,6 +18,7 @@ import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -376,19 +377,22 @@ public class MessageProcessor {
 
                     // Do all WSS processing all at once
                     if (request.isSoap()) {
-
-                        // todo, plugin here the multiple passes at the decorator (fla todo)
-
                         log.info("Running pending request through WS-Security decorator");
-                        context.getDefaultWssRequirements().setTimestampCreatedDate(context.getSsg().dateTranslatorToSsg().translate(new Date()));
+                        Date ts = context.getSsg().dateTranslatorToSsg().translate(new Date());
                         Integer expiryMillis = Integer.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
-                        if (expiryMillis != null)
-                            context.getDefaultWssRequirements().setTimestampTimeoutMillis(expiryMillis.intValue());
-                        wssDecorator.decorateMessage(request.getXmlKnob().getDocumentWritable(), // upgrade to writable document
-                                                     context.getDefaultWssRequirements());
-
-                    } else
+                        DecorationRequirements[] wssrequirements = context.getAllDecorationRequirements();
+                        for (int i = 0; i < wssrequirements.length; i++) {
+                            DecorationRequirements wssrequirement = wssrequirements[i];
+                            wssrequirement.setTimestampCreatedDate(ts);
+                            if (expiryMillis != null) {
+                                wssrequirement.setTimestampTimeoutMillis(expiryMillis.intValue());
+                            }
+                            wssDecorator.decorateMessage(request.getXmlKnob().getDocumentWritable(), // upgrade to writable document
+                                                         wssrequirement);
+                        }
+                    } else {
                         log.info("Request isn't SOAP; skipping WS-Security decoration");
+                    }
                 }
 
             } catch (PolicyAssertionException e) {
