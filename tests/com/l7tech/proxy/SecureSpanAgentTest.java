@@ -59,9 +59,9 @@ public class SecureSpanAgentTest {
         log.info("The Gateway's CA certificate: " + ssgCert);
 
         String soapaction = PLACEORDER_SOAPACTION;
-        //String message = PLACEORDER_MESSAGE;
-        HexUtils.Slurpage slurpage = HexUtils.slurpUrl(SecureSpanAgentTest.class.getClassLoader().getResource(SAML4));
-        String message = new String(slurpage.bytes);
+        String message = PLACEORDER_MESSAGE;
+        //HexUtils.Slurpage slurpage = HexUtils.slurpUrl(SecureSpanAgentTest.class.getClassLoader().getResource(SAML4));
+        //String message = new String(slurpage.bytes);
         SecureSpanAgent.Result result = agent.send(soapaction, message);
         log.info("Got back http status " + result.getHttpStatus());
         log.info("Got back envelope:\n" + XmlUtil.documentToString(result.getResponse()));
