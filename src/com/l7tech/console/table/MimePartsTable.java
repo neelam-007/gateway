@@ -51,7 +51,7 @@ public class MimePartsTable extends JTable {
             Object[][] rows = new Object[][]{};
 
             String[] cols = new String[]{
-                "Parameter Name", "MIME Part Content Type", "MIME Part Length Max."
+                "Parameter Name", "MIME Part Content Type", "MIME Part Length Max. (K bytes)"
             };
 
             tableSorter = new MimePartsTableSorter(new DefaultTableModel(rows, cols)); 
