@@ -12,10 +12,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.table.SecuredMessagePartsTableModel;
 import com.l7tech.console.table.SecuredMessagePartsTableModel.SecuredMessagePart;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.RequestWssIntegrityTreeNode;
-import com.l7tech.console.tree.policy.ResponseWssIntegrityTreeNode;
-import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
+import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.tree.wsdl.BindingOperationTreeNode;
 import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
@@ -205,12 +202,14 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         if (n == null) {
             throw new IllegalArgumentException();
         }
-        if (!(n instanceof RequestWssIntegrityTreeNode ||
-          n instanceof ResponseWssIntegrityTreeNode)) {
-            throw new IllegalArgumentException("Unsupported security node: " + n.getClass());
-        }
         node = n;
-        setTitle("XML Security Properties");
+        StringBuffer title = new StringBuffer("Select element to ");
+        if ((n instanceof RequestWssIntegrityTreeNode) || (n instanceof ResponseWssIntegrityTreeNode)) {
+            title.append("sign.");
+        } else if ((n instanceof RequestWssConfidentialityTreeNode) || (n instanceof ResponseWssConfidentialityTreeNode)) {
+            title.append("encrypt.");
+        } else throw new IllegalArgumentException("Unsupported security node: " + n.getClass());
+        setTitle(title.toString());
 
         okActionListener = okListener;
 
