@@ -13,8 +13,8 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.crypto.Cipher;
@@ -26,6 +26,9 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.text.DateFormat;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
 import java.util.*;
@@ -76,6 +79,20 @@ public class WssProcessorImpl implements WssProcessor {
                                                           PrivateKey recipientKey)
             throws WssProcessor.ProcessorException
     {
+        try {
+            return doUndecorateMessage(soapMsg, recipientCert, recipientKey);
+        } catch (XmlUtil.MultipleChildElementsException e) {
+            throw new ProcessorException(e);
+        } catch (ParseException e) {
+            throw new ProcessorException(e);
+        }
+    }
+
+    private WssProcessor.ProcessorResult doUndecorateMessage(Document soapMsg,
+                                                          X509Certificate recipientCert,
+                                                          PrivateKey recipientKey)
+            throws WssProcessor.ProcessorException, XmlUtil.MultipleChildElementsException, ParseException
+    {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
         cntx.processedDocument = (Document)soapMsg.cloneNode(true);
@@ -106,18 +123,18 @@ public class WssProcessorImpl implements WssProcessor {
         for (int i = 0; i < securityChildren.getLength(); i++) {
             Element securityChildToProcess = (Element)securityChildren.item(i);
 
-            if (securityChildToProcess.getLocalName().equals("EncryptedKey")) {
+            if (securityChildToProcess.getLocalName().equals(SoapUtil.ENCRYPTEDKEY_EL_NAME)) {
                 processEncryptedKey(securityChildToProcess, recipientKey,
                                     recipientCert.getExtensionValue("2.5.29.14"), cntx);
-            } else if (securityChildToProcess.getLocalName().equals("Timestamp")) {
-                processTimestamp(securityChildToProcess);
-            } else if (securityChildToProcess.getLocalName().equals("BinarySecurityToken")) {
+            } else if (securityChildToProcess.getLocalName().equals(SoapUtil.TIMESTAMP_EL_NAME)) {
+                processTimestamp(cntx, securityChildToProcess);
+            } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
                 processBinarySecurityToken(securityChildToProcess, cntx);
-            } else if (securityChildToProcess.getLocalName().equals("Signature")) {
+            } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SIGNATURE_EL_NAME)) {
                 processSignature(securityChildToProcess);
             } else {
                 // Unhandled child elements of the Security Header
-                String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace, SoapUtil.MUSTUNDERSTAND_EL_NAME).trim();
+                String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace, SoapUtil.MUSTUNDERSTAND_ATTR_NAME).trim();
                 if ("1".equals(mu) || "true".equalsIgnoreCase(mu)) {
                     String msg = "Unrecognized element in default Security header: " +
                                  securityChildToProcess.getNodeName() +
@@ -128,6 +145,20 @@ public class WssProcessorImpl implements WssProcessor {
                     logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
                 }
             }
+        }
+
+        // Backward compatibility - if we didn't see a timestamp in the security header, look up in the soap header
+        if (cntx.timestamp == null) {
+            Element header = XmlUtil.findOnlyOneChildElementByName(soapMsg.getDocumentElement(),
+                                                                   currentSoapNamespace,
+                                                                   SoapUtil.HEADER_EL_NAME);
+            // (header can't be null or we woulnd't be here)
+            Element timestamp = XmlUtil.findFirstChildElementByName(header,
+                                                                    SoapUtil.WSU_URIS_ARRAY,
+                                                                    SoapUtil.TIMESTAMP_EL_NAME);
+            if (timestamp != null)
+                processTimestamp(cntx, timestamp);
+
         }
 
         // remove Security element altogether
@@ -387,9 +418,70 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private void processTimestamp(Element timestampElement) {
+    private static class TimestampDate implements WssProcessor.TimestampDate {
+        Element element;
+        Date date;
+
+        TimestampDate(Element createdOrExpiresElement) throws ParseException {
+            element = createdOrExpiresElement;
+            String dateString = XmlUtil.findFirstChildTextNode(element);
+            DateFormat dateFormat = new SimpleDateFormat(SoapUtil.DATE_FORMAT_PATTERN);
+            dateFormat.setTimeZone(SoapUtil.DATE_FORMAT_TIMEZONE);
+            date = dateFormat.parse(dateString);
+        }
+
+        public Date asDate() {
+            return date;
+        }
+
+        public Element asElement() {
+            return element;
+        }
+
+        public String asXmlString() {
+            try {
+                return XmlUtil.elementToString(element);
+            } catch (IOException e) {
+                throw new RuntimeException(e); // can't happen
+            }
+        }
+    }
+
+    private void processTimestamp(ProcessingStatusHolder ctx, final Element timestampElement)
+            throws XmlUtil.MultipleChildElementsException, ParseException
+    {
         logger.finest("Processing Timestamp");
-        // todo
+        final Element created = XmlUtil.findOnlyOneChildElementByName(timestampElement,
+                                                                      SoapUtil.WSU_URIS_ARRAY,
+                                                                      SoapUtil.CREATED_EL_NAME);
+        final Element expires = XmlUtil.findOnlyOneChildElementByName(timestampElement,
+                                                                      SoapUtil.WSU_URIS_ARRAY,
+                                                                      SoapUtil.EXPIRES_EL_NAME);
+
+        final TimestampDate createdTimestampDate = created == null ? null : new TimestampDate(created);
+        final TimestampDate expiresTimestampDate = expires == null ? null : new TimestampDate(expires);
+
+        ctx.timestamp = new Timestamp() {
+            public WssProcessor.TimestampDate getCreated() {
+                return createdTimestampDate;
+            }
+
+            public WssProcessor.TimestampDate getExpires() {
+                return expiresTimestampDate;
+            }
+
+            public Element asElement() {
+                return timestampElement;
+            }
+
+            public String asXmlString() {
+                try {
+                    return XmlUtil.elementToString(timestampElement);
+                } catch (IOException e) {
+                    throw new RuntimeException(e); // can't happen
+                }
+            }
+        };
     }
 
     private void processBinarySecurityToken(final Element binarySecurityTokenElement,
