@@ -130,8 +130,6 @@ public class WssDecoratorTest extends TestCase {
             reqs.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
                 public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
                 public SecretKey getSecretKey() { return d.secureConversationKey; }
-                public int getGeneration() { return 0; }
-                public int getLength() { return 16; }
             });
         if (d.elementsToEncrypt != null)
             for (int i = 0; i < d.elementsToEncrypt.length; i++) {

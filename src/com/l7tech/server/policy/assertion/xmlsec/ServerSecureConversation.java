@@ -80,14 +80,6 @@ public class ServerSecureConversation implements ServerAssertion {
                     public SecretKey getSecretKey() {
                         return session.getSharedSecret();
                     }
-                    // todo, this makes no sense
-                    public int getGeneration() {
-                        return 0;
-                    }
-                    // todo, this makes no sense
-                    public int getLength() {
-                        return 20;
-                    }
                 });
                 return AssertionStatus.NONE;
             }

@@ -45,6 +45,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private static final Logger logger = Logger.getLogger(WssDecorator.class.getName());
 
     public static final int TIMESTAMP_TIMOUT_SEC = 300;
+    private static final int DERIVED_KEY_LENGTH = 8;
 
     private static class Context {
         SecureRandom rand = new SecureRandom();
@@ -221,20 +222,14 @@ public class WssDecoratorImpl implements WssDecorator {
         ref.setAttribute("ValueType", SoapUtil.VALUETYPE_SECURECONV);
 
         // Gather derived key params
-        int length = session.getLength();
-        if (length < 8)
-            throw new IllegalArgumentException("Session key Length too short");
-        int generation = session.getGeneration();
-        if (generation < 0)
-            throw new IllegalArgumentException("Session Generation must be nonnegative");
+        int length = DERIVED_KEY_LENGTH;
         byte[] nonce = new byte[length];
         c.rand.nextBytes(nonce);
         String label = "WS-SecureConversation";
-        // TODO - handle nonzero generation
 
         // Encode derived key params for the recipient
         Element generationEl = XmlUtil.createAndAppendElementNS(dkt, "Generation", SoapUtil.WSSC_NAMESPACE, "wssc");
-        generationEl.appendChild(factory.createTextNode(Integer.toString(generation)));
+        generationEl.appendChild(factory.createTextNode("0"));
         Element lengthEl = XmlUtil.createAndAppendElementNS(dkt, "Length", SoapUtil.WSSC_NAMESPACE, "wssc");
         lengthEl.appendChild(factory.createTextNode(Integer.toString(length)));
         Element labelEl = XmlUtil.createAndAppendElementNS(dkt, "Label", SoapUtil.WSSC_NAMESPACE, "wssc");
