@@ -199,7 +199,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             }
         });
 
-     cancelButton.addActionListener(new ActionListener() {
+        cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 XmlSecurityPropertiesDialog.this.dispose();
             }
@@ -214,7 +214,9 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                         SecuredMessagePart sp = (SecuredMessagePartsTableModel.SecuredMessagePart)it.next();
                         elements.add(toElementSecurity(sp));
                     }
-                    xmlSecAssertion.setElements((ElementSecurity[])elements.toArray(new ElementSecurity[]{}));
+                    if (!elements.isEmpty()) {
+                        xmlSecAssertion.setElements((ElementSecurity[])elements.toArray(new ElementSecurity[]{}));
+                    }
                     XmlSecurityPropertiesDialog.this.dispose();
                 } catch (SOAPException e1) {
                     throw new RuntimeException(e1);
@@ -337,23 +339,24 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         org.w3c.dom.Document document = XmlUtil.stringToDocument(s);
         Element body = SoapUtil.getBody(document);
         if (body == null) {
-            log.warning("Unable to create the blank message from "+s);
+            log.warning("Unable to create the blank message from " + s);
             return;
         }
         NodeList nl = body.getChildNodes();
-        for (int i=0; i < nl.getLength(); i++) {
+        for (int i = 0; i < nl.getLength(); i++) {
             Node item = (Node)nl.item(i);
             if (item == null) continue;
             if (item.getNodeType() == Element.ELEMENT_NODE) {
                 item.getParentNode().removeChild(item);
             }
         }
-        blankMessage = XmlUtil.documentToString(document) ;
+        blankMessage = XmlUtil.documentToString(document);
     }
 
 
     /**
      * Select the operation by name
+     *
      * @param name the operation name
      */
     private void selectOperation(String name) {
@@ -631,6 +634,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
 
     /**
      * Display soap message into the message viewer
+     *
      * @param soapMessage
      * @throws RuntimeException wrapping the originasl exception
      */
@@ -649,6 +653,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
 
     /**
      * display the string soap message onto the viewer
+     *
      * @param soapMessage
      * @throws RuntimeException wrapping the originasl exception
      */
@@ -693,7 +698,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         }
         SecuredMessagePart spm = securedMessagePartsTableModel.getPartAt(selectedRow);
         BindingOperation operation = spm.getOperation();
-        if (operation !=null)  {
+        if (operation != null) {
             selectOperation(operation.getName());
         }
     }
