@@ -26,4 +26,16 @@ public interface RsaSignerEngine {
      * @throws Exception if something bad happens
      */
     Certificate createCertificate(byte[] pkcs10req) throws Exception;
+
+    public static class CertType {
+        public static final CertType CA = new CertType("CA");
+        public static final CertType SSL = new CertType("SSL");
+        public static final CertType CLIENT = new CertType("Client");
+
+        private CertType( String desc ) {
+            this.desc = desc;
+        }
+
+        private final String desc;
+    }
 }
