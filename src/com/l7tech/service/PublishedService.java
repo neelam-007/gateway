@@ -26,6 +26,8 @@ import java.net.URL;
 import java.util.logging.Logger;
 
 /**
+ * A service that is published by the SecureSpan Gateway.  Primarily contains references to a WSDL and a policy.
+ *
  * @author alex
  * @version $Revision$
  */
@@ -41,6 +43,11 @@ public class PublishedService extends NamedEntityImp {
         setVersion(1);
     }
 
+    /**
+     * Parses the policy and returns the {@link Assertion} at its root.
+     * @return the {@link Assertion} at the root of the policy. May be null.
+     * @throws IOException if the policy cannot be deserialized
+     */
     public synchronized Assertion rootAssertion() throws IOException {
         String policyXml = getPolicyXml();
         if ( policyXml == null || policyXml.length() == 0 ) {
@@ -54,6 +61,11 @@ public class PublishedService extends NamedEntityImp {
         return _rootAssertion;
     }
 
+    /**
+     * Attempts to open a connection to the protected service
+     * @throws IOException if the connection to the protected service cannot be established
+     * @throws WSDLException if no valid URL can be found in the service's WSDL document.
+     */
     public void ping() throws IOException, WSDLException {
         InputStream is = null;
         try {
@@ -64,11 +76,20 @@ public class PublishedService extends NamedEntityImp {
         }
     }
 
+    /**
+     * Gets the URL from which the WSDL was originally downloaded
+     * @return the URL from which the WSDL was originally downloaded.  Never null, but could be empty.
+     */
     public String getWsdlUrl() {
         if (_wsdlUrl == null) _wsdlUrl = ""; // to satisfy the db
         return _wsdlUrl;
     }
 
+    /**
+     * Sets the WSDL URL for this service
+     * @param wsdlUrl the WSDL URL for this service
+     * @throws MalformedURLException if the URL cannot be parsed
+     */
     public synchronized void setWsdlUrl( String wsdlUrl ) throws MalformedURLException {
         if ( _wsdlUrl != null && !_wsdlUrl.equals(wsdlUrl) ) _wsdlXml = null;
         if (wsdlUrl != null && wsdlUrl.length() > 0) {
@@ -80,9 +101,9 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
-     * Loads the WSDL document from the _wsdlUrl if necessary.
-     * @return A String containing the WSDL document.
-     * @throws IOException
+     * Returns the contents of the WSDL document for this service.  Loads the WSDL document from the {@link #_wsdlUrl} if necessary.
+     * @return A String containing the WSDL document.  Never null.
+     * @throws IOException if the WSDL document cannot be retrieved
      */
     public synchronized String getWsdlXml() throws IOException {
         if ( _wsdlXml == null ) {
@@ -103,11 +124,20 @@ public class PublishedService extends NamedEntityImp {
         return _wsdlXml;
     }
 
+    /**
+     * Sets the contents of the WSDL document for this service.
+     * @param wsdlXml the contents of the WSDL document for this service.
+     */
     public synchronized void setWsdlXml( String wsdlXml ) {
         _wsdlXml = wsdlXml;
         _parsedWsdl = null;
     }
 
+    /**
+     * Gets the {@link Wsdl} object generated from this service's WSDL document.
+     * @return the {@link Wsdl} object generated from this service's WSDL document.
+     * @throws WSDLException
+     */
     public synchronized Wsdl parsedWsdl() throws WSDLException {
         if ( _parsedWsdl == null ) {
             try {
@@ -122,6 +152,12 @@ public class PublishedService extends NamedEntityImp {
         return _parsedWsdl;
     }
 
+    /**
+     * Gets the SOAP {@link Port} most appropriate for the given {@link Request} from this service's WSDL.
+     * @param request the {@link Request} to use to select an appropriate {@link Port}. May be null.
+     * @return the {@link Port} most appropriate for the given {@link Request}. May be null.
+     * @throws WSDLException if the WSDL cannot be parsed
+     */
     public synchronized Port wsdlPort( Request request ) throws WSDLException {
         // TODO: Get the right Port for this request, rather than just the first one!
 
@@ -132,8 +168,16 @@ public class PublishedService extends NamedEntityImp {
 
         return _wsdlPort;
     }
-    // todo: What is the Request parameter doing here? It is also unused. em24102003
+
+    /**
+     * Gets the URL of the protected service most appropriate for the given {@link Request} from this service's WSDL.
+     * @param request the {@link Request} to use in selecting an appropriate {@link Port}. May be null.
+     * @return the protected service URL. May be null.
+     * @throws WSDLException if the WSDL could not be parsed
+     * @throws MalformedURLException if the protected service URL could not be parsed
+     */
     public synchronized URL serviceUrl( Request request ) throws WSDLException, MalformedURLException {
+        // todo: What is the Request parameter doing here? It is also unused. em24102003
         if (!isSoap()) return null;
         if ( _serviceUrl == null ) {
             Port wsdlPort = wsdlPort( request );
@@ -151,11 +195,18 @@ public class PublishedService extends NamedEntityImp {
         return _serviceUrl;
     }
 
-
+    /**
+     * Gets the XML serialized policy for this service.
+     * @return the XML serialized policy for this service.
+     */
     public String getPolicyXml() {
         return _policyXml;
     }
 
+    /**
+     * Sets the XML serialized policy for this service.
+     * @param policyXml the XML serialized policy for this service.
+     */
     public void setPolicyXml( String policyXml ) {
         _policyXml = policyXml;
         // Invalidate stale Root Assertion
@@ -208,17 +259,19 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
-     * Whether or not this service is a soap service.
-     * If not soap, then service does not have wsdl and
-     * it is resolved through its routing URI property.
+     * Gets the flag indicating whether or not this service is a SOAP service.
+     * If not, the service does not have a WSDL and can only be resolved through its routing URI property.
+     *
+     * @return true if the service is SOAP (i.e. has a WSDL), false otherwise.
      */
     public boolean isSoap() {
         return soap;
     }
 
-    /** Whether or not this service is a soap service.
-     * If not soap, then service does not have wsdl and
-     * it is resolved through its routing URI property.
+    /**
+     * Sets the flag indicating whether or not this service is a SOAP service.
+     * If not, then service does not have a WSDL and can only be resolved through its routing URI property.
+     * @param isSoap true if the service is SOAP (i.e. has a WSDL), false otherwise.
      */
     public void setSoap(boolean isSoap) {
         this.soap = isSoap;
@@ -226,6 +279,7 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * URI portion of the requests that determine whether or not requests are meant for this service.
+     * @return the HTTP URI (the part of a URL after the hostname) for this service.
      */
     public String getRoutingUri() {
         return routingUri;
@@ -233,25 +287,24 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * URI portion of the requests that determine whether or not requests are meant for this service.
+     * @param routingUri the HTTP URI (the part of a URL after the hostname) for this service.
      */
     public void setRoutingUri(String routingUri) {
         this.routingUri = routingUri;
     }
 
-
-
     // ************************************************
     // PRIVATES
     // ************************************************
-    protected String _policyXml;
-    protected String _wsdlUrl;
-    protected String _wsdlXml;
-    protected boolean _disabled;
-    protected boolean soap = true;
-    protected String routingUri;
+    private String _policyXml;
+    private String _wsdlUrl;
+    private String _wsdlXml;
+    private boolean _disabled;
+    private boolean soap = true;
+    private String routingUri;
 
-    protected transient Wsdl _parsedWsdl;
-    protected transient Port _wsdlPort;
-    protected transient URL _serviceUrl;
-    protected transient Assertion _rootAssertion;
+    private transient Wsdl _parsedWsdl;
+    private transient Port _wsdlPort;
+    private transient URL _serviceUrl;
+    private transient Assertion _rootAssertion;
 }
