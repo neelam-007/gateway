@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
 import org.apache.axis.message.SOAPEnvelope;
 import org.apache.commons.httpclient.HttpClient;
@@ -129,6 +130,19 @@ public class MessageProcessor {
                     throw new ConfigurationException("SSG gave us an invalid Policy URL");
                 }
             }
+            if (status == 401) {
+                Managers.getCredentialManager().getCredentials(pendingRequest.getSsg());
+                if (!pendingRequest.isCredentialsUpdated()) {
+                    // Retry message processing a single time with possibly-shiny-and-new credentials
+                    pendingRequest.setCredentialsUpdated(true);
+                    pendingRequest.reset();
+                    return processMessage(pendingRequest);
+                }
+                if (policyUrlHeader == null)
+                    throw new ConfigurationException("SSG "); // TODO: show "invalid logon" dialog if gui
+
+            }
+
             SOAPEnvelope response = new SOAPEnvelope(postMethod.getResponseBodyAsStream());
             return response;
         } finally {
