@@ -29,11 +29,11 @@
         <id name="oid" column="oid" type="long">
           <generator class="hilo.long"/>
         </id>
-        <property name="tableName" type="string"/>
-        <property name="keySeed" type="long"/>
-        <property name="keyBatchSize" type="int"/>
-        <property name="classSeed" type="int"/>
-        <property name="serverSeed" type="int"/>
+        <property name="tableName" column="table_name" type="string"/>
+        <property name="keySeed" column="key_seed" type="long"/>
+        <property name="keyBatchSize" column="key_batch_size" type="int"/>
+        <property name="classSeed" column="class_seed" type="int"/>
+        <property name="serverSeed" column="server_seed" type="int"/>
     </class>
 
     <class name="com.l7tech.identity.internal.imp.AddressImp" table="address">
@@ -46,7 +46,7 @@
         <property name="city" type="string"/>
         <property name="state" type="com.l7tech.identity.internal.imp.StateImp"/>
         <property name="country" type="com.l7tech.identity.internal.imp.CountryImp"/>
-        <property name="postalCode" type="string"/>
+        <property name="postalCode" column="postal_code" type="string"/>
     </class>
 
     <class name="com.l7tech.identity.internal.imp.CountryImp" table="country">
@@ -88,8 +88,8 @@
 <!--        <property name="users" type="set"/> -->
         <property name="name" type="string"/>
         <property name="address" type="com.l7tech.identity.internal.imp.AddressImp"/>
-        <property name="mailingAddress" type="com.l7tech.identity.internal.imp.AddressImp"/>
-        <property name="billingAddress" type="com.l7tech.identity.internal.imp.AddressImp"/>
+        <property name="mailingAddress" column="mailing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
+        <property name="billingAddress" column="billing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
     </class>
 
     <class name="com.l7tech.identity.internal.imp.UserImp" table="internal_user">
