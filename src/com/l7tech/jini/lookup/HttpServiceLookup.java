@@ -33,7 +33,6 @@ import java.util.logging.Level;
  */
 public class HttpServiceLookup extends ServiceLookup {
     private final String serviceUrl;
-    private ServiceRegistrar serviceRegistrar;
 
     /**
      * Instantiate http serrvice lookup.
@@ -95,7 +94,6 @@ public class HttpServiceLookup extends ServiceLookup {
      */
     protected ServiceRegistrar getRegistrar()
       throws IOException, ConfigurationException, ClassNotFoundException {
-        if (serviceRegistrar !=null) return serviceRegistrar;
 
         URLConnection conn = null;
         URL url = new URL(serviceUrl+"/registrar");
@@ -112,9 +110,6 @@ public class HttpServiceLookup extends ServiceLookup {
 
             String encoded = encoder.encode(cred.getBytes());
             conn.setRequestProperty("Authorization", "Basic "+encoded);
-        } else {
-            String encoded = encoder.encode("ssgadmin:ssgadminpasswd".getBytes());
-            conn.setRequestProperty("Authorization", "Basic "+encoded);
         }
 
         // for both input and output
@@ -127,8 +122,7 @@ public class HttpServiceLookup extends ServiceLookup {
         ObjectInputStream oi = new ObjectInputStream(conn.getInputStream());
 
         try {
-            serviceRegistrar = (ServiceRegistrar)oi.readObject();
-            return serviceRegistrar;
+            return (ServiceRegistrar)oi.readObject();
         } finally {
             if (oi !=null) oi.close();
         }
