@@ -66,6 +66,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
             for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
                 ElementSecurity elementSecurity = elements[i];
                 envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
+                if ( envelopeProcessed ) preconditionMatched = true;
 
                 // XPath precondition match?
                 XpathExpression xpath = elementSecurity.getPreconditionXPath();
