@@ -1,6 +1,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.console.panels.Utilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -92,6 +93,8 @@ public abstract class PropertyDialog extends JDialog {
                                               new Insets(5, 5, 0, 0),
                                               0, 0));
 
+        Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
+
         getContentPane().add(buttonPane,
                              new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
                                                     GridBagConstraints.EAST,
@@ -105,6 +108,7 @@ public abstract class PropertyDialog extends JDialog {
      * @return True iff. the user closed the dialog by clicking the "Ok" button.
      */
     public boolean runDialog() {
+        Utilities.centerOnScreen(this);
         show();
         return userClickedOk;
     }

@@ -2,6 +2,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.console.panels.Utilities;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -33,6 +34,7 @@ public class Gui {
     private static final String MENU_SHOW = "Show";
     private static final String MENU_SHOW_MESSAGES = "Show Messages";
     private JCheckBoxMenuItem showMessages;
+    private SsgListPanel ssgListPanel;
 
     /** Get the singleton Gui. */
     public static Gui getInstance() {
@@ -106,6 +108,8 @@ public class Gui {
                     showMessages.setSelected(messageViewer.isShowing());
                 }
             });
+            messageViewer.pack();
+            Utilities.centerOnScreen(messageViewer);
         }
         return messageViewer;
     }
@@ -122,11 +126,18 @@ public class Gui {
 
             final JMenuBar menus = makeMenus();
             frame.setJMenuBar(menus);
-            frame.setContentPane(new SsgListPanel());
+            frame.setContentPane(getSsgListPanel());
             frame.pack();
+            Utilities.centerOnScreen(frame);
         }
 
         return frame;
+    }
+
+    private SsgListPanel getSsgListPanel() {
+        if (ssgListPanel == null)
+            ssgListPanel = new SsgListPanel();
+        return ssgListPanel;
     }
 
     /** Build the menu bar. */
@@ -139,6 +150,11 @@ public class Gui {
 
         final JMenuBar menus = new JMenuBar();
         final JMenu fileMenu = new JMenu(MENU_FILE);
+
+        fileMenu.add(new JMenuItem(getSsgListPanel().getActionNewSsg()));
+        fileMenu.add(new JMenuItem(getSsgListPanel().getActionEditSsg()));
+        fileMenu.add(new JMenuItem(getSsgListPanel().getActionDeleteSsg()));
+        fileMenu.add(new JSeparator());
 
         final JMenuItem fileQuit = new JMenuItem(MENU_FILE_QUIT);
         fileQuit.addActionListener(menuActionListener);

@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy.gui;
 
+import com.l7tech.console.panels.Utilities;
+
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
@@ -173,6 +175,7 @@ public class PasswordDialog extends JDialog {
 
     private char[] runPasswordPrompt() {
         pack();
+        Utilities.centerOnScreen(this);
         show();
         return passwordValid ? fieldPassword.getPassword() : null;
     }
