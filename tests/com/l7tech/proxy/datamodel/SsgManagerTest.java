@@ -193,10 +193,6 @@ public class SsgManagerTest extends TestCase {
         assertTrue(sm.getSsgList().size() == 0);
     }
 
-    public void testFailures() {
-        assertTrue(false);
-    }
-
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
