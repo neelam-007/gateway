@@ -20,9 +20,9 @@ public abstract class JceProvider {
     public static final String ENGINE_PROPERTY = "com.l7tech.common.security.jceProviderEngine";
 
     // Available drivers
-    private static final String BC_ENGINE = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
-    private static final String PHAOS_ENGINE = "com.l7tech.common.security.prov.phaos.PhaosJceProviderEngine";
-    private static final String RSA_ENGINE = "com.l7tech.common.security.prov.rsa.RsaJceProviderEngine";
+    public static final String BC_ENGINE = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
+    public static final String PHAOS_ENGINE = "com.l7tech.common.security.prov.phaos.PhaosJceProviderEngine";
+    public static final String RSA_ENGINE = "com.l7tech.common.security.prov.rsa.RsaJceProviderEngine";
 
     // Default driver
     private static final String DEFAULT_ENGINE = BC_ENGINE;
