@@ -20,20 +20,19 @@ import java.io.*;
 public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMessage {
     public XmlMessageAdapter( TransportMetadata tm ) {
         super(tm);
+        _dbf.setNamespaceAware(true);
     }
 
     synchronized void parse( String xml ) throws SAXException, IOException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware( true );
         try {
             // TODO: Ensure this is a lazy parser
-            DocumentBuilder parser = dbf.newDocumentBuilder();
+            DocumentBuilder parser = _dbf.newDocumentBuilder();
             _document = parser.parse( new InputSource( new StringReader( xml ) ) );
         } catch ( ParserConfigurationException pce ) {
             throw new SAXException( pce );
         }
     }
 
-
     protected Document _document;
+    protected DocumentBuilderFactory _dbf = DocumentBuilderFactory.newInstance();
 }
