@@ -247,6 +247,7 @@ public class RequestHandler extends AbstractHttpHandler {
             interceptor.onReceiveMessage(pendingRequest);
         } catch (Exception e) {
             interceptor.onMessageError(e);
+            log.log(Level.WARNING, "unable to parse incoming request", e);
             throw new HttpException(500, "Invalid SOAP envelope: " + e);
         }
 
