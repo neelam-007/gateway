@@ -156,6 +156,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
                     logger.fine("calling REALLY close");
                     ((PoolableConnection)theConnection).reallyClose();
                 } else {
+                    logger.fine("can't call REALLY close, type not handled: " + theConnection.getClass().getName());
                     theConnection.close();
                 }
 
