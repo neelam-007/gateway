@@ -10,7 +10,9 @@ import com.l7tech.proxy.util.ClientLogger;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.io.IOException;
-import java.util.List;
+import java.util.Comparator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Provide a ListModel view of the current SSG list.
@@ -21,6 +23,11 @@ import java.util.List;
 public class SsgTableModel extends AbstractTableModel implements SsgListener {
     private static final ClientLogger log = ClientLogger.getInstance(SsgTableModel.class);
     private SsgManager ssgManager;
+    private SortedSet model = null;
+    private Object[] modelArray = null;
+    private Comparator comparator = null;
+    private int sortColumn = 1;
+    private boolean sortReverse = false;
 
     public SsgTableModel(SsgManager ssgManager) {
         super();
@@ -33,11 +40,132 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
         return false;
     }
 
+    private void setComparator(Comparator comparator) {
+        if (this.comparator != comparator) {
+            this.comparator = comparator;
+            updateModel();
+        }
+    }
+
+    private static abstract class SsgComparator implements Comparator {
+        boolean reverse;
+        private SsgComparator(boolean reverse) { this.reverse = reverse; }
+
+        // Returns compare() result if at least one of o1 or o2 is null; returns 2 if both are non-null.
+        protected int compareNull(Object o1, Object o2) {
+            // safety / paranoia: handle one or both is null (null comparing as less than non-null)
+            if (o1 == null && o2 == null)
+                return 0;
+            if (o1 == null)
+                return -1;
+            if (o2 == null)
+                return 1;
+            return 2;
+        }
+
+        public int compare(Object o1, Object o2) {
+            if (reverse)
+                return doCompare(o2, o1);
+            else
+                return doCompare(o1, o2);
+        }
+
+        public int doCompare(Object o1, Object o2) {
+            int nullCheck = compareNull(o1, o2);
+            if (nullCheck != 2)
+                return nullCheck;
+
+            // safety / paranoia: handle one or both is not an Ssg (Ssg comparing as greater than non-Ssg)
+            if (!(o1 instanceof Ssg) || !(o2 instanceof Ssg))
+                return 0;
+            else if (!(o1 instanceof Ssg))
+                return -1;
+            else if (!(o2 instanceof Ssg))
+                return 1;
+
+            Ssg ssg1 = (Ssg) o1;
+            Ssg ssg2 = (Ssg) o2;
+            int result = compare(ssg1, ssg2);
+            return result == 0 ? ssg1.compareTo(ssg2) : result; // always use ssg ID as backup comparator
+        }
+
+        protected int compareStringsThatMightBeNull(String s1, String s2) {
+            int nullCheck = compareNull(s1, s2);
+            if (nullCheck != 2)
+                return nullCheck;
+            return s1.compareTo(s2);
+        }
+
+        abstract public int compare(Ssg ssg1, Ssg ssg2);
+    }
+
+    public int getSortColumn() {
+        return sortColumn;
+    }
+
+    public boolean getSortingReverse() {
+        return sortReverse;
+    }
+
+    /** Sort the table by the specified column. */
+    public void setSortOrder(int sortColumn, final boolean reverse) {
+        this.sortColumn = sortColumn;
+        this.sortReverse = reverse;
+        if (sortColumn == 2) {
+            setComparator(new SsgComparator(reverse) {
+                public int compare(Ssg ssg1, Ssg ssg2) {
+                    return compareStringsThatMightBeNull(ssg1.getUsername(), ssg2.getUsername());
+                }
+            });
+        } else if (sortColumn == 0) {
+            setComparator(new SsgComparator(reverse) {
+                public int compare(Ssg ssg1, Ssg ssg2) {
+                    return compareStringsThatMightBeNull(ssg1.getSsgAddress(), ssg2.getSsgAddress());
+                }
+            });
+        } else { // SORT_BY_ID
+            this.sortColumn = 1;
+            setComparator(new SsgComparator(reverse) {
+                public int compare(Ssg ssg1, Ssg ssg2) {
+                    return ssg1.compareTo(ssg2);
+                }
+            });
+        }
+    }
+
+    private void updateModel() {
+        int cursize = getRowCount();
+        model = null;
+        if (cursize == getRowCount())
+            fireTableRowsUpdated(0, getRowCount());
+        else
+            fireTableDataChanged();
+    }
+
+    private SortedSet getModel() {
+        if (model == null) {
+            if (comparator == null)
+                model = new TreeSet();
+            else
+                model = new TreeSet(comparator);
+            model.addAll(ssgManager.getSsgList());
+            modelArray = null;
+        }
+        return model;
+    }
+
+    private Object[] getModelArray() {
+        if (modelArray == null) {
+            modelArray = getModel().toArray();
+        }
+        return modelArray;
+    }
+
     public Object getValueAt(int rowIndex, int columnIndex) {
         synchronized (ssgManager) {
-            if (rowIndex < 0 || rowIndex >= ssgManager.getSsgList().size())
+            if (rowIndex < 0 || rowIndex >= getModel().size())
                 return null;
-            Ssg ssg = (Ssg)  ssgManager.getSsgList().get(rowIndex);
+            Ssg ssg = (Ssg) getModelArray()[rowIndex];
             switch (columnIndex) {
                 case 0:
                     return ssg;
@@ -53,7 +181,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
     }
 
     public int getRowCount() {
-        return ssgManager.getSsgList().size();
+        return getModel().size();
     }
 
     public int getColumnCount() {
@@ -62,17 +190,13 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
 
     /** Get the SSG at the specified row, or null. */
     public Ssg getSsgAtRow(final int rowNumber) {
-        synchronized (ssgManager) {
-            if (rowNumber < 0 || rowNumber >= ssgManager.getSsgList().size())
-                return null;
-            return (Ssg)  ssgManager.getSsgList().get(rowNumber);
-        }
+        return (Ssg) getValueAt(rowNumber, 0);
     }
 
     public void addSsg(final Ssg ssg) {
         if (ssgManager.add(ssg)) {
             saveSsgList();
-            this.fireTableDataChanged();
+            updateModel();
         }
         ssgManager.onSsgUpdated(ssg);
     }
@@ -81,7 +205,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
         try {
             ssgManager.remove(ssg);
             saveSsgList();
-            this.fireTableDataChanged();
+            updateModel();
         } catch (SsgNotFoundException e) {
             // who cares
         }
@@ -89,18 +213,45 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
     }
 
     public void setDefaultSsg(Ssg ssg) {
+        Ssg oldDefault = null;
+        try {
+            oldDefault = ssgManager.getDefaultSsg();
+        } catch (SsgNotFoundException e) {
+            // ok, that's fine
+        }
         try {
             ssgManager.setDefaultSsg(ssg);
         } catch (SsgNotFoundException e) {
             log.error(e); // shouldn't ever happen
         }
         ssgManager.onSsgUpdated(ssg);
+        if (oldDefault != null)
+            fireSsgUpdated(oldDefault);
+        fireSsgUpdated(ssg);
     }
 
-    public void editedSsg() {
+    /**
+     * Return the row containing the given ssg, or -1 if it isn't in the table.
+     * @param ssg
+     * @return
+     */
+    public int getRow(Ssg ssg) {
+        if (ssg == null)
+            return -1;
+
+        for (int i = 0; i < getModelArray().length; i++) {
+            Ssg s = (Ssg) getModelArray()[i];
+            if (s.equals(ssg))
+                return i;
+        }
+
+        return -1;
+    }
+
+    public void editedSsg(Ssg ssg) {
         saveSsgList();
-        ssgManager.onSsgUpdated(null);
-        this.fireTableDataChanged();
+        ssgManager.onSsgUpdated(ssg);
+        fireSsgUpdated(ssg);
     }
 
     public Ssg createSsg() {
@@ -138,13 +289,19 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
      * This event is fired when field data in an Ssg such as name, local endpoing etc. are changed.
      */
     public void dataChanged(SsgEvent evt) {
-        List ssgList = ssgManager.getSsgList();
-        for (int i = 0; i < ssgList.size(); ++i) {
-            Ssg ssg = (Ssg) ssgList.get(i);
-            if (ssg != null && ssg.equals(evt.getSource())) {
-                fireTableRowsUpdated(i, i);
-            }
-        }
+        if (evt.getSource() instanceof Ssg)
+            fireSsgUpdated((Ssg) evt.getSource());
+    }
+
+    /**
+     * Fire an event indicating that row containing the specified SSG should be updated.
+     * Takes no action if the given SSG is not in the table.
+     * @param ssg
+     */
+    public void fireSsgUpdated(Ssg ssg) {
+        int row = getRow(ssg);
+        if (row >= 0)
+            fireTableRowsUpdated(row, row);
     }
 }
 

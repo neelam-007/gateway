@@ -1,24 +1,24 @@
 package com.l7tech.proxy.gui;
 
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgManager;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.common.gui.util.FontUtil;
+import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
-import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.util.ClientLogger;
-import com.l7tech.common.gui.util.FontUtil;
 
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.KeyEvent;
 
 /**
  * Panel listing known SSGs and allowing create/edit/delete.
@@ -88,12 +88,30 @@ public class SsgListPanel extends JPanel {
         ssgTable.getSelectionModel().setSelectionInterval(0, 0);
         ssgTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         ssgTable.getTableHeader().setReorderingAllowed(false);
+        ssgTable.getTableHeader().addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (ssgTableModel.getRowCount() < 2)
+                    return;
+                int columnIndex = ssgTable.getColumnModel().getColumnIndexAtX(e.getX());
+                int column = ssgTable.convertColumnIndexToModel(columnIndex);
+                if (e.getClickCount() == 1 && column != -1) {
+                    Ssg selectedSsg = getSelectedSsg();
+                    boolean reverse = false;
+                    if (ssgTableModel.getSortColumn() == column)
+                        reverse = !ssgTableModel.getSortingReverse();
+                    ssgTableModel.setSortOrder(column, reverse);
+                    selectSsg(selectedSsg);
+                }
+            }
+        });
+        ssgTable.setColumnSelectionAllowed(false);
         ssgTable.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2)
                     getActionEditSsg().actionPerformed(new ActionEvent(this, 1, "properties"));
             }
         });
+
 
         final JScrollPane ssgListPane = new JScrollPane(ssgTable);
         ssgListPanel.add(ssgListPane, BorderLayout.CENTER);
@@ -119,14 +137,9 @@ public class SsgListPanel extends JPanel {
      * @param ssg
      */
     private void selectSsg(Ssg ssg) {
-        int rows = ssgTableModel.getRowCount();
-        for (int i = 0; i < rows; ++i) {
-            Ssg rs = ssgTableModel.getSsgAtRow(i);
-            if (rs != null && rs == ssg) {
-                ssgTable.getSelectionModel().setSelectionInterval(i, i);
-                return;
-            }
-        }
+        int row = ssgTableModel.getRow(ssg);
+        if (row >= 0)
+            ssgTable.getSelectionModel().setSelectionInterval(row, row);
     }
 
     public Action getActionDeleteSsg() {
@@ -194,7 +207,7 @@ public class SsgListPanel extends JPanel {
                         if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg).runDialog()) {
                             if (ssg.isDefaultSsg())
                                 ssgTableModel.setDefaultSsg(ssg);
-                            ssgTableModel.editedSsg();
+                            ssgTableModel.editedSsg(ssg);
                             selectSsg(ssg);
                         }
                     }
@@ -234,7 +247,7 @@ public class SsgListPanel extends JPanel {
                     if (ssg != null) {
                         log.info("Setting default Gateway to " + ssg);
                         ssgTableModel.setDefaultSsg(ssg);
-                        ssgTableModel.editedSsg();
+                        ssgTableModel.editedSsg(ssg);
                         selectSsg(ssg);
                     }
                 }
