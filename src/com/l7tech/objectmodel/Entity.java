@@ -5,4 +5,5 @@ public interface Entity {
 
     long getOid();
     void setOid( long oid );
+    long getLoadTime();
 }
