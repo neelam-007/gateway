@@ -1,7 +1,11 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.UserPropertiesAction;
+import com.l7tech.console.action.GenericUserPropertiesAction;
+import com.l7tech.console.action.FederatedUserPropertiesAction;
+import com.l7tech.console.action.BaseAction;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -39,12 +43,19 @@ public class UserNode extends EntityHeaderNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        final UserPropertiesAction userPropertiesAction = new UserPropertiesAction(this);
+        final UserPropertiesAction userPropertiesAction;
+
+        if (getProvider().getConfig().type() == IdentityProviderType.FEDERATED) {
+            userPropertiesAction = new FederatedUserPropertiesAction(this);
+        } else {
+            userPropertiesAction = new GenericUserPropertiesAction(this);
+        }
+
         //userPropertiesAction.setEnabled(canDelete());
         list.add(userPropertiesAction);
         list.addAll(Arrays.asList(super.getActions()));
 
-        return (Action[])list.toArray(new Action[]{});
+        return (Action[]) list.toArray(new Action[]{});
     }
 
     /**
@@ -78,15 +89,6 @@ public class UserNode extends EntityHeaderNode {
         ProviderNode parent = (ProviderNode)getParent();
         EntityHeader e = parent.getEntityHeader();
         return new SpecificUser(parent.getEntityHeader().getOid(), getEntityHeader().getName());
-    }
-
-    /**
-     * Gets the default action for this node.
-     * 
-     * @return <code>null</code> indicating there should be none default action
-     */
-    public Action getPreferredAction() {
-        return new UserPropertiesAction(this);
     }
 
     /**
