@@ -14,11 +14,9 @@ import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.message.*;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
-import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -40,7 +38,6 @@ import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.WSDLException;
@@ -266,103 +263,11 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     return AssertionStatus.FAILED;
                 }
 
-                int whatToDoWithSecHeader = bridgeRoutingAssertion.getCurrentSecurityHeaderHandling();
-
                 // DELETE CURRENT SECURITY HEADER IF NECESSARY
-                // todo, move this to util class to avoid duplication of code
-                if (whatToDoWithSecHeader == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER ||
-                        whatToDoWithSecHeader == RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER) {
-                    Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
-                    Element defaultSecHeader = null;
-                    try {
-                        ProcessorResult pr = context.getRequest().getXmlKnob().getProcessorResult();
-                        if (pr != null && pr.getProcessedActor() == SecurityActor.L7ACTOR) {
-                            defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
-                        } else {
-                            defaultSecHeader = SoapUtil.getSecurityElement(doc);
-                        }
-                    } catch (InvalidDocumentFormatException e) {
-                        String msg = "this option is not supported for non-soap messages. this message is " +
-                                "supposed to be soap but does not appear to be";
-                        auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_FORMAT, null, e);
-                        throw new PolicyAssertionException(msg);
-                    }
-                    if (defaultSecHeader != null) {
-                        defaultSecHeader.getParentNode().removeChild(defaultSecHeader);
-
-                        // we should not leave an empty header element
-                        Element header = null;
-                        try {
-                            header = SoapUtil.getHeaderElement(doc);
-                        } catch (InvalidDocumentFormatException e) {
-                            String msg = "this option is not supported for non-soap messages. this message is " +
-                                    "supposed to be soap but does not appear to be";
-                            auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_FORMAT, null, e);
-                            throw new PolicyAssertionException(msg);
-                        }
-                        if (header != null) {
-                            if (XmlUtil.elementIsEmpty(header)) {
-                                header.getParentNode().removeChild(header);
-                            }
-                        }
-                    }
-                } else if (whatToDoWithSecHeader == RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS) {
-                    Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
-                    try {
-                        ProcessorResult pr = context.getRequest().getXmlKnob().getProcessorResult();
-                        // leaving the processed security header for passthrough means that if the processed
-                        // actor was l7, we need to promote to default (unless there is a default present)
-                        if (pr != null && pr.getProcessedActor() == SecurityActor.L7ACTOR) {
-                            Element defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
-                            if (defaultSecHeader != null) {
-                                Element noActorSecHeader = SoapUtil.getSecurityElement(doc);
-                                if (noActorSecHeader != null && noActorSecHeader != defaultSecHeader) {
-                                    logger.info("we can't promote l7 sec header as no actor because " +
-                                                "there is already a noactor one present. there may be " +
-                                                "something wrong with this policy");
-                                } else {
-                                    SoapUtil.removeSoapAttr(defaultSecHeader, SoapUtil.ACTOR_ATTR_NAME);
-                                }
-                            }
-                        }
-                    } catch (InvalidDocumentFormatException e) {
-                        String msg = "this option is not supported for non-soap messages. this message is " +
-                                     "supposed to be soap but does not appear to be";
-                        auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_FORMAT, null, e);
-                        throw new PolicyAssertionException(msg);
-                    }
-                }
-
-                // PROMOTE ANOTHER ONE IF NECESSARY
-                if (whatToDoWithSecHeader == RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER &&
-                        bridgeRoutingAssertion.getXmlSecurityActorToPromote() != null) {
-                    Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
-                    String actorDeservingPromotion = bridgeRoutingAssertion.getXmlSecurityActorToPromote();
-                    // check if that actor is present
-                    Element secHeaderToPromote = null;
-                    try {
-                        secHeaderToPromote = SoapUtil.getSecurityElement(doc, actorDeservingPromotion);
-                    } catch (InvalidDocumentFormatException e) {
-                        // the manager does not allow you to set this
-                        // option for non-soap service therefore this
-                        // should not hapen
-                        String msg = "this option is not supported for non-soap messages. " +
-                                "something is wrong with this policy";
-                        auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_POLICY, null, e);
-                        throw new PolicyAssertionException(msg);
-                    }
-                    if (secHeaderToPromote != null) {
-                        // do it
-                        auditor.logAndAudit(AssertionMessages.PROMOMTING_ACTOR, new String[] {actorDeservingPromotion});
-                        SoapUtil.nukeActorAttribute(secHeaderToPromote);
-                    } else {
-                        // this is not a big deal but might indicate something wrong
-                        // with the assertion => logging as info
-                        auditor.logAndAudit(AssertionMessages.NO_SECURITY_HEADER, new String[] {actorDeservingPromotion});
-                    }
-                }
-
-
+                handleProcessedSecurityHeader(context,
+                                              bridgeRoutingAssertion.getCurrentSecurityHeaderHandling(),
+                                              bridgeRoutingAssertion.getXmlSecurityActorToPromote(),
+                                              auditor);
 
                 if (bridgeRoutingAssertion.isTaiCredentialChaining()) {
                     throw new PolicyAssertionException("BridgeRoutingAssertion unable to support TAI credential chaining");
