@@ -10,27 +10,34 @@ import javax.security.auth.Subject;
 import java.awt.event.ActionEvent;
 import java.security.AccessControlException;
 import java.security.AccessController;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author emil
  * @version 3-Sep-2004
  */
 public abstract class SecureAction extends BaseAction implements LogonListener {
+    static final Logger logger = Logger.getLogger(SecureAction.class.getName());
 
     protected SecureAction() {
     }
 
     /**
      * Test whether the current subject is authorized to perform the action
+     * If the current subject is not set <code>false</code> is returnced
      *
-     * @return
+     * @return true if the current subject is authorized, false otheriwse
      */
     public boolean isAuthorized() {
         final Subject subject = Subject.getSubject(AccessController.getContext());
+        if (subject == null) { // if no subject
+            return false;
+        }
         try {
             return getSecurityProvider().isSubjectInRole(subject, requiredRoles());
         } catch (Exception e) {
-            //
+            logger.log(Level.WARNING, "Error in authorization check for subject "+subject, e);
         }
         return false;
     }
