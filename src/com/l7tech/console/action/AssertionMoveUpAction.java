@@ -28,7 +28,8 @@ public class AssertionMoveUpAction extends SecureAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Move up the assertion up";
+        //return "Move up the assertion";
+        return getName();
     }
 
     /**

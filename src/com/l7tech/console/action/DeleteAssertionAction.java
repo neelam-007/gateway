@@ -35,7 +35,8 @@ public class DeleteAssertionAction extends SecureAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Delete the assertion from the policy";
+        //return "Delete the assertion from the policy";
+        return getName();
     }
 
     /**

@@ -21,14 +21,15 @@ public class AddAssertionAction extends SecureAction {
      * @return the action name
      */
     public String getName() {
-        return "Add assertion";
+        return "Add Assertion";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Add assertion to the policy assertion tree";
+        //return "Add assertion to the policy assertion tree";
+        return getName();
     }
 
     /**

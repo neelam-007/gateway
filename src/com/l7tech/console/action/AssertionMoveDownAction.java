@@ -29,7 +29,8 @@ public class AssertionMoveDownAction extends SecureAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Move the assertion down";
+        //return "Move the assertion down";
+        return getName();
     }
 
     /**
