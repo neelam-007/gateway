@@ -24,7 +24,7 @@ public class RequestXpathPolicyTreeNode extends XpathBasedAssertionTreeNode {
     }
 
     public String getBaseName() {
-        if (_assertion.getXpathExpression() == null) return "XPath expression not set";
+        if (_assertion.getXpathExpression() == null) return "Request must match XPath " + "[XPath expression not set]";
         return "Request must match XPath " + _assertion.getXpathExpression().getExpression();
     }
 

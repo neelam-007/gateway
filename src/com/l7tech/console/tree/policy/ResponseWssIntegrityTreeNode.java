@@ -20,7 +20,7 @@ public class ResponseWssIntegrityTreeNode extends XpathBasedAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getBaseName() {
-        if (data.getXpathExpression() == null) return "XPath expression not set";
+        if (data.getXpathExpression() == null) return "Sign response element " + "[XPath expression not set]";
         return "Sign response element " + data.getXpathExpression().getExpression();
     }
     private ResponseWssIntegrity data;

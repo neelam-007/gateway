@@ -18,6 +18,7 @@ public class ResponseXpathPolicyTreeNode extends XpathBasedAssertionTreeNode {
     }
 
     public String getBaseName() {
+        if (_assertion.getXpathExpression() == null) return "Response must match XPath " + "[XPath expression not set]";
         return "Response must match XPath " + _assertion.getXpathExpression().getExpression();
     }
 

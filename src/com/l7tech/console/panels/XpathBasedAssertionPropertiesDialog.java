@@ -137,7 +137,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         initialize();
 
         // display the existing xpath expression
-        messageViewerToolBar.getxpathField().setText(xmlSecAssertion.getXpathExpression().getExpression());
+        String initialvalue = null;
+        if (xmlSecAssertion.getXpathExpression() != null) {
+            initialvalue = xmlSecAssertion.getXpathExpression().getExpression();
+        }
+        messageViewerToolBar.getxpathField().setText(initialvalue);
     }
 
 
