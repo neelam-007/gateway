@@ -6,6 +6,7 @@ import com.l7tech.message.Request;
 import com.l7tech.service.resolution.ServiceResolutionException;
 import java.util.Collection;
 import java.rmi.RemoteException;
+import java.io.IOException;
 
 
 /**
@@ -100,8 +101,6 @@ public class ServiceManagerClientImp implements ServiceManager {
     public void update(PublishedService service) throws UpdateException {
         try {
             getStub().savePublishedService(service);
-            // if the update was successful, must increment version count
-            service.setVersion(service.getVersion()+1);
         } catch (RemoteException e) {
             throw new UpdateException(e.getMessage(), e);
         }
