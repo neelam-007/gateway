@@ -1,6 +1,7 @@
 package com.l7tech.proxy.datamodel;
 
-import java.util.Collection;
+import java.util.List;
+import java.io.IOException;
 
 /**
  * Manages our SSG state.
@@ -30,10 +31,10 @@ public interface SsgManager {
 
     /**
      * Get the list of Ssgs known to this client proxy.
-     * @return A Collection of the canonical Ssg objects.
-     *         The Collection is read-only but the Ssg objects in it are the real deal.
+     * @return A List of the canonical Ssg objects.
+     *         The List is read-only but the Ssg objects in it are the real deal.
      */
-    public Collection getSsgList();
+    public List getSsgList();
 
     /**
      * Find the Ssg with the specified name.  If multiple Ssgs have the same name only the
@@ -70,4 +71,9 @@ public interface SsgManager {
      * @throws SsgNotFoundException If the specified Ssg was not found.
      */
     public void remove(Ssg ssg) throws SsgNotFoundException;
+
+    /**
+     * Save changes back to persistent store.
+     */
+    public void save() throws IOException;
 }

@@ -2,6 +2,8 @@ package com.l7tech.proxy.datamodel;
 
 import org.apache.log4j.Category;
 
+import java.text.Collator;
+
 /**
  * In-core representation of an SSG.
  * User: mike
@@ -9,7 +11,7 @@ import org.apache.log4j.Category;
  * Time: 11:09:04 AM
  * To change this template use Options | File Templates.
  */
-public class Ssg implements Cloneable {
+public class Ssg implements Cloneable, Comparable {
     private static Category log = Category.getInstance(Ssg.class);
 
     private String name = "";
@@ -17,6 +19,39 @@ public class Ssg implements Cloneable {
     private String serverUrl = "";
     private String username = null;
     private String password = null;
+
+    public int compareTo(Object o) {
+        Ssg that = (Ssg)o;
+        int res;
+
+        // Check each field
+        res = name.compareTo(that.name);
+        if (res != 0)
+            return res;
+
+        res = localEndpoint.compareTo(that.localEndpoint);
+        if (res != 0)
+            return res;
+
+        res = serverUrl.compareTo(that.serverUrl);
+        if (res != 0)
+            return res;
+
+        res = username.compareTo(that.username);
+        if (res != 0)
+            return res;
+
+        // none left
+        return res;
+    }
+
+    public boolean equals(Object o) {
+        return compareTo(o) == 0;
+    }
+
+    public int hashCode() {
+        return name.hashCode() + localEndpoint.hashCode() + serverUrl.hashCode() + username.hashCode();
+    }
 
     /** Create a new Ssg instance with default field contents. */
     public Ssg() {
@@ -99,4 +134,5 @@ public class Ssg implements Cloneable {
     public void setPassword(String password) {
         this.password = password;
     }
+
 }

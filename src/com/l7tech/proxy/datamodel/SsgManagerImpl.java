@@ -21,7 +21,7 @@ public class SsgManagerImpl implements SsgManager {
     private static final String STORE_DIR = System.getProperty("user.home") + File.separator + ".l7proxy";
     private static final String STORE_FILE = STORE_DIR + File.separator + "ssgs.xml";
 
-    private Set ssgs = new HashSet();
+    private SortedSet ssgs = new TreeSet();
     private boolean init = false;
 
     private SsgManagerImpl() {
@@ -103,12 +103,12 @@ public class SsgManagerImpl implements SsgManager {
 
     /**
      * Get the list of Ssgs known to this client proxy.
-     * @return A Collection of the canonical Ssg objects.
-     *         The Collection is read-only but the Ssg objects it contains are the real deal.
+     * @return A List of the canonical Ssg objects.
+     *         The List is read-only but the Ssg objects it contains are the real deal.
      */
-    public synchronized Collection getSsgList() {
+    public synchronized List getSsgList() {
         initialize();
-        return Collections.unmodifiableCollection(ssgs);
+        return Collections.unmodifiableList(new ArrayList(ssgs));
     }
 
     /**

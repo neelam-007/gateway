@@ -178,13 +178,16 @@ public class SsgManagerTest extends TestCase {
         assertTrue(loaded2.getName() != null);
         assertTrue(loaded2.getName().equals(SSG2.getName()));
 
-        // Duplicates are allowed as long as !a.equals(b)
+        // Duplicates aren't allowed if all significant fields are the same
         sm.add(SSG3);
         sm.add(SSG3_CLONE);
-        assertTrue(countNames(SSG3.getName()) == 2);
+        assertTrue(countNames(SSG3.getName()) == 1);
 
         eraseAllSsgs();
         assertTrue(sm.getSsgList().size() == 0);
+
+        assertTrue(0xFFFFFFFF + 1 == 0);
+
     }
 
     public static void main(String[] args) {
