@@ -2,18 +2,15 @@ package com.l7tech.console;
 
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
+import com.jgoodies.plaf.plastic.Plastic3DLookAndFeel;
+import com.jgoodies.plaf.plastic.PlasticLookAndFeel;
+import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
+import com.jgoodies.plaf.plastic.theme.SkyBluerTahoma;
+import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
-import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
-import com.jgoodies.plaf.plastic.PlasticLookAndFeel;
-import com.jgoodies.plaf.plastic.Plastic3DLookAndFeel;
-import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
-import com.jgoodies.plaf.plastic.theme.DesertBlue;
-import com.jgoodies.plaf.plastic.theme.SkyBluerTahoma;
-import com.jgoodies.clearlook.ClearLookMode;
-import com.jgoodies.clearlook.ClearLookManager;
 import net.jini.security.policy.DynamicPolicyProvider;
 import net.jini.security.policy.PolicyInitializationException;
 
@@ -192,7 +189,7 @@ public class Main {
         addlf = new PlasticXPLookAndFeel();
         UIManager.installLookAndFeel(addlf.getName(), addlf.getClass().getName());
 
-        ClearLookManager.setMode(ClearLookMode.DEBUG);
+        // ClearLookManager.setMode(ClearLookMode.DEBUG);
 
         String lfName = null;
         Preferences prefs = Preferences.getPreferences();
