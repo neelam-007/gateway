@@ -146,6 +146,10 @@ public class WssProcessorImpl implements WssProcessor {
                     logger.info("Encountered UsernameToken element but not of right namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
+            } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME)) {
+
+                // todo, handle the security context token
+
             } else {
                 // Unhandled child elements of the Security Header
                 String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace,
