@@ -1,6 +1,7 @@
 package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.XSignatureException;
+import com.ibm.xml.dsig.KeyInfo;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.ibm.xml.enc.DecryptionContext;
 import com.ibm.xml.enc.KeyInfoResolvingException;
@@ -16,26 +17,25 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.bouncycastle.jce.provider.JDKX509CertificateFactory;
 
 import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ByteArrayInputStream;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.text.DateFormat;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import sun.misc.BASE64Decoder;
 
 /**
  * An implementation of the WssProcessor for use in both the SSG and the SSA.
@@ -85,13 +85,15 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException(e);
         } catch (ParseException e) {
             throw new ProcessorException(e);
+        } catch (IOException e) {
+            throw new ProcessorException(e);
         }
     }
 
     private WssProcessor.ProcessorResult doUndecorateMessage(Document soapMsg,
                                                           X509Certificate recipientCert,
                                                           PrivateKey recipientKey)
-            throws WssProcessor.ProcessorException, XmlUtil.MultipleChildElementsException, ParseException
+            throws WssProcessor.ProcessorException, XmlUtil.MultipleChildElementsException, ParseException, IOException
     {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
@@ -424,7 +426,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         TimestampDate(Element createdOrExpiresElement) throws ParseException {
             element = createdOrExpiresElement;
-            String dateString = XmlUtil.findFirstChildTextNode(element);
+            String dateString = XmlUtil.getTextValue(element);
             DateFormat dateFormat = new SimpleDateFormat(SoapUtil.DATE_FORMAT_PATTERN);
             dateFormat.setTimeZone(SoapUtil.DATE_FORMAT_TIMEZONE);
             date = dateFormat.parse(dateString);
@@ -485,7 +487,8 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processBinarySecurityToken(final Element binarySecurityTokenElement,
-                                            ProcessingStatusHolder cntx) throws ProcessorException {
+                                            ProcessingStatusHolder cntx) throws ProcessorException, IOException
+    {
         logger.finest("Processing BinarySecurityToken");
 
         // assume that this is a b64ed binary x509 cert, get the value
@@ -496,22 +499,25 @@ public class WssProcessorImpl implements WssProcessor {
             logger.warning(msg);
             throw new ProcessorException(msg);
         }
-        BASE64Decoder decoder = new BASE64Decoder();
-        byte[] decodedValue = null;
-        try {
-            decodedValue = decoder.decodeBuffer(value);
-        } catch (IOException e) {
-            throw new ProcessorException(e);
-        }
+
+        byte[] decodedValue = HexUtils.decodeBase64(value);
         // create the x509 binary cert based on it
         X509Certificate referencedCert = null;
+
         try {
-            CertificateFactory factory = CertificateFactory.getInstance("X.509");
-            InputStream is = new ByteArrayInputStream(decodedValue);
-            referencedCert = (X509Certificate)factory.generateCertificate(is);
-        } catch (CertificateException e) {
+            // todo this is a TOTAL MESS, just for testing we let xss4j decode the certs
+            String fakeKeyInfo = "<KeyInfo xmlns=\"" + SoapUtil.DIGSIG_URI + "\"><X509Data><X509Certificate>" + value
+                    + "</X509Certificate></X509Data></KeyInfo>";
+            referencedCert =
+                    new KeyInfo(XmlUtil.stringToDocument(fakeKeyInfo).getDocumentElement()).getX509Data()[0].getCertificates()[0];
+
+        } catch (SAXException e) {
+            throw new ProcessorException(e); // can't happen
+        } catch (XSignatureException e) {
             throw new ProcessorException(e);
         }
+
+
         // remember this cert
         final X509Certificate finalcert = referencedCert;
         WssProcessor.SecurityToken rememberedSecToken = new WssProcessor.SecurityToken() {
