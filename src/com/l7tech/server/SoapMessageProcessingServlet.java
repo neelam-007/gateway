@@ -92,7 +92,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, status.getSoapFaultCode(), status.getMessage());
                 }
             } catch (PolicyAssertionException pae) {
-                logger.log(Level.SEVERE, null, pae);
+                logger.log(Level.SEVERE, pae.getMessage(), pae);
                 sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString());
             }
         } catch (SOAPException se) {
