@@ -9,6 +9,7 @@ package com.l7tech.common.security.token;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.UnsupportedDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -30,7 +31,8 @@ public class UsernameTokenImpl implements UsernameToken {
     }
 
     /** Create a UsernameTokenImpl from the given Element.  The Element will be parsed during the construction. */
-    public UsernameTokenImpl(final Element usernameTokenElement) throws InvalidDocumentFormatException {
+    public UsernameTokenImpl(final Element usernameTokenElement)
+                                        throws InvalidDocumentFormatException, UnsupportedDocumentFormatException {
         String applicableWsseNS = usernameTokenElement.getNamespaceURI();
         // Get the Username child element
         Element usernameEl = XmlUtil.findOnlyOneChildElementByName(usernameTokenElement,
@@ -52,13 +54,13 @@ public class UsernameTokenImpl implements UsernameToken {
         }
         String passwd = XmlUtil.getTextValue(passwdEl).trim();
         if (passwd.length() < 1) {
-            throw new InvalidDocumentFormatException("The usernametoken has an empty password element");
+            throw new UnsupportedDocumentFormatException("The usernametoken has an empty password element");
         }
         // Verify the password type to be supported
         String passwdType = passwdEl.getAttribute(SoapUtil.UNTOK_PSSWD_TYPE_ATTR_NAME).trim();
         if (passwdType.length() > 0) {
             if (!passwdType.endsWith("PasswordText")) {
-                throw new InvalidDocumentFormatException("This username token password type is not supported: " + passwdType);
+                throw new UnsupportedDocumentFormatException("This username token password type is not supported: " + passwdType);
             }
         }
         // Remember this as a security token

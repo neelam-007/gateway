@@ -19,6 +19,7 @@ import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.UnsupportedDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
@@ -418,7 +419,13 @@ public class WssProcessorImpl implements WssProcessor {
     private void processUsernameToken(final Element usernameTokenElement, ProcessingStatusHolder cntx)
                                         throws InvalidDocumentFormatException
     {
-        UsernameTokenImpl rememberedSecToken = new UsernameTokenImpl(usernameTokenElement);
+        UsernameTokenImpl rememberedSecToken = null;
+        try {
+            rememberedSecToken = new UsernameTokenImpl(usernameTokenElement);
+        } catch (UnsupportedDocumentFormatException e) {
+            logger.log(Level.INFO, "A usernametoken element was encountered but we dont support the format.", e);
+            return;
+        }
         cntx.securityTokens.add(rememberedSecToken);
     }
 
