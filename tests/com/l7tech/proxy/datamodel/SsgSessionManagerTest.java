@@ -152,7 +152,7 @@ public class SsgSessionManagerTest extends TestCase {
         // Disable trust manager for the test
         configureSslToTrustEveryone();
 
-        Managers.setCredentialManager(new CredentialManager() {
+        Managers.setCredentialManager(new CredentialManagerAdapter() {
             private boolean badCredentials = false;
 
             public void getCredentials(Ssg ssg) throws OperationCanceledException {
@@ -166,18 +166,6 @@ public class SsgSessionManagerTest extends TestCase {
 
             public void notifyInvalidCredentials(Ssg ssg) {
                 badCredentials = true;
-            }
-
-            public void notifyLengthyOperationStarting(Ssg ssg, String message) {
-            }
-
-            public void notifyLengthyOperationFinished(Ssg ssg) {
-            }
-
-            public void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException {
-            }
-
-            public void notifyCertificateAlreadyIssued(Ssg ssg) {
             }
         });
 
