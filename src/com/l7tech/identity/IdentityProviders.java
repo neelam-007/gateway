@@ -7,6 +7,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.util.Locator;
+import com.l7tech.objectmodel.FindException;
 
 import java.util.*;
 
@@ -14,7 +15,7 @@ import java.util.*;
  * @author alex
  */
 public class IdentityProviders {
-    public Collection findAll() {
+    public Collection findAll() throws FindException {
         IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)Locator.getDefault().lookup( IdentityProviderConfigManager.class );
         Iterator i = configManager.findAll().iterator();
 
