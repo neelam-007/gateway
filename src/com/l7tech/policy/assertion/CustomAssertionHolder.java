@@ -54,6 +54,13 @@ public class CustomAssertionHolder extends Assertion {
         this.customAssertion = ca;
     }
 
+    public String toString() {
+        if (customAssertion == null) {
+            return "[ CustomAssertion = null ]";
+        }
+        return "[ CustomAssertion = "+customAssertion.toString()+" ]";
+    }
+
     private CustomAssertion customAssertion;
 }
 
