@@ -109,6 +109,13 @@ public class IdentityAdminImpl implements IdentityAdmin {
             try {
                 endTransaction();
             } catch (TransactionException e) {
+
+                try {
+                    rollbackTransaction();
+                } catch (TransactionException e1) {
+                    logger.log(Level.WARNING, "exception rolling back", e1);
+                }
+
                 throw new SaveException(e.getMessage());
             }
         }
@@ -127,6 +134,13 @@ public class IdentityAdminImpl implements IdentityAdmin {
             try {
                 endTransaction();
             } catch (TransactionException e) {
+
+                try {
+                    rollbackTransaction();
+                } catch (TransactionException e1) {
+                    logger.log(Level.WARNING, "exception rolling back", e1);
+                }
+
                 throw new DeleteException(e.toString());
             }
         }
@@ -204,6 +218,12 @@ public class IdentityAdminImpl implements IdentityAdmin {
             try {
                 endTransaction();
             } catch (TransactionException e) {
+                try {
+                    rollbackTransaction();
+                } catch (TransactionException e1) {
+                    logger.log(Level.WARNING, "exception rolling back", e1);
+                }
+
                 throw new DeleteException(e.toString());
             }
         }
@@ -234,6 +254,13 @@ public class IdentityAdminImpl implements IdentityAdmin {
             try {
                 endTransaction();
             } catch (TransactionException e) {
+
+                try {
+                    rollbackTransaction();
+                } catch (TransactionException e1) {
+                    logger.log(Level.WARNING, "exception rolling back", e1);
+                }
+
                 throw new SaveException(e.toString());
             }
         }
@@ -286,6 +313,12 @@ public class IdentityAdminImpl implements IdentityAdmin {
             try {
                 endTransaction();
             } catch (TransactionException e) {
+                 try {
+                    rollbackTransaction();
+                } catch (TransactionException e1) {
+                    logger.log(Level.WARNING, "exception rolling back", e1);
+                }
+
                 throw new DeleteException(e.toString());
             }
         }
@@ -313,9 +346,15 @@ public class IdentityAdminImpl implements IdentityAdmin {
             logger.log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in saveGroup", e);
         } finally {
-                        try {
+            try {
                 endTransaction();
             } catch (TransactionException e) {
+                try {
+                    rollbackTransaction();
+                } catch (TransactionException e1) {
+                    logger.log(Level.WARNING, "exception rolling back", e1);
+                }
+
                 throw new SaveException(e.toString());
             }
         }
@@ -445,6 +484,21 @@ public class IdentityAdminImpl implements IdentityAdmin {
             throw new TransactionException(e.getMessage());
         } catch (ObjectModelException e) {
             logger.log(Level.SEVERE, "could not end transaction", e);
+            throw new TransactionException(e.getMessage());
+        }
+    }
+
+    private void rollbackTransaction() throws TransactionException{
+        try {
+            PersistenceContext context = PersistenceContext.getCurrent();
+
+            context.rollbackTransaction();
+            context.close();
+        } catch (java.sql.SQLException e) {
+            logger.log(Level.SEVERE, "could not rollback transaction", e);
+            throw new TransactionException(e.getMessage());
+        } catch (ObjectModelException e) {
+            logger.log(Level.SEVERE, "could not rollback transaction", e);
             throw new TransactionException(e.getMessage());
         }
     }
