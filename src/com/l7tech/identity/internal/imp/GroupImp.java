@@ -17,12 +17,12 @@ public class GroupImp extends NamedEntityImp implements Group {
     }
 
     public Collection getMembers() {
-        if (_members == null) _members = new new java.util.ArrayList();
+        if (_members == null) _members = new java.util.ArrayList();
         return _members;
     }
 
     public Collection getMemberHeaders() {
-        if (_memberHeaders == null) _memberHeaders = new new java.util.ArrayList();
+        if (_memberHeaders == null) _memberHeaders = new java.util.ArrayList();
         return _memberHeaders;
     }
 
