@@ -40,6 +40,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class PublishServiceWizard extends Wizard {
+    private boolean completedBundle;
     /**
      * the bag of service and assertions that his wizard collects
      */
@@ -116,6 +117,7 @@ public class PublishServiceWizard extends Wizard {
                 // dont care
             }
             public void wizardFinished(WizardEvent e) {
+                completedBundle = false;
                 completeTask();
             }
             public void wizardCanceled(WizardEvent e) {
@@ -131,29 +133,32 @@ public class PublishServiceWizard extends Wizard {
 
     private void completeTask() {
         try {
-            // routing assertion?
-            if (saBundle.getRoutingAssertion() != null) {
-                if (saBundle.isSharedPolicy()) {
-                    java.util.List ass = new ArrayList();
-                    ass.addAll(saBundle.getAssertion().getChildren());
-                    ass.add(saBundle.getRoutingAssertion());
-                    saBundle.getAssertion().setChildren(ass);
-                } else {
+            if (!completedBundle) {
+                // routing assertion?
+                if (saBundle.getRoutingAssertion() != null) {
+                    if (saBundle.isSharedPolicy()) {
+                        java.util.List ass = new ArrayList();
+                        ass.addAll(saBundle.getAssertion().getChildren());
+                        ass.add(saBundle.getRoutingAssertion());
+                        saBundle.getAssertion().setChildren(ass);
+                    } else {
 
-                    for (java.util.Iterator it =
-                      saBundle.getAssertion().getChildren().iterator(); it.hasNext();) {
-                        Assertion a = (Assertion)it.next();
-                        if (a instanceof AllAssertion) {
-                            AllAssertion aa = (AllAssertion)a;
-                            java.util.List ass = new ArrayList();
-                            ass.addAll(aa.getChildren());
-                            ass.add(saBundle.getRoutingAssertion().clone());
-                            aa.setChildren(ass);
+                        for (java.util.Iterator it =
+                          saBundle.getAssertion().getChildren().iterator(); it.hasNext();) {
+                            Assertion a = (Assertion)it.next();
+                            if (a instanceof AllAssertion) {
+                                AllAssertion aa = (AllAssertion)a;
+                                java.util.List ass = new ArrayList();
+                                ass.addAll(aa.getChildren());
+                                ass.add(saBundle.getRoutingAssertion().clone());
+                                aa.setChildren(ass);
+                            }
                         }
                     }
                 }
+                saBundle.setAssertion(pruneEmptyCompositeAssertions(saBundle.getAssertion()));
+                completedBundle = true;
             }
-            saBundle.setAssertion(pruneEmptyCompositeAssertions(saBundle.getAssertion()));
             if (saBundle.getAssertion() != null) {
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
                 WspWriter.writePolicy(saBundle.getAssertion(), bo);
