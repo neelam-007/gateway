@@ -18,6 +18,10 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
     private String uri;
     private String soapAction;
 
+    /**
+     * @deprecated This is just here for the bean serializer.  You should pass the arguments to the constructor
+     *             and avoid calling the mutators.
+     */
     public PolicyAttachmentKey() {}
 
     public PolicyAttachmentKey(String uri, String soapAction) {
