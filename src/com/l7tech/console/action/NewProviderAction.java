@@ -52,7 +52,7 @@ public class NewProviderAction extends NodeAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Create a new External Identity provider";
+        return "Create a new External Identity Provider";
     }
 
     /**

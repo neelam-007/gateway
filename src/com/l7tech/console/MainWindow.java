@@ -250,7 +250,8 @@ public class MainWindow extends JFrame {
         if (exitMenuItem == null) {
             exitMenuItem = new JMenuItem();
             exitMenuItem.setFocusable(false);
-            exitMenuItem.setText(resapplication.getString("ExitMenuItem_text"));
+            exitMenuItem.setText(resapplication.getString("ExitMenuItem.name"));
+            exitMenuItem.setToolTipText(resapplication.getString("ExitMenuItem.desc"));
             int mnemonic = 'X';
             exitMenuItem.setMnemonic(mnemonic);
             exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
@@ -395,8 +396,9 @@ public class MainWindow extends JFrame {
      */
     private Action getConnectAction() {
         if (connectAction != null) return connectAction;
-        String atext = resapplication.getString("ConnectMenuItem_text");
+        String atext = resapplication.getString("ConnectMenuItem.name");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/connect2.gif"));
+        String aDesc = resapplication.getString("ConnectMenuItem.desc");
         connectAction =
           new AbstractAction(atext, icon) {
               /**
@@ -408,7 +410,7 @@ public class MainWindow extends JFrame {
                   activateLogonDialog();
               }
           };
-        connectAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        connectAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return connectAction;
     }
 
@@ -419,8 +421,10 @@ public class MainWindow extends JFrame {
      */
     private Action getDisconnectAction() {
         if (disconnectAction != null) return disconnectAction;
-        String atext = resapplication.getString("CloseButton_text");
+        String atext = resapplication.getString("DisconnectMenuItem.name");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/disconnect.gif"));
+
+        String aDesc = resapplication.getString("DisconnectMenuItem.desc");
         disconnectAction =
           new AbstractAction(atext, icon) {
               /**
@@ -436,7 +440,7 @@ public class MainWindow extends JFrame {
                   }
               }
           };
-        disconnectAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        disconnectAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return disconnectAction;
     }
 
@@ -758,8 +762,9 @@ public class MainWindow extends JFrame {
      */
     private Action getPreferencesAction() {
         if (prefsAction != null) return prefsAction;
-        String atext = resapplication.getString("Preferences_MenuItem_text");
+        String atext = resapplication.getString("PreferencesMenuItem.name");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/preferences.gif"));
+        String aDesc = resapplication.getString("PreferencesMenuItem.desc");
         prefsAction =
           new AbstractAction(atext, icon) {
               /**
@@ -773,7 +778,7 @@ public class MainWindow extends JFrame {
                   dialog.setVisible(true);
               }
           };
-        prefsAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        prefsAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return prefsAction;
     }
 
