@@ -10,15 +10,18 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.message.Request;
+import com.l7tech.util.SoapUtil;
 
 import javax.wsdl.*;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap.SOAPAddress;
 import java.io.*;
 import java.net.URL;
 import java.net.MalformedURLException;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import org.xml.sax.InputSource;
+import org.apache.log4j.Category;
 
 /**
  * @author alex
@@ -83,25 +86,66 @@ public class PublishedService extends NamedEntityImp {
     }
 
     public synchronized Port getWsdlPort( Request request ) throws WSDLException {
-        // TODO: Get the right port for this request, rather than just the first one!
+        // TODO: Get the right Port for this request, rather than just the first one!
+
         if ( _wsdlPort == null ) {
             Iterator services = getParsedWsdl().getServices().iterator();
-            Service wsdlService;
+            Service wsdlService = null;
             Port wsdlPort = null;
 
-            while ( wsdlPort == null && services.hasNext() ) {
+            int numServices = 0;
+            while ( services.hasNext() ) {
+                int numPorts = 0;
+                numServices++;
+                if ( wsdlService != null ) continue;
+
                 wsdlService = (Service)services.next();
                 Map ports = wsdlService.getPorts();
                 if ( ports == null ) continue;
 
                 Iterator portKeys = ports.keySet().iterator();
-                if ( portKeys.hasNext() ) wsdlPort = (Port)portKeys.next();
+                if ( portKeys.hasNext() ) {
+                    numPorts++;
+                    if ( wsdlPort == null ) wsdlPort = (Port)portKeys.next();
+                }
+                if ( numPorts > 1 ) _log.warn( "WSDL " + getWsdlUrl() + " has more than one port, used the first." );
             }
+            if ( numServices > 1 ) _log.warn( "WSDL " + getWsdlUrl() + " has more than one service, used the first." );
             _wsdlPort = wsdlPort;
         }
 
         return _wsdlPort;
     }
+
+    public synchronized URL getServiceUrl( Request request ) throws WSDLException, MalformedURLException {
+        if ( _serviceUrl == null ) {
+            Port wsdlPort = getWsdlPort( request );
+            List elements = wsdlPort.getExtensibilityElements();
+            URL url = null;
+            ExtensibilityElement eel;
+            int num = 0;
+            for ( int i = 0; i < elements.size(); i++ ) {
+                eel = (ExtensibilityElement)elements.get(i);
+                if ( eel instanceof SOAPAddress ) {
+                    SOAPAddress sadd = (SOAPAddress)eel;
+                    num++;
+                    url = new URL( sadd.getLocationURI() );
+                }
+            }
+
+            if ( url == null ) {
+                String err = "WSDL " + getWsdlUrl() + " did not contain a valid URL";
+                _log.error( err );
+                throw new WSDLException( SoapUtil.FC_SERVER, err );
+            }
+
+            _serviceUrl = url;
+
+            if ( num > 1 ) _log.warn( "WSDL " + getWsdlUrl() + " contained multiple <soap:address> elements" );
+        }
+        return _serviceUrl;
+    }
+
 
     public String getPolicyXml() {
         return _policyXml;
@@ -142,7 +186,9 @@ public class PublishedService extends NamedEntityImp {
     protected String _soapAction;
     protected String _urn;
 
+    protected transient Category _log = Category.getInstance( getClass() );
     protected transient Wsdl _parsedWsdl;
     protected transient Port _wsdlPort;
+    protected transient URL _serviceUrl;
     protected transient Assertion _rootAssertion;
 }
