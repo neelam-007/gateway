@@ -10,7 +10,7 @@
 # source config
 . /etc/SSG_INSTALL
 
-if [ -n $back_ip ]; then
+if [ -n $net_back_ip ]; then
 	exit
 else 
 	
@@ -20,11 +20,11 @@ route=/sbin/route
 start() {
 	# Add back end routes
 	# 
-	$route add -net $back_net netmask $back_mask gw $back_rt
+	$route add -net $net_back_net netmask $net_back_mask gw $net_back_rt
 	$route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 }
 stop() {
-	$route del -net $back_net netmask $back_mask gw $back_rt
+	$route del -net $net_back_net netmask $net_back_mask gw $net_back_rt
 	$route del -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 }
 
