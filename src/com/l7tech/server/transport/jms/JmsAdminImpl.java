@@ -69,9 +69,6 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
 
     /**
      * Must be called in a transaction!
-     * @return
-     * @throws RemoteException
-     * @throws FindException
      */
     public JmsAdmin.JmsTuple[] findAllTuples() throws RemoteException, FindException {
         PersistenceContext context = null;
@@ -96,9 +93,9 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
             context.commitTransaction();
             return (JmsTuple[])result.toArray( new JmsTuple[0] );
         } catch ( TransactionException e ) {
-            throw new FindException( "Caught transaction exception", e );
+            throw new FindException( "Couldn't find endpoints", e );
         } catch ( SQLException e ) {
-            throw new FindException( "Caught SQL exception", e );
+            throw new FindException( "Couldn't find endpoints", e );
         } finally {
             context.close();
         }
@@ -128,12 +125,13 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
             enforceAdminRole();
             PersistenceContext.getCurrent().beginTransaction();
             JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
+            if (endpoint == null) throw new FindException("No endpoint with OID " + oid + " could be found");
             endpoint.setMessageSource(isMessageSource);
             PersistenceContext.getCurrent().commitTransaction();
         } catch (TransactionException e) {
-            throw new UpdateException(e.getMessage(), e);
+            throw new UpdateException("Couldn't update endpoint", e);
         } catch (SQLException e) {
-            throw new FindException(e.getMessage(), e);
+            throw new FindException("Couldn't update endpoint", e);
         } finally {
             closeContext();
         }

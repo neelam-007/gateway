@@ -58,7 +58,7 @@ public interface JmsAdmin extends Remote {
      * Finds all {@link JmsEndpoint}s in the database, each wrapped in a {@link JmsTuple} that also
      * includes its associated {@link JmsConnection}.
      *
-     * @return An array of {@link JmsTuple}s
+     * @return An array of {@link JmsTuple}s. Never null.
      * @throws FindException if a database problem prevented the endpoints and/or connections from being retrieved
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
@@ -138,7 +138,7 @@ public interface JmsAdmin extends Remote {
      *
      * Returns transient instances that are not enrolled in the Hibernate session.
      * @param connectionOid
-     * @return an array of transient {@link JmsEndpoint}s
+     * @return an array of {@link JmsEndpoint}s. Never null.
      * @throws FindException if a database problem prevented the endpoints from being retrieved
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
