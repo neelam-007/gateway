@@ -611,7 +611,7 @@ public class MainWindow extends JFrame {
 
             ConnectionListener listener = new ConnectionListener() {
                 public void onConnect(ConnectionEvent e) {
-                    setEnabled(true);
+                    // setEnabled(true);
                 }
 
                 public void onDisconnect(ConnectionEvent e) {
