@@ -3,10 +3,9 @@ package com.l7tech.adminws.logging;
 import com.l7tech.logging.LogManager;
 
 import java.rmi.RemoteException;
-import java.util.logging.LogRecord;
-import java.util.Date;
-import java.util.Calendar;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.logging.LogRecord;
 
 /**
  * Layer 7 technologies, inc.
