@@ -364,7 +364,7 @@ public class Preferences extends PropertyChangeSupport {
    * @param heightKey the key where the height is stored
    * @return the Dimension, or null.
    */
-  public Dimension getDimension(String widthKey, String heightKey) {
+  private Dimension getDimension(String widthKey, String heightKey) {
     try {
       return new Dimension(Integer.parseInt(props.getProperty(widthKey)),
                            Integer.parseInt(props.getProperty(heightKey)));
@@ -382,7 +382,7 @@ public class Preferences extends PropertyChangeSupport {
    *
    * @param d the new width and height, or null to clear them
    */
-  public void setDimension(String widthKey, String heightKey, Dimension d) {
+  private void setDimension(String widthKey, String heightKey, Dimension d) {
     if (d == null) {
       props.remove(widthKey);
       props.remove(heightKey);
@@ -462,6 +462,15 @@ public class Preferences extends PropertyChangeSupport {
     firePropertyChange(e);
   }
 
+  /**
+   * Returns the service url. This will typically be in the format
+   * protocol://host:port.
+   *
+   * @return the service url.
+   */
+  public String getServiceUrl() {
+    return props.getProperty(SERVICE_URL);
+  }
   /**
    * Returns the inactivity timeout value. The method is a conveninece
    * wrapper to deal with parsing.
