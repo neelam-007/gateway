@@ -53,7 +53,7 @@ fi
 
 if [ ! -e $SRC_ROOT/build.sh ]; then
     echo ""
-    echo "The Goose source root wasn't found in directory ${SRC_ROOT}."
+    echo "The source root wasn't found in directory ${SRC_ROOT}."
     echo "Please set your environment so that the SRC_ROOT variable "
     echo "variable refers to the valid source root."
     echo ""
