@@ -10,8 +10,8 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.objectmodel.FindException;
-
-import org.apache.log4j.Category;
+import com.l7tech.logging.LogManager;
+import java.util.logging.Level;
 
 /**
  * Asserts that the requester is a particular User.
@@ -53,13 +53,11 @@ public class SpecificUser extends IdentityAssertion {
             else
                 return AssertionStatus.AUTH_FAILED;
         } catch ( FindException fe ) {
-            _log.error( fe );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
             return AssertionStatus.FAILED;
         }
     }
 
     protected String _userLogin;
     protected User _user;
-
-    protected transient Category _log = Category.getInstance( getClass() );
 }

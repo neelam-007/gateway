@@ -10,8 +10,6 @@ import com.l7tech.message.Request;
 import com.l7tech.util.SoapUtil;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
-import org.apache.log4j.Category;
-
 import javax.wsdl.*;
 import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.ExtensibilityElement;
@@ -63,6 +61,4 @@ public class UrnResolver extends WsdlOperationServiceResolver {
     public int getSpeed() {
         return SLOW;
     }
-
-    protected Category _log = Category.getInstance( getClass() );
 }

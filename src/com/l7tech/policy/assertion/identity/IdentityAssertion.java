@@ -15,8 +15,8 @@ import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Entity;
-
-import org.apache.log4j.Category;
+import com.l7tech.logging.LogManager;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -37,7 +37,7 @@ public abstract class IdentityAssertion extends Assertion {
             // No credentials have been found yet
             if ( request.isAuthenticated() ) {
                 String err = "Request is authenticated but request has no PrincipalCredentials!";
-                _log.error( err );
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
                 throw new IllegalStateException( err );
             } else {
                 response.addResult( new AssertionResult( this, request, AssertionStatus.AUTH_REQUIRED ) );
@@ -52,12 +52,12 @@ public abstract class IdentityAssertion extends Assertion {
             AssertionStatus status;
             if ( request.isAuthenticated() ) {
                 // Is this possible?
-                _log.warn( "Weird! The request was already authenticated by someone else!" );
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Weird! The request was already authenticated by someone else!");
                 status = doCheckUser( user );
             } else {
                 if ( _identityProviderOid == Entity.DEFAULT_OID ) {
                     String err = "Can't call checkRequest() when no valid identityProviderOid has been set!";
-                    _log.error( err );
+                    LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
                     throw new IllegalStateException( err );
                 }
 
@@ -73,7 +73,7 @@ public abstract class IdentityAssertion extends Assertion {
                     }
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
-                    _log.error( err, fe );
+                    LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err, fe);
                     throw new IdentityAssertionException( err, fe );
                 }
 
@@ -109,9 +109,6 @@ public abstract class IdentityAssertion extends Assertion {
     }
 
     protected abstract AssertionStatus doCheckUser( User u );
-
     protected long _identityProviderOid = Entity.DEFAULT_OID;
-
-    protected transient Category _log = Category.getInstance( getClass() );
     protected transient IdentityProvider _identityProvider;
 }

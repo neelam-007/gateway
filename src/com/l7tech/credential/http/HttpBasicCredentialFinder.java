@@ -10,10 +10,10 @@ import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.message.Request;
 import com.l7tech.identity.User;
+import com.l7tech.logging.LogManager;
 import org.apache.axis.encoding.Base64;
-import org.apache.log4j.Category;
-
 import java.io.IOException;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -23,7 +23,7 @@ public class HttpBasicCredentialFinder extends HttpCredentialFinder {
     public static final String SCHEME = "Basic";
 
     private void throwError( String err ) throws CredentialFinderException {
-        _log.error( err );
+        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
         throw new CredentialFinderException( err );
     }
 
@@ -60,10 +60,8 @@ public class HttpBasicCredentialFinder extends HttpCredentialFinder {
         } else {
             // No colons
             String err = "Invalid HTTP Basic format!";
-            _log.warn( err );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
             throw new CredentialFinderException( err );
         }
     }
-
-    protected Category _log = Category.getInstance( getClass() );
 }

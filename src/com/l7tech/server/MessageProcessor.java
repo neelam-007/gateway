@@ -17,9 +17,9 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceManagerImp;
 import com.l7tech.service.resolution.ServiceResolutionException;
-import org.apache.log4j.Category;
-
+import com.l7tech.logging.LogManager;
 import java.io.IOException;
+import java.util.logging.Level;
 
 
 /**
@@ -44,19 +44,19 @@ public class MessageProcessor {
 
                 if ( status == AssertionStatus.NONE ) {
                     if ( request.isRouted() ) {
-                        _log.info( status );
+                        LogManager.getInstance().getSystemLogger().log(Level.INFO, status.getMessage());
                     } else {
-                        _log.warn( "Request was not routed, executing default RoutingAssertion" );
+                        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Request was not routed, executing default RoutingAssertion");
                         status = _defaultRoutingAssertion.checkRequest( request, response );
                     }
                 } else {
-                    _log.warn( status );
+                    LogManager.getInstance().getSystemLogger().log(Level.SEVERE, status.getMessage());
                 }
             }
 
             return status;
         } catch ( ServiceResolutionException sre ) {
-            _log.warn( sre );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, sre);
             return AssertionStatus.SERVER_ERROR;
         }
     }
@@ -70,15 +70,11 @@ public class MessageProcessor {
         try {
             _serviceManager = new ServiceManagerImp();
         } catch ( ObjectModelException ome ) {
-            _log.error( ome );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, ome);
         }
     }
 
-    private Category _log = Category.getInstance( getClass() );
-
     private ServiceManager _serviceManager;
-
     private static MessageProcessor _instance = null;
-
     private transient RoutingAssertion _defaultRoutingAssertion = new RoutingAssertion();
 }

@@ -11,15 +11,15 @@ import com.l7tech.message.Response;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.service.PublishedService;
 import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.logging.LogManager;
 
 import java.io.*;
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.util.logging.Level;
 
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.log4j.Category;
-
 import javax.wsdl.*;
 
 /**
@@ -62,7 +62,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
             _httpCredentials = new UsernamePasswordCredentials( pc.getUser().getLogin(),
                                                                 new String( pc.getCredentials(), "UTF-8" ) );
         } catch ( UnsupportedEncodingException uee ) {
-            _log.error( uee );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, uee);
             throw new RuntimeException( uee );
         }
     }
@@ -145,14 +145,14 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
 
             return AssertionStatus.NONE;
         } catch ( WSDLException we ) {
-            _log.error( we );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, we);
             return AssertionStatus.FAILED;
         } catch ( MalformedURLException mfe ) {
-            _log.error( mfe );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, mfe);
             return AssertionStatus.FAILED;
         } catch ( IOException ioe ) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-            _log.warn( ioe );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, ioe);
             return AssertionStatus.FAILED;
         } finally {
             if ( postMethod != null ) {
@@ -183,7 +183,6 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     protected PrincipalCredentials _principalCredentials;
 
     protected transient MultiThreadedHttpConnectionManager _connectionManager;
-    protected transient Category _log = Category.getInstance( getClass() );
     protected transient HttpState _httpState;
     protected transient UsernamePasswordCredentials _httpCredentials;
 }

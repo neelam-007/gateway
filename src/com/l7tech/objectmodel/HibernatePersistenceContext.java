@@ -12,8 +12,9 @@ import cirrus.hibernate.HibernateException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Level;
 
-import org.apache.log4j.Category;
+import com.l7tech.logging.LogManager;
 
 /**
  * @author alex
@@ -53,7 +54,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
         try {
             close();
         } catch ( ObjectModelException ome ) {
-            _log.error(  "in finalize()", ome );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "in finalize()", ome);
         }
     }
 
@@ -65,10 +66,10 @@ public class HibernatePersistenceContext extends PersistenceContext {
             }
             if ( _session != null ) _session.close();
         } catch ( HibernateException he ) {
-            _log.error( he );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, he);
             throw new ObjectModelException( he.getMessage(), he );
         } catch ( SQLException se ) {
-            _log.error( se );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
             throw new ObjectModelException( se.getMessage(), se );
         }
     }
@@ -99,7 +100,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
         }
     }
 
-    protected Category _log = Category.getInstance( getClass() );
     protected HibernatePersistenceManager _manager;
     protected Session _session;
     protected DataSource _dataSource;

@@ -4,11 +4,11 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdProvConfManagerServer;
+import com.l7tech.logging.LogManager;
 
 import java.sql.SQLException;
 import java.util.List;
-
-import org.apache.log4j.Category;
+import java.util.logging.Level;
 
 /**
  * Layer 7 Technologies, inc.
@@ -48,11 +48,11 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                 return u;
             default:
                 String err = "Found more than one user with the login " + login;
-                _log.warn( err );
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
                 throw new FindException( err );
             }
         } catch ( SQLException se ) {
-            _log.error( se );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
             throw new FindException( se.toString(), se );
         }
     }
@@ -61,7 +61,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         try {
             _manager.delete( getContext(), user );
         } catch ( SQLException se ) {
-            _log.error( se );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
             throw new DeleteException( se.toString(), se );
         }
     }
@@ -70,7 +70,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         try {
             return _manager.save( getContext(), user );
         } catch ( SQLException se ) {
-            _log.error( se );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
             throw new SaveException( se.toString(), se );
         }
     }
@@ -79,7 +79,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         try {
             _manager.update( getContext(), user );
         } catch ( SQLException se ) {
-            _log.error( se );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
             throw new UpdateException( se.toString(), se );
         }
     }
@@ -95,6 +95,4 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     public Class getInterfaceClass() {
         return User.class;
     }
-
-    protected Category _log = Category.getInstance( getClass() );
 }

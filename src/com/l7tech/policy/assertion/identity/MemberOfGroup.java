@@ -9,8 +9,10 @@ package com.l7tech.policy.assertion.identity;
 import com.l7tech.identity.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.logging.LogManager;
 
 import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * Asserts that the requestor is a member of a particular group.
@@ -44,7 +46,7 @@ public class MemberOfGroup extends IdentityAssertion {
                 GroupManager gman = getIdentityProvider().getGroupManager();
                 _group = gman.findByPrimaryKey( _groupOid );
             } catch ( FindException fe ) {
-                _log.error( fe );
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
             }
         }
         return _group;
@@ -59,12 +61,11 @@ public class MemberOfGroup extends IdentityAssertion {
                 return AssertionStatus.AUTH_FAILED;
             }
         } catch ( FindException fe ) {
-            _log.error( fe );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
             return AssertionStatus.FAILED;
         }
     }
 
     protected String _groupOid;
-
     protected transient Group _group;
 }

@@ -12,6 +12,7 @@ import com.l7tech.util.SoapUtil;
 import com.l7tech.service.PublishedService;
 import com.l7tech.objectmodel.PersistenceManager;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.logging.LogManager;
 
 import javax.servlet.http.*;
 import javax.servlet.ServletException;
@@ -19,8 +20,7 @@ import javax.servlet.ServletConfig;
 import javax.xml.soap.*;
 import java.io.*;
 import java.sql.SQLException;
-
-import org.apache.log4j.Category;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -74,22 +74,22 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     respWriter.write( protRespXml );
                 }
             } catch ( PolicyAssertionException pae ) {
-                _log.error( pae );
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, pae);
                 sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString() );
             } catch ( MessageProcessingException mpe ) {
-                _log.error( mpe );
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, mpe);
                 sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, mpe.toString() );
             }
         } catch ( SOAPException se ) {
-            _log.error( se );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
         } finally {
             try {
                 PersistenceManager.getContext().close();
             } catch ( ObjectModelException ome ) {
-                _log.error( ome );
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, ome);
                 throw new ServletException( ome );
             } catch ( SQLException se ) {
-                _log.error( se );
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
                 throw new ServletException( se );
             }
 
@@ -149,6 +149,4 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private void sendChallenge( SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp ) throws SOAPException, IOException {
         sendFault( sreq, sresp, hreq, hresp, HttpServletResponse.SC_UNAUTHORIZED, SoapUtil.FC_CLIENT, "Authentication Required" );
     }
-
-    private Category _log = Category.getInstance( getClass() );
 }

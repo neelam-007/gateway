@@ -10,10 +10,10 @@ import com.l7tech.credential.*;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.*;
-import org.apache.log4j.Category;
-
+import com.l7tech.logging.LogManager;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.io.IOException;
 
 /**
@@ -47,21 +47,20 @@ public abstract class CredentialSourceAssertion extends Assertion {
 
             if ( pc == null ) {
                 response.setAuthenticationMissing( true );
-
-                _log.info( AssertionStatus.AUTH_REQUIRED.getMessage() );
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, AssertionStatus.AUTH_REQUIRED.getMessage());
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
                 request.setPrincipalCredentials( pc );
                 return doCheckRequest( request, response );
             }
         } catch ( CredentialFinderException cfe ) {
-            _log.error( cfe );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, cfe);
             throw new PolicyAssertionException( cfe.getMessage(), cfe );
         } catch ( IllegalAccessException iae ) {
-            _log.error( iae );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, iae);
             throw new PolicyAssertionException( iae.getMessage(), iae );
         } catch ( InstantiationException ie ) {
-            _log.error( ie );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, ie);
             throw new PolicyAssertionException( ie.getMessage(), ie );
         }
 
@@ -72,5 +71,4 @@ public abstract class CredentialSourceAssertion extends Assertion {
     public abstract Class getCredentialFinderClass();
 
     protected transient Map _credentialFinders = new HashMap();
-    protected Category _log = Category.getInstance( getClass() );
 }

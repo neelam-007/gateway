@@ -8,10 +8,11 @@ package com.l7tech.service.resolution;
 
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
-import org.apache.log4j.Category;
+import com.l7tech.logging.LogManager;
 
 import javax.wsdl.*;
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -37,13 +38,11 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
                 }
             }
         } catch ( WSDLException we ) {
-            _log.error( we );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, we);
         }
 
         return values.toArray();
     }
 
     protected abstract String doGetValue( BindingOperation operation );
-
-    protected Category _log = Category.getInstance( getClass() );
 }

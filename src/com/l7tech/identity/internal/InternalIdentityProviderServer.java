@@ -2,9 +2,10 @@ package com.l7tech.identity.internal;
 
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
-import org.apache.log4j.Category;
+import com.l7tech.logging.LogManager;
 
 import java.io.UnsupportedEncodingException;
+import java.util.logging.Level;
 
 /**
  * Layer 7 Technologies, inc.
@@ -37,7 +38,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
         try {
             User dbUser = userManager.findByLogin( login );
             if ( dbUser == null ) {
-                _log.info( "Couldn't find user with login " + login );
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Couldn't find user with login " + login);
                 return false;
             } else {
                 String dbPassHash = dbUser.getPassword();
@@ -46,14 +47,14 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     authUser.setProviderId( cfg.getOid() );
                     return true;
                 }
-                _log.info( "Incorrect password for login " + login );
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Incorrect password for login " + login);
                 return false;
             }
         } catch ( FindException fe ) {
-            _log.error( fe );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
             return false;
         } catch ( UnsupportedEncodingException uee ) {
-            _log.error( uee );
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, uee);
             throw new RuntimeException( uee );
         }
     }
@@ -64,7 +65,6 @@ public class InternalIdentityProviderServer implements IdentityProvider {
 
     public boolean isReadOnly() { return false; }
 
-    private Category _log = Category.getInstance( getClass() );
     private IdentityProviderConfig cfg;
     private InternalUserManagerServer userManager;
     private InternalGroupManagerServer groupManager;
