@@ -86,7 +86,6 @@ public class SoapUtil {
         SOAPPart spart = message.getSOAPPart();
         SOAPEnvelope senv = spart.getEnvelope();
         SOAPBody body = senv.getBody();
-        // TODO: Match namespace to request's SOAP version?
         SOAPFault fault = body.addFault();
         fault.setFaultCode( faultCode );
         fault.setFaultString( faultString);
