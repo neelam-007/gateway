@@ -16,6 +16,7 @@ public class IdentityProviderType implements Serializable {
     private static int id = 1;
     public static final IdentityProviderType INTERNAL = new IdentityProviderType(id++, "internal");
     public static final IdentityProviderType LDAP = new IdentityProviderType(id++, "LDAP");
+    public static final IdentityProviderType FEDERATED = new IdentityProviderType(id++, "Federated");
 
     public static IdentityProviderType fromVal(int val) {
         switch (val) {
@@ -23,6 +24,8 @@ public class IdentityProviderType implements Serializable {
                 return INTERNAL;
             case 2:
                 return LDAP;
+            case 3:
+                return FEDERATED;
         }
         throw new IllegalArgumentException("Unknown type id " + val);
     }
@@ -54,7 +57,8 @@ public class IdentityProviderType implements Serializable {
     private static final
     IdentityProviderType[] VALUES = {
         INTERNAL,
-        LDAP
+        LDAP,
+        FEDERATED
     };
     private final int type;
     private final String description;
