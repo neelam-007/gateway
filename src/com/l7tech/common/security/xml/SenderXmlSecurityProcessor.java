@@ -106,13 +106,11 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                         try {
                             encElement = SoapUtil.getBodyElement(document);
                         } catch (InvalidDocumentFormatException e) {
-                            // todo Why are we logging the entire document here?
-                            logger.severe("Could not retrieve SOAP Body from the document \n" + XmlUtil.documentToString(document));
+                            logger.severe("Could not retrieve SOAP Body from the document");
                             throw new SecurityProcessorException("Unable to extract SOAP body", e);
                         }
                         if (encElement == null) {
-                            // todo Why are we logging the entire document here?
-                            logger.severe("Could not retrieve SOAP Body from the document \n" + XmlUtil.documentToString(document));
+                            logger.severe("Could not retrieve SOAP Body from the document");
                             throw new IOException("Could not retrieve SOAP Body from the document");
                         }
                     }
