@@ -65,7 +65,6 @@ public class WssProcessorImpl implements WssProcessor {
 
     /**
      * This processes a soap message. That is, the contents of the Header/Security are processed as per the WSS rules.
-     * Do not use same instances across threads (not thread safe).
      *
      * @param soapMsg the xml document containing the soap message. this document may be modified on exit
      * @param recipientCert the recipient's cert to which encrypted keys may be encoded for
@@ -77,38 +76,40 @@ public class WssProcessorImpl implements WssProcessor {
                                                           X509Certificate recipientCert,
                                                           PrivateKey recipientKey) throws WssProcessor.ProcessorException {
         // Reset all potential outputs
-        processedDocument = (Document)soapMsg.cloneNode(true);
-        originalDocument = soapMsg;
-        elementsThatWereSigned.clear();
-        elementsThatWereEncrypted.clear();
-        securityTokens.clear();
-        timestamp = null;
-        releventSecurityHeader = null;
+        ProcessingStatusHolder cntx = new ProcessingStatusHolder();
+        cntx.processedDocument = (Document)soapMsg.cloneNode(true);
+        cntx.originalDocument = soapMsg;
+        cntx.elementsThatWereSigned.clear();
+        cntx.elementsThatWereEncrypted.clear();
+        cntx.securityTokens.clear();
+        cntx.timestamp = null;
+        cntx.releventSecurityHeader = null;
 
         // Resolve the relevent Security header
-        Element[] securityHeaders = SoapUtil.getSecurityElements(processedDocument);
+        Element[] securityHeaders = SoapUtil.getSecurityElements(cntx.processedDocument);
         // find the relevent security header. that is the one with no actor
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
         for (int i = 0; i < securityHeaders.length; i++) {
             String thisActor = securityHeaders[i].getAttributeNS(currentSoapNamespace, "actor");
             if (thisActor == null || thisActor.length() < 1) {
-                releventSecurityHeader = securityHeaders[i];
+                cntx.releventSecurityHeader = securityHeaders[i];
                 break;
             }
         }
         // maybe there are no security headers at all in which case, there is nothing to process
-        if (releventSecurityHeader == null) {
+        if (cntx.releventSecurityHeader == null) {
             logger.finer("No relevent security header found.");
-            return produceResult();
+            return produceResult(cntx);
         }
 
         // Process elements one by one
-        NodeList securityChildren = releventSecurityHeader.getElementsByTagName("*");
+        NodeList securityChildren = cntx.releventSecurityHeader.getElementsByTagName("*");
         for (int i = 0; i < securityChildren.getLength(); i++) {
             Element securityChildToProcess = (Element)securityChildren.item(i);
 
             if (securityChildToProcess.getLocalName().equals("EncryptedKey")) {
-                processEncryptedKey(securityChildToProcess, recipientKey, recipientCert.getExtensionValue("2.5.29.14"));
+                processEncryptedKey(securityChildToProcess, recipientKey,
+                                    recipientCert.getExtensionValue("2.5.29.14"), cntx);
             } else if (securityChildToProcess.getLocalName().equals("Timestamp")) {
                 processTimestamp(securityChildToProcess);
             } else if (securityChildToProcess.getLocalName().equals("BinarySecurityToken")) {
@@ -132,12 +133,15 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // remove Security element altogether
-        releventSecurityHeader.getParentNode().removeChild(releventSecurityHeader);
+        cntx.releventSecurityHeader.getParentNode().removeChild(cntx.releventSecurityHeader);
 
-        return produceResult();
+        return produceResult(cntx);
     }
 
-    private void processEncryptedKey(Element encryptedKeyElement, PrivateKey recipientKey, byte[] ski) throws ProcessorException {
+    private void processEncryptedKey(Element encryptedKeyElement,
+                                     PrivateKey recipientKey,
+                                     byte[] ski,
+                                     ProcessingStatusHolder cntx) throws ProcessorException {
         logger.finest("Processing EncryptedKey");
 
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
@@ -260,7 +264,7 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException(e);
         }
         try {
-            decryptReferencedElements(new AesKey(unencryptedKey, unencryptedKey.length*8), refList);
+            decryptReferencedElements(new AesKey(unencryptedKey, unencryptedKey.length*8), refList, cntx);
         } catch (GeneralSecurityException e) {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
@@ -332,7 +336,7 @@ public class WssProcessorImpl implements WssProcessor {
      * @throws IOException                  if there was an IO error while reading the document or a key
      * @throws org.xml.sax.SAXException                 if there was a problem parsing the document
      */
-    public void decryptReferencedElements(Key key, Element refList)
+    public void decryptReferencedElements(Key key, Element refList, ProcessingStatusHolder cntx)
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
             XMLSecurityElementNotFoundException, ProcessorException
     {
@@ -376,10 +380,10 @@ public class WssProcessorImpl implements WssProcessor {
             }
 
             // remember encrypted element
-            encryptedDataElement = SoapUtil.getElementById(originalDocument, dataRefUri);
+            encryptedDataElement = SoapUtil.getElementById(cntx.originalDocument, dataRefUri);
             if (encryptedDataElement == null) {
                 logger.warning("cannot resolve encrypted data element " + dataRefUri + " from original doc");
-            } else elementsThatWereEncrypted.add(encryptedDataElement);
+            } else cntx.elementsThatWereEncrypted.add(encryptedDataElement);
         }
     }
 
@@ -398,49 +402,51 @@ public class WssProcessorImpl implements WssProcessor {
         // todo
     }
 
-    private WssProcessor.ProcessorResult produceResult() {
+    private WssProcessor.ProcessorResult produceResult(final ProcessingStatusHolder cntx) {
         return new WssProcessor.ProcessorResult() {
             public Document getUndecoratedMessage() {
-                return processedDocument;
+                return cntx.processedDocument;
             }
             public Element[] getElementsThatWereSigned() {
-                Element[] output = new Element[elementsThatWereSigned.size()];
-                Iterator iter = elementsThatWereSigned.iterator();
+                Element[] output = new Element[cntx.elementsThatWereSigned.size()];
+                Iterator iter = cntx.elementsThatWereSigned.iterator();
                 for (int i = 0; i < output.length; i++) {
                     output[i] = (Element)iter.next();
                 }
                 return output;
             }
             public Element[] getElementsThatWereEncrypted() {
-                Element[] output = new Element[elementsThatWereEncrypted.size()];
-                Iterator iter = elementsThatWereEncrypted.iterator();
+                Element[] output = new Element[cntx.elementsThatWereEncrypted.size()];
+                Iterator iter = cntx.elementsThatWereEncrypted.iterator();
                 for (int i = 0; i < output.length; i++) {
                     output[i] = (Element)iter.next();
                 }
                 return output;
             }
             public WssProcessor.SecurityToken[] getSecurityTokens() {
-                WssProcessor.SecurityToken[] output = new WssProcessor.SecurityToken[securityTokens.size()];
-                Iterator iter = securityTokens.iterator();
+                WssProcessor.SecurityToken[] output = new WssProcessor.SecurityToken[cntx.securityTokens.size()];
+                Iterator iter = cntx.securityTokens.iterator();
                 for (int i = 0; i < output.length; i++) {
                     output[i] = (WssProcessor.SecurityToken)iter.next();
                 }
                 return output;
             }
             public WssProcessor.Timestamp getTimestamp() {
-                return timestamp;
+                return cntx.timestamp;
             }
         };
     }
 
     private final Logger logger = Logger.getLogger(WssProcessorImpl.class.getName());
 
-    private Document processedDocument = null;
-    private Document originalDocument = null;
-    private final Collection elementsThatWereSigned = new ArrayList();
-    private final Collection elementsThatWereEncrypted = new ArrayList();
-    private final Collection securityTokens = new ArrayList();
-    private WssProcessor.Timestamp timestamp = null;
-    private Element releventSecurityHeader = null;
+    private class ProcessingStatusHolder {
+        Document processedDocument = null;
+        Document originalDocument = null;
+        final Collection elementsThatWereSigned = new ArrayList();
+        final Collection elementsThatWereEncrypted = new ArrayList();
+        final Collection securityTokens = new ArrayList();
+        WssProcessor.Timestamp timestamp = null;
+        Element releventSecurityHeader = null;
+    }
     public static final String SUPPORTED_ENCRYPTEDKEY_ALGO = "http://www.w3.org/2001/04/xmlenc#rsa-1_5";
 }
