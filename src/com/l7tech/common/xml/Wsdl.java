@@ -839,9 +839,9 @@ public class Wsdl {
             Iterator itr = def.getImports().keySet().iterator();
             while (itr.hasNext()) {
                 Object importDef = itr.next();
-                Vector importList = (Vector) def.getImports().get(importDef);
+                List importList = (List) def.getImports().get(importDef);
                 for (int k = 0; k < importList.size(); k++) {
-                    imp = (Import) importList.elementAt(k);
+                    imp = (Import) importList.get(k);
                     // check if the schema is inside the file
                     String url = imp.getLocationURI();
                     String resolvedXml = null;
