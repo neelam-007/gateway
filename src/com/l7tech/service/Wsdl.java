@@ -282,11 +282,12 @@ public class Wsdl {
         Port pork = null;
         Port soapPort = null;
 
-        int numServices = 0;
         while ( services.hasNext() ) {
             int numPorts = 0;
-            numServices++;
-            if ( wsdlService != null ) break;
+            if ( wsdlService != null ) {
+                logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one service, we will use only the first." );
+                break;
+            }
 
             wsdlService = (Service)services.next();
             Map ports = wsdlService.getPorts();
@@ -313,7 +314,6 @@ public class Wsdl {
             }
             if ( numPorts > 1 ) logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one port, used the first." );
         }
-        if ( numServices > 1 ) logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one service, used the first." );
         return soapPort;
     }
 
