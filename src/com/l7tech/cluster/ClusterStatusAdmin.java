@@ -1,5 +1,7 @@
 package com.l7tech.cluster;
 
+import com.l7tech.objectmodel.FindException;
+
 /**
  * Admin interface for the cluster status panel of the SSM
  *
@@ -11,6 +13,6 @@ package com.l7tech.cluster;
  *
  */
 public interface ClusterStatusAdmin {
-    ClusterNodeInfo[] getClusterStatus();
-    ServiceUsage[] getServiceUsage();
+    ClusterNodeInfo[] getClusterStatus() throws FindException;
+    ServiceUsage[] getServiceUsage() throws FindException;
 }
