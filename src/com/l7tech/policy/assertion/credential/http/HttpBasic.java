@@ -47,6 +47,7 @@ public class HttpBasic extends HttpCredentialSourceAssertion {
         char[] password = request.getSsg().getPassword();
         if (username == null || password == null || username.length() < 1) {
             log.info("HttpBasic: no credentials configured for the SSG " + request.getSsg());
+            request.setCredentialsWouldHaveHelped(true);
             return AssertionStatus.NOT_FOUND;
         }
         request.setBasicAuthRequired(true);

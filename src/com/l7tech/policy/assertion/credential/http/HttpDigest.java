@@ -37,8 +37,10 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         Ssg ssg = request.getSsg();
-        if (ssg.getUsername() == null || ssg.getPassword() == null || ssg.getUsername().length() < 1)
+        if (ssg.getUsername() == null || ssg.getPassword() == null || ssg.getUsername().length() < 1) {
+            request.setCredentialsWouldHaveHelped(true);
             return AssertionStatus.NOT_FOUND;
+        }
         request.setDigestAuthRequired(true);
         request.setHttpDigestUsername(ssg.getUsername());
         request.setHttpDigestPassword(ssg.getPassword());

@@ -31,6 +31,7 @@ public class PendingRequest {
         private boolean isDigestAuthRequired = false;
         private String httpDigestUsername = "";
         private char[] httpDigestPassword = "".toCharArray();
+        private boolean credentialsWouldHaveHelped = false;
     }
     private PolicySettings policySettings = new PolicySettings();
 
@@ -144,5 +145,13 @@ public class PendingRequest {
 
     public void setCredentialsUpdated(boolean credentialsUpdated) {
         isCredentialsUpdated = credentialsUpdated;
+    }
+
+    public boolean isCredentialsWouldHaveHelped() {
+        return policySettings.credentialsWouldHaveHelped;
+    }
+
+    public void setCredentialsWouldHaveHelped(boolean credentialsWouldHaveHelped) {
+        this.policySettings.credentialsWouldHaveHelped = credentialsWouldHaveHelped;
     }
 }

@@ -8,6 +8,7 @@ package com.l7tech.proxy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -46,7 +47,7 @@ public class MessageProcessor {
      * Given a request from a client, decorates it according to policy, sends it to the SSG, and
      * returns the response.
      * @param pendingRequest
-     * @return
+     * @return the SOAP Envelope returned by the server
      * @throws PolicyAssertionException if the policy could not be fulfilled for this request to this SSG
      * @throws ConfigurationException if the SSG configuration is not valid
      * @throws IOException if there was a problem obtaining the response from the server
@@ -56,7 +57,17 @@ public class MessageProcessor {
             throws PolicyAssertionException, ConfigurationException, SAXException, IOException
     {
         Assertion policy = policyManager.getPolicy(pendingRequest);
-        policy.decorateRequest(pendingRequest);
+        AssertionStatus result = policy.decorateRequest(pendingRequest);
+        if (result != AssertionStatus.NONE) {
+            if (pendingRequest.isCredentialsWouldHaveHelped()) {
+                log.info("Policy failed, possibly due to lack of credentials.  Will ask for some, then trying again");
+                Managers.getCredentialManager().getCredentials(pendingRequest.getSsg());
+                pendingRequest.reset();
+                result = policy.decorateRequest(pendingRequest);
+            }
+        }
+        if (result != AssertionStatus.NONE)
+            log.error("Unable to conform to policy as required by server; attempting to continue anyway");
         return callSsg(pendingRequest);
     }
 
