@@ -180,6 +180,17 @@ public class XmlUtil {
         return result;
     }
 
+    /**
+     * same as findOnlyOneChildElementByName but allows for different namespaces
+     */
+    public static Element findOnlyOneChildElementByName(Element parent, String[] namespaces, String name) throws MultipleChildElementsException {
+        for (int i = 0; i < namespaces.length; i++) {
+            Element res = findOnlyOneChildElementByName(parent, namespaces[i], name);
+            if (res != null) return res;
+        }
+        return null;
+    }
+
     public static class MultipleChildElementsException extends Exception {
         public MultipleChildElementsException( String nsuri, String name ) {
             super( "Multiple matching \"" + name + "\" child elements found" );
