@@ -325,6 +325,18 @@ public class IdentityPolicyPanel extends JPanel {
         realmRouteField.setEditable(enableHttp);
         defaultUrlButton.setEnabled(enableHttp);
 
+        if (enableHttp) {
+            routeToUrlField.setForeground(Color.BLACK);
+            userRouteField.setForeground(Color.BLACK);         
+            passwordRouteField.setForeground(Color.BLACK);
+            realmRouteField.setForeground(Color.BLACK);
+        } else {
+            routeToUrlField.setForeground(Color.GRAY);
+            userRouteField.setForeground(Color.GRAY);
+            passwordRouteField.setForeground(Color.GRAY);
+            realmRouteField.setForeground(Color.GRAY);
+        }
+
         boolean enableJms = routeModifiable && isJms;
         jmsQueueComboBox.setEnabled(enableJms);
     }
