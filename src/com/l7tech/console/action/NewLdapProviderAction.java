@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class NewLdapProviderAction extends NewProviderAction {
-    static final Logger log = Logger.getLogger(NewUserAction.class.getName());
+    static final Logger log = Logger.getLogger(NewLdapProviderAction.class.getName());
 
     public NewLdapProviderAction(AbstractTreeNode node) {
         super(node);
