@@ -46,13 +46,11 @@ public class MemberOfGroup extends IdentityAssertion {
      * @throws FindException
      */
     protected Group getGroup() throws FindException {
-        if (_group == null) {
-            GroupManager gman = getIdentityProvider().getGroupManager();
-            if (_groupName != null) {
-                _group = gman.findByName(_groupName);
-            }
+        GroupManager gman = getIdentityProvider().getGroupManager();
+        if (_groupName != null) {
+            return gman.findByName(_groupName);
         }
-        return _group;
+        return null;
     }
 
     /**
@@ -76,5 +74,4 @@ public class MemberOfGroup extends IdentityAssertion {
     }
 
     protected String _groupName;
-    protected transient Group _group;
 }
