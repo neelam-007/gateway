@@ -28,7 +28,8 @@ public class LogMessage {
     SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
 
     public LogMessage(SSGLogRecord log) {
-        msgNumber = log.getSequenceNumber();
+        //msgNumber = log.getSequenceNumber();
+        msgNumber = log.getOid();
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(log.getMillis());
         time = sdf.format(cal.getTime());
