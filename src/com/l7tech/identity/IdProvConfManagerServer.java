@@ -61,7 +61,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
         // we should not accept saving an internal type
-        if (identityProviderConfig.type() != IdentityProviderType.LDAP) throw new SaveException("this type of config cannot be saved");
+        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL ) throw new SaveException("this type of config cannot be saved");
         try {
             return _manager.save(getContext(), identityProviderConfig);
         } catch (SQLException se) {
@@ -71,7 +71,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
     public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {
         // we should not accept saving an internal type
-        if (identityProviderConfig.type() != IdentityProviderType.LDAP) throw new UpdateException("this type of config cannot be updated");
+        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) throw new UpdateException("this type of config cannot be updated");
         try {
             IdentityProviderFactory.dropProvider(identityProviderConfig);
             _manager.update(getContext(), identityProviderConfig);
@@ -82,10 +82,11 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
     public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {
         // we should not accept deleting an internal type
-        if (identityProviderConfig.type() != IdentityProviderType.LDAP) throw new DeleteException("this type of config cannot be deleted");
+        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) throw new DeleteException("this type of config cannot be deleted");
         try {
             IdentityProvider prov = IdentityProviderFactory.makeProvider(identityProviderConfig);
             if (prov instanceof LdapIdentityProviderServer) {
+                // This works for MSAD too, it's a subclass of LDAP
                 LdapIdentityProviderServer ldapProvider = (LdapIdentityProviderServer)prov;
                 ldapProvider.invalidate();
             }
