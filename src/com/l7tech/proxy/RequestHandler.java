@@ -1,18 +1,14 @@
 package com.l7tech.proxy;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.proxy.datamodel.CurrentRequest;
-import com.l7tech.proxy.datamodel.HttpHeaders;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgFinder;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.util.ClientLogger;
-import com.l7tech.common.xml.Wsdl;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
@@ -26,14 +22,12 @@ import javax.wsdl.Port;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import sun.misc.BASE64Decoder;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -163,7 +157,7 @@ public class RequestHandler extends AbstractHttpHandler {
         if (ssg.isChainCredentialsFromClient()) {
             String authHeader = request.getField("Authorization");
             if (authHeader != null && "Basic ".equalsIgnoreCase(authHeader.substring(0, 6))) {
-                byte[] authStuff = new BASE64Decoder().decodeBuffer(authHeader.substring(6));
+                byte[] authStuff = HexUtils.decodeBase64(authHeader.substring(6));
                 for (int i = 0; i < authStuff.length - 1; ++i) {
                     if (authStuff[i] == ':') {
                         reqUsername = new String(authStuff, 0, i);

@@ -2,6 +2,7 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.Session;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
@@ -439,8 +440,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private byte[] obfuscatePassword(char[] password) {
         if (password == null)
             return null;
-        BASE64Encoder be = new BASE64Encoder();
-        String obfuscated = be.encode(new String(password).getBytes());
+
+        String obfuscated = HexUtils.encodeBase64(new String(password).getBytes());
         return obfuscated.getBytes();
     }
 
@@ -448,9 +449,9 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private char[] deobfuscatePassword(byte[] persistPassword) {
         if (persistPassword == null)
             return null;
-        BASE64Decoder bd = new BASE64Decoder();
+
         try {
-            return new String(bd.decodeBuffer(new String(persistPassword))).toCharArray();
+            return new String(HexUtils.decodeBase64(new String(persistPassword))).toCharArray();
         } catch (IOException e) {
             log.error("Unable to recover persisted password", e);
             return null;

@@ -3,6 +3,7 @@ package com.l7tech.identity.cert;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.logging.LogManager;
+import com.l7tech.common.util.HexUtils;
 
 import java.security.cert.*;
 import java.util.logging.Logger;
@@ -92,9 +93,9 @@ public class ClientCertManagerImp implements ClientCertManager {
             newentry = true;
         }
         userData.setResetCounter(userData.getResetCounter()+1);
-        sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
+
         try {
-            String encodedcert = encoder.encode(cert.getEncoded());
+            String encodedcert = HexUtils.encodeBase64(cert.getEncoded());
             userData.setCert(encodedcert);
         } catch (CertificateEncodingException e) {
             String msg = "Certificate encoding exception recording cert";
@@ -134,9 +135,9 @@ public class ClientCertManagerImp implements ClientCertManager {
                 logger.finest("no cert recorded for user " + user.getLogin());
                 return null;
             }
-            sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
+
             try {
-                byte[] certbytes = base64decoder.decodeBuffer(dbcert);
+                byte[] certbytes = HexUtils.decodeBase64(dbcert);
                 Certificate cert = CertificateFactory.getInstance("X.509").
                                     generateCertificate(new ByteArrayInputStream(certbytes));
                 return cert;

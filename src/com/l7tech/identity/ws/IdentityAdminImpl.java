@@ -2,6 +2,7 @@ package com.l7tech.identity.ws;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapConfigTemplateManager;
@@ -326,8 +327,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
             ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
             Certificate cert = manager.getUserCert(user);
             if (cert == null) return null;
-            sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
-            String encodedcert = encoder.encode(cert.getEncoded());
+
+            String encodedcert = HexUtils.encodeBase64(cert.getEncoded());
             return encodedcert;
         } finally {
             closeContext();

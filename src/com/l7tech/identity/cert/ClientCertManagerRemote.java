@@ -1,6 +1,7 @@
 package com.l7tech.identity.cert;
 
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
@@ -32,8 +33,8 @@ public class ClientCertManagerRemote implements ClientCertManager {
         try {
             String certstr = getStub().getUserCert(user);
             if (certstr == null) return null;
-            sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
-            byte[] certbytes = base64decoder.decodeBuffer(certstr);
+
+            byte[] certbytes = HexUtils.decodeBase64(certstr);
             return CertificateFactory.getInstance("X.509").
                     generateCertificate(new ByteArrayInputStream(certbytes));
         } catch (RemoteException e) {

@@ -200,8 +200,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             return new byte[0];
         }
         String b64str = tmpStr.substring(beggining, end);
-        sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
-        return base64decoder.decodeBuffer(b64str);
+        return HexUtils.decodeBase64(b64str);
     }
 
     private Certificate sign(byte[] csr) throws Exception {

@@ -27,6 +27,7 @@ public class HexUtils {
     private HexUtils() {}
 
     private static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    private static Pattern whitespacePattern = Pattern.compile("\\s+", Pattern.MULTILINE | Pattern.DOTALL);
 
     private static ThreadLocal localDecoder = new ThreadLocal() {
         protected Object initialValue() {
@@ -43,11 +44,10 @@ public class HexUtils {
         return encodeBase64(binaryData, false);
     }
 
-    private static Pattern whitespacePattern = Pattern.compile("\\s+", Pattern.MULTILINE | Pattern.DOTALL);
-    public static String encodeBase64(byte[] binaryData, boolean strip) {
+    public static String encodeBase64(byte[] binaryData, boolean stripWhitespace) {
         BASE64Encoder encoder = (BASE64Encoder)localEncoder.get();
         String s = encoder.encode( binaryData );
-        if (strip) {
+        if (stripWhitespace) {
             Matcher matcher = whitespacePattern.matcher(s);
             return matcher.replaceAll("");
         }

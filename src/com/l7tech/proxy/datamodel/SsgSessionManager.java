@@ -6,27 +6,24 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.common.security.xml.Session;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.util.ClientLogger;
-
-import javax.net.ssl.SSLHandshakeException;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
 
-import java.net.URL;
+import javax.net.ssl.SSLHandshakeException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
-import java.io.IOException;
-
-import sun.misc.BASE64Decoder;
+import java.net.URL;
 
 /**
  * Keep track of open security sessions with SSGs
@@ -130,12 +127,12 @@ public class SsgSessionManager {
 
             String idstr = header(getMethod, SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME);
             String b64keyreq = header(getMethod, SecureSpanConstants.HttpHeaders.HEADER_KEYREQ);
-            BASE64Decoder b64decoder = new BASE64Decoder();
-            byte[] keyreq = b64decoder.decodeBuffer(b64keyreq);
+
+            byte[] keyreq = HexUtils.decodeBase64(b64keyreq);
             if (keyreq == null)
                 throw new IOException("Gateway sent invalid request key in session: base64 keyreq=" + b64keyreq);
             String b64keyres = header(getMethod, SecureSpanConstants.HttpHeaders.HEADER_KEYRES);
-            byte[] keyres = b64decoder.decodeBuffer(b64keyres);
+            byte[] keyres = HexUtils.decodeBase64(b64keyres);
             if (keyres == null)
                 throw new IOException("Gateway sent invalid response key in session: base64 keyres=" + b64keyres);
 

@@ -50,8 +50,7 @@ public class RSASigner {
         int beggining = tmpStr.indexOf(beginKey) + beginKey.length();
         int end = tmpStr.indexOf(endKey);
         String b64str = tmpStr.substring(beggining, end);
-        sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
-        csrfromfile = base64decoder.decodeBuffer(b64str);
+        csrfromfile = HexUtils.decodeBase64(b64str);
 
         // instantiate the signer
         RSASigner me = new RSASigner(args[0], args[1], args[2], args[3]);
