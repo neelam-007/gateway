@@ -128,9 +128,11 @@ public class WssDecoratorTest extends TestCase {
         WssDecorator decorator = new WssDecoratorImpl();
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
         WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
+        if (d.senderSamlAssertion != null)
+            reqs.setSenderSamlToken(d.senderSamlAssertion);
+        else
+            reqs.setSenderCertificate(d.senderCert);
         reqs.setRecipientCertificate(d.recipientCert);
-        reqs.setSenderSamlToken(d.senderSamlAssertion);
-        reqs.setSenderCertificate(d.senderCert);
         reqs.setSenderPrivateKey(d.senderKey);
         reqs.setSignTimestamp(d.signTimestamp);
         reqs.setUsernameTokenCredentials(null);
@@ -346,17 +348,17 @@ public class WssDecoratorTest extends TestCase {
     }
     
     public void testSignedSamlHolderOfKeyRequest() throws Exception {
-        runTest(getTestSampleSignedSamlHolderOfKeyRequest());
+        runTest(getSignedSamlHolderOfKeyRequestTestDocument());
     }
 
-    private TestDocument getTestSampleSignedSamlHolderOfKeyRequest() throws Exception {
+    public TestDocument getSignedSamlHolderOfKeyRequestTestDocument() throws Exception {
         final Context c = new Context();
         Element senderSamlToken = createSenderSamlToken(TestDocuments.getEttkClientCertificate(),
                                                         TestDocuments.getDotNetServerCertificate(),
                                                         TestDocuments.getDotNetServerPrivateKey());
         return new TestDocument(c,
                                 senderSamlToken,
-                                null,
+                                TestDocuments.getEttkClientCertificate(),
                                 TestDocuments.getEttkClientPrivateKey(),
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),

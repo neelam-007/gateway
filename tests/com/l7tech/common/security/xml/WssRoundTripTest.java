@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,6 +28,7 @@ import java.util.logging.Logger;
  */
 public class WssRoundTripTest extends TestCase {
     private static Logger log = Logger.getLogger(WssRoundTripTest.class.getName());
+    private static final String SESSION_ID = "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid";
 
     public WssRoundTripTest(String name) {
         super(name);
@@ -123,16 +125,19 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getSkilessRecipientCertTestDocument()));        
     }
 
-    // TODO make this pass
     public void testSigningOnlyWithSecureConversation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningOnlyWithSecureConversation",
                                                wssDecoratorTest.getSigningOnlyWithSecureConversationTestDocument()));
     }
 
-    // TODO make this pass
     public void testSigningAndEncryptionWithSecureConversation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
                                                wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument()));
+    }
+
+    public void testSignedSamlHolderOfKeyRequest() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SignedSamlHolderOfKeyRequest",
+                                               wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument()));        
     }
 
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
@@ -156,14 +161,17 @@ public class WssRoundTripTest extends TestCase {
 
         log.info("Message before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(message));
         WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
+        if (td.senderSamlAssertion != null)
+            reqs.setSenderSamlToken(td.senderSamlAssertion);
+        else
+            reqs.setSenderCertificate(td.senderCert);
         reqs.setRecipientCertificate(td.recipientCert);
-        reqs.setSenderCertificate(td.senderCert);
         reqs.setSenderPrivateKey(td.senderKey);
         reqs.setSignTimestamp(td.signTimestamp);
         reqs.setUsernameTokenCredentials(null);
         if (td.secureConversationKey != null)
             reqs.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
-                public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
+                public String getId() { return SESSION_ID; }
                 public byte[] getSecretKey() { return td.secureConversationKey.getEncoded(); }
             });
         if (td.elementsToEncrypt != null)
@@ -206,12 +214,21 @@ public class WssRoundTripTest extends TestCase {
         // If timestamp was supposed to be signed, make sure it actually was
         if (td.signTimestamp) {
             assertTrue("Timestamp was supposed to have been signed", r.getTimestamp().isSigned());
-            /* todo, should we verify something else?
-            assertTrue("Timestamp was supposed to have been signed by an X509 cert",
-                       r.getTimestamp().getSigningSecurityToken() instanceof WssProcessor.X509SecurityToken);
-            assertTrue("Timestamp signging security token must match sender cert",
-                       ((WssProcessor.X509SecurityToken)r.getTimestamp().getSigningSecurityToken()).asX509Certificate().equals(td.senderCert));
-           */
+            WssProcessor.SecurityToken signer = r.getTimestamp().getSigningSecurityToken();
+            if (signer instanceof WssProcessor.X509SecurityToken) {
+                assertTrue("Timestamp signing security token must match sender cert",
+                           ((WssProcessor.X509SecurityToken)signer).asX509Certificate().equals(td.senderCert));
+            } else if (signer instanceof WssProcessor.SamlSecurityToken) {
+                assertTrue("Timestamp signing security token must match sender cert",
+                           ((WssProcessor.SamlSecurityToken)signer).getSubjectCertificate().equals(td.senderCert));
+            } else if (signer instanceof WssProcessor.SecurityContextToken) {
+                WssProcessor.SecurityContextToken sct = (WssProcessor.SecurityContextToken)signer;
+                assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());
+                assertEquals("WS-Security session ID was supposed to match", sct.getContextIdentifier(), SESSION_ID);
+                assertTrue(Arrays.equals(sct.getSecurityContext().getSharedSecret().getEncoded(),
+                                         td.secureConversationKey.getEncoded()));
+            } else
+                fail("Timestamp was signed with unrecognized security token of type " + signer.getClass() + ": " + signer);
         }
 
         // Make sure all requested elements were signed
