@@ -199,8 +199,11 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 cert = certs[0];
 
             } catch (TrustedCertAdmin.HostnameMismatchException e) {
-                logger.warning("Hostname does not match with the one the certificate is issued to");
-                //todo: ask your if the cert should be accept
+                // This should never happen since we ask retrieveCertFromUrl() to ignore the mismatch
+                // It is a coding error if HostnameMismatchException is caught
+                logger.severe("Server coding error! Unexpected HostnameMismatchException caught");
+
+                return false;
 
             } catch (IllegalArgumentException iae) {
                  JOptionPane.showMessageDialog(this, iae.getMessage(),
@@ -229,7 +232,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                         "<html>The hostname in URL does not match with the certificate's subject name. " +
                         "<br>" + "Hostname in URL: " + hostnameURL + "</br>" +
                         "<br>" + "Subject DN in Certificate: " + cn + "</br>" +
-                        "<br>" + "Do you still want to add the certificate to the trusted store?" + "</br></html>",
+                        "<br>" + "Do you still want to view the certificate?" + "</br></html>",
                         "Hostname mismatch",
                         0, JOptionPane.WARNING_MESSAGE,
                         null, options, options[1]);
@@ -386,8 +389,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         _4 = new JRadioButton();
         fileRadioButton = _4;
         _4.setText("Import from a File");
-        _4.setSelected(false);
         _4.setEnabled(true);
+        _4.setSelected(false);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;
         _5 = new JRadioButton();
