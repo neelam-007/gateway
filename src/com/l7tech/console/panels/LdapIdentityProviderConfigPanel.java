@@ -116,8 +116,16 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             };
             upbutton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    // todo
-                    System.out.println("TODO UP");
+                    int currentPos = getLdapHostList().getSelectedIndex();
+                    if (currentPos >= 0) {
+                        // make sure not already in last position
+                        Object selected = getLdapHostList().getSelectedValue();
+                        if (currentPos > 0) {
+                            DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
+                            model.removeElementAt(currentPos);
+                            model.insertElementAt(selected, currentPos-1);
+                        }
+                    }
                 }
             });
         }
@@ -143,8 +151,17 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             };
             downbutton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    // todo
-                    System.out.println("TODO DOWN");
+                    int currentPos = getLdapHostList().getSelectedIndex();
+                    if (currentPos >= 0) {
+                        // make sure not already in last position
+                        DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
+                        if (model.getSize() > (currentPos+1)) {
+                            Object selected = getLdapHostList().getSelectedValue();
+                            model.removeElementAt(currentPos);
+                            model.insertElementAt(selected, currentPos+1);
+                            //model.setSelectedItem(null);
+                        }
+                    }
                 }
             });
         }
@@ -165,7 +182,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
                 if (newUrl != null) {
                     if (model.getIndexOf(newUrl) < 0) {
-                        model.addElement(newUrl);
+                        model.insertElementAt(newUrl, model.getSize());
                     }
                 }
             }
