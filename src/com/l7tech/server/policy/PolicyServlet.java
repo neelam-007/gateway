@@ -384,7 +384,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     }
 
     private void outputPolicyDoc(HttpServletResponse res, Document doc) throws IOException {
-        logger.fine("Returning soap fault");
         res.setContentType(XmlUtil.TEXT_XML);
         res.setStatus(HttpServletResponse.SC_OK);
         OutputStream os = res.getOutputStream();
