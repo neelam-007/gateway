@@ -89,15 +89,15 @@
   <parameter name="allowedMethods" value="saveGroup findAllIdentityProviderConfigByOffset deleteIdentityProviderConfig findAllUsersByOffset findUserByPrimaryKey deleteGroup findAlllIdentityProviderConfig saveUser deleteUser saveIdentityProviderConfig findIdentityProviderConfigByPrimaryKey findAllGroups findAllUsers findGroupByPrimaryKey findAllGroupsByOffset"/>
   <parameter name="wsdlPortType" value="Identity"/>
   <parameter name="scope" value="Application"/>
-  <parameter name="className" value="com.l7tech.adminws.service.Identity"/>
+  <parameter name="className" value="com.l7tech.adminws.identity.IdentitiesSoapBindingImpl"/>
   <parameter name="wsdlServicePort" value="identities"/>
   <parameter name="wsdlTargetNamespace" value="http://www.layer7-tech.com/adminservice/identity"/>
   <parameter name="wsdlServiceElement" value="IdentityService"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns22:ArrayOf_tns1_Header" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" type="java:com.l7tech.adminws.service.Header[]" xmlns:ns22="http://www.layer7-tech.com/adminservice/identity"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns23:IdentityProviderConfig" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.adminws.service.IdentityProviderConfig" xmlns:ns23="http://service.adminws.l7tech.com"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns24:Header" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.adminws.service.Header" xmlns:ns24="http://service.adminws.l7tech.com"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns25:Group" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.adminws.service.Group" xmlns:ns25="http://service.adminws.l7tech.com"/>
-  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns26:User" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.adminws.service.User" xmlns:ns26="http://service.adminws.l7tech.com"/>
+  <typeMapping deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns22:ArrayOf_tns1_Header" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" type="java:com.l7tech.adminws.identity.Header[]" xmlns:ns22="http://www.layer7-tech.com/adminservice/identity"/>
+  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns23:IdentityProviderConfig" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.adminws.identity.IdentityProviderConfig" xmlns:ns23="http://service.adminws.l7tech.com"/>
+  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns24:Header" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.adminws.identity.Header" xmlns:ns24="http://service.adminws.l7tech.com"/>
+  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns25:Group" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.adminws.identity.Group" xmlns:ns25="http://service.adminws.l7tech.com"/>
+  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns26:User" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.adminws.identity.User" xmlns:ns26="http://service.adminws.l7tech.com"/>
  </service>
  <transport name="http">
   <requestFlow>
