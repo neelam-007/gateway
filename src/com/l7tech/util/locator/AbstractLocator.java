@@ -48,18 +48,20 @@ public abstract class AbstractLocator extends Locator {
          * @return collection of all instances
          */
         public Collection allInstances() {
+
             if (allInstances != null) {
                 return allInstances;
             }
-            allInstances = new ArrayList();
-            Iterator it = AbstractLocator.this.nameClassSet.iterator();
+
+            allInstances = new ArrayList(allItems().size());
+            Iterator it = allItems().iterator();
             while (it.hasNext()) {
-                NameClassPair nc = (NameClassPair)it.next();
-                if (matches(nc, this.template)) {
-                    allInstances.add(nc);
+                Item item = (Item)it.next();
+                Object obj = item.getInstance();
+                if (obj != null) {
+                    allInstances.add(obj);
                 }
             }
-            allInstances = Collections.unmodifiableCollection(allInstances);
             return allInstances;
         }
 
@@ -72,7 +74,18 @@ public abstract class AbstractLocator extends Locator {
             if (allClasses != null) {
                 return allClasses;
             }
-            return super.allClasses();
+
+            allClasses = new HashSet();
+
+            Iterator it = allItems().iterator();
+            while (it.hasNext()) {
+                Item item = (Item)it.next();
+                Class clazz = item.getType();
+                if (clazz != null) {
+                    allClasses.add(clazz);
+                }
+            }
+            return allClasses;
         }
 
         /** Get all registered items.
@@ -81,7 +94,19 @@ public abstract class AbstractLocator extends Locator {
          * @return collection of {@link Locator.Item}
          */
         public Collection allItems() {
-            return Collections.unmodifiableSet(AbstractLocator.this.nameClassSet);
+            if (allItems != null) {
+                return allItems;
+            }
+            allItems = new ArrayList();
+            Iterator it = AbstractLocator.this.nameClassSet.iterator();
+            while (it.hasNext()) {
+                NameClassPair nc = (NameClassPair)it.next();
+                if (matches(nc, this.template)) {
+                    allItems.add(nc);
+                }
+            }
+            allItems = Collections.unmodifiableCollection(allItems);
+            return allItems;
         }
 
         /**
@@ -109,9 +134,9 @@ public abstract class AbstractLocator extends Locator {
             return matches;
         }
 
-        private final Set allClasses = null;
+        private Set allClasses = null;
+        private Collection allItems = null;
         private Collection allInstances = null;
-
         private final Locator.Template template;
 
     }
@@ -206,7 +231,7 @@ public abstract class AbstractLocator extends Locator {
          * @return the correct class
          */
         public Class getType() {
-            return cls.getClass();
+            return cls;
         }
 
         private int hashCode = 0;
