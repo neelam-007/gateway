@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
@@ -177,8 +178,16 @@ public class PublishServiceWizard extends Wizard {
                              "you like to publish this service using a different routing URI?";
                 int answer = JOptionPane.showConfirmDialog(null, msg, "Service Resolution Conflict", JOptionPane.YES_NO_OPTION);
                 if (answer == JOptionPane.YES_OPTION) {
-                    // todo, get new routing URI
-                    // todo, try to publish again
+                    // get new routing URI
+                    SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(this, saBundle.getService());
+                    dlg.pack();
+                    Utilities.centerOnScreen(dlg);
+                    dlg.show();
+                    if (dlg.wasSubjectAffected()) {
+                        completeTask();
+                    } else {
+                        logger.info("Service publication aborted.");
+                    }
                 } else {
                     logger.info("Service publication aborted.");
                 }
