@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.util.SoapUtil;
+
 /**
  * @author alex
  * @version $Revision$
@@ -36,9 +38,9 @@ public class AssertionStatus {
 
     public String getSoapFaultCode() {
         if ( _numeric >= CLIENT && _numeric < SERVER )
-            return "Client";
+            return SoapUtil.FC_CLIENT;
         else
-            return "Server";
+            return SoapUtil.FC_SERVER;
     }
 
     private static AssertionStatus make( int numeric, String message ) {
