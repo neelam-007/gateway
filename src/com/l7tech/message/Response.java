@@ -7,10 +7,11 @@
 package com.l7tech.message;
 
 import java.io.OutputStream;
+import java.io.IOException;
 
 /**
  * @author alex
  */
 public interface Response extends Message {
-    OutputStream getResponseStream();
+    OutputStream getResponseStream() throws IOException;
 }
