@@ -15,6 +15,8 @@ import com.ncipher.provider.km.nCipherKM;
 
 import java.security.*;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 /**
  *
  * @author mike
@@ -25,6 +27,7 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
 
     public NcipherJceProviderEngine() {
         Security.insertProviderAt(PROVIDER, 0);
+        Security.addProvider( new BouncyCastleProvider() );
     }
 
     /**
