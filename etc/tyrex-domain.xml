@@ -1,0 +1,17 @@
+<domain>
+  <name>ssgDomain</name>
+  <resources>
+    <dataSource>
+      <name>ssg</name>
+      <jar>@TOMCAT_HOME@/common/lib/mysql-connector-java-3.0.7-stable-bin.jar</jar>
+      <class>com.mysql.jdbc.jdbc2.optional.MysqlDataSource</class>
+      <config>
+        <user>webuser</user>
+        <password>resubew</password>
+        <serverName>localhost</serverName>
+        <port>3306</port>
+        <database>ssg</database>
+      </config>
+    </dataSource>
+  </resources>
+</domain>
