@@ -16,6 +16,7 @@ import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
@@ -23,6 +24,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.jms.*;
+import com.l7tech.server.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 
 import javax.jms.*;
@@ -31,7 +33,6 @@ import javax.naming.NamingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -49,6 +50,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     // TODO synchronized?
     public synchronized AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException {
+
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         context.setRoutingStatus( RoutingStatus.ATTEMPTED );
         Destination jmsInboundDest = null;
         MessageProducer jmsProducer = null;
@@ -61,14 +64,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
             while ( true ) {
                 try {
-                    JmsBag bag = getJmsBag();
+                    JmsBag bag = getJmsBag(auditor);
                     jmsSession = bag.getSession();
-                    jmsOutboundRequest = makeRequest( context );
+                    jmsOutboundRequest = makeRequest( context, auditor );
                     break; // if successful, no need for further retries
                 } catch ( Throwable t ) {
                     if ( ++oopses < MAX_OOPSES ) {
-                        logger.log( Level.WARNING, "Failed to establish JMS connection on try #" + oopses +
-                                                   ".  Will retry after " + RETRY_DELAY + "ms.", t );
+                        String msg = "Failed to establish JMS connection on try #" +
+                                oopses +  ".  Will retry after " + RETRY_DELAY + "ms.";
+                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, t);
                         if ( jmsSession != null ) try { jmsSession.close(); } catch ( Exception e ) { }
                         closeBag();
 
@@ -78,10 +82,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         try {
                             Thread.sleep(RETRY_DELAY);
                         } catch ( InterruptedException e ) {
-                            logger.fine("Interrupted during retry delay");
+                            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"Interrupted during retry delay"});
                         }
                     } else {
-                        logger.severe( "Tried " + MAX_OOPSES + " times to establish JMS connection and failed." );
+                        String msg = "Tried " + MAX_OOPSES + " times to establish JMS connection and failed.";
+                        auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, t);
                         // Catcher will log the stack trace
                         throw t;
                     }
@@ -93,14 +98,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 throw new PolicyAssertionException(msg);
             }
 
-            Destination jmsOutboundDest = getRoutedRequestDestination();
+            Destination jmsOutboundDest = getRoutedRequestDestination(auditor);
             jmsInboundDest = jmsOutboundRequest.getJMSReplyTo();
 
             String corrId = jmsOutboundRequest.getJMSCorrelationID();
             String selector = null;
             if ( corrId != null && !( jmsInboundDest instanceof TemporaryQueue ) ) {
                 // TODO Heuristic use selector if temp queue, assuming otherwise it could be shared
-                logger.fine( "Inbound request queue is not temporary; using selector to filter responses to our message" );
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_INBOUD_REQUEST_QUEUE_NOT_EMPTY);
                 selector = "JMSCorrelationID = '" + escape( corrId ) + "'";
             }
 
@@ -113,27 +118,25 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 if ( inbound )
                     jmsConsumer = ((QueueSession)jmsSession).createReceiver( (Queue)jmsInboundDest, selector );
             } else if ( jmsSession instanceof TopicSession ) {
-                logger.log( Level.SEVERE, "Topics not supported!" );
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_TOPIC_NOT_SUPPORTED);
                 return AssertionStatus.NOT_YET_IMPLEMENTED;
             } else {
                 jmsProducer = jmsSession.createProducer( jmsOutboundDest );
                 if ( inbound ) jmsConsumer = jmsSession.createConsumer( jmsInboundDest, selector );
             }
 
-            logger.finer( "Routing request to protected service" );
+            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_ROUTED);
             jmsProducer.send( jmsOutboundRequest );
 
             if ( inbound ) {
-                logger.finer( "Getting response from protected service" );
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_GETTING_RESPONSE);
                 int timeout = data.getResponseTimeout();
                 final Message jmsResponse = jmsConsumer.receive( timeout );
                 if ( jmsResponse == null ) {
-                    logger.warning( "Did not receive a routing reply within timeout of " +
-                                 timeout + "ms. Will return empty response");
+                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE, new String[]{String.valueOf(timeout)});
+
                     return AssertionStatus.FAILED;
                 } else {
-                    logger.finer( "Received routing reply" );
-
                     // TODO throw PolicyAssertionException unless response isXml
 
                     if ( jmsResponse instanceof TextMessage ) {
@@ -142,12 +145,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         BytesMessage bmsg = (BytesMessage)jmsResponse;
                         context.getResponse().initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bmsg));
                     } else {
-                        logger.warning( "Received JMS reply with unsupported message type " +
-                                        jmsResponse.getClass().getName() );
+                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, new String[]{jmsResponse.getClass().getName()});
                         return AssertionStatus.FAILED;
                     }
-
-                    logger.info( "Received response from protected service" );
+                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_GOT_RESPONSE);
                     context.getResponse().attachJmsKnob(new JmsKnob() {
                         public boolean isBytesMessage() {
                             return (jmsResponse instanceof BytesMessage);
@@ -156,40 +157,43 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                     context.setRoutingStatus( RoutingStatus.ROUTED );
                 }
             } else {
-                logger.info( "No response expected from protected service" );
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE_EXPECTED);
                 context.setRoutingStatus( RoutingStatus.ROUTED );
             }
 
             return AssertionStatus.NONE;
         } catch ( NamingException e ) {
-            logger.log( Level.WARNING, "Caught NamingException in outbound JMS request processing", e );
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error in outbound JMS request processing"}, e );
             return AssertionStatus.FAILED;
         } catch ( JMSException e ) {
-            logger.log( Level.WARNING, "Caught JMSException in outbound JMS request processing", e );
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error outbound JMS request processing"}, e );
+
             closeBag();
             return AssertionStatus.FAILED;
         } catch ( FindException e ) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             String msg = "Caught FindException";
-            logger.log( Level.SEVERE, msg, e );
             throw new PolicyAssertionException(msg, e);
         } catch ( JmsConfigException e ) {
             String msg = "Invalid JMS configuration";
-            logger.log( Level.SEVERE, msg, e );
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, e);
             throw new PolicyAssertionException(msg, e);
         } catch ( Throwable t ) {
-            logger.log( Level.SEVERE, "Caught unexpected Throwable in outbound JMS request processing", t );
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing"}, t );
+
             closeBag();
             return AssertionStatus.SERVER_ERROR;
         } finally {
             try {
                 if ( jmsInboundDest instanceof TemporaryQueue ) {
                     if ( jmsConsumer != null ) jmsConsumer.close();
-                    logger.finer( "Deleting temporary queue" );
+                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_DELETE_TEMPORARY_QUEUE);
                     ((TemporaryQueue)jmsInboundDest).delete();
                 }
             } catch ( JMSException e ) {
                 closeBag();
-                logger.log( Level.WARNING, "Caught JMSException while attempting to delete temporary queue", e );
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[]{"Caught JMSException while attempting to delete temporary queue"}, e);
             }
         }
     }
@@ -205,9 +209,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         return quotePattern.matcher(corrId).replaceAll( "''" );
     }
 
-    private Queue getTemporaryResponseQueue() throws JMSException, NamingException,
+    private Queue getTemporaryResponseQueue(Auditor auditor) throws JMSException, NamingException,
                                                      JmsConfigException, FindException {
-        return getJmsBag().getSession().createTemporaryQueue(); // TODO make this thread-local or something
+        return getJmsBag(auditor).getSession().createTemporaryQueue(); // TODO make this thread-local or something
 //        if ( tempResponseQueue == null ) {
 //            JmsBag bag = getJmsBag();
 //            tempResponseQueue = bag.getSession().createTemporaryQueue();
@@ -215,46 +219,48 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 //        return tempResponseQueue;
     }
 
-    private Destination getResponseDestination( JmsEndpoint endpoint, Message request )
+    private Destination getResponseDestination( JmsEndpoint endpoint, Message request, Auditor auditor )
             throws JMSException, NamingException, JmsConfigException, FindException {
         JmsReplyType replyType = endpoint.getReplyType();
 
         if (replyType == JmsReplyType.NO_REPLY) {
-            logger.finer("Returning NO_REPLY (null) for '" + toString() + "'");
+            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_RETURN_NO_REPLY, new String[] {toString()});
             return null;
         } else {
             if (replyType == JmsReplyType.AUTOMATIC) {
 
-                logger.finer("Returning AUTOMATIC '" + request.getJMSReplyTo() + "' for '" + toString() + "'");
-                return getTemporaryResponseQueue();
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_RETURN_AUTOMATIC, new String[] {toString()});
+                return getTemporaryResponseQueue(auditor);
 
             } else if (replyType == JmsReplyType.REPLY_TO_OTHER) {
 
-                logger.finer("Returning REPLY_TO_OTHER '" + endpoint.getDestinationName() + "' for '" + toString() + "'");
-                return getEndpointResponseDestination();
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_RETURN_REPLY_TO_OTHER,
+                        new String[] {endpoint.getDestinationName(), toString()});
+                return getEndpointResponseDestination(auditor);
 
             } else {
 
-                String msg = "Unknown JmsReplyType " + (replyType == null ? "<null>" : replyType.toString());
-                logger.severe(msg);
+                String rt = (replyType == null ? "<null>" : replyType.toString());
+                String msg = "Unknown JmsReplyType " + rt;
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNKNOW_JMS_REPLY_TYPE, new String[] {rt});
                 throw new java.lang.IllegalStateException(msg);
 
             }
         }
     }
 
-    private Destination getEndpointResponseDestination() throws JMSException, NamingException, JmsConfigException, FindException {
+    private Destination getEndpointResponseDestination(Auditor auditor) throws JMSException, NamingException, JmsConfigException, FindException {
         if ( endpointResponseDestination == null ) {
             JmsEndpoint requestEndpoint = getRoutedRequestEndpoint();
             JmsEndpoint replyEndpoint = requestEndpoint.getReplyEndpoint();
 
             if ( requestEndpoint.getConnectionOid() != replyEndpoint.getConnectionOid() ) {
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_ENDPOINTS_ON_SAME_CONNECTION);
                 String msg = "Request and reply endpoints must belong to the same connection";
-                logger.severe( msg );
                 throw new JmsConfigException( msg );
             }
 
-            endpointResponseDestination = (Destination)getJmsBag().getJndiContext().lookup( replyEndpoint.getDestinationName() );
+            endpointResponseDestination = (Destination)getJmsBag(auditor).getJndiContext().lookup( replyEndpoint.getDestinationName() );
         }
         return endpointResponseDestination;
     }
@@ -262,11 +268,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     /**
      * Builds a {@link Message} to be routed to a JMS endpoint.
      * @param context contains the request to be converted into a JMS Message
+     * @param auditor for adding associated logs to audit record.
      * @return the JMS Message
      * @throws IOException
      * @throws JMSException
      */
-    private javax.jms.Message makeRequest( PolicyEnforcementContext context )
+    private javax.jms.Message makeRequest( PolicyEnforcementContext context, Auditor auditor )
         throws IOException, JMSException, NamingException, JmsConfigException, FindException
     {
         JmsEndpoint endpoint = getRoutedRequestEndpoint();
@@ -283,14 +290,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         if (context.getRequest().getKnob(JmsKnob.class) != null) {
             // Outgoing request should be the same type (i.e. TextMessage or BytesMessage) as the original request
             if (!context.getRequest().getJmsKnob().isBytesMessage()) {
-                logger.finer( "Creating request as TextMessage" );
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE);
                 outboundRequestMsg = bag.getSession().createTextMessage(new String(outboundRequestBytes, JmsUtil.DEFAULT_ENCODING));
             }
         }
 
         if (outboundRequestMsg == null) {
             // Default to BytesMessage
-            logger.finer( "Creating request as BytesMessage" );
+            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE);
             BytesMessage bmsg = bag.getSession().createBytesMessage();
             bmsg.writeBytes(outboundRequestBytes);
             outboundRequestMsg = bmsg;
@@ -298,20 +305,20 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
         JmsReplyType replyType = endpoint.getReplyType();
         if ( replyType == JmsReplyType.NO_REPLY ) {
-            logger.fine( "Routed request endpoint specified NO_REPLY, won't set JMSReplyTo and JMSCorrelationID" );
+            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY);
         } else {
-            logger.fine( "Setting JMSReplyTo and JMSCorrelationID" );
+            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_SET_REPLYTO_CORRELCTIONID);
             // Set replyTo & correlationId
-            outboundRequestMsg.setJMSReplyTo( getResponseDestination( endpoint, outboundRequestMsg ) );
+            outboundRequestMsg.setJMSReplyTo( getResponseDestination( endpoint, outboundRequestMsg, auditor ) );
             outboundRequestMsg.setJMSCorrelationID( context.getRequestId().toString() );
         }
 
         return outboundRequestMsg;
     }
 
-    private Destination getRoutedRequestDestination() throws FindException, JMSException, NamingException, JmsConfigException {
+    private Destination getRoutedRequestDestination(Auditor auditor) throws FindException, JMSException, NamingException, JmsConfigException {
         if ( routedRequestDestination == null ) {
-            Context jndiContext = getJmsBag().getJndiContext();
+            Context jndiContext = getJmsBag(auditor).getJndiContext();
             routedRequestDestination = (Destination)jndiContext.lookup(getRoutedRequestEndpoint().getDestinationName());
         }
 
@@ -326,15 +333,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         return routedRequestEndpoint;
     }
 
-    private JmsConnection getRoutedRequestConnection() throws FindException {
+    private JmsConnection getRoutedRequestConnection(Auditor auditor) throws FindException {
         if ( routedRequestConnection == null ) {
             JmsConnectionManager mgr = (JmsConnectionManager)applicationContext.getBean("jmsConnectionManager");
             JmsEndpoint endpoint = getRoutedRequestEndpoint();
             if ( endpoint == null ) {
-                String msg = "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #"
-                             + data.getEndpointOid()
-                             + " (" + data.getEndpointName() + ")";
-                logger.severe( msg );
+                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NON_EXISTENT_ENDPOINT,
+                        new String[] {String.valueOf(data.getEndpointOid()), data.getEndpointName()});
             } else {
                 routedRequestConnection = mgr.findConnectionByPrimaryKey( endpoint.getConnectionOid() );
             }
@@ -342,9 +347,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         return routedRequestConnection;
     }
 
-    private synchronized JmsBag getJmsBag() throws FindException, JMSException, NamingException, JmsConfigException {
+    private synchronized JmsBag getJmsBag(Auditor auditor) throws FindException, JMSException, NamingException, JmsConfigException {
         if ( bag == null ) {
-            JmsConnection conn = getRoutedRequestConnection();
+            JmsConnection conn = getRoutedRequestConnection(auditor);
             if ( conn == null ) throw new FindException( "JmsConnection could not be located! It may have been deleted" );
             JmsEndpoint endpoint = getRoutedRequestEndpoint();
             if ( endpoint == null ) throw new FindException( "JmsEndpoint could not be located! It may have been deleted" );

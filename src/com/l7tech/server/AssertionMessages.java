@@ -186,4 +186,27 @@ public class AssertionMessages extends Messages {
     public static final M XSL_TRAN_RESPONSE                               = m(5903, Level.FINEST, "Transforming response");
     public static final M XSL_TRAN_CONFIG_ISSUE                           = m(5904, Level.WARNING, "Assertion is not configured properly. should specify if transformation should apply to request or to response. returning failure.");
 
+    // ServerJmsRoutingAssertion
+    public static final M JMS_ROUTING_CONNECT_FAILED                      = m(6000, Level.INFO, "Failed to establish JMS connection on try #{0}. Will retry after {1}ms.");
+    public static final M JMS_ROUTING_INBOUD_REQUEST_QUEUE_NOT_EMPTY      = m(6001, Level.FINE,  "Inbound request queue is not temporary; using selector to filter responses to our message");
+    public static final M JMS_ROUTING_TOPIC_NOT_SUPPORTED                 = m(6002, Level.SEVERE, "Topics not supported!");
+    public static final M JMS_ROUTING_REQUEST_ROUTED                      = m(6003, Level.FINER, "Routing request to protected service");
+    public static final M JMS_ROUTING_GETTING_RESPONSE                    = m(6004, Level.FINEST, "Getting response from protected service");
+    public static final M JMS_ROUTING_NO_RESPONSE                         = m(6005, Level.WARNING, "Did not receive a routing reply within timeout of {0} ms. Will return empty response");
+    public static final M JMS_ROUTING_GOT_RESPONSE                        = m(6006, Level.FINER, "Received routing reply");
+    public static final M JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE       = m(6007, Level.WARNING, "Received JMS reply with unsupported message type {0}");
+    public static final M JMS_ROUTING_NO_RESPONSE_EXPECTED                = m(6008, Level.INFO, "No response expected from protected service");
+    public static final M JMS_ROUTING_DELETE_TEMPORARY_QUEUE              = m(6009, Level.FINER, "Deleting temporary queue" );
+    public static final M JMS_ROUTING_RETURN_NO_REPLY                     = m(6010, Level.FINER, "Returning NO_REPLY (null) for {0}");
+    public static final M JMS_ROUTING_RETURN_AUTOMATIC                    = m(6011, Level.FINER, "Returning AUTOMATIC {0} for {1}");
+    public static final M JMS_ROUTING_RETURN_REPLY_TO_OTHER               = m(6012, Level.FINER, "Returning REPLY_TO_OTHER {0} for {1}");
+    public static final M JMS_ROUTING_UNKNOW_JMS_REPLY_TYPE               = m(6013, Level.SEVERE, "Unknown JmsReplyType {0}");
+    public static final M JMS_ROUTING_ENDPOINTS_ON_SAME_CONNECTION        = m(6014, Level.SEVERE, "Request and reply endpoints must belong to the same connection");
+    public static final M JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE      = m(6015, Level.FINER, "Creating request as TextMessage");
+    public static final M JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE     = m(6016, Level.FINER, "Creating request as BytesMessage");
+    public static final M JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY         = m(6017, Level.FINE, "Routed request endpoint specified NO_REPLY, won't set JMSReplyTo and JMSCorrelationID");
+    public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID           = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
+    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT               = m(6019, Level.SEVERE, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
+
+
 }
