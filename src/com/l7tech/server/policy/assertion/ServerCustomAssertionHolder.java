@@ -9,6 +9,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -16,6 +17,8 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.AssertionMessages;
+import com.l7tech.server.audit.AuditContextImpl;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -58,6 +61,8 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         descriptor = CustomAssertions.getDescriptor(customAssertion.getClass());
 
         if (!checkDescriptor(descriptor)) {
+            logger.warning("Invalid custom assertion descriptor detected for '" + customAssertion.getClass() + "'\n" +
+              " this policy element is misconfigured and will cause the policy to fail.");
             throw new PolicyAssertionException("Custom assertion is misconfigured");
         }
         Class sa = descriptor.getServerAssertion();
@@ -75,6 +80,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         // Bugzilla #707 - removed the logger.entering()/exiting() as they are just for debugging purpose
         //logger.entering(ServerCustomAssertionHolder.class.getName(), "checkRequest");
 
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         if(serviceInvocation == null) initialize();
 
         try {
@@ -82,15 +88,15 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             final CustomAssertionDescriptor descriptor = CustomAssertions.getDescriptor(customAssertion.getClass());
 
             if (!checkDescriptor(descriptor)) {
+                auditor.logAndAudit(AssertionMessages.CA_INVALID_CA_DESCRIPTOR, new String[] {customAssertion.getClass().getName()});
                 throw new PolicyAssertionException("Custom assertion is misconfigured, service '" + service.getName() + "'");
             }
             Subject subject = new Subject();
             LoginCredentials principalCredentials = context.getCredentials();
             if (principalCredentials != null) {
                 String principalName = principalCredentials.getLogin();
-                logger.fine("Service '" + service.getName() + "\n" +
-                  "custom assertion ' " + descriptor.getServerAssertion().getName() + "\n" +
-                  "principal '" + principalName + "'");
+                auditor.logAndAudit(AssertionMessages.CA_CREDENTIAL_INFO,
+                        new String[] {service.getName(), descriptor.getServerAssertion().getName(), principalName});
 
                 if (principalName != null) {
                     subject.getPrincipals().add(new CustomAssertionPrincipal(principalName));
@@ -116,16 +122,16 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             return AssertionStatus.NONE;
         } catch (PrivilegedActionException e) {
             if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
-                logger.log(Level.WARNING, "Authentication (login)", e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authentication (login)"}, e);
                 return AssertionStatus.AUTH_FAILED;
             } else if (ExceptionUtils.causedBy(e.getException(), GeneralSecurityException.class)) {
-                logger.log(Level.WARNING, "Authorization (access control) failed", e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authorization (access control) failed"}, e);
                 return AssertionStatus.UNAUTHORIZED;
             }
-            logger.log(Level.SEVERE, "Failed to invoke the custom assertion", e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Failed to invoke the custom assertion"}, e);
             return AssertionStatus.FAILED;
         } catch (AccessControlException e) {
-            logger.log(Level.WARNING, "Authorization (access control) failed", e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authorization (access control) failed"}, e);
             return AssertionStatus.UNAUTHORIZED;
         } finally {
             //logger.exiting(ServerCustomAssertionHolder.class.getName(), "checkRequest");
@@ -141,8 +147,6 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
      */
     private boolean checkDescriptor(CustomAssertionDescriptor descriptor) {
         if (descriptor == null || descriptor.getServerAssertion() == null) {
-            logger.warning("Invalid custom assertion descriptor detected for '" + customAssertion.getClass() + "'\n" +
-              " this policy element is misconfigured and will cause the policy to fail.");
             return false;
         }
         return true;
