@@ -32,6 +32,7 @@ import java.net.URL;
 
 /**
  * Class that processes messages in request->response fashion.
+ * TODO: This class is a total hairball.  Needs refactoring, bad.
  *
  * User: mike
  * Date: Jun 17, 2003
@@ -128,6 +129,7 @@ public class MessageProcessor {
         } else
             log.info("No authentication specified by current policy");
 
+        postMethod.addRequestHeader("SOAPAction", pendingRequest.getSoapAction());
         postMethod.setRequestBody(pendingRequest.getSoapEnvelope().toString());
         try {
             log.info("Posting request to SSG " + ssg + ", url " + url);
