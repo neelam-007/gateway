@@ -46,6 +46,8 @@ public class Constants {
      */
     public static final String STATUS_RESPONDER = "Responder";
 
+    public static final String ELEMENT_ASSERTION = "Assertion";
+
     /**
      * Cannot instantiate this class
      */
