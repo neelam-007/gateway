@@ -276,6 +276,11 @@ public abstract class SamlStatementValidate {
         public Exception getException() {
             return exception;
         }
+
+        public String toString() {
+            final String msg = exception == null ? "<null>" : exception.getMessage();
+            return "SAML validation error: " + reason + ": " + msg;
+        }
     }
 
 }
