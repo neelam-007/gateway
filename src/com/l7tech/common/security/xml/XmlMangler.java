@@ -16,6 +16,7 @@ import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -25,7 +26,11 @@ import java.security.Key;
 import java.security.PrivateKey;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+
+import sun.misc.BASE64Decoder;
 
 /**
  * Class that encrypts and decrypts XML documents.
@@ -309,8 +314,50 @@ public class XmlMangler {
      * @return never null;
      */
     public static Key[] getEncryptedKeyFromMessage(Document soapMsg, PrivateKey recipientPrivateKey) {
-        // todo
-        return new Key[0];
+        ArrayList output = new ArrayList();
+
+        // look for the Header/Security/EncryptedKey element
+        NodeList encryptedKeyElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedKey");
+        for (int i = 0; i < encryptedKeyElements.getLength(); i++) {
+            Element encryptedKey = (Element)encryptedKeyElements.item(i);
+            // check that this is for us by checking the SecurityTokenReference or something
+            // todo
+            // check that the algo is rsa
+            // todo
+            // get the xenc:CipherValue
+            Element cipherValue = null;
+            try {
+                Element cipherData = XmlUtil.findOnlyOneChildElementByName(encryptedKey, SoapUtil.XMLENC_NS, "CipherData");
+                if (cipherData != null) {
+                    cipherValue = XmlUtil.findOnlyOneChildElementByName(encryptedKey, SoapUtil.XMLENC_NS, "CipherValue");
+                }
+            } catch (XmlUtil.MultipleChildElementsException e) {
+                logger.warning("EncryptedKey has more than one CipherData or CipherValue");
+            }
+            if (cipherValue == null) {
+                logger.warning("element missing CipherValue");
+            } else {
+                // we got the value, decrypt it
+                String value = XmlUtil.getTextValue(cipherValue);
+                BASE64Decoder decoder = new BASE64Decoder(); // todo, mike told me about another decoder somewhere. can't find it
+                byte[] encryptedKeyBytes = null;
+                try {
+                    encryptedKeyBytes = decoder.decodeBuffer(value);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "cannot b64 decode CipherValue contents: " + value, e);
+                }
+                // todo, the actual RSA decryption
+            }
+        }
+        if (output.isEmpty()) {
+            return new Key[0];
+        } else {
+            Key[] realoutput = new Key[output.size()];
+            for (int i = 0; i < realoutput.length; i++) {
+                realoutput[i] = (Key)output.get(i);
+            }
+            return realoutput;
+        }
     }
 
     // Use a logger that will work inside either the Agent or the Gateway.
