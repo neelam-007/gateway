@@ -47,6 +47,7 @@ import javax.wsdl.WSDLException;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
 import java.awt.*;
+import java.awt.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
@@ -55,10 +56,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -86,6 +84,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private Message[] soapMessages;
     private String blankMessage = "<empty />";
     private Map namespaces = new HashMap();
+    private Map requiredNamespaces = new HashMap();
     private Viewer messageViewer;
     private ViewerToolBar messageViewerToolBar;
     private ExchangerDocument exchangerDocument;
@@ -108,6 +107,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         okActionListener = okListener;
 
         xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
+        namespaces = xmlSecAssertion.getXpathExpression().getNamespaces();
         if (xmlSecAssertion instanceof RequestWssConfidentiality ||
           xmlSecAssertion instanceof ResponseWssConfidentiality) {
             isEncryption = true;
@@ -129,10 +129,14 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             initializeBlankMessage(soapMessages[0]);
             for (int i = 0; i < soapMessages.length; i++) {
                 Message soapRequest = soapMessages[i];
-                namespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
+                requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
             }
         } catch (Exception e) {
             throw new RuntimeException("Unable to parse the service WSDL " + serviceNode.getName(), e);
+        }
+
+        if (namespaces.size() < requiredNamespaces.size()) {
+            namespaces.putAll(requiredNamespaces);
         }
 
         initialize();
@@ -151,12 +155,14 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         namespaceButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                NamespaceMapEditor nseditor = new NamespaceMapEditor(XpathBasedAssertionPropertiesDialog.this, namespaces);
+                java.util.List requiredNS = new ArrayList(requiredNamespaces.values());
+                NamespaceMapEditor nseditor = new NamespaceMapEditor(XpathBasedAssertionPropertiesDialog.this,
+                                                                     namespaces,
+                                                                     requiredNS);
                 nseditor.pack();
                 nseditor.show();
                 Map newMap = nseditor.newNSMap();
                 if (newMap != null) {
-                    // todo, make sure important namespaces were not removed
                     namespaces = newMap;
                 }
             }

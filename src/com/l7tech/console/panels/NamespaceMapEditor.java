@@ -4,8 +4,7 @@ import javax.swing.*;
 import javax.swing.table.TableModel;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import java.awt.event.*;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,24 +31,29 @@ public class NamespaceMapEditor extends JDialog {
 
     private java.util.List prefixes = new ArrayList();
     private java.util.List namespaces = new ArrayList();
+    private java.util.List forbiddenNamespaces = new ArrayList();
     boolean cancelled = false;
 
-    public NamespaceMapEditor(Dialog owner, Map predefinedNamespaces) {
+    /**
+     * Construct a dialog that lets the user edit a map of namespace/prefixes
+     * @param owner the requesting dlg owner
+     * @param predefinedNamespaces optional, the initial namespace map (key is prefix, value is uri)
+     * @param forcedNamespaces optional, the namespace values that cannot be removed nor changed
+     */
+    public NamespaceMapEditor(Dialog owner, Map predefinedNamespaces, java.util.List forcedNamespaces) {
         super(owner, true);
-        if (predefinedNamespaces != null) {
-            prefixes.addAll(predefinedNamespaces.keySet());
-            namespaces.addAll(predefinedNamespaces.values());
-        }
-        initialize();
+        initialize(predefinedNamespaces, forcedNamespaces);
     }
 
-    public NamespaceMapEditor(Frame owner, Map predefinedNamespaces) {
+    /**
+     * Construct a dialog that lets the user edit a map of namespace/prefixes
+     * @param owner the requesting frame owner
+     * @param predefinedNamespaces optional, the initial namespace map (key is prefix, value is uri)
+     * @param forcedNamespaces optional, the namespace values that cannot be removed nor changed
+     */
+    public NamespaceMapEditor(Frame owner, Map predefinedNamespaces, java.util.List forcedNamespaces) {
         super(owner, true);
-        if (predefinedNamespaces != null) {
-            prefixes.addAll(predefinedNamespaces.keySet());
-            namespaces.addAll(predefinedNamespaces.values());
-        }
-        initialize();
+        initialize(predefinedNamespaces, forcedNamespaces);
     }
 
     /**
@@ -64,11 +68,17 @@ public class NamespaceMapEditor extends JDialog {
         return output;
     }
 
-    private void initialize() {
+    private void initialize(Map predefinedNamespaces, java.util.List forcedNamespaces) {
+        if (predefinedNamespaces != null) {
+            prefixes.addAll(predefinedNamespaces.keySet());
+            namespaces.addAll(predefinedNamespaces.values());
+        }
+        forbiddenNamespaces = forcedNamespaces;
         setContentPane(mainPanel);
         setTitle("Edit namespaces and prefixes");
         setTableModel();
-        setButtonListeners();
+        setListeners();
+        enableRemoveBasedOnSelection();
     }
 
     private void setTableModel() {
@@ -101,7 +111,7 @@ public class NamespaceMapEditor extends JDialog {
         table1.setModel(model);
     }
 
-    private void setButtonListeners() {
+    private void setListeners() {
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 add();
@@ -131,6 +141,41 @@ public class NamespaceMapEditor extends JDialog {
                 cancel();
             }
         });
+
+        table1.addKeyListener(new KeyListener() {
+            public void keyPressed(KeyEvent e) {}
+            public void keyReleased(KeyEvent e) {
+                enableRemoveBasedOnSelection();
+            }
+            public void keyTyped(KeyEvent e) {}
+        });
+
+        table1.addMouseListener(new MouseListener() {
+            public void mouseClicked(MouseEvent e) {
+                enableRemoveBasedOnSelection();
+            }
+            public void mouseEntered(MouseEvent e) {}
+            public void mouseExited(MouseEvent e) {}
+            public void mousePressed(MouseEvent e) {}
+            public void mouseReleased(MouseEvent e) {}
+        });
+
+    }
+
+    private void enableRemoveBasedOnSelection() {
+        // get new selection
+        int selectedRow = table1.getSelectedRow();
+        // decide whether or not the remove button should be removed
+        if (selectedRow < 0) {
+            removeButton.setEnabled(false);
+            return;
+        }
+        String selectedNSURI = (String)namespaces.get(selectedRow);
+        if (forbiddenNamespaces != null && forbiddenNamespaces.contains(selectedNSURI)) {
+            removeButton.setEnabled(false);
+        } else {
+            removeButton.setEnabled(true);
+        }
     }
 
     private void add() {
@@ -214,7 +259,15 @@ public class NamespaceMapEditor extends JDialog {
 
     public static void main(String[] args) {
         // test the dlg
-        NamespaceMapEditor blah = new NamespaceMapEditor((Frame)null, null);
+        Map initialValues = new HashMap();
+        initialValues.put("sp", "http://schemas.xmlsoap.org/soap/envelope/");
+        initialValues.put("ns1", "http://warehouse.acme.com/ws");
+        initialValues.put("acme", "http://ns.acme.com");
+        initialValues.put("77", "http://77.acme.com");
+        java.util.List forbiddenNamespaces = new ArrayList();
+        forbiddenNamespaces.add("http://schemas.xmlsoap.org/soap/envelope/");
+        forbiddenNamespaces.add("http://warehouse.acme.com/ws");
+        NamespaceMapEditor blah = new NamespaceMapEditor((Frame)null, initialValues, forbiddenNamespaces);
         blah.pack();
         blah.show();
         System.exit(0);
