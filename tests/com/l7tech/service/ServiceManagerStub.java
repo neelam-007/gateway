@@ -37,6 +37,10 @@ public class ServiceManagerStub implements ServiceManager {
           (PublishedService)services.get(new Long(oid));
     }
 
+    public void addServiceListener( ServiceListener listener ) {
+        // Not applicable
+    }
+
     /**
      * Used by the console to retreive the actual wsdl located at a target
      * as seen by the ssg.

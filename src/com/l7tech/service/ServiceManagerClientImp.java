@@ -31,6 +31,10 @@ public class ServiceManagerClientImp implements ServiceManager {
         return getStub().resolveWsdlTarget(url);
     }
 
+    public void addServiceListener( ServiceListener sl ) {
+        // Not relevant on client (yet?)
+    }
+
     public Collection findAllHeaders() throws FindException {
         com.l7tech.objectmodel.EntityHeader[] array = null;
         try {
