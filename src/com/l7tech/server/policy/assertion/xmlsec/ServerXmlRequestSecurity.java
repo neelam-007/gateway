@@ -84,7 +84,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         logger.log(Level.INFO, "cert extracted from digital signature for user " + certCN);
         User u = new User();
         u.setLogin(certCN);
-        request.setPrincipalCredentials(new PrincipalCredentials(u, null, CredentialFormat.CLIENTCERT, null, clientCert));
+        request.setPrincipalCredentials(new PrincipalCredentials(u, null, CredentialFormat.CLIENTCERT, null, cert));
 
 
         // if we must also do xml-encryption,
@@ -130,6 +130,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         } catch (XSignatureException e) {
             throw new PolicyAssertionException(e.getMessage(), e);
         }
+        return clientCert;
     }
 
     private boolean checkSeqNrValidity(Document soapmsg, Session session) {
