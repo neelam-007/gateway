@@ -72,7 +72,7 @@ public class MessageProcessor {
         // Configure SSL for outgoing connections
         System.setProperty("httpclient.useragent", SecureSpanConstants.USER_AGENT);
         Protocol https = new Protocol("https", ClientProxySecureProtocolSocketFactory.getInstance(), 443);
-        Protocol.registerProtocol("https", https);
+        Protocol.registerProtocol("https", https);        
     }
 
     /**

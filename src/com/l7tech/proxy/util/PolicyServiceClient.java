@@ -21,6 +21,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
@@ -30,7 +31,9 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
+import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -40,6 +43,7 @@ import java.util.logging.Level;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.PasswordAuthentication;
+import java.net.HttpURLConnection;
 
 /**
  * Builds request messages for the PolicyService and helps parse the responses.
@@ -295,12 +299,21 @@ public class PolicyServiceClient {
 
         CurrentRequest.setPeerSsg(ssg);
         URLConnection conn = url.openConnection();
+        if (!(conn instanceof HttpURLConnection))
+            throw new IOException("Connection to policy server was not an HttpURLConnection; instead it was " + conn.getClass());
+        HttpURLConnection httpConn = (HttpURLConnection)conn;
+        if (conn instanceof HttpsURLConnection) {
+            HttpsURLConnection sslConn = (HttpsURLConnection)conn;
+            sslConn.setSSLSocketFactory(ClientProxySecureProtocolSocketFactory.getInstance());
+        }
         if (httpBasicAuthorization != null)
             conn.setRequestProperty("Authorization", httpBasicAuthorization); 
         conn.setDoOutput(true);
         conn.setAllowUserInteraction(false);
         conn.setRequestProperty(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
         XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
+        final int code = httpConn.getResponseCode();
+        log.log(Level.FINE, "Policy server responded with: " + code + " " + httpConn.getResponseMessage());
         int len = conn.getContentLength();
         log.log(Level.FINEST, "Policy server response content length=" + len);
         CurrentRequest.setPeerSsg(null);
@@ -308,8 +321,16 @@ public class PolicyServiceClient {
         if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
             throw new IOException("Policy server returned unsupported content type " + conn.getContentType());
         Document response = null;
+        InputStream inputStream;
         try {
-            response = XmlUtil.parse(conn.getInputStream());
+            inputStream = conn.getInputStream();
+        } catch (IOException e) {
+            inputStream = httpConn.getErrorStream();
+            if (inputStream == null)
+                throw e;
+        }
+        try {
+            response = XmlUtil.parse(inputStream);
         } catch (SAXException e) {
             throw new CausedIOException("Unable to XML parse GetPolicyResponse", e);
         }
