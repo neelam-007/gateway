@@ -46,23 +46,51 @@ public class ClusterBootProcess implements TransactionalComponent {
      * @throws ChannelException if the channel cannot be created or connected for whatever reason.
      */
     public synchronized void ensureAddressAvailable(String address) throws AddressAlreadyInUseException, ChannelException {
-        JChannel channel = connectToChannel( address );
-        Address me = channel.getLocalAddress();
-        View view = channel.getView();
-        for ( Iterator i = view.getMembers().iterator(); i.hasNext(); ) {
-            Address member = (Address)i.next();
-            if ( !(member.equals(me) ) ) {
+        JChannel channel = null;
+        try {
+            channel = connectToChannel( address );
+            Address me = channel.getLocalAddress();
+            View view = channel.getView();
+            for ( Iterator i = view.getMembers().iterator(); i.hasNext(); ) {
+                Address member = (Address)i.next();
+                if ( !(member.equals(me) ) ) {
+                    throw new AddressAlreadyInUseException(member.toString());
+                }
+            }
+            this.channel = channel;
+        } finally {
+            if ( channel != null && this.channel == null ) {
                 channel.disconnect();
                 channel.close();
-                throw new AddressAlreadyInUseException(member.toString());
             }
         }
-        this.channel = channel;
     }
 
     private JChannel connectToChannel( String address ) throws ChannelException {
         String props = PROPERTIES_PREFIX + address + PROPERTIES_SUFFIX;
         JChannel channel = new JChannel(props);
+        channel.setChannelListener(new ChannelListener() {
+            public void channelConnected( Channel channel ) {
+                logger.log(Level.INFO, "Connected to cluster communications channel" );
+            }
+
+            public void channelDisconnected( Channel channel ) {
+                logger.log(Level.INFO, "Disconnected from cluster communications channel" );
+            }
+
+            public void channelClosed( Channel channel ) {
+                logger.log(Level.INFO, "Cluster communications channel closed" );
+            }
+
+            public void channelShunned() {
+                logger.log(Level.INFO, "Shunned from cluster communications channel" );
+            }
+
+            public void channelReconnected( Address address ) {
+                logger.log(Level.INFO, "Reconnected to cluster communications channel" );
+            }
+        } );
+        
         channel.connect(CHANNEL_NAME);
         return channel;
     }
@@ -122,28 +150,6 @@ public class ClusterBootProcess implements TransactionalComponent {
                 logger.log( Level.SEVERE, msg, e );
                 throw new LifecycleException(msg, e);
             }
-
-            channel.setChannelListener(new ChannelListener() {
-                public void channelConnected( Channel channel ) {
-                    logger.log(Level.INFO, "Connected to cluster communications channel" );
-                }
-
-                public void channelDisconnected( Channel channel ) {
-                    logger.log(Level.INFO, "Disconnected from cluster communications channel" );
-                }
-
-                public void channelClosed( Channel channel ) {
-                    logger.log(Level.INFO, "Cluster communications channel closed" );
-                }
-
-                public void channelShunned() {
-                    logger.log(Level.INFO, "Shunned from cluster communications channel" );
-                }
-
-                public void channelReconnected( Address address ) {
-                    logger.log(Level.INFO, "Reconnected to cluster communications channel" );
-                }
-            } );
 
             StatusUpdater.initialize();
         } catch (UpdateException e) {
