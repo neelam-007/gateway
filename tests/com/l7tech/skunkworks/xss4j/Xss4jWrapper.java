@@ -137,9 +137,7 @@ public class Xss4jWrapper {
         if (header == null)
             throw new IllegalArgumentException("Encrypted data is present, but there is no SOAP header");
 
-        Element security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE2, "Security");
-        if (security == null)
-            security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE, "Security");
+        Element security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_URIS_ARRAY, "Security");
         if (security == null)
             throw new IllegalArgumentException("Encrypted data is present, but there is no security element");
 

@@ -373,15 +373,11 @@ public class XmlMangler {
                     Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKey, SoapUtil.DIGSIG_URI, "KeyInfo");
                     if (kinfo != null) {
                         Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
-                                                                            new String[] {SoapUtil.SECURITY_NAMESPACE,
-                                                                                          SoapUtil.SECURITY_NAMESPACE2,
-                                                                                          SoapUtil.SECURITY_NAMESPACE3},
+                                                                            SoapUtil.SECURITY_URIS_ARRAY,
                                                                             "SecurityTokenReference");
                         if (str != null) {
                             Element ki = XmlUtil.findOnlyOneChildElementByName(str,
-                                                                               new String[] {SoapUtil.SECURITY_NAMESPACE,
-                                                                                             SoapUtil.SECURITY_NAMESPACE2,
-                                                                                             SoapUtil.SECURITY_NAMESPACE3},
+                                                                               SoapUtil.SECURITY_URIS_ARRAY,
                                                                                "KeyIdentifier");
                             if (ki != null) {
                                 String keyIdentifierValue = XmlUtil.getTextValue(ki);

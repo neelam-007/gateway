@@ -331,12 +331,8 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 return new Gathered(signedElementInfos, null);
 
             Element securityHeader = XmlUtil.findOnlyOneChildElementByName(header,
-                                                                           SoapUtil.SECURITY_NAMESPACE2,
+                                                                           SoapUtil.SECURITY_URIS_ARRAY,
                                                                            SoapUtil.SECURITY_EL_NAME);
-            if (securityHeader == null)
-                securityHeader = XmlUtil.findOnlyOneChildElementByName(header,
-                                                                       SoapUtil.SECURITY_NAMESPACE,
-                                                                       SoapUtil.SECURITY_EL_NAME);
             if (securityHeader == null)
                 return new Gathered(signedElementInfos, null);
 

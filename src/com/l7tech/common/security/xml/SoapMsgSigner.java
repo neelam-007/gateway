@@ -208,17 +208,13 @@ public final class SoapMsgSigner {
             // Looking for reference to a wsse:BinarySecurityToken
             // 1. look for a wsse:SecurityTokenReference element
             List secTokReferences = XmlUtil.findChildElementsByName(keyInfoElement,
-                                                              new String[] {SoapUtil.SECURITY_NAMESPACE,
-                                                                            SoapUtil.SECURITY_NAMESPACE2,
-                                                                            SoapUtil.SECURITY_NAMESPACE3},
-                                                              SEC_TOK_REF_NAME);
+                                                                    SoapUtil.SECURITY_URIS_ARRAY,
+                                                                    SEC_TOK_REF_NAME);
             if (secTokReferences.size() > 0) {
                 // 2. Resolve the child reference
                 Element securityTokenReference = (Element)secTokReferences.get(0);
                 List references = XmlUtil.findChildElementsByName(securityTokenReference,
-                                                                  new String[] {SoapUtil.SECURITY_NAMESPACE,
-                                                                                SoapUtil.SECURITY_NAMESPACE2,
-                                                                                SoapUtil.SECURITY_NAMESPACE3},
+                                                                  SoapUtil.SECURITY_URIS_ARRAY,
                                                                   WSSE_REF_NAME);
                 if (references.size() > 0) {
                     // get the URI
