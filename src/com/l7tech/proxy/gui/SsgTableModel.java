@@ -47,6 +47,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
         }
     }
 
+    /** Comparator for sorting the SSG list for display. */
     private static abstract class SsgComparator implements Comparator {
         boolean reverse;
         private SsgComparator(boolean reverse) { this.reverse = reverse; }
@@ -93,7 +94,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
             int nullCheck = compareNull(s1, s2);
             if (nullCheck != 2)
                 return nullCheck;
-            return s1.compareTo(s2);
+            return s1.compareToIgnoreCase(s2);
         }
 
         abstract public int compare(Ssg ssg1, Ssg ssg2);
