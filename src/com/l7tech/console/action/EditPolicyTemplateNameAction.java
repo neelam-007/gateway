@@ -75,7 +75,7 @@ public class EditPolicyTemplateNameAction extends BaseAction {
                   TopComponents wm = TopComponents.getInstance();
 
                   EditPolicyTemplateNameDialog d =
-                    new EditPolicyTemplateNameDialog(wm.getMainWindow(), nameChangeListener);
+                    new EditPolicyTemplateNameDialog(wm.getMainWindow(), nameChangeListener, node.getName());
                   d.show();
               }
           });

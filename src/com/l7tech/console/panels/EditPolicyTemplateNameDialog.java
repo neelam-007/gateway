@@ -28,6 +28,7 @@ public class EditPolicyTemplateNameDialog extends JDialog {
 
     /** Resource bundle with default locale */
     private ResourceBundle resources = null;
+    private String currentPolicyTemplateName;
 
     /**
      * Command string for a cancel action (e.g.,a button or menu item).
@@ -55,9 +56,10 @@ public class EditPolicyTemplateNameDialog extends JDialog {
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
-    public EditPolicyTemplateNameDialog(Frame parent, ActionListener l) {
+    public EditPolicyTemplateNameDialog(Frame parent, ActionListener l, String currentPolicyTemplateName) {
         super(parent, true);
         this.listener = l;
+        this.currentPolicyTemplateName = currentPolicyTemplateName;
         initResources();
         initComponents();
         pack();
@@ -109,6 +111,7 @@ public class EditPolicyTemplateNameDialog extends JDialog {
 
         // new name field
         newNameField.setToolTipText(resources.getString("newPolicyTemplateNameField.tooltip"));
+        newNameField.setText(currentPolicyTemplateName);
 
 
         constraints = new GridBagConstraints();
