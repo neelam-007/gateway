@@ -9,6 +9,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -30,7 +31,8 @@ public class ServerSslAssertion implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-        final HttpServletRequest httpServletRequest = context.getHttpServletRequest();
+        final HttpServletRequestKnob hsRequestKnob = (HttpServletRequestKnob)context.getRequest().getKnob(HttpServletRequestKnob.class);
+        final HttpServletRequest httpServletRequest = hsRequestKnob == null ? null : hsRequestKnob.getHttpServletRequest();
         if (httpServletRequest == null) {
             logger.info("Request not received over HTTP; don't know how to check for SSL");
             return AssertionStatus.BAD_REQUEST;

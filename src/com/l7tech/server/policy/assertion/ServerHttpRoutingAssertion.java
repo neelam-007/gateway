@@ -9,6 +9,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -332,8 +333,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
      * @param url
      * @param auditor
      */
-    private void attachCookies(HttpClient client, PolicyEnforcementContext context, URL url, final Auditor auditor) {
-        HttpServletRequest req = context.getHttpServletRequest();
+    private void attachCookies(HttpClient client, PolicyEnforcementContext context, URL url, final Auditor auditor)
+    {
+        HttpServletRequestKnob hsRequestKnob = (HttpServletRequestKnob)context.getRequest().getKnob(HttpServletRequestKnob.class);
+        HttpServletRequest req = hsRequestKnob == null ? null : hsRequestKnob.getHttpServletRequest();
         if (req == null)
             return;
         Vector updatedCookies = context.getUpdatedCookies();

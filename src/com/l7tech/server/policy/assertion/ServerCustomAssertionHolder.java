@@ -6,16 +6,18 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.message.XmlKnob;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.mime.PartIterator;
-import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.HttpServletRequestKnob;
+import com.l7tech.common.message.HttpServletResponseKnob;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -23,14 +25,14 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.common.audit.AssertionMessages;
-
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.*;
 import java.util.*;
@@ -78,6 +80,18 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         } catch (IllegalAccessException e) {
             throw new PolicyAssertionException("Custom assertion is misconfigured", e);
         }
+    }
+
+    private static void saveServletKnobs(PolicyEnforcementContext pec, Map context) {
+        final HttpServletRequestKnob hsRequestKnob = (HttpServletRequestKnob)pec.getRequest().getKnob(HttpServletRequestKnob.class);
+        final HttpServletRequest httpServletRequest = hsRequestKnob == null ? null : hsRequestKnob.getHttpServletRequest();
+        if (httpServletRequest != null)
+            context.put("httpRequest", httpServletRequest);
+
+        final HttpServletResponseKnob hsResponseKnob = (HttpServletResponseKnob)pec.getResponse().getKnob(HttpServletResponseKnob.class);
+        final HttpServletResponse httpServletResponse = hsResponseKnob == null ? null : hsResponseKnob.getHttpServletResponse();
+        if (httpServletResponse != null)
+            context.put("httpResponse", httpServletResponse);
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -201,8 +215,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             this.pec = pec;
             this.document = (Document)pec.getResponse().getXmlKnob().getDocumentReadOnly().cloneNode(true);
 
-            context.put("httpRequest", pec.getHttpServletRequest());
-            context.put("httpResponse", pec.getHttpServletResponse());
+            saveServletKnobs(pec, context);
 
             // plug in the message parts in here
             context.put("messageParts", extractParts(pec.getResponse()));
@@ -260,8 +273,9 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             this.pec = pec;
             this.document = (Document)pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
             Vector newCookies = pec.getUpdatedCookies();
-            context.put("httpRequest", pec.getHttpServletRequest());
-            context.put("httpResponse", pec.getHttpServletResponse());
+
+            saveServletKnobs(pec, context);
+
             context.put("updatedCookies", newCookies);
             // plug in the message parts in here
             context.put("messageParts", extractParts(pec.getRequest()));

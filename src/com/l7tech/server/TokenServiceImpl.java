@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SamlConstants;
@@ -229,8 +230,12 @@ public class TokenServiceImpl implements TokenService {
     }
 
     private Document handleSamlRequest(PolicyEnforcementContext context) throws TokenServiceException,
-                                                                                GeneralSecurityException {
-        String clientAddress = context.getHttpServletRequest().getRemoteAddr();
+                                                                                GeneralSecurityException
+    {
+        String clientAddress = null;
+        TcpKnob tcpKnob = context.getRequest().getTcpKnob();
+        if (tcpKnob != null)
+            clientAddress = tcpKnob.getRemoteAddress();
         LoginCredentials creds = context.getCredentials();
 
         StringBuffer responseXml = new StringBuffer(WST_RST_RESPONSE_PREFIX);

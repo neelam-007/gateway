@@ -7,8 +7,6 @@
 package com.l7tech.server.message;
 
 import com.l7tech.common.RequestId;
-import com.l7tech.common.message.HttpServletRequestKnob;
-import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
 import com.l7tech.common.xml.SoapFaultDetail;
@@ -20,8 +18,6 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -202,30 +198,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public PublishedService getService() {
         return service;
-    }
-
-    /**
-     * If the corresponding request arrived via an HTTP servlet, this stores the servlet request.
-     * This is here instead of in the HttpRequestKnob because it is only useful to the SSG.
-     *
-     * @return the HttpServletRequest that led to this policy enforcement context, or null if it was not a servlet.
-     */
-    public HttpServletRequest getHttpServletRequest() {
-        HttpServletRequestKnob hsrk = (HttpServletRequestKnob)getRequest().getKnob(HttpServletRequestKnob.class);
-        if (hsrk == null) return null;
-        return hsrk.getHttpServletRequest();
-    }
-
-    /**
-     * If the corresponding request arrived via an HTTP servlet, this stores the servlet response.
-     * This is here instead of in the HttpRequestKnob because it is only useful to the SSG.
-     *
-     * @return the HttpServletResponse waiting for the response to this request, or null if it didn't come in via a servlet.
-     */
-    public HttpServletResponse getHttpServletResponse() {
-        HttpServletResponseKnob hsrk = (HttpServletResponseKnob)getResponse().getKnob(HttpServletResponseKnob.class);
-        if (hsrk == null) return null;
-        return hsrk.getHttpServletResponse();
     }
 
     public Vector getUpdatedCookies() {
