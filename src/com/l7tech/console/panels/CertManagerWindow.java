@@ -294,6 +294,10 @@ public class CertManagerWindow extends JDialog {
                                     JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.expired.error"),
                                       resources.getString("save.error.title"),
                                       JOptionPane.ERROR_MESSAGE);
+                                } else if (embeddedDuplicateObjectException(e) != null) {
+                                    JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.duplicate.error"),
+                                      resources.getString("save.error.title"),
+                                      JOptionPane.ERROR_MESSAGE);
                                 } else {
                                     JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.save.error"),
                                       resources.getString("save.error.title"),
@@ -310,6 +314,10 @@ public class CertManagerWindow extends JDialog {
                             } catch (UpdateException e) {
                                 if (embeddedCertificateExpiredException(e) != null) {
                                     JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.expired.error"),
+                                      resources.getString("save.error.title"),
+                                      JOptionPane.ERROR_MESSAGE);
+                                } else if (embeddedDuplicateObjectException(e) != null) {
+                                    JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.duplicate.error"),
                                       resources.getString("save.error.title"),
                                       JOptionPane.ERROR_MESSAGE);
                                 } else {
@@ -332,10 +340,24 @@ public class CertManagerWindow extends JDialog {
         }
         Throwable t = e.getCause();
         while (t != null) {
-            t = t.getCause();
             if (t instanceof CertificateExpiredException) {
                 return t;
             }
+            t = t.getCause();
+        }
+        return null;
+    }
+
+    private Throwable embeddedDuplicateObjectException(Exception e) {
+        if (e instanceof DuplicateObjectException) {
+            return e;
+        }
+        Throwable t = e.getCause();
+        while (t != null) {
+            if (t instanceof DuplicateObjectException) {
+                return t;
+            }
+            t = t.getCause();
         }
         return null;
     }

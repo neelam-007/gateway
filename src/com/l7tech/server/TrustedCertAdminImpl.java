@@ -80,9 +80,21 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
             Long oid = (Long)doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
                     long oid;
-                    if ( cert.getOid() == Entity.DEFAULT_OID )
+                    if ( cert.getOid() == Entity.DEFAULT_OID ) {
+                        // check that cert with same dn not already exist
+                        // because the sql error thrown by hibernate makes it impossible
+                        // to handle that case specifically.
+                        try {
+                            TrustedCert existingCert = getManager().findBySubjectDn(cert.getSubjectDn());
+                            if (existingCert != null) {
+                                throw new DuplicateObjectException("Cert with dn=" + cert.getSubjectDn() +
+                                                                   " already exists.");
+                            }
+                        } catch (FindException e) {
+                            logger.log(Level.FINE, "error looking for similar cert", e);
+                        }
                         oid = getManager().save(cert);
-                    else {
+                    } else {
                         getManager().update(cert);
                         oid = cert.getOid();
                     }
