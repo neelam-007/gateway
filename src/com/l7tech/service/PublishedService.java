@@ -27,7 +27,7 @@ import org.apache.log4j.Category;
  * @author alex
  */
 public class PublishedService extends NamedEntityImp {
-    public synchronized Assertion getRootAssertion() {
+    public synchronized Assertion rootAssertion() {
         if ( _rootAssertion == null ) _rootAssertion = WspReader.parse( getPolicyXml() );
         return _rootAssertion;
     }
@@ -73,7 +73,7 @@ public class PublishedService extends NamedEntityImp {
         _parsedWsdl = null;
     }
 
-    public synchronized Wsdl getParsedWsdl() throws WSDLException {
+    public synchronized Wsdl parsedWsdl() throws WSDLException {
         if ( _parsedWsdl == null ) {
             try {
                 String cachedWsdl = getWsdlXml();
@@ -85,11 +85,11 @@ public class PublishedService extends NamedEntityImp {
         return _parsedWsdl;
     }
 
-    public synchronized Port getWsdlPort( Request request ) throws WSDLException {
+    public synchronized Port wsdlPort( Request request ) throws WSDLException {
         // TODO: Get the right Port for this request, rather than just the first one!
 
         if ( _wsdlPort == null ) {
-            Iterator services = getParsedWsdl().getServices().iterator();
+            Iterator services = parsedWsdl().getServices().iterator();
             Service wsdlService = null;
             Port wsdlPort = null;
 
@@ -117,9 +117,9 @@ public class PublishedService extends NamedEntityImp {
         return _wsdlPort;
     }
 
-    public synchronized URL getServiceUrl( Request request ) throws WSDLException, MalformedURLException {
+    public synchronized URL serviceUrl( Request request ) throws WSDLException, MalformedURLException {
         if ( _serviceUrl == null ) {
-            Port wsdlPort = getWsdlPort( request );
+            Port wsdlPort = wsdlPort( request );
             List elements = wsdlPort.getExtensibilityElements();
             URL url = null;
             ExtensibilityElement eel;
