@@ -65,7 +65,13 @@ public class Group extends NamedEntityImp implements Principal {
     }
 
     public int hashCode() {
-        return (int)getOid();
+        if ( _name == null )
+            return System.identityHashCode(this);
+        else {
+            int hash = _name.hashCode();
+            hash += 29 * (int)providerId;
+            return hash;
+        }
     }
 
     /**

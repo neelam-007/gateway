@@ -71,7 +71,7 @@ public class User extends NamedEntityImp implements Principal {
      * if the password is not encoded, this will encode it.
      */
     public void setPassword(String password) throws  IllegalStateException {
-        if (!isAlreadyEncoded(password)) {
+        if ( password != null && !isAlreadyEncoded(password)) {
             if (_login == null) throw new IllegalStateException("login must be set prior to encoding the password");
             _password = encodePasswd(_login, password);
         }
@@ -132,7 +132,13 @@ public class User extends NamedEntityImp implements Principal {
     }
 
     public int hashCode() {
-        return (int)getOid();
+        if ( _login == null )
+            return System.identityHashCode(this);
+        else {
+            int hash = _login.hashCode();
+            hash += 29 * (int)providerId;
+            return hash;
+        }
     }
 
     public static String encodePasswd(String login, String passwd) {
