@@ -50,11 +50,11 @@ public class UsernameTokenImpl implements UsernameToken {
                                                                  applicableWsseNS,
                                                                  SoapUtil.UNTOK_PASSWORD_EL_NAME);
         if (passwdEl == null) {
-            throw new InvalidDocumentFormatException("The usernametoken element does not contain a password element");
+            throw new UnsupportedDocumentFormatException("The usernametoken element does not contain a password element");
         }
         String passwd = XmlUtil.getTextValue(passwdEl).trim();
         if (passwd.length() < 1) {
-            throw new UnsupportedDocumentFormatException("The usernametoken has an empty password element");
+            throw new InvalidDocumentFormatException("The usernametoken has an empty password element");
         }
         // Verify the password type to be supported
         String passwdType = passwdEl.getAttribute(SoapUtil.UNTOK_PSSWD_TYPE_ATTR_NAME).trim();
