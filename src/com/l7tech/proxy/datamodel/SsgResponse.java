@@ -46,7 +46,7 @@ public class SsgResponse {
             String responseString = SoapFaultUtils.generateRawSoapFault(faultCode,
                                                                         faultString,
                                                                         "",
-                                                                        SoapFaultUtils.FC_SERVER);
+                                                                        "");
             HttpHeaders headers = new HttpHeaders(new Header[0]);
             return new SsgResponse(XmlUtil.stringToDocument(responseString), null, 500, headers);
         } catch (IOException e) {
