@@ -65,7 +65,6 @@ public class LdapGroupManager implements GroupManager {
         Collection res = parent.search(new EntityType[] {EntityType.GROUP}, name);
         switch (res.size()) {
             case 0:
-                logger.finest("no group found with name " + name);
                 return null;
             case 1:
                 EntityHeader header = (EntityHeader)res.iterator().next();
@@ -199,6 +198,10 @@ public class LdapGroupManager implements GroupManager {
                         EntityHeader header = parent.searchResultToHeader(sr, dn);
                         if (header != null) {
                             output.add(header);
+                            // Groups within groups.
+                            // check if this group refer to other groups. if so, then user belongs to those
+                            // groups too.
+                            output.addAll(getSubGroups(context, dn));
                         }
                     }
                 } catch (NamingException e) {
@@ -258,6 +261,56 @@ public class LdapGroupManager implements GroupManager {
 
     public void setGroupHeaders(String userId, Set groupHeaders) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * return a Set of groups headers for all the subgroups of the group whose dn is passed
+     *
+     * @param dn the dn of the group to inspect
+     * @return
+     */
+    private Set getSubGroups(DirContext context, String dn) {
+        Set output = new HashSet();
+        String filter = subGroupSearchString(dn);
+        SearchControls sc = new SearchControls();
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        NamingEnumeration answer = null;
+        try {
+            answer = context.search(cfg.getSearchBase(), filter, sc);
+            while (answer.hasMore()) {
+                // get this item
+                SearchResult sr = (SearchResult)answer.next();
+                // set the dn (unique id)
+                String subgroupdn = sr.getName() + "," + cfg.getSearchBase();
+                EntityHeader header = parent.searchResultToHeader(sr, subgroupdn);
+                if (header != null && header.getType().equals(EntityType.GROUP)) {
+                    output.add(header);
+                    output.addAll(getSubGroups(context, subgroupdn));
+                }
+            }
+        } catch (NamingException e) {
+            logger.log(Level.WARNING, "naming exception", e);
+        } finally {
+            try {
+                if (answer != null) answer.close();
+            } catch (NamingException e) {
+                logger.log(Level.WARNING, "naming exception closing answer", e);
+            }
+        }
+        return output;
+    }
+
+    private String subGroupSearchString(String dnOfChildGroup) {
+        StringBuffer output = new StringBuffer("(|");
+        GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
+        for (int i = 0; i < groupTypes.length; i++) {
+            output.append("(&" +
+                            "(objectClass=" + groupTypes[i].getObjClass() + ")" +
+                            "(" + groupTypes[i].getMemberAttrName() + "=" + dnOfChildGroup + ")" +
+                          ")");
+        }
+        output.append(")");
+        return output.toString();
     }
 
     public Set getUserHeaders(Group group) throws FindException {
@@ -336,7 +389,8 @@ public class LdapGroupManager implements GroupManager {
                                                 }
                                             }
                                             if (subgroup != null) {
-                                                // todo, what if some asshole has circular reference of groups?
+                                                // todo, prevent explosion
+                                                // (what if some asshole has circular reference of groups?)
                                                 // note. i dont think this is possible
                                                 Set subgroupmembers = getUserHeaders(subgroup);
                                                 headers.addAll(subgroupmembers);
