@@ -608,6 +608,21 @@ public class MainWindow extends JFrame {
           new AbstractAction(atext, icon) {
               final JTree[] trees = new JTree[]{getAssertionPaletteTree(), getServicesTree()};
 
+
+            ConnectionListener listener = new ConnectionListener() {
+                public void onConnect(ConnectionEvent e) {
+                    setEnabled(true);
+                }
+
+                public void onDisconnect(ConnectionEvent e) {
+                    setEnabled(false);
+                }
+            };
+
+            {
+                MainWindow.this.addConnectionListener(listener);
+            }
+
               /**
                * Invoked when an action occurs.
                *
@@ -1287,13 +1302,6 @@ public class MainWindow extends JFrame {
           });
     }
 
-    /**
-     * refresh the children under the node
-     *
-     * @param node   the node to refresh
-     */
-    private void refreshNode(AbstractTreeNode node) {
-    }
 
     /**
      * update the actions, menus, buttons for the selected node.
