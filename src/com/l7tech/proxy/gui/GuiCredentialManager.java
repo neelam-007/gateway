@@ -73,6 +73,13 @@ public class GuiCredentialManager implements CredentialManager {
         if (!ssg.isPromptForUsernameAndPassword())
             return;
 
+        // Don't hassle if the username is unset or empty, or if the password is unset.
+        // (Configuring an empty password when the service requires a different one should cause notification)
+        if (ssg.getUsername() == null || ssg.getUsername().length() < 1)
+            return;
+        if (ssg.getPassword() == null)
+            return;
+
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
