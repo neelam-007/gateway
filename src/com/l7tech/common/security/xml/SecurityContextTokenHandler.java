@@ -6,10 +6,7 @@ import sun.misc.BASE64Decoder;
 import java.security.SecureRandom;
 import java.io.IOException;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
+import org.w3c.dom.*;
 import com.l7tech.common.util.SoapUtil;
 
 /**
@@ -93,6 +90,30 @@ public class SecurityContextTokenHandler {
         } else {
             return (Element)listSecurityElements.item(0);
         }
+    }
+
+    /**
+     * Attempts to extract the session id from a wsse:Security/wsc:SecurityContextToken/wsc:Identifier element
+     * @return null if not present
+     */
+    public static byte[] getSessionIdFromWSCToken(Document soapMsg) throws IOException{
+        // get the element
+        NodeList listIdElements = soapMsg.getElementsByTagNameNS(WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
+        if (listIdElements.getLength() < 1) {
+            return null;
+        }
+        Element idel = (Element)listIdElements.item(0);
+        // get its text child
+        StringBuffer childText = new StringBuffer();
+        NodeList children = idel.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node kid = children.item(i);
+            if (kid.getNodeType() == Node.TEXT_NODE) {
+                childText.append(kid.getNodeValue());
+            }
+        }
+        // convert back to session id
+        return URIToSessionId(childText.toString());
     }
 
     private static final SecureRandom rand = new SecureRandom();
