@@ -258,7 +258,6 @@ public class WsdlPortTypePanel extends WizardStepPanel {
           }
       };
 
-
     {
 // do not edit this generated initializer!!! do not add your code here!!!
         $$$setupUI$$$();
@@ -281,6 +280,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         JTextField _4;
         _4 = new JTextField();
         portTypeNameField = _4;
+        _4.setText("NewPortType");
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 2, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JLabel _5;
         _5 = new JLabel();

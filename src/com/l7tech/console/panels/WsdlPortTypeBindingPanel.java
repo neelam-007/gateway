@@ -239,7 +239,6 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         return (PortType)portTypes.values().iterator().next();
     }
 
-
     {
 // do not edit this generated initializer!!! do not add your code here!!!
         $$$setupUI$$$();
@@ -264,39 +263,57 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         portTypeBindingNameField = _4;
         _4.setMargin(new Insets(0, 0, 0, 0));
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
-        JTable _5;
-        _5 = new JTable();
-        bindingOperationsTable = _5;
-        _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(10, 2, 1, 1, 0, 3, 6, 6, new Dimension(-1, -1), new Dimension(150, 50), new Dimension(-1, -1)));
+        JLabel _5;
+        _5 = new JLabel();
+        _5.setText("Port Type Binding");
+        _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JLabel _6;
         _6 = new JLabel();
-        _6.setText("Port Type Binding");
-        _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        _6.setText("Operations");
+        _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(9, 2, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JLabel _7;
         _7 = new JLabel();
-        _7.setText("Operations");
-        _2.add(_7, new com.intellij.uiDesigner.core.GridConstraints(9, 2, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        _7.setText("Style");
+        _2.add(_7, new com.intellij.uiDesigner.core.GridConstraints(5, 1, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JLabel _8;
         _8 = new JLabel();
-        _8.setText("Style");
-        _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(5, 1, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        JLabel _9;
-        _9 = new JLabel();
-        portTypeName = _9;
-        _9.setText("<Port Type Name>");
-        _2.add(_9, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        JComboBox _10;
-        _10 = new JComboBox();
-        portTypeBindingStyle = _10;
-        _2.add(_10, new com.intellij.uiDesigner.core.GridConstraints(5, 2, 1, 1, 8, 0, 2, 0, new Dimension(100, -1), new Dimension(100, -1), new Dimension(-1, -1)));
-        JLabel _11;
-        _11 = new JLabel();
-        _11.setText("Transport");
-        _2.add(_11, new com.intellij.uiDesigner.core.GridConstraints(7, 1, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        JTextField _12;
-        _12 = new JTextField();
-        portTypeBindingTransportField = _12;
-        _2.add(_12, new com.intellij.uiDesigner.core.GridConstraints(7, 2, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
+        portTypeName = _8;
+        _8.setText("<Port Type Name>");
+        _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JComboBox _9;
+        _9 = new JComboBox();
+        portTypeBindingStyle = _9;
+        _2.add(_9, new com.intellij.uiDesigner.core.GridConstraints(5, 2, 1, 1, 8, 0, 2, 0, new Dimension(100, -1), new Dimension(100, -1), new Dimension(-1, -1)));
+        JLabel _10;
+        _10 = new JLabel();
+        _10.setText("Transport");
+        _2.add(_10, new com.intellij.uiDesigner.core.GridConstraints(7, 1, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JTextField _11;
+        _11 = new JTextField();
+        portTypeBindingTransportField = _11;
+        _11.setText("http://schemas.xmlsoap.org/soap/http");
+        _11.setEditable(false);
+        _2.add(_11, new com.intellij.uiDesigner.core.GridConstraints(7, 2, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
+        com.intellij.uiDesigner.core.Spacer _12;
+        _12 = new com.intellij.uiDesigner.core.Spacer();
+        _2.add(_12, new com.intellij.uiDesigner.core.GridConstraints(4, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
+        com.intellij.uiDesigner.core.Spacer _13;
+        _13 = new com.intellij.uiDesigner.core.Spacer();
+        _2.add(_13, new com.intellij.uiDesigner.core.GridConstraints(6, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
+        com.intellij.uiDesigner.core.Spacer _14;
+        _14 = new com.intellij.uiDesigner.core.Spacer();
+        _2.add(_14, new com.intellij.uiDesigner.core.GridConstraints(8, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
+        com.intellij.uiDesigner.core.Spacer _15;
+        _15 = new com.intellij.uiDesigner.core.Spacer();
+        _2.add(_15, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
+        JScrollPane _16;
+        _16 = new JScrollPane();
+        bindingOperationsTableScrollPane = _16;
+        _2.add(_16, new com.intellij.uiDesigner.core.GridConstraints(10, 2, 1, 1, 0, 3, 7, 7, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JTable _17;
+        _17 = new JTable();
+        bindingOperationsTable = _17;
+        _16.setViewportView(_17);
     }
 
 
