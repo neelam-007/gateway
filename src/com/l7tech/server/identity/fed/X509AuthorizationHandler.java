@@ -18,8 +18,6 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.X509Config;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -119,25 +117,12 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
             checkCertificateMatch( u, requestCert );
         }
 
-        final Class csa = pc.getCredentialSourceAssertion();
-
-        if (csa == null) {
-            logger.info("credential source assertion is not set but required by the federated id provider.");
+        if ( u == null ) {
+            // Make a fake user so that a VirtualGroup can still resolve it
+            u = new FederatedUser();
+            u.setSubjectDn(subjectDn);
         }
-
-        if ( ( x509Config.isWssBinarySecurityToken() && csa == RequestWssX509Cert.class ) ||
-             ( x509Config.isSslClientCert() && csa == HttpClientCert.class )) {
-            if ( u == null ) {
-                // Make a fake user so that a VirtualGroup can still resolve it
-                u = new FederatedUser();
-                u.setSubjectDn(subjectDn);
-            }
-            return u;
-        }
-
-        throw new BadCredentialsException("Federated IDP " + providerConfig.getName() + "(" + providerConfig.getOid() +
-                                          ") is not configured to trust certificates found with " +
-                                          csa.getName() );
+        return u;
     }
 
     private static final Logger logger = Logger.getLogger(X509AuthorizationHandler.class.getName());
