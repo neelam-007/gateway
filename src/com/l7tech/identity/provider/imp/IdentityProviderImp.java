@@ -1,10 +1,11 @@
 /*
  * Created on 7-May-2003
  */
-package com.l7tech.objectmodel.imp;
+package com.l7tech.identity.provider.imp;
 
-import com.l7tech.objectmodel.IdentityProvider;
-import com.l7tech.objectmodel.IdentityProviderType;
+import com.l7tech.identity.provider.IdentityProvider;
+import com.l7tech.identity.provider.IdentityProviderType;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
  * @author alex

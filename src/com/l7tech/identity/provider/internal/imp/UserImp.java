@@ -1,18 +1,19 @@
 /*
  * Created on 7-May-2003
  */
-package com.l7tech.objectmodel.imp;
+package com.l7tech.identity.provider.internal.imp;
 
 import java.util.Collection;
 
 import com.l7tech.identity.provider.internal.Address;
-import com.l7tech.identity.provider.internal.InternalOrganization;
-import com.l7tech.identity.provider.internal.InternalUser;
+import com.l7tech.identity.provider.internal.Organization;
+import com.l7tech.identity.provider.internal.User;
+import com.l7tech.objectmodel.imp.StandardEntityImp;
 
 /**
  * @author alex
  */
-public class InternalUserImp extends StandardEntityImp implements InternalUser {
+public class UserImp extends StandardEntityImp implements User {
     public String getLogin() {
         return _login;
     }
@@ -37,7 +38,7 @@ public class InternalUserImp extends StandardEntityImp implements InternalUser {
         return _title;
     }
 
-    public InternalOrganization getOrganization() {
+    public Organization getOrganization() {
         return _organization;
     }
 
@@ -85,7 +86,7 @@ public class InternalUserImp extends StandardEntityImp implements InternalUser {
         _title = title;
     }
 
-    public void setOrganization(InternalOrganization organization) {
+    public void setOrganization(Organization organization) {
         _organization = organization;
     }
 
@@ -111,7 +112,7 @@ public class InternalUserImp extends StandardEntityImp implements InternalUser {
     private String _lastName;
     private String _email;
     private String _title;
-    private InternalOrganization _organization;
+    private Organization _organization;
     private String _department;
     private Address _address;
     private Address _mailingAddress;
