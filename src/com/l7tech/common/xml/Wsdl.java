@@ -200,7 +200,12 @@ public class Wsdl {
         final Collection allBindings = new ArrayList();
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
-                allBindings.addAll(def.getBindings().values());
+                if(def == null) return;
+
+                Map bindings = def.getBindings();
+                if(bindings != null && bindings.values() != null) {
+                    allBindings.addAll(bindings.values());
+                }
             }
         }, definition);
 
@@ -282,14 +287,19 @@ public class Wsdl {
      *         imported definitions.
      */
     public Collection getMessages() {
-        final Collection messages = new ArrayList();
+        final Collection allMessages = new ArrayList();
 
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
-                messages.addAll(def.getMessages().values());
+                if(def == null) return;
+
+                Map messages = def.getMessages();
+                if(messages != null && messages.values() != null) {
+                    allMessages.addAll(def.getMessages().values());
+                }
             }
         }, definition);
-        return messages;
+        return allMessages;
     }
 
     /**
@@ -298,15 +308,20 @@ public class Wsdl {
      *         definitions.
      */
     public Collection getPortTypes() {
-        final Collection portTypes = new ArrayList();
+        final Collection allPortTypes = new ArrayList();
 
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
-                portTypes.addAll(def.getPortTypes().values());
+                if(def == null) return;
+
+                Map portTypes = def.getPortTypes();
+                if( portTypes != null && portTypes.values() != null) {
+                    allPortTypes.addAll(def.getPortTypes().values());
+                }
             }
         }, definition);
 
-        return portTypes;
+        return allPortTypes;
     }
 
     /**
@@ -315,15 +330,20 @@ public class Wsdl {
      *         imported definitions.
      */
     public Collection getServices() {
-        final Collection services = new ArrayList();
+        final Collection allServices = new ArrayList();
 
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
-                services.addAll(def.getServices().values());
+                if(def == null) return;
+
+                Map services = def.getServices();
+                if(services != null && services.values() != null) {
+                    allServices.addAll(def.getServices().values());
+                }
             }
         }, definition);
 
-        return services;
+        return allServices;
     }
 
     /**
@@ -794,11 +814,13 @@ public class Wsdl {
             List importList = (List) iterator.next();
             for (int i = 0; i < importList.size(); i++) {
                 Import importDef = (Import) importList.get(i);
-                collectElements(collector, importDef.getDefinition());
+                if(importDef.getDefinition() != null) {
+                    collectElements(collector, importDef.getDefinition());
+                }
             }
         }
     }
-    
+
     /**
      * Get the schema element from the wsdl definiton.
      *
