@@ -74,6 +74,35 @@ public class CertUtils {
         return map;
     }
 
+    public static boolean dnsMatchWithWildcards(String userDn, String groupDn) throws Exception {
+        Map userStuff = dnToAttributeMap(userDn);
+        Map groupStuff = dnToAttributeMap(groupDn);
+
+        boolean matches = true;
+        for ( Iterator i = groupStuff.keySet().iterator(); i.hasNext(); ) {
+            String oid = (String)i.next();
+            List groupValues = (List)groupStuff.get(oid);
+            List userValues = (List)userStuff.get(oid);
+
+            if ( userValues == null ) {
+                matches = false;
+                break;
+            }
+
+            for ( Iterator j = groupValues.iterator(); j.hasNext(); ) {
+                String groupValue = (String) j.next();
+                if ( !userValues.contains(groupValue) ) {
+                    if ( !("*".equals(groupValue)) ) {
+                        matches = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return matches;
+    }
+
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
 
     /**
