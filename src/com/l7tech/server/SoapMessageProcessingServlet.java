@@ -11,7 +11,6 @@ import com.l7tech.message.HttpTransportMetadata;
 import com.l7tech.message.Request;
 import com.l7tech.message.SoapRequest;
 import com.l7tech.message.SoapResponse;
-import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
