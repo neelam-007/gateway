@@ -39,9 +39,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
     private JmsEndpoint _outboundResponseEndpoint;
     private JmsEndpoint _failureEndpoint;
 
-    private QueueConnectionFactory _queueConnectionFactory;
-    private TopicConnectionFactory _topicConnectionFactory;
-    private ConnectionFactory _destinationConnectionFactory;
+    private ConnectionFactory _connectionFactory;
 
     private Connection _inboundConnection;
     private Connection _outboundConnection;
@@ -49,6 +47,9 @@ public class JmsReceiver implements ServerComponentLifecycle {
 
     private boolean _initialized = false;
     private InitialContext _context;
+    private Queue _queue;
+    private QueueSession _queueSession;
+    private QueueConnection _queueConnection;
 
     /**
      * Complete constructor
@@ -104,25 +105,21 @@ public class JmsReceiver implements ServerComponentLifecycle {
             _context = new InitialContext( properties );
 
             String qcfUrl = _connection.getQueueFactoryUrl();
-            String tcfUrl = _connection.getTopicFactoryUrl();
             String dcfUrl = _connection.getDestinationFactoryUrl();
 
             if ( qcfUrl != null && qcfUrl.length() > 0 )
-                _queueConnectionFactory = (QueueConnectionFactory)_context.lookup( qcfUrl );
-
-            if ( tcfUrl != null && tcfUrl.length() > 0 )
-                _topicConnectionFactory = (TopicConnectionFactory)_context.lookup( tcfUrl );
+                _connectionFactory = (QueueConnectionFactory)_context.lookup( qcfUrl );
 
             if ( dcfUrl != null && dcfUrl.length() > 0 )
-                _destinationConnectionFactory = (ConnectionFactory)_context.lookup( dcfUrl );
+                _connectionFactory = (ConnectionFactory)_context.lookup( dcfUrl );
 
-            if ( _queueConnectionFactory == null &&
-                 _topicConnectionFactory == null &&
-                 _destinationConnectionFactory == null ) {
+            if ( _connectionFactory == null ) {
                 String msg = "No connection factory was configured for '" + _inboundRequestEndpoint.toString() + "'";
                 _logger.log( Level.WARNING, msg );
                 throw new LifecycleException( msg );
             }
+
+            _queue = (Queue)_context.lookup( _inboundRequestEndpoint.getDestinationName() );
 
             _initialized = true;
         } catch ( NamingException e ) {
@@ -146,23 +143,35 @@ public class JmsReceiver implements ServerComponentLifecycle {
         }
 
         try {
-            _inboundConnection = connect( _inboundRequestEndpoint, username, password );
+            _inboundConnection = connect( username, password );
+
+            if ( _inboundConnection instanceof QueueConnection ) {
+                _queueConnection = (QueueConnection)_inboundConnection;
+                _queueSession = _queueConnection.createQueueSession( false, // TODO parameterize
+                                                         QueueSession.CLIENT_ACKNOWLEDGE );
+
+                QueueReceiver receiver = _queueSession.createReceiver( _queue );
+                receiver.setMessageListener( new JmsMessageListener( _queueSession, this ) );
+            } else {
+                _logger.severe( "Only queues are currently supported!" );
+            }
+
+            _inboundConnection.start();
         } catch ( JMSException e ) {
             throw new LifecycleException( e.getMessage(), e );
         }
     }
 
-    private Connection connect( JmsEndpoint destination, String username, String password ) throws JMSException {
+    private Connection connect( String username, String password ) throws JMSException {
         Connection conn = null;
 
-        if ( _destinationConnectionFactory != null )
-            conn = _destinationConnectionFactory.createConnection( username, password );
+        if ( _connectionFactory instanceof QueueConnectionFactory )
+            conn = ((QueueConnectionFactory)_connectionFactory).createQueueConnection( username, password );
 
-        if ( conn == null &&  _queueConnectionFactory != null )
-            conn = _queueConnectionFactory.createQueueConnection( username, password );
+        if ( conn == null &&  _connectionFactory != null )
+            conn = _connectionFactory.createConnection( username, password );
 
-        if ( conn == null && _topicConnectionFactory != null )
-            conn = _topicConnectionFactory.createTopicConnection( username, password );
+        if ( conn != null ) return conn;
 
         String msg = "No connection factories were able to establish a connection to " + _inboundRequestEndpoint.toString();
         _logger.warning( msg );
@@ -188,8 +197,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
         _inboundRequestEndpoint = null;
         _failureEndpoint = null;
 
-        _queueConnectionFactory = null;
-        _topicConnectionFactory = null;
-        _destinationConnectionFactory = null;
+        _connectionFactory = null;
     }
 }
