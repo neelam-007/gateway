@@ -40,6 +40,14 @@ public class LdapUserManager implements UserManager {
             context = parent.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
 
+            if (!parent.isValidEntryBasedOnUserAccountControlAttribute(attributes)) {
+                // This is warning level because it could
+                // be caused by a locked out user trying to
+                // get in using certificate granted by ssg.
+                logger.warning("User " + dn + " is locked or disabled. Returning null.");
+                return null;
+            }
+
             UserMappingConfig[] userTypes = cfg.getUserMappings();
             Attribute objectclasses = attributes.get("objectclass");
             for (int i = 0; i < userTypes.length; i ++) {

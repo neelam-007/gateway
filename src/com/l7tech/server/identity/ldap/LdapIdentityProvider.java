@@ -663,7 +663,7 @@ public class LdapIdentityProvider implements IdentityProvider {
      * <p/>
      * See bugzilla #1116 for the justification of this check.
      */
-    private boolean isValidEntryBasedOnUserAccountControlAttribute(Attributes attibutes) {
+    boolean isValidEntryBasedOnUserAccountControlAttribute(Attributes attibutes) {
         final long DISABLED_FLAG = 0x00000002;
         final long LOCKED_FLAG = 0x00000010;
         Attribute userAccountControlAttr = attibutes.get("userAccountControl");
