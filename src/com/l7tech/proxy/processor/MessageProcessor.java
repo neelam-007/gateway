@@ -414,7 +414,9 @@ public class MessageProcessor {
       ConfigurationException, InvalidDocumentFormatException, PolicyRetryableException
     {
         Policy appliedPolicy = context.getActivePolicy();
-        log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
+        log.info(appliedPolicy == null
+                    ? "No policy applied to the request.  Leaving response undecorated"
+                    : "undecorating response");
         if (appliedPolicy == null)
             return;
 
