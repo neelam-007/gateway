@@ -202,11 +202,11 @@ public class MainWindow extends JFrame {
      */
     private void fireDisconnected() {
         LogonEvent event = new LogonEvent(this, LogonEvent.LOGOFF);
+        ssmApplication.getApplicationContext().publishEvent(event);
         EventListener[] listeners = listenerList.getListeners(LogonListener.class);
         for (int i = 0; i < listeners.length; i++) {
             ((LogonListener)listeners[i]).onLogoff(event);
         }
-        securityProvider.logoff();
         disconnected = true;
     }
 
