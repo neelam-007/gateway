@@ -11,6 +11,7 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
@@ -18,7 +19,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 

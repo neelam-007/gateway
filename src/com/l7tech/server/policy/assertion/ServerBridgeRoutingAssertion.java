@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.message.*;
@@ -33,7 +34,7 @@ import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.ssl.SslPeerHttpClient;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;

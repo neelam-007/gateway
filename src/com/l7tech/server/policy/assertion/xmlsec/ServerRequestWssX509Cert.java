@@ -5,6 +5,7 @@ import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -12,7 +13,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
 

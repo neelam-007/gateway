@@ -12,6 +12,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -22,7 +23,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;

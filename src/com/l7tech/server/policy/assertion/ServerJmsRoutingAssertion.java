@@ -17,6 +17,7 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
@@ -24,7 +25,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.jms.*;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 
 import javax.jms.*;

@@ -18,7 +18,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;

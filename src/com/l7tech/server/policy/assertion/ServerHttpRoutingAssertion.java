@@ -25,7 +25,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;

@@ -8,6 +8,7 @@ package com.l7tech.server;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.BootMessages;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.xml.TarariLoader;

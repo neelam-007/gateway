@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
@@ -18,7 +19,7 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;

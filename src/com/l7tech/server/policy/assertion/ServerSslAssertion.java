@@ -10,7 +10,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 
 import java.util.logging.Level;

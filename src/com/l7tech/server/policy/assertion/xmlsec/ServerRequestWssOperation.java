@@ -12,13 +12,14 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 

@@ -7,6 +7,7 @@
 package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionResult;
@@ -14,7 +15,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 

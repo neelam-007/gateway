@@ -5,8 +5,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TimeOfDay;
 import com.l7tech.policy.assertion.TimeRange;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 
 import java.io.IOException;
 import java.util.Calendar;

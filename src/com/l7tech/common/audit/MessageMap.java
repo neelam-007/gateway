@@ -1,9 +1,5 @@
 package com.l7tech.common.audit;
 
-import com.l7tech.server.AssertionMessages;
-import com.l7tech.server.BootMessages;
-import com.l7tech.server.MessageProcessingMessages;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;

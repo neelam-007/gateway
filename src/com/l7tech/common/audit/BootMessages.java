@@ -3,14 +3,14 @@
  *
  * $Id$
  */
-package com.l7tech.server;
+package com.l7tech.common.audit;
 
 import com.l7tech.common.audit.Messages;
 
 import java.util.logging.Level;
 
 /**
- * Message catalog for {@link BootProcess} and associated classes
+ * Message catalog for {@link com.l7tech.server.BootProcess} and associated classes
  */
 public class BootMessages extends Messages {
     public static final M DELETING_ATTACHMENT   = m(1000, Level.INFO,    "Deleting leftover attachment cache file: {0}");

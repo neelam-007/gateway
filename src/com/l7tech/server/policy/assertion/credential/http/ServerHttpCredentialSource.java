@@ -18,7 +18,7 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
-import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.AssertionMessages;
 
 import java.io.IOException;
 import java.util.Iterator;
