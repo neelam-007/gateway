@@ -168,19 +168,17 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
         int position = 0;
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(5, 1, new Insets(15, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(5, 1, new Insets(5, 0, 0, 0), -1, -1));
 
         final JLabel virtualGroupMsg = new JLabel();
         virtualGroupMsg.setText(" Virtual Group not supported");
         virtualGroupMsg.setIcon(icon);
-        //virtualGroupMsg.setFont(new java.awt.Font("Dialog", 1, 11));
         panel1.add(virtualGroupMsg, new GridConstraints(position++, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
 
         if(x509CertSelected) {
             final JLabel x509Msg = new JLabel();
             x509Msg.setText(" Every identity that you wish to authorize using X.509 credentials will need to have their certificate imported manually");
             x509Msg.setIcon(icon);
-            //x509Msg.setFont(new java.awt.Font("Dialog", 1, 11));
             panel1.add(x509Msg, new GridConstraints(position++, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         }
 
@@ -188,7 +186,6 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             final JLabel holderOfKeyMsg = new JLabel();
             holderOfKeyMsg.setText(" Holder-of-Key Subject Confirmation Method not supported");
             holderOfKeyMsg.setIcon(icon);
-            //holderOfKeyMsg.setFont(new java.awt.Font("Dialog", 1, 11));
             panel1.add(holderOfKeyMsg, new GridConstraints(position++, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         }
 
