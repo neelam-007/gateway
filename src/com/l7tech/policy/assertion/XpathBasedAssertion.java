@@ -36,6 +36,7 @@ public abstract class XpathBasedAssertion extends Assertion {
         this.xpathExpression = xpathExpression;
     }
 
+    /** @return a new basic namespace map containing only xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/". */
     public static Map createDefaultNamespaceMap() {
         Map nsmap = new HashMap();
         nsmap.put(NamespaceConstants.NSPREFIX_SOAP_ENVELOPE, SOAPConstants.URI_NS_SOAP_ENVELOPE);
