@@ -75,13 +75,11 @@ public class IconManager {
 
     public static ImageIcon getSplashImageIcon() {
         if (splashImage == null)
-            splashImage = loadImageIcon(Gui.RESOURCE_PATH + "/agent_splash.png");
+            splashImage = loadImageIcon(Gui.RESOURCE_PATH + "/agent_splash.gif");
         return splashImage;
     }
 
     public static ImageIcon getSmallSplashImageIcon() {
-        if (smallSplashImage == null)
-            smallSplashImage = loadImageIcon(Gui.RESOURCE_PATH + "/small_splash.png");
-        return smallSplashImage;
+        return getSplashImageIcon();
     }
 }
