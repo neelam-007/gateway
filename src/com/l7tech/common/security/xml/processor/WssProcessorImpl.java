@@ -115,35 +115,35 @@ public class WssProcessorImpl implements WssProcessor {
                     // for the signature to validate properly
                     removeProcessedElement = true;
                 } else {
-                    logger.info("Encountered EncryptedKey element but not of right namespace (" +
+                    logger.finer("Encountered EncryptedKey element but not of right namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.TIMESTAMP_EL_NAME)) {
                 if (elementHasNamespace(securityChildToProcess, SoapUtil.WSU_URIS_ARRAY)) {
                     processTimestamp(cntx, securityChildToProcess);
                 } else {
-                    logger.info("Encountered Timestamp element but not of right namespace (" +
+                    logger.fine("Encountered Timestamp element but not of right namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
                 if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processBinarySecurityToken(securityChildToProcess, cntx);
                 } else {
-                    logger.info("Encountered BinarySecurityToken element but not of right namespace (" +
+                    logger.fine("Encountered BinarySecurityToken element but not of right namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SIGNATURE_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.DIGSIG_URI)) {
                     processSignature(securityChildToProcess, cntx);
                 } else {
-                    logger.info("Encountered Signature element but not of right namespace (" +
+                    logger.fine("Encountered Signature element but not of right namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.USERNAME_TOK_EL_NAME)) {
                 if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processUsernameToken(securityChildToProcess, cntx);
                 } else {
-                    logger.info("Encountered UsernameToken element but not of expected namespace (" +
+                    logger.fine("Encountered UsernameToken element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME)) {
@@ -167,14 +167,14 @@ public class WssProcessorImpl implements WssProcessor {
                         cntx.securityTokens.add(secConTok);
                     }
                 } else {
-                    logger.info("Encountered SecurityContextToken element but not of expected namespace (" +
+                    logger.fine("Encountered SecurityContextToken element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.WSSC_DK_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.WSSC_NAMESPACE)) {
                     processDerivedKey(securityChildToProcess, cntx);
                 } else {
-                    logger.info("Encountered DerivedKey element but not of expected namespace (" +
+                    logger.fine("Encountered DerivedKey element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.REFLIST_EL_NAME)) {
@@ -183,14 +183,14 @@ public class WssProcessorImpl implements WssProcessor {
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.XMLENC_NS)) {
                     processReferenceList(securityChildToProcess, cntx);
                 } else {
-                    logger.info("Encountered ReferenceList element but not of expected namespace (" +
+                    logger.fine("Encountered ReferenceList element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             }  else if (securityChildToProcess.getLocalName().equals(SamlConstants.ELEMENT_ASSERTION)) {
                 if ( securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML) ) {
                     processSamlSecurityToken(securityChildToProcess, cntx);
                 } else {
-                    logger.info("Encountered SAML Assertion element but not of expected namespace (" +
+                    logger.fine("Encountered SAML Assertion element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else {
@@ -261,7 +261,7 @@ public class WssProcessorImpl implements WssProcessor {
             }
         }
         if (secHeaderDeservingPromotion != null) {
-            logger.info("Unwraping wrapped security header");
+            logger.finer("Unwraping wrapped security header");
             secHeaderDeservingPromotion.removeAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
         }
 
@@ -581,14 +581,14 @@ public class WssProcessorImpl implements WssProcessor {
         // (and possibly some whitespace before and after)?
         if (onlyChild) {
             // All relevant content of the parent node was encrypted.
-            logger.info("All of element '" + parentElement.getLocalName() + "' non-attribute contents were encrypted");
+            logger.finer("All of element '" + parentElement.getLocalName() + "' non-attribute contents were encrypted");
             cntx.elementsThatWereEncrypted.add(new ParsedElementImpl(parentElement));
         } else {
             // There was unencrypted stuff mixed in with the EncryptedData, so we can only record elements as
             // encrypted that were actually wholly inside the EncryptedData.
             // TODO: In this situation, no note is taken of any encrypted non-Element nodes (such as text nodes)
             // This sucks, but at lesat this will err on the side of safety.
-            logger.info("Only some of element '" + parentElement.getLocalName() + "' non-attribute contents were encrypted");
+            logger.finer("Only some of element '" + parentElement.getLocalName() + "' non-attribute contents were encrypted");
             for (int i = 0; i < dataList.getLength(); i++) {
                 Node node = dataList.item(i);
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
