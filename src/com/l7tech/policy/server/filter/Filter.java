@@ -1,14 +1,13 @@
 package com.l7tech.policy.server.filter;
 
-import com.l7tech.service.PublishedService;
 import com.l7tech.identity.User;
+import com.l7tech.logging.LogManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.logging.LogManager;
 
-import java.util.List;
-import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
