@@ -55,6 +55,7 @@ public class MockServletApi {
     public class DefaultMessageProcessorPreparer implements Preparer {
         public void prepare(MockServletApi servletApi) {
             try {
+                servletConfigMock.matchAndReturn("getServletContext", servletContextMock.proxy());
                 servletConfigMock.matchAndReturn("getInitParameter", C.IS_NOT_NULL, null);
                 servletContextMock.expect("log", C.IS_ANYTHING);
 
