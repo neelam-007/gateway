@@ -15,6 +15,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.StringTokenizer;
 import java.util.EventListener;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /**
  * Dialog for viewing and editing a RemoteIpRange assertion.
@@ -46,13 +48,19 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     }
 
     private void initialize() {
-        setTitle("Remote IP Range Assertion Properties");
+        initResources();
+        setTitle(resources.getString("window.title"));
         Container contents = getContentPane();
         contents.setLayout(new BorderLayout(0,0));
         contents.add(makeGlobalPanel(), BorderLayout.CENTER);
         contents.add(makeBottomButtonsPanel(), BorderLayout.SOUTH);
         setCallbacks();
         setInitialValues();
+    }
+
+    private void initResources() {
+        Locale locale = Locale.getDefault();
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.RemoteIpRangePropertiesDialog", locale);
     }
 
     private void cancel() {
@@ -65,29 +73,29 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         // get address
         String add1Str = add1.getText();
         if (add1Str == null || add1Str.length() < 1) {
-            bark("not valid address");
+            bark(resources.getString("error.badaddress"));
             return;
         }
         String add2Str = add2.getText();
         if (add2Str == null || add2Str.length() < 1) {
-            bark("not valid address");
+            bark(resources.getString("error.badaddress"));
             return;
         }
         String add3Str = add3.getText();
         if (add3Str == null || add3Str.length() < 1) {
-            bark("not valid address");
+            bark(resources.getString("error.badaddress"));
             return;
         }
         String add4Str = add4.getText();
         if (add4Str == null || add4Str.length() < 1) {
-            bark("not valid address");
+            bark(resources.getString("error.badaddress"));
             return;
         }
         String newaddress = add1Str + "." + add2Str + "." + add3Str + "." + add4Str;
         // get mask
         String suffixStr = suffix.getText();
         if (suffixStr == null || suffixStr.length() < 1) {
-            bark("not valid mask");
+            bark(resources.getString("error.badmask"));
             return;
         }
         if (subject != null) {
@@ -124,7 +132,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     }
 
     private void bark(String woof) {
-        JOptionPane.showMessageDialog(this, woof, "Remote IP Range Assertion Properties", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(this, woof, resources.getString("window.title"), JOptionPane.ERROR_MESSAGE);
     }
 
     private void setInitialValues() {
@@ -199,7 +207,8 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private JPanel makeRulePanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEADING, 0, 0));
-        includeExcludeCombo = new JComboBox(new String[] {"Include", "Exclude"});
+        includeExcludeCombo = new JComboBox(new String[] {resources.getString("includeExcludeCombo.include"),
+                                                          resources.getString("includeExcludeCombo.exclude")});
         panel.add(includeExcludeCombo);
         return panel;
     }
@@ -207,7 +216,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private JPanel makeNotePanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEADING, 0, 0));
-        panel.add(new JLabel("the following IP range", null, JLabel.LEFT));
+        panel.add(new JLabel(resources.getString("notePanel.name"), null, JLabel.LEFT));
         return panel;
     }
 
@@ -247,11 +256,11 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private JPanel makeBottomButtonsPanel() {
         // construct buttons
         helpButton = new JButton();
-        helpButton.setText("Help");
+        helpButton.setText(resources.getString("helpButton.name"));
         okButton = new JButton();
-        okButton.setText("Ok");
+        okButton.setText(resources.getString("okButton.name"));
         cancelButton = new JButton();
-        cancelButton.setText("Cancel");
+        cancelButton.setText(resources.getString("cancelButton.name"));
 
         // construct the bottom panel and wrap it with a border
         JPanel buttonsPanel = new JPanel();
@@ -285,6 +294,8 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         }
         System.exit(0);
     }
+
+    private ResourceBundle resources;
 
     private JButton helpButton;
     private JButton okButton;
