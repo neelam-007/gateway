@@ -122,7 +122,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                 WSDLWriter wsdlWriter = fac.newWSDLWriter();
                 StringWriter sw = new StringWriter();
                 wsdlWriter.writeWSDL(def, sw);
-                Wsdl ws = Wsdl.newInstance(null, new StringReader(sw.toString()));
+                Wsdl ws = Wsdl.newInstance(Wsdl.extractBaseURI(sw.toString()), new StringReader(sw.toString()));
                 service.setName(ws.getServiceName());
                 service.setWsdlXml(sw.toString());
                 final String serviceAddress = getServiceAddress(def);

@@ -81,7 +81,7 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
             }
             newWSDL = Registry.getDefault().getServiceManager().resolveWsdlTarget(response);
             if (newWSDL != null && newWSDL.length() > 0) {
-                Wsdl.newInstance(null, new StringReader(newWSDL));
+                Wsdl.newInstance(Wsdl.extractBaseURI(newWSDL), new StringReader(newWSDL));
             }
         } catch (WSDLException e) {
             logger.log(Level.WARNING, "invalid wsdl", e);
