@@ -200,9 +200,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private void doCertDownload(HttpServletResponse response, String username, String nonce)
             throws FindException, IOException, NoSuchAlgorithmException
     {
+        logger.finest("Request for root cert");
         // Find our certificate
         byte[] cert = KeystoreUtils.getInstance().readRootCert();
-        logger.fine("Sending root cert");
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null) {
