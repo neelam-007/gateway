@@ -285,7 +285,7 @@ public class Utilities {
         /**
          * Create a context menu with appropriate items for the given JTextComponent.
          * The menu will always include a "Copy" option, but will include "Cut" and "Paste" only
-         * if this.isEditable() is true.
+         * if tc.isEditable() is true.
          *
          * @return A newly-created context menu, ready to pop up.
          */
@@ -339,6 +339,14 @@ public class Utilities {
             return contextMenu;
         }
 
+        /**
+         * Allow subclasses to manually exclude certain menu items from appearing in a generated context menu.
+         * This method always returns true.
+         *
+         * @param tc  the text component whose context menu we are generating.
+         * @param menuText the text of the menu item we are about to include.
+         * @return true if this menu item should be included, or false to exclude it.
+         */
         protected boolean shouldIncludeMenu(JTextComponent tc, String menuText) {
             return true;
         }
@@ -347,7 +355,8 @@ public class Utilities {
     /**
      * Create a MouseListener that will create an edit context menu when triggered.  If the specified
      * component has the PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL client property set to "true" when
-     * the listener is triggered, the component will have "select all" called on it first.
+     * the listener is triggered, the component will have "select all" called on it first.  This method
+     * always uses the DefaultContextMenuFactory.
      *
      * @param tc The JTextComponent to which this MouseListener will be attached
      * @return the newly created MouseListener
@@ -358,7 +367,8 @@ public class Utilities {
 
     /**
      * Create a MouseListener that will create an edit context menu when triggered.  The menu will be
-     * created using the specified ContextMenuFactory.  See Utilities.createContextMenu() for
+     * created using the specified ContextMenuFactory.  See Utilities.DefaultContextMenuFactory
+     * for an implementation that supports Cut/Copy/Paste/Select All. 
      *
      * @param tc      The JTextComponent to which this MouseListener will be attached
      * @param factory The ContextMenuFactory which will produce the actual context menu.
