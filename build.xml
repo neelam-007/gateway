@@ -335,7 +335,7 @@
                 <include name="connector.jar" if="include.jms.mqseries"/>
 
                 <include name="ojdbc14.jar" if="db.oracle"/>
-		<include name="classes111.zip" if="db.oracle8"/>
+		        <include name="classes111.zip" if="db.oracle8"/>
                 <include name="mysql-connector-java-3.0.11-stable-bin.jar" if="db.mysql"/>
                 <include name="postgresql.jar" if="db.postgres"/>
             </lib>
