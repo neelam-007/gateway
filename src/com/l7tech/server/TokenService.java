@@ -45,7 +45,7 @@ import java.util.logging.Logger;
  */
 public class TokenService {
     public interface CredentialsAuthenticator {
-        User authenticate(LoginCredentials creds);
+        User authenticate(LoginCredentials creds) throws AuthenticationException;
     }
 
     public class TokenServiceException extends Exception {
