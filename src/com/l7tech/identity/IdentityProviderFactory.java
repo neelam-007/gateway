@@ -28,15 +28,22 @@ public class IdentityProviderFactory {
     }
 
     public static IdentityProvider makeProvider(IdentityProviderConfig config) {
-        IdentityProvider provider;
         try {
-            if (config.type() == IdentityProviderType.LDAP) provider = new LdapIdentityProviderServer();
-            else if (config.type() == IdentityProviderType.INTERNAL) provider = new InternalIdentityProviderServer();
-            else throw new RuntimeException("no provider type specified.");
-            provider.initialize(config);
-            return provider;
+            if (providers == null) providers = new HashMap();
+            IdentityProvider existingProvider = (IdentityProvider)providers.get(new Long(config.getOid()));
+            if (existingProvider == null) {
+                if (config.type() == IdentityProviderType.LDAP) existingProvider = new LdapIdentityProviderServer();
+                else if (config.type() == IdentityProviderType.INTERNAL) existingProvider = new InternalIdentityProviderServer();
+                else throw new RuntimeException("no provider type specified.");
+                existingProvider.initialize(config);
+                providers.put(new Long(config.getOid()), existingProvider);
+            }
+            return existingProvider;
         } catch (Exception e) {
             throw new IllegalArgumentException("Couldn't locate an implementation for IdentityProviderConfig " + config.getName() + " (#" + config.getOid() + "): " + e.toString());
         }
     }
+
+    // note these need to be singletons so that they can be invalidates in case of deletion
+    private static HashMap providers = null;
 }
