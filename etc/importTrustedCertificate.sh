@@ -22,7 +22,7 @@ KEYTOOLBIN=$JAVA_HOME/bin/keytool
 
 # CHECK THAT WE ARE RECIEVING THE CERTIFICATE FILE AS AN ARGUMENT
 if [ ! $1 ]; then
-    echo USAGE: %0 filetoimport.cer
+    echo USAGE: $0 filetoimport.cer
     exit -1
 fi
 
@@ -31,8 +31,12 @@ if [ -e $STOREFILE ]; then
         echo "THE KEYSTORE ALREADY EXIST AT $STOREFILE"
         echo "DO YOU WANT TO OVERWRITE? [y/n]"
         read USR_ANSWER
-        if [ USR_ANSWER = "n" ]; then
+        if [ $USR_ANSWER = "n" ]; then
             exit -1
+            echo
+        fi
+        if [ $USR_ANSWER = "y" ]; then
+            rm $STOREFILE
             echo
         fi
 fi
