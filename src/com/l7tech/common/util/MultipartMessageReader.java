@@ -327,13 +327,16 @@ public class MultipartMessageReader {
         delimiter[0] = 0x0d;  // CR
         delimiter[1] = 0x0a;  // LF
 
-        if(fileCache != null) writeDataToFileCache(delimiter);
-
-        if(writeIndex + 4 > attachmentsRawData.length) {
-             writeDataToFileCache(delimiter);
+        if(fileCache != null) {
+            writeDataToFileCache(delimiter);
         } else {
-            attachmentsRawData[writeIndex++] = delimiter[0];     // CR
-            attachmentsRawData[writeIndex++] = delimiter[1];     // LF
+
+            if(writeIndex + 4 > attachmentsRawData.length) {
+                writeDataToFileCache(delimiter);
+            } else {
+                attachmentsRawData[writeIndex++] = delimiter[0];     // CR
+                attachmentsRawData[writeIndex++] = delimiter[1];     // LF
+            }
         }
     }
 
@@ -343,24 +346,25 @@ public class MultipartMessageReader {
             throw new IllegalArgumentException("The header line cannot be NULL");
         }
 
+        // NOTE: getBytes returns the byte[] which does not contains the white space characters, i.e. <CR><LF>
         byte[] rawHeader = line.getBytes();
 
         if(fileCache != null) {
             writeDataToFileCache(line.getBytes());
             addLineDelimiter();
-        }
-
-        // check if there is enough room
-        if(writeIndex + rawHeader.length + 4 > attachmentsRawData.length) {
-            writeDataToFileCache(line.getBytes());
-            addLineDelimiter();
         } else {
+            // check if there is enough room
+            if(writeIndex + rawHeader.length + 4 > attachmentsRawData.length) {
+                writeDataToFileCache(line.getBytes());
+                addLineDelimiter();
+            } else {
 
-            for(int i=0; i < rawHeader.length; i++) {
-                attachmentsRawData[writeIndex++] = rawHeader[i];
+                for(int i=0; i < rawHeader.length; i++) {
+                    attachmentsRawData[writeIndex++] = rawHeader[i];
+                }
+
+                addLineDelimiter();
             }
-
-            addLineDelimiter();
         }
     }
 
@@ -373,7 +377,9 @@ public class MultipartMessageReader {
         int endIndex = -1;
         int oldWriteIndex = writeIndex;
 
-        if(fileCache != null) storeRawPartContentToFileCache(null);
+        if(fileCache != null) {
+            return storeRawPartContentToFileCache();
+        }
 
         // looking for the multipart boundary
         do {
@@ -462,9 +468,18 @@ public class MultipartMessageReader {
 
         int count;
 
-        // write data to the file
+        // write the data in the temp buffer (the initial portion of the MIME part) to the file
         writeDataToFileCache(data);
-        count = data.length;
+
+        // write the remaining portion of the MIME part to the file
+        count = storeRawPartContentToFileCache();
+
+        return (data.length + count);
+    }
+
+    private int storeRawPartContentToFileCache() throws IOException {
+
+        int count = 0;
 
         // store the remaining data of the attachment part (if any)
         // looking for the multipart boundary
@@ -521,21 +536,25 @@ public class MultipartMessageReader {
                 // store the byte
                 buf[index++] = (byte) d;
             }
-            writeDataToFileCache(buf, 0, index);
 
-            // update count
-            count += index;
+            // if the boundary NOT found when the buffer is full, store the data first and then continue
+            if(!boundaryFound) {
+                writeDataToFileCache(buf, 0, index);
 
-            //reset indices
-            index = 0;
-            startIndex = -1;
-            endIndex = -1;
+                // update count
+                count += index;
 
-            // read the next byte
-            d = pushbackInputStream.read();
+                //reset indices
+                index = 0;
+                startIndex = -1;
+                endIndex = -1;
 
-            // store the byte
-            buf[index++] = (byte) d;
+                // read the next byte
+                d = pushbackInputStream.read();
+
+                // store the byte
+                buf[index++] = (byte) d;
+            }
         }
 
         return count;
