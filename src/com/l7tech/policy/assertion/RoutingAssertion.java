@@ -76,7 +76,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
      * @return an AssertionStatus indicating the success or failure of the request.
      * @throws PolicyAssertionException if some error preventing the execution of the PolicyAssertion has occurred.
      */
-    public AssertionStatus checkRequest( Request request, Response response ) throws PolicyAssertionException {
+    public AssertionStatus checkRequest( Request request, Response response ) throws IOException, PolicyAssertionException {
       	HttpClient client = new HttpClient( _connectionManager );
 
         PostMethod postMethod = null;
@@ -84,26 +84,40 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         try {
             PublishedService service = (PublishedService)request.getParameter( Request.PARAM_SERVICE );
             URL url;
+            URL serviceUrl = service.serviceUrl( request );
             if ( _protectedServiceUrl == null ) {
-                url = service.serviceUrl( request );
+                url = serviceUrl;
             } else {
                 url = new URL( _protectedServiceUrl );
             }
 
             postMethod = new PostMethod( url.toString() );
-            synchronized( _httpState ) {
-                if ( _httpState == null ) {
-                    _httpState = new HttpState();
-                    _httpState.setCredentials( url.getHost(),
-                                               _principalCredentials.getRealm(),
-                                               _httpCredentials );
 
+            // TODO: Attachments
+            postMethod.setRequestHeader( "Content-Type", "text/xml; charset=utf-8" );
+            int port = serviceUrl.getPort();
+            StringBuffer hostValue = new StringBuffer( serviceUrl.getHost() );
+            if ( port != -1 ) {
+                hostValue.append( ":" );
+                hostValue.append( port );
+            }
+            postMethod.setRequestHeader( "Host", hostValue.toString() );
+            postMethod.setRequestHeader( "SOAPAction", (String)request.getParameter( Request.PARAM_HTTP_SOAPACTION ) );
+
+            if ( _principalCredentials != null ) {
+                synchronized ( this ) {
+                    if ( _httpState == null ) {
+                        _httpState = new HttpState();
+                        _httpState.setCredentials( url.getHost(),
+                                                   _principalCredentials.getRealm(),
+                                                   _httpCredentials );
+                    }
+                    client.setState( _httpState );
                 }
             }
 
-            client.setState( _httpState );
-
-            postMethod.setRequestBody( request.getRequestStream() );
+            String requestXml = request.getRequestXml();
+            postMethod.setRequestBody( requestXml );
             client.executeMethod( postMethod );
             InputStream responseStream = postMethod.getResponseBodyAsStream();
             response.setProtectedResponseStream( responseStream );
@@ -118,11 +132,27 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
             _log.error( mfe );
             return AssertionStatus.FAILED;
         } catch ( IOException ioe ) {
+            // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
             _log.warn( ioe );
             return AssertionStatus.FAILED;
         } finally {
-            if ( postMethod != null ) postMethod.releaseConnection();
+            if ( postMethod != null ) {
+                MethodCloser mc = new MethodCloser( postMethod );
+                response.runOnClose(mc);
+            }
         }
+    }
+
+    private class MethodCloser implements Runnable {
+        MethodCloser( HttpMethod method ) {
+            _method = method;
+        }
+
+        public void run() {
+            _method.releaseConnection();
+        }
+
+        private HttpMethod _method;
     }
 
     /** Client-side doesn't know or care about server-side routing. */
