@@ -81,6 +81,7 @@ public class WrappingLabel extends JTextArea {
             copyMenuMouseListener = new MouseAdapter() {
                 public void mouseReleased(final MouseEvent ev) {
                     if (ev.isPopupTrigger()) {
+                        WrappingLabel.this.requestFocus();
                         WrappingLabel.this.selectAll();
                         getCopyMenu().show((Component) ev.getSource(), ev.getX(), ev.getY());
                     }
