@@ -40,6 +40,7 @@ public final class TestDocuments {
     public static final String BUG_763_MONSTER_POLICY = PDIR + "bug763MonsterPolicy.xml";
     public static final String WAREHOUSE_SECURED_POLICY = PDIR + "WarehouseSecuredPolicy.xml";
     public static final String DOTNET_SIGNED_REQUEST = DIR + "dotNetSignedSoapRequest.xml";
+    public static final String DOTNET_SIGNED_REQUEST2 = DIR + "dotNetWseSignedRequest2.xml";
     public static final String DOTNET_SIGNED_TAMPERED_REQUEST = DIR + "dotNetSignedTamperedSoapRequest.xml";
     public static final String DOTNET_ENCRYPTED_REQUEST = DIR + "dotNetSignedAndEncryptedRequest.xml";
     public static final String DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN = DIR + "dotNetSignedUsingDerivedKeyToken.xml";
@@ -49,6 +50,7 @@ public final class TestDocuments {
     public static final String ETTK_SIGNED_REQUEST = DIR + "ibmEttkSignedRequest.xml";
     public static final String ETTK_ENCRYPTED_REQUEST = DIR + "ibmEttkEncryptedRequest.xml";
     public static final String ETTK_SIGNED_ENCRYPTED_REQUEST = DIR + "ibmEttkSignedEncryptedRequest.xml";
+    public static final String WEBSPHERE_SIGNED_REQUEST = DIR + "websphereSignedRequest.xml";
 
     public static final String WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndWrappedL7Actors.xml";
     public static final String MULTIPLE_WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndMultipleL7Actors.xml";
