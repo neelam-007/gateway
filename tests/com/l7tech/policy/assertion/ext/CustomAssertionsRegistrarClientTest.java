@@ -76,7 +76,7 @@ public class CustomAssertionsRegistrarClientTest extends TestCase {
                   System.out.println(cr.getClass());
                   System.out.println(cr.getClass().getClassLoader());
                   System.out.println(RMIClassLoader.getClassAnnotation(cr.getClass()));
-                  return cr.getAssertions(Category.IDENTITY);
+                  return cr.getAssertions(Category.ACCESS_CONTROL);
               }
           });
         for (Iterator iterator = collection.iterator(); iterator.hasNext();) {

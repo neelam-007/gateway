@@ -61,7 +61,7 @@ public class AuthenticationFolderNode extends AbstractTreeNode {
 
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
-            Iterator it = cr.getAssertions(Category.IDENTITY).iterator();
+            Iterator it = cr.getAssertions(Category.ACCESS_CONTROL).iterator();
             while (it.hasNext()) {
                 CustomAssertionHolder a = (CustomAssertionHolder)it.next();
                 insert(new CustomAccessControlNode(a), index++);

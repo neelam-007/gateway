@@ -10,8 +10,6 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
-import com.l7tech.policy.assertion.ext.CustomAssertions;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -111,7 +109,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
             ValidatorFactory.getValidator(a).validate(result);
             if (isPreconditionAssertion(a)) {
                 processPrecondition(a);
-            } else if(isComposite(a)) {
+            } else if (isComposite(a)) {
                 processComposite((CompositeAssertion)a);
             } else if (isCrendentialSource(a)) {
                 processCredentialSource(a);
@@ -121,7 +119,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 processRouting((RoutingAssertion)a);
             } else if (a instanceof AllAssertion) {
                 processAllAss((AllAssertion)a);
-            } else if(isCustom(a)) {
+            } else if (isCustom(a)) {
                 processCustom(a);
             } else {
                 processUnknown();
@@ -130,9 +128,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         private void processCustom(Assertion a) {
             CustomAssertionHolder csh = (CustomAssertionHolder)a;
-            CustomAssertionDescriptor descriptor = CustomAssertions.getDescriptor(csh);
-            if (Category.IDENTITY.equals(descriptor.getCategory()) ||
-                Category.ACCESS_CONTROL.equals(descriptor.getCategory())) {
+            if (Category.ACCESS_CONTROL.equals(csh.getCategory())) {
                 if (!seenCredentials) {
                     result.addError(new PolicyValidatorResult.Error(a, "Access control specified without authentication scheme.", null));
                 }
@@ -291,8 +287,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 processJmsRouting((JmsRoutingAssertion)a);
             } else {
                 result.addError(new PolicyValidatorResult.Error(a,
-                                                                "This message routing protocol is not supported.",
-                                                                null));
+                  "This message routing protocol is not supported.",
+                  null));
             }
         }
 
@@ -300,8 +296,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
             Long oid = a.getEndpointOid();
             if (oid == null) {
                 result.addWarning(new PolicyValidatorResult.Warning(a,
-                                    "The assertion might not work as configured." +
-                                    "\nThere is no protected service JMS queue defined.", null));
+                  "The assertion might not work as configured." +
+                  "\nThere is no protected service JMS queue defined.", null));
             } else {
                 // TODO: for now we just assume that any non-null oid is a valid JmsEndpoint
             }
@@ -311,23 +307,23 @@ public class DefaultPolicyValidator extends PolicyValidator {
             String url = a.getProtectedServiceUrl();
             if (url == null) {
                 result.addWarning(new PolicyValidatorResult.Warning(a,
-                                    "The assertion might not work as configured." +
-                                    "\nThe protected service url is empty.", null));
+                  "The assertion might not work as configured." +
+                  "\nThe protected service url is empty.", null));
             } else {
                 try {
                     new URL(url);
                 } catch (MalformedURLException e) {
                     result.addWarning(new PolicyValidatorResult.Warning(a,
-                                        "The assertion might not work as configured." +
-                                        "\nThe protected service url is malformed.", null));
+                      "The assertion might not work as configured." +
+                      "\nThe protected service url is malformed.", null));
                 }
             }
         }
 
         private void processComposite(CompositeAssertion a) {
             if (a instanceof AllAssertion && a.getChildren().isEmpty()) {
-                  result.addWarning(new PolicyValidatorResult.Warning(a,
-                      "This composite assertion does not contain any elements.", null));
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                  "This composite assertion does not contain any elements.", null));
             }
         }
 
@@ -362,7 +358,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         private boolean isPreconditionAssertion(Assertion a) {
             // check preconditions for both SslAssertion and  XmlResponseSecurity assertions - see processPrecondition()
             if (a instanceof SslAssertion || a instanceof XmlResponseSecurity || a instanceof HttpClientCert ||
-                a instanceof XslTransformation)
+              a instanceof XslTransformation)
                 return true;
             return false;
         }

@@ -8,13 +8,10 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
-import com.sun.jini.start.LifeCycle;
-import net.jini.config.ConfigurationException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -27,16 +24,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * The server side CustomAssertionsRegistrar implementation.
+ *
  * @author emil
  * @version 16-Feb-2004
  */
-public class CustomAssertionsRegistrarImpl extends RemoteService implements CustomAssertionsRegistrar {
+public class CustomAssertionsRegistrarImpl implements CustomAssertionsRegistrar {
     static Logger logger = Logger.getLogger(CustomAssertionsRegistrar.class.getName());
+    protected static boolean initialized = false;
 
-    public CustomAssertionsRegistrarImpl(String[] options, LifeCycle lifeCycle)
-      throws ConfigurationException, IOException {
-        super(options, lifeCycle);
-        // todo: pass the server config in ctor - em
+    public CustomAssertionsRegistrarImpl() {
+        // todo: find a way to invert dependency here
         init(ServerConfig.getInstance());
     }
 
@@ -103,7 +101,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
      * @param xml the netity header representing the service
      * @return the policy tree
      * @throws java.rmi.RemoteException on remote invocation error
-     * @throws IOException on policy format error
+     * @throws IOException              on policy format error
      */
     public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
         return WspReader.parse(xml);
@@ -127,7 +125,8 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
     }
 
     //-------------- custom assertion loading stuff -------------------------
-    private void init(ComponentConfig config) {
+    private synchronized void init(ComponentConfig config) {
+        if (initialized) return;
         fileName = config.getProperty(KEY_CONFIG_FILE);
         if (fileName == null) {
             logger.info("'" + KEY_CONFIG_FILE + "' not specified");
@@ -142,8 +141,9 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
                 in = new FileInputStream(fileName);
             }
             loadCustomAssertions(in);
+            initialized = true;
         } catch (FileNotFoundException e) {
-            logger.info("Custom assertions config file '" + fileName + "'not present\nNo custom assertions will be loaded");
+            logger.info("Custom assertions config file '" + fileName + "'not present\n Custom assertions not loaded");
         } catch (IOException e) {
             logger.log(Level.WARNING, "I/O error reading config file '" + fileName + "'", e);
         } finally {

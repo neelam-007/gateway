@@ -14,8 +14,6 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
-import com.l7tech.policy.assertion.ext.CustomAssertions;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.service.PublishedService;
@@ -90,11 +88,11 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             try {
                 User u = provider.authenticate(creds);
                 logger.fine("Authentication success for user " + creds.getLogin() + " on identity provider: " +
-                            provider.getConfig().getName());
+                  provider.getConfig().getName());
                 users.add(u);
             } catch (AuthenticationException e) {
                 logger.fine("Authentication failed for user " + creds.getLogin() +
-                            " on identity provider: " + provider.getConfig().getName());
+                  " on identity provider: " + provider.getConfig().getName());
                 continue;
             }
         }
@@ -146,12 +144,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 Assertion ass = (Assertion)it.next();
                 if (ass instanceof CustomAssertionHolder) {
                     CustomAssertionHolder ch = (CustomAssertionHolder)ass;
-                    CustomAssertionDescriptor cdesc = CustomAssertions.getDescriptor(ch);
-                    if (cdesc == null) {
-                        logger.warning("Unable to resolve the custom assertion " + ch);
-                        continue;
-                    }
-                    if (Category.IDENTITY.equals(cdesc.getCategory())) { // bingo
+                    if (Category.ACCESS_CONTROL.equals(ch.getCategory())) { // bingo
                         UserBean user = new UserBean();
                         user.setProviderId(Long.MAX_VALUE);
                         user.setLogin(creds.getLogin());

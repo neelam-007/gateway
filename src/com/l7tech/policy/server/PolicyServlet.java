@@ -3,11 +3,12 @@ package com.l7tech.policy.server;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertions;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.wsp.WspWriter;
@@ -19,6 +20,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
@@ -303,8 +305,13 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             endTransaction();
         }
         // we smelt something (maybe netegrity?)
-        if (!CustomAssertions.getAssertions(Category.IDENTITY).isEmpty()) {
-            checkInfos.add(new CheckInfo(Long.MAX_VALUE, null, null));
+        CustomAssertionsRegistrar car = (CustomAssertionsRegistrar)Locator.getDefault().lookup(CustomAssertionsRegistrar.class);
+        try {
+            if (car != null && !car.getAssertions(Category.ACCESS_CONTROL).isEmpty()) {
+                checkInfos.add(new CheckInfo(Long.MAX_VALUE, null, null));
+            }
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "Custom assertions error", e);
         }
 
         return checkInfos;

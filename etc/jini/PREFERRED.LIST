@@ -2,6 +2,6 @@ PreferredResources-Version: 1.0
 
 Preferred: false
 
-Name: com/l7tech/policy/assertion/ext/CustomAssertionsRegistrarImpl.class
+Name: com/l7tech/policy/assertion/ext/rmi/CustomAssertionsRegistrarService.class
 Preferred: true
 

@@ -5,16 +5,23 @@ import java.io.Serializable;
 
 /**
  * The enum style class that describes custom assertions categories.
+ * <p/>
+ * The categories are
+ * <ul>
+ * <li> Access control - specifiying that the custom assertion performs
+ * access control. This is typically used with the external access
+ * control apps such as Netegritiy Siteminder or Tivoli TAM.
+ * <li> Message manipulation specifiying that the custom assertion performs
+ * operations on soap message
+ * </ul>
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class Category implements Serializable {
     private static int index = 0;
-    public static final Category ALL = new Category(index++, "All");
-    public static final Category IDENTITY = new Category(index++, "Identity");
-    public static final Category TRANSFORM = new Category(index++, "Transform");
     public static final Category ACCESS_CONTROL = new Category(index++, "AccessControl");
+    public static final Category MESSAGE = new Category(index++, "Message");
     public static final Category UNFILLED = new Category(index++, "Unfilled");
 
     private final int myKey;
@@ -64,5 +71,5 @@ public class Category implements Serializable {
         return VALUES[myKey];
     }
 
-    private static final Category[] VALUES = {ALL, IDENTITY, TRANSFORM, ACCESS_CONTROL, UNFILLED};
+    private static final Category[] VALUES = {ACCESS_CONTROL, MESSAGE, UNFILLED};
 }

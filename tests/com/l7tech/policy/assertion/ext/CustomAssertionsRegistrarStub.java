@@ -22,16 +22,17 @@ import java.util.logging.Logger;
  */
 public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar {
     static Logger logger = Logger.getLogger(CustomAssertionsRegistrar.class.getName());
+
     static {
         loadTestCustomAssertions();
     }
 
     private static void loadTestCustomAssertions() {
         CustomAssertionDescriptor eh =
-                new CustomAssertionDescriptor("Test.Assertion",
-                                              TestAssertionProperties.class,
-                                              ClientTrueAssertion.class,
-                                              TestServiceInvocation.class, Category.IDENTITY, null);
+          new CustomAssertionDescriptor("Test.Assertion",
+            TestAssertionProperties.class,
+            ClientTrueAssertion.class,
+            TestServiceInvocation.class, Category.ACCESS_CONTROL, null);
         CustomAssertions.register(eh);
     }
 
@@ -59,29 +60,29 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
         final Map publishedServices = StubDataStore.defaultStore().getPublishedServices();
         PublishedService svc = (PublishedService)publishedServices.get(new Long(eh.getOid()));
         if (svc == null) {
-            throw new ObjectNotFoundException("service "+eh);
+            throw new ObjectNotFoundException("service " + eh);
         }
         try {
             return WspReader.parse(svc.getPolicyXml());
         } catch (IOException e) {
-            ServerException se = new  ServerException(e.getMessage());
+            ServerException se = new ServerException(e.getMessage());
             se.initCause(e);
             throw se;
         }
     }
 
     /**
-       * Resolve the policy in the xml string format with the custom assertions
-       * support. The server is asked will resolve registered custom elements.
-       *
-       * @param xml the netity header representing the service
-       * @return the policy tree
-       * @throws java.rmi.RemoteException on remote invocation error
-       * @throws IOException on policy format error
-       */
-      public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
-          return WspReader.parse(xml);
-      }
+     * Resolve the policy in the xml string format with the custom assertions
+     * support. The server is asked will resolve registered custom elements.
+     *
+     * @param xml the netity header representing the service
+     * @return the policy tree
+     * @throws java.rmi.RemoteException on remote invocation error
+     * @throws IOException              on policy format error
+     */
+    public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
+        return WspReader.parse(xml);
+    }
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection result = new ArrayList();

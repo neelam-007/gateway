@@ -7,6 +7,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 
 /**
@@ -52,6 +53,22 @@ public class CustomAssertionHolder extends Assertion {
     }
 
     /**
+     * @return the custom assertion category
+     */
+    public Category getCategory() {
+        return category;
+    }
+
+    /**
+     * Set the custom assertion category
+     *
+     * @param category the new category
+     */
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    /**
      * Set the custome assertion bean
      *
      * @param ca the new custome assertino bean
@@ -64,9 +81,11 @@ public class CustomAssertionHolder extends Assertion {
         if (customAssertion == null) {
             return "[ CustomAssertion = null ]";
         }
-        return "[ CustomAssertion = "+customAssertion.toString()+" ]";
+        return "[ CustomAssertion = " + customAssertion.toString() + ", Category = " + category + " ]";
     }
 
     private CustomAssertion customAssertion;
+    private Category category;
+
 }
 

@@ -12,8 +12,6 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
-import com.l7tech.policy.assertion.ext.CustomAssertions;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.server.filter.IdentityRule;
@@ -77,7 +75,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // let's see if we can get credentials...
         List users;
         try {
-            if (serviceId !=null) {
+            if (serviceId != null) {
                 users = authenticateRequestBasic(req, resolveService(Long.parseLong(serviceId)));
             } else {
                 users = authenticateRequestBasic(req);
@@ -287,12 +285,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             return false;
         } else if (assertion instanceof CustomAssertionHolder) {
             CustomAssertionHolder ch = (CustomAssertionHolder)assertion;
-            CustomAssertionDescriptor cdesc = CustomAssertions.getDescriptor(ch);
-            if (cdesc == null) {
-                logger.warning("Unable to resolve the custom assertion " + ch);
-                return false;
-            }
-            if (Category.IDENTITY.equals(cdesc.getCategory())) { // bingo
+            if (Category.ACCESS_CONTROL.equals(ch.getCategory())) { // bingo
                 return true;
             }
             return false;

@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -164,6 +165,7 @@ public class SamplePolicyTest extends TestCase {
         OneBean oneBean = new OneBean();
         oneBean.setValue("bu!");
         customAssertion.setCustomAssertion(oneBean);
+        customAssertion.setCategory(Category.ACCESS_CONTROL);
         Assertion testin = new AllAssertion(Arrays.asList(new Assertion[]{
             new HttpBasic(),
             customAssertion
