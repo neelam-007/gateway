@@ -54,12 +54,11 @@ public interface StashManager {
 
     /**
      * Check the size of a previously-stashed InputStream in bytes, if this information is available.
-     * Not all StashManagers may be capable of supplying this information.
+     * All StashManagers are required to keep track of this information for InputStreams that have been fully stashed.
      *
      * @param ordinal the ordinal that was used in a previous call to stash().
      * @return the size in bytes of the stashed InputStream; or,
      *         -1 if no such ordinal was stashed; or,
-     *         -2 if a stream was stashed but its size cannot be determined.
      */
     long getSize(int ordinal);
 

@@ -96,7 +96,7 @@ public class FileStashManager implements StashManager {
         FileInfo fi = getFileInfo(ordinal);
         if (fi == null) return -1;
         Long size = fi.getSize();
-        return size == null ? -2 : size.longValue();
+        return size == null ? -1 : size.longValue();
     }
 
     public synchronized InputStream recall(int ordinal) throws IOException, NoSuchPartException {
