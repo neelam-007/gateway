@@ -31,6 +31,7 @@ import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.net.PasswordAuthentication;
 
 /**
  * Server side implementation of JMS routing assertion.
@@ -312,8 +313,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     private synchronized JmsBag getJmsBag() throws FindException, JMSException, NamingException, JmsConfigException {
         if ( bag == null ) {
-            bag = JmsUtil.connect( getRoutedRequestConnection(),
-                                   getRoutedRequestEndpoint().getPasswordAuthentication() );
+            JmsConnection conn = getRoutedRequestConnection();
+            if ( conn == null ) throw new FindException( "JmsConnection could not be located! It may have been deleted" );
+            JmsEndpoint endpoint = getRoutedRequestEndpoint();
+            if ( endpoint == null ) throw new FindException( "JmsEndpoint could not be located! It may have been deleted" );
+            PasswordAuthentication pwauth = endpoint.getPasswordAuthentication();
+
+            bag = JmsUtil.connect( conn, pwauth );
             bag.getConnection().start();
         }
         return bag;
