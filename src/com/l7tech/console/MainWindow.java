@@ -76,7 +76,6 @@ public class MainWindow extends JFrame {
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
-    private Action serverLoadAction = null;
     private Action findAction = null;
     private Action prefsAction = null;
     private Action removeNodeAction = null;
@@ -314,10 +313,7 @@ public class MainWindow extends JFrame {
         int mnemonic = viewMenu.getText().toCharArray()[0];
         viewMenu.setMnemonic(mnemonic);
         viewMenu.add(getGotoSubmenu());
-        item = new JMenuItem(getServerLoadAction());
-        mnemonic = item.getText().toCharArray()[0];
-        item.setMnemonic(mnemonic);
-        viewMenu.add(item);
+
         viewMenu.addSeparator();
 
         viewMenu.add(getLogMenuItem());
@@ -552,29 +548,6 @@ public class MainWindow extends JFrame {
         return newProviderAction;
     }
 
-    private Action getServerLoadAction() {
-        if (serverLoadAction != null) return serverLoadAction;
-        String atext = resapplication.getString("ServerLoad_MenuItem_text");
-        serverLoadAction = new AbstractAction(atext) {
-            /**
-             * Invoked when an action occurs.
-             *
-             * @param event  the event that occured
-             * @see Action#removePropertyChangeListener
-             */
-            public void actionPerformed(ActionEvent event) {
-                ServerLoadDialog dialog = new ServerLoadDialog(MainWindow.this, true);
-                dialog.pack();
-                Utilities.centerOnScreen(dialog);
-                dialog.setResizable(false);
-                dialog.setVisible(true);
-            }
-        };
-        serverLoadAction.setEnabled(false);
-        serverLoadAction.putValue(Action.SHORT_DESCRIPTION, atext);
-        return serverLoadAction;
-    }
-
     /**
      * create the Action (the component that is used by several controls)
      *
@@ -713,7 +686,6 @@ public class MainWindow extends JFrame {
         getConnectAction().setEnabled(!connected);
         getMainBottomTabbedPane().getShowLogToggleAction().setEnabled(connected);
         getMainBottomTabbedPane().getShowStatToggleAction().setEnabled(connected);
-        getServerLoadAction().setEnabled(connected);
         homeAction.setEnabled(connected);
 
     }
