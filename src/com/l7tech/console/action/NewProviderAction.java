@@ -196,17 +196,9 @@ public class NewProviderAction extends NodeAction {
                     }
                     if (tree.hasBeenExpanded(new TreePath(node.getPath()))) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        final int childCount = node.getChildCount();
-                        int index = 0;
-                        // finds the last provider node
-                        for (int i = 0; i < childCount; i++) {
-                            TreeNode n = node.getChildAt(i);
-                            if (n instanceof ProviderNode) {
-                                index = i + 1;
-                            }
-                        }
+
                         final AbstractTreeNode newChildNode = TreeNodeFactory.asTreeNode(eh);
-                        model.insertNodeInto(newChildNode, node, index);
+                        model.insertNodeInto(newChildNode, node, node.getInsertPosition(newChildNode));
                         TreeNode[] nodePath = model.getPathToRoot(newChildNode);
                         if (nodePath != null) {
                             tree.setSelectionPath(new TreePath(nodePath));

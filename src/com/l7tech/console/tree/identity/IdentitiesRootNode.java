@@ -1,10 +1,7 @@
 package com.l7tech.console.tree.identity;
 
 import com.l7tech.console.action.NewProviderAction;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntitiesEnumeration;
-import com.l7tech.console.tree.RefreshTreeNodeAction;
-import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
@@ -30,7 +27,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
      */
     public IdentitiesRootNode(String title)
       throws IllegalArgumentException {
-        super(null);
+        super(null, EntityHeaderNode.IGNORE_CASE_NAME_COMPARATOR);
         if (title == null)
             throw new IllegalArgumentException();
         label = title;
@@ -67,7 +64,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
         children = null;
         int i = 0;
         for (; i < nodes.length; i++) {
-            insert(nodes[i], i);
+            insert(nodes[i], getInsertPosition(nodes[i]));
         }
     }
 
