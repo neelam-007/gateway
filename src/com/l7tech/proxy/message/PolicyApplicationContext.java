@@ -25,6 +25,7 @@ import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
 import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -131,8 +132,10 @@ public class PolicyApplicationContext extends ProcessingContext {
     /**
      * Reset all policy settings in preperation for starting processing over again with a different policy.
      */
-    public void reset() {
+    public void reset() throws SAXException, IOException {
         policySettings = new PolicySettings();
+        final Document original = getRequest().getXmlKnob().getOriginalDocument();
+        getRequest().getXmlKnob().setDocument(original);
     }
 
     public Ssg getSsg() {
