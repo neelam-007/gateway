@@ -275,9 +275,10 @@ CREATE TABLE trusted_cert (
   trusted_for_client char(1) default '0',
   trusted_for_server char(1) default '0',
   trusted_for_saml char(1) default '0',
-  primary key(objectid),
-  unique(subject_dn)
+  primary key(objectid)
 );
+CREATE UNIQUE INDEX i_tc_sdn on trusted_cert (subject_dn);
+CREATE UNIQUE INDEX i_tc_n   on trusted_cert (name);
 
 DROP TABLE fed_user;
 CREATE TABLE fed_user (
@@ -406,3 +407,5 @@ CREATE TABLE audit_system (
 );
 CREATE INDEX i_audit_system_component ON audit_system (component);
 CREATE INDEX i_audit_system_action ON audit_system (action);
+
+
