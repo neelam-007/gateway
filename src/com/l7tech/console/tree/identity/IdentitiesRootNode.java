@@ -6,14 +6,12 @@ import com.l7tech.console.tree.EntitiesEnumeration;
 import com.l7tech.console.tree.RefreshTreeNodeAction;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 
 import javax.swing.*;
-import java.rmi.RemoteException;
-import java.util.*;
-import java.util.logging.Level;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -70,16 +68,6 @@ public class IdentitiesRootNode extends AbstractTreeNode {
         int i = 0;
         for (; i < nodes.length; i++) {
             insert(nodes[i], i);
-        }
-        final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
-        try {
-            Iterator it = cr.getAssertions(Category.IDENTITY).iterator();
-            while (it.hasNext()) {
-                CustomAssertionHolder a = (CustomAssertionHolder)it.next();
-                insert(new CustomProviderNode(a), i++);
-            }
-        } catch (RemoteException e1) {
-            log.log(Level.WARNING, "Unable to retrieve custom identity assertions", e1);
         }
     }
 

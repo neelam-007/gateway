@@ -1,6 +1,5 @@
-package com.l7tech.console.tree.identity;
+package com.l7tech.console.tree;
 
-import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
@@ -14,14 +13,14 @@ import javax.swing.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class CustomProviderNode extends AbstractTreeNode {
+public class CustomAccessControlNode extends AbstractTreeNode {
     /**
      * construct the <CODE>CustomProviderNode</CODE> instance for a given
      * <CODE>id</CODE>
      * 
      * @param ca the e represented by this <CODE>EntityHeaderNode</CODE>
      */
-    public CustomProviderNode(CustomAssertionHolder ca) {
+    public CustomAccessControlNode(CustomAssertionHolder ca) {
         super(ca);
         setAllowsChildren(false);
     }

@@ -1,5 +1,15 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+
+import java.rmi.RemoteException;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 /**
  * The class represents a node element in the palette assertion tree.
@@ -9,6 +19,8 @@ package com.l7tech.console.tree;
  * @version 1.1
  */
 public class AuthenticationFolderNode extends AbstractTreeNode {
+    static final Logger log = Logger.getLogger(AuthenticationFolderNode.class.getName());
+
     /**
      * construct the <CODE>PoliciesFolderNode</CODE> instance for
      * a given entry.
@@ -46,6 +58,18 @@ public class AuthenticationFolderNode extends AbstractTreeNode {
         insert(new WsTokenBasicAuthNode(), index++);
         // insert(new WsTokenDigestAuthNode(), index++);
         insert(new XmlRequestSecurityNode("XML Digital Signature authentication"), index++);
+
+        final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
+        try {
+            Iterator it = cr.getAssertions(Category.IDENTITY).iterator();
+            while (it.hasNext()) {
+                CustomAssertionHolder a = (CustomAssertionHolder)it.next();
+                insert(new CustomAccessControlNode(a), index++);
+            }
+        } catch (RemoteException e1) {
+            log.log(Level.WARNING, "Unable to retrieve custom assertions", e1);
+        }
+
     }
 
     /**
