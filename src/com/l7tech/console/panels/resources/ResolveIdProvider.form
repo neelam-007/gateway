@@ -9,15 +9,6 @@
     <properties/>
     <border type="none"/>
     <children>
-      <component id="92f49" class="javax.swing.JLabel">
-        <constraints>
-          <xy x="10" y="10" width="601" height="50"/>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="0" anchor="8" fill="2"/>
-        </constraints>
-        <properties>
-          <text value="The exported policy contains assertions that refer to a foreign identity provider unknown on this system."/>
-        </properties>
-      </component>
       <grid id="bd6d2" row-count="2" column-count="2" hgap="-1" vgap="-1">
         <margin top="5" left="5" bottom="5" right="5"/>
         <constraints>
@@ -111,7 +102,7 @@
               <text value="Import erroneous assertions as-is"/>
             </properties>
           </component>
-          <component id="130bf" class="javax.swing.JComboBox">
+          <component id="130bf" class="javax.swing.JComboBox" binding="providerSelector">
             <constraints>
               <xy x="481" y="26" width="118" height="24"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
@@ -132,6 +123,15 @@
           </component>
         </children>
       </grid>
+      <component id="92f49" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="10" y="10" width="394" height="50"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="0" anchor="8" fill="2"/>
+        </constraints>
+        <properties>
+          <text value="Policy contains assertions that refer to an unknown identity provider."/>
+        </properties>
+      </component>
     </children>
   </grid>
 </form>
