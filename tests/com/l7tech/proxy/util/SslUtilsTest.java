@@ -6,19 +6,18 @@
 
 package com.l7tech.proxy.util;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.proxy.datamodel.CurrentRequest;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import java.util.logging.Logger;
-import java.net.PasswordAuthentication;
-import java.security.cert.X509Certificate;
-
-import com.l7tech.proxy.datamodel.*;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import org.apache.commons.httpclient.protocol.Protocol;
+
+import java.net.PasswordAuthentication;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -58,8 +57,8 @@ public class SslUtilsTest extends TestCase {
         SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
 
         SslUtils.changePasswordAndRevokeClientCertificate(ssg.getServerPasswordChangeUrl(),
-                                                          "mike",
-                                                          "asdfasdf".toCharArray(),
-                                                          "qwerqwer".toCharArray());
+                                                          username,
+                                                          password,
+                                                          newpassword);
     }
 }
