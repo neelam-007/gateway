@@ -12,9 +12,14 @@ import java.util.Iterator;
 public class BindingTreeNode extends WsdlTreeNode {
     private Binding binding;
 
-    BindingTreeNode(Binding b, Options options) {
+    public BindingTreeNode(Binding b, Options options) {
         super(null, options);
         this.binding = b;
+    }
+
+    /** @return binding  the wsdl binding element this node represents */
+    public Binding getBinding() {
+        return binding;
     }
 
     protected void loadChildren() {
@@ -31,7 +36,7 @@ public class BindingTreeNode extends WsdlTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/Forward16.gif";
+        return "com/l7tech/console/resources/class.gif";
     }
 
 

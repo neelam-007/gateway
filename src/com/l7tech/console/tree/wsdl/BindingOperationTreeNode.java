@@ -68,7 +68,7 @@ public class BindingOperationTreeNode extends WsdlTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/Forward16.gif";
+        return "com/l7tech/console/resources/methodPublic.gif";
     }
 
     /**
