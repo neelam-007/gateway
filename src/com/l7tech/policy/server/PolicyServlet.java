@@ -81,80 +81,88 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      * Soapy policy downloads
      */
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        // check content type
-        if (!req.getContentType().startsWith("text/html")) {
-            logger.warning("Bad content type " + req.getContentType());
-            generateFaultAndSendAsResponse(res, "content type not supported", req.getContentType());
-            return;
-        }
-
-        // get document
-        Document payload = null;
         try {
-            payload = extractXMLPayload(req);
-        } catch (ParserConfigurationException e) {
-            String msg = "Could not parse payload as xml.";
-            logger.log(Level.SEVERE, msg, e);
-            generateFaultAndSendAsResponse(res, msg, e.getMessage());
-            return;
-        } catch (SAXException e) {
-            String msg = "Could not parse payload as xml.";
-            logger.log(Level.WARNING, msg, e);
-            generateFaultAndSendAsResponse(res, msg, e.getMessage());
-            return;
-        }
+            // check content type
+            if (!req.getContentType().startsWith("text/html")) {
+                logger.warning("Bad content type " + req.getContentType());
+                generateFaultAndSendAsResponse(res, "content type not supported", req.getContentType());
+                return;
+            }
 
-        // pass over to the service
-        X509Certificate cert = null;
-        PrivateKey key = null;
-        try {
-            cert = KeystoreUtils.getInstance().getSslCert();
-            key = KeystoreUtils.getInstance().getSSLPrivateKey();
-        } catch (CertificateException e) {
-            logger.log(Level.SEVERE, "configuration exception, cannot get server cert.", e);
-            generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
-            return;
-        } catch (KeyStoreException e) {
-            logger.log(Level.SEVERE, "configuration exception, cannot get server key.", e);
-            generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
-            return;
-        }
+            // get document
+            Document payload = null;
+            try {
+                payload = extractXMLPayload(req);
+            } catch (ParserConfigurationException e) {
+                String msg = "Could not parse payload as xml.";
+                logger.log(Level.SEVERE, msg, e);
+                generateFaultAndSendAsResponse(res, msg, e.getMessage());
+                return;
+            } catch (SAXException e) {
+                String msg = "Could not parse payload as xml.";
+                logger.log(Level.WARNING, msg, e);
+                generateFaultAndSendAsResponse(res, msg, e.getMessage());
+                return;
+            }
 
-        PolicyService service = new PolicyService(key, cert);
-        HttpTransportMetadata htm = new HttpTransportMetadata(req, res);
-        HttpSoapRequest sreq = new HttpSoapRequest(htm);
-        sreq.setDocument(payload);
-        HttpSoapResponse sres = new HttpSoapResponse(htm);
-        service.respondToPolicyDownloadRequest(sreq, sres, normalPolicyGetter());
+            // pass over to the service
+            X509Certificate cert = null;
+            PrivateKey key = null;
+            try {
+                cert = KeystoreUtils.getInstance().getSslCert();
+                key = KeystoreUtils.getInstance().getSSLPrivateKey();
+            } catch (CertificateException e) {
+                logger.log(Level.SEVERE, "configuration exception, cannot get server cert.", e);
+                generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
+                return;
+            } catch (KeyStoreException e) {
+                logger.log(Level.SEVERE, "configuration exception, cannot get server key.", e);
+                generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
+                return;
+            }
 
-        Document response = null;
-        try {
-            response = sres.getDocument();
-        } catch (SAXException e) {
-            generateFaultAndSendAsResponse(res, "No response available", e.getMessage());
-        }
-        if (response == null) {
-            if (sres.getFaultDetail() != null) {
-                generateFaultAndSendAsResponse(res, sres.getFaultDetail());
+            PolicyService service = new PolicyService(key, cert);
+            HttpTransportMetadata htm = new HttpTransportMetadata(req, res);
+            HttpSoapRequest sreq = new HttpSoapRequest(htm);
+            sreq.setDocument(payload);
+            HttpSoapResponse sres = new HttpSoapResponse(htm);
+            service.respondToPolicyDownloadRequest(sreq, sres, normalPolicyGetter());
+
+            Document response = null;
+            try {
+                response = sres.getDocument();
+            } catch (SAXException e) {
+                generateFaultAndSendAsResponse(res, "No response available", e.getMessage());
+            }
+            if (response == null) {
+                if (sres.getFaultDetail() != null) {
+                    generateFaultAndSendAsResponse(res, sres.getFaultDetail());
+                    return;
+                } else {
+                    generateFaultAndSendAsResponse(res, "No response available", "");
+                }
+            }
+
+            // check if the response is already a soap fault
+            Element bodyChild = null;
+            try {
+                bodyChild = XmlUtil.findFirstChildElement(SoapUtil.getBodyElement(response));
+            } catch (InvalidDocumentFormatException e) {
+                generateFaultAndSendAsResponse(res, "Response is not soap", e.getMessage());
+            }
+            if ("Fault".equals(bodyChild.getLocalName())) {
+                outputSoapFault(res, response);
                 return;
             } else {
-                generateFaultAndSendAsResponse(res, "No response available", "");
+                outputPolicyDoc(res, response);
+                return;
             }
-        }
-
-        // check if the response is already a soap fault
-        Element bodyChild = null;
-        try {
-            bodyChild = XmlUtil.findFirstChildElement(SoapUtil.getBodyElement(response));
-        } catch (InvalidDocumentFormatException e) {
-            generateFaultAndSendAsResponse(res, "Response is not soap", e.getMessage());
-        }
-        if ("Fault".equals(bodyChild.getLocalName())) {
-            outputSoapFault(res, response);
-            return;
-        } else {
-            outputPolicyDoc(res, response);
-            return;
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.log(Level.WARNING, "Could not get current persistence context to close.", e);
+            }
         }
     }
 
@@ -179,6 +187,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 }
             }
         };
+    }
+
+
+    protected void doGetNew(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
+      throws ServletException, IOException {
+
     }
 
     protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
