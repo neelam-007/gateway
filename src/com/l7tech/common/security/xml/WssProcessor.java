@@ -52,6 +52,8 @@ public interface WssProcessor {
     public interface Timestamp extends ParsedElement {
         TimestampDate getCreated();
         TimestampDate getExpires();
+        boolean isSigned();
+        X509SecurityToken getSigningSecurityToken();
     }
 
     public interface SignedElement extends ParsedElement {

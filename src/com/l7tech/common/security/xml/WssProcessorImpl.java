@@ -21,6 +21,9 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.crypto.Cipher;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -91,6 +94,7 @@ public class WssProcessorImpl implements WssProcessor {
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
 
         // Resolve the relevent Security header
+        cntx.soapHeader = SoapUtil.getHeaderElement(cntx.processedDocument);
         cntx.releventSecurityHeader = SoapUtil.getSecurityElement(cntx.processedDocument);
 
         // maybe there are no security headers at all in which case, there is nothing to process
@@ -103,6 +107,8 @@ public class WssProcessorImpl implements WssProcessor {
         Element securityChildToProcess = XmlUtil.findFirstChildElement(cntx.releventSecurityHeader);
         while (securityChildToProcess != null) {
             boolean removeProcessedElement = false;
+
+            // TODO shouldn't we compare namespaces here as well as just localnames?
             if (securityChildToProcess.getLocalName().equals(SoapUtil.ENCRYPTEDKEY_EL_NAME)) {
                 processEncryptedKey(securityChildToProcess, recipientKey,
                                     recipientCert, cntx);
@@ -459,45 +465,53 @@ public class WssProcessorImpl implements WssProcessor {
 
         for (Iterator j = dataRefEls.iterator(); j.hasNext();) {
             Element dataRefEl = (Element)j.next();
-            String dataRefUri = dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME);
+            decryptElement(dataRefEl, refList, key, cntx);
 
-            // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
-            // soapMsg document
-            DecryptionContext dc = new DecryptionContext();
-            AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-            af.setProvider(JceProvider.getSymmetricJceProvider().getName());
-            dc.setAlgorithmFactory(af);
-            Element encryptedDataElement = SoapUtil.getElementByWsuId(refList.getOwnerDocument(), dataRefUri);
-            if (encryptedDataElement == null) {
-                String msg = "cannot resolve encrypted data element " + dataRefUri;
-                logger.warning(msg);
-                throw new ProcessorException(msg);
-            }
-            dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
-                                                        null, null);
-            dc.setKey(key);
-            try {
-                // do the actual decryption
-                dc.decrypt();
-                dc.replace();
-                // remember encrypted element
-                NodeList dataList = dc.getDataAsNodeList();
-                for (int i = 0; i < dataList.getLength(); i++) {
-                    Node node = dataList.item(i);
-                    if (node.getNodeType() == Node.ELEMENT_NODE) {
-                        cntx.elementsThatWereEncrypted.add(node);
-                    }
+        }
+    }
+
+    private void decryptElement(Element dataRefEl, Element refList, Key key, ProcessingStatusHolder cntx)
+            throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
+                   ProcessorException
+    {
+        String dataRefUri = dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME);
+
+        // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
+        // soapMsg document
+        DecryptionContext dc = new DecryptionContext();
+        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+        af.setProvider(JceProvider.getSymmetricJceProvider().getName());
+        dc.setAlgorithmFactory(af);
+        Element encryptedDataElement = SoapUtil.getElementByWsuId(refList.getOwnerDocument(), dataRefUri);
+        if (encryptedDataElement == null) {
+            String msg = "cannot resolve encrypted data element " + dataRefUri;
+            logger.warning(msg);
+            throw new ProcessorException(msg);
+        }
+        dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
+                                                    null, null);
+        dc.setKey(key);
+        try {
+            // do the actual decryption
+            dc.decrypt();
+            dc.replace();
+            // remember encrypted element
+            NodeList dataList = dc.getDataAsNodeList();
+            for (int i = 0; i < dataList.getLength(); i++) {
+                Node node = dataList.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    cntx.elementsThatWereEncrypted.add(node);
                 }
-            } catch (XSignatureException e) {
-                logger.log(Level.WARNING, "Error decrypting", e);
-                throw new ProcessorException(e);
-            } catch (StructureException e) {
-                logger.log(Level.WARNING, "Error decrypting", e);
-                throw new ProcessorException(e);
-            } catch (KeyInfoResolvingException e) {
-                logger.log(Level.WARNING, "Error decrypting", e);
-                throw new ProcessorException(e);
             }
+        } catch (XSignatureException e) {
+            logger.log(Level.WARNING, "Error decrypting", e);
+            throw new ProcessorException(e);
+        } catch (StructureException e) {
+            logger.log(Level.WARNING, "Error decrypting", e);
+            throw new ProcessorException(e);
+        } catch (KeyInfoResolvingException e) {
+            logger.log(Level.WARNING, "Error decrypting", e);
+            throw new ProcessorException(e);
         }
     }
 
@@ -542,19 +556,7 @@ public class WssProcessorImpl implements WssProcessor {
             throw new InvalidDocumentFormatException("Unable to parse Timestamp", e);
         }
 
-        ctx.timestamp = new Timestamp() {
-            public WssProcessor.TimestampDate getCreated() {
-                return createdTimestampDate;
-            }
-
-            public WssProcessor.TimestampDate getExpires() {
-                return expiresTimestampDate;
-            }
-
-            public Element asElement() {
-                return timestampElement;
-            }
-        };
+        ctx.timestamp = new TimestampImpl(createdTimestampDate, expiresTimestampDate, timestampElement);
     }
 
     private void processBinarySecurityToken(final Element binarySecurityTokenElement,
@@ -661,7 +663,9 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    private void processSignature(final Element sigElement, ProcessingStatusHolder cntx) throws ProcessorException {
+    private void processSignature(final Element sigElement, ProcessingStatusHolder cntx)
+            throws ProcessorException, InvalidDocumentFormatException
+    {
         logger.finest("Processing Signature");
 
         // 1st, process the KeyInfo
@@ -724,6 +728,7 @@ public class WssProcessorImpl implements WssProcessor {
                 logger.warning(msg);
                 throw new ProcessorException(msg);
             }
+
             // make reference to this element
             final Element finalElementCovered = elementCovered;
             cntx.elementsThatWereSigned.add(new SignedElement() {
@@ -736,6 +741,20 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             });
             signingCertToken.elementsSignedWithCert.add(elementCovered);
+
+            // if this is a timestamp in the security header, note that it was signed
+            if (SoapUtil.WSU_URIS.contains(elementCovered.getNamespaceURI()) &&
+                SoapUtil.TIMESTAMP_EL_NAME.equals(elementCovered.getLocalName()) &&
+                (cntx.releventSecurityHeader == elementCovered.getParentNode() ||
+                 cntx.soapHeader == elementCovered.getParentNode()))
+            {
+                // Make sure we've seen this timestamp
+                if (cntx.timestamp.asElement() != elementCovered)
+                    throw new InvalidDocumentFormatException("Timestamp's Signature encountered before Timestamp element");
+
+                // Update timestamp with signature information
+                ((TimestampImpl)cntx.timestamp).setSigningSecurityToken(signingCertToken);
+            }
         }
     }
 
@@ -780,6 +799,7 @@ public class WssProcessorImpl implements WssProcessor {
         final Collection elementsThatWereEncrypted = new ArrayList();
         final Collection securityTokens = new ArrayList();
         WssProcessor.Timestamp timestamp = null;
+        Element soapHeader;
         Element releventSecurityHeader = null;
         String wsaMessageId = null;
         String wsaRelatesTo = null;
@@ -825,4 +845,43 @@ public class WssProcessorImpl implements WssProcessor {
     private static final Element[] PROTOTYPE_ELEMENT_ARRAY = new Element[0];
     private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
     private static final WssProcessor.SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new WssProcessor.SecurityToken[0];
+
+    private static class TimestampImpl implements WssProcessor.Timestamp {
+        private final TimestampDate createdTimestampDate;
+        private final TimestampDate expiresTimestampDate;
+        private final Element timestampElement;
+        private boolean isSigned = false;
+        private X509SecurityTokenImpl signingToken;
+
+        public TimestampImpl(TimestampDate createdTimestampDate, TimestampDate expiresTimestampDate, Element timestampElement) {
+            this.createdTimestampDate = createdTimestampDate;
+            this.expiresTimestampDate = expiresTimestampDate;
+            this.timestampElement = timestampElement;
+        }
+
+        public WssProcessor.TimestampDate getCreated() {
+            return createdTimestampDate;
+        }
+
+        public WssProcessor.TimestampDate getExpires() {
+            return expiresTimestampDate;
+        }
+
+        public boolean isSigned() {
+            return isSigned;
+        }
+
+        public WssProcessor.X509SecurityToken getSigningSecurityToken() {
+            return signingToken;
+        }
+
+        private void setSigningSecurityToken(X509SecurityTokenImpl token) {
+            this.signingToken = token;
+            this.isSigned = true;
+        }
+
+        public Element asElement() {
+            return timestampElement;
+        }
+    }
 }
