@@ -55,23 +55,23 @@ Database:
 as Postgres:
     initdb --pgdata=/var/lib/pgsql/data
 
+    change /var/lib/pgsql/data/postgresql.conf
+
+    Allow network access (required for jdbc access)
+
+    look for tcpip_socket = false, set to true
+
+    Allow scalability of database:
+
+    uncomment and set max_connections to 100
+    uncomment and set shared_buffers to 256
+
+    Set tcp to only listen on localhost
+
+    look for virtual_host. Uncomment it, set to '127.0.0.1'
+
 
 As root:
-
-change /var/lib/pgsql/data/postgresql.conf
-
-Allow network access (required for jdbc access)
-
-look for tcpip_socket = false, set to true
-
-Allow scalability of database:
-
-uncomment and set max_connections to 100
-uncomment and set shared_buffers to 256
-
-Set tcp to only listen on localhost
-
-look for virtual_host. Uncomment it, set to '127.0.0.1'
 
 Restart psql server
 
@@ -80,7 +80,6 @@ Restart psql server
 make sure it starts at boot
 
     chkconfig postgresql on
-hibernate_unique_key, identity_provider, internal_group, internal_user, internal_user_group, published_service
 
 as Postgres:
 
