@@ -29,4 +29,18 @@ public class NullRequestInterceptor implements RequestInterceptor {
      */
     public void onReceiveReply(SOAPEnvelope reply) {
     }
+
+    /**
+     * Fired when an error is encountered while reading the message from a client.
+     * @param t The error that occurred during the request.
+     */
+    public void onMessageError(Throwable t) {
+    }
+
+    /**
+     * Fired when an error is encountered while obtaining a reply from the server.
+     * @param t The error that occurred during the request.
+     */
+    public void onReplyError(Throwable t) {
+    }
 }

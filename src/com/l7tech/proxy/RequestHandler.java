@@ -53,8 +53,11 @@ public class RequestHandler extends AbstractHttpHandler {
         logger.info("Incoming request");
 
         // Only POST allowed
-        if (request.getMethod().compareToIgnoreCase("POST") != 0)
-            throw new HttpException(405);  // "Method not allowed"
+        if (request.getMethod().compareToIgnoreCase("POST") != 0) {
+            HttpException t = new HttpException(405); // "Method not allowed"
+            interceptor.onMessageError(t);
+            throw t;
+        }
 
         // Read the envelope
         SOAPEnvelope requestEnvelope;
@@ -62,13 +65,22 @@ public class RequestHandler extends AbstractHttpHandler {
             requestEnvelope = new SOAPEnvelope(request.getInputStream());
             interceptor.onReceiveMessage(requestEnvelope);
         } catch (SAXException e) {
-            throw new HttpException(400, "Couldn't parse SOAP envelope: " + e.getMessage());
+            HttpException t = new HttpException(400, "Couldn't parse SOAP envelope: " + e.getMessage());
+            interceptor.onMessageError(t);
+            throw t;
         }
 
         // Pass the request on to the proxy server
         logger.info("Passing request on to " + serverUrl);
         Call call = new Call(serverUrl);
-        SOAPEnvelope responseEnvelope = call.invoke(requestEnvelope);
+        SOAPEnvelope responseEnvelope;
+        try {
+            responseEnvelope = call.invoke(requestEnvelope);
+        } catch (Exception e) {
+            interceptor.onReplyError(e);
+            throw new HttpException(500, "Unable to obtain response from server: " + e.getMessage());
+        }
+
         interceptor.onReceiveReply(responseEnvelope);
         logger.info("Returning result");
 

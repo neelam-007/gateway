@@ -27,22 +27,18 @@ public class MessageViewer extends JFrame {
 
     private class MessageViewListener implements ListDataListener {
         public void intervalAdded(ListDataEvent e) {
+            contentsChanged(e);
         }
 
         public void intervalRemoved(ListDataEvent e) {
-            int sel = messageList.getSelectedIndex();
-            if (sel <= 0 || sel >= messageViewerModel.getSize()) {
-                setSelectedIndex(-1);
-            } else if (sel >= e.getIndex0() && sel <= e.getIndex1()) {
-                setSelectedIndex(sel);
-            }
+            contentsChanged(e);
         }
 
         public void contentsChanged(ListDataEvent e) {
             int sel = messageList.getSelectedIndex();
             if (sel <= 0 || sel >= messageViewerModel.getSize()) {
                 setSelectedIndex(-1);
-            } else if (sel >= e.getIndex0() && sel <= e.getIndex1()) {
+            } else if (sel >= 0 && sel < messageViewerModel.getSize()) {
                 setSelectedIndex(sel);
             }
         }
@@ -57,45 +53,56 @@ public class MessageViewer extends JFrame {
         if (messageList.getSelectedIndex() != idx)
             messageList.setSelectedIndex(idx);
         if (idx >= 0 && idx <= messageViewerModel.getSize()) {
-            messageView.setText(messageViewerModel.getXmlAt(idx));
+            messageView.setText(messageViewerModel.getMessageTextAt(idx));
         } else {
             messageView.setText("");
         }
-
-        log.info("selected msg #" + idx);
     }
 
     /**
      * Create a new MessageViewer with the given title.
      * @param title
      */
-    MessageViewer(String title) {
+    public MessageViewer(String title) {
         super(title);
         getContentPane().setLayout(new BorderLayout());
+
         messageViewerModel.addListDataListener(new MessageViewListener());
-        JPanel buttonPanel = new JPanel();
         messageList = new JList(messageViewerModel);
         messageList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 setSelectedIndex(messageList.getSelectedIndex());
             }
         });
+        JScrollPane messageListPane = new JScrollPane(messageList);
+        messageListPane.setPreferredSize(new Dimension(210, 350));
+
         messageView = new JTextArea(15, 30);
         messageView.setWrapStyleWord(true);
-        JScrollPane messageListPanel = new JScrollPane(messageList);
-        JScrollPane messageViewPanel = new JScrollPane(messageView);
-        messageListPanel.setPreferredSize(new Dimension(450, 110));
-        messageViewPanel.setPreferredSize(new Dimension(450, 110));
+        JScrollPane messageViewPane = new JScrollPane(messageView);
+        messageViewPane.setPreferredSize(new Dimension(610, 350));
+
         JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 messageViewerModel.clear();
             }
         });
+        JButton hideButton = new JButton("Hide");
+        hideButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                MessageViewer.this.setVisible(false);
+                Gui.getInstance().updateMessageViewerStatus(); // TODO: clean up this hack somehow
+            }
+        });
+        JPanel buttonPanel = new JPanel();
         buttonPanel.add(clearButton);
-        getContentPane().add(messageListPanel, BorderLayout.WEST);
-        getContentPane().add(messageViewPanel, BorderLayout.EAST);
+        buttonPanel.add(hideButton);
+
+        getContentPane().add(messageListPane, BorderLayout.WEST);
+        getContentPane().add(messageViewPane, BorderLayout.EAST);
         getContentPane().add(buttonPanel, BorderLayout.SOUTH);
+
         pack();
     }
 
