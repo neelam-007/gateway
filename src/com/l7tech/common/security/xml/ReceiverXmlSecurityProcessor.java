@@ -91,12 +91,12 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
             for (Iterator ei = elementMatches.iterator(); ei.hasNext();) {
                 Element targetElement = (Element) ei.next();
 
-                List signedElements = getSigningTokens(targetElement);
-                if (signedElements == null || signedElements.size() < 1)
+                List elementSigningTokens = getSigningTokens(targetElement);
+                if (elementSigningTokens == null || elementSigningTokens.size() < 1)
                     return Result.policyViolation(new SecurityProcessorException("Element " +
                                                                                  targetElement.getLocalName() +
                                                                                  " was not signed"));
-                signingTokens.addAll(signedElements);
+                signingTokens.addAll(elementSigningTokens);
             }
 
             if (elementSecurity.isEncryption() && cryptMatches != null) {
@@ -145,7 +145,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
         for (int si = 0; si < elementsThatWereSigned.length; si++) {
             WssProcessor.SignedElement signedElement = elementsThatWereSigned[si];
             if (XmlUtil.isElementAncestor(element, signedElement.asElement()))
-                signingTokens.add(signedElement);
+                signingTokens.add(signedElement.getSigningSecurityToken());
         }
         return signingTokens;
     }
