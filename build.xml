@@ -10,8 +10,14 @@
     <!-- as the file name says -->
     <property file="${src.root}/etc/ssg.version"/>
 
-    <!-- configuration defaults (dev build only) -->
+    <!-- override configuration with user properties -->
     <property file="${user.home}/build.properties"/>
+
+    <!--
+      ** Set default build properties
+      ** Properties that were not specified in user properties
+    -->
+    <property file="${src.root}/etc/default_build.properties"/>
 
     <!-- where the builds go -->
     <property name="dist.build.home" value="${src.root}/dist"/>
@@ -25,8 +31,6 @@
     <!-- ear not used
       <property name="ear"        value="${app.name}.ear"/>
     -->
-
-
 
     <!-- project classpath -->
     <path id="project.class.path">
@@ -353,12 +357,30 @@
     <!--
       ** main compile target
       -->
-    <target name="compile" depends="prepare" unless="compile.pattern">
+    <target name="compile" depends="prepare, configure_properties" unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
             deprecation="on" depend="on" verbose="no">
             <classpath refid="project.class.path"/>
         </javac>
     </target>
+
+     <!--
+      ** token replacement target.
+      ** This should be done ONLY for non distribution builds.
+      -->
+    <target name="configure_properties" unless="dist.build">
+        <echo message="The database url is '${database.connection.url}'"/>
+        <echo message="The database url is '${database.user}'"/>
+        <echo message="The database url is '${database.password}'"/>
+
+        <replace file="${build.classes}/hibernate.properties"
+            token="DB_URL" value="${database.connection.url}"/>
+        <replace file="${build.classes}/hibernate.properties"
+            token="DB_USER" value="${database.user}"/>
+        <replace file="${build.classes}/hibernate.properties"
+            token="DB_PASSWORD" value="${database.password}"/>
+    </target>
+
 
     <!-- ** main compile target -->
     <target name="compile-tests" depends="compile">
