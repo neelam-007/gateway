@@ -262,9 +262,11 @@ public class IdentityProviderDialog extends JDialog {
             providerTypesCombo.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
             providerTypesCombo.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    IdentityProviderType ipt =
-                      (IdentityProviderType)providerTypesCombo.getSelectedItem();
-                    if (ipt == null) return;
+                    Object o = providerTypesCombo.getSelectedItem();
+                    IdentityProviderType ipt = null;
+                    if (o instanceof IdentityProviderType) {
+                       ipt = (IdentityProviderType)o;
+                    }
                     selectProvidersPanel(ipt);
                 }
             });
@@ -284,12 +286,14 @@ public class IdentityProviderDialog extends JDialog {
     }
 
     /**
-     * select the provider panel for the provider type
+     * select the provider panel for the provider type, if null
+     * reset the form
      */
     private void selectProvidersPanel(IdentityProviderType ip) {
         providersPanel.removeAll();
         providersPanel.setLayout(new BorderLayout());
         boolean found = false;
+        providerSettingsPanel = null;
         if (ip == IdentityProviderType.LDAP) {
             providerSettingsPanel = getLdapPanel(iProvider);
             providersPanel.add(providerSettingsPanel);
