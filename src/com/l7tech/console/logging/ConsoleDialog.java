@@ -17,30 +17,26 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.io.File;
 
 /**
  * This class implements a frame that displays the applicaiton
  * log.
- * todo: change the functiona;ity is so it maps over the log output file.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 
 public class ConsoleDialog extends JFrame {
 
-    private static ConsoleDialog instance = null;
-
-    public static synchronized ConsoleDialog getInstance() {
-        if (instance != null) return instance;
-        instance = new ConsoleDialog();
-        return instance;
-    }
-
+    private File logFile;
 
     private JTextArea logTextArea;
 
-    private ConsoleDialog() {
+    public ConsoleDialog(File file) {
         super("Manager Log");
-
+        if (file == null) {
+            throw new IllegalArgumentException("file == null");
+        }
+        logFile = file;
         logTextArea = new JTextArea();
         logTextArea.setEditable(false);
         JScrollPane scroller = new JScrollPane();
@@ -56,9 +52,7 @@ public class ConsoleDialog extends JFrame {
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                /* dispose();
-                instance = null;*/
-                hide();
+                dispose();
             }
         });
         pack();
@@ -75,7 +69,7 @@ public class ConsoleDialog extends JFrame {
         Dictionary table = new Hashtable();
 
         Level dl = Level.INFO;
-        Handler handler = DefaultHandler.getInstalledHandler();
+        Handler handler = null;
 
         if (handler != null) {
             dl = handler.getLevel();
@@ -201,7 +195,7 @@ public class ConsoleDialog extends JFrame {
      * @param l the new level
      */
     private void adjustHandlerLevel(Level l) {
-        Handler handler = DefaultHandler.getInstalledHandler();
+        Handler handler = null;
         if (handler != null) {
             handler.setLevel(l);
         }

@@ -2,6 +2,8 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ConsoleDialog;
 
+import java.io.File;
+
 
 /**
  * The <code>ConsoleAction</code> shows the application console
@@ -39,6 +41,6 @@ public class ConsoleAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        ConsoleDialog.getInstance().show();
+        //new ConsoleDialog(new File("find the ssm.log"));
     }
 }

@@ -1,7 +1,5 @@
 package com.l7tech.console.util;
 
-import com.l7tech.console.jnlp.JNLPPreferences;
-
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeSupport;
@@ -53,12 +51,13 @@ public class Preferences extends PropertyChangeSupport {
      */
     public static Preferences getPreferences() {
         if (prefs != null) return prefs;
+        prefs = new Preferences();
 
-        if (null == System.getProperties().getProperty("javawebstart.version")) {
-            prefs = new Preferences();
-        } else { // app is invoked from JWS
-            prefs = new JNLPPreferences();
-        }
+//        if (null == System.getProperties().getProperty("javawebstart.version")) {
+//            prefs = new Preferences();
+//        } else { // app is invoked from JWS
+//            prefs = new JNLPPreferences();
+//        }
         prefs.setupDefaults();
         try {
             prefs.initialize();
