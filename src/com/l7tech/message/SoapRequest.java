@@ -1,6 +1,7 @@
 package com.l7tech.message;
 
 import com.l7tech.common.RequestId;
+import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -58,6 +59,14 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
 
         return soap.booleanValue();
     }
+
+    public WssProcessor.ProcessorResult getWssProcessorOutput() {
+            return wssRes;
+        }
+
+        public void setWssProcessorOutput(WssProcessor.ProcessorResult res) {
+            wssRes = res;
+        }
 
     /**
      * the new valid xml payload for this request
@@ -182,4 +191,6 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     /** The cached XML document. */
     protected String _requestXml;
     protected LoginCredentials _principalCredentials;
+    
+    protected WssProcessor.ProcessorResult wssRes = null;
 }
