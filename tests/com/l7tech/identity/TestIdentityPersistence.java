@@ -21,7 +21,6 @@ public class TestIdentityPersistence extends TestCase {
      */
     public static Test suite() throws Exception {
         TestSuite suite = new TestSuite(TestIdentityPersistence.class);
-        suite.addTest( new TestIdentityProviderConfigManager() );
         return suite;
     }
 
