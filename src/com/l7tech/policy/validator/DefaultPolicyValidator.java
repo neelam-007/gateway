@@ -3,6 +3,7 @@ package com.l7tech.policy.validator;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 
@@ -82,6 +83,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 processCredentialSource(a);
             } else if (isAccessControl(a)) {
                 processAccessControl(a);
+            } else if (isRouting(a)) {
+                processRouting(a);
             } else {
                 processUnknown(a);
             }
@@ -93,6 +96,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
                   new PolicyValidatorResult.Error(a, "Access control without credentials.", null)
                 );
             }
+
+            if (seenRouting) {
+                result.addWarning(
+                  new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
+                );
+            }
+
             seenAccessControl = true;
         }
 
@@ -100,7 +110,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
             if (seenAccessControl) {
                 result.addError(
                   new PolicyValidatorResult.
-                  Error(a, "Access control already set, this assertion might be ignored.", null));
+                  Error(a, "Access control already set, this assertion might get ignored.", null));
+            }
+
+            if (seenRouting) {
+                result.addWarning(
+                  new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
+                );
             }
             seenCredentials = true;
         }
@@ -109,14 +125,23 @@ public class DefaultPolicyValidator extends PolicyValidator {
             if (seenAccessControl ||
               seenCredentials ||
               seenRouting) {
-                result.addError(
-                  new PolicyValidatorResult.Error(a, "The assertion might be ignored.", null)
+                result.addWarning(
+                  new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
                 );
             }
             seenPreconditions = true;
         }
 
+        private void processRouting(Assertion a) {
+            seenRouting = true;
+        }
+
+
         private void processUnknown(Assertion a) {
+        }
+
+        private boolean isRouting(Assertion a) {
+            return a instanceof RoutingAssertion;
         }
 
         private boolean isAccessControl(Assertion a) {

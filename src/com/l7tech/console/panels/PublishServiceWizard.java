@@ -208,7 +208,6 @@ public class PublishServiceWizard extends JDialog {
                         ByteArrayOutputStream bo = new ByteArrayOutputStream();
                         WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
                     }
-
                     long oid =
                       Registry.getDefault().getServiceManager().save(saBundle.getService());
                     EntityHeader header = new EntityHeader();

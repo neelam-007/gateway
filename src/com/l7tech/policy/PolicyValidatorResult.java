@@ -14,6 +14,7 @@ import java.util.List;
  */
 public class PolicyValidatorResult {
     private List errors = new ArrayList();
+    private List warnings = new ArrayList();
 
     /**
      * Returns the number of the errors that were collected
@@ -21,9 +22,20 @@ public class PolicyValidatorResult {
      *
      * @return the number of errors
      */
-    public int getErroCount() {
+    public int getErrorCount() {
         return errors.size();
     }
+
+    /**
+     * Returns the number of the warnings that were collected
+     * in this policy validator result.
+     *
+     * @return the number of warning
+     */
+    public int getWarningCount() {
+        return errors.size();
+    }
+
 
     /**
      * Returns the unmodifiable collection of errors collected.
@@ -32,6 +44,15 @@ public class PolicyValidatorResult {
      */
     public List getErrors() {
         return Collections.unmodifiableList(errors);
+    }
+
+    /**
+     * Returns the unmodifiable collection of warnings collected.
+     *
+     * @return the <code>List</code> of warninigs
+     */
+    public List getWarnings() {
+        return Collections.unmodifiableList(warnings);
     }
 
     /**
@@ -44,15 +65,25 @@ public class PolicyValidatorResult {
     }
 
     /**
+     * Add the warning to this validator result.
+     *
+     * @param w the warning to add
+     */
+    public void addWarning(Warning w) {
+        warnings.add(w);
+    }
+
+
+    /**
      * The class represents the policy validation error
      * todo: add warning and info levels
      */
-    public static class Error {
+    private static class Message {
         private Assertion assertion;
         private String message;
         private Throwable throwable;
 
-        public Error(Assertion erroAssertion, String message, Throwable throwable) {
+        public Message(Assertion erroAssertion, String message, Throwable throwable) {
             this.assertion = erroAssertion;
             this.message = message;
             this.throwable = throwable;
@@ -70,5 +101,17 @@ public class PolicyValidatorResult {
             return throwable;
         }
 
+    }
+
+    public static class Error extends Message {
+        public Error(Assertion erroAssertion, String message, Throwable throwable) {
+            super(erroAssertion, message, throwable);
+        }
+    }
+
+    public static class Warning extends Message {
+        public Warning(Assertion erroAssertion, String message, Throwable throwable) {
+            super(erroAssertion, message, throwable);
+        }
     }
 }

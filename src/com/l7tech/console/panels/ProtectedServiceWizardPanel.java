@@ -106,7 +106,8 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         PublishServiceWizard.ServiceAndAssertion
           collect = (PublishServiceWizard.ServiceAndAssertion)settings;
         if (!anonymousAccessCheckBox.isSelected()) {
-            collect.setRoutingAssertion(null);
+            collect.setRoutingAssertion(new RoutingAssertion());
+            return;
         }
 
         RoutingAssertion ra =

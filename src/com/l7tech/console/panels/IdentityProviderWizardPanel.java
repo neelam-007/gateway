@@ -12,12 +12,6 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.wss.WssClientCert;
-import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
@@ -30,7 +24,9 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
 
 /**
@@ -420,6 +416,8 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         if (!allAssertions.isEmpty()) {
             allAssertions.add(new OneOrMoreAssertion(identityAssertions));
             collect.setAssertion(new AllAssertion(allAssertions));
+        } else {
+            collect.setAssertion(new AllAssertion());
         }
     }
 

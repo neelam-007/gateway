@@ -121,7 +121,15 @@ public class PolicyEditorPanel extends JPanel {
                           appendToMessageArea("Assertion : " +
                             pe.getAssertion().getClass() + " Error :" + pe.getMessage());
                       }
-                      if (result.getErrors().isEmpty()) {
+                      for (Iterator iterator = result.getWarnings().iterator();
+                           iterator.hasNext();) {
+                          PolicyValidatorResult.Warning pe =
+                            (PolicyValidatorResult.Warning)iterator.next();
+                          appendToMessageArea("Assertion : " +
+                            pe.getAssertion().getClass() + " Warning :" + pe.getMessage());
+                      }
+
+                      if (result.getErrors().isEmpty() && result.getWarnings().isEmpty()) {
                           appendToMessageArea("Policy validated ok.");
                       }
                   }
