@@ -283,15 +283,26 @@
 
         </war>
         <!-- the client proxy jar -->
-        <jar jarfile="${build.dir}/ClientProxy.jar" manifest="${src.root}/etc/ClientProxy.mf">
+        <jar jarfile="${build.dir}/Agent.jar" manifest="${src.root}/etc/Agent.mf">
             <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/**"/> <!-- Well that was easy enough! -->
+                <include name="com/l7tech/proxy/**/*"/>
+                <include name="com/l7tech/common/**/*"/>
+                <include name="com/l7tech/policy/**/*"/>
             </fileset>
         </jar>
         <!-- the console jar -->
-        <jar jarfile="${build.dir}/ManagementConsole.jar" manifest="${src.root}/etc/ManagementConsole.mf">
+        <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/**"/> <!-- Well that was easy enough! -->
+                <include name="com/l7tech/adminws/**/*"/>
+                <include name="com/l7tech/common/**/*"/>
+                <include name="com/l7tech/console/**/*"/>
+                <include name="com/l7tech/identity/**/*"/>
+                <include name="com/l7tech/jini/**/*"/>
+                <include name="com/l7tech/logging/**/*"/>
+                <include name="com/l7tech/message/**/*"/>
+                <include name="com/l7tech/objectmodel/**/*"/>
+                <include name="com/l7tech/policy/**/*"/>
+                <include name="com/l7tech/service/**/*"/>
             </fileset>
         </jar>
     </target>
@@ -348,7 +359,7 @@
 
 
             <fileset dir="${src.root}/src">
-                <include name="com/l7tech/proxy/resources/*"/>
+                <include name="com/l7tech/proxy/resources/**"/>
             </fileset>
 
             <fileset dir="${src.root}/src">
@@ -744,8 +755,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <echo>Setting version in Nullsoft Installer source files to ${build.version}</echo>
         <replaceregexp match='define MUI_VERSION ".*"' replace='define MUI_VERSION "${build.version}"'>
             <fileset dir="${src.root}">
-                <include name="installer/proxy/win32/ClientProxy.nsi"/>
-                <include name="installer/console/win32/ManagementConsole.nsi"/>
+                <include name="installer/proxy/win32/Agent.nsi"/>
+                <include name="installer/console/win32/Manager.nsi"/>
             </fileset>
         </replaceregexp>
 
