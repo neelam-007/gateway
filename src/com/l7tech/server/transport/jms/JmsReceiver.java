@@ -34,7 +34,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
     private static final int MAXIMUM_OOPSES = 5;
     private static final long RECEIVE_TIMEOUT = 5000L;
     public static final int OOPS_RETRY = 5000; // Five seconds
-    public static final int OOPS_SLEEP = 5 * 60 * 1000; // Five minutes
+    public static final int OOPS_SLEEP = 1 * 60 * 1000; // One minute
 
     // Persistence stuff
     private final JmsReplyType _replyType;
