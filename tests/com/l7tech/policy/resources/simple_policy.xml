@@ -132,6 +132,8 @@
                 </RequestSwAAssertion>
                 <SamlSecurity/>
                 <AuditAssertion>
+                    <SaveRequest booleanValue="false"/>
+                    <SaveResponse booleanValue="false"/>
                     <Level stringValue="WARNING"/>
                 </AuditAssertion>
                 <CustomAssertion>
