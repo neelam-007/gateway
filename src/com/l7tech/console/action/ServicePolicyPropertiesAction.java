@@ -14,7 +14,7 @@ import com.l7tech.service.PublishedService;
 import javax.swing.*;
 
 /**
- * The <code>UserPropertiesAction</code> edits the user entity.
+ * The <code>ServicePolicyPropertiesAction</code> invokes the.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
@@ -33,7 +33,7 @@ public class ServicePolicyPropertiesAction extends NodeAction {
     }
 
     /**
-     * @return the aciton description
+     * @return the action description
      */
     public String getDescription() {
         return "View/edit service policy assertions";
@@ -62,7 +62,7 @@ public class ServicePolicyPropertiesAction extends NodeAction {
                       WorkSpacePanel wpanel =
                         windowManager.getCurrentWorkspace();
                       PublishedService svc = ((ServiceNode)node).getPublishedService();
-                      PolicyTreeModel model = new PolicyTreeModel(svc.rootAssertion());
+                      PolicyTreeModel model = PolicyTreeModel.make(svc);
                       JTree tree = windowManager.getPolicyTree();
                       tree.setModel(model);
                       tree.setName(svc.getName());

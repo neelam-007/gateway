@@ -67,7 +67,7 @@ public class SavePolicyAction extends BaseAction {
             throw new IllegalStateException("no node specified");
         }
         try {
-            JTree tree = (JTree) WindowManager.getInstance().getComponent(MainWindow.SERVICES_TREE);
+            JTree tree = WindowManager.getInstance().getPolicyTree();
             PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
             PublishedService svc = model.getService();
             Assertion rootAssertion = ((AssertionTreeNode)node.getRoot()).asAssertion();
