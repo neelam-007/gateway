@@ -139,12 +139,6 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
             throw new DeleteException("this type of config cannot be deleted");
         }
         try {
-            IdentityProvider prov = IdentityProviderFactory.makeProvider(identityProviderConfig);
-            if (prov instanceof LdapIdentityProviderServer) {
-                // This works for MSAD too, it's a subclass of LDAP
-                LdapIdentityProviderServer ldapProvider = (LdapIdentityProviderServer)prov;
-                ldapProvider.invalidate();
-            }
             IdentityProviderFactory.dropProvider(identityProviderConfig);
             _manager.delete(getContext(), identityProviderConfig);
         } catch (SQLException se) {
