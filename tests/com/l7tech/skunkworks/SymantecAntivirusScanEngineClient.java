@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.text.MessageFormat;
 
 /**
@@ -35,10 +34,78 @@ public class SymantecAntivirusScanEngineClient {
     private static final Logger logger =  Logger.getLogger(SymantecAntivirusScanEngineClient.class.getName());
     private static final String SCAN_REQ = "RESPMOD icap://{0}:{1}/AVSCAN?action=SCAN ICAP/1.0\r\n";
     private static final String DEF_HEADER = "Content-Type: application/octet-stream\r\n\r\n";
-    private  static final int TIMEOUT = 500; // in ms. this is used for both server connection and reading responses
+    private  static final int TIMEOUT = 500; // in ms. this is used for server connection
     private String scannerHostName;
     private Integer scannerPort;
     private static ThreadLocal socketHolder = new ThreadLocal();
+
+    /**
+     * Scan all message parts individually.
+     *
+     * @param msg the message to scan
+     * @return a response from the scan engine server for each part in this message. these response can be
+     * interpreted with a call to savseResponseIndicateInfection()
+     */
+    public SAVScanEngineResponse[] scan(Message msg)  throws IOException, UnknownHostException, NoSuchPartException {
+        ArrayList res = new ArrayList();
+        for (PartIterator i = msg.getMimeKnob().getParts(); i.hasNext();) {
+            PartInfo pi = i.next();
+            InputStream is = pi.getInputStream(false);
+            String headers = "Content-Type: " + pi.getContentType().getFullValue() + "\r\n\r\n";
+            res.add(scan(headers.getBytes(), HexUtils.slurpStream(is)));
+        }
+        return (SAVScanEngineResponse[])res.toArray(new SAVScanEngineResponse[res.size()]);
+    }
+
+    /**
+     * Interpret a response from the sav scan engine (figure out whether the scan detected anything nasty).
+     *
+     * The following headers typically indicate infection.
+     *
+     * X-Infection-Found: Type=0; Resolution=0; Threat=EICAR Test String;
+     * X-Violations-Found: 1
+     * 	blah2092302392
+     * 	EICAR Test String
+     * 	11101
+     * 	0
+     * @return true means savse is saying there is infection
+     */
+    public boolean savseResponseIndicateInfection(SAVScanEngineResponse parsedResponse) {
+        if (parsedResponse.headers == null) {
+            logger.warning("this parsed response does not contain headers, infection cannot be determined");
+            throw new RuntimeException("unexpected response format. " + parsedResponse); // todo, special exception type
+        }
+        String str = (String)parsedResponse.headers.get("X-Infection-Found");
+        if (str != null && str.length() > 0) {
+            logger.warning("Infection detected - X-Infection-Found: " + str);
+            return true;
+        }
+        str = (String)parsedResponse.headers.get("X-Violations-Found");
+        if (str != null && str.length() > 0) {
+            logger.warning("Infection detected - X-Violations-Found: " + str);
+            return true;
+        }
+
+        if (parsedResponse.statusCode == 204) {
+            return false;
+        }
+
+        logger.warning("Unexpected return code: " + parsedResponse.statusString);
+        // todo, some sort of 'maybe infected' return code
+        return false;
+    }
+
+    public String getSavScanEngineOptions() throws IOException, UnknownHostException {
+        String req = "OPTIONS icap://savse.com/avscan ICAP/1.0\r\n\r\n";
+        Socket socket = getOpenedSocket();
+        socket.getOutputStream().write(req.getBytes());
+        byte[] returnedfromsav = new byte[4096];
+        int read = readFromSocket(socket, returnedfromsav);
+        if (read <= 0) {
+            throw new IOException("server did not return anything");
+        }
+        return new String(returnedfromsav, 0, read);
+    }
 
     /**
      * We maintain one socket per thread (thread pool maintained by the container) and we leave them open.
@@ -49,7 +116,6 @@ public class SymantecAntivirusScanEngineClient {
             InetSocketAddress address = new InetSocketAddress(scannerHostName(), scannerPort());
             output = new Socket();
             output.connect(address, TIMEOUT);
-            output.setSoTimeout(TIMEOUT);
             socketHolder.set(output);
         }
         return output;
@@ -110,6 +176,9 @@ public class SymantecAntivirusScanEngineClient {
         int offset = 0;
         InputStream stream = s.getInputStream();
         do {
+            if (offset > 0 && endOfResponseDetected(buffer, offset)) {
+                break;
+            }
             try {
                 read = stream.read(buffer, offset, buffer.length-offset);
             } catch (SocketTimeoutException e) {
@@ -120,42 +189,55 @@ public class SymantecAntivirusScanEngineClient {
         return offset;
     }
 
-    /**
-     * Interpret a response from the sav scan engine (figure out whether the scan detected anything nasty).
-     *
-     * The following headers typically indicate infection.
-     *
-     * X-Infection-Found: Type=0; Resolution=0; Threat=EICAR Test String;
-     * X-Violations-Found: 1
-     * 	blah2092302392
-     * 	EICAR Test String
-     * 	11101
-     * 	0
-     * @return true means savse is saying there is infection
-     */
-    public boolean savseResponseIndicateInfection(SAVScanEngineResponse parsedResponse) {
-        if (parsedResponse.headers == null) {
-            logger.warning("this parsed response does not contain headers, infection cannot be determined");
-            throw new RuntimeException("unexpected response format. " + parsedResponse); // todo, special exception type
-        }
-        String str = (String)parsedResponse.headers.get("X-Infection-Found");
-        if (str != null && str.length() > 0) {
-            logger.warning("Infection detected - X-Infection-Found: " + str);
+    private boolean endOfResponseDetected(byte[] buffer, int length) throws IOException {
+        String responseSoFar = new String(buffer, 0, length);
+        // 1st, see if we are passed the http headers
+        int posEndOfHeaders = responseSoFar.indexOf("\r\n\r\n");
+        if (posEndOfHeaders < 1) return false;
+
+        // 2nd, see if there is an "Encapsulated" header
+        int encapStart = responseSoFar.indexOf("Encapsulated:");
+        if (encapStart < 1) {
+            // if we are passed the headers and there is no encapsulation, the response is complete
             return true;
         }
-        str = (String)parsedResponse.headers.get("X-Violations-Found");
-        if (str != null && str.length() > 0) {
-            logger.warning("Infection detected - X-Violations-Found: " + str);
-            return true;
+        int endOfEncapsulatedValue = responseSoFar.indexOf('\n', encapStart+13);
+        if (endOfEncapsulatedValue < 1) {
+            throw new IOException("Unexpected response format:" + responseSoFar);
+        }
+        if (responseSoFar.charAt(endOfEncapsulatedValue-1) == '\r') endOfEncapsulatedValue--;
+
+        int resHdrPos = responseSoFar.indexOf("res-hdr", encapStart+13);
+        if (resHdrPos > endOfEncapsulatedValue) {
+            resHdrPos = -1;
+        }
+        int resBodyPos = responseSoFar.indexOf("res-body", encapStart+13);
+        if (resBodyPos > endOfEncapsulatedValue) {
+            resBodyPos = -1;
         }
 
-        if (parsedResponse.statusCode == 204) {
+        // in case of infection, the Encapsulated value looks like "res-hdr=x, res-body=y\r\n..."
+        // when there is no infection, there is no Encapsulated header and the end of the
+        // headers is also the end of the response
+        // in case of options, Encapsulated contains "null-body=0\r\n..."
+        String blah = new String(buffer, encapStart+13, endOfEncapsulatedValue-(encapStart+13));
+        if (blah.indexOf("res-body=") >= 0) {
+            if (responseSoFar.endsWith("\r\n0\r\n\r\n")) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        if (blah.indexOf("res-hdr") >= 0) {
+            if (length > (posEndOfHeaders+4)) {
+                if (responseSoFar.indexOf("\r\n\r\n", posEndOfHeaders+4) > 0) {
+                    return true;
+                }
+            }
             return false;
         }
-
-        logger.warning("Unexpected return code: " + parsedResponse.statusString);
-        // todo, some sort of 'maybe infected' return code
-        return false;
+        return true;
     }
 
     public class SAVScanEngineResponse {
@@ -289,18 +371,6 @@ public class SymantecAntivirusScanEngineClient {
         return output;
     }
 
-    public String getSavScanEngineOptions() throws IOException, UnknownHostException {
-        String req = "OPTIONS icap://savse.com/avscan ICAP/1.0\r\n\r\n";
-        Socket socket = getOpenedSocket();
-        socket.getOutputStream().write(req.getBytes());
-        byte[] returnedfromsav = new byte[4096];
-        int read = readFromSocket(socket, returnedfromsav);
-        if (read <= 0) {
-            throw new IOException("server did not return anything");
-        }
-        return new String(returnedfromsav, 0, read);
-    }
-
     private synchronized String scannerHostName() {
         if (scannerHostName == null) {
             scannerHostName = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_ANTIVIRUS_HOST);
@@ -328,7 +398,6 @@ public class SymantecAntivirusScanEngineClient {
     }
 
     /**
-     *
      * @param headers a byte array containing the http headers of the payload to scan
      * @param payload the actual payload to scan
      * @return the result of the scan
@@ -345,16 +414,5 @@ public class SymantecAntivirusScanEngineClient {
         }
 
         return parseResponse(res);
-    }
-
-    public SAVScanEngineResponse[] scan(Message msg)  throws IOException, UnknownHostException, NoSuchPartException {
-        ArrayList res = new ArrayList();
-        for (PartIterator i = msg.getMimeKnob().getParts(); i.hasNext();) {
-            PartInfo pi = i.next();
-            InputStream is = pi.getInputStream(false);
-            String headers = "Content-Type: " + pi.getContentType().getFullValue() + "\r\n\r\n";
-            res.add(scan(headers.getBytes(), HexUtils.slurpStream(is)));
-        }
-        return (SAVScanEngineResponse[])res.toArray(new SAVScanEngineResponse[res.size()]);
     }
 }
