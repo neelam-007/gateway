@@ -29,11 +29,6 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
         delegate = new com.l7tech.logging.ws.LogAdminImpl();
     }
 
-    public String[] getSystemLog(int offset, int size) throws RemoteException {
-        return delegate.getSystemLog(offset, size);
-    }
-
-
     /**
      * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
      * up to the specified size.

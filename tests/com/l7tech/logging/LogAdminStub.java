@@ -12,13 +12,6 @@ import java.rmi.RemoteException;
 
 public class LogAdminStub implements LogAdmin {
 
-    public String[] getSystemLog(int offset, int size) throws RemoteException {
-        String[] logs = {};
-
-        // return nothing as this function is not used by Log Panel
-        return logs;
-    }
-
     public String[] getSystemLog(long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
 
         String[] logs = {

@@ -63,17 +63,6 @@ public class LogCLientTest extends TestCase {
         // put tear down code here
     }
 
-    public void testInvokeLogService() throws Exception {
-        LogAdmin log = (LogAdmin)Locator.getDefault().lookup(LogAdmin.class);
-        if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
-
-        String[] logs = log.getSystemLog(0, 50);
-        for (int i = 0; i < logs.length; i++) {
-            String s = logs[i];
-            System.out.println(s);
-        }
-    }
-
     /**
      * Test <code>AbstractLocatorTest</code> main.
      */

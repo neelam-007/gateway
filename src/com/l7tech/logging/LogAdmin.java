@@ -10,8 +10,6 @@ import java.rmi.RemoteException;
  * @version $Revision$, $Date$
  */
 public interface LogAdmin extends Remote {
-    String[] getSystemLog(int offset, int size) throws RemoteException;
-
     /**
      * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
      * up to the specified size.

@@ -23,11 +23,6 @@ import java.util.logging.Logger;
 public class LogAdminImpl implements LogAdmin {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/loggingAdmin";
 
-    public String[] getSystemLog(int offset, int size) throws RemoteException {
-        LogRecord[] records = LogManager.getInstance().getRecorded(offset, size);
-        return logRecordsToStrings(records);
-    }
-
     /**
      * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
      * up to the specified size.
