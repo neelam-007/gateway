@@ -8,6 +8,7 @@ package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
 import com.l7tech.identity.fed.VirtualGroup;
+import com.l7tech.identity.fed.FederatedGroupMembership;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -181,18 +182,29 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     /**
      * Delete all groups of the identity provider given the identity provider Id
      *
+     * Only apply to Federated Identity Provider
+     *
      * Must be called in a transaction!
      * @param ipoid  The identity provider id
      * @throws DeleteException
      * @throws ObjectNotFoundException
      */
     public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
-        StringBuffer hql = new StringBuffer("FROM ");
-        hql.append(getTableName()).append(" IN CLASS ").append(getImpClass());
-        hql.append(" WHERE provider_oid = ?");
+        StringBuffer hqlgroup = new StringBuffer("FROM ");
+        hqlgroup.append(getTableName()).append(" IN CLASS ").append(getImpClass());
+        hqlgroup.append(" WHERE provider_oid = ?");
+
+        StringBuffer hqlgroupmember = new StringBuffer("FROM ");
+        hqlgroupmember.append(getTableName()).append(" IN CLASS ").append(FederatedGroupMembership.class.getName());
+        hqlgroupmember.append(" WHERE provider_oid = ?");
 
         try {
-            getContext().getSession().delete(hql.toString(), new Long(ipoid), Hibernate.LONG);
+            // delete all group members
+            getContext().getSession().delete(hqlgroupmember.toString(), new Long(ipoid), Hibernate.LONG);
+
+            // delete all groups
+            getContext().getSession().delete(hqlgroup.toString(), new Long(ipoid), Hibernate.LONG);
+
         } catch ( SQLException e ) {
             logger.log( Level.SEVERE, e.getMessage(), e );
             throw new DeleteException(e.getMessage(), e);
@@ -204,6 +216,8 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     /**
      * Delete all virutal groups of the identity provider given the identity provider Id
+     *
+     * Only apply to Federated Identity Provider
      *
      * Must be called in a transaction!
      * @param ipoid  The identity provider id
