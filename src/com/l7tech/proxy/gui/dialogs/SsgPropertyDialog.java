@@ -728,6 +728,17 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setSavePasswordToDisk(false);
                 ssg.setChainCredentialsFromClient(false);
 
+                // also delete the client cert
+                try {
+                    SsgKeyStoreManager.deleteClientCert(ssg);
+                } catch (Exception e) {
+                    log.log(Level.SEVERE, "Unable to delete client certificate", e);
+                        e.printStackTrace();
+                        Gui.errorMessage("Unable to delete client certificate",
+                                         "Unable to delete client certificate for Gateway " + ssgName(),
+                                         e);
+                }
+
             } else {
                 ssg.setTrustedGatewayId(0);
 
