@@ -6,8 +6,8 @@
 
 package com.l7tech.policy.wsp;
 
-import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.security.xml.ElementSecurity;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -22,7 +22,6 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
@@ -448,7 +447,7 @@ class WspConstants {
     }
 
     private static class ArrayTypeMapping extends ComplexTypeMapping {
-        Object[] prototype;
+        private final Object[] prototype;
 
         public ArrayTypeMapping(Object[] prototype, String externalName) {
             super(prototype.getClass(), externalName);

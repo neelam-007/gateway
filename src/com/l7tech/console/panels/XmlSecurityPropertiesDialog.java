@@ -468,19 +468,19 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         es.setKeyLength(sp.getKeyLength());
         BindingOperation bn = sp.getOperation();
         if (bn != null) {
-            es.setPreconditionXPath(xpathForOperation(bn));
+            es.setPreconditionXpath(xpathForOperation(bn));
         }
 
         XpathExpression xe = new XpathExpression(sp.getXpathExpression(), namespaces);
-        es.setxPath(xe);
+        es.setElementXpath(xe);
         return es;
     }
 
     private SecuredMessagePart toSecureMessagePart(ElementSecurity es) {
         SecuredMessagePart sp = new SecuredMessagePart();
 
-        if (es.getPreconditionXPath() != null) {
-            String expression = es.getPreconditionXPath().getExpression();
+        if (es.getPreconditionXpath() != null) {
+            String expression = es.getPreconditionXpath().getExpression();
             String opname = null;
             int index = expression.lastIndexOf(":");
             if (index != -1) {
@@ -503,14 +503,14 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         }
 
         sp.setAlgorithm(es.getCipher());
-        sp.setXpathExpression(es.getxPath().getExpression());
+        sp.setXpathExpression(es.getElementXpath().getExpression());
         sp.setEncrypt(es.isEncryption());
         sp.setKeyLength(es.getKeyLength());
         return sp;
     }
 
     private boolean isEnvelopeAllOperations(ElementSecurity[] es) {
-        return (es.length == 1 && SoapUtil.SOAP_ENVELOPE_XPATH.equals(es[0].getxPath().getExpression()));
+        return (es.length == 1 && SoapUtil.SOAP_ENVELOPE_XPATH.equals(es[0].getElementXpath().getExpression()));
     }
 
     /**

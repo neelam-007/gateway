@@ -13,6 +13,8 @@ import org.w3c.dom.Element;
 import java.io.IOException;
 import java.security.*;
 import java.util.List;
+import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
 /**
@@ -78,72 +80,71 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
             boolean envelopeProcessed = false;
             boolean preconditionMatched = false;
 
+            // Process operations with encryption first
+            List deferred = new LinkedList(); // defer processing of sign-only ElementSecurity
             for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
                 ElementSecurity elementSecurity = elements[i];
+
+                if (!elementSecurity.isEncryption()) {
+                    // Defer this operation until all crypto guys are done
+                    deferred.add(elementSecurity);
+                    continue;
+                }
+
                 envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
-                // XPath precondition match?
-                XpathExpression xpath = elementSecurity.getPreconditionXPath();
-                if (xpath != null) {
-                    List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
-                    if (nodes.isEmpty()) {
-                        logger.fine("The XPath precondition result is empty '" + xpath.getExpression() + "' skipping");
-                        continue;
-                    } else {
-                        preconditionMatched = true;
-                    }
-                }
+                preconditionMatched = preconditionMatches(elementSecurity, document);
+                if (!preconditionMatched)
+                    continue; // skip: there was a precondition and it failed
 
-                Element element = null;
-                xpath = elementSecurity.getxPath();
-                if (xpath != null) {
-                    List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
-                    if (nodes.isEmpty()) {
-                        final String message = "The XPath result is empty '" + xpath.getExpression() + "'";
-                        String logmessage = message + "\nMessage is\n" + XmlUtil.documentToString(document);
-                        logger.warning(logmessage);
-                        throw new SecurityProcessorException(message);
-                    }
-                    Object o = nodes.get(0);
-                    if ( o instanceof Element ) {
-                        element = (Element)o;
-                    } else {
-                        final String message = "The XPath query resulted in something other than a single element '" + xpath.getExpression() + "'";
-                        logger.warning(message);
-                        throw new SecurityProcessorException(message);
-                    }
-                } else {
-                    element = document.getDocumentElement();
-                    envelopeProcessed = true; //signal to ignore everything else. Should scream if more lements exist?
-                }
+                FoundElement foundElement = findXpathElement(document, elementSecurity);
+                Element element = foundElement.found;
+                XpathExpression elementXpath = foundElement.expression;
+                if (foundElement.envelopeProcessed)
+                    envelopeProcessed = true;
 
-                if (elementSecurity.isEncryption()) {
-                    if (element.hasChildNodes()) {
-                        check(elementSecurity);
-                        Element encElement = element;
-                        if (envelopeProcessed) { // kludge/legacy, to preserve the session elements in clear, encrypt body only
-                            encElement = SoapUtil.getBody(document);
-                            if (encElement == null) {
-                                logger.severe("Could not retrieve SOAP Body from the document \n" + XmlUtil.documentToString(document));
-                                throw new IOException("Could not retrieve SOAP Body from the document");
-                            }
+                // Do encryption, since it is now known that isEncryption() is true for this ElementSecurity
+                if (element.hasChildNodes()) {
+                    check(elementSecurity);
+                    Element encElement = element;
+                    if (envelopeProcessed) { // kludge/legacy, to preserve the session elements in clear, encrypt body only
+                        encElement = SoapUtil.getBody(document);
+                        if (encElement == null) {
+                            logger.severe("Could not retrieve SOAP Body from the document \n" + XmlUtil.documentToString(document));
+                            throw new IOException("Could not retrieve SOAP Body from the document");
                         }
-                        // we do above check to verify if the parameters are valid and everything is ready for encryption
-                        final String referenceId = ENC_REFERENCE + encReferenceIdSuffix;
-                        byte[] keyreq = encryptionKey.getEncoded();
-                        long sessId = session.getId();
-                        XmlMangler.encryptXml(encElement, keyreq, Long.toString(sessId), referenceId);
-                        ++encReferenceIdSuffix;
-                        logger.fine("encrypted element for XPath" + xpath.getExpression());
-                    } else {
-                        logger.warning("Encrypt requested XPath '" + xpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
                     }
+                    // we do above check to verify if the parameters are valid and everything is ready for encryption
+                    final String referenceId = ENC_REFERENCE + encReferenceIdSuffix;
+                    byte[] keyreq = encryptionKey.getEncoded();
+                    long sessId = session.getId();
+                    XmlMangler.encryptXml(encElement, keyreq, Long.toString(sessId), referenceId);
+                    ++encReferenceIdSuffix;
+                    logger.fine("encrypted element for XPath" + elementXpath.getExpression());
+                } else {
+                    logger.warning("Encrypt requested XPath '" + elementXpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
                 }
-                // dsig
-                final String referenceId = SIGN_REFERENCE + signReferenceIdSuffix;
-                SoapMsgSigner.signElement(document, element, referenceId, signerInfo.getPrivate(), signerInfo.getCertificateChain());
-                ++signReferenceIdSuffix;
-                logger.fine("signed element for XPath " + xpath.getExpression());
+
+                signReferenceIdSuffix = doSignElement(signReferenceIdSuffix, document, element, elementXpath);
             }
+
+            // Then, go back and do the signing-only operations
+            for (Iterator i = deferred.iterator(); i.hasNext();) {
+                ElementSecurity elementSecurity = (ElementSecurity)i.next();
+
+                envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
+                preconditionMatched = preconditionMatches(elementSecurity, document);
+                if (!preconditionMatched)
+                    continue; // skip: there was a precondition and it failed
+
+                FoundElement foundElement = findXpathElement(document, elementSecurity);
+                Element element = foundElement.found;
+                XpathExpression elementXpath = foundElement.expression;
+                if (foundElement.envelopeProcessed)
+                    envelopeProcessed = true;
+
+                signReferenceIdSuffix = doSignElement(signReferenceIdSuffix, document, element, elementXpath);
+            }
+
             return new Result(document, preconditionMatched, signerInfo.getCertificateChain());
         } catch (SignatureStructureException e) {
             SignatureException se = new SignatureException("Signing error");
@@ -156,6 +157,63 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
         } catch (JaxenException e) {
             throw new SecurityProcessorException("XPath error", e);
         }
+    }
+
+    private int doSignElement(int signId, Document document, Element element, XpathExpression elementXpath)
+            throws SignatureStructureException, XSignatureException {
+        // dsig
+        final String referenceId = SIGN_REFERENCE + signId;
+        SoapMsgSigner.signElement(document, element, referenceId, signerInfo.getPrivate(), signerInfo.getCertificateChain());
+        ++signId;
+        logger.fine("signed element for XPath " + elementXpath.getExpression());
+        return signId;
+    }
+
+    private static final class FoundElement {
+        private FoundElement(XpathExpression expression, Element found) {
+            this(expression, found, false);
+        }
+        private FoundElement(XpathExpression expression, Element found, boolean envelopeProcessed) {
+            this.expression = expression;
+            this.found = found;
+            this.envelopeProcessed = envelopeProcessed;
+        }
+        private final XpathExpression expression;
+        private final Element found;
+        private final boolean envelopeProcessed;
+    }
+
+    private FoundElement findXpathElement(Document document, ElementSecurity elementSecurity) throws JaxenException, IOException, SecurityProcessorException {
+        XpathExpression elementXpath = elementSecurity.getElementXpath();
+        if (elementXpath != null) {
+            List nodes = XpathEvaluator.newEvaluator(document, elementXpath.getNamespaces()).select(elementXpath.getExpression());
+            if (nodes.isEmpty()) {
+                final String message = "The XPath result is empty '" + elementXpath.getExpression() + "'";
+                String logmessage = message + "\nMessage is\n" + XmlUtil.documentToString(document);
+                logger.warning(logmessage);
+                throw new SecurityProcessorException(message);
+            }
+            Object o = nodes.get(0);
+            if ( o instanceof Element )
+                return new FoundElement(elementXpath, (Element)o);
+
+            final String message = "The XPath query resulted in something other than a single element '" + elementXpath.getExpression() + "'";
+            logger.warning(message);
+            throw new SecurityProcessorException(message);
+        } else {
+            return new FoundElement(elementXpath, document.getDocumentElement(), true);
+        }
+    }
+
+    /** @return TRUE if the xpath precondition matched; FALSE if it didn't; null if there was no precondition. */
+    private static boolean preconditionMatches(ElementSecurity elementSecurity, Document document) throws JaxenException {
+        XpathExpression xpath = elementSecurity.getPreconditionXpath();
+        if (xpath == null)
+            return true;
+        List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
+        if (nodes.isEmpty())
+            logger.fine("The XPath precondition result is empty '" + xpath.getExpression() + "' skipping");
+        return !nodes.isEmpty();
     }
 
     /**

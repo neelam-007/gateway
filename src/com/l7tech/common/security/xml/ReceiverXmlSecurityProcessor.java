@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
 class ReceiverXmlSecurityProcessor extends SecurityProcessor {
@@ -62,13 +64,20 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
         try {
             X509Certificate[] documentCertificates = null;
             boolean preconditionMatched = false;
-            for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
+            List deferred = new LinkedList(); // defer processing of operations involving encryption
+            for (int i = elements.length - 1; i >= 0 && !envelopeProcessed; i++) {
                 ElementSecurity elementSecurity = elements[i];
+
+                if (elementSecurity.isEncryption()) {
+                    deferred.add(elementSecurity);
+                    continue;
+                }
+
                 envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
                 if ( envelopeProcessed ) preconditionMatched = true;
 
                 // XPath precondition match?
-                XpathExpression xpath = elementSecurity.getPreconditionXPath();
+                XpathExpression xpath = elementSecurity.getPreconditionXpath();
                 if (xpath != null) {
                     List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
                     if (nodes.isEmpty()) {
@@ -80,7 +89,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
 
                 Element element = null;
-                xpath = elementSecurity.getxPath();
+                xpath = elementSecurity.getElementXpath();
                 if (xpath != null) {
                     List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
                     if (nodes.isEmpty()) {
@@ -111,6 +120,64 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
                 logger.fine("response message element decrypted");
             }
+
+            // Now do the deferred ones that had encryption
+            for (Iterator i = deferred.iterator(); i.hasNext();) {
+                ElementSecurity elementSecurity = (ElementSecurity)i.next();
+
+                if (elementSecurity.isEncryption()) {
+                    deferred.add(elementSecurity);
+                    continue;
+                }
+
+                envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
+                if ( envelopeProcessed ) preconditionMatched = true;
+
+                // XPath precondition match?
+                XpathExpression xpath = elementSecurity.getPreconditionXpath();
+                if (xpath != null) {
+                    List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
+                    if (nodes.isEmpty()) {
+                        logger.fine("The XPath precondition result is empty '" + xpath.getExpression() + "' skipping");
+                        continue;
+                    } else {
+                        preconditionMatched = true;
+                    }
+                }
+
+                Element element = null;
+                xpath = elementSecurity.getElementXpath();
+                if (xpath != null) {
+                    List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
+                    if (nodes.isEmpty()) {
+                        final String message = "The XPath result is empty '" + xpath.getExpression() + "'";
+                        String logmessage = message + "\nMessage is\n" + XmlUtil.documentToString(document);
+                        logger.warning(logmessage);
+                        throw new SecurityProcessorException(message);
+                    }
+                    element = (Element)nodes.get(0);
+                } else {
+                    element = document.getDocumentElement();
+                    envelopeProcessed = true; //signal to ignore everything else. Should scream if more elements exist?
+                }
+                // verifiy element signature
+
+                // verify that this cert is signed with the root cert of this ssg
+                documentCertificates = SoapMsgSigner.validateSignature(document, element);
+                logger.fine("signature of response message verified");
+
+                if (elementSecurity.isEncryption()) { //element security is required
+                    if (element.hasChildNodes()) {
+                        check(elementSecurity);
+                        XmlMangler.decryptXml(document, decryptionKey);
+                    } else {
+                        logger.warning("Encrypt requested XPath '" + xpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
+                    }
+
+                }
+                logger.fine("response message element decrypted");
+            }
+
             return new Result(document, preconditionMatched, documentCertificates);
         } catch (JaxenException e) {
             throw new SecurityProcessorException("XPath error", e);

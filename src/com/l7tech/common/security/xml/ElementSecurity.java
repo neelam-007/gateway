@@ -36,8 +36,8 @@ public class ElementSecurity implements Serializable {
      */
     public static final int DEFAULT_KEYBITS = 128;
 
-    private XpathExpression xPath;
-    private XpathExpression preconditionXPath;
+    private XpathExpression elementXpath;
+    private XpathExpression preconditionXpath;
     private boolean encryption;
     private String cipher = DEFAULT_CIPHER;
     private int keyLength = DEFAULT_KEYBITS;
@@ -63,8 +63,8 @@ public class ElementSecurity implements Serializable {
         this.encryption = encryption;
         this.cipher = cipher;
         this.keyLength = keyLength;
-        this.xPath = xpath;
-        this.preconditionXPath = precondition;
+        this.elementXpath = xpath;
+        this.preconditionXpath = precondition;
     }
 
     /**
@@ -73,17 +73,17 @@ public class ElementSecurity implements Serializable {
      *
      * @return the xpath expression, may be null
      */
-    public XpathExpression getxPath() {
-        return xPath;
+    public XpathExpression getElementXpath() {
+        return elementXpath;
     }
 
     /**
      * Set the new xpath expression
      *
-     * @param xPath the xpath expression value (or null)
+     * @param xpath the xpath expression value (or null)
      */
-    public void setxPath(XpathExpression xPath) {
-        this.xPath = xPath;
+    public void setElementXpath(XpathExpression xpath) {
+        this.elementXpath = xpath;
     }
 
     /**
@@ -92,17 +92,17 @@ public class ElementSecurity implements Serializable {
      *
      * @return the xpath conditional expression, may be null
      */
-    public XpathExpression getPreconditionXPath() {
-        return preconditionXPath;
+    public XpathExpression getPreconditionXpath() {
+        return preconditionXpath;
     }
 
     /**
      * Set the new precondition xpath expression
      *
-     * @param preconditionXPath the xpath expression value (or null)
+     * @param preconditionXpath the xpath expression value (or null)
      */
-    public void setPreconditionXPath(XpathExpression preconditionXPath) {
-        this.preconditionXPath = preconditionXPath;
+    public void setPreconditionXpath(XpathExpression preconditionXpath) {
+        this.preconditionXpath = preconditionXpath;
     }
 
     /**
@@ -170,9 +170,9 @@ public class ElementSecurity implements Serializable {
      * @return true if the element selects the SOAP envelope, false otherwise
      */
     public static boolean isEnvelope(ElementSecurity element) {
-        if (element == null || element.getxPath() == null) return false;
+        if (element == null || element.getElementXpath() == null) return false;
 
-        return SoapUtil.SOAP_ENVELOPE_XPATH.equals(element.getxPath().getExpression());
+        return SoapUtil.SOAP_ENVELOPE_XPATH.equals(element.getElementXpath().getExpression());
     }
 
     /**
@@ -182,8 +182,8 @@ public class ElementSecurity implements Serializable {
      * @return true if the element selects the SOAP Body, false otherwise
      */
     public static boolean isBody(ElementSecurity element) {
-        if (element == null || element.getxPath() == null) return false;
-        return SoapUtil.SOAP_BODY_XPATH.equals(element.getxPath().getExpression());
+        if (element == null || element.getElementXpath() == null) return false;
+        return SoapUtil.SOAP_BODY_XPATH.equals(element.getElementXpath().getExpression());
     }
 
 }
