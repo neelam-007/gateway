@@ -45,8 +45,8 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 _htxn.commit();
             }
             for (Iterator i = txListenerList.iterator(); i.hasNext();) {
-                ListenerData toto = (ListenerData)i.next();
-                toto.listener.postCommit(toto.data);
+                TransactionListener toto = (TransactionListener)i.next();
+                toto.postCommit();
             }
             txListenerList.clear();
         } catch ( SQLException se ) {
@@ -196,8 +196,8 @@ public class HibernatePersistenceContext extends PersistenceContext {
         try {
             if ( _htxn != null ) _htxn.rollback();
             for (Iterator i = txListenerList.iterator(); i.hasNext();) {
-                ListenerData toto = (ListenerData)i.next();
-                toto.listener.postRollback(toto.data);
+                TransactionListener toto = (TransactionListener)i.next();
+                toto.postRollback();
             }
             txListenerList.clear();
         } catch ( HibernateException he ) {
@@ -208,17 +208,9 @@ public class HibernatePersistenceContext extends PersistenceContext {
         }
     }
 
-    public void registerTransactionListener(TransactionListener listener, Object data)
+    public void registerTransactionListener(TransactionListener listener)
                                               throws TransactionException {
-        ListenerData listenermember = new ListenerData();
-        listenermember.listener = listener;
-        listenermember.data = data;
-        txListenerList.add(listenermember);
-    }
-
-    private class ListenerData {
-        public TransactionListener listener;
-        public Object data;
+        txListenerList.add(listener);
     }
 
     protected HibernatePersistenceManager _manager;

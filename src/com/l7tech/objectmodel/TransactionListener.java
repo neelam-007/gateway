@@ -14,13 +14,11 @@ package com.l7tech.objectmodel;
 public interface TransactionListener {
     /**
      * PersistenceContext will call this back once the transaction has successfully comitted
-     * @param data the object (if any) that was passed in registerTransactionListener
      */
-    void postCommit(Object data);
+    void postCommit();
 
     /**
      * PersistenceContext will call this back once the transaction has successfully rolledback
-     * @param data the object (if any) that was passed in registerTransactionListener
      */
-    void postRollback(Object data);
+    void postRollback();
 }

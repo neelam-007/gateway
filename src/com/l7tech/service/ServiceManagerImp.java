@@ -22,12 +22,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Manages PublishedService instances.  Note that this object has state, so it should be effectively a Singleton--only get one from the Locator!
+ * Manages PublishedService instances.
+ * Note that this object has state, so it should be effectively a Singleton--only get one from the Locator!
  *
  * @author alex
  * @version $Revision$
  */
-public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager, TransactionListener {
+public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager {
     public String resolveWsdlTarget(String url) throws RemoteException {
         throw new UnsupportedOperationException();
     }
@@ -91,8 +92,33 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
         // 3. update cache on callback
         try {
-            context.registerTransactionListener(this,
-                            new TransactionCallbackData(TransactionCallbackData.SAVE, service));
+            final long passedServiceId = service.getOid();
+
+            TransactionListener inlineListener = new TransactionListener() {
+                public void postCommit() {
+                    // get service. version property must be up-to-date
+                    PublishedService svcnow = null;
+                    try {
+                        svcnow = findByPrimaryKey(passedServiceId);
+                    } catch (FindException e) {
+                        svcnow = null;
+                        logger.log(Level.WARNING, "could not get service back", e);
+                    }
+                    if (svcnow != null) {
+                        try {
+                            ServiceCache.getInstance().cache(svcnow);
+                        } catch (InterruptedException e) {
+                            logger.log(Level.WARNING, "could not update cache", e);
+                        } catch (IOException e) {
+                            logger.log(Level.WARNING, "could not update cache", e);
+                        }
+                    }
+                }
+                public void postRollback() {
+                    // nothing
+                }
+            };
+            context.registerTransactionListener(inlineListener);
         } catch (TransactionException e) {
             String msg = "could not register for transaction callback";
             logger.log(Level.WARNING, msg, e);
@@ -132,7 +158,8 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
         // check version
         if (original.getVersion() != service.getVersion()) {
-            logger.severe("db service has version: " + original.getVersion() + ". requestor service has version: " + service.getVersion());
+            logger.severe("db service has version: " + original.getVersion() + ". requestor service has version: "
+                          + service.getVersion());
             throw new VersionException("the published service you are trying to update is no longer valid.");
         }
 
@@ -165,8 +192,32 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
         // update cache after commit
         try {
-            context.registerTransactionListener(this,
-                            new TransactionCallbackData(TransactionCallbackData.UPDATE, service));
+            final long passedServiceId = service.getOid();
+            TransactionListener inlineListener = new TransactionListener() {
+                public void postCommit() {
+                    // get service. version property must be up-to-date
+                    PublishedService svcnow = null;
+                    try {
+                        svcnow = findByPrimaryKey(passedServiceId);
+                    } catch (FindException e) {
+                        svcnow = null;
+                        logger.log(Level.WARNING, "could not get service back", e);
+                    }
+                    if (svcnow != null) {
+                        try {
+                            ServiceCache.getInstance().cache(svcnow);
+                        } catch (InterruptedException e) {
+                            logger.log(Level.WARNING, "could not update cache", e);
+                        } catch (IOException e) {
+                            logger.log(Level.WARNING, "could not update cache", e);
+                        }
+                    }
+                }
+                public void postRollback() {
+                    // nothing
+                }
+            };
+            context.registerTransactionListener(inlineListener);
         } catch (TransactionException e) {
             String msg = "could not register for transaction callback";
             logger.log(Level.WARNING, msg, e);
@@ -188,59 +239,25 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
 
         try {
-            context.registerTransactionListener(this,
-                            new TransactionCallbackData(TransactionCallbackData.DELETE, service));
+            final PublishedService deletedService = service;
+            TransactionListener inlineListener = new TransactionListener() {
+                public void postCommit() {
+                    try {
+                        ServiceCache.getInstance().removeFromCache(deletedService);
+                    } catch (InterruptedException e) {
+                        logger.log(Level.WARNING, "could not update cache", e);
+                    }
+                }
+                public void postRollback() {
+                    // nothing
+                }
+            };
+            context.registerTransactionListener(inlineListener);
         } catch (TransactionException e) {
             String msg = "could not register for transaction callback";
             logger.log(Level.WARNING, msg, e);
             throw new DeleteException(msg, e);
         }
-    }
-
-    public void postCommit(Object param) {
-        TransactionCallbackData data = null;
-        if (param != null && param instanceof TransactionCallbackData) {
-            data = (TransactionCallbackData)param;
-        } else {
-            logger.warning("transaction callback data of wrong type or null");
-        }
-        switch (data.transactionType) {
-            case TransactionCallbackData.DELETE:
-            {
-                try {
-                    ServiceCache.getInstance().removeFromCache(data.service);
-                } catch (InterruptedException e) {
-                    logger.log(Level.WARNING, "error removing from cache after commit", e);
-                }
-                break;
-            }
-            case TransactionCallbackData.SAVE:
-            case TransactionCallbackData.UPDATE:
-            {
-                try {
-                    // get service. version property must be up-to-date
-                    PublishedService svcnow = null;
-                    try {
-                        svcnow = findByPrimaryKey(data.service.getOid());
-                    } catch (FindException e) {
-                        svcnow = null;
-                        logger.log(Level.WARNING, "could not get service back", e);
-                    }
-                    if (svcnow != null) {
-                        ServiceCache.getInstance().cache(svcnow);
-                    }
-                } catch (InterruptedException e) {
-                    logger.log(Level.WARNING, "error updating cache after commit", e);
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "error updating cache after commit", e);
-                }
-                break;
-            }
-        }
-    }
-
-    public void postRollback(Object data) {
-        // do nothing (cache should not be updated if transaction is rolledback)
     }
 
     public Class getImpClass() {
@@ -253,18 +270,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public String getTableName() {
         return "published_service";
-    }
-
-    private class TransactionCallbackData {
-        public TransactionCallbackData(int type, PublishedService service) {
-            this.transactionType = type;
-            this.service = service;
-        }
-        public int transactionType;
-        public PublishedService service;
-        public static final int UPDATE = 1;
-        public static final int SAVE = 2;
-        public static final int DELETE = 3;
     }
 
     private static final Logger logger = LogManager.getInstance().getSystemLogger();
