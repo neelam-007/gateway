@@ -114,8 +114,18 @@ public class ClientProxyKeyManager implements X509KeyManager {
         try {
             Ssg ssg = ssgFinder.getSsgByHostname(hostname);
             if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                log.info("Will present client cert for hostname " + hostname);
-                return hostname;
+                try {
+                    SsgKeyStoreManager.getClientCertPrivateKey(ssg); // make sure key is recoverable
+                    log.info("Will present client cert for hostname " + hostname);
+                    return hostname;
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e); // can't happen
+                } catch (BadCredentialsException e) {
+                    log.info("Private key for client cert for Ssg " + ssg + " is currently unrecoverable; won't bother to present this cert");
+                    return null;
+                } catch (OperationCanceledException e) {
+                    throw new RuntimeException(e);
+                }
             }
         } catch (SsgNotFoundException e) {
         }
