@@ -101,6 +101,10 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
 
         TarariMessageContext tmc = tknob.getContext();
         TarariMessageContextImpl tmContext = (TarariMessageContextImpl)tmc;
+        if (tmContext == null) {
+            auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
+            return softwareDelegate.checkRequest(context);
+        }
 
         RAXContext raxContext = tmContext.getRaxContext();
         int numMatches = raxContext.getCount(index);

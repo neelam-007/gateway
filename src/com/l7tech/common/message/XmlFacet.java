@@ -12,21 +12,21 @@ import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.Iterator;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a MimeFacet whose first part is text/xml.
@@ -170,6 +170,7 @@ public class XmlFacet extends MessageFacet {
         public Document getDocumentWritable() throws SAXException, IOException {
             Document working = getDocumentReadOnly();
             firstPartValid = false;
+            TarariKnob.invalidate(getMessage());
             if (getMessage().isEnableOriginalDocument() && originalDocument == null)
                 originalDocument = (Document)working.cloneNode(true); // todo find a way to skip this if it wont be needed
             return working;
@@ -186,6 +187,7 @@ public class XmlFacet extends MessageFacet {
         public void setDocument(Document document) {
             firstPartValid = false;
             XmlFacet.this.workingDocument = document;
+            TarariKnob.invalidate(getMessage());
         }
 
         public ProcessorResult getProcessorResult() {

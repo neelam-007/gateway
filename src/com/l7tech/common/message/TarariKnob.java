@@ -11,17 +11,32 @@ import com.l7tech.common.xml.tarari.TarariMessageContext;
  * then only on systems with Tarari hardware installed.
  */
 public class TarariKnob implements CloseableMessageKnob {
-    private final TarariMessageContext context;
+    private TarariMessageContext context;
 
     public TarariKnob(TarariMessageContext context) {
         this.context = context;
     }
 
+    /** @return the TarariMessageContext, or null if one is not available. */
     public TarariMessageContext getContext() {
         return context;
     }
 
     public void close() {
-        context.close();
+        if (context != null) {
+            context.close();
+            context = null;
+        }
+    }
+
+    /**
+     * Invalidate any TarariKnob attached to the specified Message.
+     *
+     * @param m the Message whose TarariKnob, if any, should be closed.
+     */
+    static void invalidate(Message m) {
+        TarariKnob knob = (TarariKnob)m.getKnob(TarariKnob.class);
+        if (knob != null)
+            knob.close();
     }
 }
