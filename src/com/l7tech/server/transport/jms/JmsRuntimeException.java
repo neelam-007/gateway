@@ -14,4 +14,8 @@ public class JmsRuntimeException extends Exception {
     JmsRuntimeException( String message ) {
         super( message );
     }
+
+    JmsRuntimeException(Throwable e) {
+        super(e);
+    }
 }

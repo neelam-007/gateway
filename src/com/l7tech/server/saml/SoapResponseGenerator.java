@@ -106,6 +106,9 @@ class SoapResponseGenerator {
         } catch (IOException se) {
             se.printStackTrace();
             throw new RuntimeException(se);
+        } catch (SAXException se) {
+            e.printStackTrace();
+            throw new RuntimeException(se);
         }
     }
 }

@@ -10,9 +10,9 @@ import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.policy.PolicyVersionException;
+import org.xml.sax.SAXException;
 
 import javax.jms.*;
-import javax.xml.soap.SOAPException;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,8 +82,12 @@ class JmsRequestHandler {
             String responseXml = soapResponse.getResponseXml();
             if ( responseXml == null || responseXml.length() == 0 ) {
                 if ( faultMessage == null ) faultMessage = status.getMessage();
-                responseXml = SoapFaultUtils.generateRawSoapFault(faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
-                                                                  faultMessage, "", "");
+                try {
+                    responseXml = SoapFaultUtils.generateRawSoapFault(faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
+                                                                      faultMessage, "", "");
+                } catch (SAXException e) {
+                    throw new JmsRuntimeException(e);
+                }
             }
 
             if ( jmsResponse instanceof TextMessage ) {

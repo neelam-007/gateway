@@ -26,6 +26,8 @@ import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.xml.sax.SAXException;
+
 /**
  * Receives SOAP requests via HTTP POST, passes them into the <code>MessageProcessor</code>
  * and formats the response as a reasonable approximation of an HTTP response.
@@ -107,13 +109,17 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
-            sendFault(sreq,
-                      sresp,
-                      hrequest,
-                      hresponse,
-                      HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                      SoapFaultUtils.FC_SERVER,
-                      e.getMessage());
+            try {
+                sendFault(sreq,
+                          sresp,
+                          hrequest,
+                          hresponse,
+                          HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                          SoapFaultUtils.FC_SERVER,
+                          e.getMessage());
+            } catch (SAXException e1) {
+                throw new ServletException(e);
+            }
         } finally {
             PersistenceContext pc = PersistenceContext.peek();
             if (pc != null) pc.close();
@@ -125,7 +131,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
-    private void sendFault(SoapRequest sreq, SoapResponse sresp, SoapFaultDetail faultDetail, HttpServletRequest req, HttpServletResponse res) throws IOException{
+    private void sendFault(SoapRequest sreq, SoapResponse sresp,
+                           SoapFaultDetail faultDetail, HttpServletRequest req,
+                           HttpServletResponse res) throws IOException, SAXException {
         OutputStream responseStream = null;
         try {
             responseStream = res.getOutputStream();
@@ -162,7 +170,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         return policyUrl.toString();
     }
 
-    private void sendFault(SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp, int httpStatus, String faultCode, String faultString) throws IOException {
+    private void sendFault(SoapRequest sreq, SoapResponse sresp,
+                           HttpServletRequest hreq, HttpServletResponse hresp,
+                           int httpStatus, String faultCode, String faultString) throws IOException, SAXException {
         OutputStream responseStream = null;
         try {
             responseStream = hresp.getOutputStream();
@@ -183,8 +193,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
-    private void sendChallenge(SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp) throws IOException {
-        sendFault(sreq, sresp, hreq, hresp, HttpServletResponse.SC_UNAUTHORIZED, SoapFaultUtils.FC_CLIENT, "Authentication Required");
+    private void sendChallenge(SoapRequest sreq, SoapResponse sresp,
+                               HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
+        sendFault(sreq, sresp, hreq, hresp,
+                HttpServletResponse.SC_UNAUTHORIZED, SoapFaultUtils.FC_CLIENT, "Authentication Required");
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());

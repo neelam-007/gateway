@@ -85,6 +85,9 @@ public class SecurityTokenServiceServlet extends AuthenticatableHttpServlet {
         } catch (IOException se) {
             se.printStackTrace();
             throw new RuntimeException(se);
+        }  catch (SAXException se) {
+            se.printStackTrace();
+            throw new RuntimeException(se);
         }
     }
 
