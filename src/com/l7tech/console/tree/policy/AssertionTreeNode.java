@@ -132,11 +132,16 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         model.insertNodeInto(this, parent, indexThat);
         model.insertNodeInto(target, parent, indexThis);
 
-        TreeNode[] path =
-          ((DefaultMutableTreeNode)AssertionTreeNode.this).getPath();
-        if (path != null) {
-            tree.setSelectionPath(new TreePath(path));
-        }
+        Runnable runnable = new Runnable() {
+            public void run() {
+                TreeNode[] path =
+                  ((DefaultMutableTreeNode)AssertionTreeNode.this).getPath();
+                if (path != null) {
+                    tree.setSelectionPath(new TreePath(path));
+                }
+            }
+        };
+        SwingUtilities.invokeLater(runnable);
     }
 
     /**
