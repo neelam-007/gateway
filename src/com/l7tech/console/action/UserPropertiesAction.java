@@ -71,7 +71,7 @@ public class UserPropertiesAction extends NodeAction {
                     Utilities.centerOnScreen(dialog);
                     dialog.show();
                 } catch(NoSuchElementException e) {
-                    notifyUserDoesNotExist(header, f);
+                    removeUserFromTree(header);
                 }
             }
         });
@@ -81,14 +81,11 @@ public class UserPropertiesAction extends NodeAction {
         this.idProvider = idProvider;
     }
 
-    private void notifyUserDoesNotExist(EntityHeader header, JFrame f) {
-        final String name = header.getName();
-        JOptionPane.showMessageDialog(f, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+    private void removeUserFromTree(EntityHeader header) {
         JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
         model.removeNodeFromParent(node);
     }
 
     private IdentityProvider idProvider;
-    private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 }
