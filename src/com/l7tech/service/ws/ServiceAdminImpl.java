@@ -16,6 +16,8 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.sf.hibernate.HibernateException;
+
 /**
  * Server side implementation of the ServiceAdmin admin api.
  * 
@@ -52,6 +54,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public PublishedService findServiceByPrimaryKey(long oid) throws RemoteException, FindException {
+        clearContextSession();
         try {
             PublishedService service = getServiceManager().findByPrimaryKey(oid);
             if (service != null) {
@@ -64,6 +67,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
+        clearContextSession();
         try {
             Collection res = getServiceManager().findAllHeaders();
             return collectionToHeaderArray(res);
@@ -74,6 +78,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
 
     public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
                     throws RemoteException, FindException {
+        clearContextSession();
         try {
             Collection res = getServiceManager().findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
@@ -92,6 +97,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
      */
     public long savePublishedService(PublishedService service) throws RemoteException,
                                     UpdateException, SaveException, VersionException {
+        clearContextSession();
         ServiceManager manager = getServiceManager();
         PersistenceContext pc = null;
         try {
@@ -133,6 +139,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public void deletePublishedService(long oid) throws RemoteException, DeleteException {
+        clearContextSession();
         ServiceManager manager = null;
         PublishedService service = null;
 
@@ -207,5 +214,18 @@ public class ServiceAdminImpl implements ServiceAdmin {
         }
         return output;
     }
+
+    private void clearContextSession() {
+        try {
+            HibernatePersistenceContext hpc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            hpc.getSession().clear();
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "error clearing existing context", e);
+        } catch (HibernateException e) {
+            logger.log(Level.WARNING, "error clearing existing context", e);
+        }
+
+    }
+
     private final Logger logger = Logger.getLogger(getClass().getName());
 }
