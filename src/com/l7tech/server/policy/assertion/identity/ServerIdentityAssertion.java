@@ -65,11 +65,10 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             // A CredentialFinder has already run.
             User user = pc.getUser();
 
-            AssertionStatus status;
             if ( request.isAuthenticated() ) {
                 // The user was authenticated by a previous IdentityAssertion.
                 _log.log(Level.FINEST, "Request already authenticated");
-                status = checkUser( user );
+                return checkUser( user );
             } else {
                 if ( _data.getIdentityProviderOid() == Entity.DEFAULT_OID ) {
                     String err = "Can't call checkRequest() when no valid identityProviderOid has been set!";
@@ -78,18 +77,32 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 }
 
                 try {
-                    if ( getIdentityProvider().authenticate( pc ) ) {
-                        // Authentication succeeded
-                        request.setAuthenticated(true);
-                        _log.log(Level.FINEST, "Authenticated " + user.getLogin() );
-                        // Make sure this guy matches our criteria
-                        status = checkUser( user );
-                    } else {
-                        // Authentication failure
-                        status = AssertionStatus.AUTH_FAILED;
-                        response.setAuthenticationMissing(true);
-                        _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
-                    }
+                    IdentityProvider provider = getIdentityProvider();
+                    provider.authenticate( pc );
+
+                    // Authentication succeeded
+                    request.setAuthenticated(true);
+                    _log.log(Level.FINEST, "Authenticated " + user.getLogin() );
+                    // Make sure this guy matches our criteria
+                    return checkUser( user );
+                } catch ( BadCredentialsException bce ) {
+                    // Authentication failure
+                    response.addResult( new AssertionResult( _data, request, AssertionStatus.AUTH_FAILED, bce.getMessage(), bce ));
+                    _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
+                    return AssertionStatus.AUTH_FAILED;
+                } catch ( InvalidClientCertificateException icce ) {
+                    response.addResult( new AssertionResult( _data, request, AssertionStatus.AUTH_FAILED, icce.getMessage(), icce ));
+                    _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
+                    return AssertionStatus.AUTH_FAILED;
+                } catch ( MissingCredentialsException mce ) {
+                    response.setAuthenticationMissing(true);
+                    response.addResult( new AssertionResult( _data, request, AssertionStatus.AUTH_REQUIRED, mce.getMessage(), mce ));
+                    _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
+                    return AssertionStatus.AUTH_REQUIRED;
+                } catch ( AuthenticationException ae ) {
+                    _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
+                    response.addResult( new AssertionResult( _data, request, AssertionStatus.AUTH_FAILED, ae.getMessage(), ae ));
+                    return AssertionStatus.AUTH_FAILED;
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
                     _log.log( Level.SEVERE, err, fe );
@@ -97,8 +110,6 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 }
 
             }
-
-            return status;
         }
     }
 
