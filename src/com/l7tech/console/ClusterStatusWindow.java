@@ -7,8 +7,6 @@ import com.l7tech.console.table.LogTableModel;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.console.icons.ArrowIcon;
-import com.l7tech.console.event.ConnectionListener;
-import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;
@@ -24,6 +22,8 @@ import java.awt.event.*;
 
 
 /*
+ * This class is a window extended from JFrame to show the cluster status.
+ *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
  * $Id$
@@ -37,7 +37,7 @@ public class ClusterStatusWindow extends JFrame {
     private static
             ResourceBundle resapplication =
             java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
-    //private final ClassLoader cl = getClass().getClassLoader();
+
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
 
@@ -50,21 +50,6 @@ public class ClusterStatusWindow extends JFrame {
         setJMenuBar(getClusterWindowMenuBar());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
-        // exitMenuItem listener
-        getExitMenuItem().
-                addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        exitMenuEventHandler(e);
-                    }
-                });
-
-        // HelpTopics listener
-        getHelpTopicsMenuItem().
-                addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        Registry.getDefault().getComponentRegistry().getMainWindow().showHelpTopics();
-                    }
-                });
 
         initAdminConnection();
         initCaches();
@@ -72,19 +57,7 @@ public class ClusterStatusWindow extends JFrame {
         // refresh the status
         refreshStatus();
 
-        //todo: remove this test data
-/*        Vector dummyData = getClusterStatusDummyData(false);
-        dummyData = getClusterStatusDummyData(true);
-        getClusterStatusTableModel().setData(dummyData);
-        getClusterStatusTableModel().getRealModel().setRowCount(dummyData.size());
-        getClusterStatusTableModel().fireTableDataChanged();*/
-
         pack();
-
-        //todo: need to reorganize this
-/*        getStatisticsPane().onConnect();
-        getStatisticsPane().refreshStatistics();*/
-
     }
 
     /**
@@ -92,7 +65,6 @@ public class ClusterStatusWindow extends JFrame {
      * @see ActionEvent for details
      */
     private void exitMenuEventHandler(ActionEvent event) {
-        Registry.getDefault().getComponentRegistry().getMainWindow().getStatMenuItem().setSelected(false);
         this.dispose();
     }
 
@@ -102,7 +74,6 @@ public class ClusterStatusWindow extends JFrame {
             frameContentPane = new JPanel();
             frameContentPane.setPreferredSize(new Dimension(800, 600));
             frameContentPane.setLayout(new BorderLayout());
-            //       getJFrameContentPane().add(getToolBarPane(), "North");
             getJFrameContentPane().add(getMainPane(), "Center");
         }
         return frameContentPane;
@@ -112,7 +83,6 @@ public class ClusterStatusWindow extends JFrame {
         if (clusterWindowMenuBar == null) {
             clusterWindowMenuBar = new JMenuBar();
             clusterWindowMenuBar.add(getFileMenu());
-            // clusterWindowMenuBar.add(getViewMenu());
             clusterWindowMenuBar.add(getHelpMenu());
         }
         return clusterWindowMenuBar;
@@ -142,13 +112,19 @@ public class ClusterStatusWindow extends JFrame {
     }
 
     private JMenuItem getExitMenuItem() {
-        if (exitMenuItem == null) {
-            exitMenuItem = new JMenuItem();
-            exitMenuItem.setText(resapplication.getString("ExitMenuItem_text"));
-            int mnemonic = 'X';
-            exitMenuItem.setMnemonic(mnemonic);
-            exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
-        }
+        if (exitMenuItem != null) return exitMenuItem;
+
+        exitMenuItem = new JMenuItem();
+        exitMenuItem.setText(resapplication.getString("ExitMenuItem_text"));
+        int mnemonic = 'X';
+        exitMenuItem.setMnemonic(mnemonic);
+        exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        exitMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                exitMenuEventHandler(e);
+            }
+        });
+
         return exitMenuItem;
     }
 
@@ -214,9 +190,6 @@ public class ClusterStatusWindow extends JFrame {
 
                         Object s = jTable2.getValueAt(row, 0);
 
-                        //String status = "";
-                        // if(s instanceof String) status = (String) s;
-                        // this.setText("");
                         if (s.toString().equals("1")) {
                             this.setIcon(connectIcon);
                         } else if (s.toString().equals("0")) {
@@ -290,13 +263,19 @@ public class ClusterStatusWindow extends JFrame {
 
 
     private JMenuItem getHelpTopicsMenuItem() {
-        if (helpTopicsMenuItem == null) {
-            helpTopicsMenuItem = new JMenuItem();
-            helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text"));
-            int mnemonic = helpTopicsMenuItem.getText().toCharArray()[0];
-            helpTopicsMenuItem.setMnemonic(mnemonic);
-            helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
-        }
+        if (helpTopicsMenuItem != null) return helpTopicsMenuItem;
+
+        helpTopicsMenuItem = new JMenuItem();
+        helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text"));
+        int mnemonic = helpTopicsMenuItem.getText().toCharArray()[0];
+        helpTopicsMenuItem.setMnemonic(mnemonic);
+        helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
+        helpTopicsMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Registry.getDefault().getComponentRegistry().getMainWindow().showHelpTopics();
+            }
+        });
+
         return helpTopicsMenuItem;
     }
 
@@ -319,32 +298,21 @@ public class ClusterStatusWindow extends JFrame {
             "Status", "Gateway", "Load Sharing %", "Request Routed %", "Load Avg", "Uptime", "IP Address"
         };
 
-        Class[] types = new Class[]{
-            java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Double.class, java.lang.String.class, java.lang.String.class
-        };
-
         LogTableModel tableModel = new LogTableModel(rows, cols);
 
         clusterStatusTableSorter = new ClusterStatusTableSorter(tableModel) {
-            /*public Class getColumnClass(int columnIndex) {
-                return types[columnIndex];
-
-            }*/
         };
 
         return clusterStatusTableSorter;
 
     }
 
-    private void initAdminConnection(){
-
-        System.out.println("Initializing Admin Service....");
-
+    private void initAdminConnection() {
         serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
-         if (serviceManager == null) throw new IllegalStateException("Cannot obtain ServiceManager remote reference");
+        if (serviceManager == null) throw new IllegalStateException("Cannot obtain ServiceManager remote reference");
 
-         clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
-         if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
+        clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
+        if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
 
     }
 
@@ -407,7 +375,7 @@ public class ClusterStatusWindow extends JFrame {
 
     private String convertUptimeToString(long uptime) {
 
-        if(uptime == 0) return new String("0 mins");
+        if (uptime == 0) return new String("0 mins");
 
         long uptime_ms = (System.currentTimeMillis() - uptime) / 1000;
 
@@ -444,78 +412,20 @@ public class ClusterStatusWindow extends JFrame {
             GatewayStatus su = (GatewayStatus) currentNodeList.get(i.next());
 
             // the second last update time stamp is -1 the very first time when the node status is retrieved
-            if(su.getSecondLastUpdateTimeStamp() == -1 ||
-                su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()){
+            if (su.getSecondLastUpdateTimeStamp() == -1 ||
+                    su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()) {
                 su.setStatus(1);
-            }
-            else{
+            } else {
                 su.setStatus(0);
             }
 
-            if(getClusterRequestCount() !=0 ){
+            if (getClusterRequestCount() != 0) {
                 su.setLoadSharing((new Long(su.getRequestCount() * 100 / getClusterRequestCount())).intValue());
-            }
-            else{
+            } else {
                 su.setLoadSharing(0);
             }
             cs.add(su);
         }
-
-/*        ServiceUsage[] serviceStat = new ServiceUsage[0];
-        try {
-            serviceStat = clusterStatusService.getServiceUsage();
-        } catch (FindException e) {
-            System.err.println("ERROR " + e.getMessage());
-        } catch (RemoteException e) {
-            System.err.println("ERROR " + e.getMessage());
-        }
-        if (serviceStat != null) {
-            System.out.println("Number of service statistics is: " + serviceStat.length);
-        }
-
-        long totalClusterRequest = 0;
-        for (int i = 0; i < serviceStat.length; i++) {
-            if (addExtraCount) {
-                totalClusterRequest += (serviceStat[i].getRequests() + 300);
-            } else {
-                totalClusterRequest += serviceStat[i].getRequests();
-            }
-
-        }
-        updateClusterRequestCounterCache(totalClusterRequest);
-
-
-        long totalRequest;
-        long totalCompleted;
-
-        for (int i = 0; i < dummyData.size(); i++) {
-            GatewayStatus gatewayStatus = (GatewayStatus) dummyData.elementAt(i);
-
-            totalRequest = 0;
-            totalCompleted = 0;
-            for (int j = 0; j < serviceStat.length; j++) {
-                if (gatewayStatus.getName().equals(serviceStat[j].getNodeid())) {
-                    if (addExtraCount) {
-                        totalRequest += (serviceStat[j].getRequests() + 300);
-                        totalCompleted += (serviceStat[j].getCompleted() + 300);
-                    } else {
-                        totalRequest += serviceStat[j].getRequests();
-                        totalCompleted += serviceStat[j].getCompleted();
-                    }
-
-                }
-            }
-
-            gatewayStatus.updateRequestCounterCache(totalRequest);
-            gatewayStatus.updateCompletedCounterCache(totalCompleted);
-            if (getClusterRequestCount() > 0) {
-                gatewayStatus.setLoadSharing((new Long(gatewayStatus.getRequestCount() * 100 / getClusterRequestCount())).intValue());
-            } else {
-                gatewayStatus.setLoadSharing(0);
-            }
-            gatewayStatus.setStatus(1);
-
-        }*/
 
         return cs;
     }
@@ -585,14 +495,12 @@ public class ClusterStatusWindow extends JFrame {
         statsWorker.start();
     }
 
-    public void dispose(){
+    public void dispose() {
         getStatusRefreshTimer().stop();
         super.dispose();
     }
 
     public void onConnect() {
-
-        System.out.println("Connection is UP.....");
         initAdminConnection();
         initCaches();
 
@@ -600,14 +508,12 @@ public class ClusterStatusWindow extends JFrame {
     }
 
     public void onDisconnect() {
-
-        System.out.println("Connection is DOWN");
         getStatusRefreshTimer().stop();
         serviceManager = null;
         clusterStatusAdmin = null;
     }
 
-    private void initCaches(){
+    private void initCaches() {
         currentNodeList = new Hashtable();
         clusterRequestCounterCache = new Vector();
     }

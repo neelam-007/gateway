@@ -998,17 +998,18 @@ public class MainWindow extends JFrame {
 
         clusterStatusWindow = new ClusterStatusWindow(resapplication.getString("SSG") + " - " + resapplication.getString("ClusterStatusWindowTitle"));
         clusterStatusWindow.addWindowListener(new WindowAdapter() {
+            public void windowClosed(final WindowEvent e) {
+                statMenuItem.setSelected(false);
+
+                clusterStatusWindow = null;
+            }
+
             public void windowClosing(final WindowEvent e) {
                 statMenuItem.setSelected(false);
 
                 clusterStatusWindow.dispose();
                 clusterStatusWindow = null;
             }
-
-/*            public void windowStateChanged(final WindowEvent e) {
-                statMenuItem.setSelected(clusterStatusWindow.isShowing());
-                clusterStatusWindow.show();
-            }*/
         });
 
         return clusterStatusWindow;
