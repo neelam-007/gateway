@@ -21,6 +21,7 @@ public class ResolutionParameters implements Serializable {
     }
 
     public void setSoapaction(String soapaction) {
+        if ( soapaction == null ) soapaction = ""; // Oracle doesn't distinguish between "" and NULL
         this.soapaction = soapaction;
     }
 
