@@ -346,6 +346,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
             if ( provider == null ) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
+            group.setProviderId(identityProviderConfigId);
 
             String id = group.getUniqueIdentifier();
             if (id == null) {

@@ -13,7 +13,8 @@ public interface Group extends Principal {
     String getUniqueIdentifier();
 
     long getProviderId();
-
+    void setProviderId(long providerId);
+    
     String getDescription();
 
     GroupBean getGroupBean();

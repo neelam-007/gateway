@@ -85,16 +85,10 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         return new Long( _oid ).toString();
     }
 
-    /**
-     * this is not persisted, it is set at run time by the provider who creates the object
-     */
     public long getProviderId() {
         return bean.getProviderId();
     }
 
-    /**
-     * this is not persisted, it is set at run time by the provider who creates the object
-     */
     public void setProviderId( long providerId ) {
         bean.setProviderId( providerId );
     }
