@@ -33,15 +33,7 @@ public class CanonicalizerBugRepro extends TestCase {
 
     public static Test suite() {
         TestSuite suite = new TestSuite(CanonicalizerBugRepro.class);
-        TestSetup wrapper = new TestSetup(suite) {
-            // this setup is run before all tests
-            protected void setUp() throws Exception {
-            }
-
-            protected void tearDown() throws Exception {
-            }
-        };
-        return wrapper;
+        return suite;
     }
 
     public static void main(String[] args) {
