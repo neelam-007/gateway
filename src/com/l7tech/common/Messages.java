@@ -19,6 +19,7 @@ public class Messages {
     /**
      * Reserved IDs:
      *
+     * Messages:                  0001 - 0999  (Generic messages, e.g. Exception)
      * BootMessages:              1000 - 1999
      * AuditMessages:             2000 - 2999
      * MessageProcessingMessages: 3000 - 3999
@@ -28,6 +29,10 @@ public class Messages {
      */
 
     private static Map messagesById = new HashMap();
+
+    // must appear after the instantiation of messageById HaspMap.
+    public static final M EXCEPTION_SEVERE                  = m(1, Level.SEVERE, "Exception caught: ");
+    public static final M EXCEPTION_WARNING                 = m(2, Level.WARNING, "Exception caught: ");
 
     protected Messages() { }
 

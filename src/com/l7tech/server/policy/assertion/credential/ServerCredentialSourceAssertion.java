@@ -43,7 +43,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
         final HashMap authParams = new HashMap();
-        Auditor auditor = new Auditor(context.getAuditContext(), Logger.getLogger(getClass().getName()));
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             LoginCredentials pc = context.getCredentials();
             if ( pc == null ) {
@@ -63,13 +63,13 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
         } catch ( CredentialFinderException cfe ) {
             AssertionStatus status = cfe.getStatus();
             if ( status == null ) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION, null, cfe);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, cfe);
                 throw new PolicyAssertionException( cfe.getMessage(), cfe );
             } else {
                 context.addResult( new AssertionResult( _data, status, cfe.getMessage() ) );
                 challenge( context, authParams );
                 // Suppress exception trace by omitting exception argument
-                auditor.logAndAudit(AssertionMessages.EXCEPTION, null, cfe);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, cfe);
 
                 if ( status == AssertionStatus.AUTH_REQUIRED )
                     context.setAuthenticationMissing();
@@ -115,4 +115,5 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
     protected abstract void challenge( PolicyEnforcementContext context, Map authParams );
 
     protected CredentialSourceAssertion _data;
+    final Logger logger = Logger.getLogger(getClass().getName());
 }
