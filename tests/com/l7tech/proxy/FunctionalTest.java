@@ -2,11 +2,12 @@ package com.l7tech.proxy;
 
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyManagerStub;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
-import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -21,7 +22,6 @@ import org.apache.axis.message.SOAPHandler;
 import org.apache.axis.message.SOAPHeader;
 import org.apache.axis.soap.SOAPConstants;
 import org.apache.log4j.Category;
-import org.mortbay.util.MultiException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.soap.SOAPException;
@@ -32,6 +32,8 @@ import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * Test message processing.
@@ -85,7 +87,7 @@ public class FunctionalTest extends TestCase {
     }
 
     /** Starts up the SSG Faker and the Client Proxy. */
-    protected void setUp() throws MultiException, IOException, KeyManagementException, NoSuchAlgorithmException, NoSuchProviderException {
+    protected void setUp() throws Exception, IOException, KeyManagementException, NoSuchAlgorithmException, NoSuchProviderException {
         destroyFaker();
         destroyProxy();
 
@@ -100,6 +102,7 @@ public class FunctionalTest extends TestCase {
         ssgFake.setLocalEndpoint(ssg0ProxyEndpoint);
         ssgFake.setSsgAddress(new URL(ssgUrl).getHost());
         ssgFake.setSsgPort(new URL(ssgUrl).getPort());
+        ssgFake.setSslPort(new URL(ssgFaker.getSslUrl()).getPort());
         ssgManager.add(ssgFake);
 
         // Make a do-nothing PolicyManager
@@ -109,6 +112,14 @@ public class FunctionalTest extends TestCase {
 
         // Start the client proxy
         clientProxy = new ClientProxy(ssgManager, messageProcessor, DEFAULT_PORT, MIN_THREADS, MAX_THREADS);
+
+        // Turn off server cert verification for the test
+        clientProxy.setTrustManager(new ClientProxyTrustManager(ssgManager) {
+            public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                return;
+            }
+        });
+
         proxyUrl = clientProxy.start().toString();
     }
 
