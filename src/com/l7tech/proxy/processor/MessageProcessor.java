@@ -6,11 +6,10 @@
 
 package com.l7tech.proxy.processor;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -244,12 +243,12 @@ public class MessageProcessor {
             postMethod = new PostMethod(url.toString());
             setAuthenticationState(req, state, postMethod);
             postMethod.addRequestHeader("SOAPAction", req.getSoapAction());
-            postMethod.addRequestHeader("L7-Original-URL", req.getOriginalUrl().toString());
+            postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, req.getOriginalUrl().toString());
             if (req.isNonceRequired())
-                postMethod.addRequestHeader(XmlResponseSecurity.XML_NONCE_HEADER_NAME,
+                postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.XML_NONCE_HEADER_NAME,
                                             Long.toString(req.getNonce()));
             if (req.getSession() != null)
-                postMethod.addRequestHeader(XmlResponseSecurity.XML_SESSID_HEADER_NAME,
+                postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME,
                                             Long.toString(req.getSession().getId()));
 
             String postBody = XmlUtil.documentToString(req.getSoapEnvelopeDirectly());
@@ -260,7 +259,7 @@ public class MessageProcessor {
             int status = client.executeMethod(postMethod);
             log.info("POST to SSG completed with HTTP status code " + status);
 
-            Header sessionStatus = postMethod.getResponseHeader(XmlRequestSecurity.SESSION_STATUS_HTTP_HEADER);
+            Header sessionStatus = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER);
             if (sessionStatus != null) {
                 log.info("SSG response contained a session status header: " + sessionStatus.getName() + ": " + sessionStatus.getValue());
                 if (sessionStatus.getValue().equalsIgnoreCase("invalid")) {
@@ -271,7 +270,7 @@ public class MessageProcessor {
             } else
                 log.info("SSG response contained no session status header");
 
-            Header policyUrlHeader = postMethod.getResponseHeader("PolicyUrl");
+            Header policyUrlHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
             if (policyUrlHeader != null) {
                 log.info("SSG response contained a PolicyUrl header: " + policyUrlHeader.getValue());
                 // Have we already updated a policy while processing this request?

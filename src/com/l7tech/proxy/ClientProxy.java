@@ -12,6 +12,7 @@ import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.common.util.SslUtils;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpContext;
@@ -46,7 +47,6 @@ public class ClientProxy {
     private static final Category log = Category.getInstance(ClientProxy.class);
     public static final String PROXY_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
-    private static final String USER_AGENT = "L7 Client Proxy; Protocol v1.0";
 
     private SsgFinder ssgFinder;
     private HttpServer httpServer;
@@ -95,7 +95,7 @@ public class ClientProxy {
     {
         if (isInitialized)
             return;
-        System.setProperty("httpclient.useragent", USER_AGENT);
+        System.setProperty("httpclient.useragent", SecureSpanConstants.USER_AGENT);
         initializeSsl();
         isInitialized = true;
     }

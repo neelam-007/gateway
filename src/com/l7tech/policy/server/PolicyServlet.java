@@ -1,5 +1,7 @@
 package com.l7tech.policy.server;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.IdProvConfManagerServer;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -8,31 +10,28 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceManager;
-import com.l7tech.util.Locator;
-import com.l7tech.util.KeystoreUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.SoapMessageProcessingServlet;
+import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceManager;
+import com.l7tech.util.KeystoreUtils;
+import com.l7tech.util.Locator;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
@@ -66,7 +65,6 @@ public class PolicyServlet extends HttpServlet {
     public static final String PARAM_USERNAME = "username";
     public static final String PARAM_NONCE = "nonce";
     // format is policyId|policyVersion (seperated with char '|')
-    public static final String POLICY_VERSION_HEADER_NAME = "l7-policy-version";
 
     public void init( ServletConfig config ) throws ServletException {
         logger = LogManager.getInstance().getSystemLogger();
@@ -116,7 +114,7 @@ public class PolicyServlet extends HttpServlet {
             String newUrl = "https://"  + httpServletRequest.getServerName();
             if (httpServletRequest.getServerPort() == 8080) newUrl += ":8443";
             newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
-            httpServletResponse.setHeader(SoapMessageProcessingServlet.POLICYURL_HEADER, newUrl);
+            httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
             httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Request must come through SSL. " + newUrl);
             logger.info("Non-anonymous policy requested on in-secure channel (http). Sending 401 back with secure URL to requestor: " + newUrl);
             return;
@@ -130,7 +128,7 @@ public class PolicyServlet extends HttpServlet {
                 String newUrl = "https://"  + httpServletRequest.getServerName();
                 if (httpServletRequest.getServerPort() == 8080 || httpServletRequest.getServerPort() == 8443) newUrl += ":8443";
                 newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
-                httpServletResponse.setHeader(SoapMessageProcessingServlet.POLICYURL_HEADER, newUrl);
+                httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
                 httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Must provide valid credentials.");
                 return;
             }
@@ -211,7 +209,8 @@ public class PolicyServlet extends HttpServlet {
 
     private void outputPublishedServicePolicy(PublishedService service, HttpServletResponse response) throws IOException {
         if (service == null) {
-            response.addHeader(POLICY_VERSION_HEADER_NAME, Long.toString(service.getOid()) + '|' + Long.toString(service.getVersion()));
+            response.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION,
+                               Long.toString(service.getOid()) + '|' + Long.toString(service.getVersion()));
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "ERROR cannot resolve target service or you are not authorized to consult it");
             return;
         } else {

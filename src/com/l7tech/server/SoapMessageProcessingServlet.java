@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.util.SoapUtil;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -31,7 +32,6 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class SoapMessageProcessingServlet extends HttpServlet {
-    public static final String POLICYURL_HEADER = "PolicyUrl";
     public static final String POLICYURL_TAG = "policy-url";
     public static final String DEFAULT_CONTENT_TYPE = "text/xml; charset=utf-8";
     public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
@@ -140,7 +140,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if ( pserv != null && sresp.isPolicyViolated() ) {
                 String purl = makePolicyUrl( hreq, pserv.getOid() );
 
-                hresp.setHeader( POLICYURL_HEADER, purl );
+                hresp.setHeader( SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl );
 
                 Detail detail = fault.addDetail();
                 DetailEntry entry = detail.addDetailEntry( senv.createName( POLICYURL_TAG ) );

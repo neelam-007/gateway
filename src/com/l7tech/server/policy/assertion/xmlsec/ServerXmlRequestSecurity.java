@@ -18,6 +18,7 @@ import com.l7tech.xmlsig.SecureConversationTokenHandler;
 import com.l7tech.xmlsig.SignatureNotFoundException;
 import com.l7tech.xmlsig.SoapMsgSigner;
 import com.l7tech.xmlsig.XMLSecurityElementNotFoundException;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
@@ -68,7 +69,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         } catch (SessionInvalidException e) {
             // when the session is no longer valid we must inform the client proxy so that he generates another session
             HttpTransportMetadata metadata = (HttpTransportMetadata)response.getTransportMetadata();
-            metadata.getResponse().addHeader(XmlRequestSecurity.SESSION_STATUS_HTTP_HEADER, "invalid");
+            metadata.getResponse().addHeader(SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER, "invalid");
             return AssertionStatus.FALSIFIED;
         }
 
@@ -76,7 +77,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         if (!checkSeqNrValidity(soapmsg, xmlsecSession)) {
             // when the session is no longer valid we must inform the client proxy so that he generates another session
             HttpTransportMetadata metadata = (HttpTransportMetadata)response.getTransportMetadata();
-            metadata.getResponse().addHeader(XmlRequestSecurity.SESSION_STATUS_HTTP_HEADER, "invalid");
+            metadata.getResponse().addHeader(SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER, "invalid");
             // todo, control what the soap fault look like
             // in this case the policy is not violated
             // response.setPolicyViolated(true);

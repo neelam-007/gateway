@@ -14,6 +14,7 @@ import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
@@ -87,7 +88,7 @@ public class PolicyManagerImpl implements PolicyManager {
             if (status == 401) {
                 getMethod.releaseConnection();
                 // was a new url provided ?
-                Header newURLHeader = getMethod.getResponseHeader("PolicyUrl");
+                Header newURLHeader = getMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
                 URL newUrl = policyUrl;
                 if (newURLHeader != null) {
                     try {

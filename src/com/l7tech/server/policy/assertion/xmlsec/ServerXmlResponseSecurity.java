@@ -16,6 +16,7 @@ import com.l7tech.xmlenc.SessionManager;
 import com.l7tech.xmlenc.Session;
 import com.l7tech.xmlenc.SessionNotFoundException;
 import com.l7tech.xmlenc.XmlMangler;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import java.io.IOException;
@@ -70,7 +71,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         HttpTransportMetadata meta = (HttpTransportMetadata)request.getTransportMetadata();
 
         // DECORATE WITH NONCE IN A WSSC TOKEN
-        String nonceValue = meta.getRequest().getHeader(XmlResponseSecurity.XML_NONCE_HEADER_NAME);
+        String nonceValue = meta.getRequest().getHeader(SecureSpanConstants.HttpHeaders.XML_NONCE_HEADER_NAME);
         // (this is optional)
         if (nonceValue != null && nonceValue.length() > 0) {
             SecureConversationTokenHandler.appendNonceToDocument(soapmsg, Long.parseLong(nonceValue));
@@ -80,7 +81,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         if (data.isEncryption()) {
             // RETREIVE SESSION ID
             // get the header containing the xml session id
-            String sessionIDHeaderValue = meta.getRequest().getHeader(XmlResponseSecurity.XML_SESSID_HEADER_NAME);
+            String sessionIDHeaderValue = meta.getRequest().getHeader(SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME);
             if (sessionIDHeaderValue == null || sessionIDHeaderValue.length() < 1) {
                 String msg = "Could not encrypt response because xml session id was not provided by requestor.";
                 logger.severe(msg);
