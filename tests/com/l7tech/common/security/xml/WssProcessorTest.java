@@ -55,34 +55,51 @@ public class WssProcessorTest extends TestCase {
             WssProcessor.ProcessorResult result = wssProcessor.undecorateMessage(request,
                                                                                  recipientCertificate,
                                                                                  recipientPrivateKey);
-
+            assertTrue(result != null);
 
             Element[] encrypted = result.getElementsThatWereEncrypted();
-            log.info("The following elements were encrypted:");
-            for (int j = 0; j < encrypted.length; j++) {
-                Element element = encrypted[j];
-                log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
-            }
+            assertTrue(encrypted != null);
+            if (encrypted.length > 0) {
+                log.info("The following elements were encrypted:");
+                for (int j = 0; j < encrypted.length; j++) {
+                    Element element = encrypted[j];
+                    log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
+                }
+            } else
+                log.info("No elements were encrypted.");
 
             Element[] signed = result.getElementsThatWereSigned();
-            log.info("The following elements were signed:");
-            for (int j = 0; j < signed.length; j++) {
-                Element element = signed[j];
-                log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
-            }
+            assertTrue(signed != null);
+            if (signed.length > 0) {
+                log.info("The following elements were signed:");
+                for (int j = 0; j < signed.length; j++) {
+                    Element element = signed[j];
+                    log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
+                }
+            } else
+                log.info("No elements were signed.");
+
 
             WssProcessor.SecurityToken[] tokens = result.getSecurityTokens();
-            log.info("The following security tokens were found:");
-            for (int j = 0; j < tokens.length; j++) {
-                WssProcessor.SecurityToken token = tokens[j];
-                log.info("  " + token.getClass());
-            }
+            assertTrue(tokens != null);
+            if (tokens.length > 0) {
+                log.info("The following security tokens were found:");
+                for (int j = 0; j < tokens.length; j++) {
+                    WssProcessor.SecurityToken token = tokens[j];
+                    log.info("  " + token.getClass());
+                }
+            } else
+                log.info("No security tokens were found.");
 
             WssProcessor.Timestamp timestamp = result.getTimestamp();
-            log.info("Timestamp created = " + timestamp.getCreated().asDate());
-            log.info("Timestamp expires = " + timestamp.getExpires().asDate());
+            if (timestamp != null) {
+                log.info("Timestamp created = " + timestamp.getCreated().asDate());
+                log.info("Timestamp expires = " + timestamp.getExpires().asDate());
+            } else
+                log.info("No timestamp was found.");
 
             Document undecorated = result.getUndecoratedMessage();
+            assertTrue(undecorated != null);
             log.info("Undecordated document:\n" + XmlUtil.documentToString(undecorated));
         }
     }
@@ -122,10 +139,10 @@ public class WssProcessorTest extends TestCase {
             String keystorePassword = ksp.getProperty("keystore.storepass");
             String serverAlias = ksp.getProperty("keystore.server.alias");
             String serverKeyPassword = ksp.getProperty("keystore.server.keypass");
-            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            KeyStore keyStore = KeyStore.getInstance(ksp.getProperty("keystore.type"));
             InputStream fis = null;
             try {
-                fis = TestDocuments.getInputStream(TestDocuments.SSL_KS);
+                fis = TestDocuments.getInputStream(TestDocuments.ETTK_KS);
                 keyStore.load(fis, keystorePassword.toCharArray());
             } finally {
                 if (fis != null)
