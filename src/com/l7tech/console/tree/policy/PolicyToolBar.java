@@ -243,7 +243,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
           public void valueChanged(TreeSelectionEvent e) {
               TreePath path = e.getNewLeadSelectionPath();
               if (path == null) {
-                  lastAssertionNode = null;
+                  lastAssertionNode = rootAssertionNode;
               } else {
                   lastAssertionNode = (AssertionTreeNode)path.getLastPathComponent();
               }
