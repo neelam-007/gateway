@@ -3,11 +3,11 @@
   * Sample service for WSDL parsing tests.
 -->
 <definitions name="StockQuoteService"
-             targetNamespace="urn:xmltoday-delayed-quotes"
-             xmlns:tns="urn:xmltoday-delayed-quotes"
-             xmlns="http://schemas.xmlsoap.org/wsdl/"
-             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+    targetNamespace="urn:xmltoday-delayed-quotes"
+    xmlns:tns="urn:xmltoday-delayed-quotes"
+    xmlns="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
 
     <message name="getQuoteInput">
         <part name="symbol" type="xsd:string"/>
@@ -22,35 +22,41 @@
             <input message="tns:getQuoteInput"/>
             <output message="tns:getQuoteOutput"/>
         </operation>
+        <operation name="getQuote2">
+            <input message="tns:getQuoteInput"/>
+            <output message="tns:getQuoteOutput"/>
+        </operation>
+
     </portType>
+
 
     <binding name="GetQuoteSoapBinding" type="tns:GetQuote">
         <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
         <operation name="getQuote">
             <soap:operation soapAction=""/>
             <input>
-                <soap:body use="encoded" 
-                           encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
-                           namespace="urn:xmltoday-delayed-quotes"/>
+                <soap:body use="encoded"
+                    encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                    namespace="urn:xmltoday-delayed-quotes"/>
             </input>
             <output>
                 <soap:body use="encoded"
-                           encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
-                           namespace="urn:xmltoday-delayed-quotes"/>
+                    encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                    namespace="urn:xmltoday-delayed-quotes"/>
             </output>
         </operation>
-        
+
         <operation name="getQuote2">
             <soap:operation soapAction=""/>
             <input>
-                <soap:body use="encoded" 
-                           encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
-                           namespace="urn:xmltoday-delayed-quotes"/>
+                <soap:body use="encoded"
+                    encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                    namespace="urn:xmltoday-delayed-quotes2"/>
             </input>
             <output>
                 <soap:body use="encoded"
-                           encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
-                           namespace="urn:xmltoday-delayed-quotes"/>
+                    encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                    namespace="urn:xmltoday-delayed-quotes2"/>
             </output>
         </operation>
 
