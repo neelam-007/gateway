@@ -67,7 +67,7 @@ public class LdapUserManager implements UserManager {
             }
             return null;
         } catch (NameNotFoundException e) {
-            logger.finest("user " + dn + " does not exist" + e.getMessage());
+            logger.finest("user " + dn + " does not exist in" + cfg.getName() + "(" + e.getMessage() + ")");
             return null;
         } catch ( NamingException ne ) {
             logger.log( Level.SEVERE, ne.getMessage(), ne );
@@ -222,13 +222,13 @@ public class LdapUserManager implements UserManager {
             // Close the context when we're done
             userCtx.close();
         } catch (AuthenticationException e) {
-            logger.info( "User failed to authenticate: " + dn );
+            logger.info( "User failed to authenticate: " + dn  + " in provider " + cfg.getName());
             return false;
         } catch (NamingException e) {
-            logger.log( Level.WARNING, "General naming failure for user: " + dn, e);
+            logger.log( Level.WARNING, "General naming failure for user: " + dn + " in provider " + cfg.getName(), e);
             return false;
         }
-        logger.info("User: "+ dn +" authenticated successfully.");
+        logger.info("User: "+ dn +" authenticated successfully in provider " + cfg.getName());
         return true;
     }
 
