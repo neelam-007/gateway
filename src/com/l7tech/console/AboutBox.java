@@ -1,7 +1,7 @@
 package com.l7tech.console;
 
+import com.l7tech.common.BuildInfo;
 import com.l7tech.console.table.MapBackedTableModel;
-import com.l7tech.adminws.identity.Service;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,7 +31,7 @@ public class AboutBox extends JDialog implements ActionListener {
 
     JPanel infoPanel = new JPanel(new GridBagLayout());
     String product = "Layer7 - Management Console";
-    String version = Service.VERSION;
+    String version = BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber();
     ResourceThread rThread = new ResourceThread();
     JProgressBar resourceMeter = new JProgressBar();
     JTable systemProperties = new
