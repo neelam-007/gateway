@@ -2,7 +2,7 @@ package com.l7tech.message;
 
 import org.w3c.dom.Document;
 
-import java.io.OutputStream;
+import java.io.*;
 
 /**
  * @author alex
@@ -13,13 +13,13 @@ public class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlR
         super(tm);
     }
 
-    public OutputStream getResponseStream() {
-        return _responseStream;
+    public Reader getResponseReader() {
+        return _responseReader;
     }
 
     public Document getDocument() {
         return null;
     }
 
-    protected OutputStream _responseStream;
+    protected Reader _responseReader;
 }

@@ -3,8 +3,7 @@ package com.l7tech.message;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import java.io.InputStream;
-import java.io.IOException;
+import java.io.*;
 
 import com.l7tech.credential.PrincipalCredentials;
 
@@ -25,29 +24,29 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
      */
     public synchronized Document getDocument() throws SAXException, IOException {
         if ( _document == null )
-            if ( _requestStream == null )
-                throw new IllegalStateException( "No Document or InputStream yet!" );
+            if ( _requestReader == null )
+                throw new IllegalStateException( "No Document or Reader yet!" );
             else {
-                parse( _requestStream );
+                parse( _requestReader );
             }
 
         return _document;
     }
 
     /**
-     * Returns an InputStream from the request. Could be null!
+     * Returns a Reader for the request. Could be null!
      *
-     * @return The InputStream from the request, if any.
+     * @return The Reader from the request, if any.
      * @throws IOException
      */
-    public InputStream getRequestStream() throws IOException {
-        if ( _requestStream == null ) {
+    public Reader getRequestReader() throws IOException {
+        if ( _requestReader == null ) {
             if ( _transportMetadata instanceof HttpTransportMetadata ) {
                 HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
-                _requestStream = htm.getRequest().getInputStream();
+                _requestReader = htm.getRequest().getReader();
             }
         }
-        return _requestStream;
+        return _requestReader;
     }
 
     /** Returns the PrincipalCredentials associated with this request.  Could be null! */
@@ -78,5 +77,5 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
 
     protected boolean _authenticated;
     protected PrincipalCredentials _principalCredentials;
-    protected InputStream _requestStream;
+    protected Reader _requestReader;
 }
