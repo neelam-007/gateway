@@ -61,13 +61,6 @@ public class UserPropertiesAction extends NodeAction {
                     idProvider = Registry.getDefault().getIdentityProvider((EntityHeaderNode)node);
                     System.out.println("provider for " + node);
                 }
-                // read only mode not allowed at this point
-                if (idProvider.isReadOnly()) {
-                    JOptionPane.showMessageDialog(null, "This user is read-only.",
-                                                        "Read-only",
-                                                        JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
                 EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 UserPanel panel = new UserPanel();
                 JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
