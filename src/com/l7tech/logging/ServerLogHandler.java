@@ -121,7 +121,6 @@ public class ServerLogHandler extends Handler {
         }
         String reqnode = nodeId;
         if (reqnode == null) reqnode = nodeid;
-        // todo optimize the sql so that only size records get returned by select
         // add order by something and limit
         String selStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
                                         " where " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" +
@@ -134,9 +133,7 @@ public class ServerLogHandler extends Handler {
             selStatement += " and " + TABLE_NAME + "." + SEQ_COLNAME + " >= " + startMsgNumber +
                             " and " + TABLE_NAME + "." + SEQ_COLNAME + " <= " + endMsgNumber;
         }
-        selStatement += " order by " + TABLE_NAME + "." + SEQ_COLNAME + " limit " + size;
-
-        System.out.println("################################\n\n\n" + selStatement);
+        selStatement += " order by " + TABLE_NAME + "." + SEQ_COLNAME + " desc limit " + size;
 
         List res = null;
         try {
@@ -147,7 +144,6 @@ public class ServerLogHandler extends Handler {
             reportException("Exception getting records", e);
         }
         if (res == null) return Collections.EMPTY_LIST;
-        while (res.size() > size) res.remove(0);
         return res;
     }
 
