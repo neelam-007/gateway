@@ -28,13 +28,16 @@ import java.util.Date;
  * $Id$
  */
 public class SecurityContextTokenHandler {
+    private static final int SESSION_BYTES = 16;
+
+    private SecurityContextTokenHandler() {}
 
     /**
      * Generates a new random session id of 16 bytes.
      * @return
      */
     public static byte[] generateNewSessionId() {
-        byte[] sessionid = new byte[16];
+        byte[] sessionid = new byte[SESSION_BYTES];
         rand.nextBytes(sessionid);
         return sessionid;
     }
@@ -46,8 +49,8 @@ public class SecurityContextTokenHandler {
      */
     public static String sessionIdToURI(byte[] rawSessionId) {
         // the sanity check
-        if (rawSessionId == null || rawSessionId.length != 16) {
-            throw new IllegalArgumentException("This is not a proper sessionid");
+        if (rawSessionId == null || rawSessionId.length != SESSION_BYTES) {
+            throw new IllegalArgumentException("Session ID is the wrong length");
         }
         BASE64Encoder encoder = new BASE64Encoder();
         return URI_PREFIX + encoder.encode(rawSessionId);
@@ -83,6 +86,7 @@ public class SecurityContextTokenHandler {
      * This appends the sessionid to the message using ws-sc lingo.
      * Same as other appendSessionInfoToSoapMessage except this one also includes a creation timestamp. This
      * extra parameter should be used when a sessionid is 'suggested' to a SSG for the first time.
+     * TODO: should we strip any existing SecurityContextToken from the SecurityHeader?
      */
     public static void appendSessionInfoToSoapMessage(Document soapmsg, byte[] sessionid, long seqnumber,
                                                       long creationtimestamp) {
@@ -90,15 +94,6 @@ public class SecurityContextTokenHandler {
         appendIDElement(securityCtxTokEl, sessionid);
         appendSeqElement(securityCtxTokEl, seqnumber);
         appendCreationElement(securityCtxTokEl, creationtimestamp);
-    }
-
-    /**
-     * This appends the sessionid to the message using ws-sc lingo.
-     */
-    public static void appendSessionInfoToSoapMessage(Document soapmsg, byte[] sessionid, long seqnumber) {
-        Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
-        appendIDElement(securityCtxTokEl, sessionid);
-        appendSeqElement(securityCtxTokEl, seqnumber);
     }
 
     /**
@@ -131,12 +126,18 @@ public class SecurityContextTokenHandler {
     }
 
     private static void appendSeqElement(Element securityCtxTokenEl, long seqnumber) {
-        // todo, add the sequence number
+        Document doc = securityCtxTokenEl.getOwnerDocument();
+        Element messageNumberEl = doc.createElementNS(L7_NAMESPACE, MESSAGE_NUMBER_ELNAME);
+        messageNumberEl.setAttribute("xmlns:" + L7_NAMESPACE_PREFIX, L7_NAMESPACE);
+        messageNumberEl.setPrefix(L7_NAMESPACE_PREFIX);
+        Text messageNumberText = doc.createTextNode(String.valueOf(seqnumber));
+        messageNumberEl.appendChild(messageNumberText);
+        securityCtxTokenEl.insertBefore(messageNumberEl, null);
     }
 
     private static void appendCreationElement(Element securityCtxTokenEl, long creationTimeStamp) {
         Element createdEl = securityCtxTokenEl.getOwnerDocument().createElementNS(WSU_NAMESPACE, CREATED_ELNAME);
-        createdEl.setAttribute("xmlsn:" + DEF_WSU_PREFIX, WSU_NAMESPACE);
+        createdEl.setAttribute("xmlns:" + DEF_WSU_PREFIX, WSU_NAMESPACE);
         createdEl.setPrefix(DEF_WSU_PREFIX);
         String stamp = ISO8601Local.format(new Date(creationTimeStamp));
         Text valNode = securityCtxTokenEl.getOwnerDocument().createTextNode(stamp);
@@ -178,7 +179,9 @@ public class SecurityContextTokenHandler {
         ISO8601Local.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-
+    private static final String L7_NAMESPACE = "http://www.layer7tech.com/ws/security";
+    private static final String L7_NAMESPACE_PREFIX = "l7";
+    private static final String MESSAGE_NUMBER_ELNAME = "MessageNumber";
     public static final String WSC_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/sc";
     public static final String SCTOKEN_ELNAME = "SecurityContextToken";
     public static final String SCTOKEN_ID_ELNAME = "Identifier";
