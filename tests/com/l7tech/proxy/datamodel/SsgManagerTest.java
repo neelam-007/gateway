@@ -29,11 +29,11 @@ public class SsgManagerTest extends TestCase {
     private static final SsgManagerImpl sm = SsgManagerImpl.getSsgManagerImpl();
 
     private static final Ssg SSG1 =
-            new Ssg(sm.nextId(), "bunky1.foo.bar");
+            new Ssg(1, "bunky1.foo.bar");
     private static final Ssg SSG2 =
-            new Ssg(sm.nextId(), "bunky2.foo.bar");
+            new Ssg(2, "bunky2.foo.bar");
     private static final Ssg SSG3 =
-            new Ssg(sm.nextId(), "bunky3.foo.bar");
+            new Ssg(3, "bunky3.foo.bar");
     private static final Ssg SSG3_CLONE = SSG3.getCopy();
 
     public SsgManagerTest(String name) {

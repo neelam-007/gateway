@@ -40,7 +40,6 @@ public class SsgFinderImpl implements SsgFinder {
     protected SortedSet ssgs = new TreeSet();
     protected HashMap hostCache = new HashMap();
     protected boolean init = false; // should be private; relaxed for performace
-    private long nextId = 1;
 
     private static class SsgFinderHolder {
         private static final SsgFinderImpl ssgFinder = new SsgFinderImpl();
@@ -89,11 +88,6 @@ public class SsgFinderImpl implements SsgFinder {
             if (newssgs != null) {
                 ssgs.clear();
                 ssgs.addAll(newssgs);
-                for (Iterator i = ssgs.iterator(); i.hasNext();) {
-                    long id  = ((Ssg)i.next()).getId();
-                    if (nextId <= id)
-                        nextId = id + 1;
-                }
             }
         } catch (FileNotFoundException e) {
             log.info("No Gateway store found -- will create a new one");
@@ -117,7 +111,8 @@ public class SsgFinderImpl implements SsgFinder {
      *         The List is read-only but the Ssg objects it contains are the real deal.
      */
     public synchronized List getSsgList() {
-        initialize();
+        if (!init)
+            initialize();
         return Collections.unmodifiableList(new ArrayList(ssgs));
     }
 
@@ -125,17 +120,30 @@ public class SsgFinderImpl implements SsgFinder {
      * Find the Ssg with the specified ID.
      * @param id the ID to look for (ie, 3)
      * @return The requested Ssg.  Never null.
-     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified name was not found.
+     * @throws SsgNotFoundException If the specified ID was not found.
      */
     public synchronized Ssg getSsgById(final long id) throws SsgNotFoundException {
+        Ssg found = getSsgByIdFast(id);
+        if (found == null)
+            throw new SsgNotFoundException("No Gateway is registered with the id " + id);
+        return found;
+    }
+
+    /**
+     * Find the Ssg with the specified ID.
+     * @param id the ID to look for (ie, 3)
+     * @return the Ssg with the specified id, or NULL if it wasn't found.
+     */
+    private synchronized Ssg getSsgByIdFast(final long id) {
         if (!init)
             initialize();
-        for (Iterator i = ssgs.iterator(); i.hasNext();) {
-            final Ssg ssg = (Ssg)i.next();
-            if (id == ssg.getId())
-                return ssg;
-        }
-        throw new SsgNotFoundException("No Gateway is registered with the id " + id);
+        if (id == 0)
+            throw new IllegalArgumentException("Must provide a valid ID");
+        Ssg prototype = new Ssg(id);
+        SortedSet foundSet = ssgs.tailSet(prototype);
+        if (foundSet.isEmpty() || !prototype.equals(foundSet.first()))
+            return null;
+        return (Ssg) foundSet.first();
     }
 
     /**
@@ -165,6 +173,8 @@ public class SsgFinderImpl implements SsgFinder {
      * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException if no Ssg was registered with the specified hostname.
      */
     public Ssg getSsgByHostname(String hostname) throws SsgNotFoundException {
+        if (!init)
+            initialize();
         Ssg ssg = (Ssg) hostCache.get(hostname);
         if (ssg == null) {
             // on cache miss, do complete search before giving up
@@ -187,6 +197,8 @@ public class SsgFinderImpl implements SsgFinder {
      * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException if no Default SSG was found
      */
     public Ssg getDefaultSsg() throws SsgNotFoundException {
+        if (!init)
+            initialize();
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
             Ssg ssg = (Ssg) i.next();
             if (ssg.isDefaultSsg())
@@ -201,17 +213,8 @@ public class SsgFinderImpl implements SsgFinder {
      * @param ssg The SSG that was modified.  If null, will assume that all SSGs might have been modified.
      */
     public void onSsgUpdated(Ssg ssg) {
-        rebuildHostCache();
-    }
-
-    /**
-     * Increment our ID counter, and return the next one.
-     * This doesn't really belong in the FinderImpl -- it belongs in the subclasses -- but our load()
-     * method needs to update nextId while loading so we're stuck with it up here.
-     */
-    protected synchronized long nextId() {
         if (!init)
             initialize();
-        return nextId++;
+        rebuildHostCache();
     }
 }

@@ -121,4 +121,20 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
             throw new SsgNotFoundException("The requested default Gateway is not currently registered.");
         rebuildHostCache();
     }
+
+    /**
+     * Find the lowest unused ID number.
+     * This doesn't really belong in the FinderImpl -- it belongs in the subclasses -- but our load()
+     * method needs to update nextId while loading so we're stuck with it up here.
+     */
+    protected synchronized long nextId() {
+        if (!init)
+            initialize();
+        int i = 1;
+        Ssg prototype = new Ssg(i);
+        while (ssgs.contains(prototype)) {
+            prototype.setId(++i);
+        }
+        return i;
+    }
 }
