@@ -373,7 +373,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
     /** @return the wizard step label    */
     public String getStepLabel() {
-        return "Acces control";
+        return "Access control";
     }
 
     private void equalizeButtons() {
