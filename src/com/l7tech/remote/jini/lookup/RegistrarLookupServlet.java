@@ -32,6 +32,8 @@ import java.net.URL;
 import java.security.AccessControlException;
 import java.sql.SQLException;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,6 +53,8 @@ public class RegistrarLookupServlet extends HttpServlet {
     private Configuration lookupConfig;
     private static final String LOOKUP_CONFIG = "com/l7tech/remote/jini/lookup/lookupservlet.config";
     private IdentityProviderConfigManager identityProviderConfigManager;
+    /** administrator groups */
+    private final List adminGroups = Arrays.asList(new String[] {Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME});
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -123,7 +127,6 @@ public class RegistrarLookupServlet extends HttpServlet {
             logger.log(Level.SEVERE, "Error obtaining the lookup locator", e);
             throw new ServletException(e);
         } finally {
-            // todo: do this kind of things as a part of the service proxy (dyn proxy or similar)
             try {
                 PersistenceContext.getCurrent().close();
             } catch (SQLException e) {
@@ -139,8 +142,9 @@ public class RegistrarLookupServlet extends HttpServlet {
         try {
             for (Iterator i = gman.getGroupHeaders(user).iterator(); i.hasNext();) {
                 EntityHeader grp = (EntityHeader)i.next();
-                if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) return true;
-                // todo, something about Group.OPERATOR_GROUP_NAME
+                if (adminGroups.contains(grp.getName())) {
+                    return true;
+                }
             }
             return false;
         } catch (FindException fe) {
