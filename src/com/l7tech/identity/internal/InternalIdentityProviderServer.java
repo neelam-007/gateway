@@ -131,7 +131,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     if ( dbCert == null ) {
                         String err = "No certificate found for user " + login;
                         _log.log( Level.WARNING, err );
-                        throw new MissingCredentialsException( err );
+                        throw new InvalidClientCertificateException( err );
                     } else if ( dbCert instanceof X509Certificate ) {
                         dbCertX509 = (X509Certificate)dbCert;
                         _log.log( Level.FINE, "Stored cert serial# is " + dbCertX509.getSerialNumber().toString() );
