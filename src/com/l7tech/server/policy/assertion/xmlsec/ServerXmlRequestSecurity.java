@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
@@ -15,6 +16,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
+import com.l7tech.policy.assertion.xmlsec.SecurityProcessor;
+import com.l7tech.policy.assertion.xmlsec.SecurityProcessorException;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.server.SessionManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -27,6 +30,8 @@ import sun.security.x509.X500Name;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.logging.Level;
@@ -57,6 +62,85 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
+        // get the document
+        Document soapmsg = extractDocumentFromRequest(request);
+
+        // get the session
+        Session xmlsecSession = null;
+        try {
+            xmlsecSession = getXmlSecSession(soapmsg);
+        } catch (SessionInvalidException e) {
+            // when the session is no longer valid we must inform the client proxy so that he generates another session
+            response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, "invalid");
+            return AssertionStatus.FALSIFIED;
+        }
+
+        if (xmlsecSession == null) {
+            response.setPolicyViolated(true);
+            response.setAuthenticationMissing(true);
+            return AssertionStatus.FALSIFIED;
+        }
+
+        // check validity of the session
+        long gotSeq;
+        try {
+            gotSeq = checkSeqNrValidity(soapmsg, xmlsecSession);
+        } catch (InvalidSequenceNumberException e) {
+            // when the session is no longer valid we must inform the client proxy so that he generates another session
+            response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, "invalid");
+            // todo, control what the soap fault look like
+            // in this case the policy is not violated
+            // response.setPolicyViolated(true);
+            return AssertionStatus.FALSIFIED;
+        }
+        Key key = xmlsecSession.getKeyReq() != null ? new AesKey(xmlsecSession.getKeyReq(), 128) : null;
+        SecurityProcessor verifier = SecurityProcessor.getVerifier(xmlsecSession, key, data);
+
+        try {
+            verifier.processInPlace(soapmsg);
+        } catch (SecurityProcessorException e) {
+            // bad signature !
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return AssertionStatus.FALSIFIED;
+        } catch (SignatureException e) {
+            if (ExceptionUtils.causedBy(e, SignatureNotFoundException.class)) {
+                // no digital signature
+                response.setAuthenticationMissing(true);
+                response.setPolicyViolated(true);
+                logger.log(Level.WARNING, e.getMessage(), e);
+                return AssertionStatus.FALSIFIED;
+            }
+            // bad signature !
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return AssertionStatus.FALSIFIED;
+
+        } catch (GeneralSecurityException e) {
+            // bad signature !
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return AssertionStatus.FALSIFIED;
+        }
+
+
+        // so mark this sequence number as used up
+        xmlsecSession.hitSequenceNumber(gotSeq);
+        // clean the session id from the security header
+        SecureConversationTokenHandler.consumeSessionInfoFromDocument(soapmsg);
+
+        // clean empty security element and header if necessary
+        SoapUtil.cleanEmptySecurityElement(soapmsg);
+        SoapUtil.cleanEmptyHeaderElement(soapmsg);
+
+        // note, the routing should no longer use the non parsed payload
+        ((XmlRequest)request).setDocument(soapmsg);
+
+        return AssertionStatus.NONE;
+
+    }
+
+    /**
+     * keep the old method for reference
+     */
+    private AssertionStatus checkRequestOld(Request request, Response response) throws IOException, PolicyAssertionException {
         // get the document
         Document soapmsg = extractDocumentFromRequest(request);
         // XmlUtil.documentToOutputStream(soapmsg, System.out);
@@ -175,6 +259,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                 logger.fine("Decrypted request successfully.");
             }
         }
+
         // so mark this sequence number as used up
         xmlsecSession.hitSequenceNumber(gotSeq);
         // clean the session id from the security header

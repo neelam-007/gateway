@@ -2,11 +2,13 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
+import com.l7tech.policy.assertion.xmlsec.SecurityProcessor;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -83,7 +85,6 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
-
     /**
      * validate the signature of the response by the ssg server
      *
@@ -91,7 +92,70 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
      * @param response
      * @return
      */
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
+      throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException {
+        Document doc = response.getResponseAsDocument();
+
+        // LOOK FOR NONCE IN WSSC TOKEN
+        try {
+            long responsenonce = SecureConversationTokenHandler.readNonceFromDocument(doc);
+            if (responsenonce != request.getNonce())
+                throw new ResponseValidationException("Response from Gateway contained the wrong nonce value");
+        } catch (XMLSecurityElementNotFoundException e) {
+            // if the nonce is not there, we should note that this is subject to repeat attack
+            throw new ResponseValidationException("Response from Gateway did not contain a nonce", e);
+        }
+        Session session = request.getSession();
+        Key decryptionKey = null;
+        if (session != null) {
+            decryptionKey = new AesKey(session.getKeyRes(), 128);
+        }
+
+        SecurityProcessor verifier = SecurityProcessor.getVerifier(request.getSession(), decryptionKey, data);
+        try {
+            X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
+            SecurityProcessor.Result result = verifier.processInPlace(doc);
+            result.getCertificate().verify(caCert.getPublicKey());
+        } catch (Exception e) {
+            handleResponseThrowable(e);
+        }
+
+        // clean empty security element and header if necessary
+        SoapUtil.cleanEmptySecurityElement(doc);
+        SoapUtil.cleanEmptyHeaderElement(doc);
+        response.setResponse(doc);
+        return AssertionStatus.NONE;
+    }
+
+    private void handleResponseThrowable(Throwable e) throws ResponseValidationException {
+        Throwable cause = ExceptionUtils.unnestToRoot(e);
+        if (cause instanceof SignatureNotFoundException) {
+            throw new ResponseValidationException("Response from Gateway did not contain a signature as required by policy", e);
+        } else if (cause instanceof InvalidSignatureException) {
+            throw new ResponseValidationException("Response from Gateway contained an invalid signature", e);
+        } else if (cause instanceof SignatureException) {
+            throw new ResponseValidationException("Response from Gateway was signed, but not by the Gateway CA key we expected", e);
+        } else if (cause instanceof CertificateException) {
+            throw new ResponseValidationException("Signature on response from Gateway contained an invalid certificate", e);
+        } else if (cause instanceof NoSuchAlgorithmException) {
+            throw new ResponseValidationException("Signature on response from Gateway required an unsupported algorithm", e);
+        } else if (cause instanceof InvalidKeyException) {
+            throw new ResponseValidationException("Our copy of the Gateway public key is corrupt", e);
+        } else if (cause instanceof NoSuchProviderException) {
+            throw new RuntimeException("VM is misconfigured", e);
+        }
+        throw new RuntimeException("Response processing error", e);
+    }
+
+
+    /**
+     * validate the signature of the response by the ssg server (do not use, this is old version for reference)
+     *
+     * @param request
+     * @param response
+     * @return
+     */
+    private AssertionStatus unDecorateReplyOld(PendingRequest request, SsgResponse response) throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException {
         Document doc = response.getResponseAsDocument();
 
         // LOOK FOR NONCE IN WSSC TOKEN

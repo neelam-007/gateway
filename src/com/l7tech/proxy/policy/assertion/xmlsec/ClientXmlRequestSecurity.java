@@ -2,15 +2,14 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
-import com.l7tech.common.security.xml.SecureConversationTokenHandler;
-import com.l7tech.common.security.xml.Session;
-import com.l7tech.common.security.xml.SoapMsgSigner;
-import com.l7tech.common.security.xml.XmlMangler;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.security.AesKey;
+import com.l7tech.common.security.xml.*;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
+import com.l7tech.policy.assertion.xmlsec.SecurityProcessor;
+import com.l7tech.policy.assertion.xmlsec.SecurityProcessorException;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -26,6 +25,7 @@ import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -68,6 +68,54 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         Document soapmsg = null;
         soapmsg = request.getSoapEnvelope(); // this will make a defensive copy as needed
 
+        // get the client cert and private key
+        // We must have credentials to get the private key
+        Ssg ssg = request.getSsg();
+        PrivateKey userPrivateKey = null;
+        X509Certificate userCert = null;
+        Session session;
+        request.getCredentials();
+        session = request.getOrCreateSession();
+
+        request.prepareClientCertificate();
+
+        try {
+            userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+            userCert = SsgKeyStoreManager.getClientCert(ssg);
+            final SignerInfo si = new SignerInfo(userPrivateKey, userCert);
+            // decorate request with session info and seq nr
+            request.setSession(session);
+            long sessId = session.getId();
+            long seqNr = session.nextSequenceNumber();
+            byte[] keyreq = session.getKeyReq();
+            Key encryptionKey = keyreq != null ? new AesKey(keyreq, 128) : null;
+            SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(soapmsg, sessId, seqNr);
+            SecurityProcessor signer = SecurityProcessor.getSigner(session, si, encryptionKey, data);
+            signer.processInPlace(soapmsg);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (SecurityProcessorException e) {
+            throw new RuntimeException(e);
+        }
+//        XmlUtil.documentToOutputStream(soapmsg, System.out);
+        request.setSoapEnvelope(soapmsg);
+        return AssertionStatus.NONE;
+    }
+
+
+    /**
+     * ClientProxy client-side processing of the given request (do not use, this is old version for reference).
+     *
+     * @param request The request to decorate.
+     * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
+     */
+    private AssertionStatus decorateRequestOld(PendingRequest request)
+      throws OperationCanceledException, BadCredentialsException,
+      GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, ClientCertificateException {
+        // GET THE SOAP DOCUMENT
+        Document soapmsg = null;
+        soapmsg = request.getSoapEnvelope(); // this will make a defensive copy as needed
+
         // GET THE CLIENT CERT AND PRIVATE KEY
         // We must have credentials to get the private key
         Ssg ssg = request.getSsg();
@@ -99,7 +147,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             int encReferenceIdSuffix = 1;
             int signReferenceIdSuffix = 1;
             SoapMsgSigner dsigHelper = new SoapMsgSigner();
-            // ENCRYPTION
+            // encryption
             for (int i = 0; i < data.length; i++) {
                 ElementSecurity elementSecurity = data[i];
                 // XPath match?
@@ -128,7 +176,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         }
 
         // SET BACK ALL THIS IN PENDING REQUEST
-        XmlUtil.documentToOutputStream(soapmsg, System.out);
+//        XmlUtil.documentToOutputStream(soapmsg, System.out);
         request.setSoapEnvelope(soapmsg);
 
         return AssertionStatus.NONE;

@@ -7,7 +7,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.*;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
@@ -80,24 +79,24 @@ class Verifier extends SecurityProcessor {
                     }
                 }
 
-                 Element element = null;
-                    xpath = elementSecurity.getxPath();
-                    if (xpath != null) {
-                        List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
-                        if (nodes.isEmpty()) {
-                            final String message = "The XPath result is empty '" + xpath.getExpression() + "'";
-                            String logmessage = message +"\nMessage is\n"+XmlUtil.documentToString(document);
-                            logger.warning(logmessage);
-                            throw new SecurityProcessorException(message);
-                        }
-                        element = (Element)nodes.get(0);
-                        if (element.equals(document.getDocumentElement())) {
-                            envelopeProcessed = true; //signal to ignore everything else. Should scream if more elemnts exist?
-                        }
-                    } else {
-                        element = document.getDocumentElement();
-                        envelopeProcessed = true; //signal to ignore everything else. Should scream if more elements exist?
+                Element element = null;
+                xpath = elementSecurity.getxPath();
+                if (xpath != null) {
+                    List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
+                    if (nodes.isEmpty()) {
+                        final String message = "The XPath result is empty '" + xpath.getExpression() + "'";
+                        String logmessage = message + "\nMessage is\n" + XmlUtil.documentToString(document);
+                        logger.warning(logmessage);
+                        throw new SecurityProcessorException(message);
                     }
+                    element = (Element)nodes.get(0);
+                    if (element.equals(document.getDocumentElement())) {
+                        envelopeProcessed = true; //signal to ignore everything else. Should scream if more elemnts exist?
+                    }
+                } else {
+                    element = document.getDocumentElement();
+                    envelopeProcessed = true; //signal to ignore everything else. Should scream if more elements exist?
+                }
                 // verifiy element signature
                 SoapMsgSigner dsigHelper = new SoapMsgSigner();
 
@@ -112,36 +111,32 @@ class Verifier extends SecurityProcessor {
                 }
                 logger.fine("response message element decrypted");
             }
-            // clean empty security element and header if necessary
-            SoapUtil.cleanEmptySecurityElement(document);
-            SoapUtil.cleanEmptyHeaderElement(document);
-
             return new Result(document, documentCertificate);
         } catch (JaxenException e) {
             throw new SecurityProcessorException("XPath error", e);
         } catch (SignatureNotFoundException e) {
-            SignatureException se = new  SignatureException("Signature not found");
+            SignatureException se = new SignatureException("Signature not found");
             se.initCause(e);
             throw se;
         } catch (InvalidSignatureException e) {
-            SignatureException se = new  SignatureException("Invalid signature");
+            SignatureException se = new SignatureException("Invalid signature");
             se.initCause(e);
             throw se;
         } catch (ParserConfigurationException e) {
-            throw new SecurityProcessorException(e.getMessage(), e);
+            throw new SecurityProcessorException("Xml parser configuration error", e);
         } catch (SAXException e) {
-            throw new SecurityProcessorException(e.getMessage(), e);
+            throw new SecurityProcessorException("Xml parser error", e);
         } catch (XMLSecurityElementNotFoundException e) {
-            throw new SecurityProcessorException(e.getMessage(), e);
+            throw new SecurityProcessorException("Request does not contain security element", e);
         }
     }
 
-     /**
+    /**
      * Check whether the element security properties are supported
      *
      * @param elementSecurity the security element to verify
      * @throws java.security.NoSuchAlgorithmException
-     *                           on unsupported algorithm
+     *                                  on unsupported algorithm
      * @throws GeneralSecurityException on security properties invalid
      */
     protected void check(ElementSecurity elementSecurity)
