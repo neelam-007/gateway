@@ -12,7 +12,7 @@ import java.rmi.RemoteException;
 
 public class LogAdminStub implements LogAdmin {
 
-    public String[] getSystemLog(long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
+    /*public String[] getSystemLog(long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
 
         String[] logs = {
             "13|20031023 10:55:40.921|FINEEST|com.l7tech.server.AuthenticatableHttpServlet|authenticateRequestBasic|Authentication success for user pang on identity provider: Internal Identity Provider",
@@ -65,9 +65,9 @@ public class LogAdminStub implements LogAdmin {
         }
 
         return result;
-    }
+    }*/
 
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
-        throw new UnsupportedOperationException("todo");
+        return new SSGLogRecord[0];
     }
 }
