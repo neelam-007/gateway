@@ -57,6 +57,7 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
                 new PoliciesFolderNode(),
                 new AuthMethodFolderNode(),
                 new TransportLayerSecurityFolderNode(),
+                new XmlSecurityFolderNode(),
                 new RoutingFolderNode()
             };
 

@@ -5,18 +5,18 @@ package com.l7tech.console.tree;
 
 /**
  * The class represents a node element in the palette assertion tree.
- * It represents the folder with transport layer securitry.
+ * It represents the folder with XML security elements.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class TransportLayerSecurityFolderNode extends AbstractTreeNode {
+public class XmlSecurityFolderNode extends AbstractTreeNode {
     /**
      * construct the <CODE>PoliciesFolderNode</CODE> instance for
      * a given entry.
      *
      */
-    public TransportLayerSecurityFolderNode() {
+    public XmlSecurityFolderNode() {
         super(null);
     }
 
@@ -40,7 +40,9 @@ public class TransportLayerSecurityFolderNode extends AbstractTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
-        insert(new SslTransportNode(), 0);
+        int index = 0;
+        insert(new XmlSignatureNode(), index++);
+        insert(new XmlEncryptionNode(), index++);
     }
 
     /**
@@ -49,7 +51,7 @@ public class TransportLayerSecurityFolderNode extends AbstractTreeNode {
      * @return the name as a String
      */
     public String getName() {
-        return "Transport Layer Security (TLS)";
+        return "XML security";
     }
 
     /**
