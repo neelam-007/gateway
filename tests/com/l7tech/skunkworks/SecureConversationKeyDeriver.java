@@ -1,12 +1,15 @@
 package com.l7tech.skunkworks;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidKeyException;
+
+import com.l7tech.common.util.XmlUtil;
 
 /**
  * Implement mechanism described in WS-Secure Conversation to derive
@@ -30,7 +33,9 @@ public class SecureConversationKeyDeriver {
      * @param secret the secret associated with the session
      * @return the resulting derived key
      */
-    public byte[] derivedKeyTokenToKey(Element derivedKeyToken, byte[] secret) throws NoSuchAlgorithmException {
+    public Key derivedKeyTokenToKey(Element derivedKeyToken, byte[] secret) throws NoSuchAlgorithmException {
+
+        String namespaceURI = "";
         // make sure we got a DerivedKeyToken
         if (derivedKeyToken.getLocalName() == null || !derivedKeyToken.getLocalName().equals(DKT_EL_NAME)) {
             throw new IllegalArgumentException("This is no DerivedKeyToken " + derivedKeyToken.getLocalName());
@@ -40,31 +45,65 @@ public class SecureConversationKeyDeriver {
             throw new IllegalArgumentException("DerivedKeyToken must specify wsc namespace");
         } else if (derivedKeyToken.getNamespaceURI().equals(WSC11_NS)) {
             // we are dealing with wsc 1.1
-            // todo?
+            namespaceURI = WSC11_NS;
+
         } else if (derivedKeyToken.getNamespaceURI().equals(WSSE11_NS)) {
             // we are dealing with wsc 1.0
-            // todo?
+            namespaceURI = WSSE11_NS;
         } else {
+            namespaceURI = "";
             throw new IllegalArgumentException("Unsuported DerivedKeyToken namespace " + derivedKeyToken.getNamespaceURI());
         }
 
         // check that default algorithm is in effect
-        String algo = derivedKeyToken.getAttribute(ALGO_ATTRNAME);
-        if (algo == null) {
-            derivedKeyToken.getAttributeNodeNS(WSSE11_NS, ALGO_ATTRNAME);
-        }
-        if (algo == null) {
-            derivedKeyToken.getAttributeNodeNS(WSSE11_NS, ALGO_ATTRNAME);
-        }
-        if (algo != null) {
+        String algo = derivedKeyToken.getAttributeNS(namespaceURI, ALGO_ATTRNAME);
+
+        if (algo.equals("")) {
             throw new NoSuchAlgorithmException("Algorithm specified (" + algo + "). We only support default P_SHA-1");
         }
 
-        // get the Nonce
-        // todo
+        String generation = null;
+        String length = null;
+        String label = null;
+        String nonce = null;
 
-        // get the subject
-        // todo
+        // get generation
+        Element genNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken, namespaceURI,  "Generation")).get(0));
+        if(genNode != null) {
+            generation = ((Text)genNode.getFirstChild()).getNodeValue();;
+        }
+        // get length
+        Element lenNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken, namespaceURI,  "Length")).get(0));
+        if(lenNode != null) {
+            length = ((Text)lenNode.getFirstChild()).getNodeValue();
+        }
+
+        // get label
+        Element labelNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken, namespaceURI,  "Label")).get(0));
+        if(labelNode != null) {
+            label = ((Text)labelNode.getFirstChild()).getNodeValue();
+        }
+
+        // get nonce
+        Element nonceNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken, WSSE_NS,  "Nonce")).get(0));
+        if(nonceNode != null) {
+            nonce = ((Text)nonceNode.getFirstChild()).getNodeValue();
+        }
+
+        byte[] seed = new byte[secret.length + label.length() + nonce.length()];
+        System.arraycopy(secret, 0, seed, 0, secret.length);
+        System.arraycopy(label.getBytes(), 0, seed, secret.length, label.length());
+        System.arraycopy(nonce.getBytes(), 0, seed, secret.length+label.length(), nonce.length());
+
+        try{
+            byte[] key = pSHA1(secret, seed, Integer.parseInt(length));
+
+            Key dk = new SecretKeySpec(key, "SHA1");
+
+            return dk;
+        } catch (InvalidKeyException e) {
+
+        }
 
         return null;
     }
@@ -82,7 +121,7 @@ public class SecureConversationKeyDeriver {
      *      A(0) = seed
      *      A(i) = HMAC_hash(secret, A(i-1))
      */
-    public byte[] pSHA1(byte[] secret, byte[] seed, int requiredlength) throws NoSuchAlgorithmException, InvalidKeyException {
+       public byte[] pSHA1(byte[] secret, byte[] seed, int requiredlength) throws NoSuchAlgorithmException, InvalidKeyException {
         // compute A(1)
         byte[] ai = getHMacSHA1(secret).doFinal(seed);
         // compute A(1) + seed
@@ -130,5 +169,6 @@ public class SecureConversationKeyDeriver {
     private static final String DKT_EL_NAME = "DerivedKeyToken";
     private static final String WSC11_NS = "http://schemas.xmlsoap.org/ws/2004/04/sc";
     private static final String WSSE11_NS = "http://schemas.xmlsoap.org/ws/2002/12/secext/";
+    private static final String WSSE_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
     private static final String ALGO_ATTRNAME = "Algorithm";
 }

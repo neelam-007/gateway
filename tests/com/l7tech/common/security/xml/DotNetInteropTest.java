@@ -4,6 +4,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.skunkworks.SecureConversationKeyDeriver;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -14,6 +15,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.Key;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -73,6 +75,23 @@ public class DotNetInteropTest extends TestCase {
         return encryptionKeys[0];
     }
 
+        public void _testDerivedKeyToken() throws Exception {
+        Document derivedKeySignedDoc = getDerviedKeySignedRequest();
+        Element header = SoapUtil.getHeaderElement(derivedKeySignedDoc);
+
+        Element security = (Element) ((XmlUtil.findChildElementsByName(header, "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd", "Security")).get(0));
+        Element derivedKeyToken = (Element) ((XmlUtil.findChildElementsByName(security, "http://schemas.xmlsoap.org/ws/2004/04/sc", "DerivedKeyToken")).get(0));
+        byte[] secret = {5, 2, 4, 5, 8, 7, 9, 6, 32, 4, 1, 55, 8, 7, 77, 7};
+
+        SecureConversationKeyDeriver sckd = new SecureConversationKeyDeriver();
+        Key key = sckd.derivedKeyTokenToKey(derivedKeyToken, secret);
+
+        Element bodyEl = SoapUtil.getBody(derivedKeySignedDoc);
+
+        SoapMsgSigner.validateSignature(derivedKeySignedDoc, bodyEl, key);
+        System.out.println("Signature verified successfully with the derived key");
+    }
+
     public void testDecryptdotNetRequest() throws Exception {
         Document encryptedDoc = getEncryptedDoc();
         XmlMangler.ProcessedEncryptedKey encryptionKey = testGetEncryptedKey();
@@ -117,5 +136,10 @@ public class DotNetInteropTest extends TestCase {
     private Document getInvalidSignedRequest() throws Exception {
         return TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_TAMPERED_REQUEST);
     }
+
+    private Document getDerviedKeySignedRequest() throws Exception {
+            return TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN);
+        }
+
     public static final byte[] DECRYPTED_KEY = {-54, 33,-19, 87, -46, 31, -86, 44, -10, 3, -37, 111, 125, -94, -64, 24};
 }

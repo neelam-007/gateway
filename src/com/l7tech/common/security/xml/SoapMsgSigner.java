@@ -8,6 +8,7 @@ import org.w3c.dom.*;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Key;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
@@ -273,6 +274,86 @@ public final class SoapMsgSigner {
             }
         }
         throw new InvalidSignatureException("No cert found in key info.");
+    }
+
+    /**
+     * Verify that a valid signature is included and that the bodyElement is signed.
+     * The signature is verified using the shared key. Signature method is HMAC-SHA1.
+     *
+     * @param soapMsg the soap message that potentially contains a digital signature
+     * @param bodyElement the signed bodyElement
+     * @throws com.l7tech.common.security.xml.SignatureNotFoundException
+     *          if no signature is found in document
+     * @throws com.l7tech.common.security.xml.InvalidSignatureException
+     *          if the signature is invalid, not in an expected format or is missing information
+     */
+    public static void validateSignature(Document soapMsg, final Element bodyElement, Key key)
+            throws SignatureNotFoundException, InvalidSignatureException {
+        normalizeDoc(soapMsg);
+
+        // find signature bodyElement
+        final Element sigElement = getSignatureHeaderElement(soapMsg, bodyElement);
+        if (sigElement == null) {
+            throw new SignatureNotFoundException("No signature bodyElement in this document");
+        }
+
+        validateSignature(soapMsg, bodyElement, sigElement, key);
+    }
+
+    /**
+     * Verify that a valid signature is included and that the bodyElement is signed.
+     * The signature is verified using the shared key. Signature method is HMAC-SHA1.
+     * Caller is expected to have already called {@link #normalizeDoc(org.w3c.dom.Document)}.
+     *
+     * @param soapMsg the soap message that potentially contains a digital signature
+     * @param bodyElement the signed bodyElement
+     * @param sigElement the Signature element from the SOAP Security Header
+     * @throws com.l7tech.common.security.xml.SignatureNotFoundException
+     *          if no signature is found in document
+     * @throws com.l7tech.common.security.xml.InvalidSignatureException
+     *          if the signature is invalid, not in an expected format or is missing information
+     */
+    public static void validateSignature(Document soapMsg,
+                                         final Element bodyElement,
+                                         final Element sigElement,
+                                         Key key)
+            throws SignatureNotFoundException, InvalidSignatureException {
+
+        SignatureContext sigContext = new SignatureContext();
+
+        sigContext.setIDResolver(new IDResolver() {
+            public Element resolveID(Document doc, String s) {
+                return SoapUtil.getElementById(doc, s);
+            }
+        });
+
+        // validate signature
+        Validity validity = sigContext.verify(sigElement, key);
+
+        if (!validity.getCoreValidity()) {
+            throw new InvalidSignatureException("Validity not achieved: " + validity.getSignedInfoMessage() +
+                    ": " + validity.getReferenceMessage(0));
+        }
+
+        // verify that the entire envelope is signed
+        String refid = SoapUtil.getElementId(bodyElement);
+        if (refid == null || refid.length() < 1) {
+            throw new InvalidSignatureException("No reference id on envelope");
+        }
+        String envelopeURI = "#" + refid;
+        for (int i = 0; i < validity.getNumberOfReferences(); i++) {
+            if (!validity.getReferenceValidity(i)) {
+                throw new InvalidSignatureException("Validity not achieved for bodyElement " + validity.getReferenceURI(i));
+            }
+            if (envelopeURI.equals(validity.getReferenceURI(i))) {
+                // SUCCESS, RETURN THE CERT
+                // first, consume the signature bodyElement by removing it
+                sigElement.getParentNode().removeChild(sigElement);
+                return;
+            }
+        }
+        // if we get here, the envelope uri reference was not verified
+        throw new InvalidSignatureException("No reference to envelope was verified.");
     }
 
     /**
