@@ -22,6 +22,14 @@ import java.security.cert.X509Certificate;
  * Time: 10:31:45 AM
  */
 public abstract class CredentialManager {
+    public static final class ReasonHint {
+        public static final ReasonHint NONE = new ReasonHint("");
+        public static final ReasonHint PRIVATE_KEY = new ReasonHint("for unlocking your Private Key ");
+        private final String r;
+        private ReasonHint(String r) { this.r = r; }
+        public String toString() { return r; }
+    }
+
     /**
      * Get the credentials for this SSG.  If they aren't already loaded, this may involve reading
      * them from the keystore or prompting the user for them.  No new credentials will be obtained
@@ -35,6 +43,24 @@ public abstract class CredentialManager {
      * @throws OperationCanceledException if we prompted the user, but he clicked cancel
      */
     public abstract PasswordAuthentication getCredentials(Ssg ssg) throws OperationCanceledException;
+
+    /**
+     * Same as getCredentials(), but can provide a hint to the user about what the credentials are to be
+     * used for.
+     * @param ssg the Ssg whose credentials you want
+     * @param hint optional hint to the user about what we plan to do with the password when we get it.
+     *             The same credentials must be returned regardless of which hint is provided.
+     *             (Eventually we may support using a private key password that differs from the Gateway password.)
+     * @param disregardExisting if true, the user will be prompted for new credentials even if cached credentials are on hand.
+     * @param reportBadPassword if true, the user will be advised that the existing credentials are bad.  Implies disregardExisting.
+     * @return the credentials for this Ssg.
+     * @throws OperationCanceledException
+     */
+    public abstract PasswordAuthentication getCredentialsWithReasonHint(Ssg ssg,
+                                                                        ReasonHint hint,
+                                                                        boolean disregardExisting,
+                                                                        boolean reportBadPassword)
+            throws OperationCanceledException;
 
     /**
      * Get replacement credentials for this SSG.  This method will always prompt the user for

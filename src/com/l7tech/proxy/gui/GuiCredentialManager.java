@@ -75,7 +75,24 @@ public class GuiCredentialManager extends CredentialManager {
     public PasswordAuthentication getCredentials(final Ssg ssg) throws OperationCanceledException {
         for (;;) {
             try {
-                return getCredentials(ssg, false, false);
+                return getCredentials(ssg, "", false, false);
+            } catch (KeyStoreCorruptException e) {
+                notifyKeyStoreCorrupt(ssg);
+                SsgKeyStoreManager.deleteStores(ssg);
+                // FALLTHROUGH -- retry with newly-emptied keystore
+            }
+        }
+    }
+
+    public PasswordAuthentication getCredentialsWithReasonHint(Ssg ssg,
+                                                               CredentialManager.ReasonHint hint,
+                                                               boolean disregardExisting,
+                                                               boolean reportBadPassword)
+            throws OperationCanceledException
+    {
+        for (;;) {
+            try {
+                return getCredentials(ssg, hint.toString(), disregardExisting, reportBadPassword);
             } catch (KeyStoreCorruptException e) {
                 notifyKeyStoreCorrupt(ssg);
                 SsgKeyStoreManager.deleteStores(ssg);
@@ -87,7 +104,7 @@ public class GuiCredentialManager extends CredentialManager {
     public PasswordAuthentication getNewCredentials(final Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
         for (;;) {
             try {
-                return getCredentials(ssg, displayBadPasswordMessage, true);
+                return getCredentials(ssg, "", true, displayBadPasswordMessage);
             } catch (KeyStoreCorruptException e) {
                 notifyKeyStoreCorrupt(ssg);
                 SsgKeyStoreManager.deleteStores(ssg);
@@ -96,7 +113,7 @@ public class GuiCredentialManager extends CredentialManager {
         }
     }
 
-    private PasswordAuthentication getCredentials(final Ssg ssg, final boolean oldOnesWereBad, boolean mustGetNewOnes)
+    private PasswordAuthentication getCredentials(final Ssg ssg, final String reasonHint, boolean mustGetNewOnes, final boolean oldOnesWereBad)
             throws OperationCanceledException, KeyStoreCorruptException
     {
         if (oldOnesWereBad) mustGetNewOnes = true;
@@ -140,7 +157,8 @@ public class GuiCredentialManager extends CredentialManager {
                                                               ssg.toString(),
                                                               holder.showUsername,
                                                               holder.lockUsername,
-                                                              oldOnesWereBad);
+                                                              oldOnesWereBad,
+                                                              reasonHint);
                 if (pw == null) {
                     if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
                         // This is the second time we've popped up a logon dialog and the user has impatiently
@@ -222,8 +240,10 @@ public class GuiCredentialManager extends CredentialManager {
             }
         });
 
-        if (!df.destroyKeystore)
-            throw new OperationCanceledException("KeyStore is corrupt, but user does not want to delete it");
+        if (!df.destroyKeystore) {
+            ssg.cmPassword(null); // forget cached credentials
+            throw new OperationCanceledException("Unable to read the key store.");
+        }
     }
 
     /**

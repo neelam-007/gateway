@@ -43,6 +43,18 @@ public class CredentialManagerImpl extends CredentialManager {
         throw new CredentialsUnavailableException("Unable to obtain new credentials");
     }
 
+    public PasswordAuthentication getCredentialsWithReasonHint(Ssg ssg,
+                                                               CredentialManager.ReasonHint hint,
+                                                               boolean disregardExisting,
+                                                               boolean reportBadPassword)
+            throws OperationCanceledException
+    {
+        if (disregardExisting || reportBadPassword)
+            return getNewCredentials(ssg, reportBadPassword);
+        else
+            return getCredentials(ssg);
+    }
+
     public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
         log.log(Level.WARNING, "Headless CredentialManager: unable to obtain new credentials");
         throw new CredentialsUnavailableException("Unable to obtain new credentials");

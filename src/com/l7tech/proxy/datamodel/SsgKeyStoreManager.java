@@ -235,7 +235,10 @@ public class SsgKeyStoreManager {
                 return ssg.privateKey();
         }
         PasswordAuthentication pw;
-        pw = Managers.getCredentialManager().getCredentials(ssg);
+        pw = Managers.getCredentialManager().getCredentialsWithReasonHint(ssg,
+                                                                          CredentialManager.ReasonHint.PRIVATE_KEY,
+                                                                          false,
+                                                                          false);
         synchronized (ssg) {
             if (!isClientCertAvailabile(ssg))
                 return null;

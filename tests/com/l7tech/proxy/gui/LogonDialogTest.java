@@ -40,7 +40,12 @@ public class LogonDialogTest {
             frame.pack();
             frame.setVisible(true);
             Thread.sleep(1000);
-            PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), "Testing123Ssg (Default)", "Testuser", false, false);
+            PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(),
+                                                          "Testing123Ssg (Default)",
+                                                          "Testuser",
+                                                          true,
+                                                          true,
+                                                          "for me to vigorously poop on "); // test longish hint string
             if (pw != null) {
                 log.info("Got username=" + pw.getUserName());
                 log.info("Got password=" + new String(pw.getPassword()));
