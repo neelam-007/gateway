@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  */
 public class JmsMessageListener implements MessageListener, ServerComponentLifecycle {
     JmsMessageListener(QueueSession session, JmsReceiver receiver) {
-        _session = session;
+        _jmsSession = session;
         _receiver = receiver;
 
         String jmsThreadpoolSize = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_JMS_THREAD_POOL_SIZE);
@@ -44,7 +44,7 @@ public class JmsMessageListener implements MessageListener, ServerComponentLifec
     public void onMessage(Message jmsRequest) {
         TextMessage jmsResponse = null;
         try {
-            jmsResponse = _session.createTextMessage();
+            jmsResponse = _jmsSession.createTextMessage();
             JmsTransportMetadata jtm = new JmsTransportMetadata(jmsRequest, jmsResponse);
             JmsRequestHandler handler = new JmsRequestHandler(this, jtm);
             _threadPool.execute(handler);
@@ -55,39 +55,47 @@ public class JmsMessageListener implements MessageListener, ServerComponentLifec
         }
     }
 
-    void setSession(QueueSession session) {
-        _session = session;
+    void setJmsSession(QueueSession jmsSession) {
+        _jmsSession = jmsSession;
     }
 
     public void init(ComponentConfig config) throws LifecycleException {
     }
 
     public void start() throws LifecycleException {
-        if (_session == null) throw new LifecycleException("Can't start without a session!");
+        if (_jmsSession == null) throw new LifecycleException("Can't start without a session!");
     }
 
     public void stop() throws LifecycleException {
-        _session = null;
+        _jmsSession = null;
     }
 
     public void close() throws LifecycleException {
-        _session = null;
+        _jmsSession = null;
     }
 
     public void sendResponse(JmsSoapRequest soapRequest, JmsSoapResponse soapResponse,
-                             AssertionStatus status) {
+                             AssertionStatus status) throws JMSException {
         JmsEndpoint out = _receiver.getOutboundResponseEndpoint();
         JmsEndpoint fail = _receiver.getFailureEndpoint();
-        if (status == AssertionStatus.NONE) {
-            if (out != null) {
-                String qname = out.getDestinationName();
-            }
+
+        Queue jmsReplyDest = null;
+        if ( status == AssertionStatus.NONE ) {
+            jmsReplyDest = _jmsSession.createQueue( out.getDestinationName() );
+        } else if ( fail == null ) {
+            jmsReplyDest = _jmsSession.createQueue( out.getDestinationName() );
+        } else {
+            jmsReplyDest = _jmsSession.createQueue( fail.getDestinationName() );
         }
 
+        QueueSender replySender = _jmsSession.createSender( jmsReplyDest );
+
+        Message jmsResponseMsg = ((JmsTransportMetadata)soapResponse.getTransportMetadata()).getResponse();
+        replySender.send( jmsResponseMsg );
     }
 
     private static PooledExecutor _threadPool;
-    private QueueSession _session;
+    private QueueSession _jmsSession;
     private final Logger _logger = LogManager.getInstance().getSystemLogger();
     private JmsReceiver _receiver;
 }

@@ -178,6 +178,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
     }
 
     public synchronized void init(ComponentConfig config) throws LifecycleException {
+        _logger.info( "Initializing " + toString() + "..." );
         Hashtable properties = new Hashtable();
         JmsConnection conn = getConnection();
         String classname = conn.getInitialContextFactoryClassname();
@@ -194,11 +195,15 @@ public class JmsReceiver implements ServerComponentLifecycle {
             String qcfUrl = conn.getQueueFactoryUrl();
             String dcfUrl = conn.getDestinationFactoryUrl();
 
-            if (qcfUrl != null && qcfUrl.length() > 0)
+            if (qcfUrl != null && qcfUrl.length() > 0) {
+                _logger.fine( "Using queue connection factory URL '" + qcfUrl + "'" );
                 _jmsConnectionFactory = (QueueConnectionFactory)_jmsContext.lookup(qcfUrl);
+            }
 
-            if (dcfUrl != null && dcfUrl.length() > 0)
+            if (dcfUrl != null && dcfUrl.length() > 0) {
+                _logger.fine( "Using destination connection factory URL '" + qcfUrl + "'" );
                 _jmsConnectionFactory = (ConnectionFactory)_jmsContext.lookup(dcfUrl);
+            }
 
             if (_jmsConnectionFactory == null) {
                 String msg = "No connection factory was configured for '" + _inboundRequestEndpoint.toString() + "'";
@@ -209,18 +214,23 @@ public class JmsReceiver implements ServerComponentLifecycle {
             _jmsInboundQueue = (Queue)_jmsContext.lookup(_inboundRequestEndpoint.getDestinationName());
 
             if (_outboundResponseEndpoint != null) {
+                _logger.fine( "Using " + _outboundResponseEndpoint.getDestinationName() + " for outbound response messages" );
                 String dname = _outboundResponseEndpoint.getDestinationName();
                 _jmsOutboundQueue = (Queue)_jmsContext.lookup(dname);
             }
 
             if (_failureEndpoint != null) {
+                _logger.fine( "Using " + _outboundResponseEndpoint.getDestinationName() + " for failure messages" );
                 String dname = _failureEndpoint.getDestinationName();
                 _jmsFailureQueue = (Queue)_jmsContext.lookup(dname);
             }
 
-            _fifo = new FIFOSemaphore(_inboundRequestEndpoint.getMaxConcurrentRequests());
+            int max = _inboundRequestEndpoint.getMaxConcurrentRequests();
+            _logger.fine( "Allowing " + max + " concurrent request messages" );
+            _fifo = new FIFOSemaphore(max);
 
             _initialized = true;
+            _logger.info( toString() + " initialized successfully" );
         } catch (NamingException e) {
             _logger.log(Level.WARNING, "Caught NamingException initializing JMS context for '" + _inboundRequestEndpoint.toString() + "'", e);
             throw new LifecycleException(e.toString(), e);
@@ -231,6 +241,8 @@ public class JmsReceiver implements ServerComponentLifecycle {
      * Starts the receiver.
      */
     public synchronized void start() throws LifecycleException {
+        _logger.info( "Starting " + toString() + "..." );
+
         if (!_initialized) throw new LifecycleException("Can't start '" + _inboundRequestEndpoint.toString() + "', it has not been successfully initialized!");
 
         String username = _inboundRequestEndpoint.getUsername();
@@ -258,6 +270,8 @@ public class JmsReceiver implements ServerComponentLifecycle {
             }
 
             _jmsInboundConnection.start();
+
+            _logger.info( toString() + " started successfully" );
         } catch (JMSException e) {
             throw new LifecycleException(e.getMessage(), e);
         }

@@ -117,9 +117,6 @@ public class ServicePanel extends WizardStepPanel {
                 if (url.getProtocol() == null || url.getProtocol().length() < 1)
                     return false;
 
-                if (url.getHost() == null || url.getHost().length() < 1)
-                    return false;
-
                 return true;
             }
 

@@ -82,11 +82,10 @@ public class JmsEndpointManager extends HibernateEntityManager {
                     result.add( header );
                 }
             }
-
+            return (EntityHeader[])result.toArray( new EntityHeader[0] );
         } catch ( SQLException e ) {
             throw new FindException( e.toString(), e );
         }
-        return (EntityHeader[])result.toArray( new EntityHeader[0] );
     }
 
     public long save( final JmsEndpoint endpoint ) throws SaveException {
