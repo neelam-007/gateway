@@ -39,7 +39,6 @@ public class Gui {
     private static final String MESSAGE_WINDOW_TITLE = "Message Window";
     private static final String MENU_FILE = "File";
     private static final String MENU_FILE_QUIT = "Quit";
-    private static final String MENU_OPTIONS = "Options";
     private static final String MENU_WINDOW = "Window";
     private static final String MENU_MESSAGES = "Message Window";
     private JCheckBoxMenuItem showMessages;
@@ -217,9 +216,6 @@ public class Gui {
         fileMenu.add(fileQuit);
 
         menus.add(fileMenu);
-
-        final JMenu optionsMenu = new JMenu(MENU_OPTIONS);
-        menus.add(optionsMenu);
 
         final JMenu windowMenu = new JMenu(MENU_WINDOW);
 
