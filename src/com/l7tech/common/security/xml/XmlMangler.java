@@ -328,24 +328,6 @@ public class XmlMangler {
         NodeList encryptedKeyElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedKey");
         for (int i = 0; i < encryptedKeyElements.getLength(); i++) {
             Element encryptedKey = (Element)encryptedKeyElements.item(i);
-            /*EncryptedKey ekey = new EncryptedKey(encryptedKeyEl);
-            DecryptionContext dc = new DecryptionContext();
-            AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-            af.setProvider(JceProvider.getAsymmetricJceProvider().getName());
-            dc.setAlgorithmFactory(af);
-
-            Element method = XmlUtil.findFirstChildElementByName(encryptedKeyEl, SoapUtil.XMLENC_NS, "EncryptionMethod");
-            Element keyInfo = XmlUtil.findFirstChildElementByName(encryptedKeyEl, "http://www.w3.org/2000/09/xmldsig#", "KeyInfo");
-            dc.setEncryptedType(encryptedKeyEl, EncryptedData.CONTENT, method, keyInfo);
-            dc.setEncryptionMethod(method);
-            dc.setKey(recipientPrivateKey);
-
-            try {
-                dc.decrypt();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "decryption error", e);
-            }
-            dc.getData();*/
             // check that this is for us by checking the SecurityTokenReference or something
             // todo
             // check that the algo is rsa
