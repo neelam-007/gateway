@@ -24,6 +24,5 @@ public interface XmlMessage extends Message {
      * @throws IOException
      */
     Document getDocument() throws SAXException, IOException;
-
-    // TODO: setDocument()?  Include DOM serialization functionality in XmlMessageAdapter?
+    void setDocument(Document doc);
 }
