@@ -17,7 +17,6 @@ import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.xmlsig.SoapMsgSigner;
 import org.w3c.dom.Document;
-
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -90,6 +89,7 @@ public class ClientWssClientCert implements ClientAssertion {
         }
 
         request.setSoapEnvelope(soapmsg);
+
         return AssertionStatus.NONE;
     }
 
