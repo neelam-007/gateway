@@ -36,12 +36,15 @@ public class Gui {
     private JFrame frame;
     private MessageViewer messageViewer;
 
-    private static final String WINDOW_TITLE = "SecureSpan Agent";
+    static final String APP_NAME = "SecureSpan Agent";
+    private static final String WINDOW_TITLE = APP_NAME;
     private static final String MESSAGE_WINDOW_TITLE = "Message Window";
     private static final String MENU_FILE = "File";
     private static final String MENU_FILE_QUIT = "Quit";
     private static final String MENU_WINDOW = "Window";
     private static final String MENU_MESSAGES = "Message Window";
+    private static final String MENU_HELP = "Help";
+    private static final String MENU_HELP_ABOUT = "About " + APP_NAME;
     private JCheckBoxMenuItem showMessages;
     private SsgListPanel ssgListPanel;
     private SsgManager ssgManager = null;
@@ -239,6 +242,13 @@ public class Gui {
         windowMenu.add(showMessages);
 
         menus.add(windowMenu);
+
+        final JMenu aboutMenu = new JMenu(MENU_HELP);
+        final JMenuItem aboutMenuItem = new JMenuItem(MENU_HELP_ABOUT);
+        aboutMenuItem.addActionListener(menuActionListener);
+        aboutMenu.add(aboutMenuItem);
+        menus.add(aboutMenu);
+
         return menus;
     }
 
@@ -252,6 +262,8 @@ public class Gui {
             } else {
                 getMessageViewer().hide();
             }
+        } else if (MENU_HELP_ABOUT.equals(e.getActionCommand())) {
+            new AgentAboutBox().show();
         }
     }
 
