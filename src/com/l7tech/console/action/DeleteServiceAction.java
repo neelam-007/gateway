@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class DeleteServiceAction extends BaseAction {
+public class DeleteServiceAction extends SecureAction {
     static final Logger log = Logger.getLogger(DeleteServiceAction.class.getName());
     ServiceNode node;
 
@@ -59,7 +59,7 @@ public class DeleteServiceAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         if (!Actions.deleteService(node)) return;
 
         Runnable runnable = new Runnable() {

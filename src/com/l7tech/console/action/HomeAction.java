@@ -23,7 +23,7 @@ import java.net.URL;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class HomeAction extends BaseAction {
+public class HomeAction extends SecureAction {
     private WorkSpacePanel wpanel;
     private ClassLoader cl = getClass().getClassLoader();
 
@@ -59,7 +59,7 @@ public class HomeAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         try {
             wpanel.setComponent(getHomePageComponent());
         } catch (ActionVetoException e) {

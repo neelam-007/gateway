@@ -22,7 +22,7 @@ import java.util.logging.Level;
  * Date: Feb 19, 2004<br/>
  * $Id$
  */
-public class TimeRangePropertiesAction extends BaseAction {
+public class TimeRangePropertiesAction extends SecureAction {
     public TimeRangePropertiesAction(TimeRangeTreeNode subject) {
         this.subject = subject;
     }
@@ -39,7 +39,7 @@ public class TimeRangePropertiesAction extends BaseAction {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
-    public void performAction() {
+    protected void performAction() {
         Frame f = TopComponents.getInstance().getMainWindow();
         TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(f, false, subject.getTimeRange());
         dlg.addPolicyListener(listener);

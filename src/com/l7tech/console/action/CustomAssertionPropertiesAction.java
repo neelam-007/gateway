@@ -56,7 +56,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         CustomAssertionHolder cah = (CustomAssertionHolder)node.asAssertion();
         final JDialog dialog = new JDialog(TopComponents.getInstance().getMainWindow(), true);
         final CustomAssertion ca = cah.getCustomAssertion();

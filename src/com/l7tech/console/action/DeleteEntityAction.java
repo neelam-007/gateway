@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class DeleteEntityAction extends BaseAction {
+public class DeleteEntityAction extends SecureAction {
     static final Logger log = Logger.getLogger(DeleteEntityAction.class.getName());
     private EventListenerList listenerList = new WeakEventListenerList();
 
@@ -86,7 +86,7 @@ public class DeleteEntityAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         boolean deleted = false;
         deleted = Actions.deleteEntity(node, config);
         if (deleted) {

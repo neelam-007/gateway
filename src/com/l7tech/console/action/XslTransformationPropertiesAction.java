@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * Date: Feb 6, 2004<br/>
  * $Id$<br/>
  */
-public class XslTransformationPropertiesAction extends BaseAction {
+public class XslTransformationPropertiesAction extends SecureAction {
 
     public XslTransformationPropertiesAction(XslTransformationTreeNode node) {
         this.node = node;
@@ -41,7 +41,7 @@ public class XslTransformationPropertiesAction extends BaseAction {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
-    public void performAction() {
+    protected void performAction() {
         Frame f = TopComponents.getInstance().getMainWindow();
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, false, node.getAssertion());
         dlg.addPolicyListener(listener);

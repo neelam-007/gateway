@@ -135,11 +135,11 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         if (IdentityProviderType.LDAP.toVal() == unresolvedRef.getIdProviderTypeVal()) {
             NewLdapProviderAction action = new NewLdapProviderAction(null);
             action.addEntityListener(updateProviderListCallback);
-            action.performAction();
+            action.invoke();
         } else if (IdentityProviderType.FEDERATED.toVal() == unresolvedRef.getIdProviderTypeVal()) {
             NewFederatedIdentityProviderAction action = new NewFederatedIdentityProviderAction(null);
             action.addEntityListener(updateProviderListCallback);
-            action.performAction();
+            action.invoke();
         }
 
     }

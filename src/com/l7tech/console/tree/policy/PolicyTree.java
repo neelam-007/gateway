@@ -847,7 +847,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     public void refresh() {
         if (canRefresh()) {
-            new EditServicePolicyAction(policyEditorPanel.getServiceNode(), true).performAction();
+            new EditServicePolicyAction(policyEditorPanel.getServiceNode(), true).invoke();
         }
     }
 

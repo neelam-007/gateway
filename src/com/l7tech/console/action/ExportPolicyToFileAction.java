@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Jul 21, 2004<br/>
  */
-public class ExportPolicyToFileAction extends BaseAction {
+public class ExportPolicyToFileAction extends SecureAction {
     static final Logger log = Logger.getLogger(ExportPolicyToFileAction.class.getName());
     protected AssertionTreeNode node;
 
@@ -70,7 +70,7 @@ public class ExportPolicyToFileAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         if (node == null) {
             throw new IllegalStateException("no node specified");
         }

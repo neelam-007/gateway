@@ -54,7 +54,7 @@ public class SslPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         String[] options = new String[SslAssertion.options().size()];
         int index = 0;
         for (Iterator iterator = SslAssertion.options().iterator(); iterator.hasNext();) {

@@ -148,7 +148,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
             /**
              * Invoked when an action occurs.
              */
-            public void performAction() {
+            protected void performAction() {
                 node = lastAssertionNode;
                 super.performAction();
             }
@@ -163,7 +163,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
             /**
              * Invoked when an action occurs.
              */
-            public void performAction() {
+            protected void performAction() {
                 node = lastAssertionNode;
                 super.performAction();
             }
@@ -178,7 +178,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
             /**
              * Invoked when an action occurs.
              */
-            public void performAction() {
+            protected void performAction() {
                 this.paletteNode = lastPaletteNode;
                 this.assertionNode = lastAssertionNode;
                 if (this.assertionNode == null) {
@@ -199,7 +199,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
             /**
              * Invoked when an action occurs.
              */
-            public void performAction() {
+            protected void performAction() {
                 this.node = lastAssertionNode;
                 super.performAction();
                 this.node = null;

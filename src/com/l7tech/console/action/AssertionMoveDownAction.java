@@ -10,7 +10,7 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class AssertionMoveDownAction extends BaseAction {
+public class AssertionMoveDownAction extends SecureAction {
     protected AssertionTreeNode node;
 
 
@@ -45,7 +45,7 @@ public class AssertionMoveDownAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         node.swap((AssertionTreeNode)node.getNextSibling());
     }
 }

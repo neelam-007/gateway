@@ -28,7 +28,7 @@ import java.io.IOException;
  * $Id$
  */
 
-public class EditPolicyTemplateNameAction extends BaseAction {
+public class EditPolicyTemplateNameAction extends SecureAction {
 
     static final Logger log = Logger.getLogger(EditServiceNameAction.class.getName());
     protected PolicyTemplateNode node;
@@ -68,7 +68,7 @@ public class EditPolicyTemplateNameAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {

@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class IdentityPolicyAction extends BaseAction {
+public class IdentityPolicyAction extends SecureAction {
     static final Logger log = Logger.getLogger(IdentityPolicyAction.class.getName());
     IdentityAssertionTreeNode assertion;
 
@@ -56,7 +56,7 @@ public class IdentityPolicyAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         try {
             Frame f = TopComponents.getInstance().getMainWindow();
             IdentityPolicyView pw = new IdentityPolicyView(f, assertion);

@@ -20,7 +20,7 @@ import java.util.Iterator;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class SavePolicyAction extends BaseAction {
+public class SavePolicyAction extends SecureAction {
     protected AssertionTreeNode node;
 
     public SavePolicyAction() {
@@ -59,7 +59,7 @@ public class SavePolicyAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         if (node == null) {
             throw new IllegalStateException("no node specified");
         }

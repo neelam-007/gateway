@@ -452,7 +452,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getValidateAction() {
         if (validateAction == null) {
             validateAction = new ValidatePolicyAction() {
-                public void performAction() {
+                protected void performAction() {
                     PolicyValidatorResult result
                       = PolicyValidator.getDefault().validate(rootAssertion.asAssertion());
                     displayPolicyValidateResult(pruneDuplicates(result));
@@ -466,7 +466,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getServerValidateAction() {
         if (serverValidateAction == null) {
             serverValidateAction = new ValidatePolicyAction() {
-                public void performAction() {
+                protected void performAction() {
                     PolicyValidatorResult result = PolicyValidator.getDefault().
                                                         validate(rootAssertion.asAssertion());
                     try {
@@ -797,7 +797,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getSaveAction() {
         if (saveAction == null) {
             saveAction = new SavePolicyAction() {
-                public void performAction() {
+                protected void performAction() {
                     this.node = rootAssertion;
                     super.performAction();
                 }
@@ -809,7 +809,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getExportAction() {
         if (exportPolicyAction == null) {
             exportPolicyAction = new ExportPolicyToFileAction() {
-                public void performAction() {
+                protected void performAction() {
                     this.node = rootAssertion;
                     super.performAction();
                 }
@@ -821,7 +821,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getImportAction() {
         if (importPolicyAction == null) {
             importPolicyAction = new ImportPolicyFromFileAction() {
-                public void performAction() {
+                protected void performAction() {
                     pubService = service;
 
                     try {

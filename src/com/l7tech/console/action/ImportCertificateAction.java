@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ImportCertificateAction extends BaseAction {
+public class ImportCertificateAction extends SecureAction {
     static Logger log = Logger.getLogger(ImportCertificateAction.class.getName());
 
     /**
@@ -57,7 +57,7 @@ public class ImportCertificateAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         JFileChooser fc = new JFileChooser();
         FileFilter filter = new FileFilter() {
             public boolean accept(File f) {

@@ -13,7 +13,7 @@ import javax.swing.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class AddAssertionAction extends BaseAction {
+public class AddAssertionAction extends SecureAction {
     protected AbstractTreeNode paletteNode;
     protected AssertionTreeNode assertionNode;
 
@@ -44,7 +44,7 @@ public class AddAssertionAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 if (paletteNode == null || assertionNode == null) {

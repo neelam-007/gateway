@@ -167,13 +167,20 @@ public abstract class BaseAction extends AbstractAction {
     protected abstract String iconResource();
 
 
-    /** Actually perform the action.
-     * This is the method which should be called programmatically.
-
-     * note on threading usage: do not access GUI components
-     * without explicitly asking for the AWT event thread!
+    /**
+     * Actually perform the action.
      */
-    public abstract void performAction();
+    protected abstract void performAction();
+
+    /**
+     * The method that invokes the action programatically 
+     */
+    public final void invoke() {
+        actionPerformed(new ActionEvent(this,
+              ActionEvent.ACTION_PERFORMED,
+              getName()));
+
+    }
 
     /**
      * Implementation of method of javax.swing.Action interface.
@@ -181,7 +188,7 @@ public abstract class BaseAction extends AbstractAction {
      *
      * @param ev ignored
      */
-    public final void actionPerformed(ActionEvent ev) {
+    public void actionPerformed(ActionEvent ev) {
         if (ev == null) {
             ev = new ActionEvent(this,
               ActionEvent.ACTION_PERFORMED,

@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class SamlPropertiesAction extends BaseAction {
+public class SamlPropertiesAction extends SecureAction {
     static final Logger log = Logger.getLogger(SamlPropertiesAction.class.getName());
     SamlTreeNode assertion;
 
@@ -54,7 +54,7 @@ public class SamlPropertiesAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         Frame f = TopComponents.getInstance().getMainWindow();
         SamlPropertiesDialog pw = new SamlPropertiesDialog(f, assertion);
         pw.pack();

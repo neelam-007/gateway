@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  * Date: Feb 23, 2004<br/>
  * $Id$<br/>
  */
-public class RemoteIpRangePropertiesAction extends BaseAction {
+public class RemoteIpRangePropertiesAction extends SecureAction {
 
     public RemoteIpRangePropertiesAction(RemoteIpRangeTreeNode subject) {
         this.subject = subject;
@@ -42,7 +42,7 @@ public class RemoteIpRangePropertiesAction extends BaseAction {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
-    public void performAction() {
+    protected void performAction() {
         Frame f = TopComponents.getInstance().getMainWindow();
         RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(f, false, subject.getAssertion());
         dlg.addPolicyListener(listener);

@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  * Date: Feb 6, 2004<br/>
  * $Id$<br/>
  */
-public class SchemaValidationPropertiesAction extends BaseAction {
+public class SchemaValidationPropertiesAction extends SecureAction {
 
     public SchemaValidationPropertiesAction(SchemaValidationTreeNode node, PublishedService service) {
         this.node = node;
@@ -43,7 +43,7 @@ public class SchemaValidationPropertiesAction extends BaseAction {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
-    public void performAction() {
+    protected void performAction() {
         Frame f = TopComponents.getInstance().getMainWindow();
         SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
         dlg.addPolicyListener(listener);

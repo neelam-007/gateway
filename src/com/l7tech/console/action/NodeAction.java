@@ -24,7 +24,7 @@ import java.util.logging.Level;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public abstract class NodeAction extends BaseAction {
+public abstract class NodeAction extends SecureAction {
     protected AbstractTreeNode node;
     protected JTree tree;
 

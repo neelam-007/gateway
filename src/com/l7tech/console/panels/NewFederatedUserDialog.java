@@ -202,7 +202,7 @@ public class NewFederatedUserDialog extends JDialog {
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
-                        ua.performAction();
+                        ua.invoke();
                         insertSuccess = false;
                     }
                 });

@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class DeletePolicyTemplateAction extends BaseAction {
+public class DeletePolicyTemplateAction extends SecureAction {
     static final Logger log = Logger.getLogger(DeletePolicyTemplateAction.class.getName());
     PolicyTemplateNode node;
 
@@ -54,7 +54,7 @@ public class DeletePolicyTemplateAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         boolean deleted = Actions.deletePolicyTemplate(node);
         if (deleted) {
             JTree tree =

@@ -10,7 +10,7 @@ import com.l7tech.console.AboutBox;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class AboutAction extends BaseAction {
+public class AboutAction extends SecureAction {
     /**
      * @return the action name
      */
@@ -38,7 +38,7 @@ public class AboutAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         AboutBox.showDialog(null);
     }
 }

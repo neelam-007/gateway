@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class AddOneOrMoreAssertionAction extends BaseAction {
+public class AddOneOrMoreAssertionAction extends SecureAction {
     private static final Logger log = Logger.getLogger(AddOneOrMoreAssertionAction.class.getName());
     AssertionTreeNode treeNode;
 
@@ -61,7 +61,7 @@ public class AddOneOrMoreAssertionAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JTree tree =

@@ -71,7 +71,7 @@ public class EditServicePolicyAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         final ServiceNode serviceNode = (ServiceNode)node;
         try {
             TopComponents windowManager = TopComponents.getInstance();

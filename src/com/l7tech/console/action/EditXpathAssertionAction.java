@@ -31,7 +31,7 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public class EditXpathAssertionAction extends BaseAction {
+public class EditXpathAssertionAction extends SecureAction {
     public EditXpathAssertionAction(RequestXpathPolicyTreeNode xpathAssertionTreeNode) {
         _node = xpathAssertionTreeNode;
     }
@@ -55,7 +55,7 @@ public class EditXpathAssertionAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         RequestXpathAssertion xpathAssertion = (RequestXpathAssertion)_node.asAssertion();
 
         if (_cachedWsdl == null) {

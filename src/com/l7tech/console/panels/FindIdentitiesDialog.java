@@ -882,7 +882,7 @@ public class FindIdentitiesDialog extends JDialog {
                     } else if (a instanceof GroupPropertiesAction) {
                         ((GroupPropertiesAction)a).setIdProviderConfig(searchInfo.getProviderConfig());
                     }
-                    a.performAction();
+                    a.invoke();
                 }
             });
         }
@@ -911,7 +911,7 @@ public class FindIdentitiesDialog extends JDialog {
             }
         };
         da.addEntityListener(listener);
-        da.performAction();
+        da.invoke();
     }
 
 

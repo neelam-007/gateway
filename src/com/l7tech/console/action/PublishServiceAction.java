@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class PublishServiceAction extends BaseAction implements ConnectionListener {
+public class PublishServiceAction extends SecureAction implements ConnectionListener {
     static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
 
     public PublishServiceAction() {
@@ -57,7 +57,7 @@ public class PublishServiceAction extends BaseAction implements ConnectionListen
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         JFrame f = TopComponents.getInstance().getMainWindow();
         PublishServiceWizard dialog = new PublishServiceWizard(f, false);
         dialog.addEntityListener(listener);

@@ -1241,7 +1241,7 @@ public class MainWindow extends JFrame {
                 return "com/l7tech/console/resources/enableService.gif";
             }
 
-            public void performAction() {
+            protected void performAction() {
                 JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(MainWindow.this);
                 Utilities.centerOnScreen(jqw);
                 jqw.show();
@@ -1275,7 +1275,7 @@ public class MainWindow extends JFrame {
                 return "com/l7tech/console/resources/cert16.gif";
             }
 
-            public void performAction() {
+            protected void performAction() {
                 CertManagerWindow cmw = CertManagerWindow.getInstance(MainWindow.this);
                 Utilities.centerOnScreen(cmw);
                 cmw.show();

@@ -51,7 +51,7 @@ public class XpathBasedAssertionPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         XpathBasedAssertionTreeNode n = (XpathBasedAssertionTreeNode)node;
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
         XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener);

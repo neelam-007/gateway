@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Jul 21, 2004<br/>
  */
-public class ImportPolicyFromFileAction extends BaseAction {
+public class ImportPolicyFromFileAction extends SecureAction {
     static final Logger log = Logger.getLogger(ImportPolicyFromFileAction.class.getName());
     protected PublishedService pubService;
 
@@ -67,7 +67,7 @@ public class ImportPolicyFromFileAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         newPolicyXml = null;
         if (pubService == null) {
             log.severe("This action was called without a service set.");

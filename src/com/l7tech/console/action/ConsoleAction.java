@@ -12,7 +12,7 @@ import java.io.File;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ConsoleAction extends BaseAction {
+public class ConsoleAction extends SecureAction {
     /**
      * @return the action name
      */
@@ -40,7 +40,7 @@ public class ConsoleAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
         //new ConsoleDialog(new File("find the ssm.log"));
     }
 }

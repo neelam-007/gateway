@@ -1,6 +1,7 @@
 package com.l7tech.console.poleditor;
 
 import com.l7tech.console.action.BaseAction;
+import com.l7tech.console.action.SecureAction;
 
 
 /**
@@ -10,7 +11,7 @@ import com.l7tech.console.action.BaseAction;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class PolicyViewAction extends BaseAction {
+public class PolicyViewAction extends SecureAction {
 
     public PolicyViewAction() {
     }
@@ -42,6 +43,6 @@ public class PolicyViewAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    protected void performAction() {
     }
 }
