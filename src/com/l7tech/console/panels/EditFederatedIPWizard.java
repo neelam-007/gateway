@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.action.Actions;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -16,24 +16,22 @@ public class EditFederatedIPWizard extends IdentityProviderWizard {
 
     public static final String NAME = "Edit Federated Identity Provider";
 
-    public EditFederatedIPWizard(Frame parent, WizardStepPanel panel) {
+    /**
+     * Constructor
+     *
+     * @param parent The parent frame object reference.
+     * @param panel  The panel attached to this wizard. This is the panel to be displayed when the wizard is shown.
+     * @param iProvider  The identity provider configuration to be edited.
+     */
+     public EditFederatedIPWizard(Frame parent, WizardStepPanel panel, FederatedIdentityProviderConfig iProvider) {
         super(parent, panel);
 
-        // unregister the old wizard if any
-        TopComponents.getInstance().unregisterComponent(EditFederatedIPWizard.NAME);
-
-        TopComponents.getInstance().registerComponent(EditFederatedIPWizard.NAME, this);
         setResizable(true);
         setTitle("Edit Federated Identity Provider Wizard");
         setShowDescription(false);
         Actions.setEscKeyStrokeDisposes(this);
-        // create a holder for the new identity provider
-        // NOTE: we only support creating LDAP provider
 
-       //todo:
-        //wizardInput = new LdapIdentityProviderConfig();
-
-       // ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
+        wizardInput = iProvider;
 
         pack();
 
@@ -45,8 +43,4 @@ public class EditFederatedIPWizard extends IdentityProviderWizard {
 
     }
 
-    protected void finish(ActionEvent evt) {
-        TopComponents.getInstance().unregisterComponent(EditFederatedIPWizard.NAME);             
-        super.finish(evt);
-    }
 }

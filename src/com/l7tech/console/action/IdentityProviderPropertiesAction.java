@@ -11,6 +11,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.UpdateException;
@@ -94,7 +95,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                                                new FederatedIPX509CertPanel (
                                                new FederatedIPSamlPanel(
                                                new FederatedIPTrustedCertsPanel(null))));
-                             w = new EditFederatedIPWizard(f, configPanel);
+                             w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig) iProvider);
 
 
                         } else {
