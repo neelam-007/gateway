@@ -72,8 +72,14 @@ public class SsgSessionManager {
             Session session = ssg.session();
             if (session != null)
                 return session;
+        }
+        PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
+        synchronized (ssg) {
+            Session session = ssg.session();
+            if (session != null)
+                return session;
 
-            session = establishNewSession(ssg);
+            session = establishNewSession(ssg, pw);
             ssg.session(session);
             return session;
         }
@@ -86,12 +92,11 @@ public class SsgSessionManager {
         return header.getValue();
     }
 
-    private static Session establishNewSession(Ssg ssg)
-            throws OperationCanceledException, MalformedURLException, IOException,
+    private static Session establishNewSession(Ssg ssg, PasswordAuthentication pw)
+            throws MalformedURLException, IOException,
             ServerCertificateUntrustedException, BadCredentialsException
     {
         HttpClient client = new HttpClient();
-        PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
         client.getState().setAuthenticationPreemptive(true);
         client.getState().setCredentials(null, null,
                                          new UsernamePasswordCredentials(pw.getUserName(),

@@ -12,7 +12,6 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.SsgSessionManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
@@ -69,24 +68,22 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         PrivateKey userPrivateKey = null;
         X509Certificate userCert = null;
         Session session;
-        synchronized (ssg) {
-            request.getCredentials();
-            session = SsgSessionManager.getOrCreateSession(ssg);
+        request.getCredentials();
+        session = request.getOrCreateSession();
 
-            if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                try {
-                    request.getClientProxy().obtainClientCertificate(request);
-                } catch (ServerCertificateUntrustedException e) {
-                    throw e;
-                }
-            }
-
+        if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
             try {
-                userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
-                userCert = SsgKeyStoreManager.getClientCert(ssg);
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e); // can't happen
+                request.getClientProxy().obtainClientCertificate(request);
+            } catch (ServerCertificateUntrustedException e) {
+                throw e;
             }
+        }
+
+        try {
+            userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+            userCert = SsgKeyStoreManager.getClientCert(ssg);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // can't happen
         }
 
         // DECORATE REQUEST WITH SESSION INFO AND SEQ NR

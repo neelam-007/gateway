@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
+* Copyright (C) 2003 Layer 7 Technologies Inc.
+*
+* $Id$
+*/
 
 package com.l7tech.proxy.gui;
 
@@ -90,6 +90,7 @@ public class GuiCredentialManager extends CredentialManager {
 
         long now = System.currentTimeMillis();
         final CredHolder holder = new CredHolder();
+
         synchronized (ssg) {
             pw = ssg.getCredentials();
             if (ssg.credentialsUpdatedTime() > now && pw != null)
@@ -107,51 +108,47 @@ public class GuiCredentialManager extends CredentialManager {
             }
         }
 
-        synchronized(this) {
-            // If another instance already updated the credentials while we were waiting, we've done our job
-
-            log.info("Displaying logon prompt for SSG " + ssg);
-            invokeDialog(new Runnable() {
-                public void run() {
-                    PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(),
-                                                                  ssg.toString(),
-                                                                  holder.showUsername,
-                                                                  holder.lockUsername,
-                                                                  oldOnesWereBad);
-                    if (pw == null) {
-                        if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
-                            // This is the second time we've popped up a logon dialog and the user has impatiently
-                            // canceled it.  We can take a hint -- we'll turn off logon prompts until the proxy is
-                            // restarted or the user manually changes the password.
-                            ssg.promptForUsernameAndPassword(false);
-                        }
-                        return;
+        log.info("Displaying logon prompt for SSG " + ssg);
+        invokeDialog(new Runnable() {
+            public void run() {
+                PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(),
+                                                              ssg.toString(),
+                                                              holder.showUsername,
+                                                              holder.lockUsername,
+                                                              oldOnesWereBad);
+                if (pw == null) {
+                    if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
+                        // This is the second time we've popped up a logon dialog and the user has impatiently
+                        // canceled it.  We can take a hint -- we'll turn off logon prompts until the proxy is
+                        // restarted or the user manually changes the password.
+                        ssg.promptForUsernameAndPassword(false);
                     }
-                    ssg.setUsername(pw.getUserName());
-                    ssg.cmPassword(pw.getPassword()); // TODO: encoding?
-                    ssg.onCredentialsUpdated();
-                    ssg.promptForUsernameAndPassword(true);
-                    holder.pw = pw;
-
-                    try {
-                        ssgManager.save();
-                    } catch (IOException e) {
-                        log.error("Unable to save Gateway configuration: ", e);
-                        Gui.errorMessage("Unable to save Gateway configuration",
-                                         "An error was encountered while writing your Gateway configuration to disk.",
-                                         e);
-                    }
+                    return;
                 }
-            });
+                ssg.setUsername(pw.getUserName());
+                ssg.cmPassword(pw.getPassword()); // TODO: encoding?
+                ssg.onCredentialsUpdated();
+                ssg.promptForUsernameAndPassword(true);
+                holder.pw = pw;
 
-            if (holder.pw == null) {
-                log.info("User canceled logon dialog for SSG " + ssg);
-                throw new OperationCanceledException("User canceled logon dialog");
+                try {
+                    ssgManager.save();
+                } catch (IOException e) {
+                    log.error("Unable to save Gateway configuration: ", e);
+                    Gui.errorMessage("Unable to save Gateway configuration",
+                                     "An error was encountered while writing your Gateway configuration to disk.",
+                                     e);
+                }
             }
+        });
 
-            log.info("New credentials noted for SSG " + ssg);
-            return holder.pw;
+        if (holder.pw == null) {
+            log.info("User canceled logon dialog for SSG " + ssg);
+            throw new OperationCanceledException("User canceled logon dialog");
         }
+
+        log.info("New credentials noted for SSG " + ssg);
+        return holder.pw;
     }
 
     private static class DestructionFlag {
@@ -175,33 +172,31 @@ public class GuiCredentialManager extends CredentialManager {
         df.destroyKeystore = false;
 
         long now = System.currentTimeMillis();
-        synchronized(this) {
 
-            // Avoid spamming the user with reports
-            if (System.currentTimeMillis() > now + 1000)
-                return;
-            invokeDialog(new Runnable() {
-                public void run() {
-                    String msg = "The key store for the Gateway " + ssg + "\n is irrepairably damaged.\n\n" +
-                            "Do you wish to delete it and build a new one?";
+        // Avoid spamming the user with reports
+        if (System.currentTimeMillis() > now + 1000)
+            return;
+        invokeDialog(new Runnable() {
+            public void run() {
+                String msg = "The key store for the Gateway " + ssg + "\n is irrepairably damaged.\n\n" +
+                        "Do you wish to delete it and build a new one?";
 
-                    Gui.getInstance().getFrame().toFront();
-                    int result = JOptionPane.showOptionDialog(Gui.getInstance().getFrame(),
-                                                              msg,
-                                                              "Key Store Corrupt",
-                                                              JOptionPane.YES_NO_CANCEL_OPTION,
-                                                              JOptionPane.ERROR_MESSAGE,
-                                                              null,
-                                                              null,
-                                                              null);
-                    if (result == 0)
-                        df.destroyKeystore = true;
-                }
-            });
+                Gui.getInstance().getFrame().toFront();
+                int result = JOptionPane.showOptionDialog(Gui.getInstance().getFrame(),
+                                                          msg,
+                                                          "Key Store Corrupt",
+                                                          JOptionPane.YES_NO_CANCEL_OPTION,
+                                                          JOptionPane.ERROR_MESSAGE,
+                                                          null,
+                                                          null,
+                                                          null);
+                if (result == 0)
+                    df.destroyKeystore = true;
+            }
+        });
 
-            if (!df.destroyKeystore)
-                throw new OperationCanceledException("KeyStore is corrupt, but user does not wish to delete it");
-        }
+        if (!df.destroyKeystore)
+            throw new OperationCanceledException("KeyStore is corrupt, but user does not wish to delete it");
     }
 
     /**
@@ -217,22 +212,20 @@ public class GuiCredentialManager extends CredentialManager {
             return;
 
         long now = System.currentTimeMillis();
-        synchronized(this) {
 
-            // Avoid spamming the user with reports
-            if (System.currentTimeMillis() > now + 1000)
-                return;
+        // Avoid spamming the user with reports
+        if (System.currentTimeMillis() > now + 1000)
+            return;
 
-            invokeDialog(new Runnable() {
-                public void run() {
-                    Gui.errorMessage("You need a client certificate to communicate with the Gateway " + ssg + ", \n" +
-                                     "but it has already issed a client certificate to this account and cannot issue\n" +
-                                     "a second one.  If you have lost your client certificate, you will need to\n" +
-                                     "contact your Gateway administrator and have them revoke your old one before\n" +
-                                     "you can obtain a new one.");
-                }
-            });
-        }
+        invokeDialog(new Runnable() {
+            public void run() {
+                Gui.errorMessage("You need a client certificate to communicate with the Gateway " + ssg + ", \n" +
+                                 "but it has already issed a client certificate to this account and cannot issue\n" +
+                                 "a second one.  If you have lost your client certificate, you will need to\n" +
+                                 "contact your Gateway administrator and have them revoke your old one before\n" +
+                                 "you can obtain a new one.");
+            }
+        });
     }
 
     /**
@@ -245,26 +238,24 @@ public class GuiCredentialManager extends CredentialManager {
      */
     public void notifySsgHostnameMismatch(final Ssg ssg, final String whatWeWanted, final String whatWeGotInstead) {
         // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
-         if (!ssg.promptForUsernameAndPassword())
-             return;
+        if (!ssg.promptForUsernameAndPassword())
+            return;
 
         long now = System.currentTimeMillis();
-        synchronized(this) {
 
-            // Avoid spamming the user with reports
-            if (System.currentTimeMillis() > now + 1000)
-                return;
+        // Avoid spamming the user with reports
+        if (System.currentTimeMillis() > now + 1000)
+            return;
 
-            invokeDialog(new Runnable() {
-                public void run() {
-                    Gui.errorMessage(
-                            "<HTML>The configured hostname for the Gateway " + ssg + " is \"" + whatWeWanted + "\", <br>" +
-                            "but the server presented a certificate claiming its hostname is \"" + whatWeGotInstead + "\". <br>" +
-                            "<p>Please double check the Gateway hostname for the Gateway " + ssg + ".");
+        invokeDialog(new Runnable() {
+            public void run() {
+                Gui.errorMessage(
+                        "<HTML>The configured hostname for the Gateway " + ssg + " is \"" + whatWeWanted + "\", <br>" +
+                        "but the server presented a certificate claiming its hostname is \"" + whatWeGotInstead + "\". <br>" +
+                        "<p>Please double check the Gateway hostname for the Gateway " + ssg + ".");
 
-                }
-            });
-        }
+            }
+        });
     }
 
     private PleaseWaitDialog getPleaseWaitDialog() {

@@ -11,11 +11,14 @@ import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import org.w3c.dom.Document;
 
 import java.net.URL;
 import java.net.PasswordAuthentication;
 import java.security.SecureRandom;
+import java.io.IOException;
 
 /**
  * Holds request state while the client proxy is processing it.
@@ -226,12 +229,28 @@ public class PendingRequest {
     }
 
     /**
-     * Get the sssion that was passed with the initial request.
+     * Get the session that was passed with the initial request, or null if we don't have one yet.
      *
      * @return
      */
     public Session getSession() {
         return policySettings.session;
+    }
+
+    /**
+     * Get or create a session for this Ssg.
+     */
+    public Session getOrCreateSession()
+            throws ServerCertificateUntrustedException, BadCredentialsException, IOException,
+                   OperationCanceledException
+    {
+        Session session = getSession();
+        if (session != null)
+            return session;
+
+        session = SsgSessionManager.getOrCreateSession(getSsg());
+        setSession(session);
+        return session;
     }
 
     /**

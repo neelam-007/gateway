@@ -9,6 +9,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.util.ClientLogger;
 
 import java.io.FileInputStream;
@@ -154,7 +155,13 @@ public class SsgKeyStoreManager {
                 return null;
             if (ssg.privateKey() != null)
                 return ssg.privateKey();
-            PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
+        }
+        PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
+        synchronized (ssg) {
+            if (!isClientCertAvailabile(ssg))
+                return null;
+            if (ssg.privateKey() != null)
+                return ssg.privateKey();
             try {
                 PrivateKey gotKey = (PrivateKey) getKeyStore(ssg).getKey(ALIAS, pw.getPassword());
                 ssg.privateKey(gotKey);
@@ -189,23 +196,6 @@ public class SsgKeyStoreManager {
         return getClientCert(ssg).getPublicKey();
     }
 
-    private static class KeyStoreCorruptException extends RuntimeException {
-        public KeyStoreCorruptException() {
-        }
-
-        public KeyStoreCorruptException(String message) {
-            super(message);
-        }
-
-        public KeyStoreCorruptException(String message, Throwable cause) {
-            super(message, cause);
-        }
-
-        public KeyStoreCorruptException(Throwable cause) {
-            super(cause);
-        }
-    }
-
     /**
      * Obtain a key store for this SSG.  If one is present on disk, it will be loaded.  If the one on disk
      * is missing or corrupt, a new keystore will be created in memory.  Call saveKeyStore() to safely
@@ -213,7 +203,7 @@ public class SsgKeyStoreManager {
      *
      * @param ssg The Ssg whose keystore we are setting up.  Must not be null.
      * @return an in-memory KeyStore object for this Ssg, either loaded from disk or newly created.
-     * @throws KeyStoreCorruptException (non-checked) if the key store is damaged, but user doesn't want to replace it just yet
+     * @throws com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException (non-checked) if the key store is damaged, but user doesn't want to replace it just yet
      */
     public static KeyStore getKeyStore(Ssg ssg) throws KeyStoreCorruptException {
         synchronized (ssg) {
@@ -234,11 +224,7 @@ public class SsgKeyStoreManager {
                         log.info("Creating new key store " + ssg.getKeyStoreFile() + " for SSG " + ssg);
                     else {
                         log.error("Unable to load existing key store " + ssg.getKeyStoreFile() + " for SSG " + ssg + " -- will create new one", e);
-                        try {
-                            Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
-                        } catch (OperationCanceledException e1) {
-                            throw new KeyStoreCorruptException(e1);
-                        }
+                        throw new KeyStoreCorruptException(e);
                     }
                     try {
                         keyStore.load(null, KEYSTORE_PASSWORD);
@@ -341,14 +327,14 @@ public class SsgKeyStoreManager {
     public static void saveClientCertificate(final Ssg ssg, PrivateKey privateKey, X509Certificate cert)
             throws KeyStoreException, IOException
     {
+        log.info("Saving client certificate to disk");
+        PasswordAuthentication pw;
+        try {
+            pw = Managers.getCredentialManager().getCredentials(ssg);
+        } catch (OperationCanceledException e) {
+            throw new IllegalArgumentException("Ssg " + ssg + " does not yet have credentials configured");
+        }
         synchronized (ssg) {
-            log.info("Saving client certificate to disk");
-            PasswordAuthentication pw;
-            try {
-                pw = Managers.getCredentialManager().getCredentials(ssg);
-            } catch (OperationCanceledException e) {
-                throw new IllegalArgumentException("Ssg " + ssg + " does not yet have credentials configured");
-            }
             char[] password = pw.getPassword();
             getKeyStore(ssg).setKeyEntry(ALIAS, privateKey, password, new Certificate[] { cert });
             saveKeyStore(ssg);

@@ -85,7 +85,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         // If the response will be encrypted, we'll need to ensure that there's a session open
         if (data.isEncryption()) {
             log.info("According to policy, we're expecting an encrypted reply.  Verifying session.");
-            request.setSession(SsgSessionManager.getOrCreateSession(ssg));
+            request.getOrCreateSession();
         }
 
         return AssertionStatus.NONE;

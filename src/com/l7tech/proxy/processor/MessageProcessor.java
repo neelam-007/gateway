@@ -13,6 +13,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Policy;
@@ -21,13 +22,13 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.SsgSessionManager;
-import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ClientLogger;
@@ -104,6 +105,10 @@ public class MessageProcessor {
                     SsgResponse res = obtainResponse(req, appliedPolicy);
                     undecorateResponse(req, res, appliedPolicy);
                     return res;
+                } catch (KeyStoreCorruptException e) {
+                    Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
+                    SsgKeyStoreManager.deleteKeyStore(ssg);
+                    // FALLTHROUGH -- retry, creating new keystore
                 } catch (SSLException e) {
                     // An SSL handshake with the SSG has failed.
                     // See if we can identify the cause and correct it.

@@ -26,6 +26,9 @@ public abstract class CredentialManager {
      * them from the keystore or prompting the user for them.  No new credentials will be obtained
      * if this SSG already has existing credentials configured.  To indicate that the existing
      * credentials are no good and that you need new ones, call getNewCredentials() instead.
+     *
+     * Caller <em>must not</em> hold the Ssg monitor when calling this method.
+     *
      * @param ssg  the Ssg whose credentials you want
      * @return the credentials for this Ssg
      * @throws OperationCanceledException if we prompted the user, but he clicked cancel
@@ -35,6 +38,8 @@ public abstract class CredentialManager {
     /**
      * Get replacement credentials for this SSG.  This method will always prompt the user for
      * new credentials to replace the current ones.
+     *
+     * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
      * @param ssg the Ssg whose credentials you want to update
      * @return the new credentials for this Ssg
@@ -46,12 +51,16 @@ public abstract class CredentialManager {
      * Unobtrusively notify that a lengthy operation is now in progress.
      * In the GUI environment, this will put up a "Please wait..." dialog.
      * Only one "Please wait..." dialog will be active for a given Ssg.
+     * Caller <em>must not</em> hold the Ssg monitor when calling this method.
+     *
      */
     public abstract void notifyLengthyOperationStarting(Ssg ssg, String message);
 
     /**
      * Unobtrusively notify that a lengthy operation has completed.
      * Tears down any "Please wait..." dialog.
+     * Caller <em>must not</em> hold the Ssg monitor when calling this method.
+     *
      */
     public abstract void notifyLengthyOperationFinished(Ssg ssg);
 
@@ -63,6 +72,7 @@ public abstract class CredentialManager {
      * the client cert, if the only copy of it's private key is now gone).
      *
      * Whatever decision the user makes should be remembered for the rest of this session.
+     * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
      * @param ssg
      * @throws OperationCanceledException if the user does not wish to delete the invalid keystore
@@ -73,6 +83,7 @@ public abstract class CredentialManager {
      * Notify the user that a client certificate has already been issued for his account.
      * At this point there is nothing the user can do except try a different account, or contact
      * his Gateway administrator and beg to have the lost certificate revoked from the database.
+     * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
      * @param ssg
      */
@@ -81,6 +92,7 @@ public abstract class CredentialManager {
     /**
      * Notify the user that an SSL connection to the SSG could not be established because the hostname did not match
      * the one in the certificate.
+     * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
      * @param ssg
      * @param whatWeWanted  the expected hostname, equal to ssg.getSsgAddress()
