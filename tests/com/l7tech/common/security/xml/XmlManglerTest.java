@@ -6,6 +6,9 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.XpathEvaluator;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -27,6 +30,8 @@ import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -39,6 +44,8 @@ public class XmlManglerTest extends TestCase {
     private static Logger log = Logger.getLogger(XmlManglerTest.class.getName());
     private static final String xmlencNS = "http://www.w3.org/2001/04/xmlenc#";
     static final String SOAP_METHOD_NS = "http://www.l7tech.com/tests/quoter3333";
+
+    TestDocuments testDocuments = new TestDocuments();
 
     public XmlManglerTest(String name) {
         super(name);
@@ -216,6 +223,37 @@ public class XmlManglerTest extends TestCase {
         assertTrue(nl.getLength() == 0);
     }
 
+    /**
+     * @throws Exception
+     */
+    public void testXpathSelectedNodeFromSoapMessage() throws Exception {
+        Document doc = testDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
+        Map namespaces = XpathEvaluator.getNamespaces(sm);
+
+        XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, namespaces);
+        List nodes = xe.select("//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice");
+        assertTrue("Size should have been 1", nodes.size() == 1);
+
+        Key encryptionKey = new RawKey(16);
+        // log.info("Document before encryption: \n" + documentToString(doc));
+        XmlMangler.encryptXml((Element)nodes.get(0), encryptionKey.getEncoded(), "MyKeyName", "ref1");
+        // log.info("Document after encryption: \n" + documentToString(doc));
+
+        NodeList nl = doc.getElementsByTagNameNS(xmlencNS, "CipherValue");
+        assertTrue(nl != null);
+        assertTrue(nl.getLength() == 1);
+
+        final int length = nl.getLength();
+        for (int i = 0; i < length; i++) {
+            Element element = (Element)nl.item(i);
+            XmlMangler.decryptXml(doc, encryptionKey);
+            //log.info("Document after decryption "+i+" :\n" + documentToString(doc));
+        }
+        nl = doc.getElementsByTagNameNS(xmlencNS, "CipherValue");
+        assertTrue(nl != null);
+        assertTrue(nl.getLength() == 0);
+    }
 
     public void testDecryptingAMessageThatsNotEncrypted() throws Exception {
         Document orig = makeTestMessage();
