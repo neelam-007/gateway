@@ -88,74 +88,57 @@ public class CertPropertiesWindow extends JDialog {
 
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+
+                TrustedCert tc = null;
+
+                // create a new trusted cert
                 try {
+                    tc = (TrustedCert) trustedCert.clone();
+                } catch (CloneNotSupportedException e) {
+                    String errmsg = "Internal error! Unable to clone the trusted certificate.";
+                    logger.severe(errmsg);
+                    JOptionPane.showMessageDialog(mainPanel, errmsg + " \n" + "The certificate has not been updated",
+                            resources.getString("save.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
-                    // create a new trusted cert
-                    TrustedCert tc = new TrustedCert();
-                    X509Certificate cert = null;
+                try {
+                    // udpate the trusted cert with the new values
+                    updateTrustedCert(tc);
 
-                    try {
-                        cert = trustedCert.getCertificate();
-
-                    } catch (CertificateException e) {
-                        logger.warning(resources.getString("cert.decode.error"));
-                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
-                    } catch (IOException e) {
-                       logger.warning(e.getMessage());
-                        JOptionPane.showMessageDialog(mainPanel, e.getMessage(),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
-                    }
-
-                    if (cert != null) {
-                        try {
-                            tc.setOid(trustedCert.getOid());
-                            tc.setCertificate(cert);
-                            tc.setSubjectDn(trustedCert.getSubjectDn());
-
-                            // udpate the trusted cert with the new values
-                            updateTrustedCert(tc);
-
-                            // save the cert
-                            getTrustedCertAdmin().saveCert(tc);
-
-                        } catch (CertificateEncodingException e) {
-                            logger.warning(resources.getString("cert.decode.error"));
-                            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.encode.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
-                        }
-                    }
-                                       
-                    dispose();
+                    // save the cert
+                    getTrustedCertAdmin().saveCert(tc);
 
                 } catch (SaveException e) {
                     logger.warning("Unable to save the trusted certificate in server");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.save.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
+                            resources.getString("save.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
 
                 } catch (RemoteException e) {
                     logger.severe("Unable to execute remote call due to remote exception");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.remote.exception"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
+                            resources.getString("save.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
                 } catch (VersionException e) {
                     logger.warning("Unable to save the trusted certificate: " + trustedCert.getName() + "; version exception.");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.version.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
+                            resources.getString("save.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
                 } catch (UpdateException e) {
                     logger.warning("Unable to update the trusted certificate in server");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.update.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
+                            resources.getString("save.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
                 }
 
                 // suceeded, update the original trusted cert
                 updateTrustedCert(trustedCert);
+
+                // close the dialog
+                dispose();
+
             }
         });
 
@@ -353,8 +336,8 @@ public class CertPropertiesWindow extends JDialog {
         final JTextField _16;
         _16 = new JTextField();
         certExpiredOnTextField = _16;
-        _16.setText("");
         _16.setEditable(false);
+        _16.setText("");
         _7.add(_16, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JScrollPane _17;
         _17 = new JScrollPane();
