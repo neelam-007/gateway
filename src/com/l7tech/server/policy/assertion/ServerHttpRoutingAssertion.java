@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
+import com.l7tech.identity.User;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
@@ -148,6 +149,47 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 }
                 postMethod.setRequestHeader(HOST, hostValue.toString());
                 postMethod.setRequestHeader(SoapUtil.SOAPACTION, (String)request.getParameter(Request.PARAM_HTTP_SOAPACTION));
+
+                if (httpRoutingAssertion.isTaiCredentialChaining()) {
+                    String chainId = null;
+                    if (!request.isAuthenticated()) {
+                        logger.log(Level.FINE, "TAI credential chaining requested, but request was not authenticated.");
+                    } else {
+                        User clientUser = request.getUser();
+                        if (clientUser != null) {
+                            String id = clientUser.getLogin();
+                            if (id == null || id.length() < 1) id = clientUser.getName();
+                            if (id == null || id.length() < 1) id = clientUser.getUniqueIdentifier();
+
+                            if (id != null && id.length() > 0) {
+                                logger.log(Level.FINE, "TAI credential chaining requested; will chain username " + id);
+                                chainId = id;
+                            } else
+                                logger.log(Level.WARNING, "TAI credential chaining requested, but request User did not have a unique identifier"); // can't happen
+                        } else {
+                            final String login = request.getPrincipalCredentials().getLogin();
+                            if (login != null && login.length() > 0) {
+                                logger.log(Level.FINE, "TAI credential chaining requested, but there is no User; " +
+                                                       "will chain pc.login " + login);
+                                chainId = login;
+                            } else
+                                logger.log(Level.WARNING, "TAI credential chaining requested, and request was authenticated, but had no User or pc.login");
+                        }
+
+                        if (chainId != null && chainId.length() > 0) {
+                            postMethod.setRequestHeader("IV_USER", chainId);
+
+                            // there is no defined quoting or escape mechanism for HTTP cookies so we'll use URLEncoding
+                            org.apache.commons.httpclient.Cookie cookieOut = new org.apache.commons.httpclient.Cookie();
+                            cookieOut.setName("IV_USER");
+                            cookieOut.setValue(chainId);
+                            cookieOut.setDomain(url.getHost());
+                            cookieOut.setPath(url.getPath());
+                            logger.fine("Adding outgoing cookie: name = " + cookieOut.getName());
+                            client.getState().addCookie(cookieOut);
+                        }
+                    }
+                }
 
                 String login = httpRoutingAssertion.getLogin();
                 String password = httpRoutingAssertion.getPassword();

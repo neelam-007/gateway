@@ -44,6 +44,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JTextField identityTextField;
     private JTextField realmTextField;
     private JPasswordField identityPasswordField;
+    private JCheckBox taiCredentialChaining;
 
     private JPanel credentialsPanel;
     private JPanel serviceUrlPanel;
@@ -349,18 +350,35 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         credentialsPanel.add(realmPanel);
 
+        JPanel taiPanel = new JPanel();
+        taiPanel.setLayout(new BoxLayout(taiPanel, BoxLayout.X_AXIS));
+        JLabel taiLabel = new JLabel();
+        taiLabel.setText("");
+        taiPanel.add(taiLabel);
+
+        taiPanel.add(Box.createRigidArea(new Dimension(20, 10)));
+
+        taiCredentialChaining = new JCheckBox("TAI Identity Pass");
+        taiCredentialChaining.setPreferredSize(new Dimension(50, 20));
+        taiPanel.add(taiCredentialChaining);
+        taiPanel.add(Box.createGlue());
+
+        credentialsPanel.add(Box.createVerticalStrut(20));
+        credentialsPanel.add(taiPanel);
 
         Utilities.equalizeComponentSizes(
           new JComponent[]{realmLabel,
                            identityLabel,
-                           passwordLabel});
+                           passwordLabel,
+                           taiLabel});
 
 
         Utilities.equalizeComponentWidth(
           new JComponent[]{identityPasswordField,
                            realmTextField,
                            identityTextField,
-                           getAuthenticationMethodComboBox()});
+                           getAuthenticationMethodComboBox(),
+                           taiCredentialChaining});
 
         return credentialsPanel;
     }
@@ -462,6 +480,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                     assertion.setSamlAssertionExpiry(sv.intValue());
                     assertion.setGroupMembershipStatement(memebershipStatementCheck.isSelected());
                     assertion.setAttachSamlSenderVouches(samlMethod.isSelected());
+                    assertion.setTaiCredentialChaining(taiCredentialChaining.isSelected());
                     fireEventAssertionChanged(assertion);
                     HttpRoutingAssertionDialog.this.dispose();
                 }
@@ -499,6 +518,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         identityPasswordField.setText(assertion.getPassword());
         realmTextField.setText(assertion.getRealm());
         serviceUrlTextField.setText(assertion.getProtectedServiceUrl());
+        taiCredentialChaining.setSelected(assertion.isTaiCredentialChaining());
 
         memebershipStatementCheck.setSelected(assertion.isGroupMembershipStatement());
         int expiry = assertion.getSamlAssertionExpiry();

@@ -16,6 +16,7 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
     protected boolean attachSamlSenderVouches;
     protected int samlAssertionExpiry = 5;
     protected boolean groupMembershipStatement;
+    protected boolean taiCredentialChaining = false;
 
     public boolean isAttachSamlSenderVouches() {
         return attachSamlSenderVouches;
@@ -42,6 +43,14 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
 
     public void setGroupMembershipStatement(boolean groupMembershipStatement) {
         this.groupMembershipStatement = groupMembershipStatement;
+    }
+
+    public boolean isTaiCredentialChaining() {
+        return taiCredentialChaining;
+    }
+
+    public void setTaiCredentialChaining(boolean taiCredentialChaining) {
+        this.taiCredentialChaining = taiCredentialChaining;
     }
 }
 
