@@ -594,6 +594,14 @@ public class LdapGroupManager implements GroupManager {
         return output;
     }
 
+    public Integer getVersion( long oid ) throws FindException {
+        return new Integer(0);
+    }
+
+    public Map findVersionMap() throws FindException {
+        return Collections.EMPTY_MAP;
+    }
+
     protected LdapUserManager getUserManager() {
         return (LdapUserManager)parent.getUserManager();
     }

@@ -9,10 +9,7 @@ import com.l7tech.objectmodel.*;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -232,6 +229,14 @@ public class LdapUserManager implements UserManager {
             output.add(findByPrimaryKey(header.getStrId()));
         }
         return output;
+    }
+
+    public Integer getVersion( long oid ) throws FindException {
+        return new Integer(0);
+    }
+
+    public Map findVersionMap() throws FindException {
+        return Collections.EMPTY_MAP;
     }
 
     public boolean authenticateBasic(String dn, String passwd) {

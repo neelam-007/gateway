@@ -8,7 +8,6 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -22,7 +21,10 @@ import com.l7tech.policy.assertion.identity.PermissiveIdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,21 +64,9 @@ public class DefaultGatewayPolicies {
             new HttpClientCert()
         }));
 
-        IdentityProviderConfigManager ipcm = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
-        List identityAssertions = new ArrayList();
-        try {
-            Collection providers = ipcm.findAllHeaders();
-            for ( Iterator i = providers.iterator(); i.hasNext(); ) {
-                EntityHeader header = (EntityHeader)i.next();
-                PermissiveIdentityAssertion ident = new PermissiveIdentityAssertion(header.getOid());
-                identityAssertions.add(ident);
-            }
-            identities = new OneOrMoreAssertion(identityAssertions);
-        } catch ( FindException e ) {
-            final String msg = "Couldn't list identity providers";
-            logger.log(Level.SEVERE, msg, e);
-            throw new RuntimeException(msg, e);
-        }
+        configManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
+        identities = new OneOrMoreAssertion();
+        updateIdentities();
 
         defaultPolicy = new AllAssertion(Arrays.asList(new Assertion[] {
             credentialSources,
@@ -90,11 +80,45 @@ public class DefaultGatewayPolicies {
     }
 
     public AllAssertion getCertPolicy() {
-        return certPolicy;
+        synchronized(identities) {
+            updateIdentities();
+            return certPolicy;
+        }
     }
 
     public AllAssertion getDefaultPolicy() {
-        return defaultPolicy;
+        synchronized(identities) {
+            updateIdentities();
+            return defaultPolicy;
+        }
+    }
+
+    private void updateIdentities() {
+        try {
+            Map versions = configManager.findVersionMap();
+
+            for ( Iterator i = versions.keySet().iterator(); i.hasNext(); ) {
+                Long providerOid = (Long)i.next();
+                Integer currentVersion = (Integer)versions.get(providerOid);
+                Integer previousVersion = (Integer)providerVersionMap.get(providerOid);
+                if (currentVersion == null) {
+                    logger.info("Removing deleted provider " + providerOid + " from default policies");
+                    for ( Iterator j = identities.getChildren().iterator(); j.hasNext(); ) {
+                        PermissiveIdentityAssertion assertion = (PermissiveIdentityAssertion)j.next();
+                        if (assertion.getIdentityProviderOid() == providerOid.longValue()) {
+                            j.remove();
+                        }
+                    }
+                    i.remove();
+                } else if (previousVersion == null) {
+                    logger.info("Adding new provider " + providerOid + " to default policies");
+                    identities.getChildren().add(new PermissiveIdentityAssertion(providerOid.longValue()));
+                }
+            }
+            providerVersionMap = versions;
+        } catch ( FindException e ) {
+            logger.log( Level.INFO, e.getMessage(), e );
+        }
     }
 
     private static final Logger logger = Logger.getLogger(DefaultGatewayPolicies.class.getName());
@@ -103,5 +127,8 @@ public class DefaultGatewayPolicies {
     private final OneOrMoreAssertion identities;
     private final AllAssertion defaultPolicy;
     private final AllAssertion certPolicy;
-    private OneOrMoreAssertion certBasedCredentialSources;
+    private final OneOrMoreAssertion certBasedCredentialSources;
+    private final IdentityProviderConfigManager configManager;
+
+    private Map providerVersionMap = new HashMap();
 }

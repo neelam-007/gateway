@@ -257,6 +257,20 @@ public class ServiceManagerStub implements ServiceManager {
         return list;
     }
 
+    public Integer getVersion( long oid ) throws FindException {
+        return new Integer(((PublishedService)services.get(new Long(oid))).getVersion());
+    }
+
+    public Map findVersionMap() throws FindException {
+        Map versions = new HashMap();
+        for ( Iterator i = services.keySet().iterator(); i.hasNext(); ) {
+            Long oid = (Long) i.next();
+            Integer version = getVersion(oid.longValue());
+            versions.put(oid,version);
+        }
+        return versions;
+    }
+
     private EntityHeader fromService(PublishedService s) {
         return
           new EntityHeader(s.getOid(), EntityType.SERVICE, s.getName(), null);

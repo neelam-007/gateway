@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * @author alex
@@ -29,4 +30,8 @@ public interface EntityManager {
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAll( int offset, int windowSize ) throws FindException;
+
+    Integer getVersion( long oid ) throws FindException;
+
+    Map findVersionMap() throws FindException;
 }

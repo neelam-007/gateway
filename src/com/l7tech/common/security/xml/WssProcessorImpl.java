@@ -13,12 +13,17 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.apache.xmlbeans.XmlException;
+import org.w3.x2000.x09.xmldsig.KeyInfoType;
+import org.w3.x2000.x09.xmldsig.X509DataType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import x0Assertion.oasisNamesTcSAML1.AssertionType;
+import x0Assertion.oasisNamesTcSAML1.SubjectConfirmationType;
+import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
+import x0Assertion.oasisNamesTcSAML1.SubjectType;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
@@ -27,10 +32,7 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
@@ -667,7 +669,7 @@ public class WssProcessorImpl implements WssProcessor {
             throw new InvalidDocumentFormatException("Unable to parse base64 BinarySecurityToken", e);
         }
         // create the x509 binary cert based on it
-        X509Certificate referencedCert = (X509Certificate)CertificateFactory.getInstance("X.509").
+        X509Certificate referencedCert = (X509Certificate)x509CertFactory.
                                             generateCertificate(new ByteArrayInputStream(decodedValue));
 
         // remember this cert
@@ -688,8 +690,6 @@ public class WssProcessorImpl implements WssProcessor {
             SamlSecurityToken saml = new SamlSecurityTokenImpl(securityTokenElement, assertion);
             context.securityTokens.add(saml);
 
-            // TODO integrate cert inside assertion
-
             // TODO verify sender-vouches + proof-of-possession
         } catch (XmlException e) {
             throw new InvalidDocumentFormatException("Couldn't parse SAML Assertion", e);
@@ -697,7 +697,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private X509SecurityTokenImpl resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
-
+        // TODO SAML
         // Looking for reference to a wsse:BinarySecurityToken or to a derived key
         // 1. look for a wsse:SecurityTokenReference element
         List secTokReferences = XmlUtil.findChildElementsByName(parentElement,
@@ -960,6 +960,16 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private static final Logger logger = Logger.getLogger(WssProcessorImpl.class.getName());
+    private static final CertificateFactory x509CertFactory;
+    static {
+        try {
+            x509CertFactory = CertificateFactory.getInstance("X.509");
+        } catch ( CertificateException e ) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new RuntimeException("Couldn't initialize X.509 certificate factory", e);
+        }
+    }
+
 
     private class ProcessingStatusHolder {
         Document processedDocument = null;
@@ -974,8 +984,7 @@ public class WssProcessorImpl implements WssProcessor {
         Element originalDocumentSecurityHeader = null;
     }
 
-    private static class X509SecurityTokenImpl implements WssProcessor.X509SecurityToken {
-        boolean possessionProved = false;
+    private static class X509SecurityTokenImpl extends PossessionProvedX509SecurityToken {
         private final X509Certificate finalcert;
         private final Element binarySecurityTokenElement;
 
@@ -995,20 +1004,52 @@ public class WssProcessorImpl implements WssProcessor {
         public X509Certificate asX509Certificate() {
             return finalcert;
         }
+    }
 
+    private static abstract class PossessionProvedX509SecurityToken implements X509SecurityToken {
         public boolean isPossessionProved() {
             return possessionProved;
         }
 
-        private void onPossessionProved() {
-            possessionProved = true;
+        protected void onPossessionProved() {
+            this.possessionProved = true;
         }
+
+        private boolean possessionProved;
     }
 
-    private static class SamlSecurityTokenImpl implements SamlSecurityToken {
-        public SamlSecurityTokenImpl(Element element, AssertionType assertion) {
+    private static class SamlSecurityTokenImpl extends PossessionProvedX509SecurityToken implements SamlSecurityToken {
+        public SamlSecurityTokenImpl(Element element, AssertionType assertion) throws InvalidDocumentFormatException {
             this.element = element;
             this.assertion = assertion;
+
+            SubjectStatementAbstractType[] subjectStatements = assertion.getSubjectStatementArray();
+            for (int i = 0; i < subjectStatements.length; i++) {
+                SubjectStatementAbstractType subjectStatement = subjectStatements[i];
+
+                SubjectType subject = subjectStatement.getSubject();
+                if (subject == null) continue;
+
+                SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
+                if (subjectConfirmation == null) continue;
+
+                KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
+                if (keyInfo == null) continue;
+
+                X509DataType[] x509datas = keyInfo.getX509DataArray();
+                if (x509datas == null || x509datas.length == 0) continue;
+
+                X509DataType x509data = x509datas[0];
+                try {
+                    this.certificate = (X509Certificate)x509CertFactory.generateCertificate(
+                            new ByteArrayInputStream(x509data.getX509CertificateArray(0)));
+                    break;
+                } catch ( CertificateException e ) {
+                    final String msg = "Certificate in SAML assertion could not be parsed";
+                    logger.log(Level.WARNING, msg, e );
+                    throw new InvalidDocumentFormatException(e);
+                }
+            }
         }
 
         public Object asObject() {
@@ -1019,8 +1060,17 @@ public class WssProcessorImpl implements WssProcessor {
             return element;
         }
 
+        /**
+         * May be null if the assertion has no SubjectConfirmation with a KeyInfo block inside.
+         * @return the X509Certificate from the SAML Assertion's //SubjectConfirmation/KeyInfo. May be null.
+         */
+        public X509Certificate asX509Certificate() {
+            return certificate;
+        }
+
         private Element element;
         private AssertionType assertion;
+        private X509Certificate certificate;
     }
 
 

@@ -13,9 +13,10 @@ import com.l7tech.logging.ServerLogManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.server.policy.DefaultGatewayPolicies;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -49,7 +50,6 @@ public class BootProcess implements ServerComponentLifecycle {
             JceProvider.init();
             logger.info("Using asymmetric cryptography provider: " + JceProvider.getAsymmetricJceProvider().getName());
             logger.info("Using symmetric cryptography provider: " + JceProvider.getSymmetricJceProvider().getName());
-
 
             String classnameString = config.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
             String[] componentClassnames = classnameString.split("\\s.*?");
@@ -103,6 +103,8 @@ public class BootProcess implements ServerComponentLifecycle {
             if (Locator.getDefault().lookup(ServiceManager.class) == null) {
                 logger.severe("Could not instantiate the ServiceManager");
             }
+
+            DefaultGatewayPolicies.getInstance();
 
             try {
                 context.beginTransaction();
@@ -196,8 +198,4 @@ public class BootProcess implements ServerComponentLifecycle {
             System.setProperty(name, value);
         }
     }
-
-    private void initializeAdminServices() {
-    }
-
 }
