@@ -64,7 +64,7 @@ public class ServerConfig {
             try {
                 InetAddress localhost = InetAddress.getLocalHost();
                 byte[] ip = localhost.getAddress();
-                _serverId = ip[3];
+                _serverId = (byte)(ip[3] & 0x7f);
                 logger.warning( "ServerId parameter not set, assigning server ID " + _serverId +
                               " from server's IP address");
             } catch ( UnknownHostException e ) {
@@ -74,7 +74,7 @@ public class ServerConfig {
         }
     }
 
-    public byte getServerId() {
+    public int getServerId() {
         return _serverId;
     }
 
@@ -90,7 +90,7 @@ public class ServerConfig {
         return _logLevel;
     }
 
-    protected byte _serverId;
+    protected int _serverId;
     protected long _serverBootTime;
     protected String _serviceResolvers;
     protected String _logLevel;
