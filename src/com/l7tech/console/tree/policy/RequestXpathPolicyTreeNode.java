@@ -40,6 +40,14 @@ public class RequestXpathPolicyTreeNode extends LeafAssertionTreeNode {
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[]) list.toArray(new Action[]{});
     }
+    /**
+       * Gets the default action for this node.
+       *
+       * @return <code>null</code> indicating there should be none default action
+       */
+      public Action getPreferredAction() {
+          return new EditXpathAssertionAction(this);
+      }
 
     public boolean canDelete() {
         return true;

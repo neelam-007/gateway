@@ -13,7 +13,6 @@ import java.util.Arrays;
  * Class <code>XmlDsigReqAssertionTreeNode</code> specifies the policy
  * element that represents the soap request signing requirement.
  * <p/>
- * 
  */
 public class SamlTreeNode extends LeafAssertionTreeNode {
 
@@ -23,23 +22,23 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
 
     public String getName() {
         SamlSecurity ss = (SamlSecurity)asAssertion();
-        StringBuffer sb  = new StringBuffer("[");
+        StringBuffer sb = new StringBuffer("[");
         int nprops = 0;
-        if (ss.isEncryption())  {
+        if (ss.isEncryption()) {
             sb = new StringBuffer("[");
             sb.append("require encryption");
             nprops++;
         }
-        if (ss.isValidateValidityPeriod()){
-            if (nprops >0) {
+        if (ss.isValidateValidityPeriod()) {
+            if (nprops > 0) {
                 sb.append(", ");
             }
             sb.append("check period");
             nprops++;
         }
 
-        if (ss.isValidateSignature()){
-            if (nprops >0) {
+        if (ss.isValidateSignature()) {
+            if (nprops > 0) {
                 sb.append(", ");
             }
             sb.append("require signature");
@@ -50,7 +49,7 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
             sb.append("no properties set");
         }
         sb.append("]");
-        return "SAML properties "+sb.toString();
+        return "SAML properties " + sb.toString();
     }
 
     /**
@@ -64,6 +63,15 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
         list.add(new SamlPropertiesAction(this));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
+    }
+
+    /**
+     * Gets the default action for this node.
+     * 
+     * @return <code>null</code> indicating there should be none default action
+     */
+    public Action getPreferredAction() {
+        return new SamlPropertiesAction(this);
     }
 
     /**

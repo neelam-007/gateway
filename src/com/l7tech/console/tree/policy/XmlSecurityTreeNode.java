@@ -1,9 +1,9 @@
 package com.l7tech.console.tree.policy;
 
 
+import com.l7tech.console.action.XmlSecurityPropertiesAction;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
-import com.l7tech.console.action.XmlSecurityPropertiesAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -45,6 +45,15 @@ public abstract class XmlSecurityTreeNode extends LeafAssertionTreeNode {
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[]) list.toArray(new Action[]{});
     }
+
+    /**
+       * Gets the default action for this node.
+       *
+       * @return <code>null</code> indicating there should be none default action
+       */
+      public Action getPreferredAction() {
+          return new XmlSecurityPropertiesAction(this);
+      }
 
     /**
      *Test if the node can be deleted. Default is <code>true</code>

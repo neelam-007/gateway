@@ -1,9 +1,8 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.console.action.IdentityPolicyAction;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -11,6 +10,7 @@ import java.util.Arrays;
 
 /**
  * Class AssertionTreeNode.
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 
@@ -18,7 +18,7 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
     /**
      * The <code>MemberOfGroupAssertionTreeNode</code> is the composite
      * assertion node that represents the group membership.
-     *
+     * 
      * @param assertion the composite assertion
      */
     public MemberOfGroupAssertionTreeNode(MemberOfGroup assertion) {
@@ -38,7 +38,7 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
     /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
-     *
+     * 
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
@@ -50,8 +50,18 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
-     *
+     * Gets the default action for this node.
+     * 
+     * @return <code>null</code> indicating there should be none default action
+     */
+    public Action getPreferredAction() {
+        return new IdentityPolicyAction(this);
+    }
+
+
+    /**
+     * Test if the node can be deleted. Default is <code>true</code>
+     * 
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
@@ -63,6 +73,6 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
      */
     public String getName() {
         return "Group membership " + ((MemberOfGroup)getUserObject()).getGroupName() +
-                              " [" + idProviderName() + "]";
+          " [" + idProviderName() + "]";
     }
 }

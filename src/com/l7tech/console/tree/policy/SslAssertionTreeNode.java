@@ -1,9 +1,9 @@
 package com.l7tech.console.tree.policy;
 
 
+import com.l7tech.console.action.SslPropertiesAction;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.console.action.SslPropertiesAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -43,6 +43,15 @@ public class SslAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public boolean canDelete() {
         return true;
+    }
+
+    /**
+     * Gets the default action for this node.
+     *
+     * @return <code>null</code> indicating there should be none default action
+     */
+    public Action getPreferredAction() {
+        return new SslPropertiesAction(this);
     }
 
 
