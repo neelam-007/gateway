@@ -1,7 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
 /**
  * Class <code>XmlDsigResAssertionTreeNode</code> specifies the policy
@@ -11,14 +11,16 @@ import com.l7tech.policy.assertion.Assertion;
  */
 public class ResponseWssIntegrityTreeNode extends XmlSecurityTreeNode {
 
-    public ResponseWssIntegrityTreeNode(Assertion assertion) {
+    public ResponseWssIntegrityTreeNode(ResponseWssIntegrity assertion) {
         super(assertion);
+        data = assertion;
     }
 
     /**
      * @return the node name that is displayed
      */
     public String getBaseName() {
-        return "Sign Response Parts";
+        return "Sign response element " + data.getXpathExpression().getExpression();
     }
+    private ResponseWssIntegrity data;
 }

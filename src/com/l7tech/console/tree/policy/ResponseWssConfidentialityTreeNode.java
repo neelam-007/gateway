@@ -1,7 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 
 /**
  * Class <code>XmlDsigResAssertionTreeNode</code> specifies the policy
@@ -11,14 +11,17 @@ import com.l7tech.policy.assertion.Assertion;
  */
 public class ResponseWssConfidentialityTreeNode extends XmlSecurityTreeNode {
 
-    public ResponseWssConfidentialityTreeNode(Assertion assertion) {
+    public ResponseWssConfidentialityTreeNode(ResponseWssConfidentiality assertion) {
         super(assertion);
+        data = assertion;
     }
 
     /**
      * @return the node name that is displayed
      */
     public String getBaseName() {
-        return "Encrypt Response Parts";
+        return "Encrypt response element " + data.getXpathExpression().getExpression();
     }
+
+    private ResponseWssConfidentiality data;
 }

@@ -12,17 +12,16 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
  */
 public class RequestWssConfidentialityTreeNode extends XmlSecurityTreeNode {
 
-    public RequestWssConfidentialityTreeNode(Assertion assertion) {
+    public RequestWssConfidentialityTreeNode(RequestWssIntegrity assertion) {
         super(assertion);
-        if (!(assertion instanceof RequestWssIntegrity)) {
-            throw new IllegalArgumentException();
-        }
+        data = assertion;
     }
 
     /**
      * @return the node name that is displayed
      */
     public String getBaseName() {
-        return "XML Request Security - Message Elements Encrypted";
+        return "Encrypt request element " + data.getXpathExpression().getExpression();
     }
+    private RequestWssIntegrity data;
 }
