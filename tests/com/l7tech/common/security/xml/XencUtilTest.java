@@ -19,6 +19,7 @@ import java.security.interfaces.RSAPublicKey;
 
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.security.JceProvider;
 
 /**
  * @author mike
@@ -38,7 +39,14 @@ public class XencUtilTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
+    protected void setUp() throws Exception {
+        // setup the provider you want to test here
+        //System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.SUN_ENGINE);
+        System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
+    }
+
     public void testPadKey() throws Exception {
+        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
         SecureRandom rand = new SecureRandom();
         X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
@@ -53,13 +61,14 @@ public class XencUtilTest extends TestCase {
     }
     
     public void testEncryptKeyWithRsaAndPad() throws Exception {
+        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
         SecureRandom rand = new SecureRandom();
         X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
         byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
 
         String paddedB64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, rand);
-        logger.info("Got back: " + paddedB64);
+        logger.info("Got back: " + paddedB64 + "\n(length:" + paddedB64.length() + ")");
     }
 
 }
