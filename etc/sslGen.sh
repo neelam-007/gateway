@@ -89,6 +89,7 @@ then
 # EDIT THE server.xml file so that the magic value "__FunkySsgMojo__" is replaced by the actual password
 perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ $SERVER_XML_FILE
 
+
 # ASK THE USER IF HE WANTS TO COPY THE CERTIFICATE TO FLOPPY?
         echo
         echo
