@@ -178,7 +178,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             for (Iterator i = checks.iterator(); i.hasNext();) {
                 CheckInfo info = (CheckInfo) i.next();
 
-                if (info == null || info.ha1 == null) continue;
+                if (info == null || info.ha1 == null) {
+                    logger.warning("Server does not have access to requestor's password and cannot send a cert check.");
+                    continue;
+                }
 
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
                 md5.reset();
