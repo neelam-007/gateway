@@ -583,7 +583,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         groupAttributesPanel.add(memberStrategy, gridBagConstraints);
 
-        valueTitleLabel.setText("Value");
+        valueTitleLabel.setText("Mapped to");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 3;

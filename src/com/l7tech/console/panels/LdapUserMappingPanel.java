@@ -689,7 +689,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
         userAttributePanel.add(passwordStrategyAttribute, gridBagConstraints);  */
 
-        valueTitleLabel.setText("Value");
+        valueTitleLabel.setText("Mapped to");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 3;
