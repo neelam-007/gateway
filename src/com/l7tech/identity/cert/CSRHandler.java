@@ -159,19 +159,6 @@ public class CSRHandler extends AuthenticatableHttpServlet {
                 }
             }
 
-            // verify that the CN in the subject equals the login name
-            X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
-            if (!x500name.getCommonName().equals(authenticatedUser.getLogin())) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN,
-                                   "You cannot scr for a subject different than " +
-                                    authenticatedUser.getLogin());
-                logger.log(Level.SEVERE, "User " +
-                                         authenticatedUser.getLogin() +
-                                         " tried to csr for subject other than self (" +
-                                         x500name.getCommonName() + ")");
-                return;
-            }
-
             // send cert back
             try {
                 byte[] certbytes = cert.getEncoded();

@@ -4,10 +4,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.logging.LogManager;
 
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateException;
+import java.security.cert.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.List;
@@ -19,6 +16,7 @@ import java.io.IOException;
 import net.sf.hibernate.Session;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
+import sun.security.x509.X500Name;
 
 
 /**
@@ -59,12 +57,29 @@ public class ClientCertManagerImp implements ClientCertManager {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("recordNewUserCert for " + user.getLogin());
 
+        // check that the cert's subject matches the user's login
+        try {
+            X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
+            if (!x500name.getCommonName().equals(user.getLogin())) {
+                logger.log(Level.SEVERE, "User " + user.getLogin() +
+                                         " tried to csr for subject other than self (" +
+                                         x500name.getCommonName() + ")");
+                throw new UpdateException("Attempt to create cert for identity " + x500name.getCommonName() +
+                                          " with login" + user.getLogin());
+            } else {
+                logger.finest("Cert's subject matches authenticated user's login (" + user.getLogin() + ")");
+            }
+        } catch (IOException e) {
+            throw new UpdateException("could not verify the cert subject", e);
+        }
+
         // check if operation is permitted
         if (!userCanGenCert(user)) {
             String msg = "this user is currently not allowed to generate a new cert: " + user.getLogin();
             logger.info(msg);
             throw new UpdateException(msg);
         }
+
         // prepare data
         CertEntryRow userData = getFromTable(user);
         // this could be new entry
