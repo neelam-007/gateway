@@ -48,10 +48,12 @@ public class HibernatePersistenceManager extends PersistenceManager {
         FileInputStream fis = null;
         try {
             Configuration mainConfig = new Configuration();
+            Configuration auditConfig = new Configuration();
 
             if (properties != null) {
                 logger.info("Loading database configuration from presupplied properties");
                 mainConfig.setProperties(properties);
+                auditConfig.setProperties(properties);
             } else {
                 String propsPath = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_HIBERNATE);
 
@@ -61,6 +63,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
                     fis = new FileInputStream(propsPath);
                     props.load(fis);
                     mainConfig.setProperties(props);
+                    auditConfig.setProperties(props);
                 } else {
                     logger.info("Loading database configuration from system classpath");
                 }
@@ -68,7 +71,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
             mainConfig.addResource(DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
             _sessionFactory = mainConfig.buildSessionFactory();
 
-            Configuration auditConfig = new Configuration();
             auditConfig.addResource(AUDIT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
             _auditSessionFactory = auditConfig.buildSessionFactory();
 
