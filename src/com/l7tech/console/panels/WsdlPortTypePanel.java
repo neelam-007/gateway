@@ -275,7 +275,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         Map portTypes = def.getPortTypes();
         if (portTypes.isEmpty()) {
             portType = def.createPortType();
-            portType.setQName(new QName(portTypeNameField.getText()));
+            portType.setQName(new QName(definition.getTargetNamespace(),
+                                        portTypeNameField.getText()));
             portType.setUndefined(false);
             def.addPortType(portType);
         } else {

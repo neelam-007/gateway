@@ -9,6 +9,7 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.soap.SOAPBody;
 import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -16,6 +17,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Arrays;
 
 /**
  *
@@ -170,7 +172,8 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         Binding binding;
         if (bindings.isEmpty()) {
             binding = definition.createBinding();
-            binding.setQName(new QName(portTypeBindingNameField.getText()));
+            binding.setQName(new QName(definition.getTargetNamespace(),
+                                       portTypeBindingNameField.getText()));
             binding.setPortType(portType);
             binding.setUndefined(false);
             collectSoapBinding(binding);
@@ -187,22 +190,24 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
             bop.setName(op.getName());
             bop.setOperation(op);
 
+            // binding input
             BindingInput bi = definition.createBindingInput();
             bi.setName(op.getInput().getName());
+            bi.addExtensibilityElement(getSoapBody());
             bop.setBindingInput(bi);
 
+            // binding output
             BindingOutput bout = definition.createBindingOutput();
             bout.setName(op.getOutput().getName());
+            bout.addExtensibilityElement(getSoapBody());
             bop.setBindingOutput(bout);
-
             binding.addBindingOperation(bop);
             // soap action
             String action =
               portType.getQName().getLocalPart() + "#" + bop.getName();
             ExtensibilityElement ee = null;
             ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
-            ee = extensionRegistry.createExtension(BindingOperation.class,
-              SOAPConstants.Q_ELEM_SOAP_OPERATION);
+            ee = extensionRegistry.createExtension(BindingOperation.class, SOAPConstants.Q_ELEM_SOAP_OPERATION);
             if (ee instanceof SOAPOperation) {
                 SOAPOperation sop = (SOAPOperation)ee;
                 sop.setSoapActionURI(action);
@@ -213,6 +218,29 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         }
 
         return binding;
+    }
+
+   /**
+    * creates the default soap body element with the soap encoded
+    * style
+    * @return the extensibility element
+    * @throws WSDLException
+    */
+    private ExtensibilityElement getSoapBody() throws WSDLException {
+        ExtensibilityElement ee;
+        ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
+        ee = extensionRegistry.createExtension(BindingInput.class, SOAPConstants.Q_ELEM_SOAP_BODY);
+        if (ee instanceof SOAPBody) {
+            SOAPBody sob = (SOAPBody)ee;
+            sob.setNamespaceURI(definition.getTargetNamespace());
+            sob.setUse("encoded"); //soap encoded
+            java.util.List encodingStyles =
+              Arrays.asList(new String[] {"http://schemas.xmlsoap.org/soap/encoding/"});
+            sob.setEncodingStyles(encodingStyles);
+        } else {
+            throw new RuntimeException("expected SOAPBody, received " + ee.getClass());
+        }
+        return ee;
     }
 
     private void collectSoapBinding(Binding binding) throws WSDLException {
@@ -230,8 +258,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         extElements.removeAll(remove);
 
         ExtensibilityElement ee = null;
-        ee = extensionRegistry.createExtension(Binding.class,
-          SOAPConstants.Q_ELEM_SOAP_BINDING);
+        ee = extensionRegistry.createExtension(Binding.class, SOAPConstants.Q_ELEM_SOAP_BINDING);
         if (ee instanceof SOAPBinding) {
             SOAPBinding sb = (SOAPBinding)ee;
             sb.setTransportURI(portTypeBindingTransportField.getText());

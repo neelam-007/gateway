@@ -120,8 +120,8 @@ public class WsdlCreateWizard extends Wizard {
 
     /**
      *
-     * Find the prefix for the namespace within the current definiotn and
-     * create the 'prefix:localName' string.
+     * Find the prefix for the namespace within the current definition and
+     * create the 'prefix:localName' expression.
      *
      * @param localName the localname
      * @param definition the wsdl definition
