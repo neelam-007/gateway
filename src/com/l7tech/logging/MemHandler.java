@@ -56,6 +56,84 @@ public class MemHandler extends java.util.logging.Handler {
         return output;
     }
 
+     /**
+     * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
+     * up to the specified size.
+     * NOTE: the log messages whose message number equals to startMsgNumber and endMsgNumber
+     * are not returned.
+     *
+     * @param startMsgNumber the message number to locate the start point.
+     *                       Start from beginning of the message buffer if it equals to -1.
+     * @param endMsgNumber   the message number to locate the end point.
+     *                       Retrieve messages until the end of the message buffer is hit if it equals to -1.
+     * @param size  the max. number of messages retrieved
+     * @return LogRecord[] the array of log records retrieved
+     */
+    public LogRecord[] getRecords(long startMsgNumber, long endMsgNumber, int size) {
+        if (buffer == null) return new LogRecord[0];
+        Object[] allrecords = buffer.toArray();
+
+        if(allrecords.length == 0) return new LogRecord[0];
+
+        boolean startMsgFound = false;
+        boolean endMsgFound = false;
+        int startIndex = 0;
+        int endIndex = 0;
+
+         // find the starting point
+        if(startMsgNumber >= 0 ) {
+            for(int i=0; i < allrecords.length; i++){
+                if(((LogRecord)allrecords[i]).getSequenceNumber() == startMsgNumber){
+                    startMsgFound = true;
+
+                    // excluding the start msg itself
+                    startIndex = i + 1;
+                    break;
+                }
+            }
+        }
+
+        if(endMsgNumber >= 0 ) {
+            // find the ending point
+            for(int i=0; i < allrecords.length; i++){
+                if(((LogRecord)allrecords[i]).getSequenceNumber() == endMsgNumber){
+                    endMsgFound = true;
+                    endIndex = i;
+                    break;
+                }
+            }
+        }
+
+        LogRecord[] output = null;
+        int potentialMaxSize = 0;
+
+         if(startMsgFound && endMsgFound){
+            potentialMaxSize = endIndex - startIndex;
+        } else if (!startMsgFound && endMsgFound) {
+            // try to retrieve all messages up to the message whose sequence number equals to the start sequence number
+            potentialMaxSize = endIndex;
+        }
+        else if (startMsgFound && !endMsgFound){
+            potentialMaxSize = allrecords.length - startIndex;
+        } else {
+            potentialMaxSize = allrecords.length;
+        }
+
+        if (potentialMaxSize <= 0)
+            return new LogRecord[0];
+        else if (potentialMaxSize < size)
+            output = new LogRecord[potentialMaxSize];
+        else
+            output = new LogRecord[size];
+
+        for (int i = 0; i < output.length; i++) {
+            output[i] = (LogRecord) allrecords[i + startIndex];
+        }
+
+        return output;
+
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
