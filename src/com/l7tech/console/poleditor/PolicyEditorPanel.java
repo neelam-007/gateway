@@ -11,6 +11,7 @@ import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -67,6 +68,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private boolean validating = false;
     private SavePolicyAction saveAction;
     private ValidatePolicyAction validateAction;
+    private ValidatePolicyAction serverValidateAction;
     private ExportPolicyToFileAction exportPolicyAction;
     private ImportPolicyFromFileAction importPolicyAction;
 
@@ -400,7 +402,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             });
 
-            buttonValidate = new JButton(getValidateAction());
+            buttonValidate = new JButton(getServerValidateAction());
             this.add(buttonValidate);
 
             buttonSaveTemplate = new JButton(getExportAction());
@@ -457,6 +459,35 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             };
         }
         return validateAction;
+    }
+
+    public Action getServerValidateAction() {
+        if (serverValidateAction == null) {
+            serverValidateAction = new ValidatePolicyAction() {
+                public void performAction() {
+                    PolicyValidatorResult result = PolicyValidator.getDefault().
+                                                        validate(rootAssertion.asAssertion());
+                    try {
+                        PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
+                                                            validatePolicy(rootAssertion.asAssertion());
+                        if (result2.getErrorCount() > 0) {
+                            for (Iterator i = result2.getErrors().iterator(); i.hasNext();) {
+                                result.addError((com.l7tech.policy.PolicyValidatorResult.Error)i.next());
+                            }
+                        }
+                        if (result2.getWarningCount() > 0) {
+                            for (Iterator i = result2.getWarnings().iterator(); i.hasNext();) {
+                                result.addWarning((com.l7tech.policy.PolicyValidatorResult.Warning)i.next());
+                            }
+                        }
+                    } catch (RemoteException e) {
+                        log.log(Level.WARNING, "Problem running server side validation", e);
+                    }
+                    displayPolicyValidateResult(pruneDuplicates(result));
+                }
+            };
+        }
+        return serverValidateAction;
     }
 
     /**

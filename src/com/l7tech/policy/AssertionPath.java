@@ -2,6 +2,8 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 
+import java.io.Serializable;
+
 /**
  * Class AssertionPath represents a sequence of <code>Assertion</code>
  * instances.
@@ -9,7 +11,7 @@ import com.l7tech.policy.assertion.Assertion;
  * first element.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class AssertionPath {
+public class AssertionPath implements Serializable {
     /**
      * Path representing the parent, null if lastPathComponent represents
      * the root.

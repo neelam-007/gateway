@@ -3,6 +3,7 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.Assertion;
 
 import java.util.*;
+import java.io.Serializable;
 
 /**
  * This class represents the result of the policy validation.
@@ -10,7 +11,7 @@ import java.util.*;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
-public class PolicyValidatorResult {
+public class PolicyValidatorResult implements Serializable {
     private List errors = new ArrayList();
     private List warnings = new ArrayList();
     private Map assertionMessages = new HashMap();
@@ -114,7 +115,7 @@ public class PolicyValidatorResult {
      * The class represents the policy validation error
      * todo: add warning and info levels
      */
-    public static class Message {
+    public static class Message implements Serializable {
         private Assertion assertion;
         private String message;
         private Throwable throwable;
@@ -167,13 +168,13 @@ public class PolicyValidatorResult {
 
     }
 
-    public static class Error extends Message {
+    public static class Error extends Message implements Serializable {
         public Error(Assertion errorAssertion, AssertionPath ap, String message, Throwable throwable) {
             super(errorAssertion, ap, message, throwable);
         }
     }
 
-    public static class Warning extends Message {
+    public static class Warning extends Message implements Serializable {
         public Warning(Assertion errorAssertion, AssertionPath ap, String message, Throwable throwable) {
             super(errorAssertion, ap, message, throwable);
         }
