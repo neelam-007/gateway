@@ -1,8 +1,6 @@
 package com.l7tech.skunkworks;
 
 import org.snmp4j.MessageDispatcherImpl;
-import org.snmp4j.CommandResponder;
-import org.snmp4j.CommandResponderEvent;
 import org.snmp4j.PDU;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 import org.snmp4j.security.SecurityProtocols;
@@ -25,7 +23,7 @@ import java.io.IOException;
  * User: flascell<br/>
  * Date: Nov 30, 2004<br/>
  */
-public class SNMPTrapSender implements CommandResponder {
+public class SNMPTrapSender {
     public static final String TRAP_DESTINATION = "192.168.0.3";
 
     public static void main(String[] args) throws Exception {
@@ -35,7 +33,6 @@ public class SNMPTrapSender implements CommandResponder {
 
     public SNMPTrapSender() {
         dispatcher = new MessageDispatcherImpl();
-        dispatcher.addCommandResponder(this);
         dispatcher.addMessageProcessingModel(new MPv2c());
         try {
             dispatcher.addTransportMapping(new DefaultUdpTransportMapping());
@@ -54,17 +51,13 @@ public class SNMPTrapSender implements CommandResponder {
         dispatcher.sendPdu(new UdpAddress(InetAddress.getByName(TRAP_DESTINATION), 162),
                            SnmpConstants.version2c,
                            SecurityModel.SECURITY_MODEL_SNMPv2c,
-                           "ssg".getBytes(), // this should be set to the proper community bytes
+                           "ssg".getBytes(), // todo, this should be set to the proper community bytes
                            SecurityLevel.NOAUTH_NOPRIV,
                            pdu,
                            false);
     }
 
     private MessageDispatcherImpl dispatcher;
-
-    public void processPdu(CommandResponderEvent event) {
-        System.out.println("processPdu!"); // should not get here because we are not a listener
-    }
 
     /*
      Code to run on remote address to receive this trap (need permission to listen on 162):
