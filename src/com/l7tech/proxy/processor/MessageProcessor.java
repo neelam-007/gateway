@@ -374,7 +374,7 @@ public class MessageProcessor {
         HttpClient client = new HttpClient();
         HttpState state = client.getState();
 
-        Cookie[] cookies = req.getSsg().getSessionCookies();
+        Cookie[] cookies = req.getSsg().retrieveSessionCookies();
         if (cookies != null) {
             for (int i = 0; i < cookies.length; i++) {
                 Cookie cookie = cookies[i];
@@ -497,7 +497,7 @@ public class MessageProcessor {
                 if (state.getCookies() == null) {
                     req.getSsg().clearSessionCookies();
                 } else {
-                    req.getSsg().setSessionCookies(state.getCookies());
+                    req.getSsg().storeSessionCookies(state.getCookies());
                 }
                 postMethod.releaseConnection();
             }

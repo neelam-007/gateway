@@ -740,7 +740,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      *
      * @return  Cookie[]  The list of session cookies.
      */
-    public synchronized Cookie[] getSessionCookies() {
+    public synchronized Cookie[] retrieveSessionCookies() {
 
         String cookieString = "HTTP cookies: ";
         if (sessionCookies != null && sessionCookies.length > 0) {
@@ -761,7 +761,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      *
      * @param cookies  The HTTP cookies to be saved.
      */
-    public synchronized void setSessionCookies(Cookie[] cookies) {
+    public synchronized void storeSessionCookies(Cookie[] cookies) {
         sessionCookies = cookies;
     }
 
