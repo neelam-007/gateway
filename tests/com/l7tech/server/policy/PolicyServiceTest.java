@@ -14,6 +14,8 @@ import com.l7tech.message.TestSoapRequest;
 import com.l7tech.message.TestSoapResponse;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -116,11 +118,16 @@ public class PolicyServiceTest extends TestCase {
         francoBean.setUniqueIdentifier("666");
         francoBean.setProviderId(TestIdentityProvider.PROVIDER_ID);
         TestIdentityProvider.addUser(francoBean, "franco", "password".toCharArray());
+
         AllAssertion root = new AllAssertion();
         root.getChildren().add(new HttpBasic());
         OneOrMoreAssertion or = new OneOrMoreAssertion();
         root.getChildren().add(or);
         or.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "franco", "666", "franco"));
+        root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
+        root.setChildren(root.getChildren());
+        or.setChildren(or.getChildren());
+        log.info(root.toString());
 
         LoginCredentials francoCreds = new LoginCredentials("franco", "password".toCharArray(),
                                                             CredentialFormat.CLEARTEXT,
