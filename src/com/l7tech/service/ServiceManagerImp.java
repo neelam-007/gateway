@@ -9,10 +9,7 @@ package com.l7tech.service;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.*;
-import com.l7tech.service.resolution.ServiceResolutionException;
-import com.l7tech.service.resolution.ServiceResolver;
-import com.l7tech.service.resolution.SoapActionResolver;
-import com.l7tech.service.resolution.UrnResolver;
+import com.l7tech.service.resolution.*;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -135,6 +132,8 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                 classnames.append( UrnResolver.class.getName() );
                 classnames.append( " " );
                 classnames.append( SoapActionResolver.class.getName() );
+                classnames.append( " " );
+                classnames.append( HttpUriResolver.class.getName() );
                 serviceResolvers = classnames.toString();
             }
 
