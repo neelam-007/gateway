@@ -47,8 +47,10 @@ public interface Request extends Message {
     public static final String PARAM_HTTP_SERVER_PROTOCOL   = PREFIX_HTTP + ".server-protocol";
     public static final String PARAM_HTTP_SERVER_PORT       = PREFIX_HTTP + ".server-port";
 
-    InputStream getRequestStream() throws IOException;
+    String getRequestXml() throws IOException;
+    void setRequestXml( String xml );
 
+    // TODO: Support multiple sets of credentials?
     PrincipalCredentials getPrincipalCredentials();
 
     void setPrincipalCredentials( PrincipalCredentials pc );
