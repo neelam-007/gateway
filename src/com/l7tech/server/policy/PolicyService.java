@@ -8,6 +8,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.server.filter.FilterManager;
+import com.l7tech.policy.server.filter.FilteringException;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.message.SoapRequest;
 import com.l7tech.message.SoapResponse;
 import com.l7tech.common.security.xml.WssProcessor;
@@ -71,9 +74,9 @@ public class PolicyService {
      */
     public Document respondToPolicyDownloadRequest(String policyId,
                                                    User preAuthenticatedUser,
-                                                   PolicyGetter policyGetter) {
-        // todo
-        return null;
+                                                   PolicyGetter policyGetter) throws FilteringException, IOException, SAXException{
+        Assertion filteredAssertion = FilterManager.getInstance().applyAllFilters(preAuthenticatedUser, policyGetter.getPolicy(policyId));
+        return XmlUtil.stringToDocument(WspWriter.getPolicyXml(filteredAssertion));
     }
 
 
@@ -132,17 +135,29 @@ public class PolicyService {
             status = policyPolicy.checkRequest(request, response);
         } catch (IOException e) {
             exceptionToFault(e, response);
+            return;
         } catch (PolicyAssertionException e) {
             exceptionToFault(e, response);
+            return;
         }
 
         Document policyDoc = null;
         if (status == AssertionStatus.NONE) {
-            policyDoc = respondToPolicyDownloadRequest(policyId, request.getUser(), policyGetter);
+            try {
+                policyDoc = respondToPolicyDownloadRequest(policyId, request.getUser(), policyGetter);
+            } catch (FilteringException e) {
+                exceptionToFault(e, response);
+                return;
+            } catch (IOException e) {
+                exceptionToFault(e, response);
+                return;
+            } catch (SAXException e) {
+                exceptionToFault(e, response);
+                return;
+            }
         } else {
             // todo, some special soap fault
         }
-
         wrapFilteredPolicyInResponse(policyDoc, response);
         return;
     }
