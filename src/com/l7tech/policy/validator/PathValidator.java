@@ -142,11 +142,11 @@ class PathValidator {
     }
 
     private void processCredentialSource(Assertion a) {
-        if (seenRouting) {
+        if (seenRouting && isDefaultActor(a)) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
         }
 
-        if (seenAccessControl) {
+        if (seenAccessControl && isDefaultActor(a)) {
             result.addError(new PolicyValidatorResult.
               Error(a, assertionPath, "Access control already set, this assertion might get ignored.", null));
         }
@@ -252,38 +252,45 @@ class PathValidator {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                   "The assertion must be positioned before the routing assertion.", null));
             }
-        } else if (a instanceof RequestWssIntegrity) {
-            // REASON FOR THIS RULE:
+        } else if (a instanceof RequestWssIntegrity || a instanceof ResponseWssConfidentiality) {
+            // REASONS FOR THIS RULE
+            //
+            // 1. For RequestWssIntegrity:
             // it makes no sense to validate that an element is signed if we dont validate
             // that the authorized user is the one who signed it.
-            if (!seenWssSignature(a) && !seenSecureConversation && !seenSamlSecurity(a)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceeded by an WSS Signature assertion, " +
-                  "a Secure Conversation assertion, or a SAML Security assertion.", null));
-            }
-            // REASON FOR THIS RULE:
-            // it makes no sense to check something about the request after it's routed
-            if (seenRouting) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should occur before the request is routed.", null));
-            }
-        } else if (a instanceof RequestWssConfidentiality) {
-            // REASON FOR THIS RULE:
-            // it makes no sense to check something about the request after it's routed
-            if (seenRouting) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should occur before the request is routed.", null));
-            }
-        } else if (a instanceof ResponseWssConfidentiality) {
-            // REASON FOR THIS RULE:
+            //
+            // 2. For ResponseWssConfidentiality:
             // the server needs to encrypt a symmetric key for the recipient
             // the server needs the client cert for this purpose. this ensures that
             // the client certis available from the request.
             if (!seenWssSignature(a) && !seenSecureConversation && !seenSamlSecurity(a)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceeded by an WSS Signature assertion, a Secure Conversation assertion, or a SAML Security assertion.", null));
+                String actor = assertionToActor(a);
+                String msg;
+                if (actor.equals(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE)) {
+                    msg = "This assertion should be preceeded by an WSS Signature assertion, " +
+                          "a Secure Conversation assertion, or a SAML Security assertion.";
+                } else {
+                    msg = "This assertion should be preceeded by an WSS Signature or a " +
+                          "SAML Security assertion (for actor " + actor + ").";
+                }
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
             }
-        }  else if (a instanceof ResponseXpathAssertion) {
+            // REASON FOR THIS RULE:
+            // it makes no sense to check something about the request after it's routed
+            if (a instanceof RequestWssIntegrity) {
+                if (seenRouting && isDefaultActor(a)) {
+                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                      "This assertion should occur before the request is routed.", null));
+                }
+            }
+        } else if (a instanceof RequestWssConfidentiality) {
+            // REASON FOR THIS RULE:
+            // it makes no sense to check something about the request after it's routed
+            if (seenRouting && isDefaultActor(a)) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion should occur before the request is routed.", null));
+            }
+        } else if (a instanceof ResponseXpathAssertion) {
             if (!seenRouting) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion will never work because there is no response yet. This assertion should be moved " +
@@ -468,10 +475,7 @@ class PathValidator {
     }
 
     private boolean seenCredentials(Assertion context) {
-        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
-        if (context instanceof SecurityHeaderAddressable) {
-            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
-        }
+        String actor = assertionToActor(context);
         return seenCredentials(actor);
     }
 
@@ -482,47 +486,48 @@ class PathValidator {
     }
 
     private void setSeenCredentials(Assertion context, boolean value) {
-        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
-        if (context instanceof SecurityHeaderAddressable) {
-            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
-        }
+        String actor = assertionToActor(context);
         seenCredentials.put(actor, new Boolean(value));
     }
 
     private boolean seenWssSignature(Assertion context) {
-        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
-        if (context instanceof SecurityHeaderAddressable) {
-            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
-        }
+        String actor = assertionToActor(context);
         Boolean currentvalue = (Boolean)seenWssSignature.get(actor);
         if (currentvalue == null) return false;
         else return currentvalue.booleanValue();
     }
 
     private void setSeenWssSignature(Assertion context, boolean value) {
-        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
-        if (context instanceof SecurityHeaderAddressable) {
-            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
-        }
+        String actor = assertionToActor(context);
         seenWssSignature.put(actor, new Boolean(value));
     }
 
     private boolean seenSamlSecurity(Assertion context) {
-        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
-        if (context instanceof SecurityHeaderAddressable) {
-            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
-        }
+        String actor = assertionToActor(context);
         Boolean currentvalue = (Boolean)seenSamlSecurity.get(actor);
         if (currentvalue == null) return false;
         else return currentvalue.booleanValue();
     }
 
     private void setSeenSamlSecurity(Assertion context, boolean value) {
-        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
-        if (context instanceof SecurityHeaderAddressable) {
-            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
-        }
+        String actor = assertionToActor(context);
         seenSamlSecurity.put(actor, new Boolean(value));
+    }
+
+    private String assertionToActor(Assertion a) {
+        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
+        if (a instanceof SecurityHeaderAddressable) {
+            actor = ((SecurityHeaderAddressable)a).getRecipientContext().getActor();
+        }
+        return actor;
+    }
+
+    private boolean isDefaultActor(Assertion a) {
+        String actor = assertionToActor(a);
+        if (actor.equals(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE)) {
+            return true;
+        }
+        return false;
     }
 
     boolean seenPreconditions = false;
