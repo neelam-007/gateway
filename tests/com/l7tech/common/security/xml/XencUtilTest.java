@@ -24,7 +24,7 @@ import com.l7tech.common.util.HexUtils;
  * @author mike
  */
 public class XencUtilTest extends TestCase {
-    private static Logger log = Logger.getLogger(XencUtilTest.class.getName());
+    private static Logger logger = Logger.getLogger(XencUtilTest.class.getName());
 
     public XencUtilTest(String name) {
         super(name);
@@ -42,7 +42,6 @@ public class XencUtilTest extends TestCase {
         SecureRandom rand = new SecureRandom();
         X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
-
         byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
 
         final int modulusLength = publicKey.getModulus().toByteArray().length;
@@ -50,5 +49,17 @@ public class XencUtilTest extends TestCase {
         byte[] paddedKeyBytes = XencUtil.padSymmetricKeyForRsaEncryption(keyBytes, modulusLength, rand);
 
         assertTrue(paddedKeyBytes.length <= modulusLength);
+        assertTrue(paddedKeyBytes.length < 128);
     }
+    
+    public void testEncryptKeyWithRsaAndPad() throws Exception {
+        SecureRandom rand = new SecureRandom();
+        X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
+        RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
+        byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
+
+        String paddedB64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, rand);
+        logger.info("Got back: " + paddedB64);
+    }
+
 }
