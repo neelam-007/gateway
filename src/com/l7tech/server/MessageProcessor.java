@@ -26,6 +26,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.w3c.dom.Document;
@@ -260,6 +261,14 @@ public class MessageProcessor {
             return AssertionStatus.SERVER_ERROR;
         } finally {
             EventManager.fire(new MessageProcessed(request, response, status));
+            
+            // clean up the mulitpart reader cache if exists
+            if(request instanceof XmlRequest) {
+                 ServerMultipartMessageReader multipartReader = ((XmlRequest) request).getMultipartReader();
+                if(multipartReader != null && multipartReader.getFileCache() != null) {
+                    multipartReader.deleteCacheFile();
+                }
+            }
         }
     }
 

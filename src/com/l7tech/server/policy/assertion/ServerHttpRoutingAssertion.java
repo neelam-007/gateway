@@ -99,7 +99,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             throw new PolicyAssertionException("Only XML Requests are supported by ServerRoutingAssertion!");
 
         PostMethod postMethod = null;
-        InputStream is = null;
+        InputStream inputStream = null;
+        ServerMultipartMessageReader multipartReader = null;
 
         try {
             try {
@@ -139,7 +140,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 // todo: check if we need to support HTTP 1.1.
                 postMethod.setHttp11(false);
 
-                final ServerMultipartMessageReader multipartReader = request.getMultipartReader();
+                multipartReader = request.getMultipartReader();
                 if(request.isMultipart()) {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
                             "; type=\"" + XmlUtil.TEXT_XML + "\"" +
@@ -250,14 +251,13 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             request.getMultipartBoundary());
 
                     if(multipartReader.isAtLeastOneAttachmentParsed()){
-                        is = null;
                         if(multipartReader.getFileCache() != null) {
 
                             // close the connection for writing data to the temp file before opening the file for read operation
                             multipartReader.closeFileCache();
 
                             // read raw attachments from a temp file
-                            is = new FileInputStream(multipartReader.getFileCacheName());
+                            inputStream = new FileInputStream(multipartReader.getFileCacheName());
 
                         } else {
 
@@ -267,10 +267,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             for(int i=0; i < dataBuf.length; i++) {
                                 dataBuf[i] = data[i];
                             }
-                            is = new ByteArrayInputStream(dataBuf);
+                            inputStream = new ByteArrayInputStream(dataBuf);
                         }
 
-                        PushbackInputStream pushbackInputStream = new PushbackInputStream(is, MultipartMessageReader.SOAP_PART_BUFFER_SIZE);
+                        PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream, MultipartMessageReader.SOAP_PART_BUFFER_SIZE);
                         pushbackInputStream.unread(sb.toString().getBytes());
                         postMethod.setRequestBody(pushbackInputStream);
 
@@ -304,14 +304,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 request.setRoutingStatus(RoutingStatus.ROUTED);
 
-                 if(is != null) {
-                     is.close();
-                     is =null;
-                }
-
-                if (multipartReader != null && multipartReader.getFileCache() != null) {
-                    multipartReader.deleteCacheFile();
-                }
             } catch (WSDLException we) {
                 logger.log(Level.SEVERE, null, we);
                 return AssertionStatus.FAILED;
@@ -350,6 +342,15 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             if (postMethod != null) {
                 MethodCloser mc = new MethodCloser(postMethod);
                 response.runOnClose(mc);
+            }
+
+            if(inputStream != null) {
+                inputStream.close();
+                inputStream =null;
+            }
+
+            if (multipartReader != null && multipartReader.getFileCache() != null) {
+                multipartReader.deleteCacheFile();
             }
         }
 
