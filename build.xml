@@ -860,9 +860,10 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" tofile="${install.src.hibernate.properties.dist}"/>
     </target>
 
-    <target name="INTERNAL-ssg-install-keystores" if="install.full">
+    <target name="INTERNAL-ssg-install-keystores" if="install.full" depends="INTERNAL-ssg-install-genpass">
         <!-- Create CA keystore -->
-        <delete file="${install.src.ca.keystore}"/>
+        
+	<delete file="${install.src.ca.keystore}"/>
         <fail unless="install.ca.hostname" message="install.ca.hostname property not set! Check install.properties!"/>
         <java classname="sun.security.tools.KeyTool">
             <arg line="-keystore ${install.src.ca.keystore}"/>
@@ -912,7 +913,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <path id="classpath">
             <pathelement path="${src.root}/build/classes"/>
             <fileset dir="${src.root}/lib">
-                <include name="*.jar"/>
+                <include name="**/*.jar"/>
             </fileset>
         </path>
 
