@@ -57,7 +57,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JRadioButton passwordMethod;
     private JRadioButton samlMethod;
     private JSpinner expirySpinner;
-    private JCheckBox memebershipStatementCheck;
+    // private JCheckBox memebershipStatementCheck; // Bugzilla 1269, reenable for group membership attribute statement
     private JLabel expirySpinLabel;
     private JLabel identityLabel;
     private JLabel passwordLabel;
@@ -228,7 +228,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         expirySpinner.setEnabled(saml);
         expirySpinLabel.setEnabled(saml);
-        memebershipStatementCheck.setEnabled(saml);
+        // memebershipStatementCheck.setEnabled(saml); //bugzilla 1269
 
         identityTextField.setEnabled(password);
         identityLabel.setEnabled(password);
@@ -420,8 +420,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         JPanel includeGroupsPanel = new JPanel();
         includeGroupsPanel.setLayout(new BoxLayout(includeGroupsPanel, BoxLayout.X_AXIS));
-        memebershipStatementCheck = new JCheckBox("Group Membership Statement");
-        includeGroupsPanel.add(memebershipStatementCheck);
+        //memebershipStatementCheck = new JCheckBox("Group Membership Statement"); // Bugzilla 1269
+        // includeGroupsPanel.add(memebershipStatementCheck);
         includeGroupsPanel.add(Box.createGlue());
         samlPanel.add(includeGroupsPanel);
         samlPanel.add(Box.createGlue());
@@ -502,7 +502,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                         assertion.setRealm(realmTextField.getText());
                         final Integer sv = (Integer)expirySpinner.getValue();
                         assertion.setSamlAssertionExpiry(sv.intValue());
-                        assertion.setGroupMembershipStatement(memebershipStatementCheck.isSelected());
+                        //assertion.setGroupMembershipStatement(memebershipStatementCheck.isSelected()); // Bugzilla 1269
                         assertion.setAttachSamlSenderVouches(samlMethod.isSelected());
                         assertion.setTaiCredentialChaining(taiCredentialChaining.isSelected());
                         fireEventAssertionChanged(assertion);
@@ -545,7 +545,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         serviceUrlTextField.setText(assertion.getProtectedServiceUrl());
         taiCredentialChaining.setSelected(assertion.isTaiCredentialChaining());
 
-        memebershipStatementCheck.setSelected(assertion.isGroupMembershipStatement());
+        //memebershipStatementCheck.setSelected(assertion.isGroupMembershipStatement()); // Bugzilla 1269
         int expiry = assertion.getSamlAssertionExpiry();
         if (expiry == 0) {
             expiry = 5;
