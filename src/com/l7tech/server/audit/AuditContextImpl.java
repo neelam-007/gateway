@@ -119,6 +119,7 @@ public class AuditContextImpl implements AuditContext {
             currentRecord = null;
             details.clear();
             highestLevelYetSeen = Level.ALL;
+            ordinal = 0;
         }
     }
 
