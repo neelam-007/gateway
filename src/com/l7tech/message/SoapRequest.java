@@ -124,19 +124,24 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     }
 
     public Map getRequestAttachments() throws IOException {
-         return getMessageAttachments(getRequestReader());
+
+        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
+         return multipartReader.getMessageAttachments();
     }
 
     public Part getRequestAttachment(int position) throws IOException {
-        return getMessagePart(getRequestReader(), position);
+        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
+        return multipartReader.getMessagePart(position);
     }
 
     public Part getSoapPart() throws IOException {
-        return getMessagePart(getRequestReader(), 0);
+        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
+        return multipartReader.getMessagePart(0);
     }
     
     public String getMultipartBoundary() {
-        return multipartBoundary;
+        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
+        return multipartReader.multipartBoundary;
     }
 
     public void setRequestXml( String xml ) {

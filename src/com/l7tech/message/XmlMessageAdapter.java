@@ -61,22 +61,33 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         String ctype = (String)getParameter(Message.PARAM_HTTP_CONTENT_TYPE);
         HeaderValue contentTypeHeader = parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
 
-        if(breader == null) {
-            breader = new BufferedReader(reader);
-        }
-
         if (XmlUtil.MULTIPART_CONTENT_TYPE.equals(contentTypeHeader.value)) {
+
             multipart = true;
-            multipartBoundary = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_BOUNDARY);
-            if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
-            String innerType = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_TYPE);
-            if (innerType.startsWith(XmlUtil.TEXT_XML)) {
-                String firstBoundary = breader.readLine();
-                if (!firstBoundary.equals(XmlUtil.MULTIPART_BOUNDARY_PREFIX + multipartBoundary)) throw new IOException("Initial multipart boundary not found");
-                Part part = parseMultipart(breader, 0);
-                if (!part.getHeader(XmlUtil.CONTENT_TYPE).value.equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
-                return part.content;
-            } else throw new IOException("Expected first part of multipart message to be XML");
+
+            if(!soapPartParsed) {
+                String multipartBoundary = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_BOUNDARY);
+                if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
+
+                String innerType = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_TYPE);
+                if (innerType.startsWith(XmlUtil.TEXT_XML)) {
+                    multipartReader = new MultipartMessageReader(new BufferedReader(reader), multipartBoundary);
+
+                    Message.Part part = multipartReader.getSoapPart();
+                    if (!part.getHeader(XmlUtil.CONTENT_TYPE).value.equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
+
+                    soapPartParsed = true;
+                    return part.content;
+                } else throw new IOException("Expected first part of multipart message to be XML");
+            } else {
+                if(multipartReader != null) {
+                    return multipartReader.getSoapPart().content;
+                } else {
+                    // should never happen
+                    throw new IllegalStateException("The soap part was parsed once but the multipartReader is NULL.");
+                }
+            }
+
         } else {
             // Not multipart, read the whole thing
             StringBuffer xml = new StringBuffer();
@@ -91,66 +102,9 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         }
     }
 
-    protected Map getMessageAttachments(Reader reader) throws IOException {
-        if(breader == null) {
-            breader = new BufferedReader(reader);
-        }
-
-        // parse all multiple parts
-        parseAllMultiparts(breader);
-
-        Map attachments = new HashMap();
-
-        Set parts = multipartParts.keySet();
-        Iterator itr = parts.iterator();
-        while (itr.hasNext()) {
-            Object o = (Object) itr.next();
-            Object val  = (Object) multipartParts.get(o);
-            if(val instanceof Part) {
-                Message.Part part = (Part) val;
-                if(part.getPosition() > 0) {
-                    attachments.put(part.getHeader(XmlUtil.CONTENT_ID).value, part);
-                }
-            } else {
-                throw new RuntimeException("The entry retrived from multipartParts object is not the type of com.l7tech.Message.Part");
-            }
-            System.out.println("The object is: " + o.toString());
-        }
-        return attachments;
-    }
-
-    protected Part getMessagePart(Reader reader, int position) throws IOException {
-        if(breader == null) {
-             breader = new BufferedReader(reader);
-        }
-
-        if(multipartParts.size() < position) {
-             return parseMultipart(breader, position);
-        } else {
-            return getMessagePartFromMap(position);
-        }
-    }
-
-    private Part getMessagePartFromMap(int position) {
-
-        Part part = null;
-
-        Set keys = multipartParts.keySet();
-
-        Iterator itr = keys.iterator();
-        while (itr.hasNext()) {
-            Part currentPart = (Part) multipartParts.get(itr.next());
-            if(currentPart.getPosition() == position) {
-                part = currentPart;
-                break;
-            }
-        }
-        return part;
-    }
-
-    private HeaderValue parseHeader(String header) throws IOException {
+    private Message.HeaderValue parseHeader(String header) throws IOException {
         StringTokenizer stok = new StringTokenizer(header, ":; ", false);
-        HeaderValue result = new HeaderValue();
+        Message.HeaderValue result = new Message.HeaderValue();
         while (stok.hasMoreTokens()) {
             String tok = stok.nextToken();
             int epos = tok.indexOf("=");
@@ -181,104 +135,9 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         return value;
     }
 
-    /**
-     * This parser only peels the the multipart message up to the part required.
-     *
-     * @param breader  The data source
-     * @param lastPart The part to be parsed
-     * @return Part The part parsed
-     * @throws IOException
-     */
-    private Part parseMultipart(BufferedReader breader, int lastPart) throws IOException {
-
-        StringBuffer xml = new StringBuffer();
-        Part part = null;
-
-        if(multipartParts.size() > 0 && multipartParts.size() > lastPart) {
-            // the part to be retrived is already parsed
-            return getMessagePartFromMap(lastPart);
-        }
-
-        for (int i = 0; i <= lastPart; i++) {
-
-            part = new Part();
-            String line;
-            boolean headers = true;
-            while ((line = breader.readLine()) != null) {
-                if (headers) {
-                    if (line.length() == 0) {
-                        headers = false;
-                        continue;
-                    }
-                    HeaderValue header = parseHeader(line);
-                    part.headers.put(header.name, header);
-                } else {
-                    if (line.startsWith("--" + multipartBoundary)) {
-                        // The boundary is on a line by itself so the previous content doesn't actually contain the last \n
-                        // The next part is left in the reader for later
-                        if (xml.length() > 0 && xml.charAt(xml.length()-1) == '\n')
-                            xml.deleteCharAt(xml.length()-1);
-                        break;
-                    } else {
-                        xml.append(line);
-                        xml.append("\n");
-                    }
-                }
-            }
-            part.content = xml.toString();
-            part.setPostion(multipartParts.size());
-            multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).value, part);
-        }
-        return part;
-    }
-
-    /**
-     * This parser only peels the the multipart message up to the part required.
-     *
-     * @param breader  The data source
-     * @throws IOException
-     */
-    private void parseAllMultiparts(BufferedReader breader) throws IOException {
-
-        StringBuffer xml = new StringBuffer();
-        Part part = null;
-
-        String line;
-        while ((line = breader.readLine()) != null) {
-            part = new Part();
-            boolean headers = true;
-            do {
-                if (headers) {
-                    if (line.length() == 0) {
-                        headers = false;
-                        continue;
-                    }
-                    HeaderValue header = parseHeader(line);
-                    part.headers.put(header.name, header);
-                } else {
-                    if (line.startsWith("--" + multipartBoundary)) {
-                        // The boundary is on a line by itself so the previous content doesn't actually contain the last \n
-                        // The next part is left in the reader for later
-                        if (xml.length() > 0 && xml.charAt(xml.length() - 1) == '\n')
-                            xml.deleteCharAt(xml.length() - 1);
-                        break;
-                    } else {
-                        xml.append(line);
-                        xml.append("\n");
-                    }
-                }
-            } while ((line = breader.readLine()) != null);
-
-            part.content = xml.toString();
-            part.setPostion(multipartParts.size());
-            multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).value, part);
-        }
-    }
-
     protected Document _document;
+    protected boolean soapPartParsed = false;
+    protected boolean multipart = false;
+    protected MultipartMessageReader multipartReader = null;
 
-    protected boolean multipart;
-    protected String multipartBoundary;
-    protected BufferedReader breader = null;
-    protected Map multipartParts = new HashMap();
 }
