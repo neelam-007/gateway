@@ -8,10 +8,11 @@ package com.l7tech.proxy.message;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -31,8 +32,8 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,7 +45,6 @@ public class PolicyApplicationContext extends ProcessingContext {
 
     private static final Logger logger = Logger.getLogger(PolicyApplicationContext.class.getName());
     private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
-    private static final int SAML_PREEXPIRE_SEC = 30;
     private static final int WSSC_PREEXPIRE_SEC = 30;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -544,30 +544,6 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     /**
-     * Check the expiry date of our hok, and throw it away if it has started to smell a bit off.
-     */
-    private void checkExpiredAssertion() {
-        if (samlAssertion != null) {
-            Calendar expires = samlAssertion.getExpires();
-            Calendar nowUtc = Calendar.getInstance(UTC_TIME_ZONE);
-            nowUtc.add(Calendar.SECOND, SAML_PREEXPIRE_SEC);
-            if (!expires.after(nowUtc)) {
-                // See if we need to throw out the one cached in the Ssg as well
-                synchronized (ssg) {
-                    SamlAssertion ssgHok = ssg.samlAssertion();
-                    if (ssgHok == samlAssertion || (ssgHok != null && !ssgHok.getExpires().after(nowUtc))) {
-                        logger.log(Level.INFO, "Our SAML Holder-of-key assertion has expired or will do so within the next " +
-                          SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
-                        ssg.samlAssertion(null);
-                    }
-                }
-
-                samlAssertion = null;
-            }
-        }
-    }
-
-    /**
      * Get a valid holder-of-key SAML assertion for this SSG (or the Trusted SSG if this is a federated SSG).
      * If we don't currently hold a valid holder-of-key SAML assertion we will apply for a new one.
      *
@@ -582,51 +558,12 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public SamlAssertion getOrCreateSamlAssertion()
       throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
-      ClientCertificateException, BadCredentialsException, PolicyRetryableException {
-        checkExpiredAssertion();
+      ClientCertificateException, BadCredentialsException, PolicyRetryableException
+    {
         if (samlAssertion != null)
             return samlAssertion;
 
-        samlAssertion = ssg.samlAssertion();
-        checkExpiredAssertion();
-        if (samlAssertion != null)
-            return samlAssertion;
-
-        return samlAssertion = acquireSamlAssertion();
-    }
-
-    /**
-     * Get our SAML holder-of-key assertion for the current SSG (or Trusted SSG).
-     *
-     * @return our currently valid SAML assertion or null if we don't have one.
-     */
-    public SamlAssertion getSamlAssertion() {
-        if (samlAssertion != null) {
-            checkExpiredAssertion();
-            return samlAssertion;
-        }
-        samlAssertion = ssg.samlAssertion();
-        checkExpiredAssertion();
-        return samlAssertion;
-    }
-
-    private SamlAssertion acquireSamlAssertion()
-      throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
-      KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException, IOException {
-        prepareClientCertificate();
-        Ssg ssg = getSsg();
-        Ssg tokenServerSsg = ssg.getTrustedGateway();
-        if (tokenServerSsg == null) tokenServerSsg = ssg;
-        logger.log(Level.INFO, "Applying for SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
-        SamlAssertion s =
-          TokenServiceClient.obtainSamlAssertion(tokenServerSsg,
-            SsgKeyStoreManager.getClientCert(tokenServerSsg),
-            SsgKeyStoreManager.getClientCertPrivateKey(tokenServerSsg),
-            SsgKeyStoreManager.getServerCert(tokenServerSsg));
-        logger.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
-        ssg.samlAssertion(s);
-        samlAssertion = s;
-        return samlAssertion;
+        return samlAssertion = (SamlAssertion)ssg.getTokenStrategy(SecurityTokenType.SAML_AUTHENTICATION).getOrCreate();
     }
 
     /**

@@ -26,12 +26,14 @@ public class SecurityTokenType implements Serializable {
     }
 
     private static int n = 0;
-    public static final SecurityTokenType SAML = new SecurityTokenType(n++, "SAML Assertion", SamlSecurityToken.class);
+    public static final SecurityTokenType SAML_AUTHENTICATION = new SecurityTokenType(n++, "SAML Authentication Assertion", SamlSecurityToken.class);
+    public static final SecurityTokenType SAML_AUTHORIZATION = new SecurityTokenType(n++, "SAML Authorization Assertion", SamlSecurityToken.class);
+    public static final SecurityTokenType SAML_ATTRIBUTE = new SecurityTokenType(n++, "SAML Attribute Assertion", SamlSecurityToken.class);
     public static final SecurityTokenType WSSC = new SecurityTokenType(n++, "WS-SC SecurityContextToken", SecurityContextToken.class);
     public static final SecurityTokenType USERNAME = new SecurityTokenType(n++, "WS-S UsernameToken", UsernameToken.class);
     public static final SecurityTokenType X509 = new SecurityTokenType(n++, "WS-S X.509 BinarySecurityToken", X509SecurityToken.class);
 
-    private static final SecurityTokenType[] VALUES = { SAML, WSSC, USERNAME, X509 };
+    private static final SecurityTokenType[] VALUES = { SAML_AUTHENTICATION, SAML_AUTHORIZATION, SAML_ATTRIBUTE, WSSC, USERNAME, X509 };
 
     private SecurityTokenType(int num, String name, Class interfaceClass) {
         this.num = num;

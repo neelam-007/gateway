@@ -8,6 +8,10 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.proxy.datamodel.exceptions.*;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 /**
  * Interface for classes that retrieve {@link SecurityToken}s.
@@ -39,7 +43,7 @@ public interface TokenStrategy {
      * <p>
      * @return a SecurityToken if it is immediately available, or null if it is not.
      */
-    SecurityToken getOrCreate();
+    SecurityToken getOrCreate() throws OperationCanceledException, GeneralSecurityException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException;
 
     /**
      * Return a SecurityToken if it is immediately available, or null if it is not.

@@ -11,7 +11,6 @@ import java.security.cert.X509Certificate;
 /**
  * @author mike
  */
-public interface X509SecurityToken extends SecurityToken {
+public interface X509SecurityToken extends SigningSecurityToken {
     X509Certificate asX509Certificate();
-    boolean isPossessionProved();
 }

@@ -119,6 +119,7 @@ class SsgPoliciesPanel extends JPanel {
         policyTable.getColumnModel().getColumn(3).setCellRenderer(policyTable.getDefaultRenderer(Boolean.class));
         policyTable.getColumnModel().getColumn(3).setCellEditor(policyTable.getDefaultEditor(Boolean.class));
         policyTable.getColumnModel().getColumn(3).setMaxWidth(35);
+        policyTable.getColumnModel().getColumn(3).setMinWidth(35);
         policyTable.getTableHeader().setReorderingAllowed(false);
         JScrollPane policyTableSp = new JScrollPane(policyTable);
         policyTableSp.setPreferredSize(new Dimension(120, 120));

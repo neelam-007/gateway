@@ -29,6 +29,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +37,9 @@ import java.util.logging.Logger;
  * Encapsulates an abstract saml:Assertion SecurityToken.
  */
 public class SamlAssertion implements SamlSecurityToken {
+    protected static final Logger logger = Logger.getLogger(SamlAssertion.class.getName());
+    private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
+
     Element assertionElement = null;
     AssertionType assertion = null;
     boolean isSigned = false;
@@ -45,6 +49,9 @@ public class SamlAssertion implements SamlSecurityToken {
     X509Certificate issuerCertificate = null;
     private String assertionId = null;
     private Calendar expires = null;
+    private String nameIdentifierFormat;
+    private String nameQualifier;
+    private String nameIdentifierValue;
 
     /**
      * Currently only ever set by {@link com.l7tech.common.security.xml.processor.WssProcessorImpl#processSamlSecurityToken}
@@ -259,15 +266,24 @@ public class SamlAssertion implements SamlSecurityToken {
         return expires;
     }
 
+    /**
+     * Check if this assertion has either already expired, or is set to expire within the next preexpireSec seconds.
+     *
+     * @param preexpireSec number of seconds into the future for which the assertion should remain valid.
+     * @return true if this assertion has not yet expired, and will not expire for at least another preexpireSec
+     *         seconds.
+     */
+    public boolean isExpiringSoon(int preexpireSec) {
+        Calendar expires = getExpires();
+        Calendar nowUtc = Calendar.getInstance(UTC_TIME_ZONE);
+        nowUtc.add(Calendar.SECOND, preexpireSec);
+        return !expires.after(nowUtc);
+    }
+
     public X509Certificate getSigningCertificate() {
         if (holderOfKey)
             return subjectCertificate;
         else
             return issuerCertificate;
     }
-
-    private String nameIdentifierFormat;
-    private String nameQualifier;
-    private String nameIdentifierValue;
-    protected static final Logger logger = Logger.getLogger(SamlAssertion.class.getName());
 }

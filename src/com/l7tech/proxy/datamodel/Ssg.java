@@ -7,15 +7,17 @@ import com.l7tech.common.util.DateTranslator;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
+import com.l7tech.proxy.util.TokenServiceClient;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -40,6 +42,10 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private static final String SSG_PROTOCOL = "http";
     private static final int SSG_SSL_PORT = 8443;
     private static final int SSG_PORT = 8080;
+
+    // SAML timestamp stuff
+    private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
+    private static final int SAML_PREEXPIRE_SEC = 30;
 
     // The file that contains our client cert private key for this Ssg
     private static final String KEY_FILE = ClientProxy.PROXY_CONFIG + File.separator + "key";
@@ -99,10 +105,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient byte[] secureConversationSharedSecret = null;
     private transient String secureConversationId = null;
     private transient Calendar secureConversationExpiryDate = null;
-    private transient SamlAssertion samlAssertion = null;
     private transient long timeOffset = 0;
 
-    private transient Map tokensByType = new HashMap();
     private transient Map tokenStrategiesByType;
 
     private transient final MultiThreadedHttpConnectionManager httpConnectionManager = new MultiThreadedHttpConnectionManager();
@@ -717,7 +721,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return null;
 /*
         synchronized(this) {
-            SecurityToken token = (SecurityToken)tokensByType.get(tokenType);
+            SecurityToken token = (SecurityToken)tokenCache.get(tokenType);
             if (token == null) {
 
             } else {
@@ -727,17 +731,24 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 */
     }
 
-    private TokenStrategy getTokenStrategy(SecurityTokenType tokenType) {
+    /**
+     * Get the strategy for obtaining a specific type of security token.
+     * <p>
+     * TODO make these strategies configurable somehow
+     *
+     * @param tokenType the type of security token to obtain
+     * @return the strategy for getting the requested security token for this Ssg, or null if this Ssg
+     *          is not configured with a strategy for the requested token type.
+     */
+    public synchronized TokenStrategy getTokenStrategy(SecurityTokenType tokenType) {
         if (tokenStrategiesByType == null) {
             tokenStrategiesByType = new HashMap();
-            tokenStrategiesByType.put(SecurityTokenType.SAML,
-                                      new DefaultSamlTokenStrategy());
+            Ssg tokenServerSsg = getTrustedGateway();
+            if (tokenServerSsg == null) tokenServerSsg = this;
+            tokenStrategiesByType.put(SecurityTokenType.SAML_AUTHENTICATION,
+                                      new DefaultSamlAuthnTokenStrategy(tokenServerSsg));
         }
-        TokenStrategy strategy = (TokenStrategy)tokenStrategiesByType.get(tokenType);
-        if (strategy == null) {
-
-        }
-        return strategy;
+        return (TokenStrategy)tokenStrategiesByType.get(tokenType);
     }
 
     public boolean isChainCredentialsFromClient() {
@@ -882,22 +893,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     /**
-     * Transient record of SAML holder-of-key assertion for holder-of-key authentication.
-     * Don't use directly; go through PendingRequest to avoid races.
-     */
-    public void samlAssertion(SamlAssertion ass) {
-        samlAssertion = ass;
-    }
-
-    /**
-     * Transient record of SAML holder-of-key assertion for holder-of-key authentication.
-     * Don't use directly; go through PendingRequest to avoid races.
-     */
-    public SamlAssertion samlAssertion() {
-        return samlAssertion;
-    }
-
-    /**
      * Get the time offset for this SSG.  If set, this is the approximate number of milliseconds
      * that must be added to the Bridge's local UTC time to match the UTC time set on this SSG.  This
      * value might be negative if the Bridge's clock is ahead of the SSG's.
@@ -988,17 +983,69 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return httpConnectionManager;
     }
 
-    private static class DefaultSamlTokenStrategy extends AbstractTokenStrategy {
-        public DefaultSamlTokenStrategy() {
-            super(SecurityTokenType.SAML);
+    private static class DefaultSamlAuthnTokenStrategy extends AbstractTokenStrategy {
+        private final Ssg tokenServerSsg;
+        private SamlAssertion cachedAssertion = null;
+
+        /**
+         * @param tokenServerSsg what SSG is going to give me a SAML token
+         */
+        public DefaultSamlAuthnTokenStrategy(Ssg tokenServerSsg)
+        {
+            super(SecurityTokenType.SAML_AUTHENTICATION);
+            if (tokenServerSsg == null) throw new NullPointerException();
+            this.tokenServerSsg = tokenServerSsg;
         }
 
-        public SecurityToken getOrCreate() {
-            return null;
+        public SecurityToken getOrCreate()
+                throws OperationCanceledException, GeneralSecurityException, IOException, ClientCertificateException,
+                KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException
+        {
+            synchronized (tokenServerSsg) {
+                removeIfExpired();
+                if (cachedAssertion != null)
+                    return cachedAssertion;
+
+            }
+            SamlAssertion newone = acquireSamlAssertion();
+            synchronized (tokenServerSsg) {
+                return cachedAssertion = newone;
+            }
         }
 
         public SecurityToken getIfPresent() {
-            return null;
+            synchronized (tokenServerSsg) {
+                removeIfExpired();
+                return cachedAssertion;
+            }
+        }
+
+        /**
+         * Flush cached assertion if it has expired (or will expire soon).
+         */
+        private void removeIfExpired() {
+            synchronized (tokenServerSsg) {
+                if (cachedAssertion != null && cachedAssertion.isExpiringSoon(SAML_PREEXPIRE_SEC)) {
+                    log.log(Level.INFO, "Our SAML Holder-of-key assertion has expired or will do so within the next " +
+                                        SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
+                    cachedAssertion = null;
+                }
+            }
+        }
+
+        private SamlAssertion acquireSamlAssertion()
+                throws OperationCanceledException, GeneralSecurityException,
+                KeyStoreCorruptException, BadCredentialsException, IOException
+        {
+            log.log(Level.INFO, "Applying for SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
+            SamlAssertion s;
+            // TODO extract the strategies for getting tokenServer client cert, private key, and server cert
+            s = TokenServiceClient.obtainSamlAssertion(tokenServerSsg,
+                                                       SsgKeyStoreManager.getClientCert(tokenServerSsg),
+                                                       SsgKeyStoreManager.getClientCertPrivateKey(tokenServerSsg),
+                                                       SsgKeyStoreManager.getServerCert(tokenServerSsg));
+            log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
+            return s;
         }
     }
 }
