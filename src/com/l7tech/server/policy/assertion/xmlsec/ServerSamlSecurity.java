@@ -16,6 +16,8 @@ import sun.security.x509.X500Name;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * Class <code>ServerSamlSecurity</code> represents the server side saml
@@ -25,6 +27,7 @@ import java.util.logging.Logger;
  */
 public class ServerSamlSecurity implements ServerAssertion {
     private SamlSecurity assertion;
+    private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 
     /**
      * Create the server side saml security policy element
@@ -89,6 +92,15 @@ public class ServerSamlSecurity implements ServerAssertion {
             }
             SamlHolderOfKeyAssertion hok = (SamlHolderOfKeyAssertion)samlAssertion;
 
+            // Check expiry date
+            Calendar expires = hok.getExpires();
+            Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
+            if (!expires.after(now)) {
+                logger.warning("SAML holder-of-key assertion in this request has expired; assertion therefore fails.");
+                return AssertionStatus.AUTH_FAILED;
+            }
+
+            // Save pincipal credential for later authentication
             X500Name x500name = new X500Name(hok.getSubjectCertificate().getSubjectX500Principal().getName());
             String subjectCN = x500name.getCommonName();
             request.setPrincipalCredentials(new LoginCredentials(subjectCN,
