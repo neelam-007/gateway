@@ -7,6 +7,8 @@ import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.MainWindow;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -79,7 +81,9 @@ public class WsdlCreateWizard extends Wizard {
                         collect();
                         Definition definition = (Definition)wizardInput;
                         wsdlWriter.writeWSDL(definition, writer);
-                        new RawWsdlDialog(writer.toString(), definition.getQName().getLocalPart());
+
+                        MainWindow mw = TopComponents.getInstance().getMainWindow();
+                        new RawWsdlDialog(mw, writer.toString(), definition.getQName().getLocalPart());
                     } catch (WSDLException e1) {
                         e1.printStackTrace();
                     }
@@ -90,11 +94,13 @@ public class WsdlCreateWizard extends Wizard {
         return buttonPreview;
     }
 
-    private class RawWsdlDialog extends JFrame {
+    private class RawWsdlDialog extends JDialog {
         private JEditTextArea wsdlTextArea;
 
-        private RawWsdlDialog(String wsdlString, String title) {
-            super(title);
+        private RawWsdlDialog(JFrame mw, String wsdlString, String title) {
+
+            super(mw, true);
+            setTitle(title);
 
             wsdlTextArea = new JEditTextArea();
             wsdlTextArea.setEditable(false);
