@@ -59,7 +59,7 @@ public class AddRoutingAssertionAdvice implements Advice {
             dialog.pack();
             Utilities.centerOnScreen(dialog);
             dialog.show();
-            if (ra.getEndpointOid() != null && ra.getEndpointOid().longValue() != Entity.DEFAULT_OID)
+            if (!dialog.isCanceled())
                 pc.proceed();
         }
     }
