@@ -6,7 +6,6 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -41,29 +40,33 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         setProtectedServiceUrl(protectedServiceUrl);
     }
 
-    public RoutingAssertion(String protectedServiceUrl, PrincipalCredentials protectedServiceCredentials) {
-        this(protectedServiceUrl);
-        setPrincipalCredentials(protectedServiceCredentials);
-    }
-
     public Object clone() throws CloneNotSupportedException {
         RoutingAssertion n = (RoutingAssertion)super.clone();
         return n;
     }
 
-    public PrincipalCredentials getPrincipalCredentials() {
-        return _principalCredentials;
+    public String getLogin() {
+        return _login;
     }
 
-    public void setPrincipalCredentials( PrincipalCredentials pc ) {
-        _principalCredentials = pc;
-        try {
-            _httpCredentials = new UsernamePasswordCredentials( pc.getUser().getLogin(),
-                                                                new String( pc.getCredentials(), "UTF-8" ) );
-        } catch ( UnsupportedEncodingException uee ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, uee);
-            throw new RuntimeException( uee );
-        }
+    public void setLogin( String login ) {
+        _login = login;
+    }
+
+    public String getPassword() {
+        return _password;
+    }
+
+    public void setPassword( String password ) {
+        _password = password;
+    }
+
+    public String getRealm() {
+        return _realm;
+    }
+
+    public void setRealm( String realm ) {
+        _realm = realm;
     }
 
     public String getProtectedServiceUrl() {
@@ -109,12 +112,15 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
             postMethod.setRequestHeader( HOST, hostValue.toString() );
             postMethod.setRequestHeader( SOAPACTION, (String)request.getParameter( Request.PARAM_HTTP_SOAPACTION ) );
 
-            if ( _principalCredentials != null ) {
+            if ( _login != null && _password != null ) {
                 synchronized ( this ) {
+                    if ( _httpCredentials == null )
+                        _httpCredentials = new UsernamePasswordCredentials( _login, _password );
+
                     if ( _httpState == null ) {
                         _httpState = new HttpState();
                         _httpState.setCredentials( url.getHost(),
-                                                   _principalCredentials.getRealm(),
+                                                   _realm,
                                                    _httpCredentials );
                     }
                     client.setState( _httpState );
@@ -179,7 +185,9 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     }
 
     protected String _protectedServiceUrl;
-    protected PrincipalCredentials _principalCredentials;
+    protected String _login;
+    protected String _password;
+    protected String _realm;
 
     protected transient MultiThreadedHttpConnectionManager _connectionManager;
     protected transient HttpState _httpState;
