@@ -62,7 +62,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public PublishedService findByPrimaryKey(long oid) throws FindException {
         try {
-            return (PublishedService)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
+            return (PublishedService)PersistenceManager.findByPrimaryKey( getContext(), getImpClass(), oid );
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }
@@ -73,7 +73,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         PersistenceContext context = null;
         try {
             context = getContext();
-            long oid = _manager.save(context, service );
+            long oid = PersistenceManager.save(context, service );
             logger.info( "Saved service #" + oid );
             service.setOid(oid);
         } catch ( SQLException se ) {
@@ -190,7 +190,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                 throw new UpdateException("could not copy published service", e);
             }
             context = getContext();
-            _manager.update(context, original);
+            PersistenceManager.update(context, original);
             logger.info( "Updated service #" + service.getOid() );
 
         } catch ( SQLException se ) {
@@ -238,7 +238,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         PersistenceContext context = null;
         try {
             context = getContext();
-            _manager.delete(context, service );
+            PersistenceManager.delete(context, service );
             resolutionManager.deleteResolutionParameters(service.getOid());
             logger.info("Deleted service " + service.getOid());
 
