@@ -61,14 +61,14 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
             if (toTime == null) toTime = new Date(System.currentTimeMillis());
 
-            crit.add(Expression.ge(PROP_MILLIS, new Long(fromTime.getTime())));
-            crit.add(Expression.le(PROP_MILLIS, new Long(toTime.getTime())));
+            crit.add(Expression.ge(PROP_TIME, new Long(fromTime.getTime())));
+            crit.add(Expression.le(PROP_TIME, new Long(toTime.getTime())));
 
             if (fromLevel == null) fromLevel = Level.INFO;
             if (toLevel == null) toLevel = Level.INFO;
 
             if (fromLevel.equals(toLevel)) {
-                crit.add(Expression.eq(PROP_STRLVL, fromLevel.getName()));
+                crit.add(Expression.eq(PROP_LEVEL, fromLevel.getName()));
             } else {
                 if (fromLevel.intValue() > toLevel.intValue()) throw new FindException("fromLevel " + fromLevel.getName() + " is not lower in value than toLevel " + toLevel.getName());
                 Set levels = new HashSet();
@@ -78,7 +78,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
                         levels.add(level);
                     }
                 }
-                crit.add(Expression.in(PROP_STRLVL, levels));
+                crit.add(Expression.in(PROP_LEVEL, levels));
             }
             return crit.list();
         } catch ( HibernateException e ) {

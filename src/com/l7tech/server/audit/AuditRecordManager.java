@@ -21,8 +21,8 @@ import java.util.logging.Level;
  */
 public interface AuditRecordManager extends EntityManager {
     public static Level[] LEVELS_IN_ORDER = { Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.CONFIG, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF };
-    public static String PROP_MILLIS = "millis";
-    public static String PROP_STRLVL = "strlvl";
+    public static String PROP_TIME = "time";
+    public static String PROP_LEVEL = "level";
 
     AuditRecord findByPrimaryKey(long oid) throws FindException;
     Collection find(Date fromTime, Date toTime, Level fromLevel, Level toLevel, Class[] recordClasses, int maxRecords) throws FindException;
