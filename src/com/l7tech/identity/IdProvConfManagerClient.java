@@ -19,7 +19,7 @@ import java.rmi.RemoteException;
  * and the ldap identity provider.
  *
  */
-public class IdProvConfManagerClient implements GlobalIdProviderConfManager {
+public class IdProvConfManagerClient implements IdentityProviderConfigManager {
 
     public IdentityProvider getInternalIdentityProvider() {
         InternalIdentityProviderClient internalProvider = new InternalIdentityProviderClient();
@@ -27,7 +27,6 @@ public class IdProvConfManagerClient implements GlobalIdProviderConfManager {
         cfg.setOid(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
         cfg.setDescription("Internal identity provider");
         internalProvider.initialize(cfg);
-
         return internalProvider;
     }
 

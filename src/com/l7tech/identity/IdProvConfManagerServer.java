@@ -16,16 +16,13 @@ import java.sql.SQLException;
  * internal identity provider as well as the other providers (ldap) configured by the administrator.
  *
  */
-public class IdProvConfManagerServer extends HibernateEntityManager implements GlobalIdProviderConfManager {
+public class IdProvConfManagerServer extends HibernateEntityManager implements IdentityProviderConfigManager {
 
     // since this provider config is not persisted, we need a special id to identify it for certain operations
     public static final long INTERNALPROVIDER_SPECIAL_OID = -2;
 
     public IdProvConfManagerServer() {
         super();
-        // construct the ldapidentity provider
-        // ldapConfigManager = new LdapIdentityProviderConfigManager();
-
         // construct the internal id provider
         internalProvider = new InternalIdentityProviderImp();
         IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
@@ -132,7 +129,6 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements G
         out.setType(EntityType.ID_PROVIDER_CONFIG);
         return out;
     }
-    // protected LdapIdentityProviderConfigManager ldapConfigManager;
     protected InternalIdentityProviderImp internalProvider;
 
 }

@@ -34,11 +34,11 @@ public class RegistryImpl extends Registry {
     /**
      * @return the identity provider config manager
      */
-    private GlobalIdProviderConfManager getGlobalIdProviderConfManager()
+    private IdentityProviderConfigManager getGlobalIdProviderConfManager()
       throws RuntimeException {
-        GlobalIdProviderConfManager ipc =
-          (GlobalIdProviderConfManager)Locator.
-          getDefault().lookup(GlobalIdProviderConfManager.class);
+        IdentityProviderConfigManager ipc =
+          (IdentityProviderConfigManager)Locator.
+          getDefault().lookup(IdentityProviderConfigManager.class);
         if (ipc == null) {
             throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
         }
@@ -50,9 +50,9 @@ public class RegistryImpl extends Registry {
      * @return the internal identity provider
      */
     public IdentityProvider getInternalProvider() {
-        GlobalIdProviderConfManager ipc = getGlobalIdProviderConfManager();
+        IdentityProviderConfigManager ipc = getGlobalIdProviderConfManager();
         if (ipc == null) {
-            throw new RuntimeException("Could not find registered " + GlobalIdProviderConfManager.class);
+            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
         }
         return ipc.getInternalIdentityProvider();
     }

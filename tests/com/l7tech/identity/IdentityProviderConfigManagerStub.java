@@ -8,7 +8,7 @@ import java.util.*;
  * Class IdentityProviderConfigManagerStub.
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class IdentityProviderConfigManagerStub implements GlobalIdProviderConfManager {
+public class IdentityProviderConfigManagerStub implements IdentityProviderConfigManager {
     private StubDataStore dataStore;
 
     public IdentityProviderConfigManagerStub() {
