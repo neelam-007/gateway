@@ -100,18 +100,25 @@ public class JiniProxyFactoryBean
      * @return the invocation result, if any
      * @throws NoSuchMethodException     if thrown by reflection
      * @throws IllegalAccessException    if thrown by reflection
-     * @throws InvocationTargetException if thrown by reflection
+     * @throws Throwable exception thrown by remote object
      */
     private Object doInvoke(MethodInvocation invocation, Remote stub)
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = invocation.getMethod();
-        if (method.getDeclaringClass().isInstance(stub)) {
-            // directly implemented
-            return method.invoke(stub, invocation.getArguments());
-        } else {
-            // not directly implemented
-            Method stubMethod = stub.getClass().getMethod(method.getName(), method.getParameterTypes());
-            return stubMethod.invoke(stub, invocation.getArguments());
+      throws NoSuchMethodException, IllegalAccessException, Throwable {
+        try {
+            Method method = invocation.getMethod();
+            if (method.getDeclaringClass().isInstance(stub)) {
+                // directly implemented
+                return method.invoke(stub, invocation.getArguments());
+            } else {
+                // not directly implemented
+                Method stubMethod = stub.getClass().getMethod(method.getName(), method.getParameterTypes());
+                return stubMethod.invoke(stub, invocation.getArguments());
+            }
+        } catch (InvocationTargetException e) {
+            if (e.getCause() != null) {
+                throw e.getCause();
+            }
+            throw e;
         }
     }
 
