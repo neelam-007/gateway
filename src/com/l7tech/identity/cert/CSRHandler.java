@@ -16,6 +16,7 @@ import javax.servlet.ServletConfig;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
 import java.sql.SQLException;
 import org.apache.axis.transport.http.HTTPConstants;
@@ -34,7 +35,7 @@ import org.apache.axis.AxisFault;
  */
 public class CSRHandler extends HttpServlet {
 
-    public void init(ServletConfig config) throws ServletException {
+    public void init( ServletConfig config ) throws ServletException {
         super.init(config);
         rootkstore = getServletConfig().getInitParameter("RootKeyStore");
         rootkstorepasswd = getServletConfig().getInitParameter("RootKeyStorePasswd");
@@ -56,7 +57,12 @@ public class CSRHandler extends HttpServlet {
             if (decodedAuthValue == null) {
                 throw new AxisFault("cannot decode basic header");
             }
-            authenticatedUser = authenticateBasicToken(decodedAuthValue);
+            try {
+                authenticatedUser = authenticateBasicToken(decodedAuthValue);
+            } catch (FindException e) {
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+                throw new IOException(e.getMessage());
+            }
         }
         if (authenticatedUser == null) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
@@ -108,7 +114,7 @@ public class CSRHandler extends HttpServlet {
         return signer.createCertificate(csr);
     }
 
-    private User authenticateBasicToken(String value) throws AxisFault {
+    private User authenticateBasicToken(String value) throws FindException {
         String login = null;
         int i = value.indexOf( ':' );
         if (i == -1) login = value;
@@ -118,22 +124,20 @@ public class CSRHandler extends HttpServlet {
         java.security.MessageDigest md5Helper = null;
         try {
             md5Helper = java.security.MessageDigest.getInstance("MD5");
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new AxisFault(e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception in java.security.MessageDigest.getInstance", e);
+            throw new FindException(e.getMessage(), e);
         }
         byte[] digest = md5Helper.digest(value.getBytes());
         String md5edDecodedAuthValue = HexUtils.encodeMd5Digest(digest);
 
         // COMPARE TO THE VALUE IN INTERNAL DB
         com.l7tech.identity.User internalUser = findUserByLogin(login);
-        if (internalUser == null) {
-            throw new AxisFault("User " + login + " not registered in internal id provider");
-        }
-        if (internalUser.getPassword() == null) {
-            throw new AxisFault("User " + login + "does not have a password");
-        }
+        if (internalUser == null) throw new FindException("User " + login + " not found in id provider");
+        if (internalUser.getPassword() == null) throw new FindException("User " + login + "does not have a password");
         if (internalUser.getPassword().equals(md5edDecodedAuthValue)) {
             // AUTHENTICATION SUCCESS, move on to authorization
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "User " + login + " authenticated successfully");
             return internalUser;
         } else {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "authentication failure for user " + login + " with credentials " + md5edDecodedAuthValue);
@@ -144,26 +148,17 @@ public class CSRHandler extends HttpServlet {
     /**
      * returns null if user does not exist
      */
-    private User findUserByLogin(String login) {
+    private User findUserByLogin(String login) throws FindException {
         try {
             User output = getConfigManager().getInternalIdentityProvider().getUserManager().findByLogin(login);
             PersistenceContext.getCurrent().close();
             return output;
-        } catch (FindException e) {
-            // not throwing this on purpose, a FindException might just mean that the user does not exist,
-            // in which case null is a valid answer
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception finding user by login", e);
-            return null;
         } catch (SQLException e) {
-            // not throwing this on purpose, a FindException might just mean that the user does not exist,
-            // in which case null is a valid answer
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception closing context", e);
-            return null;
+            throw new FindException(e.getMessage(), e);
         } catch (ObjectModelException e) {
-            // not throwing this on purpose, a FindException might just mean that the user does not exist,
-            // in which case null is a valid answer
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception closing context", e);
-            return null;
+            throw new FindException(e.getMessage(), e);
         }
     }
 
