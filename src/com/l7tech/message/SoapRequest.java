@@ -9,6 +9,10 @@ import java.io.IOException;
 import java.io.Reader;
 
 /**
+ * Encapsulates a SOAP request. Not thread-safe.
+ *
+ * TODO, reduce binding to HTTP!
+ *
  * @author alex
  * @version $Revision$
  */
@@ -18,10 +22,12 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
     }
 
     /**
-     * Returns a DOM Document, parsing the requestStream if necessary.  If the requestStream has not already been parsed, this method will begin parsing it and return a "lazy DOM" implementation.
+     * Returns a DOM Document, getting the requestXml and thereby consuming the
+     * requestStream if necessary.
+     *
      * @return a "lazy dom" implementation -- hopefully
-     * @throws SAXException if some sort of
-     * @throws IOException
+     * @throws SAXException if an exception occurs during parsing
+     * @throws IOException if the whole document can't be read due to an IOException
      */
     public synchronized Document getDocument() throws SAXException, IOException {
         if ( _document == null ) {
@@ -59,30 +65,21 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
 
     public void setRequestXml( String xml ) {
         _requestXml = xml;
+        _document = null;
     }
 
-    /** Returns the PrincipalCredentials associated with this request.  Could be null! */
     public PrincipalCredentials getPrincipalCredentials() {
         return _principalCredentials;
     }
 
-    /** Assigns a set of PrincipalCredentials to this request. */
     public void setPrincipalCredentials( PrincipalCredentials pc ) {
         _principalCredentials = pc;
     }
 
-    /**
-     * Returns true if this request has been authenticated.
-     * @return true if this request has been authenticated.
-     */
     public boolean isAuthenticated() {
         return _authenticated;
     }
 
-    /**
-     * Sets this request's authenticated property.
-     * @param authenticated
-     */
     public void setAuthenticated(boolean authenticated) {
         _authenticated = authenticated;
     }
@@ -98,6 +95,7 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
     protected boolean _authenticated;
     protected boolean _routed;
 
+    /** The cached XML document. */
     protected String _requestXml;
     protected PrincipalCredentials _principalCredentials;
 }
