@@ -7,6 +7,7 @@
 package com.l7tech.skunkworks;
 
 import com.ibm.xml.dsig.KeyInfo;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.HexUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -14,10 +15,12 @@ import org.w3c.dom.Element;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
+import java.security.Provider;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -31,82 +34,97 @@ public class JceSignaturePlayground {
     }
 
     public static void main( String[] args ) throws Exception {
-        JceSignaturePlayground me = new JceSignaturePlayground();
-        int sum = 0;
-        int count = 100;
-        for( int i = 0; i < count; i++ ) {
-            sum += me.doIt();
+        final Provider aprov = JceProvider.getAsymmetricJceProvider();
+        final String cleartext = KEYINFO;
+        final byte[] clearBytes = cleartext.getBytes("UTF-8");
+        final RSAPrivateKey privateKey = getPrivateKey();
+        final X509Certificate cert = getCertificate();
+        final byte[] signature;
+
+        try {
+            Signature signer = Signature.getInstance( SIG_ALG, aprov );
+            signer.initSign( privateKey );
+            signer.update( clearBytes );
+            signature = signer.sign();
+        } catch ( Exception e ) {
+            throw new RuntimeException(e);
         }
-        System.err.println( "Runs:       " + count );
-        System.err.println( "Total time: " + sum + "ms." );
-        System.err.println( "Mean time:  " + (double)sum / (double)count + "ms." );
+
+        Runnable sign = new Runnable() {
+            public void run() {
+                Signature signer = null;
+                try {
+                    signer = Signature.getInstance( SIG_ALG, aprov );
+                    signer.initSign( privateKey );
+                    signer.update( clearBytes );
+                    signer.sign();
+                } catch ( Exception e ) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
+        final String base64Signature = HexUtils.encodeBase64( signature, true );
+
+        Runnable verify = new Runnable() {
+            public void run() {
+                try {
+                    Signature verifier = Signature.getInstance( SIG_ALG, aprov );
+                    verifier.initVerify( cert );
+                    verifier.update( clearBytes );
+                    byte[] signature2 = HexUtils.decodeBase64( base64Signature );
+                    if ( !verifier.verify(signature2) )
+                        throw new AssertionError( "Verification should have succeeded" );
+                } catch ( Exception e ) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
+        Runnable verify2 = new Runnable() {
+            public void run() {
+                try {
+                    Signature verifier = Signature.getInstance( SIG_ALG, aprov );
+                    verifier.initVerify( cert );
+                    verifier.update( clearBytes );
+                    if ( !verifier.verify( signature ) )
+                        throw new AssertionError( "Verification should have succeeded" );
+                } catch ( Exception e ) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
+        BenchmarkRunner runner;
+
+        log.info( "\nSIGN" );
+        runner = new BenchmarkRunner(sign,500);
+        runner.setThreadCount(4);
+        runner.run();
+
+        log.info( "\nVERIFY" );
+        runner = new BenchmarkRunner(verify,500);
+        runner.setThreadCount(4);
+        runner.run();
+
+        log.info( "\nVERIFY 2" );
+        runner = new BenchmarkRunner(verify2,500);
+        runner.setThreadCount(4);
+        runner.run();
     }
 
-    private int doIt() throws Exception {
-        String cleartext = KEYINFO;
-        byte[] clearBytes = cleartext.getBytes("UTF-8");
-
-        Signature signer = Signature.getInstance( SIG_ALG );
-        long t1 = System.currentTimeMillis();
-        signer.initSign( getPrivateKey() );
-        signer.update( clearBytes );
-        byte[] signature = signer.sign();
-        long t2 = System.currentTimeMillis();
-        int time = (int)(t2 - t1);
-//        System.err.println( "Signed in " + ( t2 - t1 ) + "ms." );
-//        System.out.println( "        Signature (" + signature.length + "): " + HexUtils.hexDump( signature ) );
-        String base64Signature = HexUtils.encodeBase64( signature, true );
-//        System.out.println( "Base64(Signature) (" + base64Signature.length() + "): " + base64Signature );
-
-        Signature verifier = Signature.getInstance( SIG_ALG );
-
-        t1 = System.currentTimeMillis();
-        verifier.initVerify( getCertificate() );
-        verifier.update( clearBytes );
-        byte[] signature2 = HexUtils.decodeBase64( base64Signature );
-        if ( !verifier.verify(signature2) )
-            throw new AssertionError( "Verification should have succeeded" );
-        t2 = System.currentTimeMillis();
-//        System.err.println( "Verified base64'd signature in " + ( t2 - t1 ) + "ms." );
-
-        t1 = System.currentTimeMillis();
-        verifier.initVerify( getCertificate() );
-        verifier.update( clearBytes );
-        if ( !verifier.verify( signature ) )
-            throw new AssertionError( "Verification should have succeeded" );
-        t2 = System.currentTimeMillis();
-//        System.err.println( "Verified in " + ( t2 - t1 ) + "ms." );
-
-        byte temp = clearBytes[3];
-        clearBytes[3] = clearBytes[4];
-        clearBytes[4] = temp;
-
-        Signature bogusVerifier = Signature.getInstance( SIG_ALG );
-        t1 = System.currentTimeMillis();
-        bogusVerifier.initVerify( getCertificate() );
-        bogusVerifier.update( clearBytes );
-        if ( bogusVerifier.verify( signature ) )
-            throw new AssertionError("Verification should have failed");
-        t2 = System.currentTimeMillis();
-//        System.err.println( "Non-verified in " + ( t2 - t1 ) + "ms." );
-        return time;
-    }
-
-
-
-    private RSAPublicKey clientCertPublicKey = null;
-    private RSAPublicKey getClientCertPublicKey() throws Exception {
+    private static RSAPublicKey clientCertPublicKey = null;
+    private static RSAPublicKey getClientCertPublicKey() throws Exception {
         if (clientCertPublicKey != null) return clientCertPublicKey;
         return clientCertPublicKey = (RSAPublicKey)getCertificate().getPublicKey();
     }
 
-    private BigInteger getPrivateExponent() throws Exception {
+    private static BigInteger getPrivateExponent() throws Exception {
         String keyHex = PRIVATE_EXPONENT;
         return new BigInteger(keyHex, 16);
     }
 
-
-    private RSAPrivateKey getPrivateKey() throws Exception {
+    private static RSAPrivateKey getPrivateKey() throws Exception {
         final RSAPublicKey pubkey = getClientCertPublicKey();
         final BigInteger exp = getPrivateExponent();
         RSAPrivateKey privkey = new RSAPrivateKey() {
@@ -136,7 +154,7 @@ public class JceSignaturePlayground {
 
 
 
-    private X509Certificate getCertificate() throws Exception {
+    private static X509Certificate getCertificate() throws Exception {
         // Find KeyInfo bodyElement, and extract certificate from this
         Document keyInfoDoc = parse( KEYINFO );
         Element keyInfoElement = keyInfoDoc.getDocumentElement();
@@ -157,7 +175,7 @@ public class JceSignaturePlayground {
         return cert;
     }
 
-    private Document parse( String xml ) throws Exception {
+    private static Document parse( String xml ) throws Exception {
         return dbf.newDocumentBuilder().parse( new ByteArrayInputStream( xml.getBytes("UTF-8") ) );
     }
 
@@ -184,6 +202,11 @@ public class JceSignaturePlayground {
 
     private static final String PRIVATE_EXPONENT = "575971570e11dfbd9f4586763d88b08b79a7bd3d266bff189871fb9216a021080d7140411d87f1db13f99b68b983c5cf8071aebc28fb0553f366a6b387e435b44f4ea87aeef8bb247ce557bd1a7b09d4754c0eab239ad99d51c7df152956e03ab9e2bd61230b70dc8851113978f39c9d99f5e555aed0d3471619d4873a4520b1";
 
-    private DocumentBuilderFactory dbf;
+    private static final Logger log = Logger.getLogger(JceSignaturePlayground.class.getName());
+
+    private static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    static {
+        dbf.setNamespaceAware(true);
+    }
     public static final String SIG_ALG = "SHA1withRSA";
 }
