@@ -319,6 +319,10 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return url;
     }
 
+    /**
+     * Check if a non-null and non-empty username, and a non-null password, are configured for this SSG.
+     * @return
+     */
     public boolean isCredentialsConfigured() {
         return getUsername() != null && password() != null && getUsername().length() > 0;
     }

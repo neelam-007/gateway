@@ -1,6 +1,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import org.apache.log4j.Category;
 
 import java.beans.XMLEncoder;
@@ -88,7 +89,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
      * Forget all about a registered Ssg.
      *
      * @param ssg The Ssg to forget about.
-     * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified Ssg was not found.
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified Ssg was not found.
      */
     public synchronized void remove(final Ssg ssg) throws SsgNotFoundException {
         if (!init)
@@ -103,7 +104,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
      * If this method returns, it's guaranteed that the specified Ssg
      * is in the Ssg list and is the only one with its Default flag set to true.
      * @param ssg
-     * @throws SsgNotFoundException
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException
      */
     public synchronized void setDefaultSsg(Ssg ssg) throws SsgNotFoundException {
         boolean found = false;

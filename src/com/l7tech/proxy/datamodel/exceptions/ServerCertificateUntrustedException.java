@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.proxy.processor;
+package com.l7tech.proxy.datamodel.exceptions;
 
 import java.security.cert.CertificateException;
 

@@ -1,5 +1,7 @@
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+
 import java.util.List;
 
 /**
@@ -22,7 +24,7 @@ public interface SsgFinder {
      *
      * @param name the name to look for (ie, "R&D Gateway")
      * @return The requested Ssg.  Never null.
-     * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified name was not found.
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified name was not found.
      */
     Ssg getSsgByName(String name) throws SsgNotFoundException;
 
@@ -32,7 +34,7 @@ public interface SsgFinder {
      *
      * @param endpoint The endpoint to look for (ie, "SSG0")
      * @return The requested Ssg.  Never null.
-     * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified endpoint was not found.
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified endpoint was not found.
      */
     Ssg getSsgByEndpoint(String endpoint) throws SsgNotFoundException;
 
@@ -41,7 +43,7 @@ public interface SsgFinder {
      * will be returned.
      * @param hostname The hostname to look for.
      * @return A registered Ssg with that hostname.
-     * @throws SsgNotFoundException if no Ssg was registered with the specified hostname.
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException if no Ssg was registered with the specified hostname.
      */
     Ssg getSsgByHostname(String hostname) throws SsgNotFoundException;
 
@@ -49,7 +51,7 @@ public interface SsgFinder {
      * Get the default SSG.
      * Returns the first SSG that has its Default flag set.  Usually there is only one such SSG.
      * @return the Default SSG
-     * @throws com.l7tech.proxy.datamodel.SsgNotFoundException if no Default SSG was found
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException if no Default SSG was found
      */
     Ssg getDefaultSsg() throws SsgNotFoundException;
 

@@ -1,24 +1,23 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.ibm.xml.dsig.SignatureStructureException;
+import com.ibm.xml.dsig.XSignatureException;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.xmlsig.SoapMsgSigner;
-import com.ibm.xml.dsig.SignatureStructureException;
-import com.ibm.xml.dsig.XSignatureException;
 import org.w3c.dom.Document;
-import java.security.PrivateKey;
+
 import java.security.NoSuchAlgorithmException;
-import java.security.KeyStoreException;
-import java.security.UnrecoverableKeyException;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.io.IOException;
 
 /**
  * User: flascell
@@ -73,17 +72,13 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         PrivateKey userPrivateKey = null;
         X509Certificate userCert = null;
         try {
-            userPrivateKey = SsgKeyStoreManager.getPrivateKey(ssg);
+            userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
             userCert = SsgKeyStoreManager.getClientCert(ssg);
         } catch (NoSuchAlgorithmException e) {
             throw new PolicyAssertionException(e);
-        } catch (IOException e) {
+        } catch (BadCredentialsException e) {
             throw new PolicyAssertionException(e);
-        } catch (CertificateException e) {
-            throw new PolicyAssertionException(e);
-        } catch (KeyStoreException e) {
-            throw new PolicyAssertionException(e);
-        } catch (UnrecoverableKeyException e) {
+        } catch (OperationCanceledException e) {
             throw new PolicyAssertionException(e);
         }
 

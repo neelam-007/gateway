@@ -1,5 +1,7 @@
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+
 import java.io.IOException;
 
 /**
@@ -27,7 +29,7 @@ public interface SsgManager extends SsgFinder {
      * Forget all about a registered Ssg.
      *
      * @param ssg The Ssg to forget about.
-     * @throws SsgNotFoundException If the specified Ssg was not found.
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified Ssg was not found.
      */
     void remove(Ssg ssg) throws SsgNotFoundException;
 
@@ -36,7 +38,7 @@ public interface SsgManager extends SsgFinder {
      * If this method returns, it's guaranteed that the specified Ssg
      * is in the Ssg list and is the only one with its Default flag set to true.
      * @param ssg the SSG that should be made the new default ssg
-     * @throws SsgNotFoundException if the specified SSG is not registered
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException if the specified SSG is not registered
      */
     void setDefaultSsg(Ssg ssg) throws SsgNotFoundException;
 

@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.proxy.datamodel;
+package com.l7tech.proxy.datamodel.exceptions;
 
 /**
  * Exception thrown during policy processing if the SSG username and/or password is found to be wrong.

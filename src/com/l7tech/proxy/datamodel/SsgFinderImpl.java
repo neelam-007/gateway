@@ -23,6 +23,7 @@ import java.util.TreeSet;
 import java.util.HashMap;
 
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 
 /**
  * Provides read-only access to the ssgs.xml file.
@@ -125,7 +126,7 @@ public class SsgFinderImpl implements SsgFinder {
      * Find the Ssg with the specified ID.
      * @param id the ID to look for (ie, 3)
      * @return The requested Ssg.  Never null.
-     * @throws SsgNotFoundException If the specified name was not found.
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified name was not found.
      */
     public synchronized Ssg getSsgById(final long id) throws SsgNotFoundException {
         if (!init)
@@ -144,7 +145,7 @@ public class SsgFinderImpl implements SsgFinder {
      *
      * @param name the name to look for (ie, "R&D Gateway")
      * @return The requested Ssg.  Never null.
-     * @throws SsgNotFoundException If the specified name was not found.
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified name was not found.
      */
     public synchronized Ssg getSsgByName(final String name) throws SsgNotFoundException {
         if (!init)
@@ -163,7 +164,7 @@ public class SsgFinderImpl implements SsgFinder {
      *
      * @param endpoint The endpoint to look for (ie, "SSG0")
      * @return The requested Ssg.  Never null.
-     * @throws SsgNotFoundException If the specified endpoint was not found.
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified endpoint was not found.
      */
     public synchronized Ssg getSsgByEndpoint(final String endpoint) throws SsgNotFoundException {
         if (!init)
@@ -181,7 +182,7 @@ public class SsgFinderImpl implements SsgFinder {
      * will be returned.
      * @param hostname The hostname to look for.
      * @return A registered Ssg with that hostname.
-     * @throws SsgNotFoundException if no Ssg was registered with the specified hostname.
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException if no Ssg was registered with the specified hostname.
      */
     public Ssg getSsgByHostname(String hostname) throws SsgNotFoundException {
         Ssg ssg = (Ssg) hostCache.get(hostname);
@@ -203,7 +204,7 @@ public class SsgFinderImpl implements SsgFinder {
      * Get the default SSG.
      * Returns the first SSG that has its Default flag set.  Usually there is only one such SSG.
      * @return the Default SSG
-     * @throws SsgNotFoundException if no Default SSG was found
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException if no Default SSG was found
      */
     public Ssg getDefaultSsg() throws SsgNotFoundException {
         for (Iterator i = ssgs.iterator(); i.hasNext();) {

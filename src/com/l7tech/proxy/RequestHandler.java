@@ -3,7 +3,7 @@ package com.l7tech.proxy;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
-import com.l7tech.proxy.datamodel.SsgNotFoundException;
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.util.SoapUtil;

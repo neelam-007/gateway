@@ -422,7 +422,7 @@ public class RSASigner {
         // Authority key identifier
         if (useaki == true) {
             // fla, rewrote this line to avoid deprecated
-            // SubjectPublicKeyInfo apki = new SubjectPublicKeyInfo((DERConstructedSequence)new DERInputStream(new ByteArrayInputStream(caCert.getPublicKey().getEncoded())).readObject());
+            // SubjectPublicKeyInfo apki = new SubjectPublicKeyInfo((DERConstructedSequence)new DERInputStream(new ByteArrayInputStream(caCert.getClientCertPublicKey().getEncoded())).readObject());
             SubjectPublicKeyInfo apki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new DERInputStream(new ByteArrayInputStream(caCert.getPublicKey().getEncoded())).readObject()));
             AuthorityKeyIdentifier aki = new AuthorityKeyIdentifier(apki);
             //AuthorityKeyIdentifier aki = new AuthorityKeyIdentifier();

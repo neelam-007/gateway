@@ -7,8 +7,9 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.xmlenc.Session;
-import com.l7tech.proxy.processor.ServerCertificateUntrustedException;
-import com.l7tech.proxy.processor.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 
 import javax.net.ssl.SSLHandshakeException;
 
@@ -51,7 +52,7 @@ public class SsgSessionManager {
      */
     public static Session getSession(Ssg ssg)
             throws OperationCanceledException, IOException, MalformedURLException,
-                   ServerCertificateUntrustedException, BadCredentialsException
+            ServerCertificateUntrustedException, BadCredentialsException
     {
         synchronized (ssg) {
             Session session = ssg.session();

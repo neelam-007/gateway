@@ -9,14 +9,15 @@ package com.l7tech.proxy.ssl;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.SsgNotFoundException;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import org.apache.log4j.Category;
 
 import javax.net.ssl.X509KeyManager;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -38,19 +39,22 @@ public class ClientProxyKeyManager implements X509KeyManager {
 
     public PrivateKey getPrivateKey(String s) {
         try {
-            log.info("ClientProxyKeyManager: getPrivateKey for " + s);
+            log.info("ClientProxyKeyManager: getClientCertPrivateKey for " + s);
             Ssg ssg = ssgFinder.getSsgByHostname(s);
-            PrivateKey pk = SsgKeyStoreManager.getPrivateKey(ssg);
+            PrivateKey pk = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
             log.info("Returning PrivateKey: " + (pk == null ? "NULL" : "<it's a real key; numbers not shown>"));
             return pk;
         } catch (SsgNotFoundException e) {
             log.info(e);
             log.info("*** About to return NULL private key..");
             return null;
-        } catch (GeneralSecurityException e) {
+        } catch (NoSuchAlgorithmException e) {
             log.error(e);
             throw new ClientProxySslException(e);
-        } catch (IOException e) {
+        } catch (BadCredentialsException e) {
+            log.error(e);
+            throw new ClientProxySslException(e);
+        } catch (OperationCanceledException e) {
             log.error(e);
             throw new ClientProxySslException(e);
         }
@@ -76,12 +80,6 @@ public class ClientProxyKeyManager implements X509KeyManager {
             log.info(e);
             log.info("*** About to return NULL certificate array..");
             return null;
-        } catch (GeneralSecurityException e) {
-            log.error(e);
-            throw new ClientProxySslException(e);
-        } catch (IOException e) {
-            log.error(e);
-            throw new ClientProxySslException(e);
         }
     }
 

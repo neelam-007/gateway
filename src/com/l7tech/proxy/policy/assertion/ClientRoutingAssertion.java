@@ -22,11 +22,11 @@ public class ClientRoutingAssertion extends ClientAssertion {
     }
 
     /** Client-side doesn't know or care about server-side routing. */
-    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest request)  {
         return AssertionStatus.NOT_APPLICABLE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)  {
         // no action on response
         return AssertionStatus.NONE;
     }

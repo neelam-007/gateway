@@ -1,4 +1,4 @@
-package com.l7tech.proxy.datamodel;
+package com.l7tech.proxy.datamodel.exceptions;
 
 /**
  * Exception thrown when a queried-for SSG is not found.

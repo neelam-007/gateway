@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.proxy.processor;
+package com.l7tech.proxy.datamodel.exceptions;
 
 /**
  * Thrown if a problem is encountered during policy processing, but it should now be safe to

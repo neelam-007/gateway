@@ -3,7 +3,7 @@ package com.l7tech.proxy.gui;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
-import com.l7tech.proxy.datamodel.SsgNotFoundException;
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 
 import javax.swing.*;
 import java.io.IOException;

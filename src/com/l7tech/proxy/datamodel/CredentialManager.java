@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.proxy.processor.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 
 /**
  * Get usernames and passwords from somewhere.  The caller of the manager interface will then

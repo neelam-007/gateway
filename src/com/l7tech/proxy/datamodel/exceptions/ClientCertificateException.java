@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.proxy.processor;
+package com.l7tech.proxy.datamodel.exceptions;
 
 /**
  * Thrown if a client certificate is needed but could not be obtained.

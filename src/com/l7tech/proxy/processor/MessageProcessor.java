@@ -12,7 +12,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.datamodel.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
@@ -78,10 +82,10 @@ public class MessageProcessor {
      * @param req  the PendingRequest to process
      * @return     the SsgResponse containing the response from the Ssg, if processing was successful, or if
      *             a SOAP fault is being returned to the client from either the CP or the SSG.
-     * @throws ClientCertificateException   if a client certificate was required but could not be obtained
+     * @throws com.l7tech.proxy.datamodel.exceptions.ClientCertificateException   if a client certificate was required but could not be obtained
      * @throws PolicyAssertionException     if the policy evaluation of request or response could not be completed due
      *                                        to a serious error
-     * @throws OperationCanceledException   if the user declined to provide a username and password
+     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException   if the user declined to provide a username and password
      * @throws ConfigurationException       if a response could not be obtained from the SSG due to a problem with
      *                                      the client or server configuration, and retrying the operation
      *                                      is unlikely to succeed until the configuration is changed.
@@ -138,18 +142,25 @@ public class MessageProcessor {
      *
      * @param req   the PendingRequest to decorate
      * @throws PolicyAssertionException     if the policy evaluation could not be completed due to a serious error
-     * @throws PolicyRetryableException     if the policy evaluation should be started over
-     * @throws OperationCanceledException   if the user declined to provide a username and password
-     * @throws ClientCertificateException   if a client certificate was required but could not be obtained
-     * @throws ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
+     * @throws com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException     if the policy evaluation should be started over
+     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException   if the user declined to provide a username and password
+     * @throws com.l7tech.proxy.datamodel.exceptions.ClientCertificateException   if a client certificate was required but could not be obtained
+     * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
     private ClientAssertion enforcePolicy(PendingRequest req)
             throws PolicyAssertionException, PolicyRetryableException, OperationCanceledException,
-                   ClientCertificateException, ServerCertificateUntrustedException, BadCredentialsException
+            ClientCertificateException, ServerCertificateUntrustedException, BadCredentialsException
     {
         Ssg ssg = req.getSsg();
         ClientAssertion policy = policyManager.getClientPolicy(req);
-        AssertionStatus result = policy.decorateRequest(req);
+        AssertionStatus result;
+        try {
+            result = policy.decorateRequest(req);
+        } catch (PolicyAssertionException e) {
+            if (e.getCause() instanceof BadCredentialsException || e.getCause() instanceof UnrecoverableKeyException)
+                throw new BadCredentialsException(e);
+            throw e;
+        }
         if (result != AssertionStatus.NONE) {
             if (req.isCredentialsWouldHaveHelped() || req.isClientCertWouldHaveHelped()) {
                 boolean gotCreds = false;
@@ -209,7 +220,7 @@ public class MessageProcessor {
      * @throws GeneralSecurityException   if we were unable to complete SSL handshake with the Ssg
      * @throws IOException                if there was a network problem
      * @throws IllegalArgumentException   if no credentials are configured for this Ssg
-     * @throws BadCredentialsException    if the SSG rejected the credentials we provided
+     * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException    if the SSG rejected the credentials we provided
      */
     private void obtainClientCertificate(Ssg ssg)
             throws GeneralSecurityException, IOException, OperationCanceledException, BadCredentialsException
@@ -297,18 +308,18 @@ public class MessageProcessor {
      *                                valid PolicyAttachmentKey
      * @throws IOException            if there was a network problem getting the message response from the SSG
      * @throws IOException            if there was a network problem downloading a policy from the SSG
-     * @throws PolicyRetryableException if a new policy was downloaded
-     * @throws ServerCertificateUntrustedException if a policy couldn't be downloaded because the SSG SSL certificate
+     * @throws com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException if a new policy was downloaded
+     * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException if a policy couldn't be downloaded because the SSG SSL certificate
      *                                             was not recognized and needs to be (re)imported
-     * @throws OperationCanceledException if credentials were needed to continue processing, but the user canceled
+     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were needed to continue processing, but the user canceled
      *                                    the logon dialog (or we are running headless).
-     * @throws ClientCertificateException if our client cert is no longer valid, but we couldn't delete it from
+     * @throws com.l7tech.proxy.datamodel.exceptions.ClientCertificateException if our client cert is no longer valid, but we couldn't delete it from
      *                                    the keystore.
-     * @throws BadCredentialsException if the SSG rejected our SSG username and/or password.
+     * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException if the SSG rejected our SSG username and/or password.
      */
     private SsgResponse obtainResponse(PendingRequest req)
             throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
-                   OperationCanceledException, ClientCertificateException, BadCredentialsException
+            OperationCanceledException, ClientCertificateException, BadCredentialsException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
@@ -420,8 +431,8 @@ public class MessageProcessor {
      *
      * @throws IOException if there was a network problem downloading the server cert
      * @throws IOException if there was a problem reading or writing the keystore for this SSG
-     * @throws BadCredentialsException if the downloaded cert could not be verified with the SSG username and password
-     * @throws OperationCanceledException if credentials were needed but the user declined to enter them
+     * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException if the downloaded cert could not be verified with the SSG username and password
+     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were needed but the user declined to enter them
      * @throws GeneralSecurityException for miscellaneous and mostly unlikely certificate or key store problems
      */
     private void installSsgServerCertificate(Ssg ssg)

@@ -9,7 +9,7 @@ package com.l7tech.proxy.ssl;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.processor.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import org.apache.log4j.Category;
 
 import javax.net.ssl.X509TrustManager;

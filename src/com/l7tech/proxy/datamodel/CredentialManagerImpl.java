@@ -7,7 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 import org.apache.log4j.Category;
-import com.l7tech.proxy.processor.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 
 /**
  * Default CredentialManager implementation.  This version requires that the credentials already be

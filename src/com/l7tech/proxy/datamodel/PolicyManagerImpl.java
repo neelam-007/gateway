@@ -11,8 +11,8 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
-import com.l7tech.proxy.processor.ServerCertificateUntrustedException;
-import com.l7tech.proxy.processor.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
@@ -66,9 +66,9 @@ public class PolicyManagerImpl implements PolicyManager {
      * @throws ConfigurationException if the PendingRequest did not contain enough information to construct a
      *                                valid PolicyAttachmentKey
      * @throws IOException if the policy could not be read from the SSG
-     * @throws ServerCertificateUntrustedException if an SSL handshake with the SSG could not be established due to
+     * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException if an SSL handshake with the SSG could not be established due to
      *                                             the SSG's SSL certificate being unrecognized
-     * @throws OperationCanceledException if credentials were required, but the user canceled the logon dialog
+     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were required, but the user canceled the logon dialog
      */
     public void updatePolicy(PendingRequest request, URL policyUrl)
             throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException

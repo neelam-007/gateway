@@ -8,7 +8,7 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.processor.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.console.panels.Utilities;
 
 import javax.swing.*;
