@@ -181,6 +181,7 @@ public class PolicyServlet extends HttpServlet {
                 md5.update(String.valueOf(info.idProvider).getBytes());
                 md5.update(cert);
                 md5.update(info.ha1.getBytes());
+                response.addHeader("L7-Cert-Debug", "name='" + username + "', nonce='" + nonce + "'");
                 response.addHeader(SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX + info.idProvider,
                                    HexUtils.encodeMd5Digest(md5.digest()) + "; " + info.realm);
             }
