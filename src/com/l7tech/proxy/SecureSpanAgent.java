@@ -54,15 +54,15 @@ public interface SecureSpanAgent {
      * @return
      * @throws SendException                if the operation failed due to one of the following problems:
      *      a client certificate was required but could not be obtained;
-     *      a new username and/or password was needed but could not be obtained from the CredentialManager;
      *      this request cannot succeed until the client or server configuration is changed;
      *      we were unable to conform to the policy, and did not get any useful SOAP fault from the Gateway;
      *      the Gateways's SSL certificate could not be obtained, validated, and/or saved;
      *      the response from the Gateway was signed, but the signature did not validate.
+     * @throws BadCredentialsException      if the username or password was not accepted by the Gateway
      * @throws IOException                  if information couldn't be obtained from the SSG due to network trouble
      * @throws IOException                  if a certificate could not be saved to disk
      */
-    Result send(String soapAction, Document message) throws SendException, IOException;
+    Result send(String soapAction, Document message) throws SendException, IOException, BadCredentialsException;
 
     /**
      * As above, but takes the XML as a string.
@@ -71,10 +71,11 @@ public interface SecureSpanAgent {
      * @param message the SOAPEnvelope containing the message to send, as a String containing XML
      * @return
      * @throws SAXException if the provided message was not well-formed XML
-     * @throws SendException @see #send
-     * @throws IOException @see #send
+     * @throws SendException see above
+     * @throws BadCredentialsException see above
+     * @throws IOException see above
      */
-    Result send(String soapAction, String message) throws SAXException, SendException, IOException;
+    Result send(String soapAction, String message) throws SAXException, SendException, IOException, BadCredentialsException;
 
     /**
      * Get the Gateway's CA certificate, or null if we don't yet know it.

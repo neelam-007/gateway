@@ -19,6 +19,7 @@ import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
+import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
 import com.l7tech.proxy.processor.MessageProcessor;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -91,7 +92,7 @@ public class SecureSpanAgentFactory {
         final MessageProcessor mp = new MessageProcessor(policyManager);
         final RequestInterceptor nri = NullRequestInterceptor.INSTANCE;
         return new SecureSpanAgent() {
-            public SecureSpanAgent.Result send(String soapAction, Document message) throws SendException, IOException {
+            public SecureSpanAgent.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException {
                 PendingRequest pr = new PendingRequest(message, ssg, nri, new URL("http://foo.bar.baz"), null);
                 pr.setSoapAction(soapAction);
                 try {
@@ -107,6 +108,8 @@ public class SecureSpanAgentFactory {
                     };
                 } catch (ClientCertificateException e) {
                     throw new CausedSendException(e);
+                } catch (CredentialsUnavailableException e) {
+                    throw new CausedBadCredentialsException(e);
                 } catch (OperationCanceledException e) {
                     throw new CausedSendException(e);
                 } catch (ConfigurationException e) {
@@ -124,7 +127,7 @@ public class SecureSpanAgentFactory {
                 }
             }
 
-            public SecureSpanAgent.Result send(String soapAction, String message) throws SecureSpanAgent.SendException, IOException, SAXException {
+            public SecureSpanAgent.Result send(String soapAction, String message) throws SecureSpanAgent.SendException, IOException, SAXException, CausedBadCredentialsException {
                 return send(soapAction, XmlUtil.stringToDocument(message));
             }
 
