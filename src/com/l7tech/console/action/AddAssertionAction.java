@@ -1,18 +1,9 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.PolicyTemplateNode;
-import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.util.ComponentRegistry;
 
 import javax.swing.*;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 /**
@@ -23,9 +14,6 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class AddAssertionAction extends BaseAction {
-    private static final Logger log =
-      Logger.getLogger(AddAssertionAction.class.getName());
-
     protected AbstractTreeNode paletteNode;
     protected AssertionTreeNode assertionNode;
 
@@ -62,73 +50,9 @@ public class AddAssertionAction extends BaseAction {
                 if (paletteNode == null || assertionNode == null) {
                     throw new IllegalStateException();
                 }
-                if (paletteNode instanceof PolicyTemplateNode) {
-                    assignPolicyTemplate((PolicyTemplateNode)paletteNode);
-                } else {
-                    assertionNode.receive(paletteNode);
-                }
+                assertionNode.receive(paletteNode);
             }
         });
     }
-
-    /**
-     * assign the policy template.
-     * todo: find a better place for this
-     *
-     * @param pn
-     */
-    private void assignPolicyTemplate(PolicyTemplateNode pn) {
-        JTree tree = ComponentRegistry.getInstance().getPolicyTree();
-        ServiceNode sn = (ServiceNode)tree.getClientProperty("service.node");
-
-        if (sn == null)
-            throw new IllegalArgumentException("No edited service specified");
-        ByteArrayOutputStream bo = null;
-        InputStream fin = null;
-        try {
-            if (!confirmApplyPolicyTemplate(sn)) return;
-
-            String oldPolicyXml = sn.getPublishedService().getPolicyXml();
-            bo = new ByteArrayOutputStream();
-            fin = new FileInputStream(pn.getFile());
-
-            byte[] buff = new byte[1024];
-            int nread = -1;
-            while ((nread = fin.read(buff)) != -1) {
-                bo.write(buff, 0, nread);
-            }
-            sn.getPublishedService().setPolicyXml(bo.toString());
-            sn.firePropertyChange(this, "policy", oldPolicyXml, sn.getPublishedService().getPolicyXml());
-        } catch (Exception e) {
-
-        } finally {
-            if (bo != null) {
-                try {
-                    bo.close();
-                } catch (IOException e) {
-                    log.log(Level.WARNING, "Error closing stream", e);
-                }
-            }
-            if (fin != null) {
-                try {
-                    fin.close();
-                } catch (IOException e) {
-                    log.log(Level.WARNING, "Error closing stream", e);
-                }
-            }
-        }
-    }
-
-    private boolean confirmApplyPolicyTemplate(ServiceNode sn) {
-        if ((JOptionPane.showConfirmDialog(
-          ComponentRegistry.getInstance().getMainWindow(),
-          "<html><center><b>Are you sure you wish to apply policy template ?<br> (This will permanently overwrite the " +
-          "policy for '" + sn.getName() + "')</b></center></html>",
-          "Overwrite Service policy",
-          JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
-            return false;
-        }
-        return true;
-
-    }
 }
+

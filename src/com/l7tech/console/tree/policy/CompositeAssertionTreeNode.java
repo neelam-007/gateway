@@ -61,11 +61,10 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
      *
      * @param node the node to receive
      */
-    public void receive(AbstractTreeNode node) {
-        if (node == null) {
-            throw new IllegalArgumentException("receiving node is null");
+    public boolean receive(AbstractTreeNode node) {
+        if (true == super.receive(node)) {
+            return true;
         }
-
         JTree tree =
           (JTree)ComponentRegistry.
           getInstance().getComponent(PolicyTree.NAME);
@@ -91,7 +90,7 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
         } else {
             log.log(Level.WARNING, "Unable to reach the palette tree.");
         }
-
+        return true;
     }
 
     protected void loadChildren() {

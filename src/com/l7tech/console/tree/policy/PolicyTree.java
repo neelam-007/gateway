@@ -129,7 +129,7 @@ public class PolicyTree extends JTree {
         }
 
         public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
-            if (!nodeCanImport()) return false;
+            //if (!nodeCanImport()) return false;
 
             for (int i = 0; i < transferFlavors.length; i++) {
                 DataFlavor transferFlavor = transferFlavors[i];
