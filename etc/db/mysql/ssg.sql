@@ -271,3 +271,21 @@ CREATE TABLE jms_endpoint(
   is_message_source tinyint default '0',
   primary key(objectid)
 ) TYPE=InnoDB;
+
+--
+-- Table structure for table 'trusted_cert'
+--
+
+DROP TABLE IF EXISTS trusted_cert;
+CREATE TABLE trusted_cert (
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  subject_dn varchar(255) NOT NULL,
+  cert_base64 text NOT NULL,
+  trusted_for_ssl tinyint(1) default '0',
+  trusted_for_client tinyint(1) default '0',
+  trusted_for_server tinyint(1) default '0',
+  trusted_for_saml tinyint(1) default '0',
+  primary key(objectid)
+) TYPE=InnoDB;

@@ -7,8 +7,6 @@
 
 <!--
   This is the unified (PostgreSQL & MySQL) version of the Hibernate mapping file.
-
-  NOTE: All changes to this file must also be made in ../mysql/SSG.hbm.xml!
 -->
 
 <hibernate-mapping>
@@ -104,22 +102,6 @@
         <property name="resetCounter" column="reset_counter" type="int"/>
     </class>
 
-    <!--
-    <class name="com.l7tech.server.url.UrlCacheRow" table="urlcache">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <timestamp name="timestamp" column="timestamp"/>
-
-        <property name="url" column="url" type="string"/>
-        <property name="content" column="content" type="string"/>
-        <property name="size" column="size" type="int"/>
-        <property name="refreshInterval" column="refresh_interval" type="int"/>
-        <property name="maxAge" column="max_age" type="int"/>
-    </class>
-    -->
-
     <class name="com.l7tech.service.resolution.ResolutionParameters" table="service_resolution">
         <id name="oid" column="objectid" type="long">
             <generator class="hilo"/>
@@ -206,6 +188,21 @@
         <property name="password"/>
         <property name="maxConcurrentRequests" column="max_concurrent_requests"/>
         <property name="messageSource" column="is_message_source"/>
+    </class>
+
+    <class name="com.l7tech.common.security.TrustedCert" table="trusted_cert">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <version name="version" column="version" type="integer"/>
+
+        <property name="name" column="name" type="string"/>
+        <property name="subjectDn" column="subject_dn" type="string"/>
+        <property name="certBase64" column="cert_base64" type="text"/>
+        <property name="trustedForSsl" column="trusted_for_ssl" type="boolean"/>
+        <property name="trustedForSigningClientCerts" column="trusted_for_client" type="boolean"/>
+        <property name="trustedForSigningServerCerts" column="trusted_for_server" type="boolean"/>
+        <property name="trustedForSigningSamlTokens" column="trusted_for_saml" type="boolean"/>
     </class>
 
 </hibernate-mapping>

@@ -253,3 +253,21 @@ CREATE TABLE jms_endpoint (
   is_message_source char(1) ,
   primary key(objectid)
 );
+
+--
+-- Table structure for table 'trusted_cert'
+--
+
+DROP TABLE trusted_cert;
+CREATE TABLE trusted_cert (
+  objectid number(38,0) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  subject_dn varchar(255) NOT NULL,
+  cert_base64 CLOB NOT NULL,
+  trusted_for_ssl char(1) default '0',
+  trusted_for_client char(1) default '0',
+  trusted_for_server char(1) default '0',
+  trusted_for_saml char(1) default '0',
+  primary key(objectid)
+);
