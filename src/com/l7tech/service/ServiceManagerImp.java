@@ -297,7 +297,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             Session s = context.getSession();
             List results = s.find(query);
             if (results == null || results.isEmpty()) {
-                logger.fine("no version info to return");
+                // logger.fine("no version info to return");
             } else {
                 for (Iterator i = results.iterator(); i.hasNext();) {
                     Object[] toto = (Object[])i.next();
