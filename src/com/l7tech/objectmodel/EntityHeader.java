@@ -106,8 +106,24 @@ public class EntityHeader implements Serializable {
         this.description = description;
     }
 
+    public boolean equals(Object obj) {
+        if (!(obj instanceof EntityHeader)) return false;
+        EntityHeader theotherone = (EntityHeader)obj;
+        if (getStrId() == null) {
+            if (theotherone.getStrId() == null) return true;
+            return false;
+        }
+        return getStrId().equals(theotherone.getStrId());
+    }
+
     public String toString() {
-        return "EntityHeader. Name=" + getName() + ", oid=" + getOid() + ", description=" + description + ", type = " + type.toString();
+        return "EntityHeader. Name=" + getName() + ", oid=" + getStrId() + ", description=" + description +
+               ", type = " + type.toString();
+    }
+
+    public int hashCode() {
+        if (strId == null) return 0;
+        return strId.hashCode();
     }
 
     /**
