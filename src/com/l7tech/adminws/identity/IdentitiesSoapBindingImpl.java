@@ -2,6 +2,8 @@ package com.l7tech.adminws.identity;
 
 import com.l7tech.adminws.translation.TypeTranslator;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.UserManager;
+import com.l7tech.identity.GroupManager;
 import com.l7tech.util.Locator;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -52,7 +54,14 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     }
 
     public com.l7tech.adminws.identity.User findUserByPrimaryKey(long identityProviderConfigId, long userId) throws java.rmi.RemoteException {
-        return null;
+        UserManager userManager = retrieveUserManager(identityProviderConfigId);
+        if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
+        try {
+            com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
+            return TypeTranslator.genUserToServiceUser(user);
+        } catch (FindException e) {
+            throw new java.rmi.RemoteException("IdentityProviderConfigManager FindException : " + e.getMessage());
+        }
     }
 
     public void deleteUser(long identityProviderConfigId, long userId) throws java.rmi.RemoteException {
@@ -123,6 +132,16 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
             identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
         }
         return identityProviderConfigManager;
+    }
+
+    private UserManager retrieveUserManager(long identityProviderConfigId) {
+        // todo (it)
+        return null;
+    }
+
+    private GroupManager retrieveGroupManager(long identityProviderConfigId) {
+        // todo (it)
+        return null;
     }
 
     IdentityProviderConfigManager identityProviderConfigManager = null;
