@@ -6,23 +6,21 @@
 
 package com.l7tech.common.security.xml;
 
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
-import java.util.Date;
-import java.util.Calendar;
+import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * @author mike
@@ -32,6 +30,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
     private static class Context {
         SecureRandom rand = new SecureRandom();
+        long count = 0;
     }
 
     public void decorateMessage(Document message,
@@ -69,7 +68,7 @@ public class WssDecoratorImpl implements WssDecorator {
      * @return
      */
     private String createWsuId(Context c, Element element) {
-        String id = element.getLocalName() + "-L7" + c.rand.nextLong();
+        String id = element.getLocalName() + "-" + c.count++ + "-" + c.rand.nextLong();
         element.setAttributeNS(SoapUtil.WSU_NAMESPACE, "wsu:Id", id);
 
         // todo use better logic to decide if wsu needs to be declared here
