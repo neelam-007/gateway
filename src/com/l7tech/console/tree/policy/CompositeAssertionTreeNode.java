@@ -1,25 +1,21 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.action.AddAllAssertionAction;
-import com.l7tech.console.action.AddOneOrMoreAssertionAction;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Cookie;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.wsdl.WSDLException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.rmi.RemoteException;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 
 /**

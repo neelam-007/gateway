@@ -40,6 +40,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * The class represents the policy editor
@@ -451,13 +452,18 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
            */
           public void propertyChange(PropertyChangeEvent evt) {
               log.info(evt.getPropertyName() + "changed");
-              if ("service.name".equals(evt.getPropertyName()) ||
-                "policy".equals(evt.getPropertyName())) {
-                  try {
+              try {
+                  if ("service.name".equals(evt.getPropertyName())) {
                       renderService(serviceNode);
-                  } catch (Exception e) {
-                      e.printStackTrace();
+                  } else if ("policy".equals(evt.getPropertyName())) {
+                      renderService(serviceNode);
+                      policyEditorToolbar.buttonSave.setEnabled(true);
+                      policyEditorToolbar.buttonSave.getAction().setEnabled(true);
                   }
+              } catch (FindException e) {
+                  log.log(Level.WARNING, "Error finding service "+serviceNode.getEntityHeader().getOid());
+              } catch (RemoteException e) {
+                  log.log(Level.WARNING, "Remote error with service "+serviceNode.getEntityHeader().getOid());
               }
           }
       };

@@ -165,7 +165,6 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         ByteArrayOutputStream bo = null;
         InputStream fin = null;
         try {
-            if (!confirmApplyPolicyTemplate(sn)) return;
 
             String oldPolicyXml = sn.getPublishedService().getPolicyXml();
             bo = new ByteArrayOutputStream();
@@ -198,18 +197,17 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         }
     }
 
-    private boolean confirmApplyPolicyTemplate(ServiceNode sn) {
-        if ((JOptionPane.showConfirmDialog(
-          ComponentRegistry.getInstance().getMainWindow(),
-          "<html><center><b>Are you sure you wish to apply policy template ?<br> (This will permanently overwrite the " +
-          "policy for '" + sn.getName() + "')</b></center></html>",
-          "Overwrite Service policy",
-          JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
-            return false;
-        }
-        return true;
-
-    }
+//    private boolean confirmApplyPolicyTemplate(ServiceNode sn) {
+//        if ((JOptionPane.showConfirmDialog(
+//          ComponentRegistry.getInstance().getMainWindow(),
+//          "<html><center><b>Are you sure you wish to apply policy template ?<br> (This will permanently overwrite the " +
+//          "policy for '" + sn.getName() + "')</b></center></html>",
+//          "Overwrite Service policy",
+//          JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
+//            return false;
+//        }
+//        return true;
+//    }
 
     /**
      * @return the published service cookie or null if not founds

@@ -163,8 +163,8 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
     private void updateActions() {
         final boolean validPNode = validPaletteNode();
         final boolean validPolicyAssertionNode = validPolicyAssertionNode();
+        disableAll();
         if (!validPolicyAssertionNode && !validPNode) {
-            disableAll();
             return;
         }
         if (validPolicyAssertionNode) {

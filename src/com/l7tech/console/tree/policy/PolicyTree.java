@@ -429,12 +429,12 @@ public class PolicyTree extends JTree implements DragSourceListener,
         private void assertionDragOver(DropTargetDragEvent e) {
             Point pt = e.getLocation();
             TreePath path = getClosestPathForLocation(pt.x, pt.y);
-            setSelectionPath(path);
             if (path != null) {
-                e.acceptDrag(e.getDropAction());
-                return;
+                setSelectionPath(path);
             }
-            e.rejectDrag();
+            e.acceptDrag(e.getDropAction());
+
+            //e.rejectDrag();
         }
 
         public void dropActionChanged(DropTargetDragEvent e) {
