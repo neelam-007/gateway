@@ -8,6 +8,8 @@ package com.l7tech.util;
 
 import com.l7tech.message.Request;
 import com.l7tech.message.XmlRequest;
+import com.l7tech.message.Message;
+import com.l7tech.message.XmlMessage;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -33,10 +35,10 @@ public class SoapUtil {
     public static final String HEADER = "Header";
     public static final String BODY   = "Body";
 
-    public static Document getDocument( Request request ) throws SAXException, IOException {
-        if ( request instanceof XmlRequest ) {
-            XmlRequest xreq = (XmlRequest)request;
-            return xreq.getDocument();
+    public static Document getDocument(Message soapmsg) throws SAXException, IOException {
+        if ( soapmsg instanceof XmlMessage ) {
+            XmlMessage xmsg = (XmlMessage)soapmsg;
+            return xmsg.getDocument();
         } else {
             throw new IllegalArgumentException( "Can't find a URN in a non-XML request!" );
         }
