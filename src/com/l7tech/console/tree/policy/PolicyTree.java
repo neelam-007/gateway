@@ -388,6 +388,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
 
             TreePath path = getClosestPathForLocation(pt.x, pt.y);
+            int row = getRowForLocation(pt.x, pt.y);
+            if (row == -1) {
+                path = new TreePath(getModel().getRoot());
+            }
             if (!(path == pathLast)) {
                 nLeftRight = 0; 	// We've moved up or down, so reset left/right movement trend
                 pathLast = path;
@@ -467,10 +471,16 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 final Object transferData = e.getTransferable().getTransferData(AssertionsTree.ASSERTION_DATAFLAVOR);
                 log.fine("DROPPING: " + transferData);
                 AbstractTreeNode node = (AbstractTreeNode)transferData;
-
                 TreePath path = getSelectionPath();
+
                 if (path == null) {
                     path = new TreePath(getModel().getRoot());
+                } else {
+                    Point location = e.getLocation();
+                    int row = getRowForLocation(location.x, location.y);
+                    if (row == -1) {
+                        path = new TreePath(getModel().getRoot());
+                    }
                 }
                 AssertionTreeNode target = (AssertionTreeNode)path.getLastPathComponent();
                 if (target.accept(node)) {
@@ -507,7 +517,12 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 if (TransferableTreePath.TREEPATH_FLAVOR.equals(flavor)) {
                     try {
                         Point pt = e.getLocation();
+
                         TreePath pathTarget = getClosestPathForLocation(pt.x, pt.y);
+                        int row = getRowForLocation(pt.x, pt.y);
+                        if (row == -1) {
+                            pathTarget = new TreePath(getModel().getRoot());
+                        }
                         TreePath pathSource = (TreePath)transferable.getTransferData(flavor);
                         log.fine("DROPPING: " + pathSource.getLastPathComponent());
                         DefaultTreeModel model = (DefaultTreeModel)getModel();
@@ -524,7 +539,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
                           ((DefaultMutableTreeNode)pathSource.getLastPathComponent());
 
                         if (targetTreeNode.getAllowsChildren()) {
-                            model.insertNodeInto(assertionTreeNodeCopy, targetTreeNode, 0);
+                            int targetIndex = 0;
+                            if (targetTreeNode == model.getRoot()) {
+                                targetIndex = targetTreeNode.getChildCount();
+                            }
+                            model.insertNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
                         } else {
                             final DefaultMutableTreeNode parent = (DefaultMutableTreeNode)targetTreeNode.getParent();
 
