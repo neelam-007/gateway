@@ -1,25 +1,12 @@
 package com.l7tech.server;
 
 import com.l7tech.identity.*;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.logging.LogManager;
 
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
 import javax.servlet.ServletConfig;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.Collection;
-import java.util.Iterator;
-import java.sql.SQLException;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
