@@ -48,7 +48,7 @@ public class NewGroupDialog extends JDialog {
     private EventListenerList listenerList = new EventListenerList();
 
     /**
-     * Create a new NewUserDialog fdialog for a given Company
+     * Create a new NewGroupDialog fdialog for a given Company
      *
      * @param parent  the parent Frame. May be <B>null</B>
      */

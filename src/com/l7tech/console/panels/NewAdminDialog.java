@@ -45,7 +45,7 @@ public class NewAdminDialog extends JDialog {
     private boolean createThenEdit = false;
 
     /**
-     * Create a new NewUserDialog
+     * Create a new NewAdminDialog
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
