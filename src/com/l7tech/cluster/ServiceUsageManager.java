@@ -54,13 +54,13 @@ public class ServiceUsageManager {
         try {
             HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             Session session = pc.getSession();
-            //session.save(data);
+            session.save(data);
             //session.saveOrUpdate(data);
-            if (isAlreadyInDB(data)) {
+            /*if (isAlreadyInDB(data)) {
                 session.update(data);
             } else {
                 session.save(data);
-            }
+            }*/
         } catch (SQLException e) {
             String msg = "could not record this service usage obj";
             logger.log(Level.SEVERE, msg, e);
