@@ -119,7 +119,7 @@ public class ServerLogManager extends LogManager {
                 pattern += File.separator;
             }
             pattern += "ssg_%g_%u.log";
-            FileHandler fileHandler = new FileHandler(pattern, getLogFilesSizeLimit(), getLogFileNr());
+            FileHandler fileHandler = new FileHandler(pattern, getLogFilesSizeLimit(), getLogFileNr(), true);
             fileHandler.setFormatter(new SimpleFormatter());
             logger.addHandler(fileHandler);
             // add a suscriber handler
