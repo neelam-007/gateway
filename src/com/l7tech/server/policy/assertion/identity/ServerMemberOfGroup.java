@@ -51,16 +51,23 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
      */
     public AssertionStatus checkUser(User user) {
         try {
+            Group targetGroup = getGroup();
+            if (targetGroup == null) {
+                logger.severe("This assertion refers to a group that does not exist." +
+                                     "Policy might be corrupted");
+                return AssertionStatus.UNAUTHORIZED;
+            }
             GroupManager gman = getIdentityProvider().getGroupManager();
-            if ( gman.isMember( user, getGroup() ) ) {
+            if ( gman.isMember(user, targetGroup) ) {
                 return AssertionStatus.NONE;
             } else {
                 logger.info("user not member of group");
                 return AssertionStatus.UNAUTHORIZED;
             }
         } catch (FindException fe) {
-            logger.log(Level.SEVERE, null, fe);
-            return AssertionStatus.FAILED;
+            logger.log(Level.SEVERE, "Error finding group that this assertion refers to." +
+                                     "Policy might be corrupted", fe);
+            return AssertionStatus.UNAUTHORIZED;
         }
     }
 
