@@ -7,8 +7,7 @@ import com.l7tech.identity.internal.imp.UserImp;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The test in memory datastore with users, groups, providers etc. Used
@@ -68,6 +67,7 @@ public class StubDataStore {
         user.setLastName("Bunky");
         user.setEmail("fred@layer7-tech.com");
         encoder.writeObject(user);
+        users.put(new Long(user.getOid()), user);
 
         user = new UserImp();
         user.setProviderOid(providerId);
@@ -77,6 +77,7 @@ public class StubDataStore {
         user.setLastName("Freeman");
         user.setEmail("don@layer7-tech.com");
         encoder.writeObject(user);
+        users.put(new Long(user.getOid()), user);
 
         user = new UserImp();
         user.setProviderOid(providerId);
@@ -86,6 +87,7 @@ public class StubDataStore {
         user.setLastName("Schwartz");
         user.setEmail("hertz@layer7-tech.com");
         encoder.writeObject(user);
+        users.put(new Long(user.getOid()), user);
     }
 
     private void initialGroups(XMLEncoder encoder, long providerId) {
@@ -94,6 +96,13 @@ public class StubDataStore {
         group.setOid(nextObjectId());
         group.setName("all-staff");
         group.setDescription("All staff group");
+        Set members = new HashSet();
+
+        for (Iterator i = users.keySet().iterator(); i.hasNext();) {
+            members.add(users.get(i.next()));
+        }
+
+        group.setMembers(members);
 
         encoder.writeObject(group);
 
