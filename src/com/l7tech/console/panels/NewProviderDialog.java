@@ -8,10 +8,14 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.ldap.LdapConfigSettings;
 import com.l7tech.util.Locator;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
@@ -24,7 +28,10 @@ import java.util.EventListener;
 public class NewProviderDialog extends JDialog {
 
     private IdentityProviderConfig iProvider = new IdentityProviderConfig();
-    private EventListenerList listenerList;
+    private EventListenerList listenerList = new EventListenerList();
+    private JPanel providersPanel;
+    private ProviderSettingsPanel providerSettingsPanel;
+    private Dimension origDimension;
 
     /**
      * Create a new NewProviderDialog
@@ -100,6 +107,13 @@ public class NewProviderDialog extends JDialog {
             }
         });
 
+        addComponentListener(new ComponentAdapter() {
+            /** Invoked when the component has been made visible.*/
+            public void componentShown(ComponentEvent e) {
+                origDimension = NewProviderDialog.this.getSize();
+            }
+        });
+
         // Provider ID label
         JLabel providerNameLabel = new JLabel();
         providerNameLabel.setToolTipText(resources.getString("providerNameTextField.tooltip"));
@@ -126,21 +140,47 @@ public class NewProviderDialog extends JDialog {
         constraints.insets = new Insets(12, 7, 0, 11);
         panel.add(getProviderNameTextField(), constraints);
 
-        // additional properties
+        // provider types
+        JLabel providerTypesLabel = new JLabel();
+        providerTypesLabel.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
+        providerTypesLabel.setText(resources.getString("providerTypeTextField.label"));
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 1;
-        constraints.gridwidth = 2;
+        constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(getAdditionalProperties(), constraints);
+        panel.add(providerTypesLabel, constraints);
+
+
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 1;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets(12, 7, 0, 0);
+        panel.add(getProviderTypes(), constraints);
+
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.gridwidth = 2;
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+        constraints.insets = new Insets(12, 7, 0, 0);
+        panel.add(getProvidersPanel(), constraints);
+
 
         // Buttons
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
-        constraints.gridy = 2;
+        constraints.gridy = 3;
         constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
@@ -149,35 +189,7 @@ public class NewProviderDialog extends JDialog {
         JPanel buttonPanel = createButtonPanel();
         panel.add(buttonPanel, constraints);
 
-        // bottom filler
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 3;
-        constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.CENTER;
-        constraints.weightx = 1.0;
-        constraints.weighty = 1.0;
-        constraints.insets = new Insets(0, 0, 0, 0);
-        Component filler = Box.createHorizontalStrut(8);
-        panel.add(filler, constraints);
-
-        // side filler
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = 0;
-        constraints.gridwidth = 1;
-        constraints.gridheight = 3;
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.CENTER;
-        constraints.weightx = 1.0;
-        constraints.weighty = 1.0;
-        constraints.insets = new Insets(0, 0, 0, 0);
-        Component filler2 = Box.createHorizontalStrut(8);
-        panel.add(filler2, constraints);
-
         getRootPane().setDefaultButton(createButton);
-
     } // initComponents()
 
     /**
@@ -203,6 +215,28 @@ public class NewProviderDialog extends JDialog {
                   }
               }));
 
+        providerNameTextField.getDocument().
+          addDocumentListener(new DocumentListener() {
+              public void insertUpdate(DocumentEvent e) {
+                  createButton.
+                    setEnabled(enableCreateButton(e));
+              }
+
+              public void removeUpdate(DocumentEvent e) {
+                  createButton.setEnabled(enableCreateButton(e));
+              }
+
+              public void changedUpdate(DocumentEvent e) {
+                  createButton.setEnabled(enableCreateButton(e));
+              }
+
+              private boolean enableCreateButton(DocumentEvent e) {
+                  return e.getDocument().getLength() > 0 &&
+                    providerTypesCombo.getSelectedIndex() != -1;
+              }
+
+          });
+
         return providerNameTextField;
     }
 
@@ -213,26 +247,51 @@ public class NewProviderDialog extends JDialog {
      *
      * @return the CheckBox component
      */
-    private JCheckBox getAdditionalProperties() {
-        if (additionalPropertiesCheckBox == null) {
-            additionalPropertiesCheckBox = new JCheckBox(resources.getString("additionalProperties.label"));
-            additionalPropertiesCheckBox.setHorizontalTextPosition(SwingConstants.LEADING);
+    private JComboBox getProviderTypes() {
+        if (providerTypesCombo == null) {
+            IdentityProviderType[] types =
+              new IdentityProviderType[]{IdentityProviderType.LDAP};
 
-            additionalPropertiesCheckBox.addItemListener(new ItemListener() {
-                /**
-                 * Invoked when an item has been selected or deselected.
-                 * The code written for this method performs the operations
-                 * that need to occur when an item is selected (or deselected).
-                 */
-                public void itemStateChanged(ItemEvent e) {
-                    if (e.getStateChange() == e.SELECTED) {
-                        createThenEdit = true;
-                    }
+            providerTypesCombo = new JComboBox(types);
+            providerTypesCombo.setRenderer(providerTypeRenderer);
+            providerTypesCombo.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
+            providerTypesCombo.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    IdentityProviderType ipt =
+                      (IdentityProviderType)providerTypesCombo.getSelectedItem();
+                    if (ipt == null) return;
+                    selectProvidersPanel(ipt);
                 }
             });
         }
+        return providerTypesCombo;
+    }
 
-        return additionalPropertiesCheckBox;
+    /**
+     * return the provider details
+     *
+     * @return the panel for the selected provide
+     */
+    private JPanel getProvidersPanel() {
+        if (providersPanel != null) return providersPanel;
+        providersPanel = new JPanel();
+        return providersPanel;
+    }
+
+    /**
+     * select the provider panel for the provider type
+     */
+    private void selectProvidersPanel(IdentityProviderType ip) {
+        providersPanel.removeAll();
+        providersPanel.setLayout(new BorderLayout());
+        if (ip == IdentityProviderType.LDAP) {
+            providerSettingsPanel = getLdapPanel();
+            providersPanel.add(providerSettingsPanel);
+        }
+        Dimension size = origDimension;
+        setSize((int)size.getWidth(), (int)(size.getHeight() * 1.5));
+        validate();
+        repaint();
     }
 
     /**
@@ -242,7 +301,6 @@ public class NewProviderDialog extends JDialog {
      * Sets the variable okButton
      */
     private JPanel createButtonPanel() {
-
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, 0));
 
@@ -250,6 +308,7 @@ public class NewProviderDialog extends JDialog {
         createButton = new JButton();
         createButton.setText(resources.getString("createButton.label"));
         createButton.setToolTipText(resources.getString("createButton.tooltip"));
+        createButton.setEnabled(false);
         createButton.setActionCommand(CMD_OK);
         createButton.
           addActionListener(new ActionListener() {
@@ -290,7 +349,6 @@ public class NewProviderDialog extends JDialog {
      *               may be null
      */
     private void windowAction(String actionCommand) {
-
         if (actionCommand == null) {
             // do nothing
         } else if (actionCommand.equals(CMD_CANCEL)) {
@@ -307,6 +365,7 @@ public class NewProviderDialog extends JDialog {
     /** insert the provider */
     private void insertProvider() {
         iProvider.setName(providerNameTextField.getText());
+        providerSettingsPanel.readSettings(iProvider);
         // emil, i leave this commented so you can see what i did
         //IdentityProviderTypeImp ip = new IdentityProviderTypeImp();
         //ip.setClassName("bla");
@@ -332,27 +391,86 @@ public class NewProviderDialog extends JDialog {
           });
     }
 
-    /**
-     * override the Dialogue method so tha we can open and editor
-     * panel if requested
-     */
-    public void dispose() {
-        super.dispose();
 
-        // maybe cancel was pressed, this ensures that
-        // an object has been inserted
-        if (insertSuccess) {
-            if (createThenEdit) {
-                // yes the additional properties are to be defined
-                createThenEdit = false;
-                SwingUtilities.invokeLater(
-                  new Runnable() {
-                      public void run() {
-                      }
-                  });
+    /**
+     * This method is called from within the constructor to
+     * initialize the dialog.
+     */
+    private ProviderSettingsPanel getLdapPanel() {
+        final JTextField ldapHostTextField = new JTextField();
+        final JTextField ldapSearchBaseTextField = new JTextField();
+
+        ProviderSettingsPanel panel = new ProviderSettingsPanel() {
+            void readSettings(IdentityProviderConfig config) {
+                config.setTypeVal(IdentityProviderType.LDAP.toVal());
+                config.putProperty(LdapConfigSettings.LDAP_HOST_URL, ldapHostTextField.getText());
+                config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, ldapSearchBaseTextField.getText());
             }
-        }
+        };
+
+        panel.setLayout(new GridBagLayout());
+
+        // LDAP host
+        JLabel ldapHostLabel = new JLabel();
+        ldapHostLabel.setToolTipText(resources.getString("ldapHostTextField.tooltip"));
+        ldapHostLabel.setText(resources.getString("ldapHostTextField.label"));
+
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(12, 12, 0, 0);
+        panel.add(ldapHostLabel, constraints);
+
+        ldapHostTextField.setPreferredSize(new Dimension(217, 20));
+        ldapHostTextField.setMinimumSize(new Dimension(217, 20));
+        ldapHostTextField.setToolTipText(resources.getString("ldapHostTextField.tooltip"));
+
+        // ldap host text field
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 0;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(12, 7, 0, 11);
+        panel.add(ldapHostTextField, constraints);
+
+        // search base label
+        JLabel ldapSearchBaseLabel = new JLabel();
+        ldapSearchBaseLabel.setToolTipText(resources.getString("ldapSearchBaseTextField.tooltip"));
+        ldapSearchBaseLabel.setText(resources.getString("ldapSearchBaseTextField.label"));
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets(12, 12, 0, 0);
+        panel.add(ldapSearchBaseLabel, constraints);
+
+
+        ldapSearchBaseTextField.setPreferredSize(new Dimension(217, 20));
+        ldapSearchBaseTextField.setMinimumSize(new Dimension(217, 20));
+        ldapSearchBaseTextField.setToolTipText(resources.getString("ldapSearchBaseTextField.tooltip"));
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 1;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets(12, 7, 0, 11);
+        panel.add(ldapSearchBaseTextField, constraints);
+
+        return panel;
     }
+
 
     /**
      * validate the input
@@ -374,22 +492,55 @@ public class NewProviderDialog extends JDialog {
         return ipc;
     }
 
-    /**
-     * main for testing
-     *
-     * @param args
-     */
-    public static void main(String[] args) {
-        try {
+    private ListCellRenderer
+      providerTypeRenderer = new DefaultListCellRenderer() {
+          /**
+           * Return a component that has been configured to display the identity provider
+           * type value.
+           *
+           * @param list The JList we're painting.
+           * @param value The value returned by list.getModel().getElementAt(index).
+           * @param index The cells index.
+           * @param isSelected True if the specified cell was selected.
+           * @param cellHasFocus True if the specified cell has the focus.
+           * @return A component whose paint() method will render the specified value.
+           *
+           * @see JList
+           * @see ListSelectionModel
+           * @see ListModel
+           */
+          public Component getListCellRendererComponent(JList list,
+                                                        Object value,
+                                                        int index,
+                                                        boolean isSelected, boolean cellHasFocus) {
+              IdentityProviderType type = (IdentityProviderType)value;
+              setText(type.description());
+              return this;
+          }
 
-            JFrame frame = new JFrame() {
-                public Dimension getPreferredSize() {
-                    return new Dimension(200, 100);
-                }
-            };
-            new NewProviderDialog(frame).show();
-        } catch (Exception e) {
-            e.printStackTrace();
+      };
+
+    /**
+     * the specific provider settigs panels exted this panel
+     */
+    abstract static class ProviderSettingsPanel extends JPanel {
+        /**
+         * read the identity prov ider config
+         *
+         * @param config the receving configuraiton
+         */
+        abstract void readSettings(IdentityProviderConfig config);
+
+        /**
+         * validate the config. The specific panel validates its
+         * config, this is optional method that is typically invoked
+         * by the caller panel before the record insert.
+         *
+         * @param config the identity configuration
+         * @return boolean if valid config, false otherwise
+         */
+        boolean validate(IdentityProviderConfig config) {
+            return true;
         }
     }
 
@@ -401,13 +552,9 @@ public class NewProviderDialog extends JDialog {
     private String CMD_OK = "cmd.ok";
 
     private JButton createButton = null;
-    private JButton editButton = null;
-
-    private boolean insertSuccess = false;
-    private boolean createThenEdit = false;
 
     /** provider ID text field */
     private JTextField providerNameTextField = null;
-    private JCheckBox additionalPropertiesCheckBox = null;
+    private JComboBox providerTypesCombo = null;
 }
 

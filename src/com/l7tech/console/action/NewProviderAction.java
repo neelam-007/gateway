@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.NewProviderDialog;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.event.EntityListener;
@@ -61,7 +62,10 @@ public class NewProviderAction extends NodeAction {
         SwingUtilities.invokeLater(
           new Runnable() {
             public void run() {
-                NewProviderDialog dialog = new NewProviderDialog(null);
+                NewProviderDialog dialog =
+                  new NewProviderDialog(Registry.getDefault().
+                                        getWindowManager().getMainWindow());
+                dialog.addEntityListener(listener);
 
                 dialog.setResizable(false);
                 dialog.show();

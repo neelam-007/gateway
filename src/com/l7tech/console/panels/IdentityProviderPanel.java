@@ -92,7 +92,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
               boolean isSelected,
               boolean cellHasFocus) {
                 IdentityProvider ip = (IdentityProvider)value;
-                return new JLabel(ip.getConfig().getDescription());
+                return new JLabel(ip.getConfig().getName());
             }
         });
         providersComboBox.addActionListener(new ActionListener() {
@@ -330,11 +330,11 @@ public class IdentityProviderPanel extends WizardStepPanel {
         try {
 
             providersComboBoxModel.addElement(NO_PROVIDER);
-            providersComboBoxModel.addElement(Registry.getDefault().getInternalProvider());
             Iterator providers =
               Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
             while (providers.hasNext()) {
-                providersComboBoxModel.addElement(providers.next());
+                Object o = providers.next();
+                providersComboBoxModel.addElement(o);
             }
         } catch (FindException e) {
             e.printStackTrace();  //todo: fix this with better, general exception management
@@ -509,11 +509,11 @@ public class IdentityProviderPanel extends WizardStepPanel {
     static {
         credentialsLocationMap.put("HTTP basic", new HttpBasic());
         credentialsLocationMap.put("HTTP digest", new HttpDigest());
-        // credentialsLocationMap.put("HTTP client cert", new HttpClientCert());
+        credentialsLocationMap.put("HTTP client cert", new HttpClientCert());
 
         credentialsLocationMap.put("WSS token basic", new WssBasic());
         credentialsLocationMap.put("WSS token digest", new WssDigest());
-        // credentialsLocationMap.put("WSS client cert", new WssClientCert());
+        credentialsLocationMap.put("WSS client cert", new WssClientCert());
     }
 
     /**
@@ -539,6 +539,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
           {
               config.setDescription("No provider selected ");
+              config.setName("No provider selected ");
           }
 
       };

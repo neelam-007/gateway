@@ -3,9 +3,11 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -30,18 +32,18 @@ public class Actions {
         boolean rb = false;
         if (bn instanceof UserNode) {
             return deleteUser((UserNode)bn);
+        } else if (bn instanceof ProviderNode) {
+            return deleteProvider((ProviderNode)bn);
         } else {
             // Unknown node type .. do nothing
             rb = false;
         }
-
         JOptionPane.showConfirmDialog(
           getMainWindow(),
           "Are you sure you wish to deleteEntity " + bn.getEntityHeader().getName() + "?",
           "Delete",
           JOptionPane.OK_OPTION);
         return false;
-
     }
 
     // Deletes the given user
@@ -76,6 +78,40 @@ public class Actions {
         }
         return false;
     }
+
+    // Deletes the given user
+      private static boolean deleteProvider(ProviderNode node) {
+          // Make sure
+          if ((JOptionPane.showConfirmDialog(
+            getMainWindow(),
+            "Are you sure you wish to delete " +
+            node.getName() + "?",
+            "Delete Provider",
+            JOptionPane.YES_NO_OPTION)) == 1) {
+              return false;
+          }
+
+          // Delete the  node and update the tree
+          try {
+              EntityHeader eh = node.getEntityHeader();
+              IdentityProviderConfig ic = new IdentityProviderConfig();
+              ic.setOid(eh.getOid());
+              Registry.getDefault().getProviderConfigManager().delete(ic);
+              return true;
+          } catch (Exception e) {
+               log.log(Level.SEVERE, "Error deleting provider", e);
+              // Error deleting realm - display error msg
+              JOptionPane.showMessageDialog(
+                getMainWindow(),
+                "Error encountered while deleting " +
+                node.getName() +
+                ". Please try again later.",
+                "Delete Provider",
+                JOptionPane.ERROR_MESSAGE);
+          }
+          return false;
+      }
+
 
 
     // Deletes the given saervice

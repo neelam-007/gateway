@@ -2,8 +2,10 @@ package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.console.action.NewProviderAction;
+import com.l7tech.identity.IdentityProviderConfigManager;
 
 import javax.swing.*;
+import javax.swing.tree.MutableTreeNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -17,11 +19,13 @@ import java.util.List;
  * @version 1.1
  */
 public class ProvidersFolderNode extends AbstractTreeNode {
+    IdentityProviderConfigManager manager;
     /**
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
-    public ProvidersFolderNode() {
+    public ProvidersFolderNode(IdentityProviderConfigManager im) {
         super(null);
+        manager = im;
     }
 
     /**
@@ -45,6 +49,14 @@ public class ProvidersFolderNode extends AbstractTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
+         Enumeration e =
+          TreeNodeFactory.
+          getTreeNodeEnumeration(
+            new EntitiesEnumeration(new ProviderEntitiesCollection(manager)));
+        int index = 0;
+        for (; e.hasMoreElements();) {
+            insert((MutableTreeNode) e.nextElement(), index++);
+        }
     }
 
     /**

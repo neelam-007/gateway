@@ -12,6 +12,7 @@ import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.IconManager2;
 
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
@@ -1392,7 +1393,8 @@ public class MainWindow extends JFrame {
         setName("MainWindow");
         setJMenuBar(getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
-        ImageIcon imageIcon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+        ImageIcon imageIcon =
+          new ImageIcon(IconManager2.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);

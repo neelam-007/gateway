@@ -53,7 +53,7 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
             new AbstractTreeNode[]{
                 new UserFolderNode(r.getInternalUserManager(), providerId),
                 new GroupFolderNode(r.getInternalGroupManager(), providerId),
-                new ProvidersFolderNode(),
+                new ProvidersFolderNode(r.getProviderConfigManager()),
                 new PoliciesFolderNode(),
                 new AuthMethodFolderNode(),
                 new TransportLayerSecurityFolderNode(),
