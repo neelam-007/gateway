@@ -32,24 +32,34 @@ public class SsgListPanel extends JPanel {
     }
 
     private void init() {
-        setLayout(new BorderLayout());
+        setLayout(new GridBagLayout());
 
-        JPanel ssgListPanel = new JPanel();
+        JPanel ssgListPanel = new JPanel(new BorderLayout());
+        ssgListPanel.setMinimumSize(new Dimension(400, 300));
 
         JToolBar toolBar = new JToolBar(JToolBar.HORIZONTAL);
         toolBar.setFloatable(false);
         toolBar.setRollover(true);
 
-        add(toolBar, BorderLayout.NORTH);
-        add(ssgListPanel, BorderLayout.CENTER);
+        add(toolBar,
+            new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                                   GridBagConstraints.NORTH,
+                                   GridBagConstraints.BOTH,
+                                   new Insets(0, 0, 0, 0),
+                                   0, 0));
+        add(ssgListPanel,
+            new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+                                   GridBagConstraints.SOUTH,
+                                   GridBagConstraints.BOTH,
+                                   new Insets(0, 0, 0, 0),
+                                   0, 0));
 
         ssgListModel = new SsgListModel();
         ssgList = new JList(ssgListModel);
         ssgList.setSelectedIndex(0);
         ssgList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        ssgList.setPreferredSize(new Dimension(350, 300));
         JScrollPane ssgListPane = new JScrollPane(ssgList);
-        ssgListPanel.add(ssgListPane);
+        ssgListPanel.add(ssgListPane, BorderLayout.CENTER);
 
         toolBar.add(new AbstractAction("New", IconManager.getAdd()) {
             public void actionPerformed(ActionEvent e) {
