@@ -28,15 +28,19 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
         return suite;
     }
 
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(suite());
+    protected void setUp() {
+        if (scanner == null) {
+            System.setProperty("com.l7tech.server.savseEnable", "yes");
+            System.setProperty("com.l7tech.server.savsePort", "7777");
+            System.setProperty("com.l7tech.server.savseHost", "phlox.l7tech.com");
+            scanner = new SymantecAntivirusScanEngineClient();
+        }
     }
 
-    protected void setUp() {
-        System.setProperty("com.l7tech.server.savseEnable", "yes");
-        System.setProperty("com.l7tech.server.savsePort", "7777");
-        System.setProperty("com.l7tech.server.savseHost", "phlox.l7tech.com");
-        scanner = new SymantecAntivirusScanEngineClient();
+    public static void main(String[] args) throws Throwable {
+        //for (int i = 0; i < 100; i++) {
+            junit.textui.TestRunner.run(suite());
+        //}
     }
 
     public void testInfectedMultipartMsg() throws Exception {
@@ -78,7 +82,8 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
     }
 
     public void testGettingOptions() throws Exception {
-        System.out.println("Scanner options:\n" + scanner.getSavScanEngineOptions());
+        scanner.getSavScanEngineOptions();
+        //System.out.println("Scanner options:\n" + scanner.getSavScanEngineOptions());
     }
 
     private Message makeMsg(String contentTypeValue, byte[] content) throws Exception {
