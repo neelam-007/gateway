@@ -96,6 +96,12 @@ public class HomeAction extends SecureAction {
                                 new PublishServiceAction().invoke();
                             }
                         });
+                    } else if (ADD_XML_APP.equals(url)) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                new PublishNonSoapServiceAction().invoke();
+                            }
+                        });
                     } else if (CREATE_DEFINITION.equals(url)) {
                         SwingUtilities.invokeLater(new Runnable() {
                             public void run() {
@@ -165,6 +171,7 @@ public class HomeAction extends SecureAction {
     }
 
     private static final String ADD_SERVICE = "file://add.service";
+    private static final String ADD_XML_APP = "file://add.xml.app";
     private static final String CREATE_DEFINITION = "file://create.definition";
     private static final String ADD_USER = "file://add.user";
     private static final String ADD_GROUP = "file://add.group";
