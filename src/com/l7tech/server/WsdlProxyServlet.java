@@ -129,6 +129,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             if (svc == null) {
                 res.sendError(HttpServletResponse.SC_NOT_FOUND, "service does not exist or not authorized");
                 return;
+            } else if (!svc.isSoap()) {
+                res.sendError(HttpServletResponse.SC_NOT_FOUND, "service has no wsdl");
+                return;
             }
             // make sure this service is indeed anonymously accessible
             if (users == null || users.isEmpty()) {
