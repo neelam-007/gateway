@@ -14,6 +14,8 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.sql.SQLException;
 
+import sun.misc.BASE64Decoder;
+
 /**
  * This servlet lets a client change the password of his internal account.
  * This is only applicable for accounts of the internal id provider.
@@ -70,6 +72,15 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
                 logger.warning("The request did not include a new password, returning 400.");
                 res.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please provide new password in http header " +
                                                                   SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD);
+                return;
+            }
+            // unbase 64 it
+            BASE64Decoder decoder = new BASE64Decoder();
+            try {
+                str_newpasswd = new String(decoder.decodeBuffer(str_newpasswd));
+            } catch (IOException e) {
+                logger.warning("The passed password could not be b64decoded, returning 400.");
+                res.sendError(HttpServletResponse.SC_BAD_REQUEST, "Password should be b64ed.");
                 return;
             }
             // make sure it's different from current one
