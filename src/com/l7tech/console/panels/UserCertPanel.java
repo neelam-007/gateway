@@ -319,19 +319,27 @@ public class UserCertPanel extends JPanel {
                                 if (userPanel instanceof FederatedUserPanel) {
                                     FederatedUserPanel fup = (FederatedUserPanel) userPanel;
                                     if (userPanel.getUser().getSubjectDn().length() > 0) {
-                                        //prompt you if he wants to replace the subject DN name
-                                        Object[] options = {"Replace", "Cancel"};
-                                        int result = JOptionPane.showOptionDialog(null,
-                                                "<html>The User's Subject DN is different from the one appearing in certificate being imported." +
-                                                "Do you want to replace the Subject DN with the one from the certificate" +
-                                                "?<br>" +
-                                                "<center>The certificate will not be added if this operation is cancelled." +
-                                                "</center></html>",
-                                                "Replace the Subject DN?",
-                                                0, JOptionPane.WARNING_MESSAGE,
-                                                null, options, options[1]);
-                                        if (result == 0) {
-                                            fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
+
+                                        if (subjectDNFromCert.compareToIgnoreCase(fup.getX509SubjectNameTextField().getText()) != 0) {
+                                            //prompt you if he wants to replace the subject DN name
+                                            Object[] options = {"Replace", "Cancel"};
+                                            int result = JOptionPane.showOptionDialog(null,
+                                                    "<html>The User's Subject DN is different from the one appearing in certificate being imported." +
+                                                    "<br>The user's Subject DN: " +  fup.getX509SubjectNameTextField().getText() +
+                                                    "<br>The Subject DN in the certiticate: " + subjectDNFromCert  +
+                                                    "<br>Do you want to replace the Subject DN with the one from the certificate" +
+                                                    "?<br>" +
+                                                    "<center>The certificate will not be added if this operation is cancelled." +
+                                                    "</center></html>",
+                                                    "Replace the Subject DN?",
+                                                    0, JOptionPane.WARNING_MESSAGE,
+                                                    null, options, options[1]);
+                                            if (result == 0) {
+                                                fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
+
+                                                certImported = true;
+                                            }
+                                        } else {
                                             certImported = true;
                                         }
                                     } else {
