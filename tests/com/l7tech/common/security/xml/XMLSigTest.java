@@ -46,22 +46,35 @@ public class XMLSigTest extends TestCase {
     public void testAndValidateDSig() throws Exception {
         // get document
         Document doc = readDocFromString(simpleDoc);
-        //Document doc = readDocFromString(simpleDocWithHeader);
-        //Document doc = readDocFromString(simpleDocWithSecurity);
-        //Document doc = readDocFromString(simpleDocWithSecurityContext);
-
         // append SecureConversationToken
         SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
-
         // sign it
         SoapMsgSigner signer = new SoapMsgSigner();
         signer.signEnvelope(doc, privateKey, cert);
-
         System.out.println("SIGNATURE RESULT:\n\n" + serializeDoc(doc));
 
         // validate the signature (will throw if doesn't validate)
         X509Certificate cert2 = signer.validateSignature(doc);
 
+        assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
+    }
+
+    public void testAndValidateDSigOnTrickyDoc() throws Exception {
+        // get document
+        Document doc = readDocFromString(simpleDocWithComplexTextEl);
+        System.out.println("ORIGINAL DOC:\n\n" + serializeDoc(doc));
+        // sign it
+        SoapMsgSigner signer = new SoapMsgSigner();
+        signer.signEnvelope(doc, privateKey, cert);
+        System.out.println("SIGNATURE RESULT:\n\n" + serializeDoc(doc));
+
+        // serialize and deserialize
+        doc = readDocFromString(serializeDoc(doc));
+
+        System.out.println("AFTER SERIAL & DESERIAL:\n\n" + serializeDoc(doc));
+
+        // validate the signature (will throw if doesn't validate)
+        X509Certificate cert2 = signer.validateSignature(doc);
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
     }
 
@@ -153,6 +166,7 @@ public class XMLSigTest extends TestCase {
     }
 
     private String simpleDoc = "<?xml version=\"1.0\" encoding=\"utf-8\"?><S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\"><S:Body><tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">QQQ</tru:StockSymbol></S:Body></S:Envelope>";
+    private String simpleDocWithComplexTextEl = "<?xml version=\"1.0\" encoding=\"utf-8\"?><S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\"><S:Body><blah:BodyContent xmlns:blah=\"http://blah.com/blahns\">blahblah blahblah\n\t\t\tblahblah blahblah</blah:BodyContent></S:Body></S:Envelope>";
     private String simpleDocWithHeader = "<?xml version=\"1.0\" encoding=\"utf-8\"?><S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\"><S:Header></S:Header><S:Body><tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">QQQ</tru:StockSymbol></S:Body></S:Envelope>";
     private String simpleDocWithSecurity = "<?xml version=\"1.0\" encoding=\"utf-8\"?><S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\"><S:Header><wsse:Security xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/12/secext\"></wsse:Security></S:Header><S:Body><tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">QQQ</tru:StockSymbol></S:Body></S:Envelope>";
     private String simpleDocWithSecurityContext = "<?xml version=\"1.0\" encoding=\"utf-8\"?><S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\"><S:Header><wsse:Security xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/12/secext\"><wsse:SecurityContextToken></wsse:SecurityContextToken></wsse:Security></S:Header><S:Body><tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">QQQ</tru:StockSymbol></S:Body></S:Envelope>";
