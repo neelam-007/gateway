@@ -47,7 +47,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      */
     public Object clone() throws CloneNotSupportedException {
         CompositeAssertion n = (CompositeAssertion)super.clone();
-        n.setChildren(children);
+        n.setChildren(reparentedChildren(n, children));
         return n;
     }
 
@@ -72,7 +72,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     private List reparentedChildren(CompositeAssertion newParent, List children) {
         List newKids = new LinkedList();
         for (Iterator i = children.iterator(); i.hasNext(); ) {
-            Assertion child = (Assertion)i.next();
+            Assertion child = ((Assertion)i.next()).getCopy();
             child.setParent(newParent);
             newKids.add(child);
         }
