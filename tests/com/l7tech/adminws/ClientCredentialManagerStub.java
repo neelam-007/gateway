@@ -1,5 +1,7 @@
 package com.l7tech.adminws;
 
+import org.apache.axis.client.Call;
+
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
 
@@ -16,5 +18,9 @@ public class ClientCredentialManagerStub extends ClientCredentialManager {
     public void login(PasswordAuthentication creds)
       throws LoginException, VersionException {
         setCredentials(creds);
+    }
+
+    public Call getAxisSession() {
+        return null;
     }
 }
