@@ -229,10 +229,10 @@ class PathValidator {
                 public void validate(PathValidator pv, Assertion[] path) {
                     if (!pv.seenSsl) {
                         result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                          "HttpClientCert requires to have SSL transport.", null));
+                          "HTTP Client Certificate requires SSL transport.", null));
                     } else if (pv.sslForbidden) {
                         result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                          "HttpClientCert requires to have SSL transport (not forbidden).", null));
+                          "HTTP Client Certificate requires SSL transport (not forbidden).", null));
                     }
                 }
             };
