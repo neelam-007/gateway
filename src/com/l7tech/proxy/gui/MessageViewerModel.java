@@ -7,15 +7,14 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.util.XmlUtil;
 import org.apache.log4j.Category;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
-import java.io.StringWriter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -91,33 +90,24 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * ASCII on-demand.
      */
     private static class SavedXmlMessage extends SavedMessage {
-        private static final XMLSerializer xmlSerializer = new XMLSerializer();
-        private Document soapEnvelope;
-
-        static {
-            // Set up the output format for the xmlSerializer
-            OutputFormat outputFormat = new OutputFormat();
-            outputFormat.setLineWidth(80);
-            outputFormat.setIndent(2);
-            outputFormat.setIndenting(true);
-            xmlSerializer.setOutputFormat(outputFormat);
-        }
+        private String str;
+        private Document message;
 
         SavedXmlMessage(final String title, final Document msg) {
             super(title);
-            this.soapEnvelope = msg;
+            this.message = msg;
         }
 
         public String getMessageText() {
-            final StringWriter sw = new StringWriter();
-            xmlSerializer.setOutputCharStream(sw);
+            if (str != null)
+                return str;
             try {
-                xmlSerializer.serialize(soapEnvelope);
-            } catch (Exception e) {
-                log.error(e);
-                return "(Internal error)";
+                str = XmlUtil.documentToString(message);
+            } catch (IOException e) {
+                str = "Unable to read message: " + e;
             }
-            return sw.toString();
+            message = null;
+            return str;
         }
 
         public Component getComponent() {
