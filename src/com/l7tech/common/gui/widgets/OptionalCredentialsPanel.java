@@ -6,8 +6,12 @@
 
 package com.l7tech.common.gui.widgets;
 
+import com.l7tech.common.gui.util.Utilities;
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 /**
  * This panel includes a "Requires username and password" checkbox, and allows entry of the username
@@ -22,6 +26,11 @@ public class OptionalCredentialsPanel extends JPanel {
         setLayout(new GridBagLayout());
 
         requireCheckbox = new JCheckBox("Requires username and password");
+        requireCheckbox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableComponents();
+            }
+        });
         add(requireCheckbox,
             new GridBagConstraints(0, 0, 2, 1, 0.0, 0.0,
                                    GridBagConstraints.WEST,
@@ -35,6 +44,7 @@ public class OptionalCredentialsPanel extends JPanel {
                                    new Insets(0, 32, 5, 3), 0, 0));
 
         usernameField = new JTextField();
+        Utilities.enableGrayOnDisabled(usernameField);
         usernameField.setPreferredSize(new Dimension(90, 20));
         add(usernameField,
             new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
@@ -49,15 +59,24 @@ public class OptionalCredentialsPanel extends JPanel {
                                    new Insets(0, 32, 5, 3), 0, 0));
 
         passwordField = new JPasswordField();
+        Utilities.enableGrayOnDisabled(passwordField);
         passwordField.setPreferredSize(new Dimension(90, 20));
         add(passwordField,
             new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
                                    GridBagConstraints.WEST,
                                    GridBagConstraints.NONE,
                                    new Insets(0, 0, 5, 0), 0, 0));
+
+        enableOrDisableComponents();
     }
 
-    public boolean getUsernameAndPasswordRequired() {
+    private void enableOrDisableComponents() {
+        boolean r = requireCheckbox.isSelected();
+        usernameField.setEnabled(r);
+        passwordField.setEnabled(r);
+    }
+
+    public boolean isUsernameAndPasswordRequired() {
         return requireCheckbox.isSelected();
     }
 
