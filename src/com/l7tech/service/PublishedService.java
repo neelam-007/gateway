@@ -26,6 +26,7 @@ import org.apache.log4j.Category;
 
 /**
  * @author alex
+ * @version $Revision$
  */
 public class PublishedService extends NamedEntityImp {
     public synchronized Assertion rootAssertion() throws IOException {
