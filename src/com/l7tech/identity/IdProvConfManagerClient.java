@@ -4,7 +4,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.identity.Client;
 import com.l7tech.identity.internal.imp.InternalIdentityProviderClient;
 import com.l7tech.identity.internal.imp.InternalIdentityProviderImp;
-import com.l7tech.identity.internal.InternalIDProviderConfig;
 
 import java.util.Collection;
 import java.util.Iterator;
