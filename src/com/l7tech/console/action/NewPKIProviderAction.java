@@ -6,14 +6,10 @@ import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.event.*;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
-import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SaveException;
 
 import javax.swing.event.EventListenerList;
 import javax.swing.*;
@@ -22,7 +18,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.EventListener;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -72,86 +67,19 @@ public class NewPKIProviderAction extends NodeAction {
             public void run() {
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                JDialog d = new PKIIdentityProviderWindow(f);
-               // d.addWizardListener(wizardListener);
+                PKIIdentityProviderWindow w = new PKIIdentityProviderWindow(f);
 
                 // register itself to listen to the addEvent
-                addEntityListener(listener);
+                w.addEntityListener(listener);
 
-               // w.pack();
-                d.setSize(550, 400);
-                Utilities.centerOnScreen(d);
-                d.setVisible(true);
+                w.setSize(550, 400);
+                Utilities.centerOnScreen(w);
+                w.setVisible(true);
 
             }
         });
 
     }
-
-    private WizardListener wizardListener = new WizardAdapter() {
-        /**
-         * Invoked when the wizard has finished.
-         *
-         * @param we the event describing the wizard finish
-         */
-        public void wizardFinished(WizardEvent we) {
-
-            // update the provider
-            Wizard w = (Wizard) we.getSource();
-            final IdentityProviderConfig iProvider = (IdentityProviderConfig) w.getCollectedInformation();
-
-            if (iProvider != null) {
-
-                SwingUtilities.invokeLater(
-                        new Runnable() {
-                            public void run() {
-                                EntityHeader header = new EntityHeader();
-                                header.setName(iProvider.getName());
-                                header.setType(EntityType.ID_PROVIDER_CONFIG);
-                                try {
-                                    header.setOid(getProviderConfigManager().save(iProvider));
-                                } catch (SaveException e) {
-                                    ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
-                                    header = null;
-                                }
-                                if (header != null) fireEventProviderAdded(header);
-                            }
-                        });
-            }
-        }
-
-    };
-
-    /**
-     * notfy the listeners that the entity has been added
-     * @param header
-     */
-    private void fireEventProviderAdded(EntityHeader header) {
-        EntityEvent event = new EntityEvent(this, header);
-        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
-        for (int i = 0; i < listeners.length; i++) {
-            ((EntityListener) listeners[i]).entityAdded(event);
-        }
-    }
-
-    /**
-      * add the EntityListener
-      *
-      * @param listener the EntityListener
-      */
-     public void addEntityListener(EntityListener listener) {
-         listenerList.add(EntityListener.class, listener);
-     }
-
-     /**
-      * remove the the EntityListener
-      *
-      * @param listener the EntityListener
-      */
-     public void removeEntityListener(EntityListener listener) {
-         listenerList.remove(EntityListener.class, listener);
-     }
-
 
     private IdentityProviderConfigManager getProviderConfigManager()
             throws RuntimeException {
