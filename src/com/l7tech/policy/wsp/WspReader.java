@@ -93,7 +93,7 @@ public class WspReader {
                 } catch (SecurityException e) {
                     throw new InvalidPolicyStreamException("Policy contains reference to unsupported assertion property " + parm, e);
                 } catch (InvocationTargetException e) {
-                    throw new InvalidPolicyStreamException("Policy contains reference to unsupported assertion property " + parm, e);
+                    throw new InvalidPolicyStreamException("Policy contains invalid assertion property " + parm, e);
                 } catch (IllegalAccessException e) {
                     throw new InvalidPolicyStreamException("Policy contains reference to unsupported assertion property " + parm, e);
                 }
