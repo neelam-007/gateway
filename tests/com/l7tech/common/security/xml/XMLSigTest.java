@@ -1,6 +1,8 @@
 package com.l7tech.common.security.xml;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
@@ -25,12 +27,12 @@ import junit.framework.TestCase;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
- *
+ * <p/>
  * User: flascell
  * Date: Aug 28, 2003
  * Time: 2:01:06 PM
  * $Id$
- *
+ * <p/>
  * These tests use a keystore and a certificate in the directory of the test class.
  * The tests director must be in the classpath for this to work
  */
@@ -96,6 +98,31 @@ public class XMLSigTest extends TestCase {
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
     }
 
+    /**
+     * Create and validate a valid signature for a single element
+     */
+    public void testSingleElementSignature() throws Exception {
+        // get document
+        Document doc = readDocFromString(simpleDoc);
+        // append SecureConversationToken
+        SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
+
+        NodeList nodes = doc.getElementsByTagNameNS("http://fabrikam123.com/payloads", "StockSymbol");
+        if (nodes.getLength() < 1) {
+            throw new IllegalStateException("could not find the element");
+        }
+        Element toSign = (Element)nodes.item(0);
+          
+        // sign it
+          
+        SoapMsgSigner signer = new SoapMsgSigner();
+        signer.signElement(doc, toSign, "stock_symbol_signature", privateKey, cert);
+          // validate the signature (will throw if doesn't validate)
+        X509Certificate cert2 = signer.validateSignature(doc, toSign);
+
+        assertTrue("The signature verification failed", cert.equals(cert2));
+    }
+
     public void testAndValidateDSigOnTrickyDoc() throws Exception {
         // get document
         Document doc = readDocFromString(simpleDocWithComplexTextEl);
@@ -150,7 +177,8 @@ public class XMLSigTest extends TestCase {
 
     /**
      * make sure signature is still validable after being serialized and parsed again
-     * @throws Exception
+     * 
+     * @throws Exception 
      */
     public void testValidateDSigFromSerializedDocument() throws Exception {
         // get document
@@ -173,7 +201,7 @@ public class XMLSigTest extends TestCase {
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
     }
 
-    private Document readDocFromString(String docStr)  throws Exception {
+    private Document readDocFromString(String docStr) throws Exception {
         DocumentBuilder builder = DOMParserNS.createBuilder();
         builder.setErrorHandler(new StandardErrorHandler());
         return builder.parse(new InputSource(new StringReader(docStr)));
@@ -211,65 +239,65 @@ public class XMLSigTest extends TestCase {
     }
 
     private String simpleDoc = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
-                                "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
-                                    "<S:Body>" +
-                                        "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
-                                            "QQQ" +
-                                        "</tru:StockSymbol>" +
-                                    "</S:Body>" +
-                                "</S:Envelope>";
+      "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+      "<S:Body>" +
+      "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
+      "QQQ" +
+      "</tru:StockSymbol>" +
+      "</S:Body>" +
+      "</S:Envelope>";
 
     private String simpleDocWithComplexTextEl = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
-                                                "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
-                                                    "<S:Body>" +
-                                                        "<blah:BodyContent xmlns:blah=\"http://blah.com/blahns\">" +
-                                                        "blahblah blahblah blahblah blahblah</blah:BodyContent>" +
-                                                    "</S:Body>" +
-                                                "</S:Envelope>";
+      "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+      "<S:Body>" +
+      "<blah:BodyContent xmlns:blah=\"http://blah.com/blahns\">" +
+      "blahblah blahblah blahblah blahblah</blah:BodyContent>" +
+      "</S:Body>" +
+      "</S:Envelope>";
 
     private String simpleDocWithComplexTextEl2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
-                                                "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
-                                                    "<S:Body>" +
-                                                        "<blah:BodyContent xmlns:blah=\"http://blah.com/blahns\">" +
-                                                        " blahblah\tblahblah\t\tblahblah\t\t\r\nblahblah\n\n\n</blah:BodyContent>" +
-                                                    "</S:Body>" +
-                                                "</S:Envelope>";
+      "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+      "<S:Body>" +
+      "<blah:BodyContent xmlns:blah=\"http://blah.com/blahns\">" +
+      " blahblah\tblahblah\t\tblahblah\t\t\r\nblahblah\n\n\n</blah:BodyContent>" +
+      "</S:Body>" +
+      "</S:Envelope>";
 
     private String simpleDocWithHeader = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
-                                            "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
-                                                "<S:Header></S:Header>" +
-                                                "<S:Body>" +
-                                                    "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
-                                                        "QQQ" +
-                                                    "</tru:StockSymbol>" +
-                                                "</S:Body>" +
-                                            "</S:Envelope>";
+      "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+      "<S:Header></S:Header>" +
+      "<S:Body>" +
+      "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
+      "QQQ" +
+      "</tru:StockSymbol>" +
+      "</S:Body>" +
+      "</S:Envelope>";
 
     private String simpleDocWithSecurity = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
-                                            "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
-                                                "<S:Header>" +
-                                                    "<wsse:Security xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/12/secext\">" +
-                                                    "</wsse:Security>" +
-                                                "</S:Header>" +
-                                                "<S:Body>" +
-                                                    "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
-                                                        "QQQ" +
-                                                    "</tru:StockSymbol>" +
-                                                "</S:Body>" +
-                                            "</S:Envelope>";
+      "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+      "<S:Header>" +
+      "<wsse:Security xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/12/secext\">" +
+      "</wsse:Security>" +
+      "</S:Header>" +
+      "<S:Body>" +
+      "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
+      "QQQ" +
+      "</tru:StockSymbol>" +
+      "</S:Body>" +
+      "</S:Envelope>";
     private String simpleDocWithSecurityContext = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
-                                                    "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
-                                                        "<S:Header>" +
-                                                            "<wsse:Security xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/12/secext\">" +
-                                                                "<wsse:SecurityContextToken></wsse:SecurityContextToken>" +
-                                                            "</wsse:Security>" +
-                                                        "</S:Header>" +
-                                                        "<S:Body>" +
-                                                            "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
-                                                                "QQQ" +
-                                                            "</tru:StockSymbol>" +
-                                                        "</S:Body>" +
-                                                    "</S:Envelope>";
+      "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+      "<S:Header>" +
+      "<wsse:Security xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/12/secext\">" +
+      "<wsse:SecurityContextToken></wsse:SecurityContextToken>" +
+      "</wsse:Security>" +
+      "</S:Header>" +
+      "<S:Body>" +
+      "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
+      "QQQ" +
+      "</tru:StockSymbol>" +
+      "</S:Body>" +
+      "</S:Envelope>";
 
     private PrivateKey privateKey;
     private X509Certificate cert;
