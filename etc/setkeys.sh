@@ -37,6 +37,7 @@ KEYTOOL="$JAVA_HOME/bin/keytool"
 WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
 SERVER_XML_FILE="$TOMCAT_HOME/conf/server.xml"
 WEBAPPS_ROOT="$TOMCAT_HOME/webapps/ROOT"
+WEB_XML="$TOMCAT_HOME/webapps/ROOT/WEB-INF/web.xml"
 ROOT_KEY_ALIAS=ssgroot
 
 
@@ -177,8 +178,9 @@ then
     # GENERATE A LOCAL CERTIFICATE SIGNING REQUEST
     $KEYTOOL -certreq -keyalg RSA -alias tomcat -file "$SSL_CSR_FILE" -keystore "$SSL_KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD"
 
-    # EDIT THE server.xml file so that the existing value is replaced by the actual password
-    perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ "$SERVER_XML_FILE"
+    # Edit the server.xml file so that the appropriate keystore location and paswords are remembered
+    KS_QUOTED_SLASHES=${SSL_KEYSTORE_FILE//\//\\\/}
+    perl -pi.bak -e s/keystoreFile=\".*\"/keystoreFile=\"${KS_QUOTED_SLASHES}\"\ keystorePass=\"$KEYSTORE_PASSWORD\"/ "$SERVER_XML_FILE"
 else
     # INFORM THE USER OF THE FAILURE
     echo "ERROR: The ssl keystore file was not generated"
@@ -190,7 +192,7 @@ fi
 # REMEMBER THE KEYSTORE PASSWORDS IN THE KEYSTORE.PROPERTIES FILE
 # -----------------------------------------------------------------------------
 # IF THE WAR FILE IS PRESENT BUT NOT YET EXPANDED, EXPAND IT
-if [ -e "$KEYSTORE_PROPERTIES_FILE" ]; then
+if [ -e "$WEB_XML" ]; then
     echo
 else
     unzip $WAR_FILE -d $WEBAPPS_ROOT
