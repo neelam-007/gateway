@@ -9,11 +9,16 @@ package com.l7tech.service.resolution;
 import com.l7tech.message.Request;
 import com.l7tech.service.PublishedService;
 
+import javax.wsdl.BindingOperation;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap.SOAPOperation;
+import java.util.Iterator;
+
 /**
  * @author alex
  * @version $Revision$
  */
-public class SoapActionResolver extends NameValueServiceResolver {
+public class SoapActionResolver extends WsdlOperationServiceResolver {
     public int getSpeed() {
         return FAST;
     }
@@ -22,8 +27,17 @@ public class SoapActionResolver extends NameValueServiceResolver {
         return Request.PARAM_HTTP_SOAPACTION;
     }
 
-    protected Object[] getTargetValues( PublishedService service ) {
-        return new Object[] { service.getSoapAction() };
+    protected String doGetValue( BindingOperation operation ) {
+        Iterator eels = operation.getExtensibilityElements().iterator();
+        ExtensibilityElement ee;
+        while ( eels.hasNext() ) {
+            ee = (ExtensibilityElement)eels.next();
+            if ( ee instanceof SOAPOperation ) {
+                SOAPOperation sop = (SOAPOperation)ee;
+                return sop.getSoapActionURI();
+            }
+        }
+        return null;
     }
 
     protected Object getRequestValue( Request request ) {

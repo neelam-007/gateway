@@ -6,27 +6,40 @@
 
 package com.l7tech.service.resolution;
 
-import com.l7tech.service.PublishedService;
 import com.l7tech.message.Request;
 import com.l7tech.util.SoapUtil;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
+import org.apache.log4j.Category;
 
+import javax.wsdl.*;
+import javax.wsdl.extensions.soap.SOAPBody;
+import javax.wsdl.extensions.ExtensibilityElement;
 import java.io.IOException;
+import java.util.*;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class UrnResolver extends NameValueServiceResolver {
+public class UrnResolver extends WsdlOperationServiceResolver {
 
     protected String getParameterName() {
         return Request.PARAM_SOAP_URN;
     }
 
-    protected Object[] getTargetValues( PublishedService service ) {
-        // TODO: Multiple URNs?
-        return new Object[] { service.getUrn() };
+    protected String doGetValue( BindingOperation operation ) {
+        BindingInput input = operation.getBindingInput();
+        Iterator eels = input.getExtensibilityElements().iterator();
+        ExtensibilityElement ee;
+        while ( eels.hasNext() ) {
+            ee = (ExtensibilityElement)eels.next();
+            if ( ee instanceof SOAPBody ) {
+                SOAPBody body = (SOAPBody)ee;
+                return body.getNamespaceURI();
+            }
+        }
+        return null;
     }
 
     protected Object getRequestValue( Request request ) throws ServiceResolutionException {
@@ -50,4 +63,6 @@ public class UrnResolver extends NameValueServiceResolver {
     public int getSpeed() {
         return SLOW;
     }
+
+    protected Category _log = Category.getInstance( getClass() );
 }
