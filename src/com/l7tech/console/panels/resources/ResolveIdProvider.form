@@ -11,7 +11,7 @@
     <children>
       <component id="92f49" class="javax.swing.JLabel">
         <constraints>
-          <xy x="10" y="10" width="601" height="30"/>
+          <xy x="10" y="10" width="601" height="50"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="0" anchor="8" fill="2"/>
         </constraints>
         <properties>
@@ -21,7 +21,7 @@
       <grid id="bd6d2" row-count="2" column-count="2" hgap="-1" vgap="-1">
         <margin top="5" left="5" bottom="5" right="5"/>
         <constraints>
-          <xy x="10" y="45" width="610" height="106"/>
+          <xy x="10" y="65" width="610" height="86"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -80,7 +80,7 @@
         <properties/>
         <border type="etched" title="Action"/>
         <children>
-          <component id="90712" class="javax.swing.JRadioButton">
+          <component id="90712" class="javax.swing.JRadioButton" binding="manualResolvRadio">
             <constraints>
               <xy x="11" y="26" width="296" height="23"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
@@ -89,7 +89,7 @@
               <text value="Change assertions to use this identity provider:"/>
             </properties>
           </component>
-          <component id="6a9d9" class="javax.swing.JRadioButton">
+          <component id="6a9d9" class="javax.swing.JRadioButton" binding="removeRadio">
             <constraints>
               <xy x="11" y="55" width="374" height="23"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
@@ -99,7 +99,7 @@
               <text value="Remove assertions that refer to the missing identity provider"/>
             </properties>
           </component>
-          <component id="71d2c" class="javax.swing.JRadioButton">
+          <component id="71d2c" class="javax.swing.JRadioButton" binding="ignoreRadio">
             <constraints>
               <xy x="11" y="83" width="220" height="23"/>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
