@@ -40,7 +40,23 @@ public class DotNetInteropTest extends TestCase {
         System.out.println("Signature verified successfully for subject: " + clientCert[0].getSubjectDN() + ".");
     }
 
+    public void testInValidateSignatureFromBaddotNetSignature() throws Exception {
+        Document signedDoc = getInvalidSignedRequest();
+        Element bodyEl = SoapUtil.getBody(signedDoc);
+        boolean signatureFailed = false;
+        try {
+            SoapMsgSigner.validateSignature(signedDoc, bodyEl);
+        } catch (InvalidSignatureException e) {
+            signatureFailed = true;
+        }
+        assertTrue(signatureFailed);
+    }
+
     private Document getSignedRequest() throws Exception {
         return TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_REQUEST);
+    }
+
+    private Document getInvalidSignedRequest() throws Exception {
+        return TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_TAMPERED_REQUEST);
     }
 }
