@@ -1,11 +1,17 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.event.PolicyEvent;
 
 import javax.swing.*;
+import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.util.EventListener;
 
 /**
  * Dialog to view/edit the properties of a SamlSecurity assertion.
@@ -23,6 +29,7 @@ public class SamlSecurityPropertiesPanel extends JDialog {
     private JComboBox confirmationMethodComboBox;
     private JPanel mainPanel;
     private SamlSecurity subject;
+    private final EventListenerList listenerList = new EventListenerList();
 
     public SamlSecurityPropertiesPanel(Frame owner, SamlSecurity assertion) {
         super(owner, true);
@@ -61,6 +68,7 @@ public class SamlSecurityPropertiesPanel extends JDialog {
 
     private void ok() {
         subject.setConfirmationMethodType(confirmationMethodComboBox.getSelectedIndex());
+        fireEventAssertionChanged(subject);
         SamlSecurityPropertiesPanel.this.dispose();
     }
 
@@ -70,6 +78,25 @@ public class SamlSecurityPropertiesPanel extends JDialog {
 
     private void cancel() {
         SamlSecurityPropertiesPanel.this.dispose();
+    }
+
+    public void addPolicyListener(PolicyListener listener) {
+        listenerList.add(PolicyListener.class, listener);
+    }
+
+    private void fireEventAssertionChanged(final Assertion a) {
+        SwingUtilities.invokeLater(
+          new Runnable() {
+              public void run() {
+                  int[] indices = new int[a.getParent().getChildren().indexOf(a)];
+                  PolicyEvent event = new
+                          PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
+                  EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
+                  for (int i = 0; i < listeners.length; i++) {
+                      ((PolicyListener)listeners[i]).assertionsChanged(event);
+                  }
+              }
+          });
     }
 
     public static void main(String[] args) {

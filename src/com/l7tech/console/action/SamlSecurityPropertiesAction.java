@@ -3,10 +3,16 @@ package com.l7tech.console.action;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.SamlSecurityPropertiesPanel;
 import com.l7tech.console.tree.policy.SamlTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.event.PolicyListenerAdapter;
+import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.common.gui.util.Utilities;
 
+import javax.swing.*;
 import java.awt.*;
+import java.util.logging.Level;
 
 /**
  * Action to edit the properties of a saml security authentication assertion.
@@ -43,4 +49,17 @@ public class SamlSecurityPropertiesAction extends SecureAction {
         dlg.show();
         // todo, update the tree
     }
+
+    private final PolicyListener listener = new PolicyListenerAdapter() {
+        public void assertionsChanged(PolicyEvent e) {
+            JTree tree = TopComponents.getInstance().getPolicyTree();
+            if (tree != null) {
+                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                model.assertionTreeNodeChanged(node);
+                log.finest("model invalidated");
+            } else {
+                log.log(Level.WARNING, "Unable to reach the palette tree.");
+            }
+        }
+    };
 }
