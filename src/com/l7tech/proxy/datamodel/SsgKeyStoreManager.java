@@ -194,7 +194,7 @@ public class SsgKeyStoreManager {
      * @return an in-memory KeyStore object for this Ssg, either loaded from disk or newly created.
      * @throws RuntimeException if the key store is damaged, but user doesn't want to replace it just yet
      */
-    public static KeyStore getKeyStore(Ssg ssg) {
+    public static KeyStore getKeyStore(Ssg ssg) throws RuntimeException {
         synchronized (ssg) {
             if (ssg.keyStore() == null) {
                 KeyStore keyStore;
