@@ -21,6 +21,9 @@ import java.util.logging.Logger;
 public class ServerSpecificUser extends ServerIdentityAssertion implements ServerAssertion {
     public ServerSpecificUser( SpecificUser data ) {
         super( data );
+        if (data == null || data.getUserLogin() == null) {
+            throw new IllegalArgumentException("must set a valid SpecificUser assertion");
+        }
         _data = data;
     }
 
@@ -31,7 +34,7 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
      * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      */
     public AssertionStatus checkUser(User requestingUser) {
-        if (requestingUser.getLogin().equals(_data.getUserLogin())) {
+        if (_data.getUserLogin().equals(requestingUser.getLogin())) {
             if (requestingUser.getProviderId() == _data.getIdentityProviderOid()) {
                 return AssertionStatus.NONE;
             }
