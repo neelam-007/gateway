@@ -13,6 +13,8 @@ package com.l7tech.policy.assertion.credential.wss;
  *
  * @author alex, flascell
  * @version $Revision$
+ *
+ * todo remove this class
  */
 public class WssClientCert extends WssCredentialSourceAssertion {
 }
