@@ -1,11 +1,13 @@
 package com.l7tech.adminws.service;
 
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceStatistics;
 import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
@@ -73,6 +75,12 @@ public class Service implements ServiceManager {
         } finally {
             endTransaction();
         }
+    }
+
+    public ServiceStatistics getStatistics( long serviceOid ) throws RemoteException {
+        Map services = serviceManagerInstance.serviceMap();
+        PublishedService service = (PublishedService)services.get( new Long( serviceOid ) );
+        return service.getStatistics();
     }
 
     /**
