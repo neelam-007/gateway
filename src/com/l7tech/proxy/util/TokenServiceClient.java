@@ -428,10 +428,6 @@ public class TokenServiceClient {
                                                                   SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME);
         if (scTokenEl != null) {
             // It's a SecurityContextToken
-            // TODO relax this if we need to do WS-SC without a client cert
-            if (clientPrivateKey == null || clientCertificate == null)
-                throw new ProcessorException("Was not expecting to receive a SecurityContextToken");
-
             return processSecurityContextToken(scTokenEl, rstr, clientCertificate, clientPrivateKey);
         }
 
@@ -500,9 +496,6 @@ public class TokenServiceClient {
                                                       PrivateKey clientPrivateKey)
                                             throws InvalidDocumentFormatException, GeneralSecurityException
     {
-        if (clientPrivateKey == null) throw new NullPointerException();
-        if (clientCertificate == null) throw new NullPointerException();
-
         // Extract session ID
         Element identifierEl = XmlUtil.findOnlyOneChildElementByName(scTokenEl, SoapUtil.WSSC_NAMESPACE, "Identifier");
         if (identifierEl == null) throw new InvalidDocumentFormatException("Response contained no wsc:Identifier");
@@ -536,12 +529,16 @@ public class TokenServiceClient {
         if (encryptedKeyEl != null) {
             // If there's a KeyIdentifier, log whether it's talking about our key
             // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
-            XencUtil.checkKeyInfo(encryptedKeyEl, clientCertificate);
+            if (clientCertificate != null)
+                XencUtil.checkKeyInfo(encryptedKeyEl, clientCertificate);
+            else
+                log.log(Level.FINER, "Not checking KeyIdentifier: client cert not available");
 
             // verify that the algo is supported
             XencUtil.checkEncryptionMethod(encryptedKeyEl);
 
             // Extract the encrypted key
+            if (clientPrivateKey == null) throw new InvalidDocumentFormatException("Was not expecting to receive an encrypted token: client private key not available");
             sharedSecret = XencUtil.decryptKey(encryptedKeyEl, clientPrivateKey);
         } else if (binarySecretEl != null && clientPrivateKey == null) {
             String base64edsecret = XmlUtil.getTextValue(binarySecretEl);
