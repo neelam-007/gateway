@@ -52,7 +52,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
             if ( pc == null ) {
                 response.setAuthenticationMissing( true );
                 challenge( request, response );
-                logger.log(Level.INFO, AssertionStatus.AUTH_REQUIRED.getMessage());
+                logger.info(AssertionStatus.AUTH_REQUIRED.getMessage());
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
                 request.setPrincipalCredentials( pc );

@@ -108,7 +108,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
             HttpSession session = servletrequest.getSession(true);
             session.setAttribute(AUTHENTICATED_USER, authenticatedUser);
             session.setMaxInactiveInterval(30); // 30 seconds times you out
-            logger.log(Level.INFO, "created admin session for user " + authenticatedUser.getLogin());
+            logger.info("created admin session for user " + authenticatedUser.getLogin());
         }
         else {
             logger.log(Level.SEVERE, "authorization failure for user " + authenticatedUser.getLogin());

@@ -88,7 +88,7 @@ public class CSRHandler extends HttpServlet {
             logger.log(Level.SEVERE, "failed authorization " + tmp);
             return;
         }
-        logger.log(Level.INFO, "User " + authenticatedUser.getLogin() + " has authenticated for CSR");
+        logger.info("User " + authenticatedUser.getLogin() + " has authenticated for CSR");
 
         // check if user is allowed to generate a new cert
         InternalUserManagerServer userMan = (InternalUserManagerServer)getConfigManager().getInternalIdentityProvider().getUserManager();
@@ -141,7 +141,7 @@ public class CSRHandler extends HttpServlet {
             response.setContentLength(certbytes.length);
             response.getOutputStream().write(certbytes);
             response.flushBuffer();
-            logger.log(Level.INFO, "sent new cert to user " + authenticatedUser.getLogin() + ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
+            logger.info("sent new cert to user " + authenticatedUser.getLogin() + ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
         } catch (CertificateEncodingException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             logger.log(Level.SEVERE, e.getMessage(), e);

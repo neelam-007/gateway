@@ -111,7 +111,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.FALSIFIED;
         }
-        logger.log(Level.INFO, "cert extracted from digital signature for user " + certCN);
+        logger.info("cert extracted from digital signature for user " + certCN);
         User u = new User();
         u.setLogin(certCN);
         request.setPrincipalCredentials(new PrincipalCredentials(u, null, CredentialFormat.CLIENTCERT, null, cert));

@@ -212,7 +212,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
                 }
 
                 if ( !scheme().equals(scheme) ) {
-                    logger.log( Level.INFO, "Invalid scheme '" + scheme + "' in WWW-Authorize header" );
+                    logger.info("Invalid scheme '" + scheme + "' in WWW-Authorize header");
                     return null;
                 }
             }

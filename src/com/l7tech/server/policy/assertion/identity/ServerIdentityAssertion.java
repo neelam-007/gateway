@@ -88,21 +88,21 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 } catch ( BadCredentialsException bce ) {
                     // Authentication failure
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, bce.getMessage(), bce ));
-                    logger.log(Level.INFO, "Authentication failed for " + user.getLogin() );
+                    logger.info("Authentication failed for " + user.getLogin() );
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( InvalidClientCertificateException icce ) {
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, icce.getMessage(), icce ));
-                    logger.log(Level.INFO, "Invalid client cert for " + user.getLogin() );
+                    logger.info("Invalid client cert for " + user.getLogin() );
                     // set some response header so that the CP is made aware of this situation
                     response.setParameter(Response.PARAM_HTTP_CERT_STATUS, "invalid");
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( MissingCredentialsException mce ) {
                     response.setAuthenticationMissing(true);
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_REQUIRED, mce.getMessage(), mce ));
-                    logger.log(Level.INFO, "Authentication failed for " + user.getLogin() );
+                    logger.info("Authentication failed for " + user.getLogin() );
                     return AssertionStatus.AUTH_REQUIRED;
                 } catch ( AuthenticationException ae ) {
-                    logger.log(Level.INFO, "Authentication failed for " + user.getLogin() );
+                    logger.info("Authentication failed for " + user.getLogin() );
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, ae.getMessage(), ae ));
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( FindException fe ) {

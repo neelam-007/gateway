@@ -59,7 +59,7 @@ public class LdapIdentityProviderServer implements IdentityProvider {
     public void authenticate( PrincipalCredentials pc ) throws AuthenticationException {
         if (!valid) {
             String msg = "invalid id provider asked to authenticate";
-            logger.log(Level.INFO, msg);
+            logger.info(msg);
             throw new AuthenticationException(msg);
         }
         User realUser = null;
@@ -70,7 +70,7 @@ public class LdapIdentityProviderServer implements IdentityProvider {
             throw new BadCredentialsException("invalid user");
         }
         if (realUser == null) {
-            logger.log(Level.INFO, "invalid user");
+            logger.info("invalid user");
             throw new BadCredentialsException("invalid user");
         }
 
@@ -145,7 +145,7 @@ public class LdapIdentityProviderServer implements IdentityProvider {
      */
     public Collection search(EntityType[] types, String searchString) throws FindException {
         if (!valid) {
-            logger.log(Level.INFO, "invalid id provider asked for search");
+            logger.info("invalid id provider asked for search");
             throw new FindException("provider invalidated");
         }
         if (types == null || types.length < 1) throw new IllegalArgumentException("must pass at least one type");
