@@ -14,10 +14,12 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -37,6 +39,7 @@ class PathValidator {
     private AssertionPath assertionPath;
     private PublishedService service;
     private Collection wsdlBindingOperations;
+    private static Map policyParseCache = Collections.synchronizedMap(new WeakHashMap());
 
     PathValidator(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
         result = r;
@@ -309,12 +312,39 @@ class PathValidator {
         seenRouting = true;
         if (a instanceof HttpRoutingAssertion) {
             processHttpRouting((HttpRoutingAssertion)a);
+            if (a instanceof BridgeRoutingAssertion) {
+                processBridgeRouting((BridgeRoutingAssertion)a);
+            }
         } else if (a instanceof JmsRoutingAssertion) {
             processJmsRouting((JmsRoutingAssertion)a);
         } else {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
               "This message routing protocol is not supported.",
               null));
+        }
+    }
+
+    private void processBridgeRouting(BridgeRoutingAssertion a) {
+        String policyXml = a.getPolicyXml();
+        if (policyXml == null)
+            return;
+        Object cachedResult = policyParseCache.get(policyXml);
+        if (cachedResult instanceof Boolean)
+            return;
+        if (cachedResult instanceof Throwable) {
+            result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+                                                            "This manually specified policy XML is not valid.",
+                                                            (Throwable)cachedResult));
+            return;
+        }
+        try {
+            WspReader.parse(policyXml);
+            policyParseCache.put(policyXml, Boolean.TRUE);
+        } catch (IOException e) {
+            policyParseCache.put(policyXml, e);
+            result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+                                                            "This manually specified policy XML is not valid.",
+                                                            e));
         }
     }
 

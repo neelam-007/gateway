@@ -6,16 +6,16 @@
 
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.message.*;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
-import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.SecurityActor;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
@@ -34,7 +34,6 @@ import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.ssl.SslPeerHttpClient;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
@@ -250,7 +249,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         Auditor auditor = new Auditor(context.getAuditContext(), logger);
 
         if (messageProcessor == null || ssg == null) {
-            auditor.logAndAudit(AssertionMessages.BAD_PROTECTED_SERVICE_URL);
+            auditor.logAndAudit(AssertionMessages.BRIDGE_BAD_CONFIG);
             return AssertionStatus.FAILED;
         }
 
@@ -360,7 +359,8 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     SubjectStatement statement = SubjectStatement.createAuthenticationStatement(context.getCredentials(), SubjectStatement.SENDER_VOUCHES);
                     ag.attachStatement(document, statement, samlOptions);
                 }
-                // TODO support cookies on SSB API
+
+                // TODO decide whether to pass through cookies from the client to the back end service
                 // attachCookies(client, context, url, auditor);
 
                 try {

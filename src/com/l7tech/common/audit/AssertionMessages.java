@@ -30,7 +30,7 @@ public class AssertionMessages extends Messages {
     public static final M ADD_OUTGOING_COOKIE_WITH_VERSION     = m(4017, Level.FINE, "Adding outgoing cookie: name = {0}, version = {1}");
     public static final M UPDATE_COOKIE                        = m(4018, Level.FINE,  "Updating cookie: name = {0}");
     public static final M BRIDGE_NO_ATTACHMENTS                = m(4019, Level.WARNING, "Bridge Routing Assertion does not currently support SOAP-with-attachments.  Ignoring additional MIME parts");
-    public static final M BAD_PROTECTED_SERVICE_URL            = m(4020, Level.SEVERE, "Routing Assertion is not configured with a valid protected service URL");
+    public static final M BRIDGE_BAD_CONFIG                    = m(4020, Level.SEVERE, "Bridge Routing Assertion is configured with invalid protected service URL or policy XML");
     public static final M BAD_ORIGINAL_REQUEST_URL             = m(4021, Level.WARNING, "Invalid original request URI -- using default");
     public static final M ACCESS_DENIED                        = m(4022, Level.WARNING, "Protected service denies access with current BridgeRoutingAssertion credentials");
 
