@@ -34,6 +34,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
     }
 
     public X509Certificate[] getAcceptedIssuers() {
+        log.info("Making list of SSG CA certs");
         List ssgs = ssgFinder.getSsgList();
         List certs = new ArrayList();
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
@@ -56,6 +57,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
 
     public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
         // TODO: This is currently a little bit _too_ trustworthy.  To be finished on Tuesday when Francois is around!
+        log.info("FIXME: automatically trusting the server certificate chain");
         return;
     }
 }
