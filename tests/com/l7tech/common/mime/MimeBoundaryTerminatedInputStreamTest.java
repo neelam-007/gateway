@@ -439,7 +439,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
 
     public void testRubyMultipartWithTwoParts() throws Exception {
         byte[] testMsg = ("Content-Type: multipart/related; boundary=\"----=Part_-763936460.407197826076299\"\r\n\r\n" +
-                MultipartMessageTest.MESS).getBytes();
+                MimeBodyTest.MESS).getBytes();
         log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long: \n" + new String(testMsg));
         readParts(testMsg, 2, 4096);
     }
@@ -449,8 +449,8 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         // rather than "\r\n--" -- but rather than special case this, MimeBoundaryTerminatedInputStream requires that
         // the extra "\r\n" be inserted by its client.  This test verifies the expected failure if this is not done.
 
-        byte[] testMsg = ("Content-Type: " + MultipartMessageTest.CT2 + "\r\n\r\n" +
-                MultipartMessageTest.MESS2).getBytes();
+        byte[] testMsg = ("Content-Type: " + MimeBodyTest.CT2 + "\r\n\r\n" +
+                MimeBodyTest.MESS2).getBytes();
         log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long: \n" + new String(testMsg));
         try {
             readParts(testMsg, 2, 4096);

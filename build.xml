@@ -257,7 +257,7 @@
             <test name="com.l7tech.common.mime.MimeHeaderTest" haltonfailure="no"/>
             <test name="com.l7tech.common.mime.MimeHeadersTest" haltonfailure="no"/>
             <test name="com.l7tech.common.mime.MimeBoundaryTerminatedInputStreamTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.mime.MultipartMessageTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.mime.MimeBodyTest" haltonfailure="no"/>
             <test name="com.l7tech.common.mime.StashManagerTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.server.TokenServiceTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.PolicyServiceTest" haltonfailure="no"/>

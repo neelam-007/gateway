@@ -22,17 +22,17 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * @author mike
+ * Test for MimeBody class.
  */
-public class MultipartMessageTest extends TestCase {
-    private static Logger log = Logger.getLogger(MultipartMessageTest.class.getName());
+public class MimeBodyTest extends TestCase {
+    private static Logger log = Logger.getLogger(MimeBodyTest.class.getName());
 
-    public MultipartMessageTest(String name) {
+    public MimeBodyTest(String name) {
         super(name);
     }
 
     public static Test suite() {
-        return new TestSuite(MultipartMessageTest.class);
+        return new TestSuite(MimeBodyTest.class);
     }
 
     public static void main(String[] args) {

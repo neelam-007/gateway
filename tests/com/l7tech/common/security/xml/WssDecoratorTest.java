@@ -14,7 +14,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.mime.MultipartMessageTest;
+import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -502,7 +502,7 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public TestDocument getSoapWithUnsignedAttachmentTestDocument() throws Exception {
-        final Context c = new Context(XmlUtil.stringToDocument(MultipartMessageTest.SOAP));
+        final Context c = new Context(XmlUtil.stringToDocument(MimeBodyTest.SOAP));
         return new TestDocument(c,
                                 TestDocuments.getEttkClientCertificate(),
                                 TestDocuments.getEttkClientPrivateKey(),
@@ -518,7 +518,7 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public TestDocument getSoapWithSignedAttachmentTestDocument() throws Exception {
-        final Context c = new Context(XmlUtil.stringToDocument(MultipartMessageTest.SOAP));
+        final Context c = new Context(XmlUtil.stringToDocument(MimeBodyTest.SOAP));
         return new TestDocument(c,
                                 TestDocuments.getEttkClientCertificate(),
                                 TestDocuments.getEttkClientPrivateKey(),
@@ -534,7 +534,7 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public TestDocument getSoapWithSignedEncryptedAttachmentTestDocument() throws Exception {
-        final Context c = new Context(XmlUtil.stringToDocument(MultipartMessageTest.SOAP));
+        final Context c = new Context(XmlUtil.stringToDocument(MimeBodyTest.SOAP));
         return new TestDocument(c,
                                 TestDocuments.getEttkClientCertificate(),
                                 TestDocuments.getEttkClientPrivateKey(),
