@@ -146,8 +146,8 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 conn = _session.connection();
                 pingStmt = conn.createStatement();
                 rs = pingStmt.executeQuery( PINGSQL );
-                return _session;
 
+                return _session;
             } catch (SQLException e) {
                 String msg = "Try #" + (i+1) + " caught SQLException";
                 logger.log(Level.WARNING, msg, e);
@@ -175,12 +175,14 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 logger.fine("session is broken, trying to reconnect jdbc connection.");
 
                 Connection theConnection = _session.connection();
-                if (theConnection instanceof PoolableConnection) {
-                    logger.fine("calling REALLY close");
-                    ((PoolableConnection)theConnection).reallyClose();
-                } else {
-                    logger.fine("can't call REALLY close, type not handled: " + theConnection.getClass().getName());
-                    theConnection.close();
+                if ( !theConnection.isClosed() ) {
+                    if (theConnection instanceof PoolableConnection) {
+                        logger.fine("calling REALLY close");
+                        ((PoolableConnection)theConnection).reallyClose();
+                    } else {
+                        logger.fine("can't call REALLY close, type not handled: " + theConnection.getClass().getName());
+                        theConnection.close();
+                    }
                 }
             } catch ( HibernateException he ) {
                 logger.log( Level.WARNING, "exception closing session", he );
