@@ -28,9 +28,8 @@ public abstract class CredentialSourceAssertion extends Assertion {
         new RequestWssX509Cert(),
         new SecureConversation(),
         new HttpClientCert(),
-        new WssDigest(),
         new HttpDigest(),
         new WssBasic(),
-        new HttpBasic(),
+        new HttpBasic()
     };
 }
