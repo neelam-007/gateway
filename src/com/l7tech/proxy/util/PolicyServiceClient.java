@@ -171,6 +171,15 @@ public class PolicyServiceClient {
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
                    ServerCertificateUntrustedException, BadCredentialsException
     {
+        {
+            // check for fault message from server
+            Element payload = SoapUtil.getPayloadElement(response);
+            if (payload == null) throw new MissingRequiredElementException("Policy server response is missing SOAP Body or payload element");
+            if (response.getDocumentElement().getNamespaceURI().equals(payload.getNamespaceURI()) && "Fault".equals(payload.getLocalName()))
+                translateSoapFault(payload);
+        }
+
+
         WssProcessor wssProcessor = new WssProcessorImpl();
         ProcessorResult result;
         try {
