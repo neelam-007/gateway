@@ -6,17 +6,19 @@
 
 package com.l7tech.service;
 
-import com.l7tech.objectmodel.*;
 import com.l7tech.message.Request;
-import com.l7tech.service.resolution.*;
+import com.l7tech.objectmodel.*;
+import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.service.resolution.ServiceResolver;
+import com.l7tech.service.resolution.SoapActionResolver;
+import com.l7tech.service.resolution.UrnResolver;
+import org.apache.log4j.Category;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.rmi.RemoteException;
-import java.util.*;
 import java.sql.SQLException;
-
-import org.apache.log4j.Category;
+import java.util.*;
 
 /**
  * Manages PublishedService instances.  Note that this object has state, so it should be effectively a Singleton--only get one from the Locator!
@@ -35,15 +37,15 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
      * @return null if multiple or no PublishedServices could be found to satisfy the request.
      * @throws ServiceResolutionException
      */
-    public synchronized PublishedService resolveService(Request request) throws ServiceResolutionException {
+    public PublishedService resolveService(Request request) throws ServiceResolutionException {
         Set services = new HashSet();
         Set tempServices = null;
         int size;
-        services.addAll( _allServices );
+        services.addAll( serviceSet() );
         Iterator i = _resolvers.iterator();
 
         while ( i.hasNext() ) {
-            ServiceResolver resolver = (ServiceResolver) i.next();
+            ServiceResolver resolver = (ServiceResolver)i.next();
             tempServices = resolver.resolve( request, services );
             if ( tempServices != null ) {
                 // If for some reason it's null, we'll just pass the same old set to the next one.
@@ -66,13 +68,31 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return null;
     }
 
+    synchronized void putService( PublishedService service ) {
+        _oidToServiceMap.put( new Long( service.getOid() ), service );
+    }
+
+    synchronized void removeService( PublishedService service ) {
+        _oidToServiceMap.remove( new Long( service.getOid() ) );
+    }
+
+    synchronized Set serviceSet() {
+        HashSet set = new HashSet();
+        set.addAll( _oidToServiceMap.values() );
+        return set;
+    }
+
     public ServiceManagerImp() throws ObjectModelException {
         super();
 
         synchronized( this ) {
             Collection services = findAll();
-            _allServices = new HashSet();
-            _allServices.addAll(services);
+
+            PublishedService service;
+            for (Iterator i = services.iterator(); i.hasNext();) {
+                service = (PublishedService)i.next();
+                putService( service );
+            }
 
             String serviceResolvers = null;
             try {
@@ -101,7 +121,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                 try {
                     resolverClass = Class.forName( className );
                     resolver = (ServiceResolver)resolverClass.newInstance();
-                    resolver.setServices( _allServices );
+                    resolver.setServices( serviceSet() );
                     addServiceListener( resolver );
 
                     _resolvers.add( resolver );
@@ -127,7 +147,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public long save(PublishedService service) throws SaveException {
         try {
             long oid = _manager.save( getContext(), service );
-            _allServices.add( service );
+            putService( service );
             fireCreated( service );
             return oid;
         } catch ( SQLException se ) {
@@ -138,6 +158,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public void update(PublishedService service) throws UpdateException {
         try {
             _manager.update( getContext(), service );
+            putService( service );
             fireUpdated( service );
         } catch ( SQLException se ) {
             throw new UpdateException( se.toString(), se );
@@ -147,28 +168,28 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public void delete( PublishedService service ) throws DeleteException {
         try {
             _manager.delete( getContext(), service );
-            _allServices.remove( service );
+            removeService( service );
             fireDeleted( service );
         } catch ( SQLException se ) {
             throw new DeleteException( se.toString(), se );
         }
     }
 
-    void fireCreated( PublishedService service ) {
+    synchronized void fireCreated( PublishedService service ) {
         for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
             ServiceListener listener = (ServiceListener) i.next();
             listener.serviceCreated( service );
         }
     }
 
-    void fireUpdated( PublishedService service ) {
+    synchronized void fireUpdated( PublishedService service ) {
         for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
             ServiceListener listener = (ServiceListener)i.next();
             listener.serviceUpdated( service );
         }
     }
 
-    void fireDeleted( PublishedService service ) {
+    synchronized void fireDeleted( PublishedService service ) {
         for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
             ServiceListener listener = (ServiceListener) i.next();
             listener.serviceDeleted( service );
@@ -194,9 +215,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     private static final Category log = Category.getInstance(ServiceManagerImp.class);
     protected SortedSet _resolvers;
 
-    protected transient Set _allServices;
+    protected transient Map _oidToServiceMap = new HashMap();
     protected transient List _serviceListeners = new ArrayList();
-
-    //protected transient Map _paramNameMap = new HashMap();
-    //protected transient Map _paramToServiceMap = new HashMap();
 }
