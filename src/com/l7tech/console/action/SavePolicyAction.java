@@ -3,8 +3,10 @@ package com.l7tech.console.action;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Cookie;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
@@ -12,6 +14,7 @@ import com.l7tech.service.PublishedService;
 import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.util.logging.Level;
+import java.util.Iterator;
 
 
 /**
@@ -65,9 +68,7 @@ public class SavePolicyAction extends BaseAction {
             throw new IllegalStateException("no node specified");
         }
         try {
-            JTree tree = ComponentRegistry.getInstance().getPolicyTree();
-            ServiceNode sn = (ServiceNode)tree.getClientProperty("service.node");
-
+            ServiceNode sn = getServiceNodeCookie();
             if (sn == null)
                 throw new IllegalArgumentException("No edited service specified");
             PublishedService svc = sn.getPublishedService();
@@ -77,9 +78,20 @@ public class SavePolicyAction extends BaseAction {
             WspWriter.writePolicy(rootAssertion, bo);
             svc.setPolicyXml(bo.toString());
             Registry.getDefault().getServiceManager().savePublishedService(svc);
-            sn.clearServiceHolder(); // reread service
+            sn.clearServiceHolder();
         } catch (Exception e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving service and policy");
         }
+    }
+
+    /**
+     * @return the published service cookie or null if not founds
+     */
+    private ServiceNode getServiceNodeCookie() {
+        for (Iterator i = ((AbstractTreeNode)node.getRoot()).cookies(); i.hasNext(); ) {
+            Object value = ((Cookie)i.next()).getValue();
+            if (value instanceof ServiceNode) return (ServiceNode)value;
+        }
+        return null;
     }
 }

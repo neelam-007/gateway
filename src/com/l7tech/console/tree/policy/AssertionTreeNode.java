@@ -6,6 +6,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Cookie;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
@@ -14,10 +15,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Enumeration;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.ByteArrayOutputStream;
@@ -161,7 +159,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      */
     private void assignPolicyTemplate(PolicyTemplateNode pn) {
         JTree tree = ComponentRegistry.getInstance().getPolicyTree();
-        ServiceNode sn = (ServiceNode)tree.getClientProperty("service.node");
+        ServiceNode sn = getServiceNodeCookie();
 
         if (sn == null)
             throw new IllegalArgumentException("No edited service specified");
@@ -214,6 +212,16 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
 
     }
 
+    /**
+     * @return the published service cookie or null if not founds
+     */
+    private ServiceNode getServiceNodeCookie() {
+        for (Iterator i = ((AbstractTreeNode)getRoot()).cookies(); i.hasNext(); ) {
+            Object value = ((Cookie)i.next()).getValue();
+            if (value instanceof ServiceNode) return (ServiceNode)value;
+        }
+        return null;
+    }
     /**
      * Does the assertion node accepts the abstract tree node
      *

@@ -1,10 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.*;
-import com.l7tech.console.tree.FilteredTreeModel;
-import com.l7tech.console.tree.NodeFilter;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Registry;
@@ -126,10 +123,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         setName(service.getName());
         getSplitPane().setName(service.getName());
 
-        policyTree.putClientProperty("service.node", sn);
         PolicyTreeModel model = PolicyTreeModel.make(service);
         rootAssertion = (AssertionTreeNode)model.getRoot();
-
+        rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(sn));
         TreeNode root = (TreeNode)model.getRoot();
         FilteredTreeModel filteredTreeModel = new FilteredTreeModel(root);
         policyTree.setModel(filteredTreeModel);
@@ -549,7 +545,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         log.fine("Resetting the policy editor panel");
         serviceNode.removePropertyChangeListener(servicePropertyChangeListener);
         serviceNode = null;
-        policyTree.putClientProperty("service.node", null);
         policyTree.setPolicyEditor(null);
         policyTree.setModel(null);
     }

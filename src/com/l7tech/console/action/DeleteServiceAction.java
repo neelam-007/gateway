@@ -2,13 +2,16 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Cookie;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Logger;
+import java.util.Iterator;
 
 
 /**
@@ -69,11 +72,8 @@ public class DeleteServiceAction extends BaseAction {
                       getInstance().getComponent(PolicyTree.NAME);
                     if (tree == null) return;
 
-                    ServiceNode sn =  (ServiceNode)tree.getClientProperty("service.node");
-                    if (sn == null) return;
-
                     try {
-                        PublishedService svc = sn.getPublishedService();
+                        PublishedService svc = node.getPublishedService();
                         // if currently edited service was deleted
                         if (node.getPublishedService().getOid() == svc.getOid()) {
                             ComponentRegistry.getInstance().getCurrentWorkspace().clearWorkspace();
@@ -86,6 +86,6 @@ public class DeleteServiceAction extends BaseAction {
             }
         };
         SwingUtilities.invokeLater(runnable);
-
     }
+
 }

@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.console.util.WeakPropertyChangeSupport;
+import com.l7tech.console.util.Cookie;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
@@ -9,6 +10,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.logging.Logger;
 import java.beans.PropertyChangeListener;
 
@@ -20,6 +23,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     static Logger logger = Logger.getLogger(AbstractTreeNode.class.getName());
     protected boolean hasLoadedChildren;
     protected WeakPropertyChangeSupport propChangeSupport = new WeakPropertyChangeSupport();
+    private java.util.List cookies = new ArrayList();
 
     /**
      * Instantiate the
@@ -29,6 +33,35 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         super(object);
     }
 
+    /**
+     * add a cookie to the node
+     * @param c
+     */
+    public void addCookie(Cookie c) {
+        cookies.add(c);
+
+    }
+
+    /**
+     * @return the cookies iterator
+     */
+    public Iterator cookies() {
+        return cookies.iterator();
+    }
+
+    /**
+     * node cookie class.
+     */
+    public static class NodeCookie implements Cookie {
+        public NodeCookie(Object cookieValue) {
+            this.cookieValue = cookieValue;
+        }
+
+        public Object getValue() {
+            return cookieValue;
+        }
+        private Object cookieValue;
+    }
     /**
      * Returns the number of children <code>TreeNode</code>s the receiver
      * contains.
