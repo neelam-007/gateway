@@ -269,7 +269,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 if (status == 200)
                     logger.fine("Request routed successfully");
                 else
-                    logger.info("Protected service responded with status " + status);
+                    logger.info("Protected service (" + url + ") responded with status " + status);
 
                 response.setParameter(Response.PARAM_HTTP_STATUS, new Integer(status));
 
