@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
@@ -64,7 +65,10 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JLabel passwordLabel;
     private JLabel realmLabel;
 
-    private JCheckBox promoteActorCheck;
+    private JPanel xmlSecurityHeaderPanel;
+    private JRadioButton promoteActorRadio;
+    private JRadioButton removeSecHeaderRadio;
+    private JRadioButton passthroughSecHeaderRadio;
     private JComboBox promoteActorCombo;
 
     /**
@@ -186,25 +190,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         mainPanel.add(credentialsPanel);
 
-        // add xml security actor promotion controls
-        JPanel actorPromotionPanel = new JPanel();
-        actorPromotionPanel.setBorder(BorderFactory.createTitledBorder("Downstream XML Security Actor"));
-        actorPromotionPanel.setLayout(new BorderLayout());
-        promoteActorCheck = new JCheckBox("Promote XML Security Actor");
-        promoteActorCombo = new JComboBox();
-        promoteActorCombo.setEditable(true);
-        actorPromotionPanel.add(promoteActorCheck, BorderLayout.NORTH);
-        actorPromotionPanel.add(promoteActorCombo, BorderLayout.SOUTH);
-        promoteActorCheck.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (promoteActorCheck.isSelected()) {
-                    promoteActorCombo.setEnabled(true);
-                } else {
-                    promoteActorCombo.setEnabled(false);
-                }
-            }
-        });
-        mainPanel.add(actorPromotionPanel);
+        // add xml security header promotion/passthrough controls
+        mainPanel.add(getSecHeaderPanel());
 
         // Add buttonPanel
         mainPanel.add(getButtonPanel());
@@ -224,7 +211,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
         try {
             if (!service.getPublishedService().isSoap()) {
                 samlMethod.setEnabled(false);
-                promoteActorCheck.setEnabled(false);
+                promoteActorRadio.setEnabled(false);
+                removeSecHeaderRadio.setEnabled(false);
+                passthroughSecHeaderRadio.setEnabled(false);
                 promoteActorCombo.setEnabled(false);
             }
         } catch (FindException e) {
@@ -252,6 +241,55 @@ public class HttpRoutingAssertionDialog extends JDialog {
         realmLabel.setEnabled(password);
         identityPasswordField.setEnabled(password);
         passwordLabel.setEnabled(password);
+    }
+
+    private JPanel getSecHeaderPanel() {
+        if (xmlSecurityHeaderPanel == null) {
+
+            xmlSecurityHeaderPanel = new JPanel();
+            xmlSecurityHeaderPanel.setBorder(BorderFactory.createTitledBorder("Current XML security header handling"));
+            xmlSecurityHeaderPanel.setLayout(new BoxLayout(xmlSecurityHeaderPanel, BoxLayout.Y_AXIS));
+
+            ActionListener disenableCombo = new ActionListener() {
+                                                public void actionPerformed(ActionEvent e) {
+                                                    if (promoteActorRadio.isSelected()) {
+                                                        promoteActorCombo.setEnabled(true);
+                                                    } else {
+                                                        promoteActorCombo.setEnabled(false);
+                                                    }
+                                                }
+                                            };
+
+
+            removeSecHeaderRadio = new JRadioButton("Remove processed Security header from request before routing");
+            removeSecHeaderRadio.addActionListener(disenableCombo);
+            JPanel temp = new JPanel();
+            temp.setLayout(new BorderLayout());
+            temp.add(removeSecHeaderRadio, BorderLayout.NORTH);
+            xmlSecurityHeaderPanel.add(temp);
+
+            passthroughSecHeaderRadio = new JRadioButton("Leave current Security header in request before routing");
+            passthroughSecHeaderRadio.addActionListener(disenableCombo);
+            temp = new JPanel();
+            temp.setLayout(new BorderLayout());
+            temp.add(passthroughSecHeaderRadio, BorderLayout.NORTH);
+            xmlSecurityHeaderPanel.add(temp);
+
+            JPanel actorPromotionPanel = new JPanel();
+            actorPromotionPanel.setLayout(new BorderLayout());
+            promoteActorRadio = new JRadioButton("Promote other Security header as default before routing");
+            promoteActorCombo = new JComboBox();
+            promoteActorCombo.setEditable(true);
+            actorPromotionPanel.add(promoteActorRadio, BorderLayout.NORTH);
+            actorPromotionPanel.add(promoteActorCombo, BorderLayout.SOUTH);
+            promoteActorRadio.addActionListener(disenableCombo);
+            xmlSecurityHeaderPanel.add(actorPromotionPanel);
+            ButtonGroup bg = new ButtonGroup();
+            bg.add(removeSecHeaderRadio);
+            bg.add(passthroughSecHeaderRadio);
+            bg.add(promoteActorRadio);
+        }
+        return xmlSecurityHeaderPanel;
     }
 
     /**
@@ -522,17 +560,24 @@ public class HttpRoutingAssertionDialog extends JDialog {
                         assertion.setAttachSamlSenderVouches(samlMethod.isSelected());
                         assertion.setTaiCredentialChaining(taiCredentialChaining.isSelected());
                         fireEventAssertionChanged(assertion);
-                        HttpRoutingAssertionDialog.this.dispose();
-                        if (promoteActorCheck.isSelected()) {
+
+                        if (promoteActorRadio.isSelected()) {
                             String currentVal = (String)promoteActorCombo.getSelectedItem();
                             if (currentVal != null && currentVal.length() > 0) {
                                 assertion.setXmlSecurityActorToPromote(currentVal);
+                                assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER);
                             } else {
-                                assertion.setXmlSecurityActorToPromote(null);
+                                JOptionPane.showMessageDialog(okButton, "The security actor to promote must be set.");
+                                return;
                             }
-                        } else {
+                        } else if (removeSecHeaderRadio.isSelected()) {
+                            assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER);
+                            assertion.setXmlSecurityActorToPromote(null);
+                        } else if (passthroughSecHeaderRadio.isSelected()) {
+                            assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
                             assertion.setXmlSecurityActorToPromote(null);
                         }
+                        HttpRoutingAssertionDialog.this.dispose();
                     }
                 }
             });
@@ -591,11 +636,21 @@ public class HttpRoutingAssertionDialog extends JDialog {
             String s = (String) iterator.next();
             ((DefaultComboBoxModel)promoteActorCombo.getModel()).addElement(s);
         }
-        if (assertion.getXmlSecurityActorToPromote() == null) {
-            promoteActorCheck.setSelected(false);
+        // todo set initial values based on new routing setting
+        if (assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER) {
+            promoteActorRadio.setSelected(false);
             promoteActorCombo.setEnabled(false);
+            removeSecHeaderRadio.setSelected(true);
+            passthroughSecHeaderRadio.setSelected(false);
+        } else if (assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS) {
+            promoteActorRadio.setSelected(false);
+            promoteActorCombo.setEnabled(false);
+            removeSecHeaderRadio.setSelected(false);
+            passthroughSecHeaderRadio.setSelected(true);
         } else {
-            promoteActorCheck.setSelected(true);
+            promoteActorRadio.setSelected(true);
+            removeSecHeaderRadio.setSelected(false);
+            passthroughSecHeaderRadio.setSelected(false);
             promoteActorCombo.setEnabled(true);
             promoteActorCombo.getModel().setSelectedItem(assertion.getXmlSecurityActorToPromote());
         }

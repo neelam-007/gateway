@@ -12,12 +12,16 @@ import java.io.Serializable;
  * @author alex
  */
 public abstract class RoutingAssertion extends Assertion implements Cloneable, Serializable {
+    public static final int REMOVE_CURRENT_SECURITY_HEADER = 0;
+    public static final int LEAVE_CURRENT_SECURITY_HEADER_AS_IS = 1;
+    public static final int PROMOTE_OTHER_SECURITY_HEADER = 2;
     // saml (model as a different bean when serializer supports it)
     protected boolean attachSamlSenderVouches;
     protected int samlAssertionExpiry = 5;
     protected boolean groupMembershipStatement;
     protected boolean taiCredentialChaining = false;
     protected String xmlSecurityActorToPromote;
+    protected int currentSecurityHeaderHandling = REMOVE_CURRENT_SECURITY_HEADER;
 
     /**
      * This is the value of the soap security header actor attribute that should be promoted to
@@ -76,6 +80,29 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
 
     public void setTaiCredentialChaining(boolean taiCredentialChaining) {
         this.taiCredentialChaining = taiCredentialChaining;
+    }
+
+    /**
+     * This setting controls what this routing assertion should do with the current security header
+     * before routing the request. Possible values are:
+     * REMOVE_CURRENT_SECURITY_HEADER,
+     * LEAVE_CURRENT_SECURITY_HEADER_AS_IS,
+     * PROMOTE_OTHER_SECURITY_HEADER
+     */ 
+    public int getCurrentSecurityHeaderHandling() {
+        return currentSecurityHeaderHandling;
+    }
+
+    /**
+     * Set what this routing assertion should do with the current security header before routing the request. Possible
+     * values are:
+     * REMOVE_CURRENT_SECURITY_HEADER,
+     * LEAVE_CURRENT_SECURITY_HEADER_AS_IS,
+     * PROMOTE_OTHER_SECURITY_HEADER
+     * @param currentSecurityHeaderHandling see description for possible values
+     */
+    public void setCurrentSecurityHeaderHandling(int currentSecurityHeaderHandling) {
+        this.currentSecurityHeaderHandling = currentSecurityHeaderHandling;
     }
 }
 

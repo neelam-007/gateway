@@ -231,47 +231,14 @@ public class WssProcessorImpl implements WssProcessor {
                 processTimestamp(cntx, timestamp);
         }
 
-        // remove Security element altogether
-        Element soapHeader = (Element) cntx.releventSecurityHeader.getParentNode();
-        soapHeader.removeChild(cntx.releventSecurityHeader);
-
-        /*
-        This is no longer done, if a security header needs to be promoted, it needs to be described in the routing
-        assertion
-
-
-        // if there were other security headers and one with a special actor set by the Bridge, we
-        // want to change the actor here to set it back to default value
-        // in the case of multiple wrapped actors, the one with the higest value must be stripped
-        Element secHeaderDeservingPromotion = null;
-        List remainingSecurityHeaders = SoapUtil.getSecurityElements(cntx.processedDocument);
-        long currentGen = -1;
-        for (Iterator secIt = remainingSecurityHeaders.iterator(); secIt.hasNext();) {
-            Element secHeader = (Element)secIt.next();
-            String actor = secHeader.getAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
-            if (actor.startsWith(SoapUtil.ACTOR_LAYER7_WRAPPED)) {
-                long generationOfWrappedSecHeader = 0;
-                if (actor.length() > SoapUtil.ACTOR_LAYER7_WRAPPED.length()) {
-                    generationOfWrappedSecHeader = Long.parseLong(actor.substring(SoapUtil.ACTOR_LAYER7_WRAPPED.length()));
-                }
-                if (secHeaderDeservingPromotion == null) {
-                    secHeaderDeservingPromotion = secHeader;
-                    currentGen = generationOfWrappedSecHeader;
-                } else {
-                    // remember this one only if it has a higher value
-                    if (currentGen < generationOfWrappedSecHeader) {
-                        currentGen = generationOfWrappedSecHeader;
-                        secHeaderDeservingPromotion = secHeader;
-                    }
-                }
-            }
-        }
-        if (secHeaderDeservingPromotion != null) {
-            logger.finer("Unwraping wrapped security header");
-            secHeaderDeservingPromotion.removeAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
-        }*/
+        // NOTE fla, we used to remove the Security header altogether but we now leave this up to the policy
+        // instead we just remove the must-understand attribute
+        SoapUtil.removeSoapAttr(cntx.releventSecurityHeader, SoapUtil.MUSTUNDERSTAND_ATTR_NAME);
+        //Element soapHeader = (Element) cntx.releventSecurityHeader.getParentNode();
+        //soapHeader.removeChild(cntx.releventSecurityHeader);
 
         // If our work has left behind an empty SOAP Header, remove it too
+        Element soapHeader = (Element) cntx.releventSecurityHeader.getParentNode();
         if (XmlUtil.elementIsEmpty(soapHeader))
             soapHeader.getParentNode().removeChild(soapHeader);
 
