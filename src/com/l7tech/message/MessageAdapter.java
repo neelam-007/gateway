@@ -25,6 +25,11 @@ public abstract class MessageAdapter implements Message {
         _params.put( name, value );
     }
 
+    public void setParameterIfEmpty( String name, Object value ) {
+        Object temp = getParameter( name );
+        if ( temp == null ) setParameter( name, value );
+    }
+
     public Object getParameter( String name ) {
         Object value = _transportMetadata.getParameter(name);
         if ( value == null ) value = _params.get( name );
