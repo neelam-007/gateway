@@ -34,7 +34,6 @@ public class ClientWssBasic extends ClientWssCredentialSource implements ClientA
      * @throws PolicyAssertionException
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
-
         SOAPHeaderElement secHeader = null;
         try {
             secHeader = getSecurityElement(request);
@@ -74,8 +73,12 @@ public class ClientWssBasic extends ClientWssCredentialSource implements ClientA
 
         // add username and password to the usernametoken element
         try {
-            usernametokenelement.addChild(new MessageElement(SECURITY_NAMESPACE, "Username", username));
-            usernametokenelement.addChild(new MessageElement(SECURITY_NAMESPACE, "Password", new String(password)));
+            MessageElement usernameElement = new MessageElement(SECURITY_NAMESPACE, "Username");
+            usernameElement.addTextNode(username);
+            MessageElement passwordElement = new MessageElement(SECURITY_NAMESPACE, "Password");
+            passwordElement.addTextNode(new String(password));
+            usernametokenelement.addChild(usernameElement);
+            usernametokenelement.addChild(passwordElement);
         } catch (SOAPException e) {
             throw new PolicyAssertionException(e.getMessage(), e);
         }
