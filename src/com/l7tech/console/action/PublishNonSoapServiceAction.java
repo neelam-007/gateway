@@ -38,7 +38,7 @@ public class PublishNonSoapServiceAction extends SecureAction {
     }
 
     protected String iconResource() {
-        return "com/l7tech/console/resources/services16.png";
+        return "com/l7tech/console/resources/xmlObject16.gif";
     }
 
     protected void performAction() {

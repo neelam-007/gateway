@@ -1083,7 +1083,7 @@ public class MainWindow extends JFrame {
         identitiesTree.setRootVisible(true);
         identitiesTree.setModel(treeModel);
 
-        String rootTitle = "Web Services @ ";
+        String rootTitle = "Services @ ";
         rootTitle +=
           Preferences.getPreferences().getString(Preferences.SERVICE_URL);
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
@@ -1466,7 +1466,7 @@ public class MainWindow extends JFrame {
         sections.setBorder(null);
         treePanel = new JTabbedPane();
         // treePanel.setLayout(new BorderLayout());
-        treePanel.addTab("Web Services", getServicesTree());
+        treePanel.addTab("Services", getServicesTree());
         treePanel.setTabPlacement(JTabbedPane.TOP);
         treePanel.setBorder(null);
 
