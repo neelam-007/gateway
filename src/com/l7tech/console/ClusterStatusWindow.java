@@ -1,13 +1,10 @@
 package com.l7tech.console;
 
-import com.l7tech.console.action.AboutAction;
-import com.l7tech.console.action.ActionVetoException;
 import com.l7tech.console.util.BarIndicator;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.table.LogTableModel;
-import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ClusterInfo;
 import com.l7tech.console.icons.ArrowIcon;
@@ -127,7 +124,6 @@ public class ClusterStatusWindow extends JFrame {
         helpMenu = new JMenu();
         helpMenu.setText(resapplication.getString("Help"));
         helpMenu.add(getHelpTopicsMenuItem());
-        helpMenu.add(new AboutAction());
         int mnemonic = helpMenu.getText().toCharArray()[0];
         helpMenu.setMnemonic(mnemonic);
 
@@ -457,7 +453,7 @@ public class ClusterStatusWindow extends JFrame {
 
         ClusterInfo  c3 = new ClusterInfo();
         c3.setName("SSG3"); c3.setAddress("192.128.1.102"); c3.setAvgLoad(0); c3.setUptime(1072746404);
-        GatewayStatus node3 = new GatewayStatus(c3, 1,  0, 0);
+        GatewayStatus node3 = new GatewayStatus(c3, 0,  0, 0);
 
         ClusterInfo  c4 = new ClusterInfo();
         c4.setName("SSG4"); c4.setAddress("192.128.2.10"); c4.setAvgLoad(1.1); c4.setUptime(1072776414);
@@ -473,11 +469,11 @@ public class ClusterStatusWindow extends JFrame {
 
         ClusterInfo  c7 = new ClusterInfo();
         c7.setName("SSG7"); c7.setAddress("192.128.3.2"); c7.setAvgLoad(0); c7.setUptime(1072808010);
-        GatewayStatus node7 = new GatewayStatus(c7, 1,  0, 0);
+        GatewayStatus node7 = new GatewayStatus(c7, 0,  0, 0);
 
         ClusterInfo  c8 = new ClusterInfo();
         c8.setName("SSG8"); c8.setAddress("192.128.3.3"); c8.setAvgLoad(0); c8.setUptime(1072808325);
-        GatewayStatus node8 = new GatewayStatus(c8, 1,  0, 0);
+        GatewayStatus node8 = new GatewayStatus(c8, 0,  0, 0);
 
         dummyData.add(node1);
         dummyData.add(node2);

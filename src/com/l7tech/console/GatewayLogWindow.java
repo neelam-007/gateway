@@ -1,7 +1,6 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.console.action.AboutAction;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.Registry;
 
@@ -103,7 +102,6 @@ public class GatewayLogWindow extends JFrame {
         helpMenu = new JMenu();
         helpMenu.setText(resapplication.getString("Help"));
         helpMenu.add(getHelpTopicsMenuItem());
-        helpMenu.add(new AboutAction());
         int mnemonic = helpMenu.getText().toCharArray()[0];
         helpMenu.setMnemonic(mnemonic);
 
