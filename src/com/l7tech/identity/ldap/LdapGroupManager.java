@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.*;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.OperationNotSupportedException;
 import javax.naming.directory.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -142,7 +143,8 @@ public class LdapGroupManager implements GroupManager {
         for (Iterator i = allgroups.iterator(); i.hasNext();) {
             Group agrp = (Group)i.next();
             if (isMember(user, agrp)) {
-                output.add(new EntityHeader(agrp.getUniqueIdentifier(), EntityType.GROUP, agrp.getName(), agrp.getDescription()));
+                output.add(new EntityHeader(agrp.getUniqueIdentifier(), EntityType.GROUP, agrp.getName(),
+                            agrp.getDescription()));
             }
         }
         return output;
@@ -195,6 +197,7 @@ public class LdapGroupManager implements GroupManager {
                         }
                     } else {
                         Attribute memberAttribute = attributes.get(groupTypes[i].getMemberAttrName());
+                        // for some reason, oracle directory specifies his members more than one (?!)
                         if (memberAttribute != null) {
                             for (int ii = 0; ii < memberAttribute.size(); ii++) {
                                 Object val = memberAttribute.get(ii);
@@ -204,9 +207,12 @@ public class LdapGroupManager implements GroupManager {
                                     // try to get user through dn
                                     boolean done = false;
                                     try {
-                                        User u = getUserManager().findByPrimaryKey(memberhint);
+                                        LdapUser u = (LdapUser)getUserManager().findByPrimaryKey(memberhint);
                                         if (u != null) {
-                                            headers.add(new EntityHeader(u.getName(), EntityType.USER, u.getLogin(), null));
+                                            EntityHeader newheader =
+                                                    new EntityHeader(u.getDn(), EntityType.USER, u.getLogin(), null);
+                                            if (!headers.contains(newheader))
+                                                headers.add(newheader);
                                             done = true;
                                         }
                                     } catch (FindException e) {
@@ -315,12 +321,20 @@ public class LdapGroupManager implements GroupManager {
         SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         NamingEnumeration answer = null;
-        answer = context.search(cfg.getSearchBase(), filter.toString(), sc);
+        try {
+            answer = context.search(cfg.getSearchBase(), filter.toString(), sc);
+        } catch (OperationNotSupportedException e) {
+            // this gets thrown by oid for some weird groups
+            logger.log(Level.FINE, cfg.getName() + "directory cannot search on" + nvhint, e);
+            return;
+        }
         while (answer.hasMore()) {
             String userdn = null;
             SearchResult sr = (SearchResult)answer.next();
             userdn = sr.getName() + "," + cfg.getSearchBase();
-            memberHeaders.add(parent.searchResultToHeader(sr, userdn));
+            EntityHeader newheader = parent.searchResultToHeader(sr, userdn);
+            if (!memberHeaders.contains(newheader))
+                memberHeaders.add(newheader);
         }
     }
 
