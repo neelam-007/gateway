@@ -8,16 +8,16 @@ package com.l7tech.server;
 
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
-import com.l7tech.service.ServiceManagerImp;
 import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.util.Locator;
 import com.l7tech.logging.LogManager;
+
 import java.io.IOException;
 import java.util.logging.Level;
 
@@ -67,11 +67,7 @@ public class MessageProcessor {
     }
 
     private MessageProcessor() {
-        try {
-            _serviceManager = new ServiceManagerImp();
-        } catch ( ObjectModelException ome ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, ome);
-        }
+        _serviceManager = (ServiceManager)Locator.getDefault().lookup( ServiceManager.class );
     }
 
     private ServiceManager _serviceManager;
