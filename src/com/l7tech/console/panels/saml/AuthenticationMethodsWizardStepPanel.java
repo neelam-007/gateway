@@ -42,17 +42,21 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
     private JLabel titleLabel;
     private JCheckBox[] allMethods;
     private HashMap authenticationsMap = new HashMap();
+    private boolean showTitleLabel;
 
     /**
-     * Creates new form WizardPanel
+     * Creates new form WizardPanel. Full constructor, specifiy
+     */
+    public AuthenticationMethodsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
+        super(next);
+        this.showTitleLabel = showTitleLabel;
+        initialize();
+    }
+    /**
+     * Creates new form WizardPanel with default optins
      */
     public AuthenticationMethodsWizardStepPanel(WizardStepPanel next) {
-        super(next);
-        setLayout(new BorderLayout());
-        /** Set content pane */
-        add(mainPanel, BorderLayout.CENTER);
-        initialize();
-
+        this(next, true);
     }
 
     /**
@@ -110,7 +114,14 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
     }
 
     private void initialize() {
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        setLayout(new BorderLayout());
+        /** Set content pane */
+        add(mainPanel, BorderLayout.CENTER);
+        if (showTitleLabel) {
+            titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        } else {
+            titleLabel.getParent().remove(titleLabel);
+        }
         Collection lm = new ArrayList();
         lm.add(checkBoxPasswordMethod);
         authenticationsMap.put(SamlConstants.PASSWORD_AUTHENTICATION, checkBoxPasswordMethod);

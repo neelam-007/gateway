@@ -21,17 +21,21 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     private JLabel titleLabel;
     private JCheckBox checkBoxCheckAssertionValidity;
     private JTextField textFieldAudienceRestriction;
+    private boolean showTitleLabel;
 
     /**
      * Creates new form WizardPanel
      */
-    public ConditionsWizardStepPanel(WizardStepPanel next) {
+    public ConditionsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
         super(next);
-        setLayout(new BorderLayout());
-        /** Set content pane */
-        add(mainPanel, BorderLayout.CENTER);
+        this.showTitleLabel = showTitleLabel;
         initialize();
-
+    }
+    /**
+     * Creates new form WizardPanel
+     */
+    public ConditionsWizardStepPanel(WizardStepPanel next) {
+        this(next, true);
     }
 
     /**
@@ -69,7 +73,14 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     }
 
     private void initialize() {
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        setLayout(new BorderLayout());
+        /** Set content pane */
+        add(mainPanel, BorderLayout.CENTER);
+        if (showTitleLabel) {
+            titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        } else {
+            titleLabel.getParent().remove(titleLabel);
+        }
     }
 
     /**

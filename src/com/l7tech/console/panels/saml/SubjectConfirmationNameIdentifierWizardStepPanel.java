@@ -30,17 +30,21 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
     private JCheckBox checkBoxWindowsDomainQualifiedName;
     private JCheckBox checkBoxUnspecified;
     private HashMap nameFormatsMap;
+    private boolean showTitleLabel;
 
+    /**
+      * Creates new form WizardPanel
+      */
+     public SubjectConfirmationNameIdentifierWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
+         super(next);
+        this.showTitleLabel = showTitleLabel;
+         initialize();
+     }
     /**
      * Creates new form WizardPanel
      */
     public SubjectConfirmationNameIdentifierWizardStepPanel(WizardStepPanel next) {
-        super(next);
-        setLayout(new BorderLayout());
-        /** Set content pane */
-        add(mainPanel, BorderLayout.CENTER);
-        initialize();
-
+        this(next, true);
     }
 
     /**
@@ -98,7 +102,14 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
     }
 
     private void initialize() {
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        setLayout(new BorderLayout());
+        /** Set content pane */
+        add(mainPanel, BorderLayout.CENTER);
+        if (showTitleLabel) {
+            titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        } else {
+            titleLabel.getParent().remove(titleLabel);
+        }
         nameFormatsMap = new HashMap();
         nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT, checkBoxFormatX509SubjectName);
         nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_EMAIL, checkBoxEmailAddress);
@@ -125,7 +136,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
 
     public String getDescription() {
         return
-        "<html>Specify one or more name formats that will be accepted by the gateway<br>" +
+        "<html>Specify one or more name formats that will be accepted by the gateway " +
           "and the optional subject name qualifier</html>";
     }
 

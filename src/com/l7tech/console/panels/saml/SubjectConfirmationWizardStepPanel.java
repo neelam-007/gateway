@@ -33,16 +33,22 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private Map confirmationsMap;
     private JCheckBox checkBoxNoSubjectConfirmation;
     private boolean proofOfPossesionManuallyDisabled = false;
+    private boolean showTitleLabel;
 
     /**
      * Creates new form WizardPanel
      */
-    public SubjectConfirmationWizardStepPanel(WizardStepPanel next) {
+    public SubjectConfirmationWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
         super(next);
-        setLayout(new BorderLayout());
-        /** Set content pane */
-        add(mainPanel, BorderLayout.CENTER);
+        this.showTitleLabel = showTitleLabel;
         initialize();
+    }
+
+    /**
+     * Creates new form Subject confirmation WizardPanel
+     */
+    public SubjectConfirmationWizardStepPanel(WizardStepPanel next) {
+        this(next, true);
     }
 
     /**
@@ -102,6 +108,15 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     }
 
     private void initialize() {
+        setLayout(new BorderLayout());
+        /** Set content pane */
+        add(mainPanel, BorderLayout.CENTER);
+        if (showTitleLabel) {
+            titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        } else {
+            titleLabel.getParent().remove(titleLabel);
+        }
+
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
         checkBoxHolderOfKey.setToolTipText("<html>Key Info for the Subject, that the Assertion describes<br>" +
                                              " MUST be present within the Subject Confirmation.</html>");
@@ -153,8 +168,8 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
 
     public String getDescription() {
         return
-        "<html>Wpecify one or more subject confirmations that will be accepted by the gateway<br>" +
-          "and whether the message signature is required as the proof material</html>";
+        "<html>Specify one or more subject confirmations that will be accepted by the gateway" +
+          " and whether the message signature is required as the proof material</html>";
     }
 
     /**
