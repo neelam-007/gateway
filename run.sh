@@ -81,20 +81,23 @@ case "$foo" in
 		exec $TOMCAT_HOME/bin/startup.sh run $*
 		;;
 	console)
-		target="com.l7tech.console.Main";
-		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} $* 
+		exec installer/Manager-*/Manager.sh
+		#target="com.l7tech.console.Main";
+		#exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} $* 
 		;;
 	textproxy)
 		target="com.l7tech.proxy.Main";
 		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
 		;;
 	proxy)
-		target="com.l7tech.proxy.gui.Main";
-                exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
+		exec installer/Agent-*/Agent.sh
+		#target="com.l7tech.proxy.gui.Main";
+                #exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
                 ;;
 	agent)
-		target="com.l7tech.proxy.gui.Main";
-		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
+		exec installer/Agent-*/Agent.sh
+		#target="com.l7tech.proxy.gui.Main";
+		#exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
 		;;
 	*)
 		echo "Usage: run.sh (ssg|console|proxy|textproxy)"
