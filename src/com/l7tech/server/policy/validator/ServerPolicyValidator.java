@@ -6,11 +6,13 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.identity.IdentityProvider;
@@ -67,14 +69,14 @@ public class ServerPolicyValidator extends PolicyValidator {
                 case ID_FIP:
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
                         CredentialSourceAssertion credSrc = (CredentialSourceAssertion) iterator.next();
-                        if (credSrc instanceof SamlSecurity || credSrc instanceof RequestWssX509Cert);
+                        if (credSrc instanceof SamlSecurity || credSrc instanceof RequestWssX509Cert ||
+                            credSrc instanceof SecureConversation || credSrc instanceof HttpClientCert);
                         else {
                             r.addError(new PolicyValidatorResult.Error(a,
                                                                        ap,
-                                                                       "This identity can only authenticate with " +
-                                                                       "a SAML token or an X509 Binary Security " +
-                                                                       "Token but another type of credential " +
-                                                                       "source is specified.",
+                                                                       "This identity cannot authenticate with the " +
+                                                                       "type of credential " +
+                                                                       "source specified.",
                                                                        null));
                             break;
                         }
@@ -98,13 +100,14 @@ public class ServerPolicyValidator extends PolicyValidator {
                 case ID_X509ONLY:
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
                         CredentialSourceAssertion credSrc = (CredentialSourceAssertion) iterator.next();
-                        if (!(credSrc instanceof RequestWssX509Cert)) {
+                        if (!(credSrc instanceof RequestWssX509Cert || credSrc instanceof SecureConversation ||
+                              credSrc instanceof HttpClientCert)) {
                             r.addError(new PolicyValidatorResult.Error(a,
                                                                        ap,
-                                                                       "This identity can only authenticate with " +
-                                                                       "an X509 Binary Security " +
-                                                                       "Token but another type of credential " +
-                                                                       "source is specified.",
+                                                                       "This identity can only authenticate using " +
+                                                                       "its client cert. " +
+                                                                       "The specified type of credential " +
+                                                                       "source is not supported by that user.",
                                                                        null));
                             break;
                         }
