@@ -183,11 +183,18 @@ sub make_tar_file {
 		docopy("$BUILD_PATH/$include", "./$dir");
 	}
 
+	my $extra;
+	if ($file eq "Agent") {
+	    $extra = "-server ";
+    } else {
+        $extra = "";
+    }
+
 	create_file("./$dir/$file.sh", <<"EOM", 0755);
 #!/bin/sh
 
 cd `dirname \$0`
-java -jar $file.jar
+java $extra-jar $file.jar
 EOM
 
 	unlink("$dir.tar.gz");
