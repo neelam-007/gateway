@@ -3,10 +3,10 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
@@ -14,7 +14,6 @@ import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import javax.swing.plaf.TextUI;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.tree.DefaultTreeModel;
@@ -30,8 +29,6 @@ import java.net.URL;
 import java.security.Principal;
 import java.util.*;
 import java.util.List;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * The <code>IdentityPolicyPanel</code> is the policy panel that allows
@@ -223,19 +220,22 @@ public class IdentityPolicyPanel extends JPanel {
             othersCredAssertions.addAll(ip.getAssignableAssertions(CredentialSourceAssertion.class));
         }
 
-        Set principalCredAssertions =
-          principalAssertionPaths.getAssignableAssertions(CredentialSourceAssertion.class);
+        Set principalCredAssertions = principalAssertionPaths.getAssignableAssertions(CredentialSourceAssertion.class);
         for (Iterator it = principalCredAssertions.iterator(); it.hasNext();) {
-            existingCredAssertion = (CredentialSourceAssertion) it.next();
+            CredentialSourceAssertion credAssertion = (CredentialSourceAssertion)it.next();
 
             XmlRequestSecurity xmlSec = null;
-            if (existingCredAssertion instanceof XmlRequestSecurity) {
-                xmlSec = (XmlRequestSecurity) existingCredAssertion;
+            if (credAssertion instanceof XmlRequestSecurity) {
+                xmlSec = (XmlRequestSecurity)credAssertion;
                 if (!xmlSec.hasAuthenticationElement()) {
                     // Skip this -- it's not a valid credential source assertion.
                     // TODO clean up CredentialSourceAssertion design -- See Bug #760 for discussion
                     continue;
+                } else {
+                    existingCredAssertion = credAssertion;
                 }
+            } else {
+                existingCredAssertion = credAssertion;
             }
 
             selectAuthMethodComboItem(existingCredAssertion);
