@@ -90,45 +90,34 @@ if [ "$PASSWORD_LENGTH" -lt 6 ]; then
 	exit -1
 fi
 
-# GENERATE THE KEYSTORE FILE
-echo "GENERATING THE KEYSTORE FILE FOR TOMCAT SSL"
-echo "Important: During the key generation, it is important that you enter the COMMON NAME value (CN) properly."
-echo "This value must be equal to the host name that the client uses to reach the ssg (e.g. ssg.acme.com)."
-echo
-echo "PRESS ANY KEY TO CONTINUE"
-read
-$KEYTOOL -genkey -alias tomcat -keystore "$KEYSTORE_FILE_OSPATH" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
+# ASK FOR THE HOST NAME
+echo "Please type in the host name"
+read HOSTNAME
+DN="CN="$HOSTNAME
+
+# GENERATE THE KEYSTORE
+$KEYTOOL -genkey -v -alias tomcat -dname $DN -keystore "$KEYSTORE_FILE_OSPATH" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
 
 # CHECK THAT THIS KEYSTORE WAS SET SUCCESSFULLY
 if [ -e "$KEYSTORE_FILE" ]
 then
-# EXPORT THE SERVER CERTIFICATE
+        # EXPORT THE SERVER CERTIFICATE
         $KEYTOOL -export -alias tomcat -storepass "$KEYSTORE_PASSWORD" -file "$CERTIFICATE_FILE_OSPATH" -keystore "$KEYSTORE_FILE_OSPATH"
 
-# GENERATE A LOCAL CERTIFICATE SIGNING REQUEST
+        # SHOW THE CERTIFICATE
+        $KEYTOOL -printcert -file "$CERTIFICATE_FILE_OSPATH"
+
+        # GENERATE A LOCAL CERTIFICATE SIGNING REQUEST
         $KEYTOOL -certreq -keyalg RSA -alias tomcat -file "$CSR_FILE_OSPATH" -keystore "$KEYSTORE_FILE_OSPATH" -storepass "$KEYSTORE_PASSWORD"
 
-# SIGN THE SSL CERT WITH ROOT KEY
-# TODO
+        # SIGN THE SSL CERT WITH ROOT KEY
+        # TODO
 
-# EDIT THE server.xml file so that the magic value "__FunkySsgMojo__" is replaced by the actual password
+        # EDIT THE server.xml file so that the magic value "__FunkySsgMojo__" is replaced by the actual password
         perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ "$SERVER_XML_FILE"
 
-# ASK THE USER IF HE WANTS TO COPY THE CERTIFICATE TO FLOPPY?
-#        echo
-#        echo
-#        echo "The certificate was generated successfully."
-#        echo "It must be imported in your Admin Console."
-#        echo
-#        echo 'DO YOU WANT TO COPY THE CERTIFICATE TO A FLOPPY? [y/n]'
-#        read QUERY_ANSWER
-#        if [ $QUERY_ANSWER = "y" ]; then
-#                mount /mnt/floppy
-#                cp "$CERTIFICATE_FILE" /mnt/floppy/ssg.cer
-#        fi
-
 else
-# INFORM THE USER OF THE FAILURE
+        # INFORM THE USER OF THE FAILURE
         echo "ERROR: The keystore file was not generated"
         echo
         exit 255
