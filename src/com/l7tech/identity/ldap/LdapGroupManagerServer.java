@@ -267,6 +267,6 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
         return null;
     }
 
-    private static final String GROUP_OBJCLASS = "posixGroup";
+    static final String GROUP_OBJCLASS = "posixGroup";
     private volatile boolean valid = true;
 }
