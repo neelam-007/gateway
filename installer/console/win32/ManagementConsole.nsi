@@ -5,7 +5,7 @@
 !define J2RE "j2re1.4.2"  ;Name of directory containing JRE
 !define J2RE_PATH "C:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !define COMPANY "Layer7 Technologies"
-!define MUI_PRODUCT "Layer7 Management Console" ;Define your own software name here
+!define MUI_PRODUCT "Layer7  SecureSpan Manager" ;Define your own software name here
 
 ; Edit this to set the version number in the build
 !define MUI_VERSION "HEAD"
