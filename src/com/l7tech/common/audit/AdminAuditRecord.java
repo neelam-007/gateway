@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.event.PersistenceEvent;
 import com.l7tech.objectmodel.event.Updated;
 
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * An {@link AuditRecord} that describes a single administrative action.
@@ -25,15 +24,15 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class AdminAuditRecord extends AuditRecord {
-    public AdminAuditRecord(Level level, PersistenceEvent event, String adminLogin) {
-        super(level);
-        logger.info("new AdminAuditRecord(" + level + ", " + event + ", " + adminLogin + ")");
+    public AdminAuditRecord(Level level, String nodeId, PersistenceEvent event, String adminLogin) {
+        super(level, nodeId, null);
         if (adminLogin == null) throw new IllegalStateException("Couldn't determine current administrator login");
+        this.adminLogin = adminLogin;
 
         final Entity entity = event.getEntity();
-        this.entityClass = entity.getClass();
+        this.entityClassname = entity.getClass().getName();
         this.entityOid = entity.getOid();
-        StringBuffer msg = new StringBuffer(entityClass.getName());
+        StringBuffer msg = new StringBuffer(entityClassname);
         msg.append(" ");
         msg.append(entityOid);
         if (event instanceof Created) {
@@ -51,8 +50,38 @@ public class AdminAuditRecord extends AuditRecord {
         this.message = msg.toString();
     }
 
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public AdminAuditRecord() {
+    }
+
+    public String getAdminLogin() {
+        return adminLogin;
+    }
+
+    public String getEntityClassname() {
+        return entityClassname;
+    }
+
+    public long getEntityOid() {
+        return entityOid;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setAdminLogin( String adminLogin ) {
+        this.adminLogin = adminLogin;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setEntityClassname(String entityClassname) {
+        this.entityClassname = entityClassname;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setEntityOid( long entityOid ) {
+        this.entityOid = entityOid;
+    }
+
     protected String adminLogin;
-    protected Class entityClass;
+    protected String entityClassname;
     protected long entityOid;
-    private static Logger logger = Logger.getLogger(AdminAuditRecord.class.getName());
 }

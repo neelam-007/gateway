@@ -21,13 +21,17 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class MessageSummaryAuditRecord extends AuditRecord {
-    public MessageSummaryAuditRecord( Level level, AssertionStatus status, String clientAddr,
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public MessageSummaryAuditRecord() {
+    }
+
+    public MessageSummaryAuditRecord(Level level, String nodeId, String requestId, AssertionStatus status, String clientAddr,
                                      String requestXml, int requestContentLength,
                                      String responseXml, int responseContentLength,
                                      long serviceOid, String serviceName,
                                      boolean authenticated, long identityProviderOid, String userName, String userId)
     {
-        super(level);
+        super(level, nodeId, null);
         StringBuffer msg = new StringBuffer("Message ");
         if (status == AssertionStatus.NONE) {
             msg.append("processed successfully");
@@ -36,8 +40,9 @@ public class MessageSummaryAuditRecord extends AuditRecord {
             msg.append(status.getMessage());
             msg.append(" (").append(status.getNumeric()).append(")");
         }
+        this.requestId = requestId;
         this.message = msg.toString();
-        this.status = status;
+        this.status = status.getNumeric();
         this.clientAddr = clientAddr;
         this.requestXml = requestXml;
         this.requestContentLength = requestContentLength;
@@ -51,7 +56,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.userId = userId;
     }
 
-    public AssertionStatus getStatus() {
+    public int getStatus() {
         return status;
     }
 
@@ -99,8 +104,80 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return responseContentLength;
     }
 
+    public String getRequestId() {
+        return requestId;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setStatus( int status ) {
+        this.status = status;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setRequestXml( String requestXml ) {
+        this.requestXml = requestXml;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setResponseXml( String responseXml ) {
+        this.responseXml = responseXml;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setServiceOid( long serviceOid ) {
+        this.serviceOid = serviceOid;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setServiceName( String serviceName ) {
+        this.serviceName = serviceName;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setIdentityProviderOid( long identityProviderOid ) {
+        this.identityProviderOid = identityProviderOid;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setUserName( String userName ) {
+        this.userName = userName;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setUserId( String userId ) {
+        this.userId = userId;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setAuthenticated( boolean authenticated ) {
+        this.authenticated = authenticated;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setClientAddr( String clientAddr ) {
+        this.clientAddr = clientAddr;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setRequestContentLength( int requestContentLength ) {
+        this.requestContentLength = requestContentLength;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setResponseContentLength( int responseContentLength ) {
+        this.responseContentLength = responseContentLength;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setRequestId( String requestId ) {
+        this.requestId = requestId;
+    }
+
+    /** ID of the request being processed */
+    protected String requestId;
+
     /** Status of the request so far, or AssertionStatus.UNDEFINED if it's not yet known. */
-    protected AssertionStatus status;
+    protected int status;
 
     /** String containing XML from request, or null if the current request has no XML */
     protected String requestXml;
