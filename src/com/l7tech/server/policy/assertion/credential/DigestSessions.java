@@ -11,8 +11,7 @@ import com.l7tech.common.util.HexUtils;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * @author alex
@@ -61,19 +60,44 @@ public class DigestSessions {
 
         // Updating the value in the nonce hashtable
         synchronized( _nonceInfos ) {
-            _nonceInfos.put( nonceValue, new NonceInfo( currentTime + timeout, maxUses ) );
+            _nonceInfos.put( nonceValue, new NonceInfo( nonceValue, currentTime + timeout, maxUses ) );
         }
 
         return nonceValue;
     }
 
-    private class NonceInfo {
-        public NonceInfo( long expires, int maxUses ) {
+    private class NonceInfo implements Comparable {
+        public NonceInfo( String nonce, long expires, int maxUses ) {
+            _nonce = nonce;
             _expires = expires;
             _maxUses = maxUses;
             _uses = 1;
         }
 
+        public int hashCode() {
+            return _nonce.hashCode();
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof NonceInfo)) return false;
+
+            final NonceInfo nonceInfo = (NonceInfo) o;
+
+            if (_nonce != null ? !_nonce.equals(nonceInfo._nonce) : nonceInfo._nonce != null) return false;
+
+            return true;
+        }
+
+        /** Maintain NonceInfos in ascending order of expiry */
+        public int compareTo(Object o) {
+            NonceInfo other = (NonceInfo)o;
+            if ( this._expires > other._expires ) return 1;
+            if ( this._expires < other._expires ) return -1;
+            return 0;
+        }
+
+        String _nonce;
         long _expires;
         volatile int _uses;
         int _maxUses;
@@ -87,8 +111,15 @@ public class DigestSessions {
         }
     }
 
+    private class ExpireThread extends Thread {
+        public void run() {
+
+        }
+    }
+
     private static final String NONCEKEY = "Layer7-SSG-DigestNonceKey";
     private static DigestSessions _instance;
-    private Map _nonceInfos = new HashMap(37);
+    private Map _nonceInfos = new HashMap();
+    private SortedSet _nonceInfoSet = new TreeSet();
     private MessageDigest _md5 = null;
 }
