@@ -18,6 +18,7 @@ import java.awt.event.WindowEvent;
 import java.net.PasswordAuthentication;
 
 /**
+ * Small dialog box that propts for a username and password.
  * This class is the Client Proxy Logon dialog, used by the GuiCredentialManager.
  * Copied and modified from Emil's com.l7tech.console.LogonDialog
  */

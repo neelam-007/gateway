@@ -37,7 +37,6 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JLabel fieldLocalEndpoint;
     private JTextField fieldServerUrl;
     private JCheckBox cbDefault;
-    private JTextField fieldKeyStorePath;
     private JTextField fieldUsername;
     private JButton buttonClearPassword;
     private JButton buttonSetPassword;
@@ -232,11 +231,6 @@ public class SsgPropertyDialog extends PropertyDialog {
             cbDefault.setPreferredSize(new Dimension(200, 20));
             pane.add(cbDefault, gbc());
 
-            fieldKeyStorePath = new JTextField();
-            fieldKeyStorePath.setPreferredSize(new Dimension(200, 20));
-            pane.add(new JLabel("Key store:"), gbcLabel());
-            pane.add(fieldKeyStorePath, gbc());
-
             fieldUsername = new JTextField();
             fieldUsername.setPreferredSize(new Dimension(200, 20));
             pane.add(new JLabel("Username:"), gbcLabel());
@@ -317,7 +311,6 @@ public class SsgPropertyDialog extends PropertyDialog {
         fieldName.setText(ssg.getName());
         fieldLocalEndpoint.setText("/" + ssg.getLocalEndpoint());
         fieldServerUrl.setText(ssg.getServerUrl());
-        fieldKeyStorePath.setText(ssg.getKeyStorePath());
         fieldUsername.setText(ssg.getUsername());
         editPassword = ssg.getPassword();
         fieldPassword.setText(passwordToString(editPassword));
@@ -338,7 +331,6 @@ public class SsgPropertyDialog extends PropertyDialog {
             ssg.setName(fieldName.getText());
             ssg.setLocalEndpoint(fieldLocalEndpoint.getText());
             ssg.setServerUrl(fieldServerUrl.getText());
-            ssg.setKeyStorePath(fieldKeyStorePath.getText());
             ssg.setUsername(fieldUsername.getText());
             ssg.setPassword(editPassword);
             ssg.setPromptForUsernameAndPassword(cbPromptForPassword.isSelected());

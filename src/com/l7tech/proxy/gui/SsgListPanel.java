@@ -125,6 +125,8 @@ public class SsgListPanel extends JPanel {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg newSsg = ssgListModel.createSsg();
                     newSsg.setName("New SSG");
+                    if (ssgListModel.getSize() < 1)
+                        newSsg.setDefaultSsg(true);
                     try {
                         if (PropertyDialog.getPropertyDialogForObject(newSsg).runDialog())
                             ssgListModel.addSsg(newSsg);
@@ -137,5 +139,14 @@ public class SsgListPanel extends JPanel {
             actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new SSG with this Client Proxy");
         }
         return actionNewSsg;
+    }
+
+    /**
+     * Get the number of registered SSGs.
+     * @return the number of registered SSGs.
+     */
+    public int getNumSsgs() {
+        return ssgList.getModel().getSize();
+
     }
 }

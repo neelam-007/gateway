@@ -19,7 +19,8 @@ import java.awt.event.KeyListener;
 import java.util.Arrays;
 
 /**
- * Dialog that prompts for a password with confirmation.
+ * Small dialog box that prompts for a new password, requiring the user to type it twice for confirmation.
+ * Doesn't ask about usernames, and so not to be confused with LogonDialog, which does.
  * Interaction design is intended to be error-dialog-free.
  * User: mike
  * Date: Jun 30, 2003

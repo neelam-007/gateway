@@ -200,6 +200,9 @@ public class Gui {
             throw new IllegalStateException("Gui has already been started");
 
         getFrame().show();
+
+        if (getSsgListPanel().getNumSsgs() < 1)
+            getSsgListPanel().getActionNewSsg().actionPerformed(new ActionEvent(this, 1, "NewDefault"));
     }
 
     /**

@@ -24,7 +24,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private int sslPort = 8443;
     private String username = null;
     private char[] password = null;
-    private String keyStorePath = null;
     private HashMap policyMap = new HashMap();
     private boolean promptForUsernameAndPassword = true;
     private boolean defaultSsg = false;
@@ -229,14 +228,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public void setPassword(final String password) {
         this.password = password.toCharArray();
-    }
-
-    public String getKeyStorePath() {
-        return keyStorePath;
-    }
-
-    public void setKeyStorePath(final String keyStorePath) {
-        this.keyStorePath = keyStorePath;
     }
 
     public int getSslPort() {
