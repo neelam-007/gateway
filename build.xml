@@ -734,7 +734,6 @@
                 <exclude name="**/**ant*"/>
                 <exclude name="**/optional.jar"/>
                 <exclude name="**/*junit.jar"/>
-                <exclude name="**/jsdk23.jar"/>
             </fileset>
 
             <!-- the default crypto provider -->

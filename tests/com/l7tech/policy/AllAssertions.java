@@ -103,6 +103,9 @@ public class AllAssertions {
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
         new SamlSecurity(),
+        new SamlAuthenticationStatement(),
+        new SamlAuthorizationStatement(),
+        new SamlAttributeStatement(),
         new AuditAssertion(),
         CUSTOM_ASSERTION_HOLDER,
         new UnknownAssertion()
@@ -143,7 +146,10 @@ public class AllAssertions {
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
         new SamlSecurity(),
-        new AuditAssertion(),        
+        new SamlAuthenticationStatement(),
+        new SamlAuthorizationStatement(),
+        new SamlAttributeStatement(),
+        new AuditAssertion(),
         new CustomAssertionHolder(),
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
@@ -160,6 +166,9 @@ public class AllAssertions {
         new WssDigest(),
         new RequestWssX509Cert(),
         new SecureConversation(),
+        new SamlAuthenticationStatement(),
+        new SamlAuthorizationStatement(),
+        new SamlAttributeStatement(),
         new SamlSecurity()
     };
 

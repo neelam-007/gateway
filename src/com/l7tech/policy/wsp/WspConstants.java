@@ -393,8 +393,7 @@ public class WspConstants {
                         }
                     }
                 } while (setter == null);
-
-                setter.invoke(target, parameter);
+                invokeMethod(setter, target, parameter);
             } catch (SecurityException e) {
                 visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
             } catch (IllegalAccessException e) {
@@ -735,6 +734,9 @@ public class WspConstants {
         new AssertionMapping(new SecureConversation(), "SecureConversation"),
         new AssertionMapping(new RequestWssReplayProtection(), "RequestWssReplayProtection"),
         new AssertionMapping(new SamlSecurity(), "SamlSecurity"),
+        new AssertionMapping(new SamlAuthenticationStatement(), "SamlAuthenticationStatement"),
+        new AssertionMapping(new SamlAuthorizationStatement(), "SamlAuthorizationStatement"),
+        new AssertionMapping(new SamlAttributeStatement(), "SalmAttributeStatement"),
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
         new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
@@ -867,9 +869,37 @@ public class WspConstants {
             TypeMapping tm = findTypeMappingByClass(returnType);
             if (tm == null)
                 throw new InvalidPolicyTreeException("class " + bean.getClass() + " has property \"" + parm + "\" with unsupported type " + returnType);
-            Object value = getter.invoke(bean, new Object[0]);
+            final Object[] args = new Object[0];
+            Object value = invokeMethod(getter, bean, args);
             TypedReference tr = new TypedReference(returnType, value, parm);
             tm.freeze(tr, element);
+        }
+    }
+
+    /**
+     * Invoke the public method attempting to avoid the jvm bug
+     * see bug parade 4071957, 4852768. The bug is apparently fixed in Tiger - 1.5
+     * @param method the method to invoke
+     * @param targetObject the target object
+     * @param args the method arguments
+     * @return the method invocatin return value
+     * @throws IllegalAccessException see contract in {@link Method#invoke(Object, Object[])}
+     * @throws InvocationTargetException see contract in {@link Method#invoke(Object, Object[])}
+     */
+    private static Object invokeMethod(Method method, Object targetObject, final Object[] args)
+      throws IllegalAccessException, InvocationTargetException {
+        boolean accessible = method.isAccessible();
+        boolean accessibilityChanged = false;
+        try {
+            if (!accessible) {
+                method.setAccessible(true);
+                accessibilityChanged = true;
+            }
+            return method.invoke(targetObject, args);
+        } finally {
+            if (accessibilityChanged) {
+                method.setAccessible(accessible);
+            }
         }
     }
 

@@ -149,6 +149,25 @@
                 <SamlSecurity>
                     <ConfirmationMethodType intValue="0"/>
                 </SamlSecurity>
+                <SamlAuthenticationStatement>
+                    <AudienceRestriction stringValueNull="null"/>
+                    <SubjectConfirmations stringArrayValue="included"/>
+                    <AuthenticationMethods stringArrayValue="included"/>
+                    <CheckAssertionValidity booleanValue="true"/>
+                    <TargetRestriction stringValueNull="null"/>
+                </SamlAuthenticationStatement>
+                <SamlAuthorizationStatement>
+                    <AudienceRestriction stringValueNull="null"/>
+                    <SubjectConfirmations stringArrayValue="included"/>
+                    <CheckAssertionValidity booleanValue="true"/>
+                    <TargetRestriction stringValueNull="null"/>
+                </SamlAuthorizationStatement>
+                <SalmAttributeStatement>
+                    <AudienceRestriction stringValueNull="null"/>
+                    <SubjectConfirmations stringArrayValue="included"/>
+                    <CheckAssertionValidity booleanValue="true"/>
+                    <TargetRestriction stringValueNull="null"/>
+                </SalmAttributeStatement>
                 <AuditAssertion>
                     <SaveRequest booleanValue="false"/>
                     <SaveResponse booleanValue="false"/>
