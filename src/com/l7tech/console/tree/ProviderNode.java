@@ -20,7 +20,7 @@ import java.awt.*;
 /**
  * The class represents an tree node gui node element that
  * corresponds to the Provider entity.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
@@ -30,7 +30,7 @@ public class ProviderNode extends EntityHeaderNode {
      * a given entity.
      * The parameter entity must represent a provider, otherwise the
      * runtime IllegalArgumentException exception is thrown.
-     * 
+     *
      * @param e the Entry instance, must be provider
      * @throws IllegalArgumentException thrown if the entity instance is not a provider
      */
@@ -46,7 +46,7 @@ public class ProviderNode extends EntityHeaderNode {
     /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
-     * 
+     *
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
@@ -72,7 +72,7 @@ public class ProviderNode extends EntityHeaderNode {
 
     /**
      * Gets the default action for this node.
-     * 
+     *
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
@@ -102,7 +102,7 @@ public class ProviderNode extends EntityHeaderNode {
 
     /**
      * Returns true if the receiver is a leaf.
-     * 
+     *
      * @return true if leaf, false otherwise
      */
     public boolean isLeaf() {
@@ -111,7 +111,7 @@ public class ProviderNode extends EntityHeaderNode {
 
     /**
      * subclasses override this method specifying the resource name
-     * 
+     *
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
@@ -126,4 +126,14 @@ public class ProviderNode extends EntityHeaderNode {
     public boolean canRefresh() {
         return true;
     }
+
+    /**
+     *Test if the node can be deleted. Default is <code>true</code>
+     *
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return true;
+    }
+
 }

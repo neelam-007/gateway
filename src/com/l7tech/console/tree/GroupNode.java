@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.Group;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ public class GroupNode extends EntityHeaderNode {
     public Action[] getActions() {
            java.util.List list = new ArrayList();
          final GroupPropertiesAction groupPropertiesAction = new GroupPropertiesAction(this);
-         groupPropertiesAction.setEnabled(canDelete());
+         groupPropertiesAction.setEnabled(isInternal());
          list.add(groupPropertiesAction);
         list.addAll(Arrays.asList(super.getActions()));
 
@@ -55,7 +56,10 @@ public class GroupNode extends EntityHeaderNode {
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
-        return isInternal();
+        if(!getEntityHeader().getName().equals(Group.ADMIN_GROUP_NAME) && isInternal()){
+            return true;
+        }
+        return false;
     }
 
     /**

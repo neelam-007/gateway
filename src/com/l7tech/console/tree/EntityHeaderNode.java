@@ -60,7 +60,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
-        return true;
+        return super.canDelete();
     }
 
     /**
