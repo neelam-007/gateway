@@ -120,8 +120,8 @@ CREATE TABLE published_service (
   version int NOT NULL,
   name varchar(255) NOT NULL,
   policy_xml text NOT NULL,
-  wsdl_url varchar(255) NOT NULL,
-  wsdl_xml text NOT NULL,
+  wsdl_url varchar(255),
+  wsdl_xml text,
   disabled boolean NOT NULL DEFAULT 0,
   soap boolean NOT NULL DEFAULT 1,
   routing_uri varchar(128)

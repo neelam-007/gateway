@@ -127,7 +127,7 @@ CREATE TABLE published_service (
   version int(11) NOT NULL,
   name varchar(255) NOT NULL,
   policy_xml mediumtext,
-  wsdl_url varchar(255) NOT NULL,
+  wsdl_url varchar(255),
   wsdl_xml mediumtext,
   disabled TINYINT(1) NOT NULL DEFAULT 0,
   soap TINYINT(1) NOT NULL DEFAULT 1,

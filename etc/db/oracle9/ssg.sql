@@ -111,8 +111,8 @@ CREATE TABLE published_service (
   version int NOT NULL ,
   name varchar(255) NOT NULL ,
   policy_xml clob NOT NULL ,
-  wsdl_url varchar(255) NOT NULL ,
-  wsdl_xml clob NOT NULL ,
+  wsdl_url varchar(255),
+  wsdl_xml clob,
   disabled char(1) NOT NULL ,
   soap char(1) DEFAULT 1,
   routing_uri varchar(128)
