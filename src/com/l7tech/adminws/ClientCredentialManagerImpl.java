@@ -24,21 +24,17 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
      * If successful, those credentials will be cached for future admin ws calls.
      */
     public synchronized void login(PasswordAuthentication creds)
-      throws LoginException, VersionException {
+      throws LoginException, VersionException, RemoteException {
         resetCredentials();
         setCredentials(creds);
         // version check
-        try {
-            IdentityService is = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
-            String remoteVersion = is.echoVersion();
-            if (!Service.VERSION.equals(remoteVersion)) {
-                throw new VersionException(Service.VERSION, remoteVersion);
-            }
-            serviceLookup =
-              (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
-        } catch (RemoteException e) {
-            throw new VersionException(e);
+        IdentityService is = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        String remoteVersion = is.echoVersion();
+        if (!Service.VERSION.equals(remoteVersion)) {
+            throw new VersionException(Service.VERSION, remoteVersion);
         }
+        serviceLookup =
+          (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
     }
 
 

@@ -9,6 +9,7 @@ import java.net.PasswordAuthentication;
 import java.security.AccessController;
 import java.security.Principal;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -27,7 +28,7 @@ public abstract class ClientCredentialManager implements ConnectionListener {
      * @see ClientCredentialManagerImpl
      */
     public abstract void login(PasswordAuthentication creds)
-            throws LoginException, VersionException;
+            throws LoginException, VersionException, RemoteException;
 
 
     /**
