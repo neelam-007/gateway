@@ -67,7 +67,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
 
     private void initialize() {
         setContentPane(mainPanel);
-        setTitle("XmlSecurityRecipientContext");
+        setTitle("XML Security Recipient Context");
         ButtonGroup bg = new ButtonGroup();
         bg.add(specificRecipientRradio);
         bg.add(defaultRadio);
@@ -84,6 +84,18 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         };
         specificRecipientRradio.addActionListener(al);
         defaultRadio.addActionListener(al);
+
+        Actions.setEscAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                cancel();
+            }
+        });
+
+        Actions.setEnterAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                ok();
+            }
+        });
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
