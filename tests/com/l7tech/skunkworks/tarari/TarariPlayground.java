@@ -36,11 +36,16 @@ public class TarariPlayground {
     public static void main(String[] args) throws Exception {
         TarariUtil.setupIsSoap();
 
-        run(TestDocuments.DIR + "tiny.xml", false);
-        run(TestDocuments.PLACEORDER_CLEARTEXT, true);
-        run(TestDocuments.DOTNET_USERNAME_TOKEN, true);
-        run(TestDocuments.DOTNET_SIGNED_REQUEST, true);
-        run(TestDocuments.PLACEORDER_WITH_MAJESTY, true);
+        if (args.length > 0) {
+            Boolean soap = args.length == 2 ? Boolean.valueOf(args[1]) : Boolean.FALSE;
+            run(args[0], soap.booleanValue());
+        } else {
+            run(TestDocuments.DIR + "tiny.xml", false);
+            run(TestDocuments.PLACEORDER_CLEARTEXT, true);
+            run(TestDocuments.DOTNET_USERNAME_TOKEN, true);
+            run(TestDocuments.DOTNET_SIGNED_REQUEST, true);
+            run(TestDocuments.PLACEORDER_WITH_MAJESTY, true);
+        }
     }
 
     private static void run(String docName, boolean shouldBeSoap) throws Exception {
