@@ -5,8 +5,6 @@ package com.l7tech.identity.internal.imp;
 
 import java.util.Set;
 
-import com.l7tech.identity.internal.Address;
-import com.l7tech.identity.internal.Organization;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.imp.EntityImp;
 
@@ -50,24 +48,8 @@ public class UserImp extends EntityImp implements User {
         return _title;
     }
 
-    public Organization getOrganization() {
-        return _organization;
-    }
-
     public String getDepartment() {
         return _department;
-    }
-
-    public Address getAddress() {
-        return _address;
-    }
-
-    public Address getMailingAddress() {
-        return _mailingAddress;
-    }
-
-    public Address getBillingAddress() {
-        return _billingAddress;
     }
 
     public Set getGroups() {
@@ -116,24 +98,8 @@ public class UserImp extends EntityImp implements User {
         _title = title;
     }
 
-    public void setOrganization(Organization organization) {
-        _organization = organization;
-    }
-
     public void setDepartment(String department) {
         _department = department;
-    }
-
-    public void setAddress(Address address) {
-        _address = address;
-    }
-
-    public void setMailingAddress(Address mailingAddress) {
-        _mailingAddress = mailingAddress;
-    }
-
-    public void setBillingAddress(Address billingAddress) {
-        _billingAddress = billingAddress;
     }
 
     public String toString() {
@@ -167,11 +133,7 @@ public class UserImp extends EntityImp implements User {
     private String _lastName;
     private String _email;
     private String _title;
-    private Organization _organization;
     private String _department;
-    private Address _address;
-    private Address _mailingAddress;
-    private Address _billingAddress;
     private Set _groups;
     private Set _groupHeaders;
 }
