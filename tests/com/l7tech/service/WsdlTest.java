@@ -122,12 +122,12 @@ public class WsdlTest extends TestCase {
     public void testGetAndSetPortUrl() throws FileNotFoundException, WSDLException, MalformedURLException {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(WSDL));
         Port port = wsdl.getSoapPort();
-        URL url = wsdl.getUrlFromPort(port);
+        URL url = new URL(wsdl.getUriFromPort(port));
         log.info("Read port URL: " + url);
         wsdl.setPortUrl(port, new URL("http://blee.blah.baz:9823/foo/bar/baz?whoomp=foomp&feez=gleez&atlue=42"));
         log.info("Changed port URL");
         port = wsdl.getSoapPort();
-        url = wsdl.getUrlFromPort(port);
+        url = new URL(wsdl.getUriFromPort(port));
         log.info("Read back port URL: " + url);
     }
 

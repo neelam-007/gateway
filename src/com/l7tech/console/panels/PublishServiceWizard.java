@@ -6,6 +6,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -69,10 +70,15 @@ public class PublishServiceWizard extends Wizard {
         }
 
         public String getServiceURI() {
-            try {
-                Wsdl wsdl = service.parsedWsdl();
-                if (wsdl != null) return wsdl.getServiceURI();
-            } catch (WSDLException e) {
+
+            if(routingAssertion != null && routingAssertion instanceof HttpRoutingAssertion) {
+                return ((HttpRoutingAssertion)routingAssertion).getProtectedServiceUrl(); 
+            } else {
+                try {
+                    Wsdl wsdl = service.parsedWsdl();
+                    if (wsdl != null) return wsdl.getServiceURI();
+                } catch (WSDLException e) {
+                }
             }
             return null;
         }

@@ -167,15 +167,24 @@ public class PublishedService extends NamedEntityImp {
         if (_serviceUrl == null) {
             Port wsdlPort = wsdlPort();
             if (wsdlPort == null) return null;
-            URL url = parsedWsdl().getUrlFromPort(wsdlPort);
+            String uri = parsedWsdl().getUriFromPort(wsdlPort);
 
-            if (url == null) {
+            if (uri == null) {
                 String err = "WSDL " + getWsdlUrl() + " did not contain a valid URL";
                 logger.severe(err);
                 throw new WSDLException(SoapFaultUtils.FC_SERVER, err);
             }
 
-            _serviceUrl = url;
+            String baseURI = Wsdl.extractBaseURI(getWsdlUrl());
+            if(baseURI != null && baseURI.startsWith("http") || uri.startsWith("HTTP")) {
+                if(uri.startsWith("http") || uri.startsWith("HTTP")) {
+                    _serviceUrl = new URL(uri);
+                } else {
+                    _serviceUrl = new URL( baseURI + uri);
+                }
+            } else {
+                _serviceUrl = new URL(uri);
+            }
         }
         return _serviceUrl;
     }

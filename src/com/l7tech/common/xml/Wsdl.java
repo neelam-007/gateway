@@ -654,11 +654,30 @@ public class Wsdl {
         }
     }
 
-    public URL getUrlFromPort(Port wsdlPort) throws MalformedURLException {
+    /**
+     * extract base URI from the URL specified.
+     * @param url
+     * @return
+     */
+    public static String extractBaseURI(String url) {
+
+        int lastIndexOfSlash = url.lastIndexOf('/');
+        String baseURL;
+        if(lastIndexOfSlash == -1) {
+            baseURL = "./";
+        } else {
+            baseURL = url.substring(0, lastIndexOfSlash + 1);
+        }
+
+        return baseURL;
+    }
+
+
+    public String getUriFromPort(Port wsdlPort) throws MalformedURLException {
         if (wsdlPort == null)
             throw new IllegalArgumentException("No WSDL port was provided");
         List elements = wsdlPort.getExtensibilityElements();
-        URL url = null;
+        String uri = null;
         ExtensibilityElement eel;
         int num = 0;
         for (int i = 0; i < elements.size(); i++) {
@@ -666,13 +685,13 @@ public class Wsdl {
             if (eel instanceof SOAPAddress) {
                 SOAPAddress sadd = (SOAPAddress)eel;
                 num++;
-                url = new URL(sadd.getLocationURI());
+                uri = sadd.getLocationURI();
             }
         }
 
         if (num > 1) logger.warning("WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements");
 
-        return url;
+        return uri;
     }
 
     /**

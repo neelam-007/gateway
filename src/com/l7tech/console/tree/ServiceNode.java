@@ -151,7 +151,7 @@ public class ServiceNode extends EntityHeaderNode {
         try {
             PublishedService s = getPublishedService();
             if (s != null && s.isSoap()) {
-                Wsdl wsdl = Wsdl.newInstance(null, new StringReader(svc.getWsdlXml()));
+                Wsdl wsdl = Wsdl.newInstance(Wsdl.extractBaseURI(s.getWsdlUrl()), new StringReader(svc.getWsdlXml()));
                 WsdlTreeNode node = WsdlTreeNode.newInstance(wsdl);
                 children = null;
                 node.getChildCount();

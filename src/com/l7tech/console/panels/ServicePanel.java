@@ -238,14 +238,6 @@ public class ServicePanel extends WizardStepPanel {
             // this can be either a WSDL or a WSIL document
             String xmlResult = (String) result;
 
-            int lastIndexOfSlash = wsdlUrlTextField.getText().lastIndexOf('/');
-            String baseURL;
-            if(lastIndexOfSlash == -1) {
-                baseURL = "./";
-            } else {
-                baseURL = wsdlUrlTextField.getText().substring(0, lastIndexOfSlash + 1);
-            }
-
             Document resolvedDoc = XmlUtil.stringToDocument(xmlResult);
 
             // is this a WSIL?
@@ -263,7 +255,7 @@ public class ServicePanel extends WizardStepPanel {
                     return onNextButton();
                 }
             } else {
-                wsdl = Wsdl.newInstance(baseURL, new StringReader(xmlResult));
+                wsdl = Wsdl.newInstance(Wsdl.extractBaseURI(wsdlUrlTextField.getText()), new StringReader(xmlResult));
 
                 final String serviceName = wsdl.getServiceName();
                 // if service name not obtained service name is WSDL URL
@@ -326,9 +318,14 @@ public class ServicePanel extends WizardStepPanel {
                 Port port = wsdl.getSoapPort();
                 sa.setRoutingAssertion(new HttpRoutingAssertion());
                 if (port != null) {
-                    URL url = wsdl.getUrlFromPort(port);
-                    if (url != null)
-                        sa.setRoutingAssertion(new HttpRoutingAssertion(url.toString()));
+                    String uri = wsdl.getUriFromPort(port);
+                    if (uri != null) {
+                        if(uri.startsWith("http") || uri.startsWith("HTTP")) {
+                             sa.setRoutingAssertion(new HttpRoutingAssertion(uri));
+                        } else {
+                             sa.setRoutingAssertion(new HttpRoutingAssertion(Wsdl.extractBaseURI(publishedService.getWsdlUrl()) + uri));
+                        }
+                    }
                 }
                 if (sa.getAssertion() != null && sa.getAssertion().getChildren().isEmpty()) {
                     sa.getAssertion().addChild(sa.getRoutingAssertion());
