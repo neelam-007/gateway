@@ -5,7 +5,13 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.Wsdl;
 import com.l7tech.service.PublishedService;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
 
 import javax.wsdl.WSDLException;
@@ -175,17 +181,32 @@ public class StubDataStore {
         service.setWsdlXml(sw.toString());
         service.setWsdlUrl(file.toURI().toString());
         service.setOid(nextObjectId());
-        Group g =
-          (Group)groups.values().iterator().next();
-        Assertion assertion =
-          new MemberOfGroup( makeProvider(pc).getConfig().getOid(), g.getName() );
+        Assertion assertion = sampleAssertion(pc);
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         WspWriter.writePolicy(assertion, bo);
 
         service.setPolicyXml(bo.toString());
         encoder.writeObject(service);
         populate(service);
+    }
 
+    private Assertion sampleAssertion(IdentityProviderConfig pc) {
+        Group g =
+          (Group)groups.values().iterator().next();
+        List identities = new ArrayList();
+
+        long providerId = makeProvider(pc).getConfig().getOid();
+
+        identities.add(new MemberOfGroup(providerId, g.getName()));
+        for (Iterator i = users.values().iterator(); i.hasNext();) {
+            identities.add(new SpecificUser(providerId, ((User)i.next()).getLogin()));
+        }
+        OneOrMoreAssertion oom = new OneOrMoreAssertion(identities);
+        AllAssertion assertion =
+          new AllAssertion(
+            Arrays.asList(new Assertion[] {new HttpBasic(), oom})
+          );
+        return assertion;
     }
 
     private IdentityProvider makeProvider(IdentityProviderConfig pc) {

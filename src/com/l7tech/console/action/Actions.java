@@ -116,7 +116,7 @@ public class Actions {
             // Make sure
         if ((JOptionPane.showConfirmDialog(
           getMainWindow(),
-          "Are you sure you wish to delete service " +
+          "Are you sure you wish to delete assertion " +
           node.getName() + "?",
           "Delete assertion",
           JOptionPane.YES_NO_OPTION)) == 1) {

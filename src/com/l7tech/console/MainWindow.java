@@ -8,6 +8,7 @@ import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
@@ -83,7 +84,7 @@ public class MainWindow extends JFrame {
     private JLabel statusMsgRight = null;
 
     private JToolBar toolBarPane = null;
-    private JToolBar policyToolBar = null;
+    private PolicyToolBar policyToolBar = null;
 
     private JSplitPane mainJSplitPane = null;
     private JPanel mainLeftJPanel = null;
@@ -96,15 +97,13 @@ public class MainWindow extends JFrame {
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
 
-    private Action addAssertionAction;
-    private Action assertionMoveUpAction;
-    private Action assertionMoveDownAction;
-    private Action deleteAssertionAction;
     private JMenu gotoMenu;
     public static final String ASSERTION_PALETTE = "assertion.palette";
     public static final String SERVICES_TREE = "services.treee";
     public static final String TITLE = "SSG console";
      public static final String NAME = "main.window"; // registered
+    private JTree policyTree;
+
     /**
      * MainWindow constructor comment.
      */
@@ -846,91 +845,11 @@ public class MainWindow extends JFrame {
      */
     private JToolBar getPolicyToolBar() {
         if (policyToolBar != null) return policyToolBar;
-
-        policyToolBar = new JToolBar();
-        policyToolBar.addSeparator();
-        policyToolBar.setOrientation(JToolBar.VERTICAL);
-        policyToolBar.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
-        policyToolBar.setFloatable(false);
-
-        JButton b = policyToolBar.add(getAddAssertionAction());
-        b.setEnabled(false);
-        b.setMargin(new Insets(0, 0, 0, 0));
-        policyToolBar.addSeparator();
-
-        b = policyToolBar.add(getAssertionMoveUpAction());
-        b.setEnabled(false);
-        b.setMargin(new Insets(0, 0, 0, 0));
-        policyToolBar.addSeparator();
-
-        b = policyToolBar.add(getAssertionMoveDownAction());
-        b.setEnabled(false);
-        b.setMargin(new Insets(0, 0, 0, 0));
-        policyToolBar.addSeparator();
-
-        b = policyToolBar.add(getDeleteAssertionAction());
-        b.setEnabled(false);
-        b.setMargin(new Insets(0, 0, 0, 0));
-        policyToolBar.addSeparator();
-
+        policyToolBar = new PolicyToolBar();
+        policyToolBar.registerPaletteTree(getAssertionPaletteTree());
+        policyTree = Registry.getDefault().getWindowManager().getPolicyTree();
+        policyToolBar.registerPolicyTree(policyTree);
         return policyToolBar;
-    }
-
-    private Action getAssertionMoveUpAction() {
-        if (assertionMoveUpAction != null)
-            return assertionMoveUpAction;
-        assertionMoveUpAction = new AssertionMoveUpAction() {
-            /**
-             * Invoked when an action occurs.
-             */
-            public void performAction() {
-            }
-        };
-
-        return assertionMoveUpAction;
-
-    }
-
-    private Action getAssertionMoveDownAction() {
-        if (assertionMoveDownAction != null)
-            return assertionMoveDownAction;
-        assertionMoveDownAction = new AssertionMoveDownAction() {
-            /**
-             * Invoked when an action occurs.
-             */
-            public void performAction() {
-            }
-        };
-
-        return assertionMoveDownAction;
-
-    }
-
-    private Action getAddAssertionAction() {
-        if (addAssertionAction != null)
-            return addAssertionAction;
-        addAssertionAction = new AddAssertionAction() {
-            /**
-             * Invoked when an action occurs.
-             */
-            public void performAction() {
-            }
-        };
-        return addAssertionAction;
-    }
-
-
-    private Action getDeleteAssertionAction() {
-        if (deleteAssertionAction != null)
-            return deleteAssertionAction;
-        deleteAssertionAction = new DeleteAssertionAction() {
-            /**
-             * Invoked when an action occurs.
-             */
-            public void performAction() {
-            }
-        };
-        return deleteAssertionAction;
     }
 
 
@@ -1119,15 +1038,6 @@ public class MainWindow extends JFrame {
     }
 
     /**
-     * Updates the right panel with the component that manages
-     * the given node.
-     * Determine the panel for node, and if any found
-     */
-    private void activateWorkBenchPanel(Object o) {
-    }
-
-
-    /**
      * Invoked on node selection change, update the right panel
      * @param event
      * @see TreeSelectionEvent for details
@@ -1142,8 +1052,6 @@ public class MainWindow extends JFrame {
             updateActions(node);
             object = node.getUserObject();
         }
-
-        activateWorkBenchPanel(object);
     }
 
     /**

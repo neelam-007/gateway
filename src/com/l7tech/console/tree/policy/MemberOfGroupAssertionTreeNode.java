@@ -31,6 +31,15 @@ class MemberOfGroupAssertionTreeNode extends LeafAssertionTreeNode {
 
 
     /**
+     *Test if the node can be deleted. Default is <code>true</code>
+     *
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return true;
+    }
+
+    /**
      * @return the node name that is displayed
      */
     public String getName() {

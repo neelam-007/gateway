@@ -5,6 +5,7 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.WindowManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -56,12 +57,14 @@ public class ServicePolicyPropertiesAction extends NodeAction {
           new Runnable() {
               public void run() {
                   try {
+                      WindowManager windowManager =
+                        Registry.getDefault().getWindowManager();
                       WorkSpacePanel wpanel =
-                        Registry.getDefault().
-                        getWindowManager().getCurrentWorkspace();
+                        windowManager.getCurrentWorkspace();
                       PublishedService svc = ((ServiceNode)node).getPublishedService();
                       PolicyTreeModel model = new PolicyTreeModel(svc.rootAssertion());
-                      PolicyTree tree = new PolicyTree(model);
+                      JTree tree = windowManager.getPolicyTree();
+                      tree.setModel(model);
                       tree.setName(svc.getName());
                       wpanel.setComponent(tree);
                   } catch (Exception e) {

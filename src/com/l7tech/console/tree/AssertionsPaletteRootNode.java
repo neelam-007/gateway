@@ -47,8 +47,7 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
      */
     protected void loadChildren() {
         Registry r = Registry.getDefault();
-        List list =
-          Arrays.asList(
+        AbstractTreeNode[] nodes =
             new AbstractTreeNode[]{
                 new UserFolderNode(r.getInternalUserManager()),
                 new GroupFolderNode(r.getInternalGroupManager()),
@@ -56,10 +55,10 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
                 new PoliciesFolderNode(),
                 new AuthMethodFolderNode(),
                 new TransportLayerSecurityFolderNode()
-            });
-        int index = 0;
-        for (Iterator i = list.iterator(); i.hasNext();) {
-            insert((MutableTreeNode) i.next(), index++);
+            };
+
+        for (int i = 0; i < nodes.length; i++) {
+            insert(nodes[i], i);
         }
     }
 

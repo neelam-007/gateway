@@ -36,8 +36,19 @@ class AllAssertionTreeNode extends CompositeAssertionTreeNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         list.addAll(Arrays.asList(super.getActions()));
-        if (canDelete())  list.add(new AddIdentityAssertionAction());
+        Action a = new AddIdentityAssertionAction();
+        a.setEnabled(false);
+        list.add(a);
         return (Action[]) list.toArray(new Action[]{});
+    }
+
+    /**
+     *Test if the node can be deleted. Default is <code>true</code>
+     *
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return getParent() !=null;
     }
 
 
@@ -56,6 +67,6 @@ class AllAssertionTreeNode extends CompositeAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "All assertions must evaluate true";
+        return "All assertions must evaluate to true";
     }
 }

@@ -28,20 +28,28 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         return this.toString();
     }
 
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        java.util.List list = new ArrayList();
+        list.addAll(Arrays.asList(super.getActions()));
+        Action da = new DeleteAssertionAction(this);
+        da.setEnabled(canDelete());
+        list.add(da);
+        return (Action[])list.toArray(new Action[]{});
+    }
 
     /**
-    * Get the set of actions associated with this node.
-    * This may be used e.g. in constructing a context menu.
-    *
-    * @return actions appropriate to the node
-    */
-   public Action[] getActions() {
-       java.util.List list = new ArrayList();
-       list.addAll(Arrays.asList(super.getActions()));
-       if (canDelete())  list.add(new DeleteAssertionAction(this));
-       return (Action[]) list.toArray(new Action[]{});
-   }
-
+     * Does the assertion node accepts the abstract tree node
+     *
+     * @param node the node to accept
+     * @return true if the node can be accepted, false otherwise
+     */
+    public abstract boolean accept(AbstractTreeNode node);
 }
 
 /**
@@ -57,6 +65,16 @@ abstract class LeafAssertionTreeNode extends AssertionTreeNode {
 
     protected void loadChildren() {
     }
+
+    /**
+     * By default, the leaf node never accepts a node.
+     *
+     * @param node the node to accept
+     * @return always false
+     */
+    public boolean accept(AbstractTreeNode node) {
+        return false;
+    }
 }
 
 /**
@@ -71,11 +89,21 @@ class CompositeAssertionTreeNode extends AssertionTreeNode {
     }
 
     protected void loadChildren() {
-        CompositeAssertion assertion = (CompositeAssertion) getUserObject();
+        CompositeAssertion assertion = (CompositeAssertion)getUserObject();
         int index = 0;
         for (Iterator i = assertion.children(); i.hasNext();) {
-            insert((AssertionTreeNodeFactory.asTreeNode((Assertion) i.next())), index++);
+            insert((AssertionTreeNodeFactory.asTreeNode((Assertion)i.next())), index++);
         }
+    }
+
+    /**
+     * By default, the composite node accepts a node.
+     *
+     * @param node the node to accept
+     * @return always true
+     */
+    public boolean accept(AbstractTreeNode node) {
+        return true;
     }
 
     /**

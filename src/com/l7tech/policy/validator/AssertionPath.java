@@ -12,7 +12,7 @@ import java.util.ArrayList;
  * instances.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class AssertionPath {
+public class AssertionPath {
     /**
      * Cnstruct the new assertion path with the give n<code>Asserion</code>
      * representing root assertion.

@@ -37,6 +37,17 @@ class OneOrMoreAssertionTreeNode extends CompositeAssertionTreeNode {
         return "com/l7tech/console/resources/folder.gif";
     }
 
+
+    /**
+     *Test if the node can be deleted. Default is <code>true</code>
+     *
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return getParent() !=null;
+    }
+
+
     /**
      * @return the node name that is displayed
      */

@@ -75,14 +75,13 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         return null;
     }
 
-
     /**
      *Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
-        return true;
+        return false;
     }
 
     /**
@@ -127,4 +126,11 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected abstract String iconResource(boolean open);
+
+    /**
+     * @return the string representation of this node
+     */
+    public String toString() {
+        return "["+this.getClass() + ", "+getName()+"]";
+    }
 }
