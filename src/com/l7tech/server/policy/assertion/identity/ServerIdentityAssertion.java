@@ -122,18 +122,14 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
      * @throws FindException
      */
     protected IdentityProvider getIdentityProvider() throws FindException {
-        if ( _identityProvider == null ) {
-            if ( _configManager == null ) _configManager = new IdProvConfManagerServer();
-            IdentityProviderConfig config = _configManager.findByPrimaryKey( _data.getIdentityProviderOid() );
-            _identityProvider = IdentityProviderFactory.makeProvider( config );
-        }
-        return _identityProvider;
+        if ( _configManager == null ) _configManager = new IdProvConfManagerServer();
+        IdentityProviderConfig config = _configManager.findByPrimaryKey( _data.getIdentityProviderOid() );
+        return IdentityProviderFactory.makeProvider( config );
     }
 
     protected abstract AssertionStatus checkUser( User u );
 
     protected transient IdentityProviderConfigManager _configManager = null;
-    protected transient IdentityProvider _identityProvider;
     protected transient Logger logger = LogManager.getInstance().getSystemLogger();
 
     protected IdentityAssertion _data;
