@@ -1,13 +1,19 @@
 package com.l7tech.server.secureconversation;
 
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
+import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 
 import javax.crypto.SecretKey;
 import java.security.SecureRandom;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -29,20 +35,43 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
     /**
      * Retrieve a session previously recorded.
      */
-    public synchronized SecureConversationSession getSession(String identifier) {
-        return (SecureConversationSession)sessions.get(identifier);
+    public SecureConversationSession getSession(String identifier) {
+        checkExpiriedSessions();
+        SecureConversationSession output = null;
+        Sync readlock = rwlock.readLock();
+        try {
+            readlock.acquire();
+            output = (SecureConversationSession)sessions.get(identifier);
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Read lock interrupted", e);
+        } finally {
+            readlock.release();
+        }
+        return output;
     }
 
     /**
      * For use by the token service. Records and remembers a session for the duration specified.
      */
-    public synchronized void saveSession(SecureConversationSession newSession) throws DuplicateSessionException {
-        // Two sessions with same id is not allowed. ever (even if one is expired)
-        SecureConversationSession alreadyExistingOne = getSession(newSession.getIdentifier());
-        if (alreadyExistingOne != null) {
-            throw new DuplicateSessionException("Session already exists with id " + newSession.getIdentifier());
+    public void saveSession(SecureConversationSession newSession) throws DuplicateSessionException {
+        Sync writelock = rwlock.writeLock();
+        try {
+            writelock.acquire();
+            // Two sessions with same id is not allowed. ever (even if one is expired)
+            SecureConversationSession alreadyExistingOne =
+                    (SecureConversationSession)sessions.get(newSession.getIdentifier());
+            if (alreadyExistingOne != null) {
+                throw new DuplicateSessionException("Session already exists with id " + newSession.getIdentifier());
+            }
+            sessions.put(newSession.getIdentifier(), newSession);
+            logger.finest("Saved SC context " + newSession.getIdentifier());
+        } catch (InterruptedException e) {
+            String msg = "Write lock interrupted. Session might not have been saved";
+            logger.log(Level.WARNING, msg, e);
+            throw new RuntimeException(e);
+        } finally {
+            writelock.release();
         }
-        sessions.put(newSession.getIdentifier(), newSession);
     }
 
     /**
@@ -74,6 +103,35 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
         return session;
     }
 
+    private void checkExpiriedSessions() {
+        long now = System.currentTimeMillis();
+        if ((now - lastExpirationCheck) > SESSION_CHECK_INTERVAL) {
+            Sync writelock = rwlock.writeLock();
+            try {
+                writelock.acquire();
+                // check expired sessions
+                logger.finest("Checking for expired sessions");
+                Collection sessionsCol = sessions.values();
+                for (Iterator iterator = sessionsCol.iterator(); iterator.hasNext();) {
+                    SecureConversationSession sess = (SecureConversationSession)iterator.next();
+                    if (sess.getExpiration() <= now) {
+                        // delete the session
+                        logger.info("Deleting secure conversation session because expired: " + sess.getIdentifier());
+                        sessions.remove(sess.getIdentifier());
+                        // reset the traversor
+                        sessionsCol = sessions.values();
+                        iterator = sessionsCol.iterator();
+                    }
+                }
+            } catch (InterruptedException e) {
+                logger.log(Level.WARNING, "this check was interrupted", e);
+            } finally {
+                writelock.release();
+            }
+            lastExpirationCheck = now;
+        }
+    }
+
     private byte[] generateNewSecret() {
         // return some random secret
         byte[] output = new byte[16];
@@ -97,7 +155,6 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
 
     private SecureConversationContextManager() {
         // maybe in the future we use some distributed cache?
-        // todo, something that deletes old sessions
     }
 
     /**
@@ -111,6 +168,10 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
     }
 
     private final Logger logger = Logger.getLogger(SecureConversationContextManager.class.getName());
-    private static final long DEFAULT_SESSION_DURATION = 1000*60*60*2; // 2 hrs?
+    private static final long DEFAULT_SESSION_DURATION = 1000*60*60*2; // 2 hrs
+    private static final long SESSION_CHECK_INTERVAL = 1000*60*5; // check every 5 minutes
     private static final Random random = new SecureRandom();
+    private long lastExpirationCheck = System.currentTimeMillis();
+    private final ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();
 }
+
