@@ -15,6 +15,8 @@ import org.apache.log4j.Category;
  * User: flascelles
  * Date: Jun 24, 2003
  *
+ * @version $Revision$
+ *
  */
 public class InternalUserManagerServer extends HibernateEntityManager implements UserManager {
 
