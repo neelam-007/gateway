@@ -19,8 +19,8 @@ import java.util.logging.Logger;
 /**
  * This class implements a frame that displays the applicaiton
  * log.
- *
- * @author
+ * todo: change the functionlaity is so it maps over the log output file.
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 
 public class ConsoleDialog extends JFrame {

@@ -4,7 +4,7 @@ import java.util.logging.*;
 
 /**
  * Class DefaultHandler.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class DefaultHandler extends Handler {
     boolean headerWritten;
