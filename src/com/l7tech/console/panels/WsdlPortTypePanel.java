@@ -60,7 +60,12 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "Port Type";
+        return "<html><b>Port Type</b><br>"+
+          "The <i>port type</i> element contains a set of abstract operations and the abstract " +
+          "messages involved. " +
+          "For RPC-style Web services a <i>portType</i> can be thought as an interface definition " +
+          "in which each method can be defined as an operation."+
+          "</html>";
     }
 
     /**

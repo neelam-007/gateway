@@ -344,37 +344,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return msg;
     }
 
-    private static class IdentityNodeFilter implements NodeFilter {
-        /**
-         * @param node  the <code>TreeNode</code> to examine
-         * @return  true if filter accepts the node, false otherwise
-         */
-        public boolean accept(TreeNode node) {
-            if (node instanceof SpecificUserAssertionTreeNode ||
-              node instanceof MemberOfGroupAssertionTreeNode)
-                return false;
-
-            if (node instanceof CompositeAssertionTreeNode) {
-                if (((CompositeAssertionTreeNode)node).getChildCount(this) == 0)
-                    return false;
-            }
-
-            TreeNode[] path = ((DefaultMutableTreeNode)node).getPath();
-            IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[1];
-            AssertionTreeNode an = (AssertionTreeNode)node;
-            IdentityPath ip = in.getIdentityPath();
-            Set paths = ip.getPaths();
-            for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
-                Assertion[] apath = (Assertion[])iterator.next();
-                for (int i = apath.length - 1; i >= 0; i--) {
-                    Assertion assertion = apath[i];
-                    if (assertion.equals(an.asAssertion())) return true;
-                }
-            }
-            return false;
-        }
-
-    }
 
     // listener for policy tree changes
     TreeModelListener policyTreeModellistener = new TreeModelListener() {

@@ -39,9 +39,9 @@ public class WsdlServicePanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "Specify the SOAP elements: port definition and address (URI) of an endpoint" +
-          " or port where the Web service can be reached.\n" +
-          "Choose Finish when you are satisfied.";
+        return "<html><b>Service</b><br>" +
+          "The service element defines the address (URI) of an endpoint" +
+          " and the port where the Web service can be reached.</html>";
     }
 
     /**

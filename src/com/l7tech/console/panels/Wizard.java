@@ -6,6 +6,8 @@ import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 
 import javax.swing.*;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
@@ -166,7 +168,7 @@ public class Wizard extends JDialog {
         JScrollPane descScrollPane = new JScrollPane();
         descScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
-        JTextArea da = getStepDescriptionTextArea();
+        JEditorPane da = getStepDescriptionTextPane();
         da.setBackground(descScrollPane.getBackground());
         descScrollPane.setViewportView(da);
 
@@ -325,15 +327,13 @@ public class Wizard extends JDialog {
     /**
      * @return the description area
      */
-    private JTextArea getStepDescriptionTextArea() {
-        if (stepDescriptionTextArea != null)
-            return stepDescriptionTextArea;
+    private JTextPane getStepDescriptionTextPane() {
+        if (stepDescriptionTextPane != null)
+            return stepDescriptionTextPane;
 
-        stepDescriptionTextArea = new WrappingLabel();
-        stepDescriptionTextArea.setEditable(false);
-        stepDescriptionTextArea.setLineWrap(true);
-        stepDescriptionTextArea.setWrapStyleWord(true);
-        stepDescriptionTextArea.setRows(5);
+        stepDescriptionTextPane = new JTextPane();
+        stepDescriptionTextPane.setEditorKit(new HTMLEditorKit());
+        stepDescriptionTextPane.setEditable(false);
         addWizardListener( new WizardAdapter() {
             /**
              * Invoked when the wizard page has been changed.
@@ -342,10 +342,13 @@ public class Wizard extends JDialog {
              */
             public void wizardSelectionChanged(WizardEvent e) {
                 WizardStepPanel wp = (WizardStepPanel)e.getSource();
-                stepDescriptionTextArea.setText(wp.getDescription());
+                stepDescriptionTextPane.setText(wp.getDescription());
             }
         });
-        return stepDescriptionTextArea;
+        Dimension pd = stepDescriptionTextPane.getPreferredSize();
+        int fh = getFontMetrics(getFont()).getHeight();
+        stepDescriptionTextPane.setPreferredSize(new Dimension(pd.width, fh * 5));
+        return stepDescriptionTextPane;
     }
 
     protected JPanel createButtonPanel() {
@@ -571,7 +574,7 @@ public class Wizard extends JDialog {
     private JPanel stepLabelsPanel;
     private JPanel wizardStepPanel;
 
-    private JTextArea stepDescriptionTextArea;
+    private JTextPane stepDescriptionTextPane;
     private JButton buttonFinish;
     private JButton cancelButton;
     private JButton buttonNext;

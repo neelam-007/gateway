@@ -63,7 +63,14 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "Port Type Binding";
+        return "<html><b>Port Type Binding</b><br>" +
+          "The <i>binding</i> element contains binding definitions that specify message formatting and" +
+          "protocol details. " +
+          "The <i>soapAction</i> attribute specifies the value of the SOAPAction header for this operation."+
+          "The transport attribute indicates which SOAP transport this binding corresponds to. The value " +
+          "http://schemas.xmlsoap.org/soap/http corresponds to the HTTP binding in the SOAP specification."+
+          "The style attribute is set to either rpc or document."+
+          "</html>";
     }
 
     /**

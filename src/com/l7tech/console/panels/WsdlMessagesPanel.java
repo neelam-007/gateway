@@ -123,9 +123,13 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "Messages";
+        return "<html><b>Messages</b><br>"+
+          "The <i>Message</i> element provides a common abstraction for messages passed " +
+          "between the client and the server. " +
+          "A message consists of one or more logical parts each of which is associated with " +
+          "a type from the type system."+
+          "</html>";
     }
-
     /**
      * @return the wizard step label
      */

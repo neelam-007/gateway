@@ -25,7 +25,7 @@ public class WsdlCreateOverviewPanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "Service";
+        return "";
     }
 
     /**
