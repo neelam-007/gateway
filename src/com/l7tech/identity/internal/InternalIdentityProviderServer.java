@@ -1,27 +1,31 @@
 package com.l7tech.identity.internal;
 
-import com.l7tech.identity.*;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.EntityHeaderComparator;
-import com.l7tech.logging.LogManager;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.identity.*;
+import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.EntityHeaderComparator;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.util.KeystoreUtils;
 
 import javax.naming.NamingException;
 import java.io.*;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Map;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Collection;
-import java.util.TreeSet;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateException;
-import java.security.SignatureException;
-import java.security.GeneralSecurityException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -35,6 +39,12 @@ public class InternalIdentityProviderServer implements IdentityProvider {
     public InternalIdentityProviderServer() {
         userManager = new InternalUserManagerServer();
         groupManager = new InternalGroupManagerServer();
+        try {
+            _md5 = MessageDigest.getInstance( "MD5" );
+        } catch (NoSuchAlgorithmException e) {
+            _log.log( Level.SEVERE, e.getMessage(), e );
+            throw new RuntimeException( e );
+        }
     }
 
     public void initialize( IdentityProviderConfig config ) {
@@ -62,6 +72,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
             } else {
                 CredentialFormat format = pc.getFormat();
 
+                // TODO: This is really ugly.  Move to CredentialFormat subclasses?
                 if ( format == CredentialFormat.CLIENTCERT ) {
                     Certificate dbCert = null;
                     X509Certificate dbCertX509 = null;
@@ -141,9 +152,46 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     String authPassHash = null;
 
                     if ( format == CredentialFormat.CLEARTEXT ) {
-                        authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ) );
+                        String realm = pc.getRealm();
+                        if ( realm == null )
+                            authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ), HttpDigest.REALM );
+                        else
+                            authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ), realm );
                     } else if ( format == CredentialFormat.DIGEST ) {
-                        authPassHash = new String( credentials, ENCODING );
+                        Map authParams = (Map)pc.getPayload();
+                        if ( authParams == null ) {
+                            _log.log( Level.SEVERE, "No Digest authentication parameters found in PrincipalCredentials payload!" );
+                            return false;
+                        }
+
+                        String qop = (String)authParams.get( HttpDigest.PARAM_QOP );
+                        String nonce = (String)authParams.get( HttpDigest.PARAM_NONCE );
+
+                        String a2 = (String)authParams.get( HttpDigest.PARAM_METHOD ) + ":" +
+                                    (String)authParams.get( HttpDigest.PARAM_URI );
+
+                        String ha2 = HexUtils.encodeMd5Digest( _md5.digest( a2.getBytes() ) );
+
+                        String serverDigestValue;
+                        if (HttpDigest.QOP_AUTH.equals(qop))
+                            serverDigestValue = dbPassHash + ":" + nonce + ":" + ha2;
+                        else {
+                            String nc = (String)authParams.get( HttpDigest.PARAM_NC );
+                            String cnonce = (String)authParams.get( HttpDigest.PARAM_CNONCE );
+
+                            serverDigestValue = dbPassHash + ":" + nonce + ":" + nc + ":"
+                                    + cnonce + ":" + qop + ":" + ha2;
+                        }
+
+                        String expectedResponse = HexUtils.encodeMd5Digest( _md5.digest( serverDigestValue.getBytes() ) );
+                        String response = new String( credentials );
+
+                        if ( response.equals( expectedResponse ) ) {
+                            authUser.copyFrom( dbUser );
+                            return true;
+                        } else {
+                            return false;
+                        }
                     } else {
                         throwUnsupportedCredentialFormat(format);
                     }
@@ -206,4 +254,5 @@ public class InternalIdentityProviderServer implements IdentityProvider {
     private InternalGroupManagerServer groupManager;
 
     private Logger _log = LogManager.getInstance().getSystemLogger();
+    private MessageDigest _md5;
 }
