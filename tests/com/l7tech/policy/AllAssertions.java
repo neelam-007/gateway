@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -146,7 +147,7 @@ public class AllAssertions {
         // TODO new InetAddressAssertion(),
     };
 
-    public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {
+    public static CredentialSourceAssertion[] CREDENTIAL_ASSERTIONS = new CredentialSourceAssertion[] {
         new HttpBasic(),
         new HttpClientCert(),
         new HttpDigest(),
