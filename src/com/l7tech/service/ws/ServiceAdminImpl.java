@@ -3,6 +3,7 @@ package com.l7tech.service.ws;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.ServiceManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
@@ -17,6 +18,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.io.InputStream;
 import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -54,28 +56,28 @@ public class ServiceAdminImpl implements ServiceAdmin {
 
     public PublishedService findServiceByPrimaryKey(long oid) throws RemoteException, FindException {
         try {
-            return getServiceManagerAndBeginTransaction().findByPrimaryKey(oid);
+            return getServiceManager().findByPrimaryKey(oid);
         } finally {
-            endTransaction();
+            closeContext();
         }
     }
 
     public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
         try {
-            Collection res = getServiceManagerAndBeginTransaction().findAllHeaders();
+            Collection res = getServiceManager().findAllHeaders();
             return collectionToHeaderArray(res);
         } finally {
-            endTransaction();
+            closeContext();
         }
     }
 
     public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
                     throws RemoteException, FindException {
         try {
-            Collection res = getServiceManagerAndBeginTransaction().findAllHeaders(offset, windowSize);
+            Collection res = getServiceManager().findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } finally {
-            endTransaction();
+            closeContext();
         }
     }
 
@@ -93,15 +95,16 @@ public class ServiceAdminImpl implements ServiceAdmin {
      */
     public long savePublishedService(PublishedService service) throws RemoteException,
                                     UpdateException, SaveException, VersionException {
+        beginTransaction();
         try {
             // does that object have a history?
             if (service.getOid() > 0) {
-                com.l7tech.service.ServiceManager manager = getServiceManagerAndBeginTransaction();
+                com.l7tech.service.ServiceManager manager = getServiceManager();
                 manager.update(service);
                 return service.getOid();
             } else { // ... or is it a new object
                 logger.info("Saving PublishedService: " + service.getOid());
-                return getServiceManagerAndBeginTransaction().save(service);
+                return getServiceManager().save(service);
             }
         } finally {
             endTransaction();
@@ -109,8 +112,9 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public void deletePublishedService(long oid) throws RemoteException, DeleteException {
+        beginTransaction();
         try {
-            com.l7tech.service.ServiceManager theManagerDude = getServiceManagerAndBeginTransaction();
+            com.l7tech.service.ServiceManager theManagerDude = getServiceManager();
             PublishedService theExecutionee = theManagerDude.findByPrimaryKey(oid);
             theManagerDude.delete(theExecutionee);
             logger.info("Deleted PublishedService: " + oid);
@@ -129,30 +133,43 @@ public class ServiceAdminImpl implements ServiceAdmin {
     // PRIVATES
     // ************************************************
 
-    private com.l7tech.service.ServiceManager getServiceManagerAndBeginTransaction() throws RemoteException {
-        try {
-            PersistenceContext.getCurrent().beginTransaction();
-            if (serviceManagerInstance == null) {
-                initialiseServiceManager();
-            }
-        } catch (Throwable e) {
-            logger.log(Level.SEVERE, "Exception in initialiseServiceManager", e);
-            throw new RemoteException(e.getMessage(), e);
+    private ServiceManager getServiceManager() throws RemoteException {
+        if (serviceManagerInstance == null) {
+            initialiseServiceManager();
         }
         return serviceManagerInstance;
     }
 
-    private void endTransaction() throws RemoteException {
+    private void beginTransaction() throws RemoteException {
         try {
-            PersistenceContext context = PersistenceContext.getCurrent();
-            context.commitTransaction();
-            context.close();
-        } catch (java.sql.SQLException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new RemoteException("Exception commiting", e);
+            PersistenceContext.getCurrent().beginTransaction();
         } catch (TransactionException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new RemoteException("Exception commiting", e);
+            String msg = "cannot begin transaction.";
+            throw new RemoteException(msg);
+        } catch (SQLException e) {
+            String msg = "cannot begin transaction.";
+            throw new RemoteException(msg);
+        }
+    }
+
+    private void closeContext() {
+        try {
+            PersistenceContext.getCurrent().close();
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "error closing context", e);
+        }
+    }
+
+    private void endTransaction() {
+        try {
+            PersistenceContext.getCurrent().flush();
+            PersistenceContext.getCurrent().close();
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "Exception commiting", e);
+        } catch (TransactionException e) {
+            logger.log(Level.WARNING, "Exception commiting", e);
+        } catch (ObjectModelException e) {
+            logger.log(Level.WARNING, "Exception commiting", e);
         }
     }
 
@@ -174,19 +191,13 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     private synchronized void initialiseServiceManager() throws RemoteException {
-        try {
-            serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().
-                                        lookup(com.l7tech.service.ServiceManager.class);
-            if (serviceManagerInstance == null) {
-                throw new RemoteException("Cannot instantiate the ServiceManager");
-            }
-        } catch (Throwable e) {
-            String msg = "Exception in Locator.getDefault().lookup(com.l7tech.service.ServiceAdmin.class)";
-            logger.log(Level.SEVERE, msg + e.getMessage(), e);
-            throw new RemoteException(msg + e.getMessage(), e);
+        serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().
+                                    lookup(com.l7tech.service.ServiceManager.class);
+        if (serviceManagerInstance == null) {
+            throw new RemoteException("Cannot instantiate the ServiceManager");
         }
     }
 
-    private com.l7tech.service.ServiceManager serviceManagerInstance = null;
+    private ServiceManager serviceManagerInstance = null;
     private Logger logger = null;
 }
