@@ -85,10 +85,16 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         return _maxConcurrentRequests;
     }
 
+    /**
+     * What does this mean?
+     */
     public boolean isMessageSource() {
         return _messageSource;
     }
 
+    /**
+     * What does this mean?
+     */
     public void setMessageSource( boolean messageSource ) {
         _messageSource = messageSource;
     }
