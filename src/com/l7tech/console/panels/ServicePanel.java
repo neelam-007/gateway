@@ -55,7 +55,7 @@ public class ServicePanel extends WizardStepPanel {
         serviceUrljLabel.setBorder(new EmptyBorder(new Insets(1, 1, 1, 5)));
         serviceUrljPanel.add(serviceUrljLabel);
 
-        wsdlUrljTextField.setText("http://www.xmethods.net/sd/2001/BabelFishService.wsdl");
+        wsdlUrljTextField.setText("http://www.xmethods.net/sd/StockQuoteService.wsdl");
         wsdlUrljTextFieldFont = wsdlUrljTextField.getFont();
 
         wsdlUrljTextField.setPreferredSize(new Dimension(150, 20));
