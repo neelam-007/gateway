@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * Date: May 29, 2003
  * Time: 3:22:24 PM
  */
-public class SsgListPanel extends JPanel {
+class SsgListPanel extends JPanel {
     private final Logger log = Logger.getLogger(SsgListPanel.class.getName());
     private final ClientProxy clientProxy;
     private SsgTableModel ssgTableModel;
@@ -127,7 +127,7 @@ public class SsgListPanel extends JPanel {
      *
      * @return The selected SSG or null.
      */
-    public Ssg getSelectedSsg() {
+    Ssg getSelectedSsg() {
         return ssgTableModel.getSsgAtRow(ssgTable.getSelectedRow());
     }
 
@@ -142,7 +142,7 @@ public class SsgListPanel extends JPanel {
             ssgTable.getSelectionModel().setSelectionInterval(row, row);
     }
 
-    public Action getActionDeleteSsg() {
+    Action getActionDeleteSsg() {
         if (actionDeleteSsg == null) {
             actionDeleteSsg = new DeleteSsgAction(this, clientProxy);
             actionDeleteSsg.putValue(Action.SHORT_DESCRIPTION, "Remove this Gateway registration");
