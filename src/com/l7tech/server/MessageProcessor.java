@@ -19,6 +19,7 @@ import com.l7tech.util.Locator;
 
 import java.io.IOException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -33,13 +34,13 @@ public class MessageProcessor {
             AssertionStatus status;
             if ( service == null || service.isDisabled() ) {
                 if ( service == null )
-                    LogManager.getInstance().getSystemLogger().log(Level.INFO, "Service not found" );
+                    _log.log(Level.INFO, "Service not found" );
                 else
-                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Service disabled" );
+                    _log.log( Level.WARNING, "Service disabled" );
 
                 status = AssertionStatus.SERVICE_NOT_FOUND;
             } else {
-                LogManager.getInstance().getSystemLogger().log(Level.FINER, "Service resolved" );
+                _log.log(Level.FINER, "Service resolved" );
                 request.setParameter( Request.PARAM_SERVICE, service );
                 ServerAssertion ass = service.rootAssertion();
 
@@ -48,13 +49,13 @@ public class MessageProcessor {
                 if ( status == AssertionStatus.NONE ) {
                     service.incrementRequestCount();
                     if ( request.isRouted() ) {
-                        LogManager.getInstance().getSystemLogger().log(Level.INFO, "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
+                        _log.log(Level.INFO, "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
                     } else {
-                        LogManager.getInstance().getSystemLogger().log(Level.WARNING, "Request was not routed!");
+                        _log.log(Level.WARNING, "Request was not routed!");
                         status = AssertionStatus.FALSIFIED;
                     }
                 } else {
-                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, status.getMessage() );
+                    _log.log( Level.WARNING, status.getMessage() );
                 }
             }
 
@@ -66,14 +67,19 @@ public class MessageProcessor {
     }
 
     public static MessageProcessor getInstance() {
-        if ( _instance == null ) _instance = new MessageProcessor();
+        if ( _instance == null )
+            _instance = new MessageProcessor();
         return _instance;
     }
 
     private MessageProcessor() {
+        // This only uses Locator because only one instance of ServiceManager must
+        // be active at once.
         _serviceManager = (ServiceManager)Locator.getDefault().lookup( ServiceManager.class );
     }
 
-    private ServiceManager _serviceManager;
     private static MessageProcessor _instance = null;
+
+    private ServiceManager _serviceManager;
+    private Logger _log = LogManager.getInstance().getSystemLogger();
 }
