@@ -186,7 +186,7 @@ public class ServerLogHandler extends Handler {
      * and flushing new cached log entries to database.
      * this method is responsible to manager its own persistence context.
      */
-    protected void cleanAndFlush(/*boolean fullClean*/) {
+    protected void cleanAndFlush() {
         // get the persistence context
         HibernatePersistenceContext context = null;
         Session session = null;
@@ -206,27 +206,20 @@ public class ServerLogHandler extends Handler {
         try {
             context.beginTransaction();
 
-            /*if (fullClean) {
+            /*
+            This commented out code used to delete previous records for this node before first dump
+            we decided to make this the responsibility of an external cron job.
+            if (fullClean) {
                 String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
                                             " where " + TABLE_NAME + "." + NODEID_COLNAME +
                                             " = \'" + nodeid + "\'";
                 session.delete(deleteSQLStatement);
                 session.flush();
-            } else {
-                // delete records older than 48 hrs
-                long deadline = System.currentTimeMillis();
-                deadline -= HOW_LONG_WE_KEEP_LOGS;
-                String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
-                                            " where " + TABLE_NAME + "." + TIMESTAMP_COLNAME +
-                                            " < " + deadline;
-                session.delete(deleteSQLStatement);
             }*/
             // flush new records
             flushtodb(session);
             context.commitTransaction();
-        } /*catch (HibernateException e) {
-            reportException("error deleting old records", e);
-        }*/ catch(TransactionException e) {
+        }  catch(TransactionException e) {
             reportException("Exception with hibernate transaction", e);
         } finally {
             if ( context != null ) context.close();
@@ -245,6 +238,7 @@ public class ServerLogHandler extends Handler {
         }
     }
 
+    // todo, use a timer instead
     private static class LogDumper extends Thread {
         public LogDumper() {
             super( "LogDumper" );
@@ -259,7 +253,6 @@ public class ServerLogHandler extends Handler {
                                 "this log handler will stop dumping logs to db", null);
                 return;
             }
-            //boolean fullclean = true;
             while (true) {
                 try {
                     sleep(FLUSH_FREQUENCY);
@@ -269,11 +262,10 @@ public class ServerLogHandler extends Handler {
                     break;
                 }
                 try {
-                    parent.cleanAndFlush(/*fullclean*/);
+                    parent.cleanAndFlush();
                 } catch (Throwable e) {
                     reportException("unhandled exception", e);
                 }
-                //fullclean = false;
             }
         }
         ServerLogHandler parent = null;
