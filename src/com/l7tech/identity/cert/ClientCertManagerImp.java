@@ -96,7 +96,8 @@ public class ClientCertManagerImp implements ClientCertManager {
             sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
             try {
                 byte[] certbytes = base64decoder.decodeBuffer(dbcert);
-                Certificate cert = CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(certbytes));
+                Certificate cert = CertificateFactory.getInstance("X.509").
+                                    generateCertificate(new ByteArrayInputStream(certbytes));
                 return cert;
             } catch (CertificateException e) {
                 String msg = "Error in CertificateFactory.getInstance";
