@@ -3,6 +3,7 @@ package com.l7tech.console.tree;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.NodeAction;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.WeakPropertyChangeSupport;
 import com.l7tech.policy.assertion.Assertion;
@@ -248,11 +249,13 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         JPopupMenu pm = new JPopupMenu();
         for (int i = 0; i < actions.length; i++) {
             final Action action = actions[i];
-            if (action instanceof NodeAction) {
-                final NodeAction nodeAction = ((NodeAction)actions[i]);
-                if (nodeAction.isAuthorized()) {
-                    nodeAction.setTree(tree);
+            if (action instanceof SecureAction) {
+                final SecureAction secureAction = ((SecureAction)actions[i]);
+                if (secureAction.isAuthorized()) {
                     pm.add(actions[i]);
+                    if (secureAction instanceof NodeAction) {
+                        ((NodeAction)secureAction).setTree(tree);
+                    }
                 }
             } else {
                 pm.add(actions[i]);
