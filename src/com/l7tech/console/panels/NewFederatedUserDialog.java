@@ -85,6 +85,30 @@ public class NewFederatedUserDialog extends JDialog {
             }
         });
 
+        ButtonGroup bg = new ButtonGroup();
+        bg.add(subjectDNRadioButton);
+        bg.add(loginRadioButton);
+        bg.add(emailRadioButton);
+        subjectDNRadioButton.setSelected(true);
+
+        subjectDNRadioButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                updateUserNameLinkedTextField();
+            }
+        });
+
+        emailRadioButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                updateUserNameLinkedTextField();
+            }
+        });
+
+        loginRadioButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                updateUserNameLinkedTextField();
+            }
+        });
+
         createButton.setText(resources.getString("createButton.label"));
         createButton.setToolTipText(resources.getString("createButton.tooltip"));
         createButton.setActionCommand(CMD_OK);
@@ -126,6 +150,25 @@ public class NewFederatedUserDialog extends JDialog {
                 }
             }
         });
+    }
+
+
+    private void updateUserNameLinkedTextField() {
+        if (subjectDNRadioButton.isSelected()) {
+            x509SubjectDNTextField.setText("CN=" + userNameTextField.getText().trim());
+            emailTextField.setText("");
+            loginTextField.setText("");
+        }
+        if (emailRadioButton.isSelected()) {
+            emailTextField.setText(userNameTextField.getText() + "@");
+            x509SubjectDNTextField.setText("");
+            loginTextField.setText("");
+        }
+        if (loginRadioButton.isSelected()) {
+            loginTextField.setText(userNameTextField.getText());
+            emailTextField.setText("");
+            x509SubjectDNTextField.setText("");
+        }
     }
 
     /**
@@ -259,6 +302,16 @@ public class NewFederatedUserDialog extends JDialog {
                 UserIdFieldFilled = true;
             } else {
                 UserIdFieldFilled = false;
+            }
+
+            if(subjectDNRadioButton.isSelected()) {
+                x509SubjectDNTextField.setText("CN=" + userNameTextField.getText().trim());
+            }
+            if(emailRadioButton.isSelected()) {
+                emailTextField.setText(userNameTextField.getText() + "@");
+            }
+            if(loginRadioButton.isSelected()) {
+               loginTextField.setText(userNameTextField.getText());
             }
         } else {
             // do nothing
