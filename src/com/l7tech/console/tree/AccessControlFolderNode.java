@@ -61,7 +61,7 @@ public class AccessControlFolderNode extends AbstractTreeNode {
         insert(new SecureConversationNode(), index++);
         insert(new SamlAuthenticationStatementNode(), index++);
         insert(new SamlAuthorizationStatementNode(), index++);
-        // insert(new SamlAttributeStatementNode(), index++);
+        insert(new SamlAttributeStatementNode(), index++);
 
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {

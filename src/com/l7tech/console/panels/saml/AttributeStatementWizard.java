@@ -7,6 +7,8 @@ package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 
 import java.awt.*;
 
@@ -21,8 +23,13 @@ public class AttributeStatementWizard extends Wizard {
     /**
      * Creates new wizard
      */
-    public AttributeStatementWizard(Frame parent, WizardStepPanel panel) {
+    public AttributeStatementWizard(SamlAttributeStatement assertion, Frame parent, WizardStepPanel panel) {
         super(parent, panel);
+        if (assertion == null) {
+            throw new IllegalArgumentException();
+        }
+        wizardInput = assertion;
         setTitle("SAML Attribute Statement Constraints Wizard");
     }
+
  }

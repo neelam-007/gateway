@@ -5,6 +5,7 @@ import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
@@ -89,5 +90,6 @@ public class Advices {
         advicesMap.put(RequestSwAAssertion.class, new Class[] {AddRequestSwAAssertionAdvice.class});
         advicesMap.put(SamlAuthenticationStatement.class, new Class[] {AddSamlAuthenticationStatementAssertionAdvice.class});
         advicesMap.put(SamlAuthorizationStatement.class, new Class[] {AddSamlAuthorizationStatementAssertionAdvice.class});
+        advicesMap.put(SamlAttributeStatement.class, new Class[] {AddSamlAttributeStatementAssertionAdvice.class});
     }
 }

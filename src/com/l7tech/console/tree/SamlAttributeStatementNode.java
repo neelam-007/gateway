@@ -7,7 +7,7 @@ import javax.swing.*;
 
 
 /**
- * The class represents the SAML authorization statement node element in the
+ * The class represents the SAML attribute statement node element in the
  * assertion palette.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -73,6 +73,6 @@ public class SamlAttributeStatementNode extends AbstractTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/xmlsignature.gif";
+        return "com/l7tech/console/resources/SAMLAttributeStatement.gif";
     }
 }

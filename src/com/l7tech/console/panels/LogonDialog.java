@@ -677,6 +677,7 @@ public class LogonDialog extends JDialog {
     private boolean isInputValid() {
         String userName = userNameTextField.getText();
         if (null == userName || "".equals(userName)) {
+            log.finest("Empty user name, returning false");
             return false;
         }
         if (serverComboBox == null) return false;
@@ -684,6 +685,7 @@ public class LogonDialog extends JDialog {
         JTextField editor = (JTextField)serverComboBox.getEditor().getEditorComponent();
         String surl = editor.getText();
         if (surl == null || "".equals(surl)) {
+            log.finest("Empty server name, returning false");
             return false;
         }
         return true;
