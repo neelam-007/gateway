@@ -100,9 +100,9 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             } else return null;
             return findByPrimaryKey(dn);
         } catch (NamingException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new FindException(e.getMessage(), e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
+        return null;
     }
 
     /**
