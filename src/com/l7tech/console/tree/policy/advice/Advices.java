@@ -1,12 +1,16 @@
-package com.l7tech.console.tree.policy;
+package com.l7tech.console.tree.policy.advice;
 
+import com.l7tech.console.tree.policy.PolicyChange;
+import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
 
 import java.util.*;
 
 /**
  * Supporting class for assertion advices.
- * <p>
+ * <p/>
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Advices {
@@ -19,7 +23,7 @@ public class Advices {
 
     /**
      * Returns the corresponding <code>Advice</code> array for an assertion
-     *
+     * 
      * @return the <code>AssertionDescription</code> for a given
      *         assertion
      */
@@ -31,7 +35,7 @@ public class Advices {
         try {
             Iterator it = advicesMap.keySet().iterator();
             List advices = new ArrayList();
-            for (;it.hasNext();) {
+            for (; it.hasNext();) {
                 Class assertionClass = (Class)it.next();
                 if (assertionClass.isAssignableFrom(assertion.getClass())) {
                     Class[] adviceClasses = (Class[])advicesMap.get(assertionClass);
@@ -44,7 +48,7 @@ public class Advices {
             if (advices.isEmpty()) {
                 advices.add(new UnknonwnAssertion(assertion));
             }
-            return (Advice[])advices.toArray(new Advice[] {});
+            return (Advice[])advices.toArray(new Advice[]{});
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -56,13 +60,14 @@ public class Advices {
      */
     static class UnknonwnAssertion implements Advice {
         private Assertion assertion;
+
         public UnknonwnAssertion(Assertion assertion) {
             this.assertion = assertion;
         }
 
         /**
          * Intercepts a policy change.
-         *
+         * 
          * @param pc The policy change.
          */
         public void proceed(PolicyChange pc) throws PolicyException {
@@ -75,6 +80,7 @@ public class Advices {
     // maping assertions to advices, the Class#isAssignable() is used to determine
     // the advice that applies to the assertion
     static {
-        advicesMap.put(Assertion.class, new Class[] {PolicyValidatorAdvice.class});
+        advicesMap.put(Assertion.class, new Class[]{PolicyValidatorAdvice.class});
+        advicesMap.put(RequestXpathAssertion.class, new Class[]{AddXpathAssertionAdvice.class});
     }
 }

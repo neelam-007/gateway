@@ -1,4 +1,7 @@
-package com.l7tech.console.tree.policy;
+package com.l7tech.console.tree.policy.advice;
+
+import com.l7tech.console.tree.policy.PolicyChange;
+import com.l7tech.console.tree.policy.PolicyException;
 
 /**
  * Intercepts Policy changes. Advice implementations can delegate
