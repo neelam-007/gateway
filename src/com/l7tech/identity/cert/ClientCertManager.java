@@ -11,7 +11,7 @@ import java.security.cert.Certificate;
  * Date: Jul 29, 2003
  * Time: 11:35:46 AM
  *
- * Manages the client_cert data
+ * This is our internal CA. It manages the client_cert data
  */
 public interface ClientCertManager {
 
