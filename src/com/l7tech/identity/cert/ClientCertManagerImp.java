@@ -89,7 +89,7 @@ public class ClientCertManagerImp implements ClientCertManager {
         try {
             HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             Session session = pc.getSession();
-            Transaction trans = session.beginTransaction();
+            // Transaction trans = session.beginTransaction();
             if (newentry) {
                 Object res = session.save(userData);
                 logger.finest("saving cert entry " + res);
@@ -97,8 +97,8 @@ public class ClientCertManagerImp implements ClientCertManager {
                 logger.finest("updating cert entry");
                 session.update(userData);
             }
-            trans.commit();
-            pc.close();
+            //trans.commit();
+            //pc.close();
         } catch (HibernateException e) {
             String msg = "Hibernate exception recording cert";
             logger.log(Level.WARNING, msg, e);
