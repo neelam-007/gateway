@@ -47,6 +47,10 @@
                 <XmlRequestSecurity>
                     <Encryption booleanValue="false"/>
                 </XmlRequestSecurity>
+                <RequestXpathAssertion>
+                    <NamespaceMap base64SerializedMapValue="rO0ABXA="/>
+                    <Pattern stringValueNull="null"/>
+                </RequestXpathAssertion>
             </OneOrMore>
         </All>
         <ExactlyOne>
@@ -60,6 +64,10 @@
                 <MaxConnections intValue="-5"/>
                 <Login stringValue="bob&amp;joe"/>
             </RoutingAssertion>
+            <RequestXpathAssertion>
+                <NamespaceMap base64SerializedMapValue="rO0ABXNyABFqYXZhLnV0aWwuSGFzaE1hcAUH2sHDFmDRAwACRgAKbG9hZEZhY3RvckkACXRocmVz aG9sZHhwP0AAAAAAAAx3CAAAABAAAAABdAAEYmxlZXQABGJsYWh4"/>
+                <Pattern stringValueNull="null"/>
+            </RequestXpathAssertion>
         </ExactlyOne>
         <TrueAssertion/>
         <FalseAssertion/>

@@ -23,6 +23,17 @@ import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ByteArrayInputStream;
+
+import sun.misc.BASE64Encoder;
+import sun.misc.BASE64Decoder;
 
 /**
  *
@@ -113,12 +124,12 @@ class WspConstants {
 
     static class TypeThawer {
         void thaw(Object target, Method setter, String in)
-                throws InvocationTargetException, IllegalAccessException
+                throws InvocationTargetException, IllegalAccessException, InvalidPolicyStreamException
         {
             setter.invoke(target, new Object[] { thawValue(in) });
         }
 
-        protected Object thawValue(String in) {
+        protected Object thawValue(String in) throws InvalidPolicyStreamException {
             return in;
         }
     }
@@ -177,7 +188,43 @@ class WspConstants {
             protected Object thawValue(String in) {
                 return SslAssertion.Option.forKeyName(in);
             }
-        })
+        }),
+
+        //TODO: we can't leave serialized java objects in the policy
+        new TypeMapping(Map.class, "base64SerializedMapValue", new TypeFreezer() {
+            Pattern nocr = Pattern.compile("\\s+", Pattern.MULTILINE);
+
+            String freeze(Object in) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try {
+                    ObjectOutputStream oos = new ObjectOutputStream(baos);
+                    oos.writeObject(in);
+                } catch (IOException e) {
+                    throw new RuntimeException(e); // can't happen
+                }
+                byte[] bay = baos.toByteArray();
+                BASE64Encoder enc = new BASE64Encoder();
+
+                String encoded = enc.encode(bay);
+                return nocr.matcher(encoded).replaceAll(" ");
+            }
+        }, new TypeThawer() {
+            Pattern yescr = Pattern.compile("\\s+", Pattern.MULTILINE);
+
+            protected Object thawValue(String in) throws InvalidPolicyStreamException {
+                BASE64Decoder dec = new BASE64Decoder();
+                try {
+                    in = yescr.matcher(in).replaceAll("\n");
+                    byte[] bay = dec.decodeBuffer(in);
+                    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bay));
+                    return ois.readObject();
+                } catch (IOException e) {
+                    throw new InvalidPolicyStreamException("invalid base64 encoded attribute", e);
+                } catch (ClassNotFoundException e) {
+                    throw new InvalidPolicyStreamException("egg error - unsupported serialized Java class", e);
+                }
+            }
+        }),
     };
 
     static TypeMapping findTypeMappingByClass(Class clazz) {

@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -18,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileOutputStream;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -50,6 +53,11 @@ public class WspWriterTest extends TestCase {
     }
 
     public void testWritePolicy() throws IOException {
+        RequestXpathAssertion rxa = new RequestXpathAssertion();
+        Map foo = new HashMap();
+        foo.put("blee", "blah");
+        rxa.setNamespaceMap(foo);
+
         Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
             new AllAssertion(Arrays.asList(new Assertion[] {
                 new TrueAssertion(),
@@ -59,6 +67,7 @@ public class WspWriterTest extends TestCase {
                 new TrueAssertion(),
                 new FalseAssertion(),
                 new RoutingAssertion("http://floomp.boomp.foomp/", "bob&joe", "james;bloo=foo&goo\"poo\"\\sss\\", "", -5),
+                rxa,
             })),
             new TrueAssertion(),
             new FalseAssertion()

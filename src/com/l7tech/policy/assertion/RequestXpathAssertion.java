@@ -39,6 +39,15 @@ public class RequestXpathAssertion extends Assertion {
         _namespaceMap = namespaceMap;
     }
 
+    public String toString() {
+        StringBuffer sb = new StringBuffer(super.toString());
+        if (_namespaceMap != null)
+            sb.append(" namespacesmap=" + _namespaceMap);
+        if (_pattern != null)
+            sb.append(" pattern=" + _pattern);
+        return sb.toString();
+    }
+
     private String _pattern;
     private Map _namespaceMap;
 }
