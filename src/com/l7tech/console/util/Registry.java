@@ -7,6 +7,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserManager;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 
 
 /**
@@ -21,11 +22,14 @@ public abstract class Registry {
      * A dummy registry that never returns any services.
      */
     public static final Registry EMPTY = new Empty();
-    /** default instance */
+    /**
+     * default instance
+     */
     private static Registry instance;
 
     /**
      * Static method to obtain the global locator.
+     *
      * @return the global lookup in the system
      */
     public static synchronized Registry getDefault() {
@@ -39,7 +43,9 @@ public abstract class Registry {
         return instance;
     }
 
-    /** Empty constructor for use by subclasses. */
+    /**
+     * Empty constructor for use by subclasses.
+     */
     protected Registry() {
     }
 
@@ -61,8 +67,8 @@ public abstract class Registry {
     abstract public IdentityProvider getInternalProvider();
 
     /**
-      * @return the identity provider given the oid of the identity provider
-      */
+     * @return the identity provider given the oid of the identity provider
+     */
     abstract public IdentityProvider getIdentityProvider(long idProviderOid);
 
     /**
@@ -84,6 +90,11 @@ public abstract class Registry {
      * @return the jms provider manager
      */
     abstract public JmsAdmin getJmsManager();
+
+    /**
+     * @return the custome assertions registrar
+     */
+    abstract public CustomAssertionsRegistrar getCustomAssertionsRegistrar();
 
 
     /**
@@ -124,6 +135,13 @@ public abstract class Registry {
         }
 
         public JmsAdmin getJmsManager() {
+            return null;
+        }
+
+        /**
+         * @return the custome assertions registrar
+         */
+        public CustomAssertionsRegistrar getCustomAssertionsRegistrar() {
             return null;
         }
     }

@@ -32,7 +32,7 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
     }
 
     public String toString() {
-        return "Extensibility Assertions Boot Process";
+        return "Custom Assertions Boot Process";
     }
 
     public void init(ComponentConfig config) throws LifecycleException {

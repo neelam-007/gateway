@@ -9,6 +9,7 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 
 
 
@@ -91,5 +92,17 @@ public class RegistryImpl extends Registry {
             throw new RuntimeException("Could not find registered " + JmsAdmin.class);
         }
         return ja;
+    }
+
+    /**
+     * @return the custome assertions registrar
+     */
+    public CustomAssertionsRegistrar getCustomAssertionsRegistrar() {
+        CustomAssertionsRegistrar cr =
+          (CustomAssertionsRegistrar)Locator.getDefault().lookup(CustomAssertionsRegistrar.class);
+        if (cr == null) {
+            throw new RuntimeException("Could not find registered " + CustomAssertionsRegistrar.class);
+        }
+        return cr;
     }
 }

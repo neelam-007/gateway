@@ -6,17 +6,14 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.*;
+import com.l7tech.console.util.registry.RegistryStub;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.service.JmsAdminStub;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.service.ServiceAdminStub;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -39,48 +36,11 @@ public class PublishServiceWizardTest extends Locator {
         log.info("New PSWT");
     }
 
-    private static class TestRegistry extends Registry {
-        public static final StubDataStore STUB_DATA_STORE = StubDataStore.defaultStore();
-        public static final UserManagerStub USER_MANAGER_STUB = new UserManagerStub(STUB_DATA_STORE);
-        public static final GroupManagerStub GROUP_MANAGER_STUB = new GroupManagerStub(STUB_DATA_STORE);
-        public static final IdentityProviderConfigManagerStub IDENTITY_PROVIDER_CONFIG_MANAGER_STUB = new IdentityProviderConfigManagerStub();
-        public static final IdentityProviderStub IDENTITY_PROVIDER_STUB = new IdentityProviderStub();
-        public static final ServiceAdminStub SERVICE_MANAGER_STUB = new ServiceAdminStub();
-        public static final JmsAdminStub JMS_MANAGER_STUB = new JmsAdminStub();
-
-        public IdentityProviderConfigManager getProviderConfigManager() {
-            return IDENTITY_PROVIDER_CONFIG_MANAGER_STUB;
-        }
-
-        public IdentityProvider getInternalProvider() {
-            return IDENTITY_PROVIDER_STUB;
-        }
-
-        public UserManager getInternalUserManager() {
-            return USER_MANAGER_STUB;
-        }
-
-        public GroupManager getInternalGroupManager() {
-            return GROUP_MANAGER_STUB;
-        }
-
-        public ServiceAdmin getServiceManager() {
-            return SERVICE_MANAGER_STUB;
-        }
-
-        public JmsAdmin getJmsManager() {
-            return JMS_MANAGER_STUB;
-        }
-
-        public IdentityProvider getIdentityProvider(long idProviderOid) {
-            return IDENTITY_PROVIDER_STUB;
-        }
-    }
 
     public Object lookup(Class clazz) {
         log.info("Lookup: " + clazz);
         if (clazz.isAssignableFrom(Registry.class)) {
-            return new TestRegistry();
+            return new RegistryStub();
         }
 
         return null;
@@ -100,7 +60,7 @@ public class PublishServiceWizardTest extends Locator {
         };
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, FindException {
         System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -111,11 +71,11 @@ public class PublishServiceWizardTest extends Locator {
         PublishServiceWizard w = new PublishServiceWizard(new JFrame(), true);
         w.setWsdlUrl("http://data.l7tech.com/ACMEWarehouseWS/Service1.asmx?WSDL");
         w.show();
-
-        EntityHeader[] services = TestRegistry.SERVICE_MANAGER_STUB.findAllPublishedServices();
+        Registry registry = Registry.getDefault();
+        EntityHeader[] services = registry.getServiceManager().findAllPublishedServices();
         for (int i = 0; i < services.length; i++) {
             EntityHeader serviceHeader = services[i];
-            PublishedService service = TestRegistry.SERVICE_MANAGER_STUB.findServiceByPrimaryKey(serviceHeader.getOid());
+            PublishedService service = registry.getServiceManager().findServiceByPrimaryKey(serviceHeader.getOid());
             String policyXml = service.getPolicyXml();
             Assertion assertion = WspReader.parse(policyXml);
             log.info("--------------------------------\nService: " + service.getName() + "\n------------\n");

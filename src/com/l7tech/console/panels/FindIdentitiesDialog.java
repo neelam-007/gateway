@@ -533,7 +533,6 @@ public class FindIdentitiesDialog extends JDialog {
 
         buttonPanel.add(Box.createGlue());
 
-        // edit button
         final JButton selectButton = new JButton();
         selectButton.setText(resources.getString("selectButton.label"));
         selectButton.addActionListener(new ActionListener() {
@@ -552,6 +551,25 @@ public class FindIdentitiesDialog extends JDialog {
         buttonPanel.add(selectButton);
         selectButton.setEnabled(false);
 
+        final JButton deleteButton = new JButton();
+        deleteButton.setText(resources.getString("deleteButton.label"));
+        deleteButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                int rows[] = searchResultTable.getSelectedRows();
+                List principals = new ArrayList();
+                for (int i = 0; rows != null && i < rows.length; i++) {
+                    int row = rows[i];
+                    EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
+                    principals.add(headerToPrincipal(eh));
+                }
+                selections = (Principal[])principals.toArray(new Principal[]{});
+            }
+        });
+
+        buttonPanel.add(deleteButton);
+        deleteButton.setEnabled(false);
+
+
         searchResultTable.getSelectionModel().
           addListSelectionListener(new ListSelectionListener() {
               /**
@@ -563,6 +581,7 @@ public class FindIdentitiesDialog extends JDialog {
                   int row = searchResultTable.getSelectedRow();
                   if (row == -1) {
                       selectButton.setEnabled(false);
+                      deleteButton.setEnabled(false);
                   } else {
                       selectButton.setEnabled(true);
                   }
@@ -590,13 +609,13 @@ public class FindIdentitiesDialog extends JDialog {
               public void keyPressed(KeyEvent e) {
                   int row = searchResultTable.getSelectedRow();
                   if (row == -1) return;
-                  Object o = searchResultTable.getValueAt(row, 0);
+                  EntityHeader eh = (EntityHeader)searchResultTable.getValueAt(row, 0);
 
                   int keyCode = e.getKeyCode();
                   if (keyCode == KeyEvent.VK_ENTER) {
-                      showEntityDialog(o);
+                      showEntityDialog(eh);
                   } else if (keyCode == KeyEvent.VK_DELETE) {
-                      deleteEntity(o, row);
+                      deleteEntity(eh, row);
                   }
               }
           });
@@ -626,7 +645,7 @@ public class FindIdentitiesDialog extends JDialog {
         searchResultPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         JButton[] buttons
-          = new JButton[]{newSearchButton, selectButton};
+          = new JButton[]{newSearchButton, deleteButton, selectButton};
 
         Utilities.equalizeButtonSizes(buttons);
 
@@ -757,22 +776,19 @@ public class FindIdentitiesDialog extends JDialog {
     /**
      * delete the given entity
      *
-     * @param o the <CODE>AbstractTreeNode</CODE> instance
+     * @param eh the <CODE>EntityHeader</CODE> instance
      */
-    private void deleteEntity(Object o, final int row) {
-        if (o instanceof EntityHeader) {
-            EntityHeader eh = (EntityHeader)o;
-            AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
-            final IdentityProvider ip = (IdentityProvider)providersComboBox.getSelectedItem();
-            DeleteEntityAction da = new DeleteEntityAction((EntityHeaderNode)an, ip);
-            final EntityListenerAdapter listener = new EntityListenerAdapter() {
-                public void entityRemoved(EntityEvent ev) {
-                    tableModel.removeRow(row);
-                }
-            };
-            da.addEntityListener(listener);
-            da.performAction();
-        }
+    private void deleteEntity(EntityHeader eh, final int row) {
+        AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
+        final IdentityProvider ip = (IdentityProvider)providersComboBox.getSelectedItem();
+        DeleteEntityAction da = new DeleteEntityAction((EntityHeaderNode)an, ip);
+        final EntityListenerAdapter listener = new EntityListenerAdapter() {
+            public void entityRemoved(EntityEvent ev) {
+                tableModel.removeRow(row);
+            }
+        };
+        da.addEntityListener(listener);
+        da.performAction();
     }
 
 
