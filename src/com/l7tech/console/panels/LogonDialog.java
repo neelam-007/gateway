@@ -499,7 +499,8 @@ public class LogonDialog extends JDialog {
         URL url = null;
         HttpURLConnection conn = null;
         try {
-            conn = (HttpURLConnection) new URL(serviceUrl).openConnection();
+            url = new URL(serviceUrl);
+            conn = (HttpURLConnection)url.openConnection();
             addSslHostNameVerifier(conn);
             conn.connect();
             int code = conn.getResponseCode();
