@@ -177,9 +177,7 @@ public class Descriptions {
         descriptionsMap.put(HttpBasic.class, NoParam.class);
         descriptionsMap.put(HttpDigest.class, NoParam.class);
         descriptionsMap.put(RoutingAssertion.class, RoutingDescription.class);
-        descriptionsMap.put(XmlEncReqAssertion.class, NoParam.class);
-        descriptionsMap.put(XmlEncResAssertion.class, NoParam.class);
-        descriptionsMap.put(XmlDsigReqAssertion.class, NoParam.class);
-        descriptionsMap.put(XmlDsigResAssertion.class, NoParam.class);
+        descriptionsMap.put(XmlRequestSecurity.class,  NoParam.class);
+        descriptionsMap.put(XmlResponseSecurity.class, NoParam.class);
     }
 }
