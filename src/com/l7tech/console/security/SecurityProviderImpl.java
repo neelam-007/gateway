@@ -4,7 +4,11 @@ import com.l7tech.common.VersionException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.remote.jini.lookup.ServiceLookup;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
@@ -17,8 +21,9 @@ import java.rmi.RemoteException;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class SecurityProviderImpl extends SecurityProvider {
-    private ServiceLookup serviceLookup;
+public class SecurityProviderImpl extends SecurityProvider
+  implements ApplicationContextAware, ApplicationListener {
+    private ApplicationContext applicationContext;
 
     /**
      * Determines if the passed credentials will grant access to the admin service.
@@ -26,32 +31,74 @@ public class SecurityProviderImpl extends SecurityProvider {
      */
     public synchronized void login(PasswordAuthentication creds)
       throws LoginException, VersionException, RemoteException {
+        boolean authenticated = false;
         resetCredentials();
         setCredentials(creds);
-        // version check
-        IdentityAdmin is = (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
-        if (is == null) {
-            throw new ConnectException("Unable to connect to the remote service");
+
+        try {
+            // version check
+            IdentityAdmin is = (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
+            if (is == null) {
+                throw new ConnectException("Unable to connect to the remote service");
+            }
+            String remoteVersion = is.echoVersion();
+            if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
+                throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
+            }
+            authenticated = true;
+            LogonEvent le = new LogonEvent(this, LogonEvent.LOGON);
+            applicationContext.publishEvent(le);
+        } finally {
+            if (!authenticated) {
+                resetCredentials();
+            }
         }
-        String remoteVersion = is.echoVersion();
-        if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
-            throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
-        }
-        serviceLookup = (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
     }
 
 
     /**
-     * Invoked on disconnect
+     * Set the ApplicationContext that this object runs in.
+     * Normally this call will be used to initialize the object.
+     * <p>Invoked after population of normal bean properties but before an init
+     * callback like InitializingBean's afterPropertiesSet or a custom init-method.
+     * Invoked after ResourceLoaderAware's setResourceLoader.
      *
-     * @param e describing the dosconnect event
+     * @param ctx ApplicationContext object to be used by this object
+     * @throws org.springframework.context.ApplicationContextException
+     *          in case of applicationContext initialization errors
+     * @throws org.springframework.beans.BeansException
+     *          if thrown by application applicationContext methods
+     * @see org.springframework.beans.factory.BeanInitializationException
      */
-    public void onLogoff(LogonEvent e) {
+    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
+        applicationContext = ctx;
+    }
+
+    /**
+     * Handle an application event.
+     *
+     * @param event the event to respond to
+     */
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof LogonEvent) {
+            LogonEvent le = (LogonEvent)event;
+            if (le.getType() == LogonEvent.LOGOFF) {
+                onLogoff(le);
+            } else {
+                onLogon(le);
+            }
+        }
+    }
+
+    private void onLogoff(LogonEvent e) {
         logger.finer("Disconnect message received, invalidating service lookup reference");
         resetCredentials();
-        // invalidate lookup
-        serviceLookup = null;
-        Locator.recycle();
+        LogonEvent le = new LogonEvent(this, LogonEvent.LOGOFF);
+        applicationContext.publishEvent(le);
+    }
+
+
+    private void onLogon(LogonEvent le) {
     }
 
 }

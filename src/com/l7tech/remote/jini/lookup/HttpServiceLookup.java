@@ -137,6 +137,13 @@ public class HttpServiceLookup extends ServiceLookup {
     }
 
     /**
+     * reset the registrar
+     */
+    synchronized void resetRegistrar() {
+        registrar = null;
+    }
+
+    /**
      * set the authorizaition properties for the connection
      *
      * @param state the http client state

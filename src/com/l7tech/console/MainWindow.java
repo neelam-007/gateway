@@ -13,7 +13,6 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.security.LogonListener;
-import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -140,7 +139,6 @@ public class MainWindow extends JFrame {
     public static final String NAME = "main.window"; // registered
     private EventListenerList listenerList = new WeakEventListenerList();
     // cached credential manager
-    private SecurityProvider securityProvider;
     private String connectionContext = "";
     private FocusAdapter actionsFocusListener;
     private ServicesTree servicesTree;
@@ -151,14 +149,16 @@ public class MainWindow extends JFrame {
     private JMenuItem saveMenuItem;
     private boolean disconnected = false;
     private String ssgURL;
+    private SsmApplication ssmApplication;
     private IdentitiesRootNode identitiesRootNode;
     private ServicesFolderNode servicesRootNode;
 
     /**
      * MainWindow constructor comment.
      */
-    public MainWindow() {
+    public MainWindow(SsmApplication app) {
         super(TITLE);
+        ssmApplication = app;
         initialize();
     }
 
@@ -1947,14 +1947,6 @@ public class MainWindow extends JFrame {
                   }
               } catch (IOException e) {
                   log.log(Level.WARNING, "onAuthSuccess()", e);
-              }
-
-              securityProvider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
-              if (securityProvider == null) {
-                  log.log(Level.WARNING, "Cannot obtain current SSM security provider");
-              } else {
-                  log.log(Level.FINEST, "Registering the connection listener " + securityProvider.getClass());
-                  addLogonListener(securityProvider);
               }
 
               ClusterStatusAdmin clusterStatusAdmin = (ClusterStatusAdmin)Locator.getDefault().lookup(ClusterStatusAdmin.class);

@@ -5,7 +5,7 @@
  */
 package com.l7tech.console.security;
 
-import java.util.EventObject;
+import org.springframework.context.ApplicationEvent;
 
 /**
  * This class represents the logon events.
@@ -13,7 +13,7 @@ import java.util.EventObject;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class LogonEvent extends EventObject {
+public class LogonEvent extends ApplicationEvent {
     public static int LOGON = 0x0;
     public static int LOGOFF = 0x1;
 

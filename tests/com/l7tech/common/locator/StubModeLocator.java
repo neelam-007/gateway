@@ -46,6 +46,17 @@ public class StubModeLocator extends Locator {
                 list.add(got);
                 return list;
             }
+
+            /**
+             * Get all registered Items that match the criteria.
+             * This should include all pairs of instances together
+             * with their classes, IDs, and so on.
+             *
+             * @return collection of {@link com.l7tech.common.util.Locator.Item}
+             */
+            public Collection allItems() {
+                throw new IllegalStateException("not implemented");
+            }
         };
     }
 }

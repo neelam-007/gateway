@@ -6,9 +6,7 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.registry.RegistryStub;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
@@ -17,10 +15,6 @@ import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,35 +23,11 @@ import java.util.logging.Logger;
  * Date: Oct 1, 2003
  * Time: 2:59:36 PM
  */
-public class PublishServiceWizardTest extends Locator {
+public class PublishServiceWizardTest {
     private static final Logger log = Logger.getLogger(PublishServiceWizardTest.class.getName());
 
     public PublishServiceWizardTest() {
         log.info("New PSWT");
-    }
-
-
-    public Object lookup(Class clazz) {
-        log.info("Lookup: " + clazz);
-        if (clazz.isAssignableFrom(Registry.class)) {
-            return new RegistryStub();
-        }
-
-        return null;
-    }
-
-    public Locator.Matches lookup(final Locator.Template template) {
-        log.info("Lookup");
-        return new Locator.Matches() {
-            public Collection allInstances() {
-                Object got = lookup(template.getType());
-                if (got == null)
-                    return Collections.EMPTY_LIST;
-                List list = new LinkedList();
-                list.add(got);
-                return list;
-            }
-        };
     }
 
     public static void main(String[] args) throws IOException, FindException {

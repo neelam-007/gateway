@@ -9,15 +9,15 @@ import java.util.*;
 /**
  * A general service lookup permitting clients to find instances of services,
  * service proxy objects, client side stubs etc.
- *
+ * <p/>
  * The services are  looked up by interface or super class. This allows to have
  * the client of the service to know what calls to make to gain access to the
  * service. But how (or even if) the proxy communicates with the service itself
  * is completely up to the proxy and the service from which it comes.
- *
- *<p>
- *Here is a sample showing basic <code>Locator</code> usage.
- *
+ * <p/>
+ * <p/>
+ * Here is a sample showing basic <code>Locator</code> usage.
+ * <p/>
  * <blockquote><pre>
  * // in the applicaiton lookup a component that implements
  * // the UserManager interface
@@ -25,7 +25,7 @@ import java.util.*;
  * UserManager um =
  *      (UserManager)Locator.lookup(UserManager.class);
  * </pre></blockquote>
- * <p>
+ * <p/>
  * The class is inspired by JINI(tm) with the differences that methods are
  * not throwing exceptions, and is mostly concentrated on the lookup, not
  * on the registration.
@@ -39,11 +39,14 @@ public abstract class Locator {
      * A dummy locator that never returns any results.
      */
     public static final Locator EMPTY = new Empty();
-    /** default instance */
+    /**
+     * default instance
+     */
     private static Locator defaultLocator;
 
     /**
      * Static method to obtain the global locator.
+     *
      * @return the global lookup in the system
      */
     public static synchronized Locator getDefault() {
@@ -57,7 +60,7 @@ public abstract class Locator {
         try {
             if (className != null) {
                 Class c = Class.forName(className);
-                defaultLocator = (Locator) c.newInstance();
+                defaultLocator = (Locator)c.newInstance();
                 return defaultLocator;
             }
         } catch (Exception ex) {
@@ -75,14 +78,25 @@ public abstract class Locator {
         defaultLocator = Locators.propertiesLocator(res, null);
 
         return defaultLocator;
-
     }
 
-    /** Empty constructor for use by subclasses. */
-    public Locator() {
+    /**
+     * Static method that sets the global locator
+     *
+     * @param l the new locator
+     */
+    public static synchronized void setDefault(Locator l) {
+        defaultLocator = l;
     }
 
-    /** Look up an object matching a given interface.
+    /**
+     * Empty constructor for use by subclasses.
+     */
+    protected Locator() {
+    }
+
+    /**
+     * Look up an object matching a given interface.
      * This is the simplest method to use.
      * If more than one object matches, one will be returned arbitrarily.
      * The template class may be a class or interface; the instance is
@@ -95,10 +109,12 @@ public abstract class Locator {
     public Object lookup(Class clazz) {
         Matches res = lookup(new Template(clazz));
         Iterator it = res.allItems().iterator();
-        return it.hasNext() ? ((Item) it.next()).getInstance() : null;
+        return it.hasNext() ? ((Item)it.next()).getInstance() : null;
     }
 
-    /** The general lookup method.
+    /**
+     * The general lookup method.
+     *
      * @param template a template describing the services to look for
      * @return an object containing the matching results
      */
@@ -106,35 +122,48 @@ public abstract class Locator {
 
     /**
      * This class may grow in the future, but for now, it is*
-     *  enough to start with something simple.
+     * enough to start with something simple.
      * Template defining a pattern to filter instances by.
      */
     public static final class Template {
-        /** cached hash code */
+        /**
+         * cached hash code
+         */
         private int hashCode;
-        /** type of the service */
+        /**
+         * type of the service
+         */
         private Class type;
-        /** identity to search for */
+        /**
+         * identity to search for
+         */
         private String id;
-        /** instance to search for */
+        /**
+         * instance to search for
+         */
         private Object instance;
 
-        /** General template to find all possible instances.
+        /**
+         * General template to find all possible instances.
          */
         public Template() {
             this(null);
         }
 
-        /** Create a simple template matching by class.
+        /**
+         * Create a simple template matching by class.
+         *
          * @param type the class of service we are looking for (subclasses will match)
          */
         public Template(Class type) {
             this(type, null, null);
         }
 
-        /** Constructor to create new template.
-         * @param type the class of service we are looking for or <code>null</code> to leave unspecified
-         * @param id the ID of the item/service we are looking for or <code>null</code> to leave unspecified
+        /**
+         * Constructor to create new template.
+         *
+         * @param type     the class of service we are looking for or <code>null</code> to leave unspecified
+         * @param id       the ID of the item/service we are looking for or <code>null</code> to leave unspecified
          * @param instance a specific known instance to look for or <code>null</code> to leave unspecified
          */
         public Template(Class type, String id, Object instance) {
@@ -143,16 +172,20 @@ public abstract class Locator {
             this.instance = instance;
         }
 
-        /** Get the class (or superclass or interface) to search for.
+        /**
+         * Get the class (or superclass or interface) to search for.
          * If it was not specified in the constructor, <code>Object</code> is used and
          * this will match any instance.
+         *
          * @return the class to search for
          */
         public Class getType() {
             return type;
         }
 
-        /** Get the identifier being searched for, if any.
+        /**
+         * Get the identifier being searched for, if any.
+         *
          * @return the ID or <code>null</code>
          * @see Locator.Item#getId
          */
@@ -160,7 +193,8 @@ public abstract class Locator {
             return id;
         }
 
-        /** Get the specific instance being searched for, if any.
+        /**
+         * Get the specific instance being searched for, if any.
          * Most useful for finding an <code>Item</code> when the instance
          * is already known.
          *
@@ -204,34 +238,72 @@ public abstract class Locator {
         }
     }
 
-    /** Matches of a lookup request.
+    /**
+     * Matches of a lookup request.
      * Allows access to all matching instances at once.
      * Also permits listening to changes in the result.
      */
     public static abstract class Matches {
 
-        /** Get all instances in the result.
+        /**
+         * Get all instances in the result.
+         *
          * @return collection of all instances
          */
-        public abstract Collection allInstances();
+        public Collection allInstances() {
 
-        /** Get all classes represented in the result.
+            if (allInstances != null) {
+                return allInstances;
+            }
+
+            allInstances = new ArrayList(allItems().size());
+            Iterator it = allItems().iterator();
+            while (it.hasNext()) {
+                Item item = (Item)it.next();
+                Object obj = item.getInstance();
+                if (obj != null) {
+                    allInstances.add(obj);
+                }
+            }
+            return allInstances;
+        }
+
+        /**
+         * Get all classes represented in the result.
          * That is, the set of concrete classes
          * used by instances present in the result.
+         *
          * @return set of <code>Class</code> objects
          */
         public Set allClasses() {
-            return Collections.EMPTY_SET;
+            if (allClasses != null) {
+                return allClasses;
+            }
+
+            allClasses = new HashSet();
+
+            Iterator it = allItems().iterator();
+            while (it.hasNext()) {
+                Item item = (Item)it.next();
+                Class clazz = item.getType();
+                if (clazz != null) {
+                    allClasses.add(clazz);
+                }
+            }
+            return allClasses;
         }
 
-        /** Get all registered items.
+        /**
+         * Get all registered Items that match the criteria.
          * This should include all pairs of instances together
          * with their classes, IDs, and so on.
+         *
          * @return collection of {@link Locator.Item}
          */
-        public java.util.Collection allItems() {
-            return Collections.EMPTY_SET;
-        }
+        public abstract Collection allItems();
+
+        private Collection allInstances = null;
+        private Set allClasses = null;
     }
 
     /**
@@ -240,18 +312,23 @@ public abstract class Locator {
      * but its class, a possible identifier, and so on.
      */
     public static abstract class Item {
-        /** Get the instance itself.
+        /**
+         * Get the instance itself.
+         *
          * @return the instance or null if the instance cannot be created
          */
         public abstract Object getInstance();
 
-        /** Get the implementing class of the instance.
+        /**
+         * Get the implementing class of the instance.
+         *
          * @return the class of the item
          */
         public abstract Class getType();
 
 
-        /** Get the identifier for the item.
+        /**
+         * Get the identifier for the item.
          * This identifier should uniquely represent the item
          * within its containing lookup
          *
@@ -264,7 +341,7 @@ public abstract class Locator {
             return "Locator.Item[type=" +
               getType() + ",id=" +
               (getId() == null ? "null" : getId()) /*+
-              ",instance=" + getInstance() */+ "]";
+              ",instance=" + getInstance() */ + "]";
         }
 
     }
@@ -278,27 +355,33 @@ public abstract class Locator {
         }
 
         private static final Matches NO_RESULT = new Matches() {
-
-            /** Access to all instances in the result.
-             * @return collection of all instances
+            /**
+             * Get all registered Items that match the criteria.
+             * This should include all pairs of instances together
+             * with their classes, IDs, and so on.
+             *
+             * @return collection of {@link com.l7tech.common.util.Locator.Item}
              */
-            public Collection allInstances() {
+            public Collection allItems() {
                 return Collections.EMPTY_LIST;
             }
         };
 
-        /** Locates an object of given interface. This is the simplest lookup
+        /**
+         * Locates an object of given interface. This is the simplest lookup
          * method.
          *
          * @param clazz class of the object we are searching for
          * @return the object implementing given class or null if no such
-         *   has been found
+         *         has been found
          */
         public Object lookup(Class clazz) {
             return null;
         }
 
-        /** The general lookup method.
+        /**
+         * The general lookup method.
+         *
          * @param template the template describing the services we are looking for
          * @return object containing the results
          */

@@ -11,7 +11,6 @@ import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.ImportCertificateAction;
-import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.History;
@@ -465,7 +464,6 @@ public class LogonDialog extends JDialog {
 
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             final SecurityProvider securityProvider = getCredentialManager();
-            securityProvider.onLogoff(new LogonEvent(this, LogonEvent.LOGOFF));
 
             // fla change: remember this url even if the login wont be successfull (requirement #729)
             serverUrlHistory.add(serverURL);

@@ -1,9 +1,9 @@
 package com.l7tech.console.security;
 
+import com.l7tech.common.Authorizer;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.UserBean;
-import com.l7tech.common.Authorizer;
 
 import javax.security.auth.Subject;
 import java.net.PasswordAuthentication;
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 5, 2003
  */
-public abstract class SecurityProvider extends Authorizer implements LogonListener, AuthenticationProvider {
+public abstract class SecurityProvider extends Authorizer implements AuthenticationProvider {
     protected static final Logger logger = Logger.getLogger(SecurityProvider.class.getName());
     private Set subjectRoles = new HashSet();
 
@@ -47,6 +47,7 @@ public abstract class SecurityProvider extends Authorizer implements LogonListen
             }
             subject.getPrincipals().clear();
             subject.getPrivateCredentials().clear();
+            subjectRoles.clear();
         }
     }
 
@@ -94,20 +95,6 @@ public abstract class SecurityProvider extends Authorizer implements LogonListen
             return Collections.unmodifiableSet(subjectRoles);
         }
     }
-
-    /**
-     * Invoked on logon event (empty implementation)
-     *
-     * @param e describing the logon event
-     */
-    public void onLogon(LogonEvent e) {}
-
-    /**
-     * Invoked on logon (empty implementation)
-     *
-     * @param e describing the logon event
-     */
-    public void onLogoff(LogonEvent e) {}
 
     /**
      * Determine the roles (groups) for hte given subject

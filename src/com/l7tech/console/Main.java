@@ -7,18 +7,20 @@ import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
 import com.jgoodies.plaf.plastic.theme.SkyBluerTahoma;
 import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.locator.SpringLocator;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.SplashScreen;
 import net.jini.security.policy.DynamicPolicyProvider;
 import net.jini.security.policy.PolicyInitializationException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.security.auth.Subject;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -43,7 +45,6 @@ public class Main {
     private final ClassLoader cl = getClass().getClassLoader();
 
     // splash screen
-    private SplashScreen mainSplashScreen = null;
 
     /**
      * run the application
@@ -52,55 +53,38 @@ public class Main {
      */
     public void run(String[] args) {
         try {
-            setInitialEnvironment();
-            JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
-            Logger log = Logger.getLogger(getClass().getName());
-
-            ensureSecurityManager();
-            installEventQueue();
-
-            Policy.setPolicy(new DynamicPolicyProvider());
-            final MainWindow main;
-            initializeUIPreferences();
-            /* invoke the splash screen */
-            showSplashScreen();
-
-            /* load user preferences and merge them with system props */
-            Preferences prefs = Preferences.getPreferences();
-            prefs.updateFromProperties(System.getProperties(), false);
-            /* so it is visible in help/about */
-            prefs.updateSystemProperties();
+            final SplashScreen screen = new SplashScreen("/com/l7tech/console/resources/splash-screen.gif");
             try {
-                copyResources(new String[]{"com/l7tech/console/resources/logger.dtd"}, prefs.getHomePath());
-            } catch (IOException e) {
-                log.log(Level.WARNING, "error on copying resources", e);
+                screen.splash();
+                setInitialEnvironment();
+                JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
+                Logger log = Logger.getLogger(getClass().getName());
+
+                ensureSecurityManager();
+                installEventQueue();
+
+                Policy.setPolicy(new DynamicPolicyProvider());
+
+                initializeUIPreferences();
+
+
+                /* load user preferences and merge them with system props */
+                Preferences prefs = Preferences.getPreferences();
+                prefs.updateFromProperties(System.getProperties(), false);
+                /* so it is visible in help/about */
+                prefs.updateSystemProperties();
+                try {
+                    copyResources(new String[]{"com/l7tech/console/resources/logger.dtd"}, prefs.getHomePath());
+                } catch (IOException e) {
+                    log.log(Level.WARNING, "error on copying resources", e);
+                }
+                ApplicationContext ctx = createApplicationContext();
+                Locator.setDefault(new SpringLocator(ctx));
+                SsmApplication app = (SsmApplication)ctx.getBean("ssmApplication");
+                app.run();
+            } finally {
+                screen.dispose();
             }
-
-            main = new MainWindow();
-            // Window listener
-            main.addWindowListener(new WindowAdapter() {
-                /**
-                 * Invoked when a window has been opened.
-                 */
-                public void windowOpened(WindowEvent e) {
-                    if (mainSplashScreen != null) {
-                        mainSplashScreen.dispose();
-                        mainSplashScreen = null;
-                    }
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            main.activateLogonDialog();
-                        }
-                    });
-                }
-
-                public void windowClosed(WindowEvent e) {
-                    saveWindowPosition(main);
-                    System.exit(0);
-                }
-            });
-            main.setVisible(true);
-            main.toFront();
         } catch (HeadlessException e) {
             log.log(Level.SEVERE, "SSM Error", e);
         } catch (PolicyInitializationException e) {
@@ -108,16 +92,6 @@ public class Main {
         }
     }
 
-    /**
-     * the "Splash Screen"
-     */
-    void showSplashScreen() {
-        /* Create the splash screen */
-        mainSplashScreen = new SplashScreen();
-        mainSplashScreen.pack();
-        Utilities.centerOnScreen(mainSplashScreen);
-        mainSplashScreen.setVisible(true);
-    }
 
     /**
      * install custom event queue as the default one does not pass the
@@ -163,22 +137,6 @@ public class Main {
                 }
             }
         });
-    }
-
-    /**
-     * Save the window position preference.  Called when the app is closed.
-     */
-    private void saveWindowPosition(Window w) {
-        Point curWindowLocation = w.getLocation();
-        Dimension curWindowSize = w.getSize();
-        try {
-            Preferences prefs = Preferences.getPreferences();
-            prefs.setLastWindowLocation(curWindowLocation);
-            prefs.setLastWindowSize(curWindowSize);
-            prefs.store();
-        } catch (IOException e) {
-            log.log(Level.WARNING, "unable to save window position prefs: ", e);
-        }
     }
 
 
@@ -306,6 +264,11 @@ public class Main {
                 }
             }
         }
+    }
+
+    private static ApplicationContext createApplicationContext() {
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"com/l7tech/console/resources/beans-context.xml"});
+        return context;
     }
 
 

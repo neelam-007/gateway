@@ -10,8 +10,9 @@ import java.util.logging.Logger;
  * This class provides the default way of how to store (Class, Object)
  * pairs in the locators. It offers protected methods for subclasses
  * to register the pairs.
- *
+ * <p/>
  * *
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -19,7 +20,9 @@ public abstract class AbstractLocator extends Locator {
     protected static final Logger logger = Logger.getLogger(AbstractLocator.class.getName());
 
 
-    /** The general lookup method.
+    /**
+     * The general lookup method.
+     *
      * @param template a template describing the services to look for
      * @return an object containing the matching results
      */
@@ -30,7 +33,8 @@ public abstract class AbstractLocator extends Locator {
     /**
      * Add the name, class Pair. This method is offered to
      * subclasses.
-     * @param intf  the interface clas
+     *
+     * @param intf the interface clas
      * @param impl the implementation class
      */
     protected void addPair(Class intf, Class impl) {
@@ -46,54 +50,12 @@ public abstract class AbstractLocator extends Locator {
             this.template = template;
         }
 
+
         /**
-         * Get all instances in the result.
-         * @return collection of all instances
-         */
-        public Collection allInstances() {
-
-            if (allInstances != null) {
-                return allInstances;
-            }
-
-            allInstances = new ArrayList(allItems().size());
-            Iterator it = allItems().iterator();
-            while (it.hasNext()) {
-                Item item = (Item)it.next();
-                Object obj = item.getInstance();
-                if (obj != null) {
-                    allInstances.add(obj);
-                }
-            }
-            return allInstances;
-        }
-
-        /** Get all classes represented in the result.
-         * That is, the set of concrete classes
-         * used by instances present in the result.
-         * @return set of <code>Class</code> objects
-         */
-        public Set allClasses() {
-            if (allClasses != null) {
-                return allClasses;
-            }
-
-            allClasses = new HashSet();
-
-            Iterator it = allItems().iterator();
-            while (it.hasNext()) {
-                Item item = (Item)it.next();
-                Class clazz = item.getType();
-                if (clazz != null) {
-                    allClasses.add(clazz);
-                }
-            }
-            return allClasses;
-        }
-
-        /** Get all registered items.
+         * Get all registered items.
          * This should include all pairs of instances together
          * with their classes, IDs, and so on.
+         *
          * @return collection of {@link Locator.Item}
          */
         public Collection allItems() {
@@ -114,7 +76,8 @@ public abstract class AbstractLocator extends Locator {
 
         /**
          * determine whether the name class pair matches the template.
-         * @param pair the name class pair
+         *
+         * @param pair     the name class pair
          * @param template the template to check against
          * @return true if match, false otherwise
          */
@@ -137,9 +100,7 @@ public abstract class AbstractLocator extends Locator {
             return matches;
         }
 
-        private Set allClasses = null;
         private Collection allItems = null;
-        private Collection allInstances = null;
         private final Locator.Template template;
 
     }
@@ -154,6 +115,7 @@ public abstract class AbstractLocator extends Locator {
 
         /**
          * Create an item.
+         *
          * @param intf the interface.
          * @param impl object implementaiton to register
          */
@@ -163,7 +125,8 @@ public abstract class AbstractLocator extends Locator {
 
         /**
          * Create an item; full constructor.
-         * @param id the item id. may be null
+         *
+         * @param id   the item id. may be null
          * @param intf the interface.
          * @param impl object implementaiton to register
          */
@@ -186,6 +149,7 @@ public abstract class AbstractLocator extends Locator {
 
         /**
          * Get instance of registered object.
+         *
          * @return the instance of the object.
          */
         public Object getInstance() {
@@ -195,7 +159,7 @@ public abstract class AbstractLocator extends Locator {
                     WeakReference ref = (WeakReference)instancesCache.get(this);
                     if (ref == null) {
                         Object o = createInstance();
-                        logger.finest("Cache lookup failed '"+itemInterface.getName()+"'" +
+                        logger.finest("Cache lookup failed '" + itemInterface.getName() + "'" +
                           "\nin " + instancesCache +
                           "\ncreating new instance  " + o);
                         instancesCache.put(this, new WeakReference(o));
@@ -203,11 +167,11 @@ public abstract class AbstractLocator extends Locator {
                     } else {
                         Object o = ref.get();
                         if (o == null) {
-                            logger.finest("Cache lookup failed '"+itemInterface.getName()+"', removing weak reference - type " + itemImplementation.getName());
+                            logger.finest("Cache lookup failed '" + itemInterface.getName() + "', removing weak reference - type " + itemImplementation.getName());
                             instancesCache.remove(this);
                             return getInstance();
                         }
-                        logger.finest("Cache lookup success, returns instance " +o);
+                        logger.finest("Cache lookup success, returns instance " + o);
                         instance = o;
                     }
                     return instance;
@@ -230,13 +194,16 @@ public abstract class AbstractLocator extends Locator {
 
         /**
          * An identity of the item.
+         *
          * @return string representing the item
          */
         public String getId() {
             return id;
         }
 
-        /** The class of this item.
+        /**
+         * The class of this item.
+         *
          * @return the correct class
          */
         public Class getType() {
@@ -270,7 +237,7 @@ public abstract class AbstractLocator extends Locator {
      * is the list of <code>Locator.Item</code> isntances
      * that are registered.
      *
-     * @return  a string representation of the object.
+     * @return a string representation of the object.
      */
     public String toString() {
         StringBuffer sb = new StringBuffer();
@@ -290,7 +257,7 @@ public abstract class AbstractLocator extends Locator {
             if (o != null) {
                 s = o.getClass().getName();
             }
-            sb.append("Type : "+key.getType()+ " "+s).append("\n");
+            sb.append("Type : " + key.getType() + " " + s).append("\n");
         }
 
         return sb.toString();

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+    <bean id="ssmApplication" class="com.l7tech.console.SsmApplication">
+    </bean>
+
+    <bean id="securityProvider" class="com.l7tech.console.security.SecurityProviderImpl">
+    </bean>
+
+    <bean id="clientCertManager" class="com.l7tech.identity.cert.ClientCertManagerRemote">
+    </bean>
+
+    <bean id="registry" class="com.l7tech.console.util.registry.RegistryImpl">
+    </bean>
+
+
+    <bean id="serviceLookup" class="com.l7tech.remote.jini.lookup.HttpServiceLookup">
+    </bean>
+
+    <!--
+     * Jini Services managed by JiniProxyFactoryBean
+    -->
+
+    <bean id="logAdmin" class="com.l7tech.remote.jini.lookup.JiniProxyFactoryBean">
+        <constructor-arg>
+            <ref bean="serviceLookup"/>
+        </constructor-arg>
+        <property name="serviceInterface">
+            <value>com.l7tech.logging.LogAdmin</value>
+        </property>
+    </bean>
+
+    <bean id="identityAdmin" class="com.l7tech.remote.jini.lookup.JiniProxyFactoryBean">
+        <constructor-arg>
+            <ref bean="serviceLookup"/>
+        </constructor-arg>
+        <property name="serviceInterface">
+            <value>com.l7tech.identity.IdentityAdmin</value>
+        </property>
+    </bean>
+
+    <bean id="clusterStatusAdmin" class="com.l7tech.remote.jini.lookup.JiniProxyFactoryBean">
+        <constructor-arg>
+            <ref bean="serviceLookup"/>
+        </constructor-arg>
+        <property name="serviceInterface">
+            <value>com.l7tech.cluster.ClusterStatusAdmin</value>
+        </property>
+    </bean>
+
+    <bean id="serviceAdmin" class="com.l7tech.remote.jini.lookup.JiniProxyFactoryBean">
+        <constructor-arg>
+            <ref bean="serviceLookup"/>
+        </constructor-arg>
+        <property name="serviceInterface">
+            <value>com.l7tech.service.ServiceAdmin</value>
+        </property>
+    </bean>
+
+    <bean id="jmsAdmin" class="com.l7tech.remote.jini.lookup.JiniProxyFactoryBean">
+        <constructor-arg>
+            <ref bean="serviceLookup"/>
+        </constructor-arg>
+        <property name="serviceInterface">
+            <value>com.l7tech.common.transport.jms.JmsAdmin</value>
+        </property>
+    </bean>
+
+    <bean id="customAssertionsAdmin" class="com.l7tech.remote.jini.lookup.JiniProxyFactoryBean">
+        <constructor-arg>
+            <ref bean="serviceLookup"/>
+        </constructor-arg>
+        <property name="serviceInterface">
+            <value>com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar</value>
+        </property>
+    </bean>
+
+    <bean id="trustedCertsAdmin" class="com.l7tech.remote.jini.lookup.JiniProxyFactoryBean">
+        <constructor-arg>
+            <ref bean="serviceLookup"/>
+        </constructor-arg>
+        <property name="serviceInterface">
+            <value>com.l7tech.common.security.TrustedCertAdmin</value>
+        </property>
+    </bean>
+
+    <bean id="auditAdmin" class="com.l7tech.remote.jini.lookup.JiniProxyFactoryBean">
+        <constructor-arg>
+            <ref bean="serviceLookup"/>
+        </constructor-arg>
+        <property name="serviceInterface">
+            <value>com.l7tech.common.audit.AuditAdmin</value>
+        </property>
+    </bean>
+    <!-- listener that manages the connection lifecycle -->
+    <bean id="connectionListener" class="com.l7tech.remote.jini.lookup.ConnectionListenerBean">
+    </bean>
+    <!-- end Jini services  -->
+</beans>
