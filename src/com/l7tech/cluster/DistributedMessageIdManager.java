@@ -109,7 +109,11 @@ public class DistributedMessageIdManager implements MessageIdManager {
                         if (rs != null) try {
                             rs.close();
                         } finally {
-                            if (ps != null) ps.close();
+                            try {
+                                if (ps != null) ps.close();
+                            } finally {
+                                if (context != null) context.close();
+                            }
                         }
                     }
                 }
