@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 public class CertUsagePanel extends WizardStepPanel{
     private JPanel mainPanel;
     private JPanel certUsagePane;
-    private JCheckBox signingCertOutboundSSLConnCheckBox;
+    private JCheckBox signingServerCertCheckBox;
     private JCheckBox signingSAMLTokenCheckBox;
     private JCheckBox signingClientCertCheckBox;
     private JCheckBox outboundSSLConnCheckBox;
@@ -51,7 +51,7 @@ public class CertUsagePanel extends WizardStepPanel{
 
                 tc.setTrustedForSigningClientCerts(signingClientCertCheckBox.isSelected());
                 tc.setTrustedForSigningSamlTokens(signingSAMLTokenCheckBox.isSelected());
-                tc.setTrustedForSigningServerCerts(signingCertOutboundSSLConnCheckBox.isSelected());
+                tc.setTrustedForSigningServerCerts(signingServerCertCheckBox.isSelected());
                 tc.setTrustedForSsl(outboundSSLConnCheckBox.isSelected());
             }
         }
@@ -112,7 +112,7 @@ public class CertUsagePanel extends WizardStepPanel{
         _2.add(_5, new GridConstraints(3, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JCheckBox _6;
         _6 = new JCheckBox();
-        signingCertOutboundSSLConnCheckBox = _6;
+        signingServerCertCheckBox = _6;
         _6.setText("Signing Certificates for Outbound SSL Connections");
         _2.add(_6, new GridConstraints(4, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JPanel _7;
