@@ -61,10 +61,6 @@ public class UserManagerStub implements UserManager {
 
     }
 
-    public String save(UserBean user) throws SaveException {
-        return null;
-    }
-
     public void update(User user) throws UpdateException {
         InternalUser imp = (InternalUser)user;
         Long key = new Long(imp.getOid());
@@ -76,7 +72,12 @@ public class UserManagerStub implements UserManager {
 
     }
 
-    public void update(UserBean user) throws UpdateException {
+    public String save(User user, Set groupHeaders) throws SaveException {
+        return save( user, null );
+    }
+
+    public void update(User user, Set groupHeaders) throws UpdateException {
+        update( user, null );
     }
 
     public EntityHeader userToHeader(User user) {
