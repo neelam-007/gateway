@@ -38,6 +38,9 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
     }
 
+     public String getDescription() {
+        return "Select the type of LDAP identity provider.";
+    }
     /**
      * This method is called from within the constructor to
      * initialize the dialog.

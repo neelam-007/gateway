@@ -39,8 +39,12 @@ public class LdapUserMappingPanel extends WizardStepPanel {
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-        //todo: change the property file from IdentityProviderDialog to LdapIdentityProviderConfigPanel
+
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
+    }
+
+    public String getDescription() {
+        return "The page shows the attribute mappings of the LDAP user object classes. You can add/delete/modify the attributes mappings on this page.";
     }
 
     /** @return the wizard step label    */

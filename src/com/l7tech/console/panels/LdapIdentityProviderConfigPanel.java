@@ -41,10 +41,13 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-        //todo: change the property file from IdentityProviderDialog to LdapIdentityProviderConfigPanel
+
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
     }
 
+    public String getDescription() {
+        return "Enter the configuration data of the LDAP Identity Provider. The fields marked with '*' are mandatory. You are allowed to go to next step only when all the mandatory fields are filled. You can test the LDAP configuration by pressing the Test button.";
+    }
 
     /** @return the wizard step label    */
     public String getStepLabel() {

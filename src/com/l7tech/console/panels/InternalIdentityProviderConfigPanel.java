@@ -8,7 +8,6 @@ import java.awt.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
@@ -53,12 +52,16 @@ public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
         return "Provider Configuration";
     }
 
+    public String getDescription() {
+        return "Modification of the Internal Identity Provider properties is not allowed. The data shown above is for viewing purpose only.";
+    }
+
     /**
      * Loads locale-specific resources: strings  etc
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-        //todo: change the property file from IdentityProviderDialog to LdapIdentityProviderConfigPanel
+
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
     }
 
