@@ -54,6 +54,13 @@ public class XpathEvaluatorTest extends TestCase {
             String obj = (String)iterator.next();
             assertTrue("Value must be DIS", obj.equals("Some-URI"));
         }
+
+        nodes = xe.select("string-length(string(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol))");
+        assertTrue("Size should have been >0", nodes.size() > 0);
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            Double obj = (Double)iterator.next();
+            assertTrue("Value must be 3", obj.intValue() == 3);
+        }
     }
 
     public void testContains() throws Exception {
