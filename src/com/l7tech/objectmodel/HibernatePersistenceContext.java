@@ -26,10 +26,10 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
     public void commitTransaction() throws TransactionException {
         try {
-            if ( _session != null )
-                _session.flush();
-            else
+            if ( _session == null )
                 throw new IllegalStateException( "Can't commit when there's no session!" );
+            else
+                _session.flush();
 
             if ( _htxn != null ) _htxn.commit();
         } catch ( Exception e ) {
