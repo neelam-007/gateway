@@ -76,6 +76,9 @@ public class PKIIdentityProviderWindow extends JDialog {
         }
         certScrollPane.setViewportView(trustedCertTable);
 
+        // Hide the cert usage data column
+        trustedCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX);
+
         trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             /**
              * Called whenever the value of the selection changes.
@@ -135,9 +138,9 @@ public class PKIIdentityProviderWindow extends JDialog {
                 Object o = (Object) certList.get(i);
                 certs.add(o);
             }
-            ((TrustedCertTableSorter) trustedCertTable.getModel()).setData(certs);
-            ((TrustedCertTableSorter) trustedCertTable.getModel()).getRealModel().setRowCount(certs.size());
-            ((TrustedCertTableSorter) trustedCertTable.getModel()).fireTableDataChanged();
+            trustedCertTable.getTableSorter().setData(certs);
+            trustedCertTable.getTableSorter().getRealModel().setRowCount(certs.size());
+            trustedCertTable.getTableSorter().fireTableDataChanged();
 
         } catch (RemoteException re) {
             JOptionPane.showMessageDialog(this, resources.getString("cert.remote.exception"),
