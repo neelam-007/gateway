@@ -12,6 +12,7 @@ import org.w3c.dom.Element;
 import java.security.cert.X509Certificate;
 import java.security.PrivateKey;
 import java.security.GeneralSecurityException;
+import java.security.Key;
 import java.util.Date;
 
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -60,7 +61,7 @@ public interface WssProcessor {
         /**
          * The actual symmetric key data to be used to verify signatures or decrypt.
          */
-        byte[] getComputedDerivedKey();
+        Key getComputedDerivedKey();
     }
 
     public interface SecurityContext {
