@@ -10,6 +10,10 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * @author alex
  */
 public class IdentityProviderTypeImp extends NamedEntityImp implements IdentityProviderType {
+
+    public IdentityProviderTypeImp() {
+        super();
+    }
     public String getDescription() {
         return _description;
     }
