@@ -33,12 +33,14 @@ public class SecureSpanBridgeOptions {
      * by the SecureSpanBridgeFactory.
      *
      * @param gatewayHostname
-     * @param username
+     * @param username  the username to use.  Must not be null.
      * @param password
      */
     public SecureSpanBridgeOptions(String gatewayHostname,
                                   String username,
-                                  char[] password) {
+                                  char[] password)
+    {
+        if (gatewayHostname == null) throw new NullPointerException("gatewayHostname must not be null");
         this.gatewayHostname = gatewayHostname;
         this.username = username;
         this.password = password;
@@ -114,10 +116,11 @@ public class SecureSpanBridgeOptions {
      * Get the ID to use for the SecureSpanBridge instance.  The ID is used to generate the keystore filename,
      * if one is not set explicitly.  If no ID has been set, the hashCode of the username is used as the ID.
      * @return the ID that will be used by the newly-created SecureSpanBridge
+     * @throws NullPointerException if there is no ID, username, or gatewayHostname set.
      */
     public int getId() {
         if (id == 0)
-            id = username.hashCode();
+            id = username == null ? gatewayHostname.hashCode() : username.hashCode();
         return id;
     }
 

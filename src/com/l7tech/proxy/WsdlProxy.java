@@ -142,6 +142,12 @@ class WsdlProxy {
         // The reason for the last failure
         Exception error = null;
 
+        // TODO change this to use GenericHttpClient
+        // TODO change this to use GenericHttpClient
+        // TODO change this to use GenericHttpClient
+        // TODO change this to use GenericHttpClient
+        // TODO change this to use GenericHttpClient
+        
         // Password retries for WSDL download
         PasswordAuthentication pw;
         for (int retries = 0; retries < 3; ++retries) {
@@ -149,10 +155,11 @@ class WsdlProxy {
             try {
                 pw = Managers.getCredentialManager().getCredentials(ssg);
                 getMethod = new GetMethod(url.toString());
-                httpClient.getState().setCredentials(null,
-                                                     null,
-                                                     new UsernamePasswordCredentials(pw.getUserName(),
-                                                                                     new String(pw.getPassword())));
+                if (pw != null)
+                    httpClient.getState().setCredentials(null,
+                                                         null,
+                                                         new UsernamePasswordCredentials(pw.getUserName(),
+                                                                                         new String(pw.getPassword())));
                 log.info("WsdlProxy: Attempting download from Gateway from URL: " + url);
                 try {
                     CurrentSslPeer.set(ssg);

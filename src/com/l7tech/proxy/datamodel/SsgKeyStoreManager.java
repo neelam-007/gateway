@@ -219,6 +219,11 @@ public class SsgKeyStoreManager {
                                                                           CredentialManager.ReasonHint.PRIVATE_KEY,
                                                                           false,
                                                                           false);
+        if (pw == null) {
+            log.finer("No credentials configured -- unable to access private key");
+            return null;
+        }
+
         synchronized (ssg) {
             if (!isClientCertAvailabile(ssg))
                 return null;
@@ -552,7 +557,7 @@ public class SsgKeyStoreManager {
             if (cd.isUncheckablePassword()) {
                 // The username was known to the SSG, but at least one of the accounts with that username
                 // had an uncheckable password (either unavailable or hashed in an unsupported way).
-                Managers.getCredentialManager().notifySslCertificateUntrusted("the Gateway " + ssg, gotCert);
+                Managers.getCredentialManager().notifySslCertificateUntrusted(ssg, "the Gateway " + ssg, gotCert);
             } else
                 throw new BadCredentialsException("The downloaded Gateway server certificate could not be verified with the current user name and password.");
         }
@@ -582,6 +587,8 @@ public class SsgKeyStoreManager {
             throws BadCredentialsException, GeneralSecurityException, KeyStoreCorruptException,
                    CertificateAlreadyIssuedException, IOException
     {
+        if (credentials == null)
+            throw new BadCredentialsException("Unable to apply for client certificate without credentials");
         if (ssg.isFederatedGateway())
             throw new IllegalArgumentException("Unable to obtain client certificate for Federated Gateway.");
         try {

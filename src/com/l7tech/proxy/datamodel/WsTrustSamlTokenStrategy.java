@@ -213,7 +213,7 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
             throw (SSLException)new SSLException("SSL connection failure, but no peer certificate presented: " + e.getMessage()).initCause(e);
 
         // Check if the user wants to trust this peer certificate
-        Managers.getCredentialManager().notifySslCertificateUntrusted(serverName, peerCert);
+        Managers.getCredentialManager().notifySslCertificateUntrusted(sslPeer, serverName, peerCert);
 
         // They do; import it
         storeTokenServerCert(peerCert);

@@ -3,6 +3,7 @@ package com.l7tech.proxy;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import com.l7tech.proxy.processor.MessageProcessor;
@@ -53,7 +54,7 @@ public class Main {
         System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
 
         // Prepare .l7tech directory before initializing logging (Bug #1288)
-        new File(ClientProxy.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
+        new File(Ssg.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
 
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties");
         JceProvider.init();
@@ -94,9 +95,9 @@ public class Main {
           maxThreads);
 
         // Clean out attachment directory after we've established that no other Client Proxy was running
-        if (!ClientProxy.ATTACHMENT_DIR.exists())
-            ClientProxy.ATTACHMENT_DIR.mkdir();
-        deleteOldAttachments(ClientProxy.ATTACHMENT_DIR);
+        if (!Ssg.ATTACHMENT_DIR.exists())
+            Ssg.ATTACHMENT_DIR.mkdir();
+        deleteOldAttachments(Ssg.ATTACHMENT_DIR);
 
         return clientProxy;
     }

@@ -8,7 +8,6 @@ import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 import org.mortbay.util.MultiException;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -31,11 +30,6 @@ public class ClientProxy {
     }
 
     private static final Logger log = Logger.getLogger(ClientProxy.class.getName());
-    public static final String PROXY_CONFIG =
-            System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
-
-    // Threshold for storing attachments on disk instead of in ram
-    public static final int ATTACHMENT_DISK_THRESHOLD = 131071;
 
     /**
      * This is the suffix appended to the local endpoint to form local WSDL discovery URLs.
@@ -57,7 +51,6 @@ public class ClientProxy {
     private volatile boolean isRunning = false;
     private volatile boolean isDestroyed = false;
     private volatile boolean isInitialized = false;
-    public static final File ATTACHMENT_DIR = new File(PROXY_CONFIG + "/attachments");
 
     /**
      * Create a ClientProxy with the specified settings.

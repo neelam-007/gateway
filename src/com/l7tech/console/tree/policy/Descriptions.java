@@ -120,15 +120,18 @@ public class Descriptions {
         }
 
         /**
-         * The method returns the assertion parameters for MemeberOfGroup
+         * The method returns the assertion parameters for MemberOfGroup
          * to be used in messages.
          *
          * @return the <CODE>Object[]</CODE> array of assertion parameters
          */
         protected Object[] parameters() {
             if (assertion instanceof HttpRoutingAssertion) {
+                String suffix = "";
+                if (assertion instanceof BridgeRoutingAssertion)
+                    suffix = " using SecureSpan Bridge";
                 return new Object[]{
-                    ((HttpRoutingAssertion)assertion).getProtectedServiceUrl()
+                    ((HttpRoutingAssertion)assertion).getProtectedServiceUrl() + suffix
                 };
             } else if (assertion instanceof JmsRoutingAssertion) {
                 JmsRoutingAssertion ass = (JmsRoutingAssertion)assertion;

@@ -8,6 +8,7 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.ssl.SslPeer;
 
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
@@ -32,11 +33,7 @@ public class CredentialManagerImpl extends CredentialManager {
             throws OperationCanceledException
     {
         PasswordAuthentication pw = ssg.getRuntime().getCredentials();
-        if (pw != null)
-            return pw;
-
-        log.log(Level.WARNING, "Headless CredentialManager: unable to obtain new credentials");
-        throw new CredentialsUnavailableException("Unable to obtain new credentials");
+        return pw;
     }
 
     public PasswordAuthentication getCredentialsWithReasonHint(Ssg ssg,
@@ -77,7 +74,7 @@ public class CredentialManagerImpl extends CredentialManager {
         log.log(Level.SEVERE, "Gateway hostname " + whatWeWanted + " does not match hostname in peer certificate: \"" + whatWeGotInstead + "\"");
     }
 
-    public void notifySslCertificateUntrusted(String server, X509Certificate certificate) throws OperationCanceledException {
+    public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException {
         String msg = "The authenticity of the SSL server certificate could not be established automatically.";
         log.log(Level.SEVERE, msg);
         throw new OperationCanceledException(msg);

@@ -7,6 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.ssl.SslPeer;
 
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
@@ -39,7 +40,7 @@ public abstract class CredentialManager {
      * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
      * @param ssg  the Ssg whose credentials you want
-     * @return the credentials for this Ssg
+     * @return the credentials for this Ssg, or null if none are configured
      * @throws OperationCanceledException if we prompted the user, but he clicked cancel
      */
     public abstract PasswordAuthentication getCredentials(Ssg ssg) throws OperationCanceledException;
@@ -53,7 +54,7 @@ public abstract class CredentialManager {
      *             (Eventually we may support using a private key password that differs from the Gateway password.)
      * @param disregardExisting if true, the user will be prompted for new credentials even if cached credentials are on hand.
      * @param reportBadPassword if true, the user will be advised that the existing credentials are bad.  Implies disregardExisting.
-     * @return the credentials for this Ssg.
+     * @return the credentials for this Ssg, or null if none are configured.
      * @throws OperationCanceledException
      */
     public abstract PasswordAuthentication getCredentialsWithReasonHint(Ssg ssg,
@@ -70,7 +71,7 @@ public abstract class CredentialManager {
      *
      * @param ssg the Ssg whose credentials you want to update
      * @param displayBadPasswordMessage if true, user will be told that current credentials are no good.
-     * @return the new credentials for this Ssg
+     * @return the new credentials for this Ssg.  Never null.
      * @throws OperationCanceledException if we prompted the user, but he clicked cancel
      */
     public abstract PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException;
@@ -133,10 +134,11 @@ public abstract class CredentialManager {
      * Notify the user that the discovered server certificate could not be trusted automatically.
      * The user may elect to trust it anyway, or to cancel.
      *
-     * @param server description of the SSL server we were talking to (ie, "the Gateway foo.bar.baz")
-     * @param certificate the certificate that was presented by this server and that did not pass muster
+     * @param sslPeer
+     @param serverDesc description of the SSL server we were talking to (ie, "the Gateway foo.bar.baz")
+     @param untrustedCertificate the certificate that was presented by this server and that did not pass muster
      */
-    public abstract void notifySslCertificateUntrusted(String server, X509Certificate certificate) throws OperationCanceledException;
+    public abstract void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException;
 
     /**
      * Save any changes made to the specified Ssg back to whereever it came from.

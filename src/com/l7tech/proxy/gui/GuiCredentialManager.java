@@ -15,6 +15,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.dialogs.LogonDialog;
 import com.l7tech.proxy.gui.dialogs.PleaseWaitDialog;
 import com.l7tech.proxy.gui.dialogs.TrustCertificateDialog;
+import com.l7tech.proxy.ssl.SslPeer;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -275,13 +276,13 @@ class GuiCredentialManager extends CredentialManager {
         });
     }
 
-    public void notifySslCertificateUntrusted(String server, final X509Certificate certificate) throws OperationCanceledException {
-        final String msg = "The authenticity of the SSL server certificate for " + server + " could not be automatically established.  ";
+    public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, final X509Certificate untrustedCertificate) throws OperationCanceledException {
+        final String msg = "The authenticity of the SSL server certificate for " + serverDesc + " could not be automatically established.  ";
         String mess = msg +
-                "Do you want to trust " + server + " using this server certificate?  " +
+                "Do you want to trust " + serverDesc + " using this server certificate?  " +
                 "If you don't know, click Cancel.";
-        final TrustCertificateDialog tcd = new TrustCertificateDialog(certificate,
-                                                                      "Trust Certificate for " + server,
+        final TrustCertificateDialog tcd = new TrustCertificateDialog(untrustedCertificate,
+                                                                      "Trust Certificate for " + serverDesc,
                                                                       mess);
         invokeOnSwingThread(new Runnable() {
             public void run() {

@@ -6,19 +6,19 @@
 
 package com.l7tech.proxy;
 
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.security.JceProvider;
+import com.l7tech.proxy.datamodel.Ssg;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
-import java.io.FileInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 /**
  * @author mike
@@ -41,7 +41,7 @@ public class AgentPerfClient {
         System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
 
         // Prepare .l7tech directory before initializing logging (Bug #1288)
-        new File(ClientProxy.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
+        new File(Ssg.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
 
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties");
         JceProvider.init();

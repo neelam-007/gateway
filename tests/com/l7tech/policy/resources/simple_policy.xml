@@ -43,6 +43,20 @@
                     <CurrentSecurityHeaderHandling intValue="0"/>
                     <SamlAssertionExpiry intValue="5"/>
                 </HttpRoutingAssertion>
+                <BridgeRoutingAssertion>
+                    <XmlSecurityActorToPromote stringValueNull="null"/>
+                    <AttachSamlSenderVouches booleanValue="false"/>
+                    <TaiCredentialChaining booleanValue="false"/>
+                    <UserAgent stringValueNull="null"/>
+                    <ProtectedServiceUrl stringValueNull="null"/>
+                    <Login stringValueNull="null"/>
+                    <GroupMembershipStatement booleanValue="false"/>
+                    <Password stringValueNull="null"/>
+                    <Realm stringValueNull="null"/>
+                    <MaxConnections intValue="100"/>
+                    <CurrentSecurityHeaderHandling intValue="0"/>
+                    <SamlAssertionExpiry intValue="5"/>
+                </BridgeRoutingAssertion>
                 <JmsRoutingAssertion>
                     <XmlSecurityActorToPromote stringValueNull="null"/>
                     <AttachSamlSenderVouches booleanValue="false"/>

@@ -2,7 +2,6 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
@@ -35,12 +34,18 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private static final int SSG_SSL_PORT = 8443;
     private static final int SSG_PORT = 8080;
 
+    public static final String PROXY_CONFIG =
+            System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
+    // Threshold for storing attachments on disk instead of in ram
+    public static final int ATTACHMENT_DISK_THRESHOLD = 131071;
+    public static final File ATTACHMENT_DIR = new File(PROXY_CONFIG + "/attachments");
+
     // The file that contains our client cert private key for this Ssg
-    private static final String KEY_FILE = ClientProxy.PROXY_CONFIG + File.separator + "key";
+    private static final String KEY_FILE = PROXY_CONFIG + File.separator + "key";
     private static final String KEY_EXT = ".p12";
 
     // The file that contains the trusted server cert for this Ssg
-    private static final String TRUST_FILE = ClientProxy.PROXY_CONFIG + File.separator + "certs";
+    private static final String TRUST_FILE = PROXY_CONFIG + File.separator + "certs";
     private static final String TRUST_EXT = ".p12";
 
     private long id = 0;

@@ -722,7 +722,8 @@ public class WspConstants {
         new AssertionMapping(new SslAssertion(), "SslAssertion"),
         new AssertionMapping(new JmsRoutingAssertion(), "JmsRoutingAssertion"),
         new AssertionMapping(new HttpRoutingAssertion(), "HttpRoutingAssertion"),
-        new AssertionMapping(new HttpRoutingAssertion(), "RoutingAssertion"), // backwards compatibility
+        new AssertionMapping(new HttpRoutingAssertion(), "RoutingAssertion"), // backwards compatibility with pre-3.0
+        new AssertionMapping(new BridgeRoutingAssertion(), "BridgeRoutingAssertion"),
         new AssertionMapping(new TrueAssertion(), "TrueAssertion"),
         new AssertionMapping(new MemberOfGroup(), "MemberOfGroup"),
         new AssertionMapping(new SpecificUser(), "SpecificUser"),

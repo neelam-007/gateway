@@ -12,6 +12,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
+import java.net.PasswordAuthentication;
 import java.util.logging.Logger;
 
 /**
@@ -37,7 +38,11 @@ public class ClientHttpDigest extends ClientAssertion {
             log.info("this is a Federated SSG.  Assertion therefore fails.");
             return AssertionStatus.FAILED;
         }
-        context.getCredentialsForTrustedSsg();
+        PasswordAuthentication pw = context.getCredentialsForTrustedSsg();
+        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1) {
+            log.info("HttpDigest: Unable to obtain username/password credentials for HTTP digest.  Assertion therefore fails.");
+            return AssertionStatus.FAILED;
+        }
         context.setDigestAuthRequired(true);
         return AssertionStatus.NONE;
     }

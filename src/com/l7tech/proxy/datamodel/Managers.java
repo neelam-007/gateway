@@ -8,7 +8,6 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.mime.HybridStashManager;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.proxy.ClientProxy;
 
 /**
  * Used to obtain datamodel classes.
@@ -46,7 +45,7 @@ public class Managers {
      * @return a new StashManager reader to stash input stream to RAM or disk according to their size.
      */
     public static StashManager createStashManager() {
-        return new HybridStashManager(ClientProxy.ATTACHMENT_DISK_THRESHOLD, ClientProxy.ATTACHMENT_DIR,
+        return new HybridStashManager(Ssg.ATTACHMENT_DISK_THRESHOLD, Ssg.ATTACHMENT_DIR,
                                       "att" + getStashFileUnique());
     }
 }

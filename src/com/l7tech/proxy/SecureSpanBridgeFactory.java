@@ -20,6 +20,7 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
+import com.l7tech.proxy.ssl.SslPeer;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -67,12 +68,16 @@ public class SecureSpanBridgeFactory {
     private static Map credentialManagerMap = Collections.synchronizedMap(new HashMap());
     static {
         Managers.setCredentialManager(new CredentialManagerImpl() {
-            public void notifySslCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
-                CredentialManager cm = (CredentialManager)credentialManagerMap.get(ssg);
+            public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException 
+            {
+                // TODO if this is a third-party token service, can't look up the SSG
+                if (sslPeer == null)
+                    throw new OperationCanceledException("Unable to determine trustworthiness of non-Gateway peer certificate");
+                CredentialManager cm = (CredentialManager)credentialManagerMap.get(sslPeer);
                 if (cm != null)
-                    cm.notifySslCertificateUntrusted("the Gateway " + ssg, certificate);
+                    cm.notifySslCertificateUntrusted(sslPeer, "the Gateway " + sslPeer, untrustedCertificate);
                 else
-                    super.notifySslCertificateUntrusted("the Gateway " + ssg, certificate);
+                    super.notifySslCertificateUntrusted(sslPeer, "the Gateway " + sslPeer, untrustedCertificate);
             }
         });
     }
@@ -86,9 +91,15 @@ public class SecureSpanBridgeFactory {
      */
     public static SecureSpanBridge createSecureSpanBridge(SecureSpanBridgeOptions options) {
         final Ssg ssg = new Ssg(options.getId(), options.getGatewayHostname());
-        final PasswordAuthentication pw = new PasswordAuthentication(options.getUsername(), (char[]) options.getPassword().clone());
-        ssg.setUsername(pw.getUserName());
-        ssg.getRuntime().setCachedPassword(pw.getPassword());
+        final PasswordAuthentication pw;
+        if (options.getUsername() != null) {
+            final char[] pass = options.getPassword() == null ? new char[0] : (char[]) options.getPassword().clone();
+            pw = new PasswordAuthentication(options.getUsername(),
+                                                                                     pass);
+            ssg.setUsername(pw.getUserName());
+            ssg.getRuntime().setCachedPassword(pw.getPassword());
+        } else
+            pw = null;
         if (options.getGatewayPort() != 0)
             ssg.setSsgPort(options.getGatewayPort());
         if (options.getGatewaySslPort() != 0)
@@ -107,9 +118,9 @@ public class SecureSpanBridgeFactory {
             final SecureSpanBridgeOptions.GatewayCertificateTrustManager tm = options.getGatewayCertificateTrustManager();
             credentialManagerMap.put(ssg, new CredentialManagerImpl() {
                 final String msgNoTrust = "Bridge API user's GatewayCertificateTrustManager rejected Gateway certificate";
-                public void notifySslCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
+                public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException {
                     try {
-                        if (tm.isGatewayCertificateTrusted(new X509Certificate[] {certificate}))
+                        if (tm.isGatewayCertificateTrusted(new X509Certificate[] {untrustedCertificate}))
                             return;
                     } catch (CertificateException e) {
                         throw new OperationCanceledException(msgNoTrust, e);
@@ -286,6 +297,8 @@ public class SecureSpanBridgeFactory {
 
         public void importClientCert(X509Certificate clientCert, PrivateKey clientKey) throws IOException {
             try {
+                if (pw == null)
+                    throw new CausedIOException("Unable to import a client certificate -- no credentials were set for this Bridge instance.");
                 synchronized (ssg) {
                     SsgKeyStoreManager.saveClientCertificate(ssg, clientKey, clientCert, pw.getPassword());
                     ssg.getRuntime().resetSslContext();
@@ -303,6 +316,8 @@ public class SecureSpanBridgeFactory {
 
         public void importClientCert(File pkcs12Path, final String alias, char[] pkcs12Password) throws IOException {
             try {
+                if (pw == null)
+                    throw new CausedIOException("Unable to import a client certificate -- no credentials were set for this Bridge instance.");
                 synchronized (ssg) {
                     SsgKeyStoreManager.AliasPicker aliasPicker = new SsgKeyStoreManager.AliasPicker() {
                         public String selectAlias(String[] options) {

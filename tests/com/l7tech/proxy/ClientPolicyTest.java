@@ -17,7 +17,6 @@ import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -75,20 +74,12 @@ public class ClientPolicyTest extends TestCase {
 
         ssg.setUsername(null);
         ssg.getRuntime().setCachedPassword("".toCharArray());
-        try {
-            result = policy.decorateRequest(context);
-            fail("HttpBasic was provided null username, and didn't throw");
-        } catch (OperationCanceledException e) {
-            // Ok
-        }
+        result = policy.decorateRequest(context);
+        assertTrue(AssertionStatus.NONE != result);
 
         ssg.setUsername("");
-        try {
-            result = policy.decorateRequest(context);
-            fail("HttpBasic was provided empty username, and didn't throw");
-        } catch (OperationCanceledException e) {
-            // Ok
-        }
+        result = policy.decorateRequest(context);
+        assertTrue(AssertionStatus.NONE != result);
 
         final String USER = "fbunky";
         ssg.setUsername(USER);
@@ -139,14 +130,11 @@ public class ClientPolicyTest extends TestCase {
 
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
 
+            // Test empty username
             ssg.setUsername("");
             ssg.getRuntime().setCachedPassword("".toCharArray());
-            try {
-                result = clientPolicy.decorateRequest(makeContext(ssg, env));
-                fail("Policy was given empty username, but failed to throw");
-            } catch (OperationCanceledException e) {
-                // Ok
-            }
+            result = clientPolicy.decorateRequest(makeContext(ssg, env));
+            assertTrue(AssertionStatus.NONE != result);
 
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
@@ -171,14 +159,11 @@ public class ClientPolicyTest extends TestCase {
 
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
 
+            // Test empty username
             ssg.setUsername("");
             ssg.getRuntime().setCachedPassword("".toCharArray());
-            try {
-                result = clientPolicy.decorateRequest(makeContext(ssg, env));
-                fail("Policy was given empty username, and failed to throw");
-            } catch (OperationCanceledException e) {
-                // Ok
-            }
+            result = clientPolicy.decorateRequest(makeContext(ssg, env));
+            assertTrue(AssertionStatus.NONE != result);
 
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
