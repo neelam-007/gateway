@@ -6,10 +6,9 @@
 
 package com.l7tech.proxy.policy.assertion.credential.wss;
 
-import org.apache.axis.message.SOAPHeaderElement;
-import org.apache.axis.AxisFault;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import org.apache.axis.message.SOAPHeaderElement;
 
 import javax.xml.soap.SOAPException;
 
@@ -24,6 +23,9 @@ public abstract class ClientWssCredentialSource implements ClientAssertion {
      * @return
      */
     protected SOAPHeaderElement getSecurityElement(PendingRequest request) throws SOAPException {
+        return null;
+        // TODO: no longer using Axis API if we can help it -- sorry about this Francois :(
+        /*
         SOAPHeaderElement secHeader = null;
         try {
             secHeader = request.getSoapEnvelope().getHeaderByName(SECURITY_NAMESPACE, SECURITY_NAME);
@@ -35,6 +37,7 @@ public abstract class ClientWssCredentialSource implements ClientAssertion {
             request.getSoapEnvelope().addHeader(secHeader);
         }
         return secHeader;
+        */
     }
 
     protected static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/04/secext";

@@ -8,21 +8,19 @@ package com.l7tech.proxy.ssl;
 
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.log4j.Category;
+import sun.security.x509.X500Name;
 
 import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocket;
-import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-
-import sun.security.x509.X500Name;
 
 /**
  * New socket factory for SSL with the Jakarta Commons HTTP client.
@@ -45,6 +43,8 @@ public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSoc
         public void handshakeCompleted(HandshakeCompletedEvent event) {
             log.info("MyHandshakeCompletedListner: connection was made to " + expectedHostname);
             try {
+                // TODO: Invalidate session only if a cert has changed
+                //event.getSession().invalidate();
                 Certificate[] certs = event.getPeerCertificates();
                 if (certs.length < 1)
                     throw new RuntimeException("Server presented no server certificates");

@@ -26,11 +26,13 @@ import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
+import org.apache.xml.serialize.XMLSerializer;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
@@ -248,8 +250,16 @@ public class MessageProcessor {
             postMethod = new PostMethod(url.toString());
             setAuthenticationState(req, state, postMethod);
 
+            // TODO: MUST BE FIXED -- using new XML serializer for each request
             postMethod.addRequestHeader("SOAPAction", req.getSoapAction());
-            postMethod.setRequestBody(req.getSoapEnvelope().toString());
+            final StringWriter sw = new StringWriter();
+            XMLSerializer xmlSerializer = new XMLSerializer();
+            xmlSerializer.setOutputCharStream(sw);
+            xmlSerializer.serialize(req.getSoapEnvelope());
+
+            String postBody = sw.toString();
+            //log.info("Posting to SSG: " + postBody);
+            postMethod.setRequestBody(postBody);
 
             log.info("Posting request to SSG " + ssg + ", url " + url);
             int status = client.executeMethod(postMethod);

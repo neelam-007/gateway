@@ -6,29 +6,28 @@
 
 package com.l7tech.proxy;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import java.util.logging.Logger;
-import java.util.Arrays;
-
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
-import com.l7tech.proxy.policy.assertion.ClientSslAssertion;
-import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
-import org.apache.axis.message.SOAPEnvelope;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientSslAssertion;
+import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
+import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.w3c.dom.Document;
+
+import java.util.Arrays;
+import java.util.logging.Logger;
 
 /**
  *
@@ -54,7 +53,7 @@ public class ClientPolicyTest extends TestCase {
     /** Decorate a message with an empty policy. */
     public void testNullPolicy() throws Exception {
         Ssg ssg = new Ssg(1, "Foo Ssg", "http://foo");
-        PendingRequest req = new PendingRequest(new SOAPEnvelope(), ssg, NullRequestInterceptor.INSTANCE);
+        PendingRequest req = new PendingRequest(null, ssg, NullRequestInterceptor.INSTANCE);
 
         ClientAssertion policy = new ClientTrueAssertion( TrueAssertion.getInstance() );
 
@@ -67,7 +66,7 @@ public class ClientPolicyTest extends TestCase {
     public void testHttpBasicPolicy() throws Exception {
         ClientAssertion policy = new ClientHttpBasic( new HttpBasic() );
         Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
-        SOAPEnvelope env = new SOAPEnvelope();
+        Document env = null;
         PendingRequest req;
         AssertionStatus result;
 
@@ -103,7 +102,7 @@ public class ClientPolicyTest extends TestCase {
     public void testAnonymousSslPolicy() throws Exception {
         ClientAssertion policy = new ClientSslAssertion( new SslAssertion() );
         Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
-        SOAPEnvelope env = new SOAPEnvelope();
+        Document env = null;
         PendingRequest req;
         AssertionStatus result;
 
@@ -115,7 +114,7 @@ public class ClientPolicyTest extends TestCase {
     /** Test a composite policy. */
     public void testCompositePolicy() throws Exception {
         Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
-        SOAPEnvelope env = new SOAPEnvelope();
+        Document env = null;
         PendingRequest req;
         AssertionStatus result;
 

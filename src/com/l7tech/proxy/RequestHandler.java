@@ -6,20 +6,17 @@ import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgNotFoundException;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.util.SoapUtil;
 import org.apache.axis.message.SOAPEnvelope;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import javax.xml.soap.Name;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPElement;
-import javax.xml.soap.SOAPException;
 import java.io.IOException;
-import java.util.Iterator;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -51,27 +48,15 @@ public class RequestHandler extends AbstractHttpHandler {
      * @return
      */
     private PendingRequest gatherRequest(HttpRequest request,
-                                         SOAPEnvelope requestEnvelope,
+                                         Document requestEnvelope,
                                          Ssg ssg)
-            throws SOAPException
     {
         PendingRequest pr = new PendingRequest(requestEnvelope, ssg, interceptor);
         String sa = request.getField("SOAPAction");
         if (sa != null)
             pr.setSoapAction(sa);
-        SOAPBody soapBody = requestEnvelope.getBody();
-        if (soapBody != null) {
-            Iterator kids = soapBody.getChildElements();
-            if (kids.hasNext()) {
-                SOAPElement elm = (SOAPElement) kids.next();
-                Name bodyName = elm.getElementName();
-                if (bodyName != null) {
-                    String uri = bodyName.getURI();
-                    if (uri != null)
-                        pr.setUri(uri);
-                }
-            }
-        }
+
+        pr.setUri(SoapUtil.getNamespaceUri(requestEnvelope));
         log.info("Request SOAPAction=" + pr.getSoapAction() + "   BodyURI=" + pr.getUri());
         return pr;
     }
@@ -99,7 +84,12 @@ public class RequestHandler extends AbstractHttpHandler {
         final Ssg ssg = getDesiredSsg(request);
         log.info("Mapped to SSG: " + ssg);
 
-        final SOAPEnvelope requestEnvelope = getRequestEnvelope(request);
+        final Document requestEnvelope;
+        try {
+            requestEnvelope = getRequestEnvelope(request);
+        } catch (Exception e) {
+            throw new HttpException(500, "Invalid SOAP envelope: " + e);
+        }
 
         SsgResponse responseString = getServerResponse(request, ssg, requestEnvelope);
 
@@ -129,7 +119,7 @@ public class RequestHandler extends AbstractHttpHandler {
      * @return          the SOAPEnvelope it contained
      * @throws HttpException    if no valid SOAPEnvelope could be extracted
      */
-    private SOAPEnvelope getRequestEnvelope(final HttpRequest request) throws HttpException {
+    private Document getRequestEnvelope(final HttpRequest request) throws Exception {
         // Read the envelope
         final SOAPEnvelope requestEnvelope;
         try {
@@ -140,7 +130,7 @@ public class RequestHandler extends AbstractHttpHandler {
             interceptor.onMessageError(t);
             throw t;
         }
-        return requestEnvelope;
+        return requestEnvelope.getAsDocument();
     }
 
     /**
@@ -188,7 +178,7 @@ public class RequestHandler extends AbstractHttpHandler {
      */
     private SsgResponse getServerResponse(final HttpRequest request,
                                           final Ssg ssg,
-                                          final SOAPEnvelope requestEnvelope)
+                                          final Document requestEnvelope)
             throws HttpException
     {
         log.info("Processing message to SSG " + ssg.getName());

@@ -6,9 +6,9 @@
 
 package com.l7tech.proxy.datamodel;
 
-import org.apache.axis.message.SOAPEnvelope;
-import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.NullRequestInterceptor;
+import com.l7tech.proxy.RequestInterceptor;
+import org.w3c.dom.Document;
 
 /**
  * Holds request state while the client proxy is processing it.
@@ -17,7 +17,8 @@ import com.l7tech.proxy.NullRequestInterceptor;
  * Time: 12:04:09 PM
  */
 public class PendingRequest {
-    private SOAPEnvelope soapEnvelope;
+    private Document soapEnvelope;
+    private Document initialEnvelope;
     private Ssg ssg;
     private RequestInterceptor requestInterceptor = NullRequestInterceptor.INSTANCE;
     private String soapAction = "";
@@ -41,24 +42,29 @@ public class PendingRequest {
     private PolicySettings policySettings = new PolicySettings();
 
     /** Construct a PendingRequest around the given SOAPEnvelope going to the given SSG. */
-    public PendingRequest(SOAPEnvelope soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor) {
+    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor) {
         this.soapEnvelope = soapEnvelope;
+        this.initialEnvelope = soapEnvelope;
         this.ssg = ssg;
         setRequestInterceptor(requestInterceptor);
     }
 
     /**
      * Reset all policy settings in preperation for starting processing over again with a different policy.
-     * TODO: Policies currently don't modify the soapEnvelope; but when they do, this must restore that too
      */
     public void reset() {
         policySettings = new PolicySettings();
+        soapEnvelope = initialEnvelope;
     }
 
     // Getters and setters
 
-    public SOAPEnvelope getSoapEnvelope() {
+    public Document getSoapEnvelope() {
         return soapEnvelope;
+    }
+
+    public void setSoapEnvelope(Document newEnvelope) {
+        soapEnvelope = newEnvelope;
     }
 
     public Ssg getSsg() {

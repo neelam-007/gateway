@@ -24,6 +24,8 @@ import javax.xml.soap.SOAPException;
 import java.io.IOException;
 import java.util.Enumeration;
 
+import com.l7tech.common.util.HexUtils;
+
 /**
  * A "test" Ssg that can be controlled programmatically.  Used to test the Client Proxy.
  * Implements a simple echo server.
@@ -138,6 +140,8 @@ public class SsgFaker {
                 throws HttpException, IOException
         {
             log.info("SsgFakerHandler: incoming request: pathInContext=" + pathInContext);
+
+            //log.info("Got request: " + new String(HexUtils.slurpStream(request.getInputStream(), 16384)));
 
             SOAPEnvelope requestEnvelope;
             try {
