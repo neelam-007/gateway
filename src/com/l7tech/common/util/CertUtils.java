@@ -57,11 +57,11 @@ public class CertUtils {
         X509Name x509name = new X509Name(dn);
         Map map = new HashMap();
         for (int i = 0; i < x509name.getOIDs().size(); i++ ) {
-            String oid = ((DERObjectIdentifier)x509name.getOIDs().get(i)).toString();
+            final DERObjectIdentifier oid = (DERObjectIdentifier)x509name.getOIDs().get(i);
 
             String name = (String)X509Name.DefaultSymbols.get(oid);
             if (name == null) name = (String)X509Name.RFC2253Symbols.get(oid);
-            if (name == null) name = oid.toString();
+            if (name == null) name = oid.getId();
 
             List values = (List) map.get(name);
             if ( values == null ) {
