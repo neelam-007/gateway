@@ -36,6 +36,7 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
 
     public synchronized void setResponseXml( String xml ) {
         _responseXml = xml;
+        _document = null;
     }
 
     public synchronized String getResponseXml() throws IOException {
@@ -64,7 +65,9 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
     }
 
     public synchronized Document getDocument() throws IOException, SAXException {
-        parse( getResponseXml() );
+        if (_document == null) {
+            parse(getResponseXml());
+        }
         return _document;
     }
 
