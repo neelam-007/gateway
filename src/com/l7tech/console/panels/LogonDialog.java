@@ -16,6 +16,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.spring.remoting.rmi.NamingURL;
 import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
 import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
+import com.l7tech.identity.BadCredentialsException;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
@@ -717,7 +718,7 @@ public class LogonDialog extends JDialog {
             log.log(Level.WARNING, "logon()", e);
             String msg = MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{serviceUrl.getHost()});
             JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (cause instanceof LoginException || cause instanceof FailedLoginException) {
+        } else if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException) {
             log.log(Level.WARNING, "logon()", e);
             showInvalidCredentialsMessage();
         } else if (cause instanceof RemoteException || cause instanceof IOException) {
