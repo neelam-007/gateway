@@ -12,6 +12,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -61,6 +63,29 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         providerNameTextField.setPreferredSize(new Dimension(217, 20));
         providerNameTextField.setMinimumSize(new Dimension(217, 20));
         providerNameTextField.setToolTipText(resources.getString("providerNameTextField.tooltip"));
+        providerNameTextField.addKeyListener(new KeyListener() {
+            public void keyPressed(KeyEvent ke) {
+                // don't care
+            }
+
+            public void keyReleased(KeyEvent ke) {
+                if (providerNameTextField.getText().length() > 0) {
+                    // a name is entered, can advance to next panel
+                    advanceAllowed = true;
+                    finishAllowed = true;
+                } else {
+                    advanceAllowed = false;
+                    finishAllowed = false;
+                }
+
+                // notify the wizard to update the state of the control buttons
+                notifyListeners();
+            }
+
+            public void keyTyped(KeyEvent ke) {
+                // don't care
+            }
+        });
 
         return providerNameTextField;
     }
@@ -372,11 +397,24 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         convertedcfg.setSearchBase(ldapSearchBaseTextField.getText());
     }
 
+    /**
+      * Indicate this panel is not the last one. The user must go to the panel.
+      *
+      * @return false
+      */
+     public boolean canFinish() {
+         return finishAllowed;
+     }
 
-    boolean validate(IdentityProviderConfig config) {
-        return true;
-    }
-
+     /**
+      * Test whether the step is finished and it is safe to advance to the next one.  This method
+      * should return quickly.
+      *
+      * @return true if the panel is valid, false otherwis
+      */
+     public boolean canAdvance() {
+         return advanceAllowed;
+     }
 
     private void testSettings() {
         Object type = providerTypesCombo.getSelectedItem();
@@ -482,9 +520,14 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
                 }
 
                 providerTypesCombo.setEnabled(false);
-
-            } else {
-
+                if(getProviderNameTextField().getText().length() > 0) {
+                    advanceAllowed = true;
+                    finishAllowed = true;
+                }
+                else{
+                    advanceAllowed = false;
+                    finishAllowed = false;
+                }
             }
         }
     }
@@ -518,5 +561,7 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
     private LdapIdentityProviderConfig[] templates = null;
     static final Logger log = Logger.getLogger(LdapIdentityProviderConfigPanel.class.getName());
     private boolean showProviderType;
+    private boolean finishAllowed = false;
+    private boolean advanceAllowed = false;
 
 }
