@@ -16,6 +16,7 @@ import javax.servlet.http.*;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
+import java.sql.SQLException;
 
 /**
  * @author alex
@@ -35,33 +36,38 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
         response.setContentType( "text/html" );
         PrintWriter out = response.getWriter();
 
-        IdentityProviderConfigManager ipcm = new IdentityProviderConfigManagerImp();
+        PersistenceContext context;
+        IdentityProviderConfigManager ipcm;
+        try {
+            context = PersistenceManager.getContext();
+            ipcm = new IdentityProviderConfigManagerImp( context );
+        } catch ( SQLException se ) {
+            throw new ServletException( se );
+        }
 
-        String op = request.getParameter("op");
-        if ( op.equals("list") ) {
-            Collection c = ipcm.findAll();
-            out.println( c );
-        } else if ( op.equals( "get") ) {
-            String soid = request.getParameter("oid");
-            long oid = Long.parseLong( soid );
-            IdentityProviderConfig config = null;
-            try {
-                config = ipcm.findByPrimaryKey( oid );
-            } catch (FindException e) {
-                throw new ServletException(e);
+        try {
+            String op = request.getParameter("op");
+
+            if ( op.equals("list") ) {
+                Collection c = ipcm.findAll();
+                out.println( c );
+            } else if ( op.equals( "get") ) {
+                String soid = request.getParameter("oid");
+                long oid = Long.parseLong( soid );
+                IdentityProviderConfig config = ipcm.findByPrimaryKey( oid );
+                out.println( config );
+            } else if ( op.equals( "create") ) {
+                IdentityProviderConfig config = new IdentityProviderConfigImp();
+                config.setName("Identity Provider #1");
+                config.setDescription("This object is bogus.");
+
+                PersistenceManager.beginTransaction( context );
+                long oid = ipcm.save( config );
+                out.println( "Saved " + oid );
+                PersistenceManager.commitTransaction( context );
             }
-            out.println( config );
-        } else if ( op.equals( "create") ) {
-            IdentityProviderConfig config = new IdentityProviderConfigImp();
-            config.setName("Identity Provider #1");
-            config.setDescription("This object is bogus.");
-            long oid = 0;
-            try {
-                oid = ipcm.save( config );
-            } catch (SaveException e) {
-                throw new ServletException(e);
-            }
-            out.println( "Saved " + oid );
+        } catch ( ObjectModelException ome ) {
+            throw new ServletException( ome );
         }
         out.close();
     }
