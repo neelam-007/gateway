@@ -1,15 +1,9 @@
 package com.l7tech.proxy.gui;
 
+import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.panels.Utilities;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import org.apache.log4j.Category;
@@ -42,6 +36,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JTextField fieldName;
     private JLabel fieldLocalEndpoint;
     private JTextField fieldServerUrl;
+    private JCheckBox cbDefault;
     private JTextField fieldKeyStorePath;
     private JTextField fieldUsername;
     private JButton buttonClearPassword;
@@ -143,7 +138,7 @@ public class SsgPropertyDialog extends PropertyDialog {
                      new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
-                                            new Insets(6, 6, 6, 6), 3, 3));
+                                            new Insets(6, 6, 0, 6), 3, 3));
 
             buttonFlushPolicies = new JButton("Clear Policy Cache");
             buttonFlushPolicies.addActionListener(new ActionListener() {
@@ -156,7 +151,7 @@ public class SsgPropertyDialog extends PropertyDialog {
                      new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.EAST,
                                             GridBagConstraints.NONE,
-                                            new Insets(0, 0, 0, 0), 0, 0));
+                                            new Insets(6, 6, 0, 6), 0, 0));
 
             displayPolicies = new ArrayList();
             displayPolicyTableModel = new DisplayPolicyTableModel();
@@ -164,7 +159,6 @@ public class SsgPropertyDialog extends PropertyDialog {
             policyTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             policyTable.setCellSelectionEnabled(false);
             policyTable.setRowSelectionAllowed(true);
-            policyTable.setBorder(BorderFactory.createLineBorder(Color.BLACK));
             policyTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
             policyTable.setAutoCreateColumnsFromModel(true);
             policyTable.getColumnModel().getColumn(0).setHeaderValue("Body URI");
@@ -175,16 +169,15 @@ public class SsgPropertyDialog extends PropertyDialog {
                      new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
-                                            new Insets(6, 6, 6, 6), 3, 3));
+                                            new Insets(0, 6, 3, 6), 0, 0));
 
             pane.add(new JLabel("Associated policy:"),
                      new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
-                                            new Insets(4, 6, 0, 6), 3, 3));
+                                            new Insets(4, 6, 0, 6), 0, 0));
 
             policyTree = new JTree((TreeModel)null);
-            policyTree.setBorder(BorderFactory.createLineBorder(Color.BLACK));
             policyTree.setCellRenderer(new EntityTreeCellRenderer());
             JScrollPane policyTreeSp = new JScrollPane(policyTree);
             policyTreeSp.setPreferredSize(new Dimension(120, 120));
@@ -234,6 +227,10 @@ public class SsgPropertyDialog extends PropertyDialog {
             fieldLocalEndpoint.setPreferredSize(new Dimension(200, 20));
             pane.add(new JLabel("Endpoint:"), gbcLabel());
             pane.add(fieldLocalEndpoint, gbc());
+
+            cbDefault = new JCheckBox("Route unknown endpoints to this SSG");
+            cbDefault.setPreferredSize(new Dimension(200, 20));
+            pane.add(cbDefault, gbc());
 
             fieldKeyStorePath = new JTextField();
             fieldKeyStorePath.setPreferredSize(new Dimension(200, 20));
@@ -325,6 +322,7 @@ public class SsgPropertyDialog extends PropertyDialog {
         editPassword = ssg.getPassword();
         fieldPassword.setText(passwordToString(editPassword));
         cbPromptForPassword.setSelected(ssg.isPromptForUsernameAndPassword());
+        cbDefault.setSelected(ssg.isDefaultSsg());
         policyFlushRequested = false;
 
         updatePolicyPanel();
@@ -344,6 +342,7 @@ public class SsgPropertyDialog extends PropertyDialog {
             ssg.setUsername(fieldUsername.getText());
             ssg.setPassword(editPassword);
             ssg.setPromptForUsernameAndPassword(cbPromptForPassword.isSelected());
+            ssg.setDefaultSsg(cbDefault.isSelected());
             if (policyFlushRequested)
                 ssg.clearPolicies();
         }
