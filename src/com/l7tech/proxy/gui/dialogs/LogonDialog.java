@@ -11,6 +11,7 @@ import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.proxy.util.ClientLogger;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
@@ -38,18 +39,16 @@ public class LogonDialog extends JDialog {
     /* Command string for a login action (e.g.,a button or menu item). */
     private String CMD_LOGIN = "cmd.login";
 
-    private JButton loginButton = null;
-
-    /** username text field */
-    private JTextField userNameTextField = null;
-
-    /** password text field */
-    private JPasswordField passwordField = null;
+    private JButton loginButton;
+    private JButton cancelButton;
+    private JTextField userNameTextField;
+    private JPasswordField passwordField;
 
     private static JFrame frame;
     private boolean badPasswordMessage;
     private boolean lockUsername;
     private String ssgName;
+    private final JTextComponent focusComponent;
 
     /**
      * Create a new LogonDialog
@@ -67,13 +66,37 @@ public class LogonDialog extends JDialog {
         initComponents();
         getRootPane().setDefaultButton(loginButton);
 
-        if (defaultUsername != null)
+        if (defaultUsername == null) {
+            focusComponent = userNameTextField;
+        } else {
             userNameTextField.setText(defaultUsername);
+            focusComponent = passwordField;
+        }
 
-        if (defaultUsername == null)
-            userNameTextField.requestFocus();
-        else
-            passwordField.requestFocus();
+        final FocusTraversalPolicy ftp = getFocusTraversalPolicy();
+        setFocusTraversalPolicy(new FocusTraversalPolicy() {
+            public Component getComponentAfter(Container focusCycleRoot,
+                                               Component aComponent) {
+                return ftp.getComponentAfter(focusCycleRoot, aComponent);
+            }
+
+            public Component getComponentBefore(Container focusCycleRoot,
+                                                Component aComponent) {
+                return ftp.getComponentBefore(focusCycleRoot, aComponent);
+            }
+
+            public Component getFirstComponent(Container focusCycleRoot) {
+                return focusComponent;
+            }
+
+            public Component getLastComponent(Container focusCycleRoot) {
+                return cancelButton;
+            }
+
+            public Component getDefaultComponent(Container focusCycleRoot) {
+                return focusComponent;
+            }
+        });
 
         updateOkButton();
     }
@@ -124,6 +147,7 @@ public class LogonDialog extends JDialog {
         }
 
         userNameTextField = new ContextMenuTextField(); //needed below
+        Utilities.enableSelectAllOnFocus(userNameTextField);
         userNameTextField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { updateOkButton(); }
             public void removeUpdate(DocumentEvent e) { updateOkButton(); }
@@ -171,6 +195,7 @@ public class LogonDialog extends JDialog {
         contents.add(userNameTextField, constraints);
 
         passwordField = new JPasswordField(); // needed below
+        Utilities.enableSelectAllOnFocus(passwordField);
 
         // password label
         JLabel passwordLabel = new JLabel();
@@ -240,7 +265,7 @@ public class LogonDialog extends JDialog {
         panel.add(Box.createRigidArea(new Dimension(5, 0)));
 
         // cancel button
-        JButton cancelButton = new JButton();
+        cancelButton = new JButton();
         cancelButton.setText("Cancel");
         cancelButton.setActionCommand(CMD_CANCEL);
         cancelButton.addActionListener(new ActionListener() {
@@ -327,12 +352,7 @@ public class LogonDialog extends JDialog {
      * Before displaying dialog, ensure that correct fields are selected.
      */
     public void show() {
-        userNameTextField.requestFocus();
-        userNameTextField.selectAll();
-
         addWindowListener(new WindowAdapter() {
-            boolean didOpen = false;
-
             /**
              * Invoked when a window has been opened.
              */
@@ -341,7 +361,8 @@ public class LogonDialog extends JDialog {
                 frame.show();
                 frame.toFront();
                 LogonDialog.this.toFront();
-                LogonDialog.this.requestFocus();
+                //LogonDialog.this.requestFocus();
+                focusComponent.requestFocus();
             }
         });
         super.show();
