@@ -42,9 +42,16 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
 
     public long saveIdentityProviderConfig(com.l7tech.adminws.identity.IdentityProviderConfig identityProviderConfig) throws java.rmi.RemoteException {
         try {
+            if (identityProviderConfig.getOid() > 0) {
+                getIdentityProviderConfigManager().update(TypeTranslator.serviceIdentityProviderConfigToGenericOne(identityProviderConfig));
+                return identityProviderConfig.getOid();
+            }
             return getIdentityProviderConfigManager().save(TypeTranslator.serviceIdentityProviderConfigToGenericOne(identityProviderConfig));
         } catch (SaveException e) {
             throw new java.rmi.RemoteException("SaveException in saveIdentityProviderConfig", e);
+        }
+        catch (UpdateException e) {
+            throw new java.rmi.RemoteException("UpdateException in saveIdentityProviderConfig", e);
         }
     }
 
@@ -88,11 +95,17 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         UserManager userManager = retrieveUserManager(identityProviderConfigId);
         if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
         try {
+            if (user.getOid() > 0) {
+                userManager.update(TypeTranslator.serviceUserToGenUser(user));
+                return user.getOid();
+            }
             return userManager.save(TypeTranslator.serviceUserToGenUser(user));
         } catch (SaveException e) {
             throw new java.rmi.RemoteException("SaveException in saveUser", e);
         } catch (ClassNotFoundException e) {
             throw new java.rmi.RemoteException("ClassNotFoundException in TypeTranslator.serviceUserToGenUser", e);
+        } catch (UpdateException e) {
+            throw new java.rmi.RemoteException("UpdateException in saveUser", e);
         }
     }
 
@@ -138,11 +151,17 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     public long saveGroup(long identityProviderConfigId, com.l7tech.adminws.identity.Group group) throws java.rmi.RemoteException {
         try {
             GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
+            if (group.getOid() > 0) {
+                groupManager.update(TypeTranslator.serviceGroupToGenGroup(group));
+                return group.getOid();
+            }
             return groupManager.save(TypeTranslator.serviceGroupToGenGroup(group));
         } catch (SaveException e) {
             throw new RemoteException("SaveException in saveGroup", e);
         } catch (ClassNotFoundException e) {
             throw new java.rmi.RemoteException("ClassNotFoundException in TypeTranslator.serviceGroupToGenGroup", e);
+        } catch (UpdateException e) {
+            throw new java.rmi.RemoteException("UpdateException in TypeTranslator.serviceGroupToGenGroup", e);
         }
     }
 
