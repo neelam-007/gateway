@@ -50,9 +50,6 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         JceProvider.init();
     }
 
-    private static final String DEFAULT_KEYSTORE_NAME = "ssgroot";
-    private static final String DEFAULT_PRIVATE_KEY_ALIAS = "ssgroot";
-
     private PrivateKey privateKey;
     private X509Certificate caCert;
     X509Name caSubjectName;
@@ -384,8 +381,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         // Design criteria: 1. No counter to keep track on. 2. Multiple thereads can generate numbers at once, in
         // a clustered environment etc.
 
-        // mike: "We are not concerned about the security of the random bits"??
-        // TODO: Comment out these two lines before shipping the code!
+        // this random number is just for the serial number
         long seed = (new Date().getTime()) + this.hashCode();
         random.setSeed(seed);
 
@@ -425,7 +421,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         privateKeyAlias = DEFAULT_PRIVATE_KEY_ALIAS;
         defaultProperties.setProperty("privateKeyAlias", privateKeyAlias);
         //Validity in days from days date for created certificate;
-        validity = new Long(730);
+        validity = new Long(CERT_DAYS_VALID);
         defaultProperties.setProperty("validity", validity.toString());
         //Use BasicConstraints?;
         basicConstraints = true;

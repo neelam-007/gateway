@@ -7,6 +7,7 @@ import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.security.JceProvider;
 import org.mortbay.util.MultiException;
 
 import java.net.BindException;
@@ -37,6 +38,7 @@ public class Main {
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
         log.info("Starting Agent; " + BuildInfo.getLongBuildString());
+        JceProvider.init();
 
         SsgManager ssgManager = SsgManagerImpl.getSsgManagerImpl();
 

@@ -65,6 +65,7 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
      */
     public KeyPair generateRsaKeyPair() {
         JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
+        kpg.initialize(RSA_KEY_LENGTH);
         return kpg.generateKeyPair();
     }
 

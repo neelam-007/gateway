@@ -12,6 +12,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SignatureException;
+import java.security.Security;
 
 /**
  * Provide a single point where our JCE provider can be altered.
@@ -20,9 +21,18 @@ import java.security.SignatureException;
  */
 public abstract class JceProvider {
     private static JceProviderEngine engine = new BouncyCastleJceProviderEngine();
+    //private static JceProviderEngine engine = new PhaosJceProviderEngine();
+
+    private static void listProviders() {
+        Provider[] p = Security.getProviders();
+        for (int i = 0; i < p.length; i++) {
+            Provider provider = p[i];
+            System.out.println("Security provider: " + provider.getName());
+        }
+    }
 
     public static void init() {
-        // No action required; work was done when this class was loaded.
+        // no action should be required
     }
 
     public static Provider getProvider() {

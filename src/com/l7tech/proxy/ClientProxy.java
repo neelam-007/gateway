@@ -3,6 +3,7 @@ package com.l7tech.proxy;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.util.ClientLogger;
+import com.l7tech.common.security.JceProvider;
 import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
@@ -24,6 +25,10 @@ import java.security.NoSuchProviderException;
  * Time: 1:32:33 PM
  */
 public class ClientProxy {
+    static {
+        JceProvider.init();
+    }
+
     private static final ClientLogger log = ClientLogger.getInstance(ClientProxy.class);
     public static final String PROXY_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";

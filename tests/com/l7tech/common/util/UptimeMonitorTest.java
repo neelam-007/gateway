@@ -10,6 +10,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.log4j.Category;
+import com.l7tech.server.util.UptimeMonitor;
 
 /**
  * Test the UptimeMonitor and the parsing in UptimeMetrics.

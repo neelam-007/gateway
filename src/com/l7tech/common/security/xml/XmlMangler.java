@@ -40,6 +40,10 @@ import java.security.Key;
  * Time: 11:07:41 AM
  */
 public class XmlMangler {
+    static {
+        JceProvider.init();
+    }
+
     // ID for EncryptedData element
     private static final String id = "bodyId";
 

@@ -3,7 +3,7 @@ package com.l7tech.logging.ws;
 import com.l7tech.logging.LogManager;
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.common.util.UptimeMetrics;
-import com.l7tech.common.util.UptimeMonitor;
+import com.l7tech.server.util.UptimeMonitor;
 
 import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;

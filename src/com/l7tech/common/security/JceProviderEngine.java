@@ -17,6 +17,8 @@ import java.security.SignatureException;
  * @version 1.0
  */
 public interface JceProviderEngine {
+    int RSA_KEY_LENGTH = 1024;
+
     /**
      * Get the Provider.
      * @return the JCE Provider

@@ -4,10 +4,12 @@
  * $Id$
  */
 
-package com.l7tech.common.util;
+package com.l7tech.server.util;
 
 import com.l7tech.logging.LogManager;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.common.util.UptimeMetrics;
+import com.l7tech.common.util.HexUtils;
 
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
@@ -93,8 +95,8 @@ public class UptimeMonitor {
      * Query the last uptime gathered by the system.
      *
      * @return The last gathered uptime information, or null if no information has been gathered yet.
-     * @throws FileNotFoundException  if uptime is not available here
-     * @throws IllegalStateException  if the monitor thread has been shut down
+     * @throws java.io.FileNotFoundException  if uptime is not available here
+     * @throws java.lang.IllegalStateException  if the monitor thread has been shut down
      */
     public static UptimeMetrics getLastUptime() throws FileNotFoundException, IllegalStateException {
         return getInstance().doGetLastUptime();
@@ -114,8 +116,8 @@ public class UptimeMonitor {
      * Query the last uptime gathered by the system.
      *
      * @return The last gathered uptime information, or null if no information has been gathered yet.
-     * @throws FileNotFoundException  if uptime is not available here
-     * @throws IllegalStateException  if the monitor thread has been shut down
+     * @throws java.io.FileNotFoundException  if uptime is not available here
+     * @throws java.lang.IllegalStateException  if the monitor thread has been shut down
      */
     private synchronized UptimeMetrics doGetLastUptime() throws FileNotFoundException, IllegalStateException {
         if (foundUptime == null)
@@ -144,8 +146,8 @@ public class UptimeMonitor {
      * Attempt to run uptime at the provided path, and update our uptime metrics if successful.
      * @param uptimePath    the path to try
      * @return the string output by the uptime program, limited to 512 bytes
-     * @throws IOException   if the program could not be executed
-     * @throws InterruptedException  if this thread was interrupted
+     * @throws java.io.IOException   if the program could not be executed
+     * @throws java.lang.InterruptedException  if this thread was interrupted
      */
     private static UptimeMetrics runUptime(String uptimePath) throws IOException, InterruptedException {
         Process up = null;

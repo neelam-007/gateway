@@ -14,6 +14,10 @@ import java.security.cert.Certificate;
  * @version 1.0
  */
 public interface RsaSignerEngine {
+    String DEFAULT_KEYSTORE_NAME = "ssgroot";
+    String DEFAULT_PRIVATE_KEY_ALIAS = "ssgroot";
+    int CERT_DAYS_VALID = 730; // how many days of validity the cert should have
+
     /**
      * Create a certificate from the given PKCS10 Certificate Request.
      *
