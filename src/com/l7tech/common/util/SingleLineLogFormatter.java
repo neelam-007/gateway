@@ -58,13 +58,13 @@ public class SingleLineLogFormatter extends Formatter {
             sb.append(record.getLoggerName());
         }
         if (record.getSourceMethodName() != null) {
-            sb.append(" ");
+            sb.append("\t");
             sb.append(record.getSourceMethodName());
         }
-        sb.append(" ");
+        sb.append("\t");
         String message = formatMessage(record);
         sb.append(record.getLevel().getLocalizedName());
-        sb.append(": ");
+        sb.append(":\t");
         sb.append(message);
         sb.append(lineSeparator);
         if (record.getThrown() != null) {
