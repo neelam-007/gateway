@@ -44,14 +44,18 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     public boolean onNextButton() {
         // collect actions details and store in the reference for resolution
         if (manualResolvRadio.isSelected()) {
-            // todo, set the right provider id here.
-            //unresolvedRef.setLocalizeReplace();
+            Long newProviderId = getProviderIdFromName(providerSelector.getSelectedItem().toString());
+            if (newProviderId == null) {
+                // this cannot happen
+                logger.severe("could not get provider from name");
+                return false;
+            }
+            unresolvedRef.setLocalizeReplace(newProviderId.longValue());
         } else if (removeRadio.isSelected()) {
             unresolvedRef.setLocalizeDelete();
         } else if (ignoreRadio.isSelected()) {
             unresolvedRef.setLocalizeIgnore();
         }
-
         return true;
     }
 
@@ -100,21 +104,33 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             logger.severe("Cannot get the IdentityAdmin");
             return;
         }
-        EntityHeader[] providerHeaders = null;
+        providerHeaders = null;
         try {
             providerHeaders = admin.findAllIdentityProviderConfig();
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Cannot get the id provider headers.", e);
             return;
         }
+        if (providerHeaders == null) {
+            // this can't happen under normal circumpstences
+            throw new RuntimeException("No providers at all?");
+        }
         DefaultComboBoxModel idprovidermodel = new DefaultComboBoxModel();
         for ( int i = 0; i < providerHeaders.length; i++ ) {
             EntityHeader entityHeader = providerHeaders[i];
             idprovidermodel.addElement(entityHeader.getName());
         }
-
-        //DefaultComboBoxModel idprovidermodel = new DefaultComboBoxModel(new String[] {"blah", "bluh"});
         providerSelector.setModel(idprovidermodel);
+    }
+
+    private Long getProviderIdFromName(String name) {
+        for ( int i = 0; i < providerHeaders.length; i++ ) {
+            EntityHeader entityHeader = providerHeaders[i];
+            if (entityHeader.getName().equals(name)) {
+                return new Long(entityHeader.getOid());
+            }
+        }
+        return null;
     }
 
     private JPanel mainPanel;
@@ -127,6 +143,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     private ButtonGroup actionRadios;
 
     private IdProviderReference unresolvedRef;
+    private EntityHeader[] providerHeaders;
     private final Logger logger = Logger.getLogger(ResolveForeignIdentityProviderPanel.class.getName());
 
     {
