@@ -117,8 +117,7 @@ public class PolicyServlet extends HttpServlet {
 
         // THE POLICY SHOULD BE STRIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
         try {
-            // todo, re-enable this
-            /*targetService = */FilterManager.getInstance().applyAllFilters(user, targetService);
+            targetService = FilterManager.getInstance().applyAllFilters(user, targetService);
         } catch (FilteringException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Could not filter policy", e);
             httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not process policy. Consult server logs.");
