@@ -5,6 +5,7 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceStatistics;
 
 import javax.swing.*;
@@ -389,7 +390,7 @@ public class StatisticsPanel extends JPanel {
                             completedCountTotal += stats.getCompletedRequestCount();
                             lastMinuteCompletedCountTotal += lastMinuteCompletedCount;
                         }
-
+                        // todo, francis i dont think this is the best way to handle this exception (use a logger)
                     } catch (Throwable t) {
                         t.printStackTrace();
                     }
@@ -397,7 +398,9 @@ public class StatisticsPanel extends JPanel {
                 }
 
             }
+            // todo, francis i think you might want to do somethign about these exceptions
         } catch (RemoteException e) {
+        } catch (FindException e) {
         }
 
         getStatTableModel().fireTableDataChanged();
