@@ -6,11 +6,11 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.AuditAssertion;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.AuditAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -28,6 +28,7 @@ public class ServerAuditAssertion implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+        request.setAuditLevel(level);
+        return AssertionStatus.NONE;
     }
 }
