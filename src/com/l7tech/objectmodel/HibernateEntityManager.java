@@ -94,19 +94,12 @@ public abstract class HibernateEntityManager implements EntityManager {
 
     public Collection findAllHeaders() throws FindException {
         try {
-            Iterator i = _manager.find( getContext(), getAllQuery() ).iterator();
-            NamedEntity ne;
-            Entity e;
-            EntityHeader header;
-            List headers = new ArrayList(5);
-            while ( i.hasNext() ) {
-                e = (Entity)i.next();
-                if ( e instanceof NamedEntity ) {
-                    ne = (NamedEntity)e;
-                    header = new EntityHeader(ne.getOid(), EntityType.fromInterface(getInterfaceClass()), ne.getName(), EMPTY_STRING);
-                } else
-                    header = new EntityHeader(e.getOid(), EntityType.fromInterface(getInterfaceClass()), EMPTY_STRING, EMPTY_STRING);
-                headers.add(header);
+            List headers = new ArrayList();
+            List results = _manager.find( getContext(), allHeadersQuery);
+            for (Iterator i = results.iterator(); i.hasNext();) {
+                Object[] row = (Object[])i.next();
+                final long id = ((Long)row[0]).longValue();
+                headers.add(new EntityHeader(id, EntityType.fromInterface(getInterfaceClass()), row[1].toString(), EMPTY_STRING));
             }
             return Collections.unmodifiableList(headers);
         } catch ( SQLException se ) {
@@ -131,13 +124,22 @@ public abstract class HibernateEntityManager implements EntityManager {
     }
 
     public String getAllQuery() {
-        return "from " + getTableName() + " in class " + getImpClass().getName();
+        String alias = getTableName();
+        return "from " + alias + " in class " + getImpClass().getName();
     }
+
 
     protected PersistenceContext getContext() throws SQLException {
         return PersistenceContext.getCurrent();
     }
 
+    private String alias = getTableName();
+    /**
+     * all headers query,
+     */
+    private final String allHeadersQuery = "select " + alias + ".oid, " +
+                                            alias + ".name from " + alias + " in class "+
+                                            getImpClass().getName();
     protected PersistenceManager _manager;
     protected Logger logger = LogManager.getInstance().getSystemLogger();
 }
