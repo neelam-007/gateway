@@ -186,8 +186,9 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
 
             switch (column) {
                 case ASSOCIATED_LOG_TIMESTAMP_COLUMN_INDEX:
-                    elementA = new Long(((AssociatedLog) a).getTimeStamp());
-                    elementB = new Long(((AssociatedLog) b).getTimeStamp());
+                    // Special note: the ordinal is used to determine the sequence of the logs as the timestamp's resolution is not adequate to resolve the order (ms).
+                    elementA = new Integer(((AssociatedLog) a).getOrdinal());
+                    elementB = new Integer(((AssociatedLog) b).getOrdinal());
                     break;
 
                 case ASSOCIATED_LOG_SECURITY_COLUMN_INDEX:
@@ -223,8 +224,8 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
                 return -1;
             } else {
                 if (ascending) {
-                    if (elementA instanceof Long) {
-                        return ((Long) elementA).longValue() > ((Long) elementB).longValue()?1:0;
+                    if (elementA instanceof Integer) {
+                        return ((Integer) elementA).intValue() > ((Integer) elementB).intValue()?1:0;
                     } else if(elementA instanceof String) {
                         return ((String)elementA).compareToIgnoreCase((String)elementB);
                     } else {
@@ -232,8 +233,8 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
                         return 0;
                     }
                 } else {
-                     if (elementA instanceof Long) {
-                        return ((Long) elementB).longValue() > ((Long) elementA).longValue()?1:0;
+                     if (elementA instanceof Integer) {
+                        return ((Integer) elementB).intValue() > ((Integer) elementA).intValue()?1:0;
                     } else if(elementA instanceof String) {
                         return ((String)elementB).compareToIgnoreCase((String)elementA);
                     } else {

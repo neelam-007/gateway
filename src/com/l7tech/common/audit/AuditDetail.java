@@ -24,6 +24,9 @@ public class AuditDetail extends EntityImp implements Serializable {
     private int componentId;
     private String exception;
 
+    // used to determine the order of the messages as the timestamp (ms) of the messages may be the same.
+    private int ordinal;
+
     public AuditDetail(AuditDetailMessage message) {
         this(message, null, (Throwable)null);
     }
@@ -68,6 +71,10 @@ public class AuditDetail extends EntityImp implements Serializable {
         return auditOid;
     }
 
+    public int getOrdinal() {
+        return ordinal;
+    }
+
     /** Can be null. */
     public String[] getParams() {
         return params;
@@ -88,6 +95,10 @@ public class AuditDetail extends EntityImp implements Serializable {
     public int getComponentId() {
         return componentId;
     }
+
+    public void setOrdinal(int ordinal) {
+         this.ordinal = ordinal;
+     }
 
     /** @deprecated only for persistence */
     public AuditDetail() {

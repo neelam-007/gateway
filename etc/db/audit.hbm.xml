@@ -65,7 +65,7 @@
 
         <property name="time" type="long"/>
         <property name="componentId" column="component_id" type="int"/>
-<!--    <property name="ordinal" type="int"/>-->
+        <property name="ordinal" type="int"/>
         <property name="messageId" column="message_id" type="int"/>
         <property name="exception" type="text"/>
 

@@ -54,6 +54,7 @@ public class AuditContext {
     private static Level systemAdminThreshold = DEFAULT_ADMIN_THRESHOLD;
     private static Level associatedLogsThreshold = DEFAULT_ASSOCIATED_LOGS_THRESHOLD;
 
+    private static int ordinal = 0;
     /**
      * Sets the current {@link AuditRecord} for this context.
      */
@@ -74,6 +75,8 @@ public class AuditContext {
         Level severity = MessageMap.getInstance().getSeverityLevelById(detail.getMessageId());
         if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
         if(severity.intValue() >= currentAssociatedLogsThreshold.intValue()) {
+            // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
+            detail.setOrdinal(ordinal++);
             details.add(detail);
         }
     }
@@ -214,6 +217,7 @@ public class AuditContext {
         AuditContext context = (AuditContext)contextLocal.get();
         if (context == null) {
             context = new AuditContext(applicationContext);
+            ordinal = 0;
             contextLocal.set(context);
         }
         return context;

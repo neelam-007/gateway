@@ -10,11 +10,13 @@ public class AssociatedLog {
     long timeStamp;
     String message;
     String severity;
+    int ordinal;
 
-    public AssociatedLog(long timeStamp, String severity, String message) {
+    public AssociatedLog(long timeStamp, String severity, String message, int ordinal) {
         this.timeStamp = timeStamp;
         this.severity = severity;
         this.message = message;
+        this.ordinal = ordinal;
     }
 
     public long getTimeStamp() {
@@ -27,5 +29,9 @@ public class AssociatedLog {
 
     public String getSeverity() {
         return severity;
+    }
+
+    public int getOrdinal() {
+        return ordinal;
     }
 }
