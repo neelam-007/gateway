@@ -35,4 +35,12 @@ public interface SsgFinder {
      * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified endpoint was not found.
      */
     Ssg getSsgByEndpoint(String endpoint) throws SsgNotFoundException;
+
+    /**
+     * Get the default SSG.
+     * Returns the first SSG that has its Default flag set.  Usually there is only one such SSG.
+     * @return the Default SSG
+     * @throws com.l7tech.proxy.datamodel.SsgNotFoundException if no Default SSG was found
+     */
+    Ssg getDefaultSsg() throws SsgNotFoundException;
 }

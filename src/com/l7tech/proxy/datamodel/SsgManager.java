@@ -32,14 +32,6 @@ public interface SsgManager extends SsgFinder {
     void remove(Ssg ssg) throws SsgNotFoundException;
 
     /**
-     * Get the default SSG.
-     * Returns the first SSG that has its Default flag set.  Usually there is only one such SSG.
-     * @return the Default SSG
-     * @throws SsgNotFoundException if no Default SSG was found
-     */
-    Ssg getDefaultSsg() throws SsgNotFoundException;
-
-    /**
      * Set the default SSG.
      * If this method returns, it's guaranteed that the specified Ssg
      * is in the Ssg list and is the only one with its Default flag set to true.
