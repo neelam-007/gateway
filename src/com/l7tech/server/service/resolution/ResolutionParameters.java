@@ -1,6 +1,7 @@
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.objectmodel.imp.EntityImp;
+import com.l7tech.service.ResolutionParameterTooLongException;
 
 import java.io.Serializable;
 
@@ -18,12 +19,18 @@ import java.io.Serializable;
  * $Id$
  */
 public class ResolutionParameters extends EntityImp implements Serializable {
+    // todo, ideally, this should fail at the database layer but mysql truncs silently
+    public static final int MAX_LENGTH_RES_PARAMETER = 128;
     public String getSoapaction() {
         return soapaction;
     }
 
-    public void setSoapaction(String soapaction) {
-        if ( soapaction == null ) soapaction = ""; // Oracle doesn't distinguish between "" and NULL
+    public void setSoapaction(String soapaction) throws ResolutionParameterTooLongException {
+        if (soapaction == null) soapaction = ""; // Oracle doesn't distinguish between "" and NULL
+        if (soapaction.length() > MAX_LENGTH_RES_PARAMETER) {
+            throw new ResolutionParameterTooLongException("The soapaction " + soapaction + " is too " +
+                                                          "long to remember as a resolution parameter.");
+        }
         this.soapaction = soapaction;
     }
 
@@ -31,7 +38,11 @@ public class ResolutionParameters extends EntityImp implements Serializable {
         return urn;
     }
 
-    public void setUrn(String urn) {
+    public void setUrn(String urn) throws ResolutionParameterTooLongException {
+        if (urn != null && urn.length() > MAX_LENGTH_RES_PARAMETER) {
+            throw new ResolutionParameterTooLongException("The namespace " + urn + " is too " +
+                                                          "long to remember as a resolution parameter.");
+        }
         this.urn = urn;
     }
 
@@ -47,8 +58,13 @@ public class ResolutionParameters extends EntityImp implements Serializable {
         return uri;
     }
 
-    public void setUri(String uri) {
+    public void setUri(String uri) throws ResolutionParameterTooLongException {
+        if (uri != null && uri.length() > MAX_LENGTH_RES_PARAMETER) {
+            throw new ResolutionParameterTooLongException("The URI " + uri + " is too " +
+                                                          "long to remember as a resolution parameter.");
+        }
         this.uri = uri;
+
     }
     /**
      * this must be overriden (hibernate requirement for composite id classes)

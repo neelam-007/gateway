@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.wsp.WspReader;
@@ -111,7 +112,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
      *
      */
     public long savePublishedService(PublishedService service) throws RemoteException,
-                                    UpdateException, SaveException, VersionException {
+                                    UpdateException, SaveException, VersionException, ResolutionParameterTooLongException {
         ServiceManager manager = getServiceManager();
         PersistenceContext pc = null;
         try {

@@ -22,7 +22,8 @@ public interface ServiceAdmin extends Remote {
     EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws RemoteException, FindException;
 
     long savePublishedService(PublishedService service)
-                    throws RemoteException, UpdateException, SaveException, VersionException;
+                    throws RemoteException, UpdateException, SaveException,
+                           VersionException, ResolutionParameterTooLongException;
 
     void deletePublishedService(long oid) throws RemoteException, DeleteException;
 

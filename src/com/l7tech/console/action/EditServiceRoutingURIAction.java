@@ -6,6 +6,7 @@ import com.l7tech.console.panels.NonSoapServicePanel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
@@ -76,6 +77,9 @@ public class EditServiceRoutingURIAction extends NodeAction {
             JOptionPane.showMessageDialog(mw, "Error while changing name " + e.getMessage());
         } catch (VersionException e) {
             JOptionPane.showMessageDialog(mw, "This service is not up to date.");
+        } catch (ResolutionParameterTooLongException e) {
+            JOptionPane.showMessageDialog(mw, "Error while changing name " + e.getMessage());
+            // should not happen
         }
     }
 }
