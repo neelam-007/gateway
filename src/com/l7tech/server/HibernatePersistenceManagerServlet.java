@@ -35,7 +35,6 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
         try {
             PersistenceContext.getCurrent().beginTransaction();
             ipcm = new IdentityProviderConfigManagerImp();
-            //iptm = new IdentityProviderTypeManagerImp();
         } catch ( Exception e ) {
             throw new ServletException( e );
         }
