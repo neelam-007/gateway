@@ -53,7 +53,7 @@ public class AdminFolderNode implements BasicTreeNode {
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
-        return true;
+        return false;
     }
 
     /**
