@@ -82,13 +82,23 @@ public class ServiceNode extends EntityHeaderNode {
 
         }
 
-        return new Action[]{
-            new EditServicePolicyAction(this),
-            new ViewServiceWsdlAction(this),
-            new EditServiceNameAction(this),
-            ea,
-            da,
-            new DeleteServiceAction(this)};
+        if (svc.isNonSoap()) {
+            return new Action[]{
+                new EditServicePolicyAction(this),
+                // todo, some action to edit/view the routing uri
+                new EditServiceNameAction(this),
+                ea,
+                da,
+                new DeleteServiceAction(this)};
+        } else {
+            return new Action[]{
+                new EditServicePolicyAction(this),
+                new ViewServiceWsdlAction(this),
+                new EditServiceNameAction(this),
+                ea,
+                da,
+                new DeleteServiceAction(this)};
+        }
     }
 
     /**
@@ -115,7 +125,7 @@ public class ServiceNode extends EntityHeaderNode {
     protected void loadChildren() {
         try {
             PublishedService s = getPublishedService();
-            if (s != null) {
+            if (s != null && !s.isNonSoap()) {
                 Wsdl wsdl = Wsdl.newInstance(null, new StringReader(svc.getWsdlXml()));
                 WsdlTreeNode node = WsdlTreeNode.newInstance(wsdl);
                 children = null;
