@@ -22,6 +22,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.io.StringWriter;
 
 import org.syntax.jedit.JEditTextArea;
@@ -34,6 +35,7 @@ import org.syntax.jedit.tokenmarker.XMLTokenMarker;
  * @version 1.0
  */
 public class WsdlCreateWizard extends Wizard {
+    static final Logger log = Logger.getLogger(WsdlCreateWizard.class.getName());
 
     public WsdlCreateWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);

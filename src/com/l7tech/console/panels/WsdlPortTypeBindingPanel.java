@@ -337,8 +337,8 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         final JTextField _11;
         _11 = new JTextField();
         portTypeBindingTransportField = _11;
-        _11.setText("http://schemas.xmlsoap.org/soap/http");
         _11.setEditable(false);
+        _11.setText("http://schemas.xmlsoap.org/soap/http");
         _2.add(_11, new com.intellij.uiDesigner.core.GridConstraints(7, 2, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
         final com.intellij.uiDesigner.core.Spacer _12;
         _12 = new com.intellij.uiDesigner.core.Spacer();

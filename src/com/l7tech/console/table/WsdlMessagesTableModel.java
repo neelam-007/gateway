@@ -16,8 +16,8 @@ import java.util.*;
  * hashmap to keep the predictable iteration order.
  * Note that the class is not aware of the external modifications
  * of the  <code>Definition</code> instance that is used.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
+ * 
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class WsdlMessagesTableModel extends AbstractTableModel {
     private Definition definition;
@@ -25,7 +25,8 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
 
     /**
      * Create the new <code>WsdlMessagesTableModel</code>
-     * @param def
+     * 
+     * @param def 
      */
     public WsdlMessagesTableModel(Definition def) {
         definition = def;
@@ -40,7 +41,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * Returns the number of columns in the model. A
      * <code>JTable</code> uses this method to determine how many columns it
      * should create and display by default.
-     *
+     * 
      * @return the number of columns in the model
      * @see #getRowCount
      */
@@ -49,11 +50,8 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-     * Returns the number of rows in the model. A
-     * <code>JTable</code> uses this method to determine how many rows it
-     * should display.  This method should be quick, as it
-     * is called frequently during rendering.
-     *
+     * Returns the number of rows in the model.
+     * 
      * @return the number of rows in the model
      * @see #getColumnCount
      */
@@ -63,13 +61,25 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
+     * Returns the rows from the table model. Note that this
+     * operation returns the list that the table model is backed
+     * and not the copy.
+     * 
+     * @return the list of rows in the model
+     */
+    public List getRows() {
+        return messageList;
+    }
+
+
+    /**
      * Returns the value for the cell at <code>columnIndex</code> and
      * <code>rowIndex</code>.
-     *
+     * 
      * @param	rowIndex	the row whose value is to be queried
-     *                      (1 based)
+     * (1 based)
      * @param	columnIndex the column whose value is to be queried
-     *                      this field is ignored as
+     * this field is ignored as
      * @return	the value Object at the specified cell
      */
     public Object getValueAt(int rowIndex, int columnIndex) {
@@ -84,8 +94,9 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-     * create and add an empty message by name 
-     * to the message table 
+     * create and add an empty message by name
+     * to the message table
+     * 
      * @param name the message name local part
      * @return the newly created message
      */
@@ -94,8 +105,9 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-     * create then add the message by <code>QName</code> 
+     * create then add the message by <code>QName</code>
      * to the message table
+     * 
      * @param name the message <code>QName</code>
      * @return the newly created message
      */
@@ -107,8 +119,9 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-     * add the message <code>Message</code>  to 
+     * add the message <code>Message</code>  to
      * the message table
+     * 
      * @param message the message to add
      */
     public void addMessage(Message message) {
@@ -121,6 +134,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
 
     /**
      * remove the message by name
+     * 
      * @param name the message name local part
      */
     public void removeMessage(String name) {
@@ -129,6 +143,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
 
     /**
      * remove the message by <code>QName</code>
+     * 
      * @param name the message name local part
      */
     public void removeMessage(QName name) {
@@ -141,6 +156,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
 
     /**
      * remove the message by <code>index</code>
+     * 
      * @param index the message index
      */
     public Message removeMessage(int index) {
@@ -160,11 +176,11 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-     *  Returns false.  This is the default implementation for all cells.
-     *
-     *  @param  rowIndex  the row being queried
-     *  @param  columnIndex the column being queried
-     *  @return false
+     * Returns false.  This is the default implementation for all cells.
+     * 
+     * @param rowIndex    the row being queried
+     * @param columnIndex the column being queried
+     * @return false
      */
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return true;
@@ -187,17 +203,18 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
 
     /**
      * replace the message om with the new message nm.
-     * @param om the 
-     * @param nm
+     * 
+     * @param om the
+     * @param nm 
      */
     private void replaceMessage(Message om, Message nm) {
         int size = messageList.size();
-        for (int i=0; i< size; i++) {
+        for (int i = 0; i < size; i++) {
             Message m = (Message)messageList.get(i);
             if (m.getQName().equals(om.getQName())) {
                 Message rm = definition.removeMessage(om.getQName());
                 definition.addMessage(nm);
-                if (rm !=null) {
+                if (rm != null) {
                     Iterator pi = om.getParts().values().iterator();
                     while (pi.hasNext()) {
                         Part p = (Part)pi.next();
@@ -212,10 +229,10 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-     *  Returns a the name for the columns. There is a part name and the
+     * Returns a the name for the columns. There is a part name and the
      * type column
-     *
-     * @param column  the column being queried
+     * 
+     * @param column the column being queried
      * @return a string containing the default name of <code>column</code>
      */
     public String getColumnName(int column) {
@@ -228,9 +245,9 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
 
     /**
      * Returns the Message at the  row <code>rowIndex</code>.
-     *
+     * 
      * @param	rowIndex	the row whose value is to be queried
-     *                      (1 based)
+     * (1 based)
      * @return	the Message at the specified row
      */
     private Message getMessageAt(int rowIndex) {

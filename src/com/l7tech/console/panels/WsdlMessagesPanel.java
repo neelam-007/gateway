@@ -20,11 +20,10 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Logger;
+import java.util.Iterator;
 
 /**
- *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version
  */
 public class WsdlMessagesPanel extends WizardStepPanel {
     static Logger log = Logger.getLogger(WsdlMessagesPanel.class.getName());
@@ -126,11 +125,11 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
         cellEditorListener = new CellEditorListener() {
             public void editingCanceled(ChangeEvent e) {
-                log.info("edting cancelled "+e.getSource());
+                log.info("edting cancelled " + e.getSource());
             }
 
             public void editingStopped(ChangeEvent e) {
-                log.info("edting stopped "+e.getSource());
+                log.info("edting stopped " + e.getSource());
             }
         };
     }
@@ -139,13 +138,14 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "<html><b>Messages</b><br>"+
+        return "<html><b>Messages</b><br>" +
           "The <i>Message</i> element provides a common abstraction for messages passed " +
           "between the client and the server. " +
           "A message consists of one or more logical parts each of which is associated with " +
-          "a type from the type system."+
+          "a type from the type system." +
           "</html>";
     }
+
     /**
      * @return the wizard step label
      */
@@ -157,7 +157,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      * Test whether the step is finished and it is safe to proceed to the next
      * one.
      * If the step is valid, the "Next" (or "Finish") button will be enabled.
-     *
+     * 
      * @return true if the panel is valid, false otherwis
      */
     public boolean isValid() {
@@ -166,7 +166,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
     /**
      * Test whether the step is finished and it is safe to finish the wizard.
-     *
+     * 
      * @return true if the panel is valid, false otherwis
      */
 
@@ -179,10 +179,10 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      * Provides the wizard with the current data--either
      * the default data or already-modified settings. This is a
      * noop version that subclasses implement.
-     *
+     * 
      * @param settings the object representing wizard panel state
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (!(settings instanceof Definition)) {
@@ -204,7 +204,9 @@ public class WsdlMessagesPanel extends WizardStepPanel {
           new DefaultCellEditor(new JTextField()) {
               Message message;
 
-              /** Implements the <code>TableCellEditor</code> interface. */
+              /**
+               * Implements the <code>TableCellEditor</code> interface.
+               */
               public Component
                 getTableCellEditorComponent(JTable table, Object value,
                                             boolean isSelected,
@@ -217,6 +219,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
               /**
                * Forwards the message from the <code>CellEditor</code> to
                * the <code>delegate</code>.
+               * 
                * @see EditorDelegate#getCellEditorValue
                */
               public Object getCellEditorValue() {
@@ -248,10 +251,10 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      * Rather than updating its settings with every change in the GUI,
      * it should collect them, and then only save them when requested to
      * by this method.
-     *
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
+     * 
      * @param settings the object representing wizard panel state
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof Definition) {
@@ -259,22 +262,22 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
+        validate(messagesTableModel.getRows(), definition);
     }
 
     private
     DefaultTableCellRenderer messagesTableCellRenderer
       = new DefaultTableCellRenderer() {
           /**
-           *
            * Returns the default table cell renderer.
-           *
-           * @param table  the <code>JTable</code>
-           * @param value  the value to assign to the cell at
-           *			<code>[row, column]</code>
+           * 
+           * @param table      the <code>JTable</code>
+           * @param value      the value to assign to the cell at
+           *                   <code>[row, column]</code>
            * @param isSelected true if cell is selected
-           * @param hasFocus true if cell has focus
-           * @param row  the row of the cell to render
-           * @param column the column of the cell to render
+           * @param hasFocus   true if cell has focus
+           * @param row        the row of the cell to render
+           * @param column     the column of the cell to render
            * @return the default table cell renderer
            */
           public Component
@@ -306,16 +309,15 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     DefaultTableCellRenderer partsTableCellRenderer
       = new DefaultTableCellRenderer() {
           /**
-           *
            * Returns the default table cell renderer.
-           *
-           * @param table  the <code>JTable</code>
-           * @param value  the value to assign to the cell at
-           *			<code>[row, column]</code>
+           * 
+           * @param table      the <code>JTable</code>
+           * @param value      the value to assign to the cell at
+           *                   <code>[row, column]</code>
            * @param isSelected true if cell is selected
-           * @param hasFocus true if cell has focus
-           * @param row  the row of the cell to render
-           * @param column the column of the cell to render
+           * @param hasFocus   true if cell has focus
+           * @param row        the row of the cell to render
+           * @param column     the column of the cell to render
            * @return the default table cell renderer
            */
           public Component
@@ -348,6 +350,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
       messagesTableSelectionListener = new ListSelectionListener() {
           /**
            * Called whenever the value of the selection changes.
+           * 
            * @param e the event that characterizes the change.
            */
           public void valueChanged(ListSelectionEvent e) {
@@ -388,7 +391,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
               boolean found = false;
               int suffixAdd = 0;
               while (!found) {
-                  int msgSuffix = messagesTableModel.getRowCount()+ suffixAdd;
+                  int msgSuffix = messagesTableModel.getRowCount() + suffixAdd;
                   newMessageName = "NewMessage" + msgSuffix;
                   found = true;
                   int rows = messagesTableModel.getRowCount();
@@ -411,7 +414,9 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
     private ActionListener
       removeMessageActionListener = new ActionListener() {
-          /** Invoked when an action occurs. */
+          /**
+           * Invoked when an action occurs.
+           */
           public void actionPerformed(ActionEvent e) {
               int index = messagesTable.getSelectedRow();
               if (index != -1) {
@@ -422,7 +427,9 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
     private ActionListener
       addPartActionListener = new ActionListener() {
-          /** Invoked when an action occurs.  */
+          /**
+           * Invoked when an action occurs.
+           */
           public void actionPerformed(ActionEvent e) {
               Part p = partsTableModel.addPart(getNewMessagePartArgumentName());
               p.setTypeName(XmlSchemaConstants.QNAME_TYPE_STRING);
@@ -434,7 +441,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
               boolean found = false;
               int suffixAdd = 0;
               while (!found) {
-                  int partNameSuffix = partsTableModel.getRowCount() +suffixAdd;
+                  int partNameSuffix = partsTableModel.getRowCount() + suffixAdd;
                   newMessagePartName = "arg" + partNameSuffix;
                   found = true;
                   int rows = partsTableModel.getRowCount();
@@ -466,6 +473,25 @@ public class WsdlMessagesPanel extends WizardStepPanel {
               }
           }
       };
+
+    /**
+     * Validate (and sync if needed) the existing messages with the
+     * wsdl definition. The changes might have happened to the
+     * WSDL definition (through different wsdl elements) and the messages
+     * may not be aware of this.
+     * 
+     * @param messages the list of wsdl messages
+     * @param def      the wsdl definition
+     */
+    private void validate(java.util.List messages, Definition def) {
+        for (Iterator iterator = messages.iterator(); iterator.hasNext();) {
+            Message m = (Message)iterator.next();
+            final String defTargetNamespace = def.getTargetNamespace();
+            if (!defTargetNamespace.equals(m.getQName().getNamespaceURI())) {
+                m.setQName(new QName(defTargetNamespace, m.getQName().getLocalPart()));
+            }
+        }
+    }
 
     {
 // do not edit this generated initializer!!! do not add your code here!!!
@@ -513,14 +539,14 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         final JButton _10;
         _10 = new JButton();
         removeMessagePartButton = _10;
-        _10.setText("Remove");
         _10.setLabel("Remove");
+        _10.setText("Remove");
         _9.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final JButton _11;
         _11 = new JButton();
         addMessagePartButton = _11;
-        _11.setText("Add");
         _11.setLabel("Add");
+        _11.setText("Add");
         _9.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final com.intellij.uiDesigner.core.Spacer _12;
         _12 = new com.intellij.uiDesigner.core.Spacer();
@@ -535,15 +561,15 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         final JButton _15;
         _15 = new JButton();
         removeMessageButton = _15;
-        _15.setText("Remove");
         _15.setActionCommand("AddMessage");
         _15.setLabel("Remove");
+        _15.setText("Remove");
         _14.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final JButton _16;
         _16 = new JButton();
         addMessageButton = _16;
-        _16.setText("Add");
         _16.setLabel("Add");
+        _16.setText("Add");
         _14.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final com.intellij.uiDesigner.core.Spacer _17;
         _17 = new com.intellij.uiDesigner.core.Spacer();

@@ -12,11 +12,10 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Map;
+import java.util.Iterator;
 
 /**
- *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version
  */
 public class WsdlPortTypePanel extends WizardStepPanel {
     private JPanel mainPanel;
@@ -81,7 +80,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * Test whether the step is finished and it is safe to proceed to the next
      * one.
      * If the step is valid, the "Next" (or "Finish") button will be enabled.
-     *
+     * 
      * @return true if the panel is valid, false otherwis
      */
     public boolean isValid() {
@@ -90,7 +89,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
 
     /**
      * Test whether the step is finished and it is safe to finish the wizard.
-     *
+     * 
      * @return true if the panel is valid, false otherwis
      */
 
@@ -102,10 +101,10 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     /**
      * Provides the wizard with the current data--either
      * the default data or already-modified settings.
-     *
+     * 
      * @param settings the object representing wizard panel state
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof Definition) {
@@ -152,19 +151,21 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * Rather than updating its settings with every change in the GUI,
      * it should collect them, and then only save them when requested to
      * by this method.
-     *
-     *
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
+     * 
      * @param settings the object representing wizard panel state
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        PortType p = getOrCreatePortType(definition);
-        String ptNameText = portTypeNameField.getText();
-        if (!p.getQName().getLocalPart().equals(ptNameText)) {
-            QName qn = new QName(p.getQName().getNamespaceURI(), ptNameText);
-            p.setQName(qn);
+        if (settings instanceof Definition) {
+            definition = (Definition)settings;
+        } else {
+            throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
+
+        PortType p = getOrCreatePortType(definition);
+        validate(p, definition);
+
     }
 
     private ActionListener
@@ -215,16 +216,15 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     DefaultTableCellRenderer operationsTableCellRenderer
       = new DefaultTableCellRenderer() {
           /**
-           *
            * Returns the default table cell renderer.
-           *
-           * @param table  the <code>JTable</code>
-           * @param value  the value to assign to the cell at
-           *			<code>[row, column]</code>
+           * 
+           * @param table      the <code>JTable</code>
+           * @param value      the value to assign to the cell at
+           *                   <code>[row, column]</code>
            * @param isSelected true if cell is selected
-           * @param hasFocus true if cell has focus
-           * @param row  the row of the cell to render
-           * @param column the column of the cell to render
+           * @param hasFocus   true if cell has focus
+           * @param row        the row of the cell to render
+           * @param column     the column of the cell to render
            * @return the default table cell renderer
            */
           public Component
@@ -268,6 +268,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
 
     /**
      * Retrieve the port type. Create the new port type if necessary
+     * 
      * @return the port type
      */
     private PortType getOrCreatePortType(Definition def) {
@@ -275,14 +276,39 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         Map portTypes = def.getPortTypes();
         if (portTypes.isEmpty()) {
             portType = def.createPortType();
-            portType.setQName(new QName(definition.getTargetNamespace(),
-                                        portTypeNameField.getText()));
+            portType.setQName(new QName(def.getTargetNamespace(), portTypeNameField.getText()));
             portType.setUndefined(false);
             def.addPortType(portType);
         } else {
             portType = (PortType)portTypes.values().iterator().next();
         }
         return portType;
+    }
+
+    /**
+     * Validate (and sync if needed) the existing port type with the
+     * wsdl definition. The changes might have happened to the
+     * WSDL definition (through different wsdl elements) and the port
+     * type may not be aware of this.
+     * 
+     * @param p   the port type
+     * @param def the wsdl definition
+     */
+    private void validate(PortType p, Definition def) {
+        if (def.getTargetNamespace().equals(p.getQName().getNamespaceURI())) {
+            return;
+        }
+        WsdlCreateWizard.log.fine("target namespace changed, updating port type....");
+        def.removePortType(p.getQName());
+        PortType portType = def.createPortType();
+        portType.setQName(new QName(def.getTargetNamespace(), portTypeNameField.getText()));
+        portType.setUndefined(false);
+        def.addPortType(portType);
+        java.util.List operations  = p.getOperations();
+        for (Iterator iterator = operations.iterator(); iterator.hasNext();) {
+            Operation op = (Operation)iterator.next();
+            portType.addOperation(op);
+        }
     }
 
     {
@@ -335,8 +361,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         final JButton _10;
         _10 = new JButton();
         addOperationButton = _10;
-        _10.setText("Add");
         _10.setLabel("Add");
+        _10.setText("Add");
         _8.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final com.intellij.uiDesigner.core.Spacer _11;
         _11 = new com.intellij.uiDesigner.core.Spacer();
