@@ -115,6 +115,18 @@ public interface WssDecorator {
             this.secureConversationSession = secureConversationSession;
         }
 
+        public String getPreferredWSUNamespace() {
+            return preferredWSUNamespace;
+        }
+
+        /**
+         * If this is not set, then the default SoapUtil.WSU_NAMESPACE
+         * will be used.
+         */ 
+        public void setPreferredWSUNamespace(String ns) {
+            preferredWSUNamespace = ns;
+        }
+
         public interface SecureConversationSession {
             String getId();
             byte[] getSecretKey();
@@ -144,6 +156,7 @@ public interface WssDecorator {
         private Set elementsToEncrypt = new LinkedHashSet();
         private Set elementsToSign = new LinkedHashSet();
         private String preferredSecurityNamespace = SoapUtil.SECURITY_NAMESPACE;
+        private String preferredWSUNamespace = SoapUtil.WSU_NAMESPACE;
     }
 
     /**

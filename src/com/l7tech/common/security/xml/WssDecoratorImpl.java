@@ -47,6 +47,7 @@ public class WssDecoratorImpl implements WssDecorator {
         long count = 0;
         Map idToElementCache = new HashMap();
         String wsseNS = SoapUtil.SECURITY_NAMESPACE;
+        String wsuNS = SoapUtil.WSU_NAMESPACE;
     }
 
     /**
@@ -59,12 +60,15 @@ public class WssDecoratorImpl implements WssDecorator {
         Context c = new Context();
 
         c.wsseNS = decorationRequirements.getPreferredSecurityNamespace();
-        Element securityHeader = createSecurityHeader(message, c.wsseNS);
+        c.wsuNS = decorationRequirements.getPreferredWSUNamespace();
+        Element securityHeader = createSecurityHeader(message,
+                                                      c.wsseNS,
+                                                      c.wsuNS);
         Set signList = decorationRequirements.getElementsToSign();
 
         // If we aren't signing the entire message, find extra elements to sign
         if (decorationRequirements.isSignTimestamp() || !signList.isEmpty()) {
-            Element timestamp = addTimestamp(securityHeader);
+            Element timestamp = addTimestamp(securityHeader, c);
             signList.add(timestamp);
         }
 
@@ -699,19 +703,19 @@ public class WssDecoratorImpl implements WssDecorator {
             element.setAttribute("Id", id);
         } else {
             // do normal handling
-            String wsuPrefix = XmlUtil.getOrCreatePrefixForNamespace(element, SoapUtil.WSU_NAMESPACE, "wsu");
-            element.setAttributeNS(SoapUtil.WSU_NAMESPACE, wsuPrefix + ":Id", id);
+            String wsuPrefix = XmlUtil.getOrCreatePrefixForNamespace(element, c.wsuNS, "wsu");
+            element.setAttributeNS(c.wsuNS, wsuPrefix + ":Id", id);
         }
 
         return id;
     }
 
-    private Element addTimestamp(Element securityHeader) {
+    private Element addTimestamp(Element securityHeader, Context c) {
         Document message = securityHeader.getOwnerDocument();
-        Element timestamp = message.createElementNS(SoapUtil.WSU_NAMESPACE,
+        Element timestamp = message.createElementNS(c.wsuNS,
                                                     SoapUtil.TIMESTAMP_EL_NAME);
         securityHeader.appendChild(timestamp);
-        timestamp.setPrefix(XmlUtil.getOrCreatePrefixForNamespace(timestamp, SoapUtil.WSU_NAMESPACE, "wsu"));
+        timestamp.setPrefix(XmlUtil.getOrCreatePrefixForNamespace(timestamp, c.wsuNS, "wsu"));
 
         Calendar now = Calendar.getInstance();
         timestamp.appendChild(makeTimestampChildElement(timestamp, SoapUtil.CREATED_EL_NAME, now.getTime()));
@@ -748,7 +752,7 @@ public class WssDecoratorImpl implements WssDecorator {
         return element;
     }
 
-    private Element createSecurityHeader(Document message, String wsseNS) throws InvalidDocumentFormatException {
+    private Element createSecurityHeader(Document message, String wsseNS, String wsuNs) throws InvalidDocumentFormatException {
         // Wrap any existing header
         Element oldSecurity = SoapUtil.getSecurityElement(message);
         if (oldSecurity != null) {
@@ -760,7 +764,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element securityHeader = SoapUtil.makeSecurityElement(message, wsseNS);
         // Make sure wsu is declared to save duplication
-        XmlUtil.getOrCreatePrefixForNamespace(securityHeader, SoapUtil.WSU_NAMESPACE, "wsu");
+        XmlUtil.getOrCreatePrefixForNamespace(securityHeader, wsuNs, "wsu");
         return securityHeader;
     }
 }
