@@ -50,15 +50,16 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         LoginCredentials pc = request.getPrincipalCredentials();
         if ( pc == null ) {
             // No credentials have been found yet
-            if ( request.isAuthenticated() ) {
+            if (request.isAuthenticated()) {
                 String err = "Request is authenticated but request has no LoginCredentials!";
                 logger.log(Level.SEVERE, err);
                 throw new IllegalStateException( err );
             } else {
                 // Authentication is required for any IdentityAssertion
-                response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_REQUIRED ) );
+                response.addResult(new AssertionResult(_data, AssertionStatus.AUTH_REQUIRED));
                 // TODO: Some future IdentityAssertion might succeed, but this flag will remain true!
-                response.setAuthenticationMissing( true );
+                response.setAuthenticationMissing(true);
+                logger.fine("No credentials found");
                 return AssertionStatus.AUTH_REQUIRED;
             }
         } else {
@@ -114,7 +115,6 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     // throw new IdentityAssertionException( err, fe );
                     return AssertionStatus.AUTH_FAILED;
                 }
-
             }
         }
     }

@@ -43,7 +43,8 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
                 return AssertionStatus.NONE;
             }
         }
-        return AssertionStatus.AUTH_FAILED; 
+        logger.fine("No credentials found");
+        return AssertionStatus.AUTH_FAILED;
     }
 
     protected SpecificUser _data;
