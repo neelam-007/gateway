@@ -299,8 +299,11 @@ public class Gui {
         KeyStore ks = KeyStore.getInstance("JKS");
         try {
             FileInputStream ksfis = new FileInputStream(ClientProxy.TRUST_STORE_FILE);
-            ks.load(ksfis, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
-            ksfis.close();
+            try {
+                ks.load(ksfis, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+            } finally {
+                ksfis.close();
+            }
         } catch (FileNotFoundException e) {
             // Create a new one.
             ks.load(null, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());

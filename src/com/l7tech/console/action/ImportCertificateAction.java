@@ -113,8 +113,11 @@ public class ImportCertificateAction extends BaseAction {
         String trustStoreFile = Preferences.getPreferences().getTrustStoreFile();
         try {
             FileInputStream ksfis = new FileInputStream(trustStoreFile);
-            ks.load(ksfis, trustStorPassword);
-            ksfis.close();
+            try {
+                ks.load(ksfis, trustStorPassword);
+            } finally {
+                ksfis.close();
+            }
         } catch (FileNotFoundException e) {
             // Create a new one.
             ks.load(null, trustStorPassword);
