@@ -10,6 +10,13 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.AesKey;
+import com.ibm.xml.enc.type.*;
+import com.ibm.xml.enc.StructureException;
+import com.ibm.xml.enc.EncryptionContext;
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
+import com.ibm.xml.enc.KeyInfoResolvingException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -26,6 +33,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.IOException;
 
 /**
  * @author mike
@@ -41,6 +49,16 @@ public class WssDecoratorImpl implements WssDecorator {
     }
 
     private static class CausedDecoratorException extends DecoratorException {
+        CausedDecoratorException(String message) {
+            super();
+            initCause(new RuntimeException(message));
+        }
+
+        CausedDecoratorException(String message, Throwable cause) {
+            super();
+            initCause(new RuntimeException(message, cause));
+        }
+
         CausedDecoratorException(Throwable cause) {
             super();
             initCause(cause);
@@ -84,7 +102,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                     Element securityHeader,
                                     X509Certificate recipientCertificate,
                                     Element[] elementsToEncrypt)
-            throws GeneralSecurityException
+            throws GeneralSecurityException, CausedDecoratorException
     {
         Document soapMsg = securityHeader.getOwnerDocument();
 
@@ -126,15 +144,71 @@ public class WssDecoratorImpl implements WssDecorator {
 
         for (int i = 0; i < elementsToEncrypt.length; i++) {
             Element element = elementsToEncrypt[i];
+            Element encryptedElement = encryptElement(c, element, keyBytes);
+
             Element dataReference = soapMsg.createElementNS(xencNs, "DataReference");
             dataReference.setPrefix(xenc);
-            dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, element));
+            dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement));
             referenceList.appendChild(dataReference);
 
             // todo go and encrypt this element now
         }
 
         return encryptedKey;
+    }
+
+    /**
+     * Encrypt the specified element.  Returns the new EncryptedData element.
+     * @param c
+     * @param element
+     * @param keyBytes
+     * @return the EncryptedData element that replaces the specified element.
+     */
+    private Element encryptElement(Context c, Element element, byte[] keyBytes)
+            throws CausedDecoratorException, GeneralSecurityException
+    {
+        Document soapMsg = element.getOwnerDocument();
+
+        // todo
+        CipherData cipherData = new CipherData();
+        cipherData.setCipherValue(new CipherValue());
+        KeyInfo keyInfo = new KeyInfo();
+        EncryptionMethod encMethod = new EncryptionMethod();
+        encMethod.setAlgorithm(EncryptionMethod.AES128_CBC);
+        EncryptedData encData = new EncryptedData();
+        encData.setCipherData(cipherData);
+        encData.setEncryptionMethod(encMethod);
+        encData.setKeyInfo(keyInfo);
+        Element encDataElement = null;
+        try {
+            encDataElement = encData.createElement(soapMsg, true);
+        } catch (StructureException e) {
+            throw new CausedDecoratorException(e);
+        }
+
+        // Create encryption context and encrypt the header subtree
+        EncryptionContext ec = new EncryptionContext();
+        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+        af.setProvider(JceProvider.getSymmetricJceProvider().getName());
+        ec.setAlgorithmFactory(af);
+        ec.setEncryptedType(encDataElement, EncryptedData.CONTENT, null, null);
+
+        ec.setData(element);
+        ec.setKey(new AesKey(keyBytes, 128));
+
+        try {
+            ec.encrypt();
+            ec.replace();
+        } catch (KeyInfoResolvingException e) {
+            throw new CausedDecoratorException(e); // can't happen
+        } catch (StructureException e) {
+            throw new CausedDecoratorException(e); // shouldn't happen
+        } catch (IOException e) {
+            throw new CausedDecoratorException(e); // shouldn't happen
+        }
+
+
+        return element;
     }
 
     /**
