@@ -1340,6 +1340,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
                 <include name="dbfaildetect.sh"/>
                 <include name="iptables"/>
                 <include name="tcp_tune.sh"/>
+                <include name="db/mysql/my.cnf"/>
             </fileset>
         </copy>
 
