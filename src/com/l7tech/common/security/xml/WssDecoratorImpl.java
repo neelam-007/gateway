@@ -27,14 +27,12 @@ import org.w3c.dom.Element;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -245,7 +243,8 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element cipherData = XmlUtil.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
-        cipherValue.appendChild(soapMsg.createTextNode(encryptWithRsa(keyBytes, recipientCertificate.getPublicKey())));
+        final String base64 = encryptWithRsa(c, keyBytes, recipientCertificate.getPublicKey());
+        cipherValue.appendChild(soapMsg.createTextNode(base64));
         Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, "ReferenceList", xencNs, xenc);
 
         for (int i = 0; i < elementsToEncrypt.length; i++) {
@@ -326,17 +325,51 @@ public class WssDecoratorImpl implements WssDecorator {
         return id;
     }
 
-    private String encryptWithRsa(byte[] keyBytes, PublicKey publicKey) throws GeneralSecurityException {
+    private String encryptWithRsa(Context c, byte[] keyBytes, PublicKey publicKey) throws GeneralSecurityException {
         Cipher rsa = Cipher.getInstance("RSA");
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
-        byte[] paddedKeyBytes = padSymmetricKeyForRsaEncryption(keyBytes);
+        final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length;
+        byte[] paddedKeyBytes = padSymmetricKeyForRsaEncryption(c, keyBytes, modulusLength);
         byte[] encrypted = rsa.doFinal(paddedKeyBytes);
         return HexUtils.encodeBase64(encrypted, true);
     }
 
-    private byte[] padSymmetricKeyForRsaEncryption(byte[] keyBytes) {
-        // todo, if necessary
-        return keyBytes;
+    /**
+     * This handles the padding of the encryption method designated by http://www.w3.org/2001/04/xmlenc#rsa-1_5.
+     *
+     * Exceprt from the spec:
+     * the padding is of the following special form:
+     * 02 | PS* | 00 | key
+     * where "|" is concatenation, "02" and "00" are fixed octets of the corresponding hexadecimal value, PS is
+     * a string of strong pseudo-random octets [RANDOM] at least eight octets long, containing no zero octets,
+     * and long enough that the value of the quantity being CRYPTed is one octet shorter than the RSA modulus,
+     * and "key" is the key being transported. The key is 192 bits for TRIPLEDES and 128, 192, or 256 bits for
+     * AES. Support of this key transport algorithm for transporting 192 bit keys is MANDATORY to implement.
+     *
+     * @param keyBytes
+     * @return
+     * @throws KeyException if there are too many keyBytes to fit inside this modulus
+     */
+    private byte[] padSymmetricKeyForRsaEncryption(Context c, byte[] keyBytes, int modulusBytes) throws KeyException {
+        int padbytes = modulusBytes - 3 - keyBytes.length;
+
+        // Check just in case, although this should never happen in real life
+        if (padbytes < 8)
+            throw new KeyException("Recipient RSA public key has too few bits to encode this symmetric key");
+
+        byte[] padded = new byte[modulusBytes - 1];
+        int pos = 0;
+        padded[pos++] = 2;
+        while (padbytes > 0) {
+            padded[pos++] = (byte)(c.rand.nextInt(255) + 1);
+            padbytes--;
+        }
+        padded[pos++] = 0;
+        System.arraycopy(keyBytes, 0, padded, pos, keyBytes.length);
+
+
+
+        return padded;
     }
 
     private void addKeyInfo(Element encryptedKey, byte[] recipSki) {
