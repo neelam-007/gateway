@@ -107,22 +107,6 @@ public class IdentityRule extends Filter {
     }
 
     public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user) throws FilteringException {
-        /*
-        Free pass for federated users no longer applies
-        try {
-            IdentityProvider provider = IdentityProviderFactory.getProvider(idassertion.getIdentityProviderOid());
-            if (provider == null) {
-                logger.log(Level.WARNING, MISSING_PROVIDER_MESSAGE);
-                return false;
-            }
-            // TODO support federated credentials in policy servlet
-            if (provider.getConfig().type() == IdentityProviderType.FEDERATED) return true;
-        } catch ( FindException e ) {
-            logger.log( Level.WARNING, MISSING_PROVIDER_MESSAGE, e );
-            return false;
-        }
-        */
-
         if (user == null) return false;
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
@@ -149,15 +133,11 @@ public class IdentityRule extends Filter {
                     }
 
                     Group grp = gman.findByPrimaryKey(grpmemship.getGroupId());
-                    if ( grp == null ) return false;
-                    
-                    Set members = gman.getUserHeaders( grp );
-                    for (Iterator jj = members.iterator(); jj.hasNext();) {
-                        EntityHeader memberx = (EntityHeader)jj.next();
-                        if (memberx.getName().equals(user.getLogin())) {
-                            return true;
-                        }
+                    if (grp == null) {
+                        logger.warning("The group " + grpmemship.getGroupId() + " does not exist.");
+                        return false;
                     }
+                    return gman.isMember(user, grp);
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "Cannot get group from provider", e);
                     return false;
