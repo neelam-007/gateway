@@ -30,15 +30,28 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
     }
 
     public void delete(Group group) throws DeleteException {
-        throw new DeleteException("Not supported in GroupManagerClient");
+        try {
+            // todo, group must be refactored so that it's id is always a string
+            getStub().deleteGroup(config.getOid(), Long.toString(group.getOid()));
+        } catch (java.rmi.RemoteException e) {
+            throw new DeleteException(e.getMessage(), e);
+        }
     }
 
     public long save(Group group) throws SaveException {
-        throw new SaveException("Not supported in GroupManagerClient");
+        try {
+            return getStub().saveGroup(config.getOid(), group);
+        } catch (java.rmi.RemoteException e) {
+            throw new SaveException(e.getMessage(), e);
+        }
     }
 
     public void update(Group group) throws UpdateException {
-        throw new UpdateException("Not supported in GroupManagerClient");
+        try {
+            getStub().saveGroup(config.getOid(), group);
+        } catch (java.rmi.RemoteException e) {
+            throw new UpdateException(e.getMessage(), e);
+        }
     }
 
     public Collection findAllHeaders() throws FindException {
