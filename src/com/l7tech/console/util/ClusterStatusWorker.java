@@ -1,8 +1,6 @@
 package com.l7tech.console.util;
 
 import com.l7tech.common.gui.util.SwingWorker;
-import com.l7tech.common.util.UptimeMetrics;
-import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -26,7 +24,6 @@ import java.rmi.RemoteException;
 
 public class ClusterStatusWorker extends SwingWorker {
 
-    private UptimeMetrics metrics = null;
     private ClusterStatusAdmin clusterStatusService = null;
     private Hashtable statsList;
     private Hashtable newNodeList;
