@@ -158,12 +158,15 @@ public class WssProcessorImpl implements WssProcessor {
             Element secHeader = (Element)secIt.next();
             String actor = secHeader.getAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
             if (actor.startsWith(SoapUtil.ACTOR_LAYER7_WRAPPED)) {
+                long generationOfWrappedSecHeader = 0;
+                if (actor.length() > SoapUtil.ACTOR_LAYER7_WRAPPED.length()) {
+                    generationOfWrappedSecHeader = Long.parseLong(actor.substring(SoapUtil.ACTOR_LAYER7_WRAPPED.length()));
+                }
                 if (secHeaderDeservingPromotion == null) {
                     secHeaderDeservingPromotion = secHeader;
-                    currentGen = Long.parseLong(actor.substring(SoapUtil.ACTOR_LAYER7_WRAPPED.length()));
+                    currentGen = generationOfWrappedSecHeader;
                 } else {
                     // remember this one only if it has a higher value
-                    long generationOfWrappedSecHeader = Long.parseLong(actor.substring(SoapUtil.ACTOR_LAYER7_WRAPPED.length()));
                     if (currentGen < generationOfWrappedSecHeader) {
                         currentGen = generationOfWrappedSecHeader;
                         secHeaderDeservingPromotion = secHeader;
