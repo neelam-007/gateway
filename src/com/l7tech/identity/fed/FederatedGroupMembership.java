@@ -13,6 +13,10 @@ import com.l7tech.identity.internal.GroupMembership;
  * @version $Revision$
  */
 public class FederatedGroupMembership extends GroupMembership {
+    public FederatedGroupMembership() {
+        super();
+    }
+
     public FederatedGroupMembership(long providerOid, long userOid, long groupOid) {
         super(userOid, groupOid);
         this.providerOid = providerOid;

@@ -10,13 +10,14 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.identity.internal.InternalIdentityProviderServer;
-import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 
+import java.lang.reflect.Constructor;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This factory caches identity providers!
@@ -38,7 +39,7 @@ public class IdentityProviderFactory {
 
     /**
      * call this because a config object is being updated or deleted and you want to inform the cache that
-     * correcponding id provider should be removed from cache
+     * corresponding id provider should be removed from cache
      */
     public synchronized static void dropProvider(IdentityProviderConfig config) {
         if (providers == null) return;
@@ -50,8 +51,10 @@ public class IdentityProviderFactory {
     }
 
     /**
-     * Returns the {@link IdentityProvider} corresponding to the specified ID.  If possible it will be a cached version,
-     * but in all cases it will be up-to-date with respect to the database.
+     * Returns the {@link IdentityProvider} corresponding to the specified ID.
+     *
+     * If possible it will be a cached version, but in all cases it will be up-to-date
+     * with respect to the database, because the version is always checked.
      *
      * @param identityProviderOid the OID of the IdentityProviderConfig record ({@link com.l7tech.server.identity.IdProvConfManagerServer#INTERNALPROVIDER_SPECIAL_OID} for the Internal ID provider)
      * @return the IdentityProvider, or null if it's not in the database (either it was deleted or never existed)
@@ -78,19 +81,41 @@ public class IdentityProviderFactory {
             IdentityProviderConfig config = configManager.findByPrimaryKey(oid.longValue());
             if ( config == null ) throw new FindException("Couldn't find IdentityProviderConfig with oid=" + oid );
 
-            if ( oid.longValue() == IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID ) {
-                cachedProvider = new InternalIdentityProviderServer();
-            } else {
-                if ( config.type() == IdentityProviderType.LDAP ) {
-                    cachedProvider = new LdapIdentityProvider();
-                } else {
-                    throw new RuntimeException( "Can't initialize an identity cachedProvider with type " + config.type() );
-                }
+            try {
+                cachedProvider = makeProvider( config );
+            } catch ( InvalidIdProviderCfgException e ) {
+                final String msg = "Can't initialize an identity cachedProvider with type " + config.type();
+                logger.log(Level.SEVERE, msg, e);
+                throw new RuntimeException(msg, e);
             }
-            cachedProvider.initialize(config);
+
             providers.put(oid,cachedProvider);
         }
 
+        return cachedProvider;
+    }
+
+    /**
+     * Creates a new IdentityProvider of the correct type indicated by, and initialized with, the specified
+     * {@link IdentityProviderConfig}
+     *
+     * Uses reflection, so don't call often!  Call {@link #getProvider(long)} for runtime use, it has a cache.
+     *
+     * @param config the configuration to intialize the provider with.
+     * @return the newly-initialized IdentityProvider
+     * @throws InvalidIdProviderCfgException if the specified configuration cannot be used to construct an
+     * IdentityProvider. Call {@link Throwable#getCause()} to find out why!
+     */
+    public static IdentityProvider makeProvider( IdentityProviderConfig config ) throws InvalidIdProviderCfgException {
+        IdentityProvider cachedProvider;
+        String classname = config.type().getClassname();
+        try {
+            Class providerClass = Class.forName(classname);
+            Constructor ctor = providerClass.getConstructor(new Class[] { IdentityProviderConfig.class });
+            cachedProvider = (IdentityProvider)ctor.newInstance(new Object[] { config });
+        } catch ( Exception e ) {
+            throw new InvalidIdProviderCfgException(e);
+        }
         return cachedProvider;
     }
 
@@ -98,4 +123,5 @@ public class IdentityProviderFactory {
     private static Map providers = new HashMap();
 
     public static final int MAX_AGE = 60 * 1000;
+    private static final Logger logger = Logger.getLogger(IdentityProviderFactory.class.getName());
 }

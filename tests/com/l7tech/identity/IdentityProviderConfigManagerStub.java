@@ -86,8 +86,7 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
     }
 
     private IdentityProvider makeProvider(IdentityProviderConfig config) {
-        IdentityProvider provider = new IdentityProviderStub();
-        provider.initialize(config);
+        IdentityProvider provider = new IdentityProviderStub(config);
         return provider;
     }
 

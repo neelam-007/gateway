@@ -38,19 +38,17 @@ import java.util.logging.Logger;
 public class InternalIdentityProviderServer implements IdentityProvider {
     public static final String ENCODING = "UTF-8";
 
-    public InternalIdentityProviderServer() {
-        userManager = new InternalUserManagerServer( this );
-        groupManager = new InternalGroupManagerServer( this );
+    public InternalIdentityProviderServer(IdentityProviderConfig config) {
+        this.config = config;
+        this.userManager = new InternalUserManagerServer( this );
+        this.groupManager = new InternalGroupManagerServer( this );
+
         try {
             _md5 = MessageDigest.getInstance( "MD5" );
         } catch (NoSuchAlgorithmException e) {
             logger.log( Level.SEVERE, e.getMessage(), e );
             throw new RuntimeException( e );
         }
-    }
-
-    public void initialize( IdentityProviderConfig config ) {
-        cfg = config;
     }
 
     public UserManager getUserManager() {
@@ -244,7 +242,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
     }
 
     public IdentityProviderConfig getConfig() {
-        return cfg;
+        return config;
     }
 
     public boolean isReadOnly() { return false; }
@@ -276,10 +274,17 @@ public class InternalIdentityProviderServer implements IdentityProvider {
         return HttpDigest.REALM;
     }
 
-    private IdentityProviderConfig cfg;
-    private InternalUserManagerServer userManager;
-    private InternalGroupManagerServer groupManager;
+    public void test() throws InvalidIdProviderCfgException {
+        if (config.getOid() != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) {
+            logger.warning("Testing an internal id provider with no good oid. Throwing InvalidIdProviderCfgException");
+            throw new InvalidIdProviderCfgException("This internal ID provider config is not valid.");
+        }
+    }
+
+    private final IdentityProviderConfig config;
+    private final InternalUserManagerServer userManager;
+    private final InternalGroupManagerServer groupManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private MessageDigest _md5;
+    private final MessageDigest _md5;
 }

@@ -53,24 +53,19 @@ public class LdapIdentityProvider implements IdentityProvider {
     /** An unused LDAP connection will be closed after 30 seconds of inactivity */
     public static final String LDAP_POOL_IDLE_TIMEOUT = new Integer(30 * 1000).toString();
 
-    public LdapIdentityProvider() {
-    }
-
-    public void initialize(IdentityProviderConfig config) {
+    public LdapIdentityProvider(IdentityProviderConfig config) {
         try {
-            this.cfg = new LdapIdentityProviderConfig(config);
+            this.config = (LdapIdentityProviderConfig)config;
             _md5 = MessageDigest.getInstance( "MD5" );
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
-        userManager = new LdapUserManager(cfg, this);
-        groupManager = new LdapGroupManager(cfg, this);
+        userManager = new LdapUserManager(this.config, this);
+        groupManager = new LdapGroupManager(this.config, this);
     }
 
     public IdentityProviderConfig getConfig() {
-        return cfg;
+        return config;
     }
 
     public UserManager getUserManager() {
@@ -291,13 +286,13 @@ public class LdapIdentityProvider implements IdentityProvider {
             }
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            context = getBrowseContext(cfg);
-            answer = context.search(cfg.getSearchBase(), filter, sc);
+            context = getBrowseContext(config);
+            answer = context.search(config.getSearchBase(), filter, sc);
             while (answer.hasMore()) {
                 // get this item
                 SearchResult sr = (SearchResult)answer.next();
                 // set the dn (unique id)
-                String dn = sr.getName() + "," + cfg.getSearchBase();
+                String dn = sr.getName() + "," + config.getSearchBase();
                 EntityHeader header = searchResultToHeader(sr, dn);
                 // if we successfully constructed a header, add it to result list
                 if (header != null) output.add(header);
@@ -326,9 +321,9 @@ public class LdapIdentityProvider implements IdentityProvider {
      * builds a search filter for all user object classes based on the config object
      */
     public String userSearchFilterWithParam(String param) {
-        if (cfg == null) throw new IllegalStateException("this provider needs a config!");
+        if (config == null) throw new IllegalStateException("this provider needs a config!");
         StringBuffer output = new StringBuffer("(|");
-        UserMappingConfig[] userTypes = cfg.getUserMappings();
+        UserMappingConfig[] userTypes = config.getUserMappings();
         for (int i = 0; i < userTypes.length; i++) {
             output.append("(&" +
                             "(objectClass=" + userTypes[i].getObjClass() + ")" +
@@ -348,8 +343,8 @@ public class LdapIdentityProvider implements IdentityProvider {
      * @return the search filter or null if no group mappings are declared for this config
      */
     public String groupSearchFilterWithParam(String param) {
-        if (cfg == null) throw new IllegalStateException("this provider needs a config!");
-        GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
+        if (config == null) throw new IllegalStateException("this provider needs a config!");
+        GroupMappingConfig[] groupTypes = config.getGroupMappings();
         if (groupTypes == null || groupTypes.length <= 0) return null;
         StringBuffer output = new StringBuffer("(|");
         for (int i = 0; i < groupTypes.length; i++) {
@@ -387,7 +382,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         // make sure we can connect
         DirContext context = null;
         try {
-            context = getBrowseContext(cfg);
+            context = getBrowseContext(config);
         } catch (NamingException e) {
             // note. i am not embedding the NamingException because it sometimes
             // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
@@ -403,9 +398,9 @@ public class LdapIdentityProvider implements IdentityProvider {
 
         // make sure the base DN is valid and contains at least one entry
         try {
-            answer = context.search(cfg.getSearchBase(), "(objectClass=*)", sc);
+            answer = context.search(config.getSearchBase(), "(objectClass=*)", sc);
         } catch (NamingException e) {
-            String msg = "Cannot search using base: " + cfg.getSearchBase();
+            String msg = "Cannot search using base: " + config.getSearchBase();
             logger.log(Level.INFO, "ldap config test failure " + msg, e);
 
             // cleanup and leave test with exception
@@ -425,7 +420,7 @@ public class LdapIdentityProvider implements IdentityProvider {
 
         // check user mappings. make sure they work
         boolean atLeastOneUser = false;
-        UserMappingConfig[] userTypes = cfg.getUserMappings();
+        UserMappingConfig[] userTypes = config.getUserMappings();
         Collection offensiveUserMappings = new ArrayList();
         Collection userMappingsWithoutLoginAttribute = new ArrayList();
         for (int i = 0; i < userTypes.length; i++) {
@@ -444,11 +439,11 @@ public class LdapIdentityProvider implements IdentityProvider {
                          ")" +
                       ")";
             try {
-                answer = context.search(cfg.getSearchBase(), filter, sc);
+                answer = context.search(config.getSearchBase(), filter, sc);
                 while (answer.hasMore()) {
                     SearchResult sr = (SearchResult)answer.next();
                     // set the dn (unique id)
-                    String dn = sr.getName() + "," + cfg.getSearchBase();
+                    String dn = sr.getName() + "," + config.getSearchBase();
                     EntityHeader header = searchResultToHeader(sr, dn);
                     // if we successfully constructed a header, add it to result list
                     if (header != null) {
@@ -464,7 +459,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         }
 
         // check group mappings. make sure they work
-        GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
+        GroupMappingConfig[] groupTypes = config.getGroupMappings();
         Collection offensiveGroupMappings = new ArrayList();
         boolean atLeastOneGroup = false;
         for (int i = 0; i < groupTypes.length; i++) {
@@ -473,11 +468,11 @@ public class LdapIdentityProvider implements IdentityProvider {
                          "(" + groupTypes[i].getNameAttrName() + "=*)" +
                      ")";
             try {
-                answer = context.search(cfg.getSearchBase(), filter, sc);
+                answer = context.search(config.getSearchBase(), filter, sc);
                 while (answer.hasMore()) {
                     SearchResult sr = (SearchResult)answer.next();
                     // set the dn (unique id)
-                    String dn = sr.getName() + "," + cfg.getSearchBase();
+                    String dn = sr.getName() + "," + config.getSearchBase();
                     EntityHeader header = searchResultToHeader(sr, dn);
                     // if we successfully constructed a header, add it to result list
                     if (header != null) {
@@ -551,7 +546,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         // is it user or group ?
         Attribute objectclasses = atts.get("objectclass");
         // check if it's a user
-        UserMappingConfig[] userTypes = cfg.getUserMappings();
+        UserMappingConfig[] userTypes = config.getUserMappings();
         for (int i = 0; i < userTypes.length; i ++) {
             String userclass = userTypes[i].getObjClass();
             if (attrContainsCaseIndependent(objectclasses, userclass)) {
@@ -585,7 +580,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             }
         }
         // check that it's a group
-        GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
+        GroupMappingConfig[] groupTypes = config.getGroupMappings();
         for (int i = 0; i < groupTypes.length; i ++) {
             if (attrContainsCaseIndependent(objectclasses, groupTypes[i].getObjClass())) {
                 String groupName = null;
@@ -631,9 +626,11 @@ public class LdapIdentityProvider implements IdentityProvider {
     }
 
     public static final String DESCRIPTION_ATTRIBUTE_NAME = "description";
-    private LdapIdentityProviderConfig cfg;
+
+    private final LdapIdentityProviderConfig config;
+    private final MessageDigest _md5;
+    private final LdapUserManager userManager;
+    private final LdapGroupManager groupManager;
+
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private MessageDigest _md5;
-    private LdapUserManager userManager;
-    private LdapGroupManager groupManager;
 }

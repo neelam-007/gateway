@@ -22,11 +22,10 @@ import java.util.Iterator;
 public class IdProvConfManagerClient implements IdentityProviderConfigManager {
 
     public IdentityProvider getInternalIdentityProvider() {
-        IdentityProviderClient internalProvider = new IdentityProviderClient();
         IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
         cfg.setOid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         cfg.setDescription("Internal identity provider");
-        internalProvider.initialize(cfg);
+        IdentityProviderClient internalProvider = new IdentityProviderClient(cfg);
         return internalProvider;
     }
 
@@ -75,8 +74,7 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
             EntityHeader thisHeader = (EntityHeader)iter.next();
             IdentityProviderConfig conf = findByPrimaryKey(thisHeader.getOid());
             if (conf != null) {
-                IdentityProvider provider = new IdentityProviderClient();
-                provider.initialize(conf);
+                IdentityProvider provider = new IdentityProviderClient(conf);
                 output.add(provider);
             }
         }
@@ -91,8 +89,7 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
     public IdentityProvider getIdentityProvider(long oid) throws FindException {
         IdentityProviderConfig conf = findByPrimaryKey(oid);
         if (conf == null) return null;
-        IdentityProvider provider = new IdentityProviderClient();
-        provider.initialize(conf);
+        IdentityProvider provider = new IdentityProviderClient(conf);
         return provider;
     }
 

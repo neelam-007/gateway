@@ -1,8 +1,8 @@
 package com.l7tech.identity;
 
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import java.util.Collection;
 
@@ -10,7 +10,6 @@ import java.util.Collection;
  * @author alex
  */
 public interface IdentityProvider {
-    void initialize( IdentityProviderConfig config );
     IdentityProviderConfig getConfig();
     UserManager getUserManager();
     GroupManager getGroupManager();
@@ -29,4 +28,6 @@ public interface IdentityProvider {
     Collection search(EntityType[] types, String searchString) throws FindException;
 
     String getAuthRealm();
+
+    void test() throws InvalidIdProviderCfgException;
 }

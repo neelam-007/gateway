@@ -288,7 +288,8 @@ CREATE TABLE trusted_cert (
   trusted_for_server tinyint(1) default '0',
   trusted_for_saml tinyint(1) default '0',
   primary key(objectid),
-  unique (subject_dn)
+  unique (subject_dn),
+  unique (name)
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS fed_user;
@@ -332,7 +333,7 @@ CREATE TABLE fed_user_group (
   provider_oid bigint(20) NOT NULL,
   fed_user_oid bigint(20) NOT NULL,
   fed_group_oid bigint(20) NOT NULL,
-  PRIMARY KEY (provider_oid,internal_user,internal_group)
+  PRIMARY KEY (provider_oid,fed_user_oid,fed_group_oid)
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS fed_group_virtual;
@@ -343,14 +344,14 @@ CREATE TABLE fed_group_virtual (
   name varchar(128) NOT NULL,
   description mediumtext,
 
-  subject_dn_pattern varchar(255),
-  email_pattern varchar(128),
+  x509_subject_dn_pattern varchar(255),
+  saml_email_pattern varchar(128),
   properties text,
 
   PRIMARY KEY  (objectid),
   INDEX i_provider_oid (provider_oid),
-  INDEX i_subject_dn_pattern (subject_dn_pattern),
-  INDEX i_email_pattern (email_pattern),
+  INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern),
+  INDEX i_saml_email_pattern (saml_email_pattern),
   UNIQUE KEY i_name (provider_oid, name)
 ) TYPE=InnoDB;
 

@@ -1,10 +1,15 @@
 package com.l7tech.identity;
 
-import java.io.Serializable;
 import java.io.ObjectStreamException;
+import java.io.Serializable;
 
 /**
  * Enum that specifies which type of id provider.
+ *
+ * <b>Note:</b> The numeric IDs assigned to these types are also used explicitly in SSG.hbm.xml at the moment.
+ *
+ * This should be changed to something like {@link net.sf.hibernate.PersistentEnum} (maybe less deprecated)
+ * in the future.
  * 
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
@@ -14,9 +19,17 @@ import java.io.ObjectStreamException;
  */
 public class IdentityProviderType implements Serializable {
     private static int id = 1;
-    public static final IdentityProviderType INTERNAL = new IdentityProviderType(id++, "internal");
-    public static final IdentityProviderType LDAP = new IdentityProviderType(id++, "LDAP");
-    public static final IdentityProviderType FEDERATED = new IdentityProviderType(id++, "Federated");
+    public static final IdentityProviderType INTERNAL =
+            new IdentityProviderType( id++, "internal",
+                                      "com.l7tech.server.identity.internal.InternalIdentityProviderServer");
+
+    public static final IdentityProviderType LDAP =
+            new IdentityProviderType( id++, "LDAP",
+                                      "com.l7tech.server.identity.ldap.LdapIdentityProvider");
+
+    public static final IdentityProviderType FEDERATED =
+            new IdentityProviderType( id++, "Federated",
+                                      "com.l7tech.server.identity.fed.FederatedIdentityProvider");
 
     public static IdentityProviderType fromVal(int val) {
         switch (val) {
@@ -38,9 +51,14 @@ public class IdentityProviderType implements Serializable {
         return description;
     }
 
-    protected IdentityProviderType(int type, String desc) {
+    protected IdentityProviderType(int type, String desc, String classname) {
         this.type = type;
         this.description = desc;
+        this.classname = classname;
+    }
+
+    public String getClassname() {
+        return classname;
     }
 
     /**
@@ -60,8 +78,8 @@ public class IdentityProviderType implements Serializable {
         LDAP,
         FEDERATED
     };
+
     private final int type;
     private final String description;
-
-
+    private final String classname;
 }

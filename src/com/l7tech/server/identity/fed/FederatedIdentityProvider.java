@@ -24,12 +24,13 @@ import java.util.Collection;
  * @version $Revision$
  */
 public class FederatedIdentityProvider implements IdentityProvider {
-    public void initialize( IdentityProviderConfig config ) {
+    public FederatedIdentityProvider( IdentityProviderConfig config ) {
         if ( !(config instanceof FederatedIdentityProviderConfig) )
             throw new IllegalArgumentException("Config must be an instance of FederatedIdentityProviderConfig");
         this.config = (FederatedIdentityProviderConfig)config;
         this.userManager = new FederatedUserManager(this);
         this.groupManager = new FederatedGroupManager(this);
+        this.trustedCertManager = (TrustedCertManager) Locator.getDefault().lookup(TrustedCertManager.class);
     }
 
     public IdentityProviderConfig getConfig() {
@@ -74,7 +75,8 @@ public class FederatedIdentityProvider implements IdentityProvider {
     public void test() {
     }
 
-    private FederatedIdentityProviderConfig config;
-    private FederatedUserManager userManager;
-    private FederatedGroupManager groupManager;
+    private final FederatedIdentityProviderConfig config;
+    private final FederatedUserManager userManager;
+    private final FederatedGroupManager groupManager;
+    private final TrustedCertManager trustedCertManager;
 }

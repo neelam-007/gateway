@@ -32,11 +32,11 @@ public class IdentityProviderClientTest {
         credsManager.login(creds);
 
         // construct the provider to test
-        IdentityProviderClient internalProvider = new IdentityProviderClient();
         IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
         cfg.setOid(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
         cfg.setDescription("Internal identity provider");
-        internalProvider.initialize(cfg);
+
+        IdentityProviderClient internalProvider = new IdentityProviderClient(cfg);
 
         idProvider = internalProvider;
     }

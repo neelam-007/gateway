@@ -15,6 +15,7 @@
             <generator class="hilo"/>
         </id>
 
+        <!-- For subclasses -->
         <discriminator column="type"/>
 
         <version name="version" column="version" type="integer"/>
@@ -22,13 +23,15 @@
         <property name="description" type="string"/>
         <property name="name" type="string"/>
 
+        <!-- insert="false" and update="false" because column is defined twice. discriminator is updated instead -->
         <property name="typeVal" type="int" column="type" insert="false" update="false"/>
 
         <property name="serializedProps" type="text" column="properties" />
-
-        <subclass name="com.l7tech.identity.ldap.LdapIdentityProviderConfig" discriminator-value="2"/>
-        <subclass name="com.l7tech.identity.fed.FederatedIdentityProviderConfig" discriminator-value="3"/>
     </class>
+
+    <subclass name="com.l7tech.identity.ldap.LdapIdentityProviderConfig"
+              extends="com.l7tech.identity.IdentityProviderConfig"
+              discriminator-value="2"/>
 
     <class name="com.l7tech.identity.internal.InternalGroup" table="internal_group">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
@@ -210,5 +213,61 @@
         <property name="trustedForSigningServerCerts" column="trusted_for_server" type="boolean"/>
         <property name="trustedForSigningSamlTokens" column="trusted_for_saml" type="boolean"/>
     </class>
+    
+    <subclass name="com.l7tech.identity.fed.FederatedIdentityProviderConfig"
+              extends="com.l7tech.identity.IdentityProviderConfig"
+              discriminator-value="3"/>
+
+    <class name="com.l7tech.identity.fed.FederatedUser" table="fed_user">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="name" type="string" column="name" />
+        <property name="login" type="string" column="login" />
+        <property name="email" type="string"/>
+        <property name="subjectDn" column="subject_dn" type="string"/>
+
+        <property name="firstName" column="first_name"  type="string"/>
+        <property name="lastName" column="last_name" type="string"/>
+        <property name="title" type="string"/>
+    </class>
+
+    <class name="com.l7tech.identity.fed.FederatedGroup" table="fed_group">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="description" type="string"/>
+        <property name="name" type="string"/>
+    </class>
+
+    <class name="com.l7tech.identity.fed.FederatedGroupMembership" table="fed_user_group">
+        <composite-id>
+            <key-property name="providerOid" column="provider_oid" type="long"/>
+            <key-property name="userOid" column="fed_user_oid" type="long"/>
+            <key-property name="groupOid" column="fed_group_oid" type="long"/>
+        </composite-id>
+    </class>
+
+    <class name="com.l7tech.identity.fed.VirtualGroup" table="fed_group_virtual">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="description" type="string"/>
+        <property name="name" type="string"/>
+
+        <property name="samlEmailPattern" column="saml_email_pattern" type="string"/>
+        <property name="x509SubjectDnPattern" column="x509_subject_dn_pattern" type="string"/>
+        <property name="xmlProperties" column="properties" type="text"/>
+    </class>
+
 
 </hibernate-mapping>

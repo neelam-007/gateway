@@ -1,15 +1,14 @@
 package com.l7tech.identity;
 
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.identity.*;
+import com.l7tech.common.util.Locator;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.common.util.Locator;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
-import java.util.Collection;
 import java.rmi.RemoteException;
+import java.util.Collection;
 
 /**
  * SSM-side implementation of the identity provider.
@@ -21,8 +20,7 @@ import java.rmi.RemoteException;
  *
  */
 public class IdentityProviderClient implements IdentityProvider {
-
-    public void initialize(IdentityProviderConfig config) {
+    public IdentityProviderClient( IdentityProviderConfig config ) {
         this.config = config;
         userManager = new UserManagerClient(config);
         groupManager = new GroupManagerClient(config);
@@ -64,6 +62,10 @@ public class IdentityProviderClient implements IdentityProvider {
         return HttpDigest.REALM;
     }
 
+    public void test() throws InvalidIdProviderCfgException {
+        // Meaningless
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -75,7 +77,7 @@ public class IdentityProviderClient implements IdentityProvider {
         return svc;
     }
 
-    private IdentityProviderConfig config;
-    private UserManagerClient userManager;
-    private GroupManagerClient groupManager;
+    private final IdentityProviderConfig config;
+    private final UserManagerClient userManager;
+    private final GroupManagerClient groupManager;
 }

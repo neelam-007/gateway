@@ -3,10 +3,8 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.identity.fed.FederatedIdentityProvider;
 import com.l7tech.server.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
-import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -29,12 +27,11 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
     public IdProvConfManagerServer() {
         super();
         // construct the internal id provider
-        internalProvider = new InternalIdentityProviderServer();
         IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
         cfg.setName("Internal Identity Provider");
         cfg.setDescription("Internal Identity Provider");
         cfg.setOid(INTERNALPROVIDER_SPECIAL_OID);
-        internalProvider.initialize(cfg);
+        internalProvider = new InternalIdentityProviderServer(cfg);
     }
 
     public IdentityProvider getInternalIdentityProvider() {
@@ -63,25 +60,8 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
     public void test(IdentityProviderConfig identityProviderConfig)
                                 throws InvalidIdProviderCfgException {
-        IdentityProviderType type = identityProviderConfig.type();
-        if ( type == IdentityProviderType.INTERNAL ) {
-            if (identityProviderConfig.getOid() != INTERNALPROVIDER_SPECIAL_OID) {
-                logger.warning("Testing an internal id provider with no good oid. Throwing InvalidIdProviderCfgException");
-                throw new InvalidIdProviderCfgException("This internal ID provider config is not valid.");
-            }
-        } else if ( type.equals(IdentityProviderType.LDAP)) {
-            LdapIdentityProvider tmpProvider = new LdapIdentityProvider();
-            tmpProvider.initialize(identityProviderConfig);
-            tmpProvider.test();
-        } else if ( type.equals(IdentityProviderType.FEDERATED)) {
-            FederatedIdentityProvider tmpProvider = new FederatedIdentityProvider();
-            tmpProvider.initialize(identityProviderConfig);
-            tmpProvider.test();
-        } else {
-            String msg = "Unsupported IdentityProviderConfig type: " + type;
-            logger.severe(msg);
-            throw new InvalidIdProviderCfgException(msg );
-        }
+        IdentityProvider provider = IdentityProviderFactory.makeProvider(identityProviderConfig);
+        provider.test();
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
@@ -108,10 +88,12 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
         // first, check that there isn't an existing provider with same name
         try {
-            List existingProvidersWithSameName = PersistenceManager.find(getContext(), "from " + getTableName() +
-                                                                                       " in class " + getImpClass().getName() +
-                                                                                       " where " + getTableName() + ".name = ?",
-                                                                            identityProviderConfig.getName(), String.class);
+            List existingProvidersWithSameName =
+                    PersistenceManager.find( getContext(),
+                                             "from " + getTableName() + " in class " + getImpClass().getName() +
+                                             " where " + getTableName() + ".name = ?",
+                                             identityProviderConfig.getName(), String.class);
+
             if (existingProvidersWithSameName != null && !(existingProvidersWithSameName.isEmpty())) {
                 logger.fine("sending error back to requestor because existing provider with same name exists");
                 throw new SaveException("The name " + identityProviderConfig.getName() + " is already used by " +

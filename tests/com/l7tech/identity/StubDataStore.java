@@ -1,7 +1,9 @@
 package com.l7tech.identity;
 
-import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
@@ -14,8 +16,6 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.WsdlTest;
-import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.transport.jms.JmsEndpoint;
 
 import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
@@ -269,8 +269,7 @@ public class StubDataStore {
     }
 
     private IdentityProvider makeProvider(IdentityProviderConfig pc) {
-        IdentityProvider provider = new IdentityProviderStub();
-        provider.initialize(pc);
+        IdentityProvider provider = new IdentityProviderStub(pc);
         return provider;
     }
 

@@ -1,14 +1,14 @@
 package com.l7tech.identity;
 
 import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
 
 /**
  * Test stub for identity manager.
@@ -18,10 +18,7 @@ import java.util.ArrayList;
  */
 public class IdentityProviderStub implements IdentityProvider {
 
-    public IdentityProviderStub() {
-    }
-
-    public void initialize(IdentityProviderConfig config) {
+    public IdentityProviderStub( IdentityProviderConfig config ) {
         this.icf = config;
     }
 
@@ -55,6 +52,11 @@ public class IdentityProviderStub implements IdentityProvider {
     public String getAuthRealm() {
         return HttpDigest.REALM;
     }
+
+    public void test() throws InvalidIdProviderCfgException {
+        // Meaningless
+    }
+
     private IdentityProviderConfig icf = null;
 
 }

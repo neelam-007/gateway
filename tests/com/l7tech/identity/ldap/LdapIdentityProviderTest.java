@@ -93,38 +93,32 @@ public class LdapIdentityProviderTest extends TestCase {
     }
 
     private LdapIdentityProvider getSpockProviderWithBadSearchBase() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider();
-        spock.initialize(getConfigForSpockWithBadSearchBase());
+        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpockWithBadSearchBase());
         return spock;
     }
 
     private LdapIdentityProvider getSpockProvider() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider();
-        spock.initialize(getConfigForSpock());
+        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpock());
         return spock;
     }
 
     private LdapIdentityProvider getTimTamProvider() throws IOException {
-        LdapIdentityProvider timtam =  new LdapIdentityProvider();
-        timtam.initialize(getConfigForTimTam());
+        LdapIdentityProvider timtam =  new LdapIdentityProvider(getConfigForTimTam());
         return timtam;
     }
 
     private LdapIdentityProvider getMSADProvider() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider();
-        spock.initialize(getConfigForMSAD());
+        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForMSAD());
         return spock;
     }
 
     private LdapIdentityProvider getOracleProvider() throws IOException {
-        LdapIdentityProvider orcl =  new LdapIdentityProvider();
-        orcl.initialize(getConfigForOracle());
+        LdapIdentityProvider orcl =  new LdapIdentityProvider(getConfigForOracle());
         return orcl;
     }
 
     private LdapIdentityProvider getModifiedOracleProvider() throws IOException {
-        LdapIdentityProvider orcl =  new LdapIdentityProvider();
-        orcl.initialize(getModifiedConfigForOracle());
+        LdapIdentityProvider orcl =  new LdapIdentityProvider(getModifiedConfigForOracle());
         return orcl;
     }
 
