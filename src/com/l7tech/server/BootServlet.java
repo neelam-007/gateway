@@ -52,7 +52,7 @@ public class BootServlet extends HttpServlet {
 
             initializeAdminServices();
             HibernatePersistenceManager.initialize();
-            // make sure the ServiceManager is available
+            // make sure the ServiceManager is available. this will also build the service cache
             if (Locator.getDefault().lookup(ServiceManager.class) == null) {
                 logger.severe("Could not instantiate the ServiceManager");
             }
