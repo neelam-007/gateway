@@ -98,7 +98,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
                         Long svcid = (Long)i.next();
                         Entity toUpdateOrAdd = null;
                         try {
-                            toUpdateOrAdd = _manager.findByPrimaryKey(svcid.longValue());
+                            toUpdateOrAdd = _manager.findEntity(svcid.longValue());
                         } catch (FindException e) {
                             toUpdateOrAdd = null;
                             logger.log(Level.WARNING, "Entity that was updated or created " +
@@ -110,8 +110,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
                     }
                     for (Iterator i = deletions.iterator(); i.hasNext();) {
                         Long key = (Long)i.next();
-                        Entity serviceToDelete = (Entity)_cachedVersionMap.get(key);
-                        remove(serviceToDelete);
+                        remove(key);
                     }
                 }
 
@@ -128,9 +127,9 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         }
     }
 
-    private void remove( Entity removedEntity ) {
-        _cachedVersionMap.remove( new Long( removedEntity.getOid() ) );
-        removed( removedEntity );
+    private void remove( Long oid ) {
+        _cachedVersionMap.remove( oid );
+        removed( oid.longValue() );
     }
 
     private void addOrUpdate( Entity updatedEntity ) {
@@ -138,7 +137,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         createdOrUpdated( updatedEntity );
     }
 
-    protected abstract void removed( Entity removedEntity );
+    protected abstract void removed( long removedOid );
     protected abstract void createdOrUpdated( Entity updatedEntity );
 
     public long getFrequency() {

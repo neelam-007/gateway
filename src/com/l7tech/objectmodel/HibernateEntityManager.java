@@ -34,7 +34,7 @@ public abstract class HibernateEntityManager implements EntityManager {
         _manager = manager;
     }
 
-    public Entity findByPrimaryKey( long oid ) throws FindException {
+    public Entity findEntity( long oid ) throws FindException {
         String alias = getTableName();
         String query = "FROM " + alias +
                        " IN CLASS " + getImpClass() +
@@ -143,7 +143,7 @@ public abstract class HibernateEntityManager implements EntityManager {
     public Collection findAllHeaders() throws FindException {
         try {
             List headers = new ArrayList();
-            List results = _manager.find( getContext(), getAllHeadersQuery());
+            List results = PersistenceManager.find( getContext(), getAllHeadersQuery());
             for (Iterator i = results.iterator(); i.hasNext();) {
                 Object[] row = (Object[])i.next();
                 String name = null;
@@ -168,7 +168,7 @@ public abstract class HibernateEntityManager implements EntityManager {
 
     public Collection findAll() throws FindException {
         try {
-            return _manager.find( getContext(), getAllQuery() );
+            return PersistenceManager.find( getContext(), getAllQuery() );
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }
