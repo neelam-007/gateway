@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soap:Body>
+        <Echo xmlns="http://qaschematest.layer7.com/">
+            <inPerson>
+                <Name>Michael Qiu</Name>
+                <Genda>Male</Genda>
+                <Age>33</Age>
+                <DateTimeBorn>2004-02-09T01:02:03.0000000-08:00</DateTimeBorn>
+                <Married>true</Married>
+                <HomeAddress>123 Betty St. Vancouver</HomeAddress>
+                <HomePhoneNumber>6041234567</HomePhoneNumber>
+            </inPerson>
+        </Echo>
+    </soap:Body>
+</soap:Envelope>
+

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<s:schema elementFormDefault="qualified"
+    targetNamespace="http://qaschematest.layer7.com/"
+    xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+    xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+    xmlns:s="http://www.w3.org/2001/XMLSchema"
+    xmlns:s0="http://qaschematest.layer7.com/"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/">
+
+    <s:element name="Echo">
+        <s:complexType>
+            <s:sequence>
+                <s:element maxOccurs="1" minOccurs="1" name="inPerson" type="s0:Person"/>
+            </s:sequence>
+        </s:complexType>
+    </s:element>
+
+    <s:complexType name="Person">
+        <s:sequence>
+            <s:element maxOccurs="2" minOccurs="0" name="Name" type="s:string"/>
+            <s:element maxOccurs="1" minOccurs="0" name="Genda" type="s:string"/>
+            <s:element maxOccurs="1" minOccurs="1" name="Age" type="s:int"/>
+            <s:element maxOccurs="1" minOccurs="1" name="DateTimeBorn" type="s:dateTime"/>
+            <s:element maxOccurs="1" minOccurs="1" name="Married" type="s:boolean"/>
+            <s:element maxOccurs="1" minOccurs="0" name="HomeAddress" type="s:string"/>
+            <s:element maxOccurs="1" minOccurs="1"
+                name="HomePhoneNumber" type="s:long"/>
+        </s:sequence>
+    </s:complexType>
+
+    <s:element name="string" nillable="true" type="s:string"/>
+    <s:element name="int" type="s:int"/>
+    <s:element name="dateTime" type="s:dateTime"/>
+    <s:element name="boolean" type="s:boolean"/>
+    <s:element name="long" type="s:long"/>
+</s:schema>
