@@ -53,6 +53,9 @@ public class ServerWssBasic implements ServerAssertion {
             }
         }
         logger.info("cannot find credentials");
+        // we get here because there were no credentials found in the format we want
+        // therefore this assertion was violated
+        response.setPolicyViolated(true);
         return AssertionStatus.AUTH_REQUIRED;
     }
 
