@@ -54,7 +54,7 @@ public class ClientHttpClientCert extends ClientAssertion {
                 throw new PolicyAssertionException("Unable to obtain a client certificate with SSG " + ssg, e);
             }
         }
-        request.setSslRequired(true);
+        request.setSslRequired(true);  // client cert requires an SSL request
         return AssertionStatus.NONE;
     }
 
