@@ -1,16 +1,16 @@
 package com.l7tech.console.security;
 
-import com.l7tech.console.event.ConnectionListener;
-import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.common.VersionException;
+import com.l7tech.console.event.ConnectionEvent;
+import com.l7tech.console.event.ConnectionListener;
+import com.l7tech.identity.UserBean;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
-import java.security.AccessController;
-import java.security.Principal;
-import java.util.logging.Logger;
 import java.rmi.RemoteException;
+import java.security.AccessController;
+import java.util.logging.Logger;
 
 /**
  * For SSM-side admin session management.
@@ -62,7 +62,9 @@ public abstract class ClientCredentialManager implements ConnectionListener {
                 return;
             }
             subject.getPrincipals().clear();
-            subject.getPrincipals().add(new ClientPrincipal(pa.getUserName()));
+            final UserBean u = new UserBean();
+            u.setName(pa.getUserName());
+            subject.getPrincipals().add(u);
             subject.getPrivateCredentials().clear();
             subject.getPrivateCredentials().add(pa.getPassword());
         }
@@ -80,23 +82,4 @@ public abstract class ClientCredentialManager implements ConnectionListener {
      */
     public void onDisconnect(ConnectionEvent e) {}
 
-    /**
-     * internal principal holder class
-     */
-    static class ClientPrincipal implements Principal {
-        private final String principal;
-
-        ClientPrincipal(String principal) {
-            this.principal = principal;
-        }
-
-        /**
-         * Returns the name of this principal.
-         *
-         * @return the name of this principal.
-         */
-        public String getName() {
-            return principal;
-        }
-    }
 }
