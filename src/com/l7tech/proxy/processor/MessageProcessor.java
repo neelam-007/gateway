@@ -234,9 +234,9 @@ public class MessageProcessor {
                 ssg.getRuntime().getSsgKeyStoreManager().deleteClientCert();
             } catch (KeyStoreCorruptException e1) {
                 ssg.getRuntime().handleKeyStoreCorrupt();
+                // FALLTHROUGH -- retry, creating new keystore
             }
             ssg.getRuntime().resetSslContext();
-            // FALLTHROUGH -- retry, creating new keystore
         }
 
         context.getNewCredentials();
