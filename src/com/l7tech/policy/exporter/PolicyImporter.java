@@ -72,6 +72,13 @@ public class PolicyImporter {
         Element policy = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
                                                              WspConstants.L7_POLICY_NS,
                                                              WspConstants.POLICY_ELNAME);
+        // try alternative
+        if (policy == null) {
+            policy = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
+                                                         WspConstants.WSP_POLICY_NS,
+                                                         WspConstants.POLICY_ELNAME);
+        }
+
         if (policy != null) {
             return resolver.localizePolicy(policy);
         } else {
