@@ -74,7 +74,8 @@ public class MessageProcessor {
             throws PolicyAssertionException, ConfigurationException, IOException, GeneralSecurityException
     {
         if (pendingRequest.incrementTimesAttempted() > MAX_TRIES)
-            throw new ConfigurationException("Unable to fulfil request after 10 attempts to contact the SSG; giving up");
+            throw new ConfigurationException("Unable to fulfil request after " + MAX_TRIES +
+                                             " attempts to contact the SSG; giving up");
         Ssg ssg = pendingRequest.getSsg();
         Assertion policy = policyManager.getPolicy(pendingRequest);
         AssertionStatus result = policy.decorateRequest(pendingRequest);
