@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.objectmodel.UpdateException;
@@ -37,7 +38,6 @@ public class CertPropertiesWindow extends JDialog {
     private JPanel mainPanel;
     private JPanel certMainPanel;
     private JPanel certPanel;
-    private JScrollPane certDetailsScrollPane;
     private JTextField certExpiredOnTextField;
     private JTextField certIssuedToTextField;
     private JTextField certIssuedByTextField;
@@ -179,8 +179,8 @@ public class CertPropertiesWindow extends JDialog {
         cal.setTime(cert.getNotAfter());
         certExpiredOnTextField.setText(sdf.format(cal.getTime()));
 
-        certIssuedToTextField.setText(cert.getSubjectDN().getName());
-        certIssuedByTextField.setText(cert.getIssuerDN().getName());
+        certIssuedToTextField.setText(CertUtils.extractUsernameFromClientCertificate(cert));
+        certIssuedByTextField.setText(CertUtils.extractIssuerNameFromClientCertificate(cert));
         certNameTextField.setText(trustedCert.getName());
 
         // populate the details
@@ -336,12 +336,11 @@ public class CertPropertiesWindow extends JDialog {
         final JTextField _16;
         _16 = new JTextField();
         certExpiredOnTextField = _16;
-        _16.setText("");
         _16.setEditable(false);
+        _16.setText("");
         _7.add(_16, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JScrollPane _17;
         _17 = new JScrollPane();
-        certDetailsScrollPane = _17;
         _6.addTab("Details", _17);
         final JPanel _18;
         _18 = new JPanel();
