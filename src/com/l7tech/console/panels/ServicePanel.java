@@ -237,6 +237,15 @@ public class ServicePanel extends WizardStepPanel {
             }
             // this can be either a WSDL or a WSIL document
             String xmlResult = (String) result;
+
+            int lastIndexOfSlash = wsdlUrlTextField.getText().lastIndexOf('/');
+            String baseURL;
+            if(lastIndexOfSlash == -1) {
+                baseURL = "./";
+            } else {
+                baseURL = wsdlUrlTextField.getText().substring(0, lastIndexOfSlash + 1);
+            }
+
             Document resolvedDoc = XmlUtil.stringToDocument(xmlResult);
 
             // is this a WSIL?
@@ -254,7 +263,7 @@ public class ServicePanel extends WizardStepPanel {
                     return onNextButton();
                 }
             } else {
-                wsdl = Wsdl.newInstance(null, new StringReader(xmlResult));
+                wsdl = Wsdl.newInstance(baseURL, new StringReader(xmlResult));
 
                 final String serviceName = wsdl.getServiceName();
                 // if service name not obtained service name is WSDL URL
