@@ -140,6 +140,7 @@ public class RegistrarLookupServlet extends HttpServlet {
             for (Iterator i = gman.getGroupHeaders(user).iterator(); i.hasNext();) {
                 EntityHeader grp = (EntityHeader)i.next();
                 if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) return true;
+                // todo, something about Group.OPERATOR_GROUP_NAME
             }
             return false;
         } catch (FindException fe) {

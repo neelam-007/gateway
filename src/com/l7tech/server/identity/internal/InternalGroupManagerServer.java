@@ -40,6 +40,11 @@ public class InternalGroupManagerServer extends PersistentGroupManager {
             logger.severe("an attempt to delete the admin group was made.");
             throw new DeleteException("Cannot delete administrator group.");
         }
+
+        if (Group.OPERATOR_GROUP_NAME.equals(group.getName())) {
+            logger.severe("an attempt to delete the operator group was made.");
+            throw new DeleteException("Cannot delete operator group.");
+        }
     }
 
     protected void preUpdate( PersistentGroup group ) throws FindException, UpdateException {

@@ -64,10 +64,11 @@ public class GroupNode extends EntityHeaderNode {
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
-        if(!getEntityHeader().getName().equals(Group.ADMIN_GROUP_NAME) && isInternal()){
-            return true;
-        }
-        return false;
+        if (isInternal() &&
+            (getEntityHeader().getName().equals(Group.ADMIN_GROUP_NAME) ||
+             getEntityHeader().getName().equals(Group.OPERATOR_GROUP_NAME))) {
+            return false;
+        } else return true;
     }
 
     /**
