@@ -6,7 +6,6 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.Assertion;
@@ -18,6 +17,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.MainWindow;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -71,6 +71,13 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         ButtonGroup bg = new ButtonGroup();
         bg.add(specificRecipientRradio);
         bg.add(defaultRadio);
+        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        String ssghostname = mw.ssgURL();
+        int pos = ssghostname.lastIndexOf(':');
+        if (pos > 0) {
+            ssghostname = ssghostname.substring(0, pos);
+        }
+        defaultRadio.setText("Default (" + ssghostname + ")");
         setActionListeners();
         setInitialValues();
         enableSpecificControls();
@@ -330,14 +337,5 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
 
     private void cancel() {
         XmlSecurityRecipientContextEditor.this.dispose();
-    }
-
-    public static void main(String[] args) {
-        RequestWssIntegrity assertion = new RequestWssIntegrity();
-        XmlSecurityRecipientContextEditor dlg = new XmlSecurityRecipientContextEditor(null, assertion);
-        dlg.pack();
-        Utilities.centerOnScreen(dlg);
-        dlg.show();
-        System.exit(0);
     }
 }
