@@ -27,9 +27,6 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
       throws LoginException, VersionException {
         resetCredentials();
         setCredentials(creds);
-        serviceLookup =
-          (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
-        logger.info(Locator.getDefault().toString());
         // version check
         try {
             IdentityService is = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
@@ -37,6 +34,8 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
             if (!Service.VERSION.equals(remoteVersion)) {
                 throw new VersionException(Service.VERSION, remoteVersion);
             }
+            serviceLookup =
+              (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
         } catch (RemoteException e) {
             throw new VersionException(e);
         }
