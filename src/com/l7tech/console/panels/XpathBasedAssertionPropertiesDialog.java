@@ -8,6 +8,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.SoapMessageGenerator.Message;
+import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.*;
@@ -56,6 +57,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -92,6 +94,22 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private boolean isEncryption;
     private XpathEvaluator testEvaluator;
     private JButton namespaceButton;
+    private JLabel hardwareAccelStatusLabel;
+
+    /**
+     * @param owner this panel owner
+     * @param modal is this modal dialog or not
+     * @param sn    the ServiceNode
+     * @param n     the xml security node
+     */
+    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, ServiceNode sn, XpathBasedAssertionTreeNode n, ActionListener okListener) {
+        super(owner, modal);
+        if (n == null) {
+            throw new IllegalArgumentException();
+        }
+        construct(sn, n, okListener);
+    }
+
 
     /**
      * @param owner this panel owner
@@ -103,6 +121,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         if (n == null) {
             throw new IllegalArgumentException();
         }
+        construct(null, n, okListener);
+    }
+
+    private void construct(ServiceNode sn, XpathBasedAssertionTreeNode n, ActionListener okListener) {
         node = n;
         okActionListener = okListener;
 
@@ -117,7 +139,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             isEncryption = true;
         } else
             isEncryption = false;
-        serviceNode = AssertionTreeNode.getServiceNode(node);
+        if (sn != null)
+            serviceNode = sn;
+        else
+            serviceNode = AssertionTreeNode.getServiceNode(node);
         if (serviceNode == null) {
             throw new IllegalStateException("Unable to determine the service node for " + xmlSecAssertion);
         }
@@ -132,7 +157,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             }
             initializeBlankMessage(soapMessages[0]);
             for (int i = 0; i < soapMessages.length; i++) {
-                Message soapRequest = soapMessages[i];
+                SoapMessageGenerator.Message soapRequest = soapMessages[i];
                 requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
             }
         } catch (Exception e) {
@@ -185,8 +210,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 // then save it in assertion
                 JTextField xpathTextField = messageViewerToolBar.getxpathField();
                 String xpath = xpathTextField.getText();
-                XpathFeedBack res = getFeedBackMessage(xpathTextField);
-                if (res != XpathFeedBack.OK) {
+                XpathFeedBack res = getFeedBackMessage(namespaces, xpathTextField);
+                if (res != null && !res.valid()) {
                     String xpathmsg = xpath;
                     if (xpathmsg == null || xpathmsg.equals("")) {
                         xpathmsg = "[empty]";
@@ -518,7 +543,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     final PauseListener xpathFieldPauseListener = new PauseListener() {
         public void textEntryPaused(JTextComponent component, long msecs) {
             final JTextField xpathField = (JTextField)component;
-            XpathFeedBack feedBack = getFeedBackMessage(xpathField);
+            XpathFeedBack feedBack = getFeedBackMessage(namespaces, xpathField);
             processFeedBack(feedBack, xpathField);
         }
 
@@ -551,8 +576,21 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             }
         }*/
 
+        private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack) {
+            if (hardwareFeedBack == null) {
+                hardwareAccelStatusLabel.setText(" ");
+                hardwareAccelStatusLabel.setToolTipText(null);
+            } else {
+                hardwareAccelStatusLabel.setText("(No hardware accel: " + hardwareFeedBack.getShortMessage() + ")");
+                hardwareAccelStatusLabel.setToolTipText(hardwareFeedBack.getDetailedMessage());
+            }
+        }
+
         private void processFeedBack(XpathFeedBack feedBack, JTextField xpathField) {
-            if (feedBack == XpathFeedBack.OK || feedBack == XpathFeedBack.EMPTY) {
+            if (feedBack == null) feedBack = new XpathFeedBack(-1, null, null, null); // NPE guard
+            processHardwareFeedBack(feedBack.hardwareAccelFeedback);
+
+            if (feedBack.valid() || feedBack.isEmpty()) {
                 if (xpathField instanceof SquigglyTextField) {
                     SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
                     squigglyTextField.setNone();
@@ -587,17 +625,19 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
     };
 
-    private XpathFeedBack getFeedBackMessage(JTextField xpathField) {
+    private XpathFeedBack getFeedBackMessage(Map nsMap, JTextField xpathField) {
         String xpath = xpathField.getText();
-        if (xpath == null) return XpathFeedBack.EMPTY;
+        if (xpath == null) return new XpathFeedBack(-1, null, XpathFeedBack.EMPTY_MSG, XpathFeedBack.EMPTY_MSG);
         xpath = xpath.trim();
-        if (xpath.length() < 1) return XpathFeedBack.EMPTY;
+        if (xpath.length() < 1) return new XpathFeedBack(-1, null, XpathFeedBack.EMPTY_MSG, XpathFeedBack.EMPTY_MSG);
         if (isEncryption && xpath.equals("/soapenv:Envelope")) {
             return new XpathFeedBack(-1, xpath, "The path " + xpath + " is not valid for XML encryption", null);
         }
         try {
             testEvaluator.evaluate(xpath);
-            return XpathFeedBack.OK;
+            XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
+            feedback.hardwareAccelFeedback = getHardwareAccelFeedBack(nsMap, xpath);
+            return feedback;
         } catch (XPathSyntaxException e) {
             log.log(Level.FINE, e.getMessage(), e);
             return new XpathFeedBack(e.getPosition(), xpath, e.getMessage(), e.getMultilineMessage());
@@ -610,14 +650,35 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
     }
 
+    /** @return feedback for hardware accel problems, or null if no hardware accel problems detected. */
+    private XpathFeedBack getHardwareAccelFeedBack(Map nsMap, String xpath) {
+        XpathFeedBack hardwareFeedback;
+        // Check if hardware accel is known not to work with this xpath
+        String convertedXpath = xpath;
+        try {
+            convertedXpath = TarariXpathConverter.convertToTarariXpath(nsMap, xpath);
+            testEvaluator.evaluate(convertedXpath);
+            hardwareFeedback = null;
+        } catch (ParseException e) {
+            hardwareFeedback = new XpathFeedBack(e.getErrorOffset(), convertedXpath, e.getMessage(), e.getMessage());
+        } catch (XPathSyntaxException e) {
+            hardwareFeedback = new XpathFeedBack(e.getPosition(), convertedXpath, e.getMessage(), e.getMultilineMessage());
+        } catch (JaxenException e) {
+            hardwareFeedback = new XpathFeedBack(-1, convertedXpath, e.getMessage(), e.getMessage());
+        } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
+            hardwareFeedback = new XpathFeedBack(-1, convertedXpath, "XPath expression error '" + convertedXpath + "'", null);
+        }
+        return hardwareFeedback;
+    }
+
 
     private static class XpathFeedBack {
-        static final XpathFeedBack EMPTY = new XpathFeedBack(-1, null, "Empty XPath expression", "Empty XPath expression");
-        public static final XpathFeedBack OK = new XpathFeedBack(-1, null, null, null);
+        private static final String EMPTY_MSG = "Empty XPath expression";
         int errorPosition = -1;
         String shortMessage = null;
         String detailedMessage = null;
         String xpathExpression = null;
+        XpathFeedBack hardwareAccelFeedback = null;
 
         public XpathFeedBack(int errorPosition, String expression, String sm, String lm) {
             this.errorPosition = errorPosition;
@@ -646,6 +707,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             return shortMessage;
         }
 
-
+        public boolean isEmpty() {
+            return EMPTY_MSG.equals(shortMessage);
+        }
     }
 }

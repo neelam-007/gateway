@@ -362,7 +362,7 @@ public XprParser(ParserSharedInputState state) {
 				    if (( pn != null && pn.localName != null) || ( pn != null && pn.nsPrefix != null ) || (existingPredicate != null)) {
 			sbuf.append("[") ;
 					    if ( pn.localName != null) {
-					    if (inPred > 0) throw new RecognitionException("Unable to express nested predicate");
+					    if (inPred > 0) throw new RecognitionException("requires nested predicate");
 					    sbuf.append( "local-name() = \"" ) ;
 					    sbuf.append( pn.localName );
 					    sbuf.append( "\" " );
@@ -371,7 +371,7 @@ public XprParser(ParserSharedInputState state) {
 			nsflag = 1 ;
 					}
 			if ( nsUri != null ) {
-					    if (inPred > 0) throw new RecognitionException("Unable to express nested predicate");
+					    if (inPred > 0) throw new RecognitionException("requires nested predicate");
 			sbuf.append( "namespace-uri() =\"" ) ;
 			sbuf.append( nsUri ) ;
 			sbuf.append("\" " ) ;

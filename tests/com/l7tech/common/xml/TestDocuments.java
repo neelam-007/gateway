@@ -10,12 +10,12 @@ import javax.crypto.SecretKey;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
-import java.net.URL;
 
 /**
  * The class is a container for test documents, SOAP tmessages etc
@@ -80,7 +80,7 @@ public final class TestDocuments {
        return XmlUtil.nodeToString(getTestDocument(resourcetoread));
     }
 
-    public static String getTestDocumentURL(String resource)
+    public static URL getTestDocumentURL(String resource)
       throws IOException, SAXException {
         if (resource == null) {
             throw new IllegalArgumentException();
@@ -90,7 +90,7 @@ public final class TestDocuments {
         if (url == null) {
             throw new FileNotFoundException(resource);
         }
-       return XmlUtil.nodeToString(getTestDocument(resource));
+        return url;
     }
 
 
