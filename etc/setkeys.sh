@@ -18,7 +18,7 @@
 
 # VERIFY THAT THE TOMCAT_HOME VARIABLE IS SET
 if [ ! "$TOMCAT_HOME" ]; then
-    echo "ERROR: $TOMCAT_HOME not set"
+    echo "ERROR: TOMCAT_HOME not set"
     echo
     exit
 fi
