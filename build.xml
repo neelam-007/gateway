@@ -356,7 +356,7 @@
                 <include name="commons-collections-2.1.1.jar"/>
                 <include name="commons-dbcp-1.2.1.jar"/>
                 <include name="commons-discovery.jar"/>
-                <include name="commons-httpclient-2.0.jar"/>
+                <include name="commons-httpclient-2.0.2.jar"/>
                 <include name="commons-lang-1.0.1.jar"/>
                 <include name="commons-pool-1.2.jar"/>
                 <include name="dom4j.jar"/>
@@ -587,7 +587,7 @@
         <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
             <fileset dir="${build.dir}/lib" includes="jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
                                                        looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
-                                                       axis.jar,commons-httpclient-2.0.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
+                                                       axis.jar,commons-httpclient-2.0.2.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
                                                        jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar, commons-discovery.jar"/>
         </signjar>
         <signjar jar="${build.dir}/Manager.jar" keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password"/>
@@ -598,7 +598,7 @@
             <zipfileset dir="${src.root}/src/com/l7tech/console/resources" includes="layer7_logo_small_64x64.gif" prefix="ssm/images"/>
             <zipfileset dir="${build.dir}/lib" includes="jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
                                                          looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
-                                                         axis.jar,commons-httpclient-2.0.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
+                                                         axis.jar,commons-httpclient-2.0.2.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
                                                          jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar,commons-discovery.jar" prefix="ssm/lib"/>
             <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssm"/>
         </war>
@@ -1007,10 +1007,10 @@
     <target name="INTERNAL-ssg-install-properties-full" if="install.full" depends="db.properties">
         <!-- Copy hibernate.properties -->
         <property name="install.src.hibernate.properties" value="${install.src.conf}/hibernate.properties"/>
-<!--
-        <property name="database.driver" value="${my.database.driver}"/>
-        <property name="database.url" value="${my.database.url}"/>
--->
+        <!--
+                <property name="database.driver" value="${my.database.driver}"/>
+                <property name="database.url" value="${my.database.url}"/>
+        -->
 
         <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" tofile="${install.src.hibernate.properties}"/>
 
@@ -1176,9 +1176,9 @@
 
         <!-- Copy misc. stuff -->
         <copy todir="${install.src.sql}">
-             <fileset dir="${src.root}/etc/db/${database.type}">
+            <fileset dir="${src.root}/etc/db/${database.type}">
                 <include name="*.sql"/>
-             </fileset>
+            </fileset>
         </copy>
         <copy todir="${install.src.bin}">
             <fileset dir="${src.root}/etc">

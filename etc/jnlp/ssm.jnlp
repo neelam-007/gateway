@@ -1,46 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jnlp codebase="$$codebase" href="$$name">
-  <information>
-    <title>SSM - SecureSpan Manager</title>
-    <vendor>Layer7 Technologies</vendor>
-    <description>SecureSpan Manager</description>
-    <homepage href="http://www.layer7tech.com"/>
-    <icon href="images/layer7_logo_small_64x64.gif"/>
-  </information>
-  <security>
-      <all-permissions/>
-  </security> 
-  <resources>
-    <j2se version="1.4+"/>
-    <jar href="Manager.jar"/>
-    <jar href="lib/jini-core.jar"/>
-    <jar href="lib/jini-ext.jar"/>
-    <jar href="lib/reggie-dl.jar"/>
-    <jar href="lib/reggie.jar"/>
-    <jar href="lib/jh.jar"/>
-    <jar href="lib/kunststoff.jar"/>
-    <jar href="lib/looks-1.1.3.jar"/>
-    <jar href="lib/odmg.jar"/>
-    <jar href="lib/hibernate2.jar"/>
-    <jar href="lib/oswego-concurrent.jar"/>
-    <jar href="lib/wsdl4j.jar"/>
-    <jar href="lib/qname.jar"/>
-    <jar href="lib/xercesImpl.jar"/>
-    <jar href="lib/xml-apis.jar"/>
-    <jar href="lib/axis.jar"/>
-    <jar href="lib/commons-httpclient-2.0-rc2.jar"/>
-    <jar href="lib/commons-lang.jar"/>
-    <jar href="lib/commons-collections.jar"/>
-    <jar href="lib/forms_rt.jar"/>
-    <jar href="lib/jedit-syntax.jar"/>
-    <jar href="lib/jaxen-core.jar"/>
-    <jar href="lib/jaxen-dom.jar"/>
-    <jar href="lib/saxpath.jar"/>
-    <jar href="lib/jaxrpc.jar"/>
-    <jar href="lib/saaj.jar"/>
-  </resources>
-  <application-desc/>
-  <security>
-   <all-permissions/>
-  </security>
+    <information>
+        <title>SSM - SecureSpan Manager</title>
+        <vendor>Layer7 Technologies</vendor>
+        <description>SecureSpan Manager</description>
+        <homepage href="http://www.layer7tech.com"/>
+        <icon href="images/layer7_logo_small_64x64.gif"/>
+    </information>
+    <security>
+        <all-permissions/>
+    </security>
+    <resources>
+        <j2se version="1.4+"/>
+        <jar href="Manager.jar"/>
+        <jar href="lib/jini-core.jar"/>
+        <jar href="lib/jini-ext.jar"/>
+        <jar href="lib/reggie-dl.jar"/>
+        <jar href="lib/reggie.jar"/>
+        <jar href="lib/jh.jar"/>
+        <jar href="lib/kunststoff.jar"/>
+        <jar href="lib/looks-1.1.3.jar"/>
+        <jar href="lib/odmg.jar"/>
+        <jar href="lib/hibernate2.jar"/>
+        <jar href="lib/oswego-concurrent.jar"/>
+        <jar href="lib/wsdl4j.jar"/>
+        <jar href="lib/qname.jar"/>
+        <jar href="lib/xercesImpl.jar"/>
+        <jar href="lib/xml-apis.jar"/>
+        <jar href="lib/axis.jar"/>
+        <jar href="lib/commons-httpclient-2.0.2.jar"/>
+        <jar href="lib/commons-lang.jar"/>
+        <jar href="lib/commons-collections.jar"/>
+        <jar href="lib/forms_rt.jar"/>
+        <jar href="lib/jedit-syntax.jar"/>
+        <jar href="lib/jaxen-core.jar"/>
+        <jar href="lib/jaxen-dom.jar"/>
+        <jar href="lib/saxpath.jar"/>
+        <jar href="lib/jaxrpc.jar"/>
+        <jar href="lib/saaj.jar"/>
+    </resources>
+    <application-desc/>
+    <security>
+        <all-permissions/>
+    </security>
 </jnlp>
