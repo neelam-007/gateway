@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
+import javax.servlet.ServletConfig;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -32,6 +33,12 @@ import org.apache.axis.AxisFault;
  *
  */
 public class CSRHandler extends HttpServlet {
+
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
+        rootkstore = getServletConfig().getInitParameter("RootKeyStore");
+        rootkstorepasswd = getServletConfig().getInitParameter("RootKeyStorePasswd");
+    }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (!request.isSecure()) {
@@ -62,6 +69,8 @@ public class CSRHandler extends HttpServlet {
 
         byte[] csr = readCSRFromRequest(request);
         Certificate cert = null;
+
+        // sign request
         try {
             cert = sign(csr);
         } catch (Exception e) {
@@ -69,6 +78,7 @@ public class CSRHandler extends HttpServlet {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
         }
 
+        // send cert back
         try {
             byte[] certbytes = cert.getEncoded();
             response.setStatus(HttpServletResponse.SC_OK);
@@ -166,12 +176,13 @@ public class CSRHandler extends HttpServlet {
 
     private synchronized RSASigner getSigner() {
         if (rsasigner == null) {
-            // todo, dont hard code these things
-            rsasigner = new RSASigner("/usr/java/jakarta-tomcat-4.1.24/kstores/ssgroot", "password", "ssgroot", "password");
+            rsasigner = new RSASigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd);
         }
         return rsasigner;
     }
 
     private IdentityProviderConfigManager identityProviderConfigManager = null;
     private RSASigner rsasigner = null;
+    private String rootkstore = null;
+    private String rootkstorepasswd = null;
 }
