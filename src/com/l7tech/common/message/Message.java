@@ -242,6 +242,17 @@ public final class Message {
     }
 
     /**
+     * Check if this message is a Http request.
+     * @return true if the message is a Http request
+     */
+    public boolean isHttpRequest() {
+        if(getKnob(HttpRequestKnob.class) != null) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Configure this Message as an HTTP request.  This attaches sources of TCP and HTTP request transport metadata to this
      * Message.  A Message may have at most one HTTP request knob.  An HTTP request knob may cooexist with
      * an HTTP response knob.

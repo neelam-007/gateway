@@ -176,35 +176,38 @@ public class MessageProcessor extends ApplicationObjectSupport {
                 logger.finer("Resolved service " + service.getName() + " #" + service.getOid());
                 context.setService( service );
 
-                // check if requestor provided a version number for published service
-                String requestorVersion = context.getRequest().getHttpRequestKnob().getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
-                if (requestorVersion != null && requestorVersion.length() > 0) {
-                    // format is policyId|policyVersion (seperated with char '|')
-                    boolean wrongPolicyVersion = false;
-                    int indexofbar = requestorVersion.indexOf('|');
-                    if (indexofbar < 0) {
-                        logger.finest("policy version passed has incorrect format");
-                        wrongPolicyVersion = true;
-                    } else {
-                        try {
-                            long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
-                            long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar+1));
-                            if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
-                                logger.finest("policy version passed is invalid " + requestorVersion + " instead of "
-                                                + service.getOid() + "|" + service.getVersion());
-                                wrongPolicyVersion = true;
-                            }
-                        } catch (NumberFormatException e) {
+                // skip the http request header version checking if it is not a Http request
+                if(context.getRequest().isHttpRequest()) {
+                    // check if requestor provided a version number for published service
+                    String requestorVersion = context.getRequest().getHttpRequestKnob().getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+                    if (requestorVersion != null && requestorVersion.length() > 0) {
+                        // format is policyId|policyVersion (seperated with char '|')
+                        boolean wrongPolicyVersion = false;
+                        int indexofbar = requestorVersion.indexOf('|');
+                        if (indexofbar < 0) {
+                            logger.finest("policy version passed has incorrect format");
                             wrongPolicyVersion = true;
-                            logger.log(Level.FINE, "wrong format for policy version", e);
+                        } else {
+                            try {
+                                long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
+                                long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar+1));
+                                if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
+                                    logger.finest("policy version passed is invalid " + requestorVersion + " instead of "
+                                            + service.getOid() + "|" + service.getVersion());
+                                    wrongPolicyVersion = true;
+                                }
+                            } catch (NumberFormatException e) {
+                                wrongPolicyVersion = true;
+                                logger.log(Level.FINE, "wrong format for policy version", e);
+                            }
                         }
+                        if (wrongPolicyVersion) {
+                            context.setPolicyViolated(true);
+                            throw new PolicyVersionException();
+                        }
+                    } else {
+                        logger.fine("Requestor did not provide policy id.");
                     }
-                    if (wrongPolicyVersion) {
-                        context.setPolicyViolated(true);
-                        throw new PolicyVersionException();
-                    }
-                } else {
-                    logger.fine("Requestor did not provide policy id.");
                 }
 
                 // Get the server policy
