@@ -8,6 +8,10 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.ServiceStatistics;
 
 import javax.swing.*;
+import javax.swing.event.TableColumnModelListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.TableColumnModelEvent;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
@@ -33,15 +37,14 @@ public class StatisticsPanel extends JPanel {
     private static final String MIDDLE_SPACE = "     ";
     private static final String END_SPACE    = "   ";
     private static final int STAT_REFRESH_TIMER = 5000;
-    private static final String ATTEMPTED_TOTAL_PREFIX = "Attempted Total: ";
-    private static final String AUTHORIZED_TOTAL_PREFIX = "Authorized Total: ";
-    private static final String COMPLETED_TOTAL_PREFIX = "Completed Total: ";
-
-    private JTextArea data = new JTextArea("Hello");
     private com.l7tech.adminws.service.ServiceManager serviceManager = null;
     private JTable statTable = null;
+    private JTable statTotalTable = null;
     private JScrollPane statTablePane = null;
     private DefaultTableModel statTableModel = null;
+    private DefaultTableColumnModel columnModel = null;
+    private DefaultTableColumnModel totalColumnModel = null;
+    private DefaultTableModel statTotalTableModel = null;
     private JPanel selectPane = null;
     private JPanel controlPane = null;
     private JCheckBox autoRefresh = null;
@@ -52,16 +55,15 @@ public class StatisticsPanel extends JPanel {
     private Log logstub = (Log) Locator.getDefault().lookup(Log.class);
     private JPanel selectPaneRight = null;
     private JPanel selectPaneLeft = null;
-    private JLabel attemptedTotalLabel = null;
-    private JLabel authorizedTotalLabel = null;
-    private JLabel completedTotalLabel = null;
     private long attemptedCountTotal = 0;
     private long authorizedCountTotal = 0;
     private long completedCountTotal = 0;
+
     public StatisticsPanel() {
         setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(getStatTablePane());
+        add(getStatTotalTable());
         add(getSelectPane());
 
         setVisible(false);
@@ -69,19 +71,29 @@ public class StatisticsPanel extends JPanel {
     }
 
     private JScrollPane getStatTablePane() {
-        if (statTablePane == null) {
-            statTablePane = new JScrollPane();
-        }
+        if (statTablePane != null) return statTablePane;
+
+        statTablePane = new JScrollPane();
+
         statTablePane.setViewportView(getStatTable());
         statTablePane.getViewport().setBackground(getStatTable().getBackground());
 
         return statTablePane;
     }
 
+    private JTable getStatTotalTable(){
+        if(statTotalTable != null) return statTotalTable;
+
+        statTotalTable = new JTable(getStatTotalTableModel(), getStatTotalColumnModel());
+        statTotalTable.setRowSelectionAllowed(false);
+
+        return statTotalTable;
+    }
+
     private JTable getStatTable() {
-        if (statTable == null) {
-            statTable = new JTable(getStatTableModel(), getStatColumnModel());
-        }
+        if (statTable != null) return statTable;
+
+        statTable = new JTable(getStatTableModel(), getStatColumnModel());
 
         statTable.setShowHorizontalLines(false);
         statTable.setShowVerticalLines(false);
@@ -92,7 +104,9 @@ public class StatisticsPanel extends JPanel {
     }
 
     private DefaultTableColumnModel getStatColumnModel() {
-        DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
+        if(columnModel != null) return columnModel;
+
+        columnModel = new DefaultTableColumnModel();
 
         columnModel.addColumn(new TableColumn(0, 500));
         columnModel.addColumn(new TableColumn(1, 80));
@@ -103,7 +117,38 @@ public class StatisticsPanel extends JPanel {
         columnModel.getColumn(2).setHeaderValue(getStatTableModel().getColumnName(2));
         columnModel.getColumn(3).setHeaderValue(getStatTableModel().getColumnName(3));
 
+        columnModel.addColumnModelListener(new TableColumnModelListener(){
+              public void columnMarginChanged(ChangeEvent e){
+                  updateStatTotalTableColumnModel(e);
+              }
+              public void columnMoved(TableColumnModelEvent e){
+                  // not used
+              }
+              public void columnAdded(TableColumnModelEvent e){
+                  // not used
+              }
+               public void columnRemoved(TableColumnModelEvent e){
+                   // not used
+               }
+            public void columnSelectionChanged(ListSelectionEvent e){
+                // not used
+            }
+        });
         return columnModel;
+    }
+
+
+    private DefaultTableColumnModel getStatTotalColumnModel(){
+        if(totalColumnModel != null ) return totalColumnModel;
+
+        totalColumnModel = new DefaultTableColumnModel();
+
+        totalColumnModel.addColumn(new TableColumn(0, 500));
+        totalColumnModel.addColumn(new TableColumn(1, 80));
+        totalColumnModel.addColumn(new TableColumn(2, 80));
+        totalColumnModel.addColumn(new TableColumn(3, 80));
+
+        return totalColumnModel;
     }
 
     private DefaultTableModel getStatTableModel() {
@@ -128,24 +173,33 @@ public class StatisticsPanel extends JPanel {
         return statTableModel;
     }
 
-    private JPanel getSelectPaneRight(){
-        if(selectPaneRight != null) return selectPaneRight;
-
-        selectPaneRight = new JPanel();
-        selectPaneRight.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 13));
-        selectPaneRight.add(getAttemptedTotalLabel());
-        selectPaneRight.add(getAuthorizedTotalLabel());
-        selectPaneRight.add(getCompletedTotalLabel());
-
-        return selectPaneRight;
-    }
-
-
-    private JPanel getSelectPane() {
-        if (selectPane == null) {
-            selectPane = new JPanel();
+    DefaultTableModel getStatTotalTableModel() {
+        if (statTotalTableModel != null) {
+            return statTotalTableModel;
         }
 
+        String[] cols = {"Total", "Attempted Total", "Authorized Total", "Completed Total"};
+        String[][] rows = new String[][]{
+            {"TOTAL", null, null, null},
+        };
+
+        statTotalTableModel = new LogTableModel(rows, cols){
+           public Class getColumnClass(int columnIndex) {
+                Class dataType = java.lang.String.class;
+                // Only the value of the first column is a string, other columns contains numbers which should be aligned to the right
+                if (columnIndex > 0) {
+                    dataType = java.lang.Number.class;
+                }
+                return dataType;
+            }
+        };
+        return statTotalTableModel;
+    }
+
+    private JPanel getSelectPane() {
+        if (selectPane != null) return selectPane;
+
+        selectPane = new JPanel();
         selectPane.setMinimumSize(new Dimension((int) selectPane.getSize().getWidth(), 35));
         selectPane.setLayout(new BorderLayout());
         selectPane.add(getSelectPaneLeft(), BorderLayout.WEST);
@@ -154,13 +208,21 @@ public class StatisticsPanel extends JPanel {
         return selectPane;
     }
 
+    private JPanel getSelectPaneRight(){
+        if(selectPaneRight != null) return selectPaneRight;
+
+        selectPaneRight = new JPanel();
+        selectPaneRight.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 10));
+        selectPaneRight.add(getServerLoadPane());
+        return selectPaneRight;
+    }
+
     private JPanel getSelectPaneLeft(){
         if( selectPaneLeft != null) return selectPaneLeft;
 
         selectPaneLeft = new JPanel();
         selectPaneLeft.setLayout(new FlowLayout(FlowLayout.LEFT));
         selectPaneLeft.add(getControlPane());
-        selectPaneLeft.add(getServerLoadPane());
 
         return selectPaneLeft;
     }
@@ -179,10 +241,9 @@ public class StatisticsPanel extends JPanel {
     }
 
     private JPanel getControlPane() {
-        if (controlPane == null) {
-            controlPane = new JPanel();
-        }
+        if (controlPane != null) return controlPane;
 
+        controlPane = new JPanel();
         controlPane.setLayout(new FlowLayout(FlowLayout.LEFT));
 
         if (autoRefresh == null) {
@@ -291,9 +352,11 @@ public class StatisticsPanel extends JPanel {
     }
 
     private void updateReqeustsTotal(){
-        attemptedTotalLabel.setText(MIDDLE_SPACE + ATTEMPTED_TOTAL_PREFIX + attemptedCountTotal);
-        authorizedTotalLabel.setText(MIDDLE_SPACE + AUTHORIZED_TOTAL_PREFIX + authorizedCountTotal);
-        completedTotalLabel.setText(MIDDLE_SPACE + COMPLETED_TOTAL_PREFIX + completedCountTotal);
+
+       getStatTotalTable().setValueAt(new Long(attemptedCountTotal), 0, 1);
+       getStatTotalTable().setValueAt(new Long(authorizedCountTotal), 0, 2);
+       getStatTotalTable().setValueAt(new Long(completedCountTotal), 0, 3);
+       getStatTotalTableModel().fireTableDataChanged();
     }
 
     private void loadServerMetricsValues() {
@@ -353,36 +416,16 @@ public class StatisticsPanel extends JPanel {
         getStatTableModel().fireTableDataChanged();
         serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
         lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
-        attemptedTotalLabel.setText(MIDDLE_SPACE + ATTEMPTED_TOTAL_PREFIX + "0");
-        authorizedTotalLabel.setText(MIDDLE_SPACE + AUTHORIZED_TOTAL_PREFIX + "0");
-        completedTotalLabel.setText(MIDDLE_SPACE + COMPLETED_TOTAL_PREFIX + "0");
     }
 
-    public JLabel getAttemptedTotalLabel() {
-        if(attemptedTotalLabel != null) return attemptedTotalLabel;
+    public void updateStatTotalTableColumnModel(ChangeEvent e) {
 
-        attemptedTotalLabel = new JLabel();
-        attemptedTotalLabel.setText(MIDDLE_SPACE + ATTEMPTED_TOTAL_PREFIX + "0");
+        getStatTotalColumnModel().getColumn(0).setPreferredWidth(((DefaultTableColumnModel) e.getSource()).getColumn(0).getWidth());
+        getStatTotalColumnModel().getColumn(1).setPreferredWidth(((DefaultTableColumnModel) e.getSource()).getColumn(1).getWidth());
+        getStatTotalColumnModel().getColumn(2).setPreferredWidth(((DefaultTableColumnModel) e.getSource()).getColumn(2).getWidth());
+        getStatTotalColumnModel().getColumn(3).setPreferredWidth(((DefaultTableColumnModel) e.getSource()).getColumn(3).getWidth());
 
-        return attemptedTotalLabel;
-    }
-
-    public JLabel getAuthorizedTotalLabel() {
-        if(authorizedTotalLabel != null) return authorizedTotalLabel;
-
-        authorizedTotalLabel = new JLabel();
-        authorizedTotalLabel.setText(MIDDLE_SPACE + AUTHORIZED_TOTAL_PREFIX + "0");
-
-       return authorizedTotalLabel;
-    }
-
-    public JLabel getCompletedTotalLabel() {
-        if(completedTotalLabel != null) return completedTotalLabel;
-
-        completedTotalLabel = new JLabel();
-        completedTotalLabel.setText(MIDDLE_SPACE + COMPLETED_TOTAL_PREFIX + "0");
-
-       return completedTotalLabel;
+        getStatTotalColumnModel().setColumnMargin(((DefaultTableColumnModel) e.getSource()).getColumnMargin());
     }
 
 }
