@@ -54,6 +54,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 return null;
             }
             InternalGroup out = (InternalGroup)_manager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
+            if (out == null) return null;
             out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             return out;
         } catch (SQLException se) {

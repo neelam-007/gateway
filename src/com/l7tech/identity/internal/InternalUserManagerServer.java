@@ -35,6 +35,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                 return null;
             }
             InternalUser out = (InternalUser)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
+            if (out == null) return null;
             out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             return out;
         } catch ( SQLException se ) {
