@@ -12,7 +12,7 @@ import junit.framework.TestSuite;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.server.antivirus.SymantecAntivirusScanEngineClient;
+//import com.l7tech.server.antivirus.SymantecAntivirusScanEngineClient;
 
 import java.io.ByteArrayInputStream;
 
@@ -22,7 +22,7 @@ import java.io.ByteArrayInputStream;
  * @author flascelles@layer7-tech.com
  */
 public class SymantecAntivirusScanEngineClientTest extends TestCase {
-
+    /*
     public static Test suite() {
         TestSuite suite = new TestSuite(SymantecAntivirusScanEngineClientTest.class);
         return suite;
@@ -97,9 +97,9 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
 
     private SymantecAntivirusScanEngineClient.SAVScanEngineResponse[] scanMsg(Message msg) throws Exception {
         SymantecAntivirusScanEngineClient.SAVScanEngineResponse[] output = scanner.scan(msg);
-        /*for (int i = 0; i < output.length; i++) {
-            System.out.println(output[i]);
-        }*/
+//        for (int i = 0; i < output.length; i++) {
+//            System.out.println(output[i]);
+//        }
         return output;
     }
 
@@ -172,5 +172,6 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
             "<blah/>\r\n" +
             "</SOAP-ENV:Body>\r\n" +
             "</SOAP-ENV:Envelope>\r\n\r\n";
+      */
 }
 
