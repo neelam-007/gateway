@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 /**
+ * A RequestAuditRecord must be generated upon the conclusion of the processing of a message,
+ * whether successful or otherwise.
+ *
  * @author alex
  * @version $Revision$
  */
@@ -28,8 +31,8 @@ public class RequestAuditRecord extends AuditRecord {
         this( message, AssertionStatus.UNDEFINED );
     }
 
-    public RequestAuditRecord( String message, AssertionStatus status ) {
-        super( Level.INFO, message );
+    public RequestAuditRecord( String text, AssertionStatus status ) {
+        super( Level.INFO, text );
         _status = status;
 
         Request currentRequest = MessageProcessor.getCurrentRequest();
@@ -81,8 +84,8 @@ public class RequestAuditRecord extends AuditRecord {
             }
             if ( _responseContentLength == -1 && _responseXml != null ) _responseContentLength = _responseXml.length();
         }
-
     }
+
     /** Status of the request so far, or AssertionStatus.UNDEFINED if it's not yet known. */
     protected AssertionStatus _status;
 
