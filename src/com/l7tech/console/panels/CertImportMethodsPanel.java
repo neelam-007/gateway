@@ -1,6 +1,8 @@
 package com.l7tech.console.panels;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -20,6 +22,9 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private JRadioButton urlConnRadioButton;
     private JButton browseButton;
     private JTextField certFileName;
+    private JTextArea copyAndPasteTextArea;
+    private JTextField urlConnTextField;
+
 
     public CertImportMethodsPanel(WizardStepPanel next) {
         super(next);
@@ -48,6 +53,53 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             }
         });
+
+        ButtonGroup bg = new ButtonGroup();
+        bg.add(copyAndPasteRadioButton);
+        bg.add(fileRadioButton);
+        bg.add(urlConnRadioButton);
+
+        copyAndPasteRadioButton.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                updateEnableDisable();
+            }
+        });
+
+        fileRadioButton.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                updateEnableDisable();
+            }
+        });
+
+        urlConnRadioButton.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                updateEnableDisable();
+            }
+        });
+    }
+
+    private void updateEnableDisable() {
+        if(copyAndPasteRadioButton.isSelected()) {
+            browseButton.setEnabled(false);
+            copyAndPasteTextArea.setEnabled(true);
+            urlConnTextField.setEnabled(false);
+            certFileName.setEnabled(false);
+
+        } else
+
+        if(fileRadioButton.isSelected()) {
+            browseButton.setEnabled(true);
+            copyAndPasteTextArea.setEnabled(false);
+            urlConnTextField.setEnabled(false);
+            certFileName.setEnabled(true);
+        }
+
+        if(urlConnRadioButton.isSelected()) {
+            browseButton.setEnabled(false);
+            copyAndPasteTextArea.setEnabled(false);
+            urlConnTextField.setEnabled(true);
+            certFileName.setEnabled(false);
+        }
     }
 
     /**
@@ -88,9 +140,9 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         final JRadioButton _4;
         _4 = new JRadioButton();
         fileRadioButton = _4;
-        _4.setEnabled(true);
         _4.setText("Imported from a File");
         _4.setSelected(false);
+        _4.setEnabled(true);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;
         _5 = new JRadioButton();
@@ -99,6 +151,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JTextField _6;
         _6 = new JTextField();
+        urlConnTextField = _6;
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JTextField _7;
         _7 = new JTextField();
@@ -114,6 +167,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         _2.add(_9, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 5, 1, 0, 3, 7, 7, null, null, null));
         final JTextArea _10;
         _10 = new JTextArea();
+        copyAndPasteTextArea = _10;
         _10.setRows(5);
         _9.setViewportView(_10);
         final com.intellij.uiDesigner.core.Spacer _11;
