@@ -8,8 +8,6 @@
 !define MUI_PRODUCT "Layer7 Management Console" ;Define your own software name here
 
 ; Edit this to set the version number in the build
-;!define MUI_VERSION "0.97b"
-;!define MUI_VERSION "HEAD-2003-Aug-26"
 !define MUI_VERSION "HEAD"
 
 !define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
