@@ -4,6 +4,9 @@ import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.panels.SchemaValidationPropertiesDialog;
+import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.event.PolicyListenerAdapter;
+import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.service.PublishedService;
 
@@ -45,7 +48,7 @@ public class SchemaValidationPropertiesAction extends BaseAction {
     public void performAction() {
         Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
         SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
-
+        dlg.addPolicyListener(listener);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.show();
@@ -61,6 +64,19 @@ public class SchemaValidationPropertiesAction extends BaseAction {
             log.log(Level.WARNING, "Unable to reach the palette tree.");
         }
     }
+
+    private final PolicyListener listener = new PolicyListenerAdapter() {
+        public void assertionsChanged(PolicyEvent e) {
+            JTree tree = ComponentRegistry.getInstance().getPolicyTree();
+            if (tree != null) {
+                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                model.nodeChanged(node);
+                log.finest("model invalidated");
+            } else {
+                log.log(Level.WARNING, "Unable to reach the palette tree.");
+            }
+        }
+    };
 
     private final Logger log = Logger.getLogger(getClass().getName());
     private SchemaValidationTreeNode node;
