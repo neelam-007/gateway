@@ -91,8 +91,7 @@ class WspConstants {
          * If object has a null name field, then "Anonymous" format will be used for the returned Element:
          * the object may not be null, and the returned element will look like <code>&lt;Type&gt;...&lt;/Type&gt;</code>
          *
-         * @param object    the object to seriali
-         *                  ze
+         * @param object    the object to serialize
          * @param container the container to receive it
          * @return the newly created Element, which has also been appended underneath container
          */
