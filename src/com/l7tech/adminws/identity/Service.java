@@ -2,12 +2,15 @@ package com.l7tech.adminws.identity;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalUserManagerServer;
 import com.l7tech.util.Locator;
 import com.l7tech.logging.LogManager;
 
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -313,7 +316,7 @@ public class Service {
             endTransaction();
         }
     }
-    public long saveGroup(long identityProviderConfigId, com.l7tech.identity.Group group) throws java.rmi.RemoteException {
+    public long saveGroup(long identityProviderConfigId, com.l7tech.identity.Group group) throws RemoteException {
         try {
             IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
@@ -353,6 +356,28 @@ public class Service {
         } finally {
             endTransaction();
         }
+    }
+
+    public String getUserCert(long identityProviderConfigId, String userId) throws RemoteException {
+        // currently, this is only supported in the internal user manager
+        // therefore, let this cast throw
+        InternalUserManagerServer userManager = (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+        try {
+            Certificate cert = userManager.retrieveUserCert(userId);
+            if (cert == null) return null;
+            sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
+            String encodedcert = encoder.encode(cert.getEncoded());
+            return encodedcert;
+        } catch (FindException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in getUserCert", e);
+        } catch (CertificateEncodingException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in getUserCert", e);
+        } /*finally {
+            endTransaction();
+        }*/
+
     }
 
     // ************************************************

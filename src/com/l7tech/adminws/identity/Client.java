@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
 import java.io.IOException;
+import java.rmi.RemoteException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -146,7 +147,7 @@ public class Client extends AdminWSClientStub {
         call.setReturnType(org.apache.axis.encoding.XMLType.AXIS_VOID);
         call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), groupId});
     }
-    public long saveGroup(long identityProviderConfigId, com.l7tech.identity.Group group) throws java.rmi.RemoteException {
+    public long saveGroup(long identityProviderConfigId, com.l7tech.identity.Group group) throws RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "saveGroup"));
         call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
@@ -154,6 +155,15 @@ public class Client extends AdminWSClientStub {
         call.setReturnClass(Long.class);
         Long res = (Long)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), group});
         return res.longValue();
+    }
+
+    public String getUserCert(long identityProviderConfigId, String userId) throws RemoteException {
+        Call call = createStubCall();
+        call.setOperationName(new QName(IDENTITY_URN, "getUserCert"));
+        call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
+        call.addParameter(new javax.xml.namespace.QName("", "userId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
+		call.setReturnClass(String.class);
+        return (String)call.invoke(new Object[]{new Long(identityProviderConfigId), userId});
     }
 
     // ************************************************
