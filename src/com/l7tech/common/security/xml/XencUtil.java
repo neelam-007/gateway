@@ -51,6 +51,7 @@ public class XencUtil {
             // note, certain providers insist in appending a 0 byte in front.
             // we will honor this but might not be portable
             if (paddedKey[1] == 2) {
+                logger.warning("Padding for received EncryptedKey not following to xmlenc spec. Accepting anyway.");
                 pos = 1;
             } else {
                 throw new IllegalArgumentException("paddedKey has wrong format");
