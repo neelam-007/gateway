@@ -66,7 +66,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public long save(PublishedService service) throws SaveException {
         // 1. record the service
         try {
-            // ServiceCache.getInstance().validate(service);
             long oid = _manager.save( getContext(), service );
             logger.info( "Saved service #" + oid );
             service.setOid(oid);
