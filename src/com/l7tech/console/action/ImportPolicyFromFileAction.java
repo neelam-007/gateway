@@ -126,18 +126,25 @@ public class ImportPolicyFromFileAction extends BaseAction {
                                                                  ExporterConstants.EXPORTED_POL_NS,
                                                                  ExporterConstants.EXPORTED_REFERENCES_ELNAME);
         if (references != null) {
-            System.out.println("\n\n\nTODO HERE!!\n\n\n");
+            // TODO
+            System.out.println("\n\n\nBIG TODO HERE!!\n\n\n");
             // todo, check those references
             // if not resolveable, interact with administrator to fix the problem
+        } else {
+            log.warning("The policy document " + name + " did not contain exported references. Maybe this is " +
+                        "an old-school style policy export.");
         }
         Element policy = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
                                                              WspConstants.POLICY_NS,
                                                              WspConstants.POLICY_ELNAME);
-
-        try {
-            pubService.setPolicyXml(XmlUtil.nodeToString(policy));
-        } catch (IOException e) {
-            log.log(Level.WARNING, "could not read policy from " + name, e);
+        if (policy != null) {
+            try {
+                pubService.setPolicyXml(XmlUtil.nodeToString(policy));
+            } catch (IOException e) {
+                log.log(Level.WARNING, "could not read policy from " + name, e);
+            }
+        } else {
+            log.warning("The document " + name + " did not contain a policy at all.");
         }
     }
 }
