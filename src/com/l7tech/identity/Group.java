@@ -2,8 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.security.Principal;
 
 public class Group extends NamedEntityImp implements Principal {
