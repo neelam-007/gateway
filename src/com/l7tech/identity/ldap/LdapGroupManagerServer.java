@@ -64,7 +64,6 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
                 }
                 out.setMemberHeaders(membersSet);
             }
-
             context.close();
             return out;
         } catch (NamingException e) {
@@ -74,8 +73,8 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
     }
 
     public Group findByName(String name) throws FindException {
-        // TODO: Francois!
-        return null;
+        // ldap group names are their dn
+        return findByPrimaryKey(name);
     }
 
     public void delete(Group group) throws DeleteException {

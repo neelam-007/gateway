@@ -30,8 +30,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
     }
 
     public Group findByName(String name) throws FindException {
-        // TODO: Francois!
-        return null;
+        throw new FindException("not implemented in this version of the manager");
     }
 
     public void delete(Group group) throws DeleteException {
