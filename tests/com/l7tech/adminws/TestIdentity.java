@@ -43,6 +43,11 @@ public class TestIdentity {
         Identity servicePort = service.getidentities(new java.net.URL("http://localhost:8080/ssg/services/identities"));
         Header[] res = servicePort.findAlllIdentityProviderConfig();
         printres(res);
+        for (int i = 0; i < res.length; i++) {
+            com.l7tech.adminws.identity.IdentityProviderConfig ipc = servicePort.findIdentityProviderConfigByPrimaryKey(res[i].getOid());
+            System.out.println(ipc.toString());
+        }
+
 
         /*
         IdentityProviderConfigManagerClient manager = new IdentityProviderConfigManagerClient();
