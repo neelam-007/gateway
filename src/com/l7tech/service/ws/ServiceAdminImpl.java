@@ -46,8 +46,8 @@ public class ServiceAdminImpl implements ServiceAdmin {
             }
             return out.toString();
         } catch (IOException e) {
-            String msg = "com.l7tech.adminws.service.Service cannot resolve WSDL ";
-            logger.log(Level.SEVERE, msg, e);
+            String msg = "Cannot resolve WSDL target " + url;
+            logger.log(Level.WARNING, msg, e);
             throw new RemoteException(msg + e.getMessage(), e);
         }
     }
