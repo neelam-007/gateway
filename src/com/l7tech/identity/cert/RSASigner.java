@@ -22,7 +22,13 @@ import java.util.logging.Level;
 import com.l7tech.logging.LogManager;
 
 /**
- *  Creates X509 certificates using RSA keys.
+ * Layer 7 Technologies, inc.
+ * User: flascelles
+ * Date: Jul 28, 2003
+ *
+ * Creates X509 certificates using RSA keys.
+ * recycled code from smorrison who originally stole it from Justin Wood & Tomas Gustavson
+ * stripped out the se.anatom.ejbca dependencies and removed deprecated calls
  */
 public class RSASigner {
 
@@ -39,8 +45,8 @@ public class RSASigner {
     String crldisturi;
     private SecureRandom random;
 
-    public static String DEFAULT_KEYSTORE_NAME = "keystore";
-    public static String DEFAULT_PRIVATE_KEY_ALIAS = "MyKey";
+    public static String DEFAULT_KEYSTORE_NAME = "ssgroot";
+    public static String DEFAULT_PRIVATE_KEY_ALIAS = "ssgroot";
 
     Properties defaultProperties;
 
