@@ -178,7 +178,7 @@ public class RequestSwAAssertionDialog extends JDialog {
                         }
                         // create BindingOperationInfo
                         BindingOperationInfo operation = new BindingOperationInfo(bo.getOperation().getName(), partList);
-                        operations.put(bo.getOperation().toString(), operation);
+                        operations.put(bo.getOperation().getName(), operation);
                     }
                 }
                 bindingInfo = new BindingInfo(binding.getQName().getLocalPart(), operations);
