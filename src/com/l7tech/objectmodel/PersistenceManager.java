@@ -4,11 +4,12 @@
 
 package com.l7tech.objectmodel;
 
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.common.util.Locator;
 
-import java.util.*;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author alex

@@ -211,8 +211,8 @@ public abstract class HibernateEntityManager implements EntityManager {
         }
     }
 
-    protected PersistenceContext getContext() throws SQLException {
-        return PersistenceContext.getCurrent();
+    protected HibernatePersistenceContext getContext() throws SQLException {
+        return (HibernatePersistenceContext)PersistenceContext.getCurrent();
     }
 
     private String alias = getTableName();

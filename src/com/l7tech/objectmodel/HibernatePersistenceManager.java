@@ -97,17 +97,15 @@ public class HibernatePersistenceManager extends PersistenceManager {
         }
     }
 
-    private Type getHibernateType(Object param) throws FindException {
-        Type type;
-        if (param instanceof String)
-            type = Hibernate.STRING;
-        else if (param instanceof Long)
-            type = Hibernate.LONG;
-        else if (param instanceof Boolean)
-            type = Hibernate.BOOLEAN;
+    private Type getHibernateType(Class clazz) throws FindException {
+        if (clazz.isAssignableFrom(String.class))
+            return Hibernate.STRING;
+        else if (clazz.isAssignableFrom(Long.class) || clazz.isAssignableFrom(Long.TYPE))
+            return Hibernate.LONG;
+        else if (clazz.isAssignableFrom(Boolean.class) || clazz.isAssignableFrom(Boolean.TYPE))
+            return Hibernate.BOOLEAN;
         else
-            throw new FindException("I don't know how to find with parameters that aren't either String or Long!");
-        return type;
+            throw new FindException("I don't know how to find with parameters of type " + clazz.getName());
     }
 
     public void close(PersistenceContext context) {
@@ -121,7 +119,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
     List doFind(PersistenceContext context, String query, Object param, Class paramClass) throws FindException {
         try {
             Session s = contextToSession(context);
-            return s.find(query, param, getHibernateType(param));
+            return s.find(query, param, getHibernateType(paramClass));
         } catch (HibernateException he) {
             logger.throwing(getClass().getName(), "doFind", he);
             throw new FindException(he.toString(), he);
@@ -137,7 +135,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
             Session s = contextToSession(context);
             Type[] types = new Type[paramClasses.length];
             for (int i = 0; i < paramClasses.length; i++)
-                types[i] = getHibernateType(params[i]);
+                types[i] = getHibernateType(paramClasses[i]);
             return s.find(query, params, types);
         } catch (HibernateException he) {
             logger.throwing(getClass().getName(), "doFind", he);

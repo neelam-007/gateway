@@ -131,7 +131,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public int getCurrentPolicyVersion(long policyId) throws FindException {
         HibernatePersistenceContext context = null;
         try {
-            context = (HibernatePersistenceContext)getContext();
+            context = getContext();
             Session s = context.getSession();
             List results = s.find( getFieldQuery( new Long( policyId ).toString(), F_VERSION) );
             if (results == null || results.isEmpty()) {
@@ -300,7 +300,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         Map output = new HashMap();
 
         try {
-            HibernatePersistenceContext context = (HibernatePersistenceContext)getContext();
+            HibernatePersistenceContext context = getContext();
             Session s = context.getSession();
             List results = s.find(query);
             if (results == null || results.isEmpty()) {
