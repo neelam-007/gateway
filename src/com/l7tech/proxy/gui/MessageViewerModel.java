@@ -240,7 +240,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      */
     public void onReceiveMessage(PendingRequest request) {
         appendMessage(new SavedXmlMessage("From Client",
-                                          request.getUndecoratedSoapEnvelope(),
+                                          request.getUndecoratedDocument(),
                                           request.getHeaders()));
     }
 

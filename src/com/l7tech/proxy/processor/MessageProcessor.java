@@ -357,14 +357,14 @@ public class MessageProcessor {
                 if (result == AssertionStatus.NONE) {
                     // Ensure L7a:MessageID exists if we are supposed to have one
                     if (req.getL7aMessageId() != null)
-                        if (SoapUtil.getL7aMessageId(req.getDecoratedSoapEnvelope()) == null)
-                            SoapUtil.setL7aMessageId(req.getDecoratedSoapEnvelope(), req.getL7aMessageId());
+                        if (SoapUtil.getL7aMessageId(req.getDecoratedDocument()) == null)
+                            SoapUtil.setL7aMessageId(req.getDecoratedDocument(), req.getL7aMessageId());
 
                     // Do all WSS processing all at once
                     if (req.isSoapRequest()) {
                         log.info("Running pending request through WS-Security decorator");
                         req.getWssRequirements().setTimestampCreatedDate(req.getSsg().dateTranslatorToSsg().translate(new Date()));
-                        wssDecorator.decorateMessage(req.getDecoratedSoapEnvelope(), req.getWssRequirements());
+                        wssDecorator.decorateMessage(req.getDecoratedDocument(), req.getWssRequirements());
                     } else
                         log.info("Request isn't SOAP; skipping WS-Security decoration");
                 }
@@ -501,10 +501,10 @@ public class MessageProcessor {
             if (policy != null && policy.getVersion() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
-            String postBody = XmlUtil.nodeToString(req.getDecoratedSoapEnvelope());
+            String postBody = XmlUtil.nodeToString(req.getDecoratedDocument());
             if (logPosts()) {
                 if (reformatLogs())
-                    log.info("Posting to Gateway (reformatted): " + XmlUtil.nodeToFormattedString(req.getDecoratedSoapEnvelope()));
+                    log.info("Posting to Gateway (reformatted): " + XmlUtil.nodeToFormattedString(req.getDecoratedDocument()));
                 else
                     log.info("Posting to Gateway: " + postBody);
             }

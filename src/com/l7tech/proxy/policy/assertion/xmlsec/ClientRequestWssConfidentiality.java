@@ -63,7 +63,7 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
         request.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
                 final XpathExpression xpathExpression = requestWssConfidentiality.getXpathExpression();
-                final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getDecoratedSoapEnvelope(),
+                final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getDecoratedDocument(),
                                                                         xpathExpression.getNamespaces());
                 try {
                     List elements = eval.selectElements(xpathExpression.getExpression());

@@ -236,7 +236,7 @@ public class PendingRequest {
      *
      * @return A copy of the SOAP envelope Document, which may be freely modified.
      */
-    public Document getDecoratedSoapEnvelope() {
+    public Document getDecoratedDocument() {
         if (policySettings.decoratedSoapEnvelope != null)
             return policySettings.decoratedSoapEnvelope;
         return policySettings.decoratedSoapEnvelope = (Document) soapEnvelope.cloneNode(true);
@@ -245,11 +245,11 @@ public class PendingRequest {
     /**
      * Get the actual Document representing the request, which should not be modified.  Any change
      * to this Document will prevent the reset() method from returning this PendingRequest to
-     * its original state.  If you need to change the Document, use getDecoratedSoapEnvelope() instead.
+     * its original state.  If you need to change the Document, use getDecoratedDocument() instead.
      *
      * @return A reference to the original SOAP envelope Document, which must not be modified in any way.
      */
-    public Document getUndecoratedSoapEnvelope() {
+    public Document getUndecoratedDocument() {
         return soapEnvelope;
     }
 
@@ -393,7 +393,7 @@ public class PendingRequest {
     /** Ensure that there is a Wsa message ID in this request. */
     public void prepareWsaMessageId() throws InvalidDocumentFormatException {
         if (getL7aMessageId() == null) {
-            String id = SoapUtil.getL7aMessageId(getUndecoratedSoapEnvelope());
+            String id = SoapUtil.getL7aMessageId(getUndecoratedDocument());
 
             if (id == null) {
                 id = SoapUtil.generateUniqeUri();

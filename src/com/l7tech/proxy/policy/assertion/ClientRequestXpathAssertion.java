@@ -33,7 +33,7 @@ public class ClientRequestXpathAssertion extends ClientAssertion {
 
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         final XpathExpression xpathExpression = requestXpathAssertion.getXpathExpression();
-        final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getDecoratedSoapEnvelope(),
+        final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getDecoratedDocument(),
                                                                 xpathExpression.getNamespaces());
         try {
             List nodes = eval.select(xpathExpression.getExpression());
