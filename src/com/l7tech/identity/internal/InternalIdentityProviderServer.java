@@ -173,7 +173,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         String ha2 = HexUtils.encodeMd5Digest( _md5.digest( a2.getBytes() ) );
 
                         String serverDigestValue;
-                        if (HttpDigest.QOP_AUTH.equals(qop))
+                        if (!HttpDigest.QOP_AUTH.equals(qop))
                             serverDigestValue = dbPassHash + ":" + nonce + ":" + ha2;
                         else {
                             String nc = (String)authParams.get( HttpDigest.PARAM_NC );
@@ -247,6 +247,11 @@ public class InternalIdentityProviderServer implements IdentityProvider {
         if (wantUsers) searchResults.addAll(userManager.search(searchString));
         if (wantGroups) searchResults.addAll(groupManager.search(searchString));
         return searchResults;
+    }
+
+    // TODO: Make this customizable
+    public String getAuthRealm() {
+        return HttpDigest.REALM;
     }
 
     private IdentityProviderConfig cfg;
