@@ -181,25 +181,6 @@ public class DecorationRequirements {
         this.securityHeaderActor = securityHeaderActor;
     }
 
-    /**
-     * Return whether existing security header is allowed. This is used in scenarios
-     * where security header already contains elements that need to be preserved.
-     * The example is when an Saml Assertion already exists in the security header and
-     * the
-     * @return whether existing security header is supported, default is false
-     */
-    public boolean isExistingSecurityHeaderAllowed() {
-        return existingSecurityHeaderAllowed;
-    }
-
-    /**
-     * Set whether the existing security is allowed. This is supported only with default
-     * <b>null</b> security header actor.
-     */
-    public void setExistingSecurityHeaderAllowed(boolean existingSecurityHeaderAllowed) {
-        this.existingSecurityHeaderAllowed = existingSecurityHeaderAllowed;
-    }
-
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderCertificate = null;
     private LoginCredentials usernameTokenCredentials = null;
@@ -214,5 +195,4 @@ public class DecorationRequirements {
     private Date timestampCreatedDate = null;
     private int timestampTimeoutMillis = 0;
     private String securityHeaderActor = null;
-    private boolean existingSecurityHeaderAllowed  = false;
 }

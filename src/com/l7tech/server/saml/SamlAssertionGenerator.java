@@ -210,22 +210,8 @@ public class SamlAssertionGenerator {
             if (bodyElement == null) {
                 throw new MessageNotSoapException();
             }
-
-            Element secElement = SoapUtil.getOrMakeSecurityElement(soapMessage);
-            if (secElement == null) {
-                throw new SAXException("Can't attach SAML token to non-SOAP message");
-            }
-
-            SoapUtil.importNode(soapMessage, assertionDoc, secElement);
-            NodeList list = secElement.getElementsByTagNameNS(SamlConstants.NS_SAML, "Assertion");
-            if (list.getLength() == 0) {
-                throw new IOException("Cannot locate the saml assertion in \n" + XmlUtil.nodeToString(soapMessage));
-            }
-
             WssDecorator wssDecorator = new WssDecoratorImpl();
             DecorationRequirements dr = new DecorationRequirements();
-            dr.setExistingSecurityHeaderAllowed(true);
-            dr.setSignTimestamp(false);
             final Set elementsToSign = dr.getElementsToSign();
             if (options.isProofOfPosessionRequired()) {
                 final SignerInfo attestingEntity = options.getAttestingEntity();
@@ -233,7 +219,7 @@ public class SamlAssertionGenerator {
                     throw new IllegalArgumentException("Proof Of posession required, without attesting entity keys");
                 }
                 elementsToSign.add(bodyElement);
-                elementsToSign.add(list.item(0));
+                dr.setSenderSamlToken(assertionDoc.getDocumentElement());
                 dr.setSenderPrivateKey(attestingEntity.getPrivate());
                 dr.setSenderCertificate(attestingEntity.getCertificateChain()[0]);
             }
