@@ -14,9 +14,8 @@ import java.util.List;
 import java.io.Serializable;
 
 /**
- * Asserts that at least one of the child Assertions returned a positive result, and immediately returns the first positive result.
- *
- * Semantically equivalent to a short-circuited AND.
+ * Asserts that one and only one child assertion returns a true value.
+ * Semantically equivalent to a non-short-circuited exclusive-OR.
  *
  * @author alex
  * @version $Revision$
@@ -38,11 +37,13 @@ public class ExactlyOneAssertion extends CompositeAssertion implements Serializa
         Iterator kids = children();
         Assertion child;
         AssertionError result = null;
+        int numSucceeded = 0;
         while ( kids.hasNext() ) {
             child = (Assertion)kids.next();
             result = child.checkRequest( request, response );
-            if ( result == AssertionError.NONE ) return result;
+            if ( result == AssertionError.NONE )
+                ++numSucceeded;
         }
-        return AssertionError.FALSIFIED;
+        return numSucceeded == 1 ? AssertionError.NONE : AssertionError.FALSIFIED;
     }
 }
