@@ -215,14 +215,18 @@ public class AccountExpirationPanel extends JDialog {
 
     private void ok() {
         // save captured value
-        int currentlychosenyear = Integer.parseInt((String)yearspinner.getValue());
-        int currentlychosenmonth = months.indexOf(monthspinner.getValue());
-        int currentlychosenday = ((Integer)dayspinner.getValue()).intValue();
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.YEAR, currentlychosenyear);
-        cal.set(Calendar.MONTH, currentlychosenmonth);
-        cal.set(Calendar.DAY_OF_MONTH, currentlychosenday);
-        expirationValue = cal.getTimeInMillis();
+        if (noexpireradio.isSelected()) {
+            expirationValue = -1;
+        } else {
+            int currentlychosenyear = Integer.parseInt((String)yearspinner.getValue());
+            int currentlychosenmonth = months.indexOf(monthspinner.getValue());
+            int currentlychosenday = ((Integer)dayspinner.getValue()).intValue();
+            Calendar cal = Calendar.getInstance();
+            cal.set(Calendar.YEAR, currentlychosenyear);
+            cal.set(Calendar.MONTH, currentlychosenmonth);
+            cal.set(Calendar.DAY_OF_MONTH, currentlychosenday);
+            expirationValue = cal.getTimeInMillis();
+        }
         // exit
         AccountExpirationPanel.this.dispose();
     }
