@@ -237,6 +237,10 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
         final Class csa = pc.getCredentialSourceAssertion();
 
+        if (csa == null) {
+            logger.info("credential source assertion is not set but required by the federated id provider.");
+        }
+
         if ( ( x509Config.isWssBinarySecurityToken() && csa == RequestWssX509Cert.class ) ||
              ( x509Config.isSslClientCert() && csa == HttpClientCert.class )) {
             if ( u == null ) {
