@@ -154,7 +154,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
             InputStream responseStream = postMethod.getResponseBodyAsStream();
             String ctype = postMethod.getResponseHeader(CONTENT_TYPE).getValue();
             response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
-            if (ctype.indexOf(TEXT_XML) > 0) {
+            if (ctype.indexOf(TEXT_XML) >= 0) {
                 // Note that this will consume the first part of the stream...
                 BufferedReader br = new BufferedReader(new InputStreamReader(responseStream, ENCODING));
                 String line;
