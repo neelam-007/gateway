@@ -89,7 +89,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private Message[] soapMessages;
     private Map namespaces = new HashMap();
     private Viewer messageViewer;
-    private ViewerToolBar messageToolbar;
+    private ViewerToolBar messageViewerToolBar;
     private ExchangerDocument exchangerDocument;
 
     /**
@@ -146,7 +146,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 if (selected) {
                     operationsTree.setEnabled(!selected);
                     messageViewer.setViewerEnabled(!selected);
-                    messageToolbar.setToolbarEnabled(!selected);
+                    messageViewerToolBar.setToolbarEnabled(!selected);
                     securedMessagePartsTableModel = memoTableModelEntireMessage;
                     if (securedMessagePartsTableModel == null) {
                         securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
@@ -169,7 +169,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 if (selected) {
                     operationsTree.setEnabled(selected);
                     messageViewer.setViewerEnabled(selected);
-                    messageToolbar.setToolbarEnabled(selected);
+                    messageViewerToolBar.setToolbarEnabled(selected);
                     securedMessagePartsTableModel = memoTableModelMessageParts;
                     if (securedMessagePartsTableModel == null) {
                         securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
@@ -217,7 +217,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                     BindingOperationTreeNode bn = (BindingOperationTreeNode)node;
                     BindingOperation bo = bn.getOperation();
                     String xpathExpression = SoapUtil.SOAP_BODY_XPATH;
-                    xpathExpression = messageToolbar.getXPath();
+                    xpathExpression = messageViewerToolBar.getXPath();
                     SecuredMessagePart p = new SecuredMessagePart();
                     p.setOperation(bo);
                     p.setXpathExpression(xpathExpression);
@@ -261,7 +261,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             entireMessage.setSelected(envelopeAllOperations);
             messageParts.setSelected(!envelopeAllOperations);
             messageViewer.setViewerEnabled(!envelopeAllOperations);
-            messageToolbar.setToolbarEnabled(!envelopeAllOperations);
+            messageViewerToolBar.setToolbarEnabled(!envelopeAllOperations);
 
             for (int i = 0; !envelopeAllOperations && i < elements.length; i++) {
                 ElementSecurity elementSecurity = elements[i];
@@ -319,9 +319,9 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         ConfigurationProperties cp = new ConfigurationProperties();
         exchangerDocument = asExchangerDocument("<empty/>");
         messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false);
-        messageToolbar = new ViewerToolBar(cp.getViewer(), messageViewer);
+        messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
-        messageViewerToolbarPanel.add(messageToolbar, gridConstraints);
+        messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
         messageViewerPanel.add(messageViewer, gridConstraints2);
     }
@@ -466,12 +466,12 @@ public class XmlSecurityPropertiesDialog extends JDialog {
               } else {
                   final Object lpc = path.getLastPathComponent();
                   if (!((lpc instanceof BindingOperationTreeNode) || (lpc instanceof BindingTreeNode))) {
-                      messageToolbar.setToolbarEnabled(false);
+                      messageViewerToolBar.setToolbarEnabled(false);
                       addButton.setEnabled(false);
                       return;
                   }
                   if (lpc instanceof BindingTreeNode) {
-                      messageToolbar.setToolbarEnabled(false);
+                      messageViewerToolBar.setToolbarEnabled(false);
                       addButton.setEnabled(false);
                       try {
                           URL url = asTempFileURL("<all/>");
@@ -484,7 +484,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                   }
                   BindingOperationTreeNode boperation = (BindingOperationTreeNode)lpc;
                   Message sreq = forOperation(boperation.getOperation());
-                  messageToolbar.setToolbarEnabled(true);
+                  messageViewerToolBar.setToolbarEnabled(true);
                   if (sreq == null) {
                       addButton.setEnabled(false);
                   } else {
@@ -507,10 +507,14 @@ public class XmlSecurityPropertiesDialog extends JDialog {
 
     private final ListSelectionListener tableSelectionListener = new ListSelectionListener() {
         public void valueChanged(ListSelectionEvent e) {
-            if (securedItemsTable.getSelectedRow() == -1) {
+            final int selectedRow = securedItemsTable.getSelectedRow();
+            if (selectedRow == -1) {
                 removeButton.setEnabled(false);
                 return;
             }
+            String xe = (String)securedItemsTable.getModel().getValueAt(selectedRow, 1);
+
+            messageViewerToolBar.getXpathComboBox().getEditor().setItem(xe);
             removeButton.setEnabled(true);
         }
     };
@@ -682,8 +686,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JTree _12;
         _12 = new JTree();
         operationsTree = _12;
-        _12.setShowsRootHandles(false);
         _12.setRootVisible(false);
+        _12.setShowsRootHandles(false);
         _11.setViewportView(_12);
         final JScrollPane _13;
         _13 = new JScrollPane();
@@ -744,8 +748,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JTable _26;
         _26 = new JTable();
         securedItemsTable = _26;
-        _26.setPreferredScrollableViewportSize(new Dimension(-1, -1));
         _26.setAutoResizeMode(2);
+        _26.setPreferredScrollableViewportSize(new Dimension(-1, -1));
         _25.setViewportView(_26);
         final JPanel _27;
         _27 = new JPanel();

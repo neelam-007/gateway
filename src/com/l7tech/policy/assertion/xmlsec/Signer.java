@@ -67,12 +67,12 @@ class Signer extends SecurityProcessor {
      * directly on the document.
      *
      * @param document the document to sign
-     * @return the signed document (same document instance as input)
+     * @return the security processor result {@link SecurityProcessor.Result}
      * @throws SecurityProcessorException
      * @throws GeneralSecurityException
      * @throws IOException
      */
-    public Document processInPlace(Document document)
+    public Result processInPlace(Document document)
       throws SecurityProcessorException, GeneralSecurityException, IOException {
         if (document == null) {
             throw new IllegalArgumentException();
@@ -133,7 +133,7 @@ class Signer extends SecurityProcessor {
                 ++signReferenceIdSuffix;
                 logger.fine("signed element for XPath " + xpath.getExpression());
             }
-            return document;
+            return new Result(document, signerInfo.getCertificate());
         } catch (SignatureStructureException e) {
             SignatureException se = new  SignatureException("Signing error");
             se.initCause(e);

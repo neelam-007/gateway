@@ -28,26 +28,23 @@ class Verifier extends SecurityProcessor {
 
     private Key decryptionKey;
     private Session session;
-    private X509Certificate expectedCertificate;
 
     /**
      * Create the new instance with the signer information, session, optional
      * encryption key and the security elements.
      *
      * @param session  the sesion
-     * @param cert     the certificate to validate the
      * @param key      the optional encryption key. May be null, that means
      *                 no encryption. The <code>KeyException</code> is trown
      *                 if the encryption is requested.
      * @param elements the security elements
      */
-    Verifier(Session session, X509Certificate cert, Key key, ElementSecurity[] elements) {
+    Verifier(Session session, Key key, ElementSecurity[] elements) {
         super(elements);
-        if (session == null || cert == null) {
+        if (session == null) {
             throw new IllegalArgumentException();
         }
         this.session = session;
-        this.expectedCertificate = cert;
         this.decryptionKey = key;
 
     }
@@ -56,7 +53,7 @@ class Verifier extends SecurityProcessor {
      * Process the document according to the security rules.
      *
      * @param document the input document to process
-     * @return the output document
+     * @return the security processor result {@link SecurityProcessor.Result}
      * @throws java.security.GeneralSecurityException
      *                                    on security error such as unknown
      *                                    algorithm etc. The nature of the error is subclass
@@ -65,11 +62,12 @@ class Verifier extends SecurityProcessor {
      *                                    during element processing such as invalid or missing security
      *                                    properties, XPath error etc.
      */
-    public Document processInPlace(Document document)
+    public Result processInPlace(Document document)
       throws SecurityProcessorException, GeneralSecurityException, IOException {
         boolean envelopeProcessed = false;
 
         try {
+            X509Certificate documentCertificate = null;
             for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
                 ElementSecurity elementSecurity = elements[i];
                 // XPath precondition match?
@@ -102,11 +100,9 @@ class Verifier extends SecurityProcessor {
                     }
                 // verifiy element signature
                 SoapMsgSigner dsigHelper = new SoapMsgSigner();
-                X509Certificate serverCert = null;
 
                 // verify that this cert is signed with the root cert of this ssg
-                serverCert = dsigHelper.validateSignature(document, element);
-                serverCert.verify(expectedCertificate.getPublicKey());
+                documentCertificate = dsigHelper.validateSignature(document, element);
                 logger.fine("signature of response message verified");
 
 
@@ -120,7 +116,7 @@ class Verifier extends SecurityProcessor {
             SoapUtil.cleanEmptySecurityElement(document);
             SoapUtil.cleanEmptyHeaderElement(document);
 
-            return document;
+            return new Result(document, documentCertificate);
         } catch (JaxenException e) {
             throw new SecurityProcessorException("XPath error", e);
         } catch (SignatureNotFoundException e) {

@@ -21,11 +21,11 @@ import java.util.Vector;
  * @version $Revision$, $Date$
  */
 public class ViewerToolBar extends JToolBar {
-    JComboBox xpath = null;
-    CollapseAllAction collapse = null;
-    ExpandAllAction expand = null;
-    private Viewer viewer;
-    private ViewerProperties properties;
+    Viewer viewer;
+    ViewerProperties properties;
+    private JComboBox xpathComboBox = null;
+    private CollapseAllAction collapse = null;
+    private ExpandAllAction expand = null;
     private JButton selectXpath;
 
     public ViewerToolBar(ViewerProperties props, Viewer v) {
@@ -36,11 +36,11 @@ public class ViewerToolBar extends JToolBar {
         expand = new ExpandAllAction(v);
         collapse = new CollapseAllAction(v);
 
-        xpath = new JComboBox();
-        xpath.getEditor().getEditorComponent().addKeyListener(new KeyAdapter() {
+        xpathComboBox = new JComboBox();
+        xpathComboBox.getEditor().getEditorComponent().addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    String xpathString = (String)xpath.getEditor().getItem();
+                    String xpathString = (String)xpathComboBox.getEditor().getItem();
                     viewer.selectXpath(xpathString);
                     setXPaths();
                 }
@@ -51,7 +51,7 @@ public class ViewerToolBar extends JToolBar {
         selectXpath = new JButton("Select");
         selectXpath.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String xpathString = (String)xpath.getEditor().getItem();
+                String xpathString = (String)xpathComboBox.getEditor().getItem();
                 viewer.selectXpath(xpathString);
                 setXPaths();
             }
@@ -69,11 +69,11 @@ public class ViewerToolBar extends JToolBar {
         JPanel xpanel = new JPanel(new BorderLayout());
         xpanel.setBorder(new EmptyBorder(1, 0, 1, 0));
 
-        xpath.setFont(xpath.getFont().deriveFont(Font.PLAIN, 12));
-        xpath.setPreferredSize(new Dimension(100, 19));
-        xpath.setEditable(true);
+        xpathComboBox.setFont(xpathComboBox.getFont().deriveFont(Font.PLAIN, 12));
+        xpathComboBox.setPreferredSize(new Dimension(100, 19));
+        xpathComboBox.setEditable(true);
 
-        xpanel.add(xpath, BorderLayout.CENTER);
+        xpanel.add(xpathComboBox, BorderLayout.CENTER);
         xpathPanel.add(xpathLabel, BorderLayout.WEST);
         xpathPanel.add(xpanel, BorderLayout.CENTER);
         xpathPanel.add(selectXpath, BorderLayout.EAST);
@@ -93,13 +93,21 @@ public class ViewerToolBar extends JToolBar {
                     ExchangerElement element = node.getElement();
 
                     if (element != null) {
-                        xpath.getEditor().setItem(node.getElement().getPath());
+                        xpathComboBox.getEditor().setItem(node.getElement().getPath());
                     } else {
-                        xpath.getEditor().setItem(null);
+                        xpathComboBox.getEditor().setItem(null);
                     }
                 }
             }
         });
+    }
+
+    /**
+     * Access the xpath combo box component. This accesses
+     * @return the xpath combo box
+     */
+    public JComboBox getXpathComboBox() {
+        return xpathComboBox;
     }
 
     /**
@@ -108,7 +116,7 @@ public class ViewerToolBar extends JToolBar {
      * @param enabled true if this component controls should be enabled, false otherwise
      */
     public void setToolbarEnabled(boolean enabled) {
-        xpath.setEnabled(enabled);
+        xpathComboBox.setEnabled(enabled);
         collapse.setEnabled(enabled);
         expand.setEnabled(enabled);
         selectXpath.setEnabled(enabled);
@@ -118,21 +126,21 @@ public class ViewerToolBar extends JToolBar {
      * @return the currently selected xpath or <b>null</b> if none selected
      */
     public String getXPath() {
-        final Object item = xpath.getEditor().getItem();
+        final Object item = xpathComboBox.getEditor().getItem();
         if (item == null) return null;
         return item.toString();
     }
 
 
     private void setXPaths() {
-        if (xpath.getItemCount() > 0) {
-            xpath.removeAllItems();
+        if (xpathComboBox.getItemCount() > 0) {
+            xpathComboBox.removeAllItems();
         }
 
         Vector xpaths = properties.getXPaths();
 
         for (int i = 0; i < xpaths.size(); i++) {
-            xpath.addItem(xpaths.elementAt(i));
+            xpathComboBox.addItem(xpaths.elementAt(i));
         }
     }
 

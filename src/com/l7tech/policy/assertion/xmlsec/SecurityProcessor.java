@@ -67,14 +67,13 @@ public abstract class SecurityProcessor {
      * Factory method that creates the <code>Verifier</code> security processor.
      *
      * @param session  contains sequence generator, key for encrypting elements
-     * @param cert     the certificate to validate the signature against
      * @param key      the decryption key (optional value)
      * @param elements the array of security elements describing the processing
      *                 rules.
      * @return the signer security processor
      */
-    public static SecurityProcessor getVerifier(Session session, X509Certificate cert, Key key, ElementSecurity[] elements) {
-        return new Verifier(session, cert, key, elements);
+    public static SecurityProcessor getVerifier(Session session, Key key, ElementSecurity[] elements) {
+        return new Verifier(session, key, elements);
     }
 
 
@@ -84,7 +83,7 @@ public abstract class SecurityProcessor {
      * the security is applied agains that document.
      *
      * @param document the input document otp process
-     * @return the output document
+     * @return the security processor result {@link SecurityProcessor.Result}
      * @throws GeneralSecurityException   on security error such as unknown
      *                                    algorithm etc. The nature of the error is subclass
      * @throws IOException                on io error such as xml processing
@@ -92,7 +91,7 @@ public abstract class SecurityProcessor {
      *                                    during element processing such as invalid or missing
      *                                    security properties, XPath error etc.
      */
-    public Document process(Document document)
+    public Result process(Document document)
       throws SecurityProcessorException, GeneralSecurityException, IOException {
         if (document == null) {
             throw new IllegalArgumentException();
@@ -108,7 +107,7 @@ public abstract class SecurityProcessor {
      * in place.
      *
      * @param document the input document otp process
-     * @return the output document
+     * @return the security processor result {@link SecurityProcessor.Result}
      * @throws GeneralSecurityException   on security error such as unknown
      *                                    algorithm etc. The nature of the error is subclass
      * @throws IOException                on io error such as xml processing
@@ -116,10 +115,44 @@ public abstract class SecurityProcessor {
      *                                    during element processing such as invalid or missing
      *                                    security properties, XPath error etc.
      */
-    abstract public Document processInPlace(Document document)
+    abstract public Result processInPlace(Document document)
       throws SecurityProcessorException, GeneralSecurityException, IOException;
 
+    /**
+     * The class represents the result of the security operation
+     */
+    public static class Result {
+        protected Document document;
+        protected X509Certificate certificate;
 
+        /**
+         * create the result instance with the resulting document and
+         * certificate
+         *
+         * @param document the document, result of the processing
+         * @param certificate the certificate that was associated with the operation
+         */
+        Result(Document document, X509Certificate certificate) {
+            this.document = document;
+            this.certificate = certificate;
+        }
+
+        /** @return the result document */
+        public Document getDocument() {
+            return document;
+        }
+
+        /**
+         * The certificate that is assoctaed with the operation. In the case
+         * of signing this will ocntain the signing cert, in the verify case
+         * it contains the extracted cert
+         *
+         * @return the certificate that was associated with the operaiton
+         */
+        public X509Certificate getCertificate() {
+            return certificate;
+        }
+    }
     /**
      * Check whether the element security properties are supported
      *

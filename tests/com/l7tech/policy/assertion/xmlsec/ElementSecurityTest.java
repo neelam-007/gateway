@@ -70,10 +70,10 @@ public class ElementSecurityTest extends TestCase {
         for (int i = 0; i < documents.length; i++) {
             Document document = documents[i];
             SecurityProcessor signer = SecurityProcessor.getSigner(session, signerInfo, key, data);
-            SecurityProcessor verifier = SecurityProcessor.getVerifier(session, signerInfo.getCertificate(), key, data);
-            Document secureDoc = signer.process(document);
+            SecurityProcessor verifier = SecurityProcessor.getVerifier(session, key, data);
+            Document secureDoc = signer.process(document).getDocument();
 // System.out.println(XmlUtil.documentToString(secureDoc));
-            Document verifiedDoc = verifier.processInPlace(secureDoc);
+            Document verifiedDoc = verifier.processInPlace(secureDoc).getDocument();
 // System.out.println(XmlUtil.documentToString(verifiedDoc));
         }
     }
@@ -99,10 +99,10 @@ public class ElementSecurityTest extends TestCase {
         for (int i = 0; i < documents.length; i++) {
             Document document = documents[i];
             SecurityProcessor signer = SecurityProcessor.getSigner(session, signerInfo, key, data);
-            SecurityProcessor verifier = SecurityProcessor.getVerifier(session, signerInfo.getCertificate(), key, data);
-            Document secureDoc = signer.process(document);
+            SecurityProcessor verifier = SecurityProcessor.getVerifier(session, key, data);
+            Document secureDoc = signer.process(document).getDocument();
 //System.out.println(XmlUtil.documentToString(secureDoc));
-            Document verifiedDoc = verifier.processInPlace(secureDoc);
+            Document verifiedDoc = verifier.processInPlace(secureDoc).getDocument();
 // System.out.println(XmlUtil.documentToString(verifiedDoc));
         }
     }
@@ -132,16 +132,16 @@ public class ElementSecurityTest extends TestCase {
             // expected
         }
         SecurityProcessor signer = SecurityProcessor.getSigner(session, signerInfo, key, data);
-        Document securedDocument = signer.process(document);
+        Document securedDocument = signer.process(document).getDocument();
         try {
-            SecurityProcessor verifier = SecurityProcessor.getVerifier(session, signerInfo.getCertificate(), null, data);
+            SecurityProcessor verifier = SecurityProcessor.getVerifier(session, null, data);
             verifier.process(securedDocument);
             fail("KeyException expected");
         } catch (KeyException e) {
             // expected
         }
-        SecurityProcessor verifier = SecurityProcessor.getVerifier(session, signerInfo.getCertificate(), key, data);
-        Document verifiedDocument = verifier.process(securedDocument);
+        SecurityProcessor verifier = SecurityProcessor.getVerifier(session, key, data);
+        Document verifiedDocument = verifier.process(securedDocument).getDocument();
         // System.out.println(XmlUtil.documentToString(verifiedDocument));
     }
 
@@ -162,9 +162,9 @@ public class ElementSecurityTest extends TestCase {
         Session session = SessionManager.getInstance().createNewSession();
         final Key key = new AesKey(session.getKeyReq(), 128);
         Document document = documents[0];
-        SecurityProcessor verifier = SecurityProcessor.getVerifier(session, signerInfo.getCertificate(), key, data);
+        SecurityProcessor verifier = SecurityProcessor.getVerifier(session, key, data);
         try {
-            Document verifiedDocument = verifier.process(document);
+            Document verifiedDocument = verifier.process(document).getDocument();
             fail("SignatureException expected");
         } catch (SignatureException e) {
             // expected
