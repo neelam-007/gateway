@@ -201,7 +201,8 @@ public final class SoapMsgSigner {
         Validity validity = sigContext.verify(sigElement, pubKey);
 
         if (!validity.getCoreValidity()) {
-            throw new InvalidSignatureException("Validity not achieved: " + validity.getSignedInfoMessage());
+            throw new InvalidSignatureException("Validity not achieved: " + validity.getSignedInfoMessage() +
+                                                ": " + validity.getReferenceMessage( 0 ) );
         }
         // TODO Bug#723 - Check that cert still matches in the database
 
