@@ -44,7 +44,7 @@ public class WspReaderTest extends TestCase {
         assertTrue(policy != null);
         assertTrue(policy instanceof ExactlyOneAssertion);
         ExactlyOneAssertion eoa = (ExactlyOneAssertion)policy;
-        assertTrue(eoa.getChildren().size() == 4);
+        assertTrue(eoa.getChildren().size() == 5);
         assertTrue(eoa.getChildren().get(0) instanceof AllAssertion);
 
         // Do a round trip policyA -> xmlA -> policyB -> xmlB and verify that both XMLs match

@@ -12,14 +12,17 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
- * Immutable except for de-persistence.
+ * Represents a generic Assertion.  Immutable except for de-persistence.
  *
  * @author alex
  * @version $Revision$
  */
 public abstract class Assertion implements Cloneable, Serializable {
-    protected transient CompositeAssertion parent;
+    protected CompositeAssertion parent;
     private transient int ordinal;
+
+    // 2.1 CustomAssertion compatibility
+    private static final long serialVersionUID = -2639281346815614287L;
 
     public Assertion() {
         this.parent = null;

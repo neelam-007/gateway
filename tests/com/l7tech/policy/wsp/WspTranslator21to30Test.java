@@ -7,13 +7,22 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.WspWriterTest;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 
 import java.io.InputStream;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -53,6 +62,25 @@ public class WspTranslator21to30Test extends TestCase {
         assertNotNull(root);
 
         log.info("Upgraded policy: " + root);
+
+        // Check that custom assertion was deserialized correctly
+        assertTrue(root instanceof ExactlyOneAssertion);
+        ExactlyOneAssertion rootAll = (ExactlyOneAssertion)root;
+        Collection rootKids = rootAll.getChildren();
+        for (Iterator i = rootKids.iterator(); i.hasNext();) {
+            Assertion ass = (Assertion)i.next();
+            if (ass instanceof CustomAssertionHolder) {
+                CustomAssertionHolder cah = (CustomAssertionHolder)ass;
+                CustomAssertion ca = cah.getCustomAssertion();
+                if (ca != null) {
+                    assertTrue(Category.ACCESS_CONTROL.equals(cah.getCategory()));
+                    Map map = WspWriterTest.checkTestCustomAssertion(ca);
+                    assertTrue(map instanceof HashMap);
+                }
+            }
+        }
+
+        log.info("Upgraded polciy XML: " + WspWriter.getPolicyXml(root));
     }
 
     public void testTranslate21PartialEncryptionPolicy() throws Exception {
