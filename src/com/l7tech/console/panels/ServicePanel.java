@@ -1,16 +1,15 @@
 
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.FontUtil;
+import com.l7tech.common.gui.widgets.ContextMenuTextField;
+import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.MainWindow;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
-import com.l7tech.common.gui.widgets.WrappingLabel;
-import com.l7tech.common.gui.widgets.ContextMenuTextField;
-import com.l7tech.common.gui.util.FontUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -32,11 +31,6 @@ import java.rmi.RemoteException;
  * @version 1.2
  */
 public class ServicePanel extends WizardStepPanel {
-
-    private static final ClassLoader cl = ServicePanel.class.getClassLoader();
-    private static final String SPLASH_PATH = MainWindow.RESOURCE_PATH + "/splash-screen.png";
-    private static final ImageIcon titleImage = new ImageIcon(cl.getResource(SPLASH_PATH));
-
     // local service copy
     private PublishedService service = new PublishedService();
     private Wsdl wsdl;
@@ -56,12 +50,6 @@ public class ServicePanel extends WizardStepPanel {
         wsdlUrljTextField = new ContextMenuTextField();
 
         setLayout(new GridBagLayout());
-
-        add(new JLabel(titleImage),
-            new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                                   GridBagConstraints.CENTER,
-                                   GridBagConstraints.BOTH,
-                                   new Insets(0, 0, 0, 0), 0, 0));
 
         WrappingLabel splain = new WrappingLabel("Enter the URL of the WSDL that describes " +
                                                  "the web service you wish to publish.");
