@@ -346,14 +346,16 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // for each service
         for (Iterator i = services.iterator(); i.hasNext();) {
             PublishedService svc = (PublishedService)i.next();
-            outDoc.append("\t<service>\n");
-            outDoc.append("\t\t<abstract>" + svc.getName() + "</abstract>\n");
-            outDoc.append("\t\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
-            outDoc.append("location=\"");
-            String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
-            outDoc.append(protocol + "://" + host + ":" + port + uri + "?" + query);
-            outDoc.append("\"/>\n");
-            outDoc.append("\t</service>\n");
+            if (svc.isSoap()) {
+                outDoc.append("\t<service>\n");
+                outDoc.append("\t\t<abstract>" + svc.getName() + "</abstract>\n");
+                outDoc.append("\t\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
+                outDoc.append("location=\"");
+                String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
+                outDoc.append(protocol + "://" + host + ":" + port + uri + "?" + query);
+                outDoc.append("\"/>\n");
+                outDoc.append("\t</service>\n");
+            }
         }
         outDoc.append("</inspection>");
         return outDoc.toString();
