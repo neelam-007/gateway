@@ -43,6 +43,8 @@ public class MimePartInfo implements Serializable {
         for (int i = 0; i < contentTypes.length; i++) {
             newContentTypes.add(contentTypes[i]);
         }
+        // add the new content type to the list
+        newContentTypes.add(contentType);
         contentTypes = newContentTypes.toArray();
     }
 
