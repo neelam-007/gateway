@@ -5,7 +5,6 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -155,10 +154,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     services = listAnonymouslyViewableServices();
                 else
                     services = listAnonymouslyViewableAndProtectedServices(users);
-            } catch (TransactionException e) {
-                logger.log(Level.SEVERE, "cannot list services", e);
-                res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-                return;
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "cannot list services", e);
                 res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
@@ -216,8 +211,17 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         if (port == 8443)
             port = 8080;
         else if (port == 443) port = 80;
-        // todo, support the case of soap service whose routing uri is not default for bugzilla #1460
-        URL ssgurl = new URL("http" + "://" + req.getServerName() + ":" + port + SOAP_PROCESSING_SERVLET_URI + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));
+        URL ssgurl = null;
+        String routinguri = svc.getRoutingUri();
+        if (routinguri == null || routinguri.length() < 1) {
+            ssgurl = new URL("http" + "://" + req.getServerName() + ":" +
+                             port + SOAP_PROCESSING_SERVLET_URI + "?" +
+                             SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID +
+                             "=" + Long.toString(svc.getOid()));
+        } else {
+            ssgurl = new URL("http" + "://" + req.getServerName() + ":" +
+                             port + routinguri);
+        }
         substituteSoapAddressURL(wsdlDoc, ssgurl);
 
         // output the wsdl
@@ -240,11 +244,11 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         os.close();
     }
 
-    private Collection listAnonymouslyViewableServices() throws TransactionException, IOException, FindException {
+    private Collection listAnonymouslyViewableServices() throws IOException, FindException {
         return listAnonymouslyViewableAndProtectedServices(null);
     }
 
-    private Collection listAnonymouslyViewableAndProtectedServices(List users) throws TransactionException, IOException, FindException {
+    private Collection listAnonymouslyViewableAndProtectedServices(List users) throws IOException, FindException {
 
         ServiceManager manager = getServiceManager();
         // get all services
