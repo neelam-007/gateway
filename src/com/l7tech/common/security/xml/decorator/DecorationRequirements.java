@@ -154,6 +154,15 @@ public class DecorationRequirements {
         this.timestampTimeoutMillis = timestampTimeoutMillis;
     }
 
+    /**
+     * @return true iff. this decoration requirements has one of the following tokens that can be used to sign elements:
+     *   a sender cert and private key; a secure conversation session; or a sender SAML token.
+     */
+    public boolean hasSignatureSource() {
+        return senderSamlToken != null || secureConversationSession != null ||
+                (senderCertificate != null && senderPrivateKey != null);
+    }
+
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderCertificate = null;
     private LoginCredentials usernameTokenCredentials = null;
