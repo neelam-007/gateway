@@ -130,7 +130,7 @@
         <property name="serviceid" column="serviceid" type="long"/>
     </class>
 
-    <class name="com.l7tech.cluster.ClusterInfo" table="cluster_info">
+    <class name="com.l7tech.cluster.ClusterNodeInfo" table="cluster_info">
         <id name="mac" column="mac" type="string" unsaved-value="">
             <generator class="assigned"/>
         </id>

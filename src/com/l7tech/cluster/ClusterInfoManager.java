@@ -40,7 +40,7 @@ public class ClusterInfoManager {
     public boolean isCluster() {
         synchronized (this) {
             if (isCluster < 0) {
-                ClusterInfo selfCI = getSelfNodeId();
+                ClusterNodeInfo selfCI = getSelfNodeId();
                 if (selfCI != null) {
                     isCluster = 1;
                 } else {
@@ -59,7 +59,7 @@ public class ClusterInfoManager {
      * @return
      */
     public String thisNodeId() {
-        ClusterInfo selfCI = getSelfNodeId();
+        ClusterNodeInfo selfCI = getSelfNodeId();
         if (selfCI != null) return selfCI.getMac();
         return null;
     }
@@ -71,7 +71,7 @@ public class ClusterInfoManager {
      */
     public void updateSelfStatus(double avgLoad) throws UpdateException {
         long now = System.currentTimeMillis();
-        ClusterInfo selfCI = getSelfNodeId();
+        ClusterNodeInfo selfCI = getSelfNodeId();
         if (selfCI != null) {
             selfCI.setAvgLoad(avgLoad);
             selfCI.setLastUpdateTimeStamp(now);
@@ -99,7 +99,7 @@ public class ClusterInfoManager {
      */
     public void updateSelfUptime() throws UpdateException {
         long newuptimevalue = System.currentTimeMillis();
-        ClusterInfo selfCI = getSelfNodeId();
+        ClusterNodeInfo selfCI = getSelfNodeId();
         if (selfCI != null) {
             selfCI.setUptime(newuptimevalue);
             selfCI.setLastUpdateTimeStamp(newuptimevalue);
@@ -124,12 +124,12 @@ public class ClusterInfoManager {
 
     /**
      *
-     * @return a collection containing ClusterInfo objects. if the collection is empty, it means that
+     * @return a collection containing ClusterNodeInfo objects. if the collection is empty, it means that
      * the SSG operated by itself outsides a cluster.
      */
     public Collection retrieveClusterStatus() throws FindException {
         // get all objects from that table
-        String queryall = "from " + TABLE_NAME + " in class " + ClusterInfo.class.getName();
+        String queryall = "from " + TABLE_NAME + " in class " + ClusterNodeInfo.class.getName();
         HibernatePersistenceContext context = null;
         try {
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
@@ -148,7 +148,7 @@ public class ClusterInfoManager {
     /**
      * determines this node's nodeid value
      */
-    private ClusterInfo getSelfNodeId() {
+    private ClusterNodeInfo getSelfNodeId() {
         synchronized (this) {
             // special query, dont do this everytime
             // (cache return value as this will not change while the server is up)
@@ -159,7 +159,7 @@ public class ClusterInfoManager {
                 while (macs.hasNext()) {
                     String mac = (String)macs.next();
                     anymac = mac;
-                    ClusterInfo output = getNodeStatusFromDB(mac);
+                    ClusterNodeInfo output = getNodeStatusFromDB(mac);
                     if (output != null) {
                         selfId = mac;
                         return output;
@@ -168,7 +168,7 @@ public class ClusterInfoManager {
 
                 // no existing row for us. create one
                 if (anymac != null) {
-                    ClusterInfo newClusterInfo = new ClusterInfo();
+                    ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
                     String add = null;
                     try {
                         add = InetAddress.getLocalHost().getHostAddress();
@@ -197,14 +197,14 @@ public class ClusterInfoManager {
         else return null;
     }
 
-    private void recordNodeInDB(ClusterInfo node) throws SQLException, HibernateException {
+    private void recordNodeInDB(ClusterNodeInfo node) throws SQLException, HibernateException {
         HibernatePersistenceContext context = null;
         context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
         context.getSession().save(node);
     }
 
-    private ClusterInfo getNodeStatusFromDB(String mac) {
-        String query = "from " + TABLE_NAME + " in class " + ClusterInfo.class.getName() +
+    private ClusterNodeInfo getNodeStatusFromDB(String mac) {
+        String query = "from " + TABLE_NAME + " in class " + ClusterNodeInfo.class.getName() +
                        " where " + TABLE_NAME + "." + MAC_COLUMN_NAME + " = \'" + mac + "\'";
         HibernatePersistenceContext context = null;
         List hibResults = null;
@@ -225,7 +225,7 @@ public class ClusterInfoManager {
             case 0:
                 break;
             case 1:
-                return (ClusterInfo)hibResults.get(0);
+                return (ClusterNodeInfo)hibResults.get(0);
             default:
                 logger.warning("this should not happen. more than one entry found" +
                                           "for mac: " + selfId);

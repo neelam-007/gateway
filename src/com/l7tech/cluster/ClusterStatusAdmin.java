@@ -11,6 +11,6 @@ package com.l7tech.cluster;
  *
  */
 public interface ClusterStatusAdmin {
-    ClusterInfo[] getClusterStatus();
+    ClusterNodeInfo[] getClusterStatus();
     ServiceUsage[] getServiceUsage();
 }

@@ -13,7 +13,7 @@ package com.l7tech.cluster;
  * $Id$
  * 
  */
-public class ClusterInfo {
+public class ClusterNodeInfo {
 
     /**
      * mac address of the node that uniquely identifies this node in the cluster

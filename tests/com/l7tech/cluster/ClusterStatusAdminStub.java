@@ -8,17 +8,17 @@ package com.l7tech.cluster;
  */
 
 public class ClusterStatusAdminStub implements ClusterStatusAdmin{
-    public ClusterInfo[] getClusterStatus() {
+    public ClusterNodeInfo[] getClusterStatus() {
 
-        ClusterInfo[] cluster = new ClusterInfo[8];
-        ClusterInfo c1 = new ClusterInfo();
-        ClusterInfo c2 = new ClusterInfo();
-        ClusterInfo c3 = new ClusterInfo();
-        ClusterInfo c4 = new ClusterInfo();
-        ClusterInfo c5 = new ClusterInfo();
-        ClusterInfo c6 = new ClusterInfo();
-        ClusterInfo c7 = new ClusterInfo();
-        ClusterInfo c8 = new ClusterInfo();
+        ClusterNodeInfo[] cluster = new ClusterNodeInfo[8];
+        ClusterNodeInfo c1 = new ClusterNodeInfo();
+        ClusterNodeInfo c2 = new ClusterNodeInfo();
+        ClusterNodeInfo c3 = new ClusterNodeInfo();
+        ClusterNodeInfo c4 = new ClusterNodeInfo();
+        ClusterNodeInfo c5 = new ClusterNodeInfo();
+        ClusterNodeInfo c6 = new ClusterNodeInfo();
+        ClusterNodeInfo c7 = new ClusterNodeInfo();
+        ClusterNodeInfo c8 = new ClusterNodeInfo();
 
         c1.setName("SSG1"); c1.setAddress("192.128.1.100"); c1.setAvgLoad(1.5); c1.setUptime(1072746384);
         c2.setName("SSG2"); c2.setAddress("192.128.1.101"); c2.setAvgLoad(1.8); c2.setUptime(1072656394);

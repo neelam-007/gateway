@@ -10,7 +10,7 @@ package com.l7tech.cluster;
 
 public class GatewayStatus {
 
-    public GatewayStatus(ClusterInfo clusterInfo) {
+    public GatewayStatus(ClusterNodeInfo clusterInfo) {
         this.clusterInfo = clusterInfo;
     }
 
@@ -85,7 +85,7 @@ public class GatewayStatus {
          this.requestFailure = requestFailure;
      }
 
-    private final ClusterInfo clusterInfo;
+    private final ClusterNodeInfo clusterInfo;
     private int status;
     private int loadSharing;
     private int requestFailure;

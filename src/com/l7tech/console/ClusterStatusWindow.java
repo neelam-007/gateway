@@ -6,7 +6,7 @@ import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.cluster.GatewayStatus;
-import com.l7tech.cluster.ClusterInfo;
+import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.console.icons.ArrowIcon;
@@ -426,7 +426,7 @@ public class ClusterStatusWindow extends JFrame {
         ClusterStatusAdmin clusterStatusService = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
         if (clusterStatusService == null) throw new IllegalStateException("cannot obtain ClusterStatusAdmin remote reference");
 
-        ClusterInfo[] cluster = clusterStatusService.getClusterStatus();
+        ClusterNodeInfo[] cluster = clusterStatusService.getClusterStatus();
         if (cluster != null) {
             System.out.println("Number of node is: " + cluster.length);
         }
