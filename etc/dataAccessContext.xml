@@ -6,47 +6,48 @@
     persistence interceptors, and transactional behaviour.
  -->
 
+
 <beans>
     <!-- Hibernate Properties location -->
-   <bean id="hibernateProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
-       <property name="location">
-           <value>classpath:hibernate.properties</value>
-       </property>
-   </bean>
-    <!-- Default Hibernate Session Manager -->
-  <bean id="sessionFactory" class="org.springframework.orm.hibernate.LocalSessionFactoryBean">
-      <property name="mappingResources">
-          <list>
-              <value>SSG.hbm.xml</value>
-              <value>audit.hbm.xml</value>
-          </list>
-      </property>
-      <property name="hibernateProperties">
-          <ref local="hibernateProperties"/>
-      </property>
-      <property name="entityInterceptor">
-          <ref local="persistenceEventInterceptor"/>
+  <bean id="hibernateProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+      <property name="location">
+          <value>classpath:hibernate.properties</value>
       </property>
   </bean>
+    <!-- Default Hibernate Session Manager -->
+ <bean id="sessionFactory" class="org.springframework.orm.hibernate.LocalSessionFactoryBean">
+     <property name="mappingResources">
+         <list>
+             <value>SSG.hbm.xml</value>
+             <value>audit.hbm.xml</value>
+         </list>
+     </property>
+     <property name="hibernateProperties">
+         <ref local="hibernateProperties"/>
+     </property>
+     <property name="entityInterceptor">
+         <ref local="persistenceEventInterceptor"/>
+     </property>
+ </bean>
 
     <!-- Default Hibernate Transaction Manager -->
-  <bean id="transactionManager" class="org.springframework.orm.hibernate.HibernateTransactionManager">
-      <property name="sessionFactory">
-          <ref local="sessionFactory"/>
-      </property>
-  </bean>
+ <bean id="transactionManager" class="org.springframework.orm.hibernate.HibernateTransactionManager">
+     <property name="sessionFactory">
+         <ref local="sessionFactory"/>
+     </property>
+ </bean>
 
     <!-- The audit events hibernate interceptor -->
-  <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
+ <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
 
     <!--
    Transaction Interceptor set up to do PROPAGATION_REQUIRED on all methods
    -->
-   <bean id="matchAllWithPropRequired" class="org.springframework.transaction.interceptor.MatchAlwaysTransactionAttributeSource">
-       <property name="transactionAttribute">
-           <value>PROPAGATION_REQUIRED ,-Throwable</value>
-       </property>
-   </bean>
+  <bean id="matchAllWithPropRequired" class="org.springframework.transaction.interceptor.MatchAlwaysTransactionAttributeSource">
+      <property name="transactionAttribute">
+          <value>PROPAGATION_REQUIRED ,-Throwable</value>
+      </property>
+  </bean>
 
     <bean id="matchAllTxInterceptor" class="org.springframework.transaction.interceptor.TransactionInterceptor">
         <property name="transactionManager">
@@ -61,32 +62,32 @@
        BeanNameAutoProxyCreator handles all beans methods to use PROPAGATION_REQUIRED
        The beans listed do not require class proxiying and use JDK dynmic proxying.
    -->
-   <bean id="autoProxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
-       <property name="interceptorNames">
-           <list>
-               <idref local="matchAllTxInterceptor"/>
-           </list>
-       </property>
-       <property name="beanNames">
-           <list>
-               <idref bean="identityProviderConfigManager"/>
-<!--
-                Removed here for performance reasons because some methods can be non-transactional (see below)
-               <idref bean="serviceManager"/>
--->
-               <idref bean="trustedCertManager"/>
-               <idref bean="clientCertManager"/>
-               <idref bean="statusUpdateManager"/>
-               <idref bean="serviceAdmin"/>
-               <idref bean="trustedCertAdmin"/>
-               <idref bean="auditAdmin"/>
-               <idref bean="identityAdmin"/>
-               <idref bean="jmsAdmin"/>
-               <idref bean="clusterStatusAdmin"/>
-               <idref bean="tokenService"/>
-           </list>
-       </property>
-   </bean>
+  <bean id="autoProxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+      <property name="interceptorNames">
+          <list>
+              <idref local="matchAllTxInterceptor"/>
+          </list>
+      </property>
+      <property name="beanNames">
+          <list>
+              <idref bean="identityProviderConfigManager"/>
+              <!--
+                             Removed here for performance reasons because some methods can be non-transactional (see below)
+                            <idref bean="serviceManager"/>
+              -->
+              <idref bean="trustedCertManager"/>
+              <idref bean="clientCertManager"/>
+              <idref bean="statusUpdateManager"/>
+              <idref bean="serviceAdmin"/>
+              <idref bean="trustedCertAdmin"/>
+              <idref bean="auditAdmin"/>
+              <idref bean="identityAdmin"/>
+              <idref bean="jmsAdmin"/>
+              <idref bean="clusterStatusAdmin"/>
+              <idref bean="tokenService"/>
+          </list>
+      </property>
+  </bean>
 
 
     <bean id="serviceManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
@@ -109,33 +110,52 @@
         </property>
     </bean>
 
+    <!-- server side Event Manager tx proxy -->
+    <bean id="eventManager"
+        class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="target">
+            <ref bean="eventManagerTarget"/>
+        </property>
+        <property name="transactionAttributes">
+            <props>
+                <prop key="fire">PROPAGATION_SUPPORTS</prop>
+                <prop key="fireInNewTransaction">PROPAGATION_REQUIRES_NEW</prop>
+            </props>
+        </property>
+    </bean>
+
     <!--
        BeanNameAutoProxyCreator with proxyTargetClass option handles all beans methods to use PROPAGATION_REQUIRED
    -->
-   <bean id="autoProxyCreatorProxyTergetClass" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
-       <property name="proxyTargetClass"><value>true</value></property>
-       <property name="interceptorNames">
-           <list>
-               <idref local="matchAllTxInterceptor"/>
-           </list>
-       </property>
-       <property name="beanNames">
-           <list>
-               <idref bean="internalIdentityProvider"/>
-               <idref bean="internalUserManager"/>
-               <idref bean="internalGroupManager"/>
-               <idref bean="federatedIdentityProvider"/>
-               <idref bean="federatedUserManager"/>
-               <idref bean="federatedGroupManager"/>
-               <idref bean="resolutionManager"/>
-               <idref bean="clusterInfoManager"/>
-               <idref bean="serviceUsageManager"/>
-               <idref bean="jmsEndpointManager"/>
-               <idref bean="jmsConnectionManager"/>
-               <idref bean="serverLogManager"/>
-               <idref bean="auditExporter"/>
-           </list>
-       </property>
-   </bean>
+  <bean id="autoProxyCreatorProxyTergetClass" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+      <property name="proxyTargetClass">
+          <value>true</value>
+      </property>
+      <property name="interceptorNames">
+          <list>
+              <idref local="matchAllTxInterceptor"/>
+          </list>
+      </property>
+      <property name="beanNames">
+          <list>
+              <idref bean="internalIdentityProvider"/>
+              <idref bean="internalUserManager"/>
+              <idref bean="internalGroupManager"/>
+              <idref bean="federatedIdentityProvider"/>
+              <idref bean="federatedUserManager"/>
+              <idref bean="federatedGroupManager"/>
+              <idref bean="resolutionManager"/>
+              <idref bean="clusterInfoManager"/>
+              <idref bean="serviceUsageManager"/>
+              <idref bean="jmsEndpointManager"/>
+              <idref bean="jmsConnectionManager"/>
+              <idref bean="serverLogManager"/>
+              <idref bean="auditExporter"/>
+          </list>
+      </property>
+  </bean>
 
 </beans>
