@@ -9,6 +9,7 @@ import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.xml.Wsdl;
 
@@ -232,11 +233,11 @@ public class ServicePanel extends WizardStepPanel {
 
             if (sa.getRoutingAssertion() == null) {
                 Port port = wsdl.getSoapPort();
-                sa.setRoutingAssertion(new RoutingAssertion());
+                sa.setRoutingAssertion(new HttpRoutingAssertion());
                 if (port != null) {
                     URL url = wsdl.getUrlFromPort(port);
                     if (url != null)
-                        sa.setRoutingAssertion(new RoutingAssertion(url.toString()));
+                        sa.setRoutingAssertion(new HttpRoutingAssertion(url.toString()));
                 }
             }
         } catch (Exception e) {

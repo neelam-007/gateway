@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.gui.util.Utilities;
@@ -155,12 +156,12 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         PublishServiceWizard.ServiceAndAssertion
           collect = (PublishServiceWizard.ServiceAndAssertion)settings;
         if (isAnonymous()) {
-            collect.setRoutingAssertion(new RoutingAssertion(getServiceUrlTextField().getText()));
+            collect.setRoutingAssertion(new HttpRoutingAssertion(getServiceUrlTextField().getText()));
             return;
         }
 
         RoutingAssertion ra =
-          new RoutingAssertion(
+          new HttpRoutingAssertion(
             getServiceUrlTextField().getText(),
             getIdentityTextField().getText(),
             new String(getCredentials()), getRealmTextField().getText());

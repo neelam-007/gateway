@@ -8,7 +8,7 @@ package com.l7tech.policy.server.filter;
 
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -60,7 +60,7 @@ public class FilterTest extends TestCase {
                 new MemberOfGroup(providerid, "sales", "666")
             })),
             new SamlSecurity(),
-            new RoutingAssertion()
+            new HttpRoutingAssertion()
         }));
 
         InternalUser alice = new InternalUser();
@@ -87,13 +87,13 @@ public class FilterTest extends TestCase {
                 new AllAssertion(Arrays.asList(new Assertion[] {
                     new HttpDigest(),
                     new SpecificUser(providerid, "bob"),
-                    new RoutingAssertion()
+                    new HttpRoutingAssertion()
                 })),
                 new AllAssertion(Arrays.asList(new Assertion[] {
                     new SslAssertion(),
                     new HttpClientCert(),
                     new SpecificUser(providerid, "alice"),
-                    new RoutingAssertion()
+                    new HttpRoutingAssertion()
                 })),
             })),
         }));

@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -122,7 +123,7 @@ public class Descriptions {
            */
           protected Object[] parameters() {
               return new Object[]{
-                  ((RoutingAssertion)assertion).getProtectedServiceUrl()
+                  ((HttpRoutingAssertion)assertion).getProtectedServiceUrl()
               };
           }
       }

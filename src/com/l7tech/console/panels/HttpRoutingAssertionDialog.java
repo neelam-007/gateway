@@ -8,7 +8,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -24,15 +24,15 @@ import java.util.logging.Logger;
 
 
 /**
- * <code>RoutingAssertionDialog</code> is the protected service
+ * <code>HttpRoutingAssertionDialog</code> is the protected service
  * policy edit dialog.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class RoutingAssertionDialog extends JDialog {
+public class HttpRoutingAssertionDialog extends JDialog {
     static final Logger log = Logger.getLogger(LogonDialog.class.getName());
-    private RoutingAssertion assertion;
+    private HttpRoutingAssertion assertion;
     private JButton cancelButton;
     private JPanel buttonPanel;
     private JButton okButton;
@@ -61,7 +61,7 @@ public class RoutingAssertionDialog extends JDialog {
     /**
      * Creates new form ServicePanel
      */
-    public RoutingAssertionDialog(Frame owner, RoutingAssertion a, ServiceNode sn) {
+    public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion a, ServiceNode sn) {
         super(owner, true);
         setTitle("Edit Routing Assertion");
         assertion = a;
@@ -264,11 +264,11 @@ public class RoutingAssertionDialog extends JDialog {
                             log.log(Level.INFO, "Can't retrieve WSDL from the published service");
                         }
                     } catch (java.rmi.RemoteException re) {
-                        log.log(Level.INFO, "RoutingAssertionDialog", re);
+                        log.log(Level.INFO, "HttpRoutingAssertionDialog", re);
                     } catch (FindException fe) {
-                        log.log(Level.INFO, "RoutingAssertionDialog", fe);
+                        log.log(Level.INFO, "HttpRoutingAssertionDialog", fe);
                     } catch (javax.wsdl.WSDLException we) {
-                        log.log(Level.INFO, "RoutingAssertionDialog", we);
+                        log.log(Level.INFO, "HttpRoutingAssertionDialog", we);
                     }
                 } else {
                     log.log(Level.INFO, "Can't find the service");
@@ -461,7 +461,7 @@ public class RoutingAssertionDialog extends JDialog {
                     assertion.setGroupMembershipStatement(memebershipStatementCheck.isSelected());
                     assertion.setAttachSamlSenderVouches(samlMethod.isSelected());
                     fireEventAssertionChanged(assertion);
-                    RoutingAssertionDialog.this.dispose();
+                    HttpRoutingAssertionDialog.this.dispose();
                 }
             });
         }
@@ -483,7 +483,7 @@ public class RoutingAssertionDialog extends JDialog {
             // Register listener
             cancelButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    RoutingAssertionDialog.this.dispose();
+                    HttpRoutingAssertionDialog.this.dispose();
                 }
             });
         }

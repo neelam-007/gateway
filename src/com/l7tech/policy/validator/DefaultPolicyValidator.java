@@ -2,10 +2,13 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.*;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyPathBuilder;
+import com.l7tech.policy.PolicyPathResult;
+import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
@@ -21,7 +24,6 @@ import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -119,7 +121,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
             } else if (isAccessControl(a)) {
                 processAccessControl((IdentityAssertion)a);
             } else if (isRouting(a)) {
-                processRouting((RoutingAssertion)a);
+                processRouting((HttpRoutingAssertion)a);
             } else {
                 processUnknown(a);
             }
@@ -263,7 +265,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
             seenPreconditions = true;
         }
 
-        private void processRouting(RoutingAssertion a) {
+        private void processRouting(HttpRoutingAssertion a) {
             seenRouting = true;
             String url = a.getProtectedServiceUrl();
             if (url == null) {

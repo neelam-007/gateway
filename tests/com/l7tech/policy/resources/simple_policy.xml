@@ -24,7 +24,7 @@
                 <SslAssertion>
                     <Option optionValue="Required"/>
                 </SslAssertion>
-                <RoutingAssertion>
+                <HttpRoutingAssertion>
                     <AttachSamlSenderVouches booleanValue="false"/>
                     <UserAgent stringValueNull="null"/>
                     <ProtectedServiceUrl stringValueNull="null"/>
@@ -34,7 +34,12 @@
                     <Realm stringValueNull="null"/>
                     <MaxConnections intValue="100"/>
                     <SamlAssertionExpiry intValue="5"/>
-                </RoutingAssertion>
+                </HttpRoutingAssertion>
+                <JmsRoutingAssertion>
+                    <GroupMembershipStatement booleanValue="false"/>
+                    <AttachSamlSenderVouches booleanValue="false"/>
+                    <SamlAssertionExpiry intValue="5"/>
+                </JmsRoutingAssertion>
                 <TrueAssertion/>
                 <MemberOfGroup>
                     <GroupId stringValueNull="null"/>
@@ -60,7 +65,7 @@
         <ExactlyOne>
             <TrueAssertion/>
             <FalseAssertion/>
-            <RoutingAssertion>
+            <HttpRoutingAssertion>
                 <AttachSamlSenderVouches booleanValue="false"/>
                 <UserAgent stringValueNull="null"/>
                 <ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
@@ -70,7 +75,7 @@
                 <Realm stringValue=""/>
                 <MaxConnections intValue="-5"/>
                 <SamlAssertionExpiry intValue="5"/>
-            </RoutingAssertion>
+            </HttpRoutingAssertion>
             <RequestXpathAssertion>
                 <NamespaceMap mapValue="included">
                     <entry>

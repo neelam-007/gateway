@@ -7,8 +7,9 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -50,7 +51,7 @@ public class SamplePolicyTest extends TestCase {
 
     public void testSimple() {
         // Simplest possible policy.  No special requirements at all; unconditionally route to default ProtServ.
-        Assertion simplestPolicy = new RoutingAssertion();
+        Assertion simplestPolicy = new HttpRoutingAssertion();
     }
 
     public void testBasicAuth() {
@@ -63,7 +64,7 @@ public class SamplePolicyTest extends TestCase {
             new SpecificUser( identityProvider, userAlice ),
 
             // Route:
-            new RoutingAssertion()
+            new HttpRoutingAssertion()
         }));
     }
 
@@ -77,7 +78,7 @@ public class SamplePolicyTest extends TestCase {
             new SpecificUser( identityProvider, userAlice ),
 
             // Route:
-            new RoutingAssertion()
+            new HttpRoutingAssertion()
         }));
     }
 
@@ -97,7 +98,7 @@ public class SamplePolicyTest extends TestCase {
             })),
 
             // Route:
-            new RoutingAssertion() // will use default URL for the PublishedService using this policy
+            new HttpRoutingAssertion() // will use default URL for the PublishedService using this policy
         }));
     }
 
@@ -111,7 +112,7 @@ public class SamplePolicyTest extends TestCase {
             new MemberOfGroup( identityProvider, groupStaff, "666" ),
 
             // Route:
-            new RoutingAssertion()
+            new HttpRoutingAssertion()
         }));
     }
 
@@ -125,11 +126,11 @@ public class SamplePolicyTest extends TestCase {
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
                 new AllAssertion(Arrays.asList(new Assertion[] {
                     new SpecificUser( identityProvider, userAlice ),
-                    new RoutingAssertion("http://backend.example.com/service1/soap")
+                    new HttpRoutingAssertion("http://backend.example.com/service1/soap")
                 })),
                 new AllAssertion(Arrays.asList(new Assertion[] {
                     new SpecificUser( identityProvider, userBob ),
-                    new RoutingAssertion("http://backend.example.com/service2/soap")
+                    new HttpRoutingAssertion("http://backend.example.com/service2/soap")
                 })),
             })),
         }));

@@ -9,6 +9,7 @@ import com.l7tech.console.tree.policy.IdentityPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
@@ -66,8 +67,8 @@ public class IdentityPolicyPanel extends JPanel {
     private CredentialSourceAssertion existingCredAssertion = null;
     private CredentialSourceAssertion newCredAssertion = null;
 
-    private RoutingAssertion existingRoutingAssertion = null;
-    private RoutingAssertion newRoutingAssertion = null;
+    private HttpRoutingAssertion existingRoutingAssertion = null;
+    private HttpRoutingAssertion newRoutingAssertion = null;
     private boolean routeEdited;
 
     private DefaultTreeModel policyTreeModel;
@@ -242,7 +243,7 @@ public class IdentityPolicyPanel extends JPanel {
         Set principalRouteAssertions =
           principalAssertionPaths.getEqualAssertions(RoutingAssertion.class);
         for (Iterator it = principalRouteAssertions.iterator(); it.hasNext();) {
-            existingRoutingAssertion = (RoutingAssertion)it.next();
+            existingRoutingAssertion = (HttpRoutingAssertion) it.next();
             routeToUrlField.setText(existingRoutingAssertion.getProtectedServiceUrl());
             userRouteField.setText(existingRoutingAssertion.getLogin());
             passwordRouteField.setText(existingRoutingAssertion.getPassword());
@@ -395,7 +396,7 @@ public class IdentityPolicyPanel extends JPanel {
 
     private void collectRoutingAssertion() {
         if (!routeToUrlField.isEnabled() || !routeEdited) return;
-        newRoutingAssertion = new RoutingAssertion();
+        newRoutingAssertion = new HttpRoutingAssertion();
         newRoutingAssertion.setLogin(userRouteField.getText());
         newRoutingAssertion.setProtectedServiceUrl(routeToUrlField.getText());
         newRoutingAssertion.setPassword(new String(passwordRouteField.getPassword()));

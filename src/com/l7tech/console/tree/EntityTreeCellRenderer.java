@@ -1,6 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.tree.policy.RoutingAssertionTreeNode;
+import com.l7tech.console.tree.policy.HttpRoutingAssertionTreeNode;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -54,7 +54,7 @@ public class EntityTreeCellRenderer
         if (icon != null) {
             setIcon(icon);
         }
-        if (node instanceof RoutingAssertionTreeNode) {
+        if (node instanceof HttpRoutingAssertionTreeNode) {
             setFont(boldFont);
         }
         return this;

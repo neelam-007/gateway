@@ -4,6 +4,7 @@ import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 
 import javax.wsdl.WSDLException;
 import java.util.logging.Level;
@@ -33,7 +34,7 @@ public class AddRoutingAssertionAdvice implements Advice {
           !(assertions[0] instanceof RoutingAssertion)) {
             throw new IllegalArgumentException();
         }
-        RoutingAssertion ra = (RoutingAssertion)assertions[0];
+        HttpRoutingAssertion ra = (HttpRoutingAssertion) assertions[0];
         String url = "Unable to determine the service url. Please edit";
         try {
             url = pc.getService().parsedWsdl().getServiceURI();

@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
@@ -130,9 +131,9 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                 service.setWsdlUrl(serviceAddress);
                 RoutingAssertion ra = null;
                 if (serviceAddress !=null) {
-                   ra = new RoutingAssertion(serviceAddress);
+                   ra = new HttpRoutingAssertion(serviceAddress);
                 } else {
-                    ra = new RoutingAssertion();
+                    ra = new HttpRoutingAssertion();
                 }
 
                 // assign empty policy
@@ -223,7 +224,7 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
         Port port = (Port)ports.values().iterator().next();
         java.util.List extensibilityElements = port.getExtensibilityElements();
         for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
-            Object o = (Object)iterator.next();
+            Object o = iterator.next();
             if (o instanceof SOAPAddress) {
                 return ((SOAPAddress)o).getLocationURI();
             }

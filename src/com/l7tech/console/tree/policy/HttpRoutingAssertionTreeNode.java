@@ -1,8 +1,9 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.console.action.RoutingAssertionPropertiesAction;
+import com.l7tech.console.action.HttpRoutingAssertionPropertiesAction;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -13,9 +14,9 @@ import java.util.Arrays;
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class RoutingAssertionTreeNode extends LeafAssertionTreeNode {
+public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
 
-    public RoutingAssertionTreeNode(RoutingAssertion assertion) {
+    public HttpRoutingAssertionTreeNode(RoutingAssertion assertion) {
         super(assertion);
     }
 
@@ -23,7 +24,7 @@ public class RoutingAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        String url = ((RoutingAssertion)getUserObject()).getProtectedServiceUrl();
+        String url = ((HttpRoutingAssertion)getUserObject()).getProtectedServiceUrl();
         if (url != null) {
             return "Route to " + url;
         }
@@ -38,7 +39,7 @@ public class RoutingAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        Action a = new RoutingAssertionPropertiesAction(this);
+        Action a = new HttpRoutingAssertionPropertiesAction(this);
         list.add(a);
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
@@ -50,7 +51,7 @@ public class RoutingAssertionTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new RoutingAssertionPropertiesAction(this);
+        return new HttpRoutingAssertionPropertiesAction(this);
     }
 
     /**

@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 
 import javax.swing.*;
 
@@ -38,7 +39,7 @@ public class HttpRoutingNode extends AbstractTreeNode {
      * @return the popup menu
      */
     public Assertion asAssertion() {
-        return new RoutingAssertion();
+        return new HttpRoutingAssertion();
     }
 
     /**

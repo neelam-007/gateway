@@ -670,7 +670,9 @@ class WspConstants {
         new AssertionMapping(new WssDigest(), "WssDigest"),
         new AssertionMapping(new FalseAssertion(), "FalseAssertion"),
         new AssertionMapping(new SslAssertion(), "SslAssertion"),
-        new AssertionMapping(new RoutingAssertion(), "RoutingAssertion"),
+        new AssertionMapping(new JmsRoutingAssertion(), "JmsRoutingAssertion"),
+        new AssertionMapping(new HttpRoutingAssertion(), "HttpRoutingAssertion"),
+        new AssertionMapping(new HttpRoutingAssertion(), "RoutingAssertion"), // backwards compatibility
         new AssertionMapping(new TrueAssertion(), "TrueAssertion"),
         new AssertionMapping(new MemberOfGroup(), "MemberOfGroup"),
         new AssertionMapping(new SpecificUser(), "SpecificUser"),

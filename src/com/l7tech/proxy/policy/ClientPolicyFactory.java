@@ -13,6 +13,8 @@ import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -81,7 +83,8 @@ public class ClientPolicyFactory extends PolicyFactory {
         new ClientOneOrMoreAssertion(new OneOrMoreAssertion()),
         new ClientFalseAssertion(new FalseAssertion()),
         new ClientSslAssertion(new SslAssertion()),
-        new ClientRoutingAssertion(new RoutingAssertion()),
+        new ClientRoutingAssertion(new HttpRoutingAssertion()),
+        new ClientRoutingAssertion(new JmsRoutingAssertion()),
         new ClientTrueAssertion(new TrueAssertion()),
         new ClientMemberOfGroup(new MemberOfGroup()),
         new ClientSpecificUser(new SpecificUser()),
