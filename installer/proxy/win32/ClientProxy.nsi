@@ -2,6 +2,7 @@
 ;NSIS Modern User Interface version 1.63
 ;based on Basic Example Script, which was Written by Joost Verburg
 
+!define J2RE_PARENT "C:\"  ; Directory which contains j2re1.4.1_03 subdirectory
 !define COMPANY "Layer 7 Technologies"
 !define MUI_PRODUCT "Client Proxy" ;Define your own software name here
 !define MUI_VERSION "0.9b" ;Define your own software version here
@@ -75,7 +76,7 @@ Section "Client Proxy" SecCopyUI
   File "ClientProxy Text Mode.bat"
   File "${BUILD_DIR}\ClientProxy.jar"
   File /r "${BUILD_DIR}\lib"
-  File /r "j2re1.4.1_03"
+  File /r "${J2RE_PARENT}\j2re1.4.1_03"
   
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
@@ -84,7 +85,9 @@ Section "Client Proxy" SecCopyUI
     
     ;Create shortcuts
     CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Client Proxy.lnk" "$INSTDIR\ClientProxy.exe"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Client Proxy.lnk" "$INSTDIR\ClientProxy.exe"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Client Proxy in Troubleshooting Mode.lnk" "$INSTDIR\ClientProxy Debug.bat"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Client Proxy in Text Mode.lnk" "$INSTDIR\ClientProxy Text Mode.bat"
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall Client Proxy.lnk" "$INSTDIR\Uninstall.exe"
   
   !insertmacro MUI_STARTMENU_WRITE_END
@@ -125,7 +128,9 @@ Section "Uninstall"
 
   StrCmp ${TEMP} "" noshortcuts
   
-    Delete "$SMPROGRAMS\${TEMP}\Client Proxy.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Start Client Proxy.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Start Client Proxy in Troubleshooting Mode.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Start Client Proxy in Text Mode.lnk"
     Delete "$SMPROGRAMS\${TEMP}\Uninstall Client Proxy.lnk"
     RMDir "$SMPROGRAMS\${TEMP}" ;Only if empty, so it won't delete other shortcuts
     
