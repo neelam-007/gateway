@@ -96,7 +96,7 @@ public class TokenServiceClient {
         try {
             Document msg = requestSecurityTokenMessageTemplate(desiredTokenType, requestType, appliesToAddress, base);
             Element env = msg.getDocumentElement();
-            Element body = XmlUtil.findFirstChildElement(env);
+            Element body = XmlUtil.findFirstChildElementByName(env, env.getNamespaceURI(), "Body");
 
             // Maybe sign it
             WssDecorator wssDecorator = new WssDecoratorImpl();
