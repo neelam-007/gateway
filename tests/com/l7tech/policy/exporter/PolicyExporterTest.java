@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
@@ -29,6 +30,8 @@ public class PolicyExporterTest extends TestCase {
 
     private Assertion createTestPolicy() {
         AllAssertion root = new AllAssertion();
+        SpecificUser suass = new SpecificUser(125, "john");
+        root.getChildren().add(suass);
         // todo, more
         return root;
     }
