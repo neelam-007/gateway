@@ -7,11 +7,9 @@
 package com.l7tech.proxy.processor;
 
 import com.l7tech.common.util.CertificateDownloader;
-import com.l7tech.common.util.SslUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
@@ -34,15 +32,13 @@ import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
-import java.security.KeyPair;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 
@@ -99,11 +95,19 @@ public class MessageProcessor {
                     undecorateResponse(req, res, rootassertion);
                     return res;
                 } catch (SSLException e) {
+
                     if (e.getCause() instanceof ClientProxySslException &&
                         e.getCause().getCause() instanceof UnrecoverableKeyException)
                         // translate into something meaningful
                         throw new BadCredentialsException(e);
-                    throw e;
+
+                    if (e instanceof SSLHandshakeException &&
+                        e.getCause() instanceof ServerCertificateUntrustedException)
+                        installSsgServerCertificate(ssg); // might throw BadCredentialsException
+                        // allow policy to reset and retry
+                    else
+                        // not sure what happened; throw it up and abort the request
+                        throw e;
                 } catch (ServerCertificateUntrustedException e) {
                     installSsgServerCertificate(ssg); // might throw BadCredentialsException
                     // allow policy to reset and retry
