@@ -543,7 +543,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         wsdlTextArea.setEditable(false);
         wsdlTextArea.setTokenMarker(new XMLTokenMarker());
         loadFromFile = new JButton();
-        loadFromFile.setText("Load from file");//todo, resource this string
+        loadFromFile.setText(resources.getString("loadFromFile.name"));
     }
 
     private void initResources() {
