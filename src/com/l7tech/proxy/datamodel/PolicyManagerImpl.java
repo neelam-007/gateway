@@ -96,10 +96,10 @@ public class PolicyManagerImpl implements PolicyManager {
                         throw new ConfigurationException("Policy server sent us an invalid policy URL: " + newURLHeader.getValue());
                     }
                 }
-                log.info("Policy download unauthorized, trying again with credentials at " + newUrl);
                 if (!newUrl.getProtocol().equalsIgnoreCase("https"))
                     throw new ConfigurationException("Policy server sent us a 401 status with a non-https policy URL");
-                URL safeUrl = new URL("https", policyUrl.getHost(), newUrl.getPort(), newUrl.getPath());
+                URL safeUrl = new URL("https", policyUrl.getHost(), newUrl.getPort(), newUrl.getFile());
+                log.info("Policy download unauthorized, trying again with credentials at " + safeUrl);
 
                 // Make sure we actually have the credentials
                 Ssg ssg = request.getSsg();
