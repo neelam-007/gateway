@@ -16,9 +16,6 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.spring.remoting.rmi.NamingURL;
 import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
 import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
-import com.l7tech.spring.remoting.rmi.NamingURL;
-import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
-import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
