@@ -45,7 +45,11 @@ public class ServiceNode extends EntityHeaderNode {
     public ServiceNode(EntityHeader e)
       throws IllegalArgumentException {
         super(e);
-        setAllowsChildren(true);
+        try {
+            setAllowsChildren(getPublishedService().isSoap());
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public PublishedService getPublishedService() throws FindException, RemoteException {
@@ -141,7 +145,11 @@ public class ServiceNode extends EntityHeaderNode {
      * @return true if leaf, false otherwise
      */
     public boolean isLeaf() {
-        return false;
+        try {
+            return !getPublishedService().isSoap();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     /**
