@@ -160,6 +160,7 @@ public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
         providerNameTextField.setPreferredSize(new Dimension(217, 20));
         providerNameTextField.setMinimumSize(new Dimension(217, 20));
         providerNameTextField.setToolTipText(resources.getString("providerNameTextField.tooltip"));
+        providerNameTextField.setEditable(false);
 
         return providerNameTextField;
     }

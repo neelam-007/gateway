@@ -165,7 +165,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
             Wizard w = (Wizard) we.getSource();
             final IdentityProviderConfig iProvider = (IdentityProviderConfig) w.getCollectedInformation();
 
-            if (iProvider != null) {
+            if (iProvider != null && iProvider.type() != IdentityProviderType.INTERNAL) {
 
                 SwingUtilities.invokeLater(
                         new Runnable() {

@@ -313,7 +313,7 @@ public class StatisticsPanel extends JPanel {
                         - ((Long) lastMinuteCounts.get(lastMinuteCounts.size() - 2)).longValue() < 0) {
 
                     // this could happen when a node is removed from the cluster
-                    logger.info("New total completed count is less than the previous count. Service Name: " + serviceName);
+                    logger.warning("New total completed count is less than the previous count. Service Name: " + serviceName);
 
                     // should clean up the cache
                     lastMinuteCounts.removeAllElements();
@@ -340,6 +340,20 @@ public class StatisticsPanel extends JPanel {
 
                 lastMinuteCompletedCount += ((Long) lastMinuteCounts.get(index)).longValue() - ((Long) lastMinuteCounts.get(index-1)).longValue();
             }
+        }
+
+        //for debug purpose
+        if (lastMinuteCompletedCount < 0) {
+            // dump the counter
+            System.out.println("Service Name: " + serviceName +  ", count = " + lastMinuteCompletedCount);
+            if (lastMinuteCounts != null) {
+
+                for (int index = 0; index < lastMinuteCounts.size(); index++) {
+
+                    System.out.println("couter " + index + ": " +  ((Long) lastMinuteCounts.get(index)).longValue());
+                }
+            }
+
         }
 
         return lastMinuteCompletedCount;
