@@ -63,29 +63,7 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         providerNameTextField.setPreferredSize(new Dimension(217, 20));
         providerNameTextField.setMinimumSize(new Dimension(217, 20));
         providerNameTextField.setToolTipText(resources.getString("providerNameTextField.tooltip"));
-        providerNameTextField.addKeyListener(new KeyListener() {
-            public void keyPressed(KeyEvent ke) {
-                // don't care
-            }
-
-            public void keyReleased(KeyEvent ke) {
-                if (providerNameTextField.getText().length() > 0) {
-                    // a name is entered, can advance to next panel
-                    advanceAllowed = true;
-                    finishAllowed = true;
-                } else {
-                    advanceAllowed = false;
-                    finishAllowed = false;
-                }
-
-                // notify the wizard to update the state of the control buttons
-                notifyListeners();
-            }
-
-            public void keyTyped(KeyEvent ke) {
-                // don't care
-            }
-        });
+        providerNameTextField.addKeyListener(keyListener);
 
         return providerNameTextField;
     }
@@ -99,6 +77,8 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         ldapHostTextField.setToolTipText(resources.getString("ldapHostTextField.tooltip"));
 
         ldapHostTextField.setText("");
+        ldapHostTextField.addKeyListener(keyListener);
+
         return ldapHostTextField;
     }
 
@@ -111,6 +91,8 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         ldapSearchBaseTextField.setToolTipText(resources.getString("ldapSearchBaseTextField.tooltip"));
 
         ldapSearchBaseTextField.setText("");
+        ldapSearchBaseTextField.addKeyListener(keyListener);
+
         return ldapSearchBaseTextField;
     }
 
@@ -478,18 +460,25 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
             providerTypesCombo = new JComboBox(items);
             providerTypesCombo.setRenderer(providerTypeRenderer);
             providerTypesCombo.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
-/*            providerTypesCombo.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    Object o = providerTypesCombo.getSelectedItem();
-                    LdapIdentityProviderConfig ipt = null;
-                    if (o instanceof LdapIdentityProviderConfig) {
-                        ipt = (LdapIdentityProviderConfig)o;
-                    }
-                    selectProvidersPanel(ipt);
-                }
-            });*/
         }
         return providerTypesCombo;
+    }
+
+    private void updateControlButtonState() {
+        if (getProviderNameTextField().getText().length() > 0 &&
+                getLdapHostTextField().getText().length() > 0 &&
+                getLdapSearchBaseTextField().getText().length() > 0) {
+
+            // can advance to next panel only when the above three fields are not empty
+            advanceAllowed = true;
+            finishAllowed = true;
+        } else {
+            advanceAllowed = false;
+            finishAllowed = false;
+        }
+
+        // notify the wizard to update the state of the control buttons
+        notifyListeners();
     }
 
     /** populate the form from the provider beans */
@@ -520,14 +509,7 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
                 }
 
                 providerTypesCombo.setEnabled(false);
-                if(getProviderNameTextField().getText().length() > 0) {
-                    advanceAllowed = true;
-                    finishAllowed = true;
-                }
-                else{
-                    advanceAllowed = false;
-                    finishAllowed = false;
-                }
+                updateControlButtonState();
             }
         }
     }
@@ -545,13 +527,22 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         }
     }
 
-    /** Resource bundle with default locale */
+    private KeyListener keyListener = new KeyListener() {
+        public void keyPressed(KeyEvent ke) {
+            // don't care
+        }
+
+        public void keyReleased(KeyEvent ke) {
+            updateControlButtonState();
+        }
+
+        public void keyTyped(KeyEvent ke) {
+            // don't care
+        }
+    };
+
     private ResourceBundle resources = null;
     private String CMD_TEST = "cmd.test";
-//    private LdapIdentityProviderConfig iProviderConfig = null;
-
-
-    /** provider ID text field */
     private JTextField providerNameTextField = null;
     private JTextField ldapBindPassTextField = null;
     private JTextField ldapBindDNTextField = null;
