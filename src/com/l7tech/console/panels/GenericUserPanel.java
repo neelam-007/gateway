@@ -23,8 +23,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.util.NoSuchElementException;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.DateFormat;
 
 /**
  * GenericUserPanel - edits the <CODE>Generic User/CODE> instances. This includes internal users, LDAP users.
@@ -300,18 +302,20 @@ public class GenericUserPanel extends UserPanel {
             GridBagConstraints.NONE,
             new Insets(15, 10, 0, 10), 0, 0));
 
-        // add account expiration here?
-        detailsPanel.add(new JLabel("Account expiration:"),
-                         new GridBagConstraints(0, 13, 1, 1, 0.0, 0.0,
-                         GridBagConstraints.WEST,
-                         GridBagConstraints.NONE,
-                         new Insets(0, 10, 0, 10), 0, 0));
+        if (config.type().equals(IdentityProviderType.INTERNAL)) {
+            // add account expiration here
+            detailsPanel.add(new JLabel("Account expiration:"),
+                             new GridBagConstraints(0, 13, 1, 1, 0.0, 0.0,
+                             GridBagConstraints.WEST,
+                             GridBagConstraints.NONE,
+                             new Insets(0, 10, 0, 10), 0, 0));
 
-        detailsPanel.add(getSetExpirationButton(),
-                         new GridBagConstraints(1, 13, 1, 1, 1.0, 0.0,
-                         GridBagConstraints.WEST,
-                         GridBagConstraints.HORIZONTAL,
-                         new Insets(0, 10, 0, 10), 0, 0));
+            detailsPanel.add(getSetExpirationButton(),
+                             new GridBagConstraints(1, 13, 1, 1, 1.0, 0.0,
+                             GridBagConstraints.WEST,
+                             GridBagConstraints.HORIZONTAL,
+                             new Insets(0, 10, 0, 10), 0, 0));
+        }
 
         Component strut = Box.createVerticalStrut(8);
 
@@ -528,6 +532,7 @@ public class GenericUserPanel extends UserPanel {
             setExpirationButton = new JButton("never");
             setExpirationButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    InternalUser iu = (InternalUser)user; // at this point, this type should already be confirmed
                     // get parent dialog
                     JDialog parent = null;
                     Container container = GenericUserPanel.this.getParent();
@@ -538,12 +543,20 @@ public class GenericUserPanel extends UserPanel {
                         }
                         container = container.getParent();
                     }
-                    // todo get initial value
-                    AccountExpirationPanel exirationChooser = new AccountExpirationPanel(parent, -1);
+                    AccountExpirationPanel exirationChooser = new AccountExpirationPanel(parent, iu.getExpiration());
                     exirationChooser.pack();
                     Utilities.centerOnScreen(exirationChooser);
                     exirationChooser.show();
-                    // todo store value somewhere
+                    if (!exirationChooser.wasCancelled()) {
+                        long newvalue = exirationChooser.getExpirationValue();
+                        iu.setExpiration(newvalue);
+                        // refresh button with new value
+                        String newExpiration = "never";
+                        if (newvalue > -1) {
+                            newExpiration = DateFormat.getInstance().format(new Date(newvalue));
+                        }
+                        setExpirationButton.setText(newExpiration);
+                    }
                 }
             });
         }
