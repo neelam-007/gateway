@@ -201,7 +201,8 @@ public class HibernatePersistenceContext extends PersistenceContext {
         if (lastException instanceof HibernateException) {
             throw (HibernateException)lastException;
         }
-        throw new RuntimeException("should not get here");
+
+        throw new RuntimeException("Database connection failed for an unexpected reason", lastException);
     }
 
     public void beginTransaction() throws TransactionException {
