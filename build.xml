@@ -334,7 +334,6 @@
 
             <zipfileset dir="${src.root}/etc" prefix="WEB-INF">
                 <include name="server-config.wsdd"/>
-                <include name="jboss-web.xml"/>
             </zipfileset>
             <zipfileset dir="${src.root}/web" includes="index.html" prefix="ssg"/>
             <zipfileset dir="${src.root}/web" includes="index.html"/>
