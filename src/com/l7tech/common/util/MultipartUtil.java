@@ -35,7 +35,7 @@ public class MultipartUtil {
             while (headerItr.hasNext()) {
                 String headerName = (String) headerItr.next();
                 Message.HeaderValue hv = (Message.HeaderValue) headers.get(headerName);
-                sb.append(hv.getName()).append(":").append(hv.getValue()).append("\n");
+                sb.append(hv.getName()).append(":").append(hv.getValue());
 
                 // append parameters of the header
                 Map parameters = hv.getParams();
@@ -43,8 +43,9 @@ public class MultipartUtil {
                 Iterator paramItr = paramKeys.iterator();
                 while (paramItr.hasNext()) {
                     String paramName = (String) paramItr.next();
-                    sb.append(paramName).append("=").append(parameters.get(paramName)).append(";");
+                    sb.append("; ").append(paramName).append("=").append(parameters.get(paramName)).append(";");
                 }
+                sb.append("\n");
             }
             sb.append("\n" + part.getContent());
         }

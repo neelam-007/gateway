@@ -519,13 +519,17 @@ public class MessageProcessor {
                 Iterator headerItr = headerKeys.iterator();
                 while(headerItr.hasNext()) {
                     Message.HeaderValue headerValue = (Message.HeaderValue) headerMap.get(headerItr.next());
-                    if(headerValue.getName().equals(XmlUtil.CONTENT_TYPE)) {
-                        // replace the content type of the SOAP part with the one we use
-                        sb.append(XmlUtil.CONTENT_TYPE + ": " + XmlUtil.TEXT_XML +
-                                "; charset=" + ENCODING.toLowerCase() + "\n");
-                    } else {
-                        sb.append(headerValue.getName()).append(":").append(headerValue.getValue()).append("\n");
+                    sb.append(headerValue.getName()).append(":").append(headerValue.getValue());
+
+                    // append parameters of the header
+                    Map parameters = headerValue.getParams();
+                    Set paramKeys = parameters.keySet();
+                    Iterator paramItr = paramKeys.iterator();
+                    while (paramItr.hasNext()) {
+                        String paramName = (String) paramItr.next();
+                        sb.append("; ").append(paramName).append("=").append(parameters.get(paramName));
                     }
+                    sb.append("\n");
                 }
                 // an blank line is required between the header block and the body block
                 sb.append("\n");
