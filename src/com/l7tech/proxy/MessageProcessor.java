@@ -92,10 +92,9 @@ public class MessageProcessor {
                     JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
                     KeyPair keyPair = kpg.generateKeyPair();
                     PKCS10CertificationRequest csr = SslUtils.makeCsr(ssg.getUsername(),
-                                                                      ssg.getSsgAddress(),
                                                                       keyPair.getPublic(),
                                                                       keyPair.getPrivate());
-                    X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerSslUrl(),
+                    X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
                                                                             ssg.getUsername(),
                                                                             ssg.getPassword(),
                                                                             csr);
