@@ -33,15 +33,19 @@ public class SoapUtil {
     public static final String HEADER = "Header";
     public static final String BODY   = "Body";
 
-    public static Element getEnvelope( Request request ) throws SAXException, IOException {
+    public static Document getDocument( Request request ) throws SAXException, IOException {
         if ( request instanceof XmlRequest ) {
             XmlRequest xreq = (XmlRequest)request;
-            Document doc = xreq.getDocument();
-            Element env = doc.getDocumentElement();
-            return env;
+            return xreq.getDocument();
         } else {
             throw new IllegalArgumentException( "Can't find a URN in a non-XML request!" );
         }
+    }
+
+    public static Element getEnvelope( Request request ) throws SAXException, IOException {
+        Document doc = getDocument( request );
+        Element env = doc.getDocumentElement();
+        return env;
     }
 
     public static Element getHeaderElement( Request request ) throws SAXException, IOException {
