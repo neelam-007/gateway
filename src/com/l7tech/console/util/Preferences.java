@@ -109,7 +109,7 @@ public class Preferences extends PropertyChangeSupport {
     public void store() throws IOException {
         FileOutputStream fout = null;
         try {
-            fout = new FileOutputStream(CONSOLE_CONFIG + File.separator + STORE);
+            fout = new FileOutputStream(SSM_USER_HOME + File.separator + STORE);
             props.store(fout, "SSG properties");
         } finally {
             if (fout != null) {
@@ -123,7 +123,7 @@ public class Preferences extends PropertyChangeSupport {
      *         preferences are stored.
      */
     public String getHomePath() {
-        return CONSOLE_CONFIG;
+        return SSM_USER_HOME;
     }
 
     public String getTrustStoreFile() {
@@ -148,7 +148,7 @@ public class Preferences extends PropertyChangeSupport {
     private void prepare() {
         // verify home path exist, create if necessary
         File home =
-          new File(CONSOLE_CONFIG);
+          new File(SSM_USER_HOME);
         if (!home.exists()) {
             home.mkdir();
         }
@@ -167,7 +167,7 @@ public class Preferences extends PropertyChangeSupport {
                 if (in == null) {
                     log("warning couldn't load " + res[i]);
                 } else {
-                    File file = new File(CONSOLE_CONFIG + File.separator + res[i]);
+                    File file = new File(SSM_USER_HOME + File.separator + res[i]);
                     // if (!file.exists()) {
                     dumpStreamToFile(in, file);
                     // }
@@ -583,7 +583,7 @@ public class Preferences extends PropertyChangeSupport {
      * home directory.
      */
     protected void initialize() throws IOException {
-        File file = new File(CONSOLE_CONFIG + File.separator + STORE);
+        File file = new File(SSM_USER_HOME + File.separator + STORE);
 
         if (file.exists()) {
             FileInputStream fin = null;
@@ -759,10 +759,10 @@ public class Preferences extends PropertyChangeSupport {
     /**
      * where is home (properties are stored there)
      */
-    private final String CONSOLE_CONFIG =
+    public static final String SSM_USER_HOME =
       System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
 
-    private final String TRUST_STORE_FILE = CONSOLE_CONFIG + File.separator + "trustStore";
+    private final String TRUST_STORE_FILE = SSM_USER_HOME + File.separator + "trustStore";
     private final String TRUST_STORE_PASSWORD = "password";
 
 
