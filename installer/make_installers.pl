@@ -185,7 +185,7 @@ sub make_tar_file {
 
 	my $extra;
 	if ($file eq "Bridge") {
-	    $extra = "-server -Dcom.l7tech.proxy.listener.maxthreads=300 ";
+	    $extra = "-server -Dcom.l7tech.proxy.listener.maxthreads=300 \$JAVA_OPTS ";
     } else {
         $extra = "";
     }
