@@ -97,6 +97,9 @@ as Postgres:
 
 DB is now in place
 
+As Gateway:
+ copy etc/catalina.policy in $TOMCAT_HOME/conf
+
 As root
  cp /ssg/dist/etc/ssgruntimedefs.sh /etc/profile.d
 
