@@ -2,13 +2,14 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.console.action.SchemaValidationPropertiesAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * [class_desc]
+ * Policy tree node for Schema Validation Assertion.
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -21,7 +22,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
     public SchemaValidationTreeNode(Assertion assertion) {
         super(assertion);
         if (assertion instanceof SchemaValidation) {
-            originalAssertion = (SchemaValidation)assertion;
+            nodeAssertion = (SchemaValidation)assertion;
         } else throw new IllegalArgumentException("assertion passed must be of type " +
                                                    SchemaValidation.class.getName());
 
@@ -43,8 +44,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        // todo plug in our custom action here
-        //list.add(new SamlPropertiesAction(this));
+        list.add(new SchemaValidationPropertiesAction(this));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
@@ -55,8 +55,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        // todo plug in our custom action here
-        return null;
+        return new SchemaValidationPropertiesAction(this);
     }
 
     /**
@@ -68,5 +67,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
         return true;
     }
 
-    private SchemaValidation originalAssertion;
+    public SchemaValidation getAssertion() {return nodeAssertion;}
+
+    private SchemaValidation nodeAssertion;
 }
