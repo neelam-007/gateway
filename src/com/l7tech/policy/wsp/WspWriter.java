@@ -1,7 +1,6 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import org.apache.log4j.Category;
 import org.mortbay.util.WriterOutputStream;
@@ -79,9 +78,11 @@ public class WspWriter {
     }
 
     private void emitIndentedString(String what) throws IOException {
+        StringBuffer sb = new StringBuffer();
         for (int i = 0; i < indent; ++i)
-            output.write(" ".getBytes());
-        output.write(what.getBytes());
+            sb.append(" ");
+        sb.append(what);
+        output.write(sb.toString().getBytes());
     }
 
     private void emitTag(String tag) throws IOException {
