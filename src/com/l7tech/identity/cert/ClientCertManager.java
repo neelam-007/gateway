@@ -1,6 +1,7 @@
 package com.l7tech.identity.cert;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.User;
 
 import java.security.cert.Certificate;
 
@@ -22,29 +23,25 @@ public interface ClientCertManager {
      * if the user has no current cert or a cert that has not been used, this will
      * return true
      *
-     * @param providerId the provider to which this user belongs to
      */
-    boolean userCanGenCert(long providerId, String login);
+    boolean userCanGenCert(User user);
 
     /**
      * Records new cert for the user (if user is allowed)
      *
-     * @param providerId the provider to which this user belongs to
      * @param cert the cert to record
      * @throws IllegalStateException if user was not in a state that allowes the creation
      * of a cert
      */
-    void recordNewUserCert(long providerId, String login, Certificate cert) throws IllegalStateException;
+    void recordNewUserCert(User user, Certificate cert) throws IllegalStateException;
 
     /**
      * retrieves existing cert for this user
      */
-    Certificate getUserCert(long providerId, String login) throws FindException;
+    Certificate getUserCert(User user) throws FindException;
 
     /**
      * revokes the cert (if applicable) for this user
-     *
-     * @param providerId the provider to which this user belongs to
      */
-    void revokeUserCert(long providerId, String login);
+    void revokeUserCert(User user);
 }
