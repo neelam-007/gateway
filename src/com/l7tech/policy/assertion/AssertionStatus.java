@@ -18,17 +18,16 @@ public class AssertionStatus {
     public static final AssertionStatus UNDEFINED        = make( -1, "Undefined" );
 
     /** Assertion finished successfully */
-    public static final AssertionStatus NONE              = make(           0, "No Error" );
-    public static final AssertionStatus BAD_REQUEST       = make( CLIENT +  0, "Bad Request" );
+    public static final AssertionStatus NONE              = make(          0, "No Error" );
+    public static final AssertionStatus BAD_REQUEST       = make( CLIENT + 0, "Bad Request" );
     /** Credentials required but missing */
-    public static final AssertionStatus AUTH_REQUIRED     = make( CLIENT +  1, "Authentication Required" );
+    public static final AssertionStatus AUTH_REQUIRED     = make( CLIENT + 1, "Authentication Required", true );
     /** Credentials present but erroneous */
-    public static final AssertionStatus AUTH_FAILED       = make( CLIENT +  2, "Authentication Failed" );
-    public static final AssertionStatus FORBIDDEN         = make( CLIENT +  3, "Forbidden" );
-    public static final AssertionStatus SERVICE_DISABLED  = make( CLIENT +  3, "Service Disabled" );
+    public static final AssertionStatus AUTH_FAILED       = make( CLIENT + 2, "Authentication Failed", true );
+    public static final AssertionStatus UNAUTHORIZED      = make( CLIENT + 2, "Unauthorized", true );
+    public static final AssertionStatus SERVICE_DISABLED  = make( CLIENT + 3, "Service Disabled" );
     /** Couldn't resolve a service for this request */
-    public static final AssertionStatus SERVICE_NOT_FOUND = make( CLIENT +  4, "Service Not Found" );
-    public static final AssertionStatus UNAUTHORIZED      = make( CLIENT +  2, "Unauthorized" );
+    public static final AssertionStatus SERVICE_NOT_FOUND = make( CLIENT + 4, "Service Not Found" );
 
     /** Assertion not yet implemented. */
     public static final AssertionStatus NOT_YET_IMPLEMENTED = make( MISC + 0, "Not yet implemented!" );
@@ -48,6 +47,10 @@ public class AssertionStatus {
     public String getMessage() {
         return _message;
     }
+    
+    public boolean isAuthProblem() {
+        return _authProblem;
+    }
 
     public String getSoapFaultCode() {
         if ( _numeric >= CLIENT && _numeric < SERVER )
@@ -56,13 +59,18 @@ public class AssertionStatus {
             return SoapUtil.FC_SERVER;
     }
 
-    private static AssertionStatus make( int numeric, String message ) {
-        return new AssertionStatus( numeric, message );
+    private static AssertionStatus make( int numeric, String message, boolean auth ) {
+        return new AssertionStatus( numeric, message, auth );
     }
 
-    private AssertionStatus( int numeric, String message ) {
+    private static AssertionStatus make( int numeric, String message ) {
+        return make( numeric, message, false );
+    }
+
+    private AssertionStatus( int numeric, String message, boolean auth ) {
         _numeric = numeric;
         _message = message;
+        _authProblem = auth;
     }
 
     public String toString() {
@@ -71,5 +79,5 @@ public class AssertionStatus {
 
     protected final int _numeric;
     protected final String _message;
-
+    protected final boolean _authProblem;
 }

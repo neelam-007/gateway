@@ -84,21 +84,21 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                         respWriter = new BufferedWriter(new OutputStreamWriter(hresponse.getOutputStream(), ENCODING));
                         respWriter.write(protRespXml);
                     }
-                } else if (sresp.isAuthenticationMissing() ||
-                  status == AssertionStatus.AUTH_REQUIRED ||
-                  status == AssertionStatus.AUTH_FAILED ||
-                  status == AssertionStatus.UNAUTHORIZED) {
+                } else if (sresp.isAuthenticationMissing() || status.isAuthProblem()) {
                     sendChallenge(sreq, sresp, hrequest, hresponse);
                 } else {
-                    sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, status.getSoapFaultCode(), status.getMessage());
+                    sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                              status.getSoapFaultCode(), status.getMessage());
                 }
             } catch (PolicyAssertionException pae) {
                 logger.log(Level.SEVERE, pae.getMessage(), pae);
-                sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString());
+                sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                          SoapUtil.FC_SERVER, pae.toString());
             } catch (PolicyVersionException pve) {
                 String msg = "Request referred to an outdated version of policy";
                 logger.log(Level.INFO, msg );
-                sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED, SoapUtil.FC_CLIENT, msg);
+                sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
+                          SoapUtil.FC_CLIENT, msg);
             }
         } catch (SOAPException se) {
             logger.log(Level.SEVERE, se.getMessage(), se);
