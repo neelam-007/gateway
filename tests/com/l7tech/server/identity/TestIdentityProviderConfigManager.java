@@ -9,11 +9,19 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
+import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.beans.factory.InitializingBean;
+
 /**
  * @author emil
  * @version 14-Dec-2004
  */
-public class TestIdentityProviderConfigManager implements IdentityProviderConfigManager {
+public class TestIdentityProviderConfigManager extends ApplicationObjectSupport
+  implements IdentityProviderConfigManager, InitializingBean {
+    private IdentityProviderFactory identityProviderFactory;
+    private IdentityProvider idprovider;
+
+    private Map versionMap = new HashMap();
     public IdentityProvider getInternalIdentityProvider() {
         return idprovider;
     }
@@ -83,7 +91,14 @@ public class TestIdentityProviderConfigManager implements IdentityProviderConfig
         throw new UnsupportedOperationException("not implemented");
     }
 
-    private static final IdentityProvider idprovider = new TestIdentityProvider();
+    public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
+         this.identityProviderFactory = identityProviderFactory;
+     }
 
-    private Map versionMap = new HashMap();
+    public void afterPropertiesSet() throws Exception {
+        if (identityProviderFactory == null) {
+            throw new IllegalArgumentException("Identity Provider Factory is required");
+        }
+        idprovider =  identityProviderFactory.makeProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
+    }
 }

@@ -9,11 +9,11 @@ package com.l7tech.identity;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -21,19 +21,30 @@ import java.util.logging.Logger;
 public class TestIdentityProvider implements IdentityProvider {
     public static long PROVIDER_ID = 9898;
     public static int PROVIDER_VERSION = 1;
-    private static Logger log = Logger.getLogger(TestIdentityProvider.class.getName());
+
     private static Map usernameMap = Collections.synchronizedMap(new HashMap());
-    private static IdentityProviderConfig config = new IdentityProviderConfig(new IdentityProviderType(9898,
-                                                                                                       "TestIdentityProvider",
-                                                                                                       TestIdentityProvider.class.getName()));
-    {
-        config.setOid(PROVIDER_ID);
-        config.setName("TestIdentityProvider");
-        config.setDescription("ID provider for testing");
-        config.setVersion(PROVIDER_VERSION);
+
+    public static IdentityProviderConfig TEST_IDENTITY_PROVIDER_CONFIG =
+      new IdentityProviderConfig(new IdentityProviderType(9898, "TestIdentityProvider", TestIdentityProvider.class.getName()));
+
+    static {
+        TEST_IDENTITY_PROVIDER_CONFIG.setOid(PROVIDER_ID);
+        TEST_IDENTITY_PROVIDER_CONFIG.setName("TestIdentityProvider");
+        TEST_IDENTITY_PROVIDER_CONFIG.setDescription("ID provider for testing");
+        TEST_IDENTITY_PROVIDER_CONFIG.setVersion(PROVIDER_VERSION);
     }
-    private static TestUserManager userman = new TestUserManager();
-    private static TestGroupManager groupman = new TestGroupManager();
+
+
+    private ApplicationContext applicationContext;
+    private TestUserManager userman = new TestUserManager();
+    private TestGroupManager groupman = new TestGroupManager();
+    private IdentityProviderConfig config;
+
+    public TestIdentityProvider(IdentityProviderConfig config, ApplicationContext applicationContext) {
+        this.config = config;
+        this.applicationContext = applicationContext;
+    }
+
 
     private static class TestEntityManager implements EntityManager {
         public Collection findAllHeaders() throws FindException {
@@ -77,12 +88,6 @@ public class TestIdentityProvider implements IdentityProvider {
         }
     }
 
-    public TestIdentityProvider() {
-    }
-
-    public TestIdentityProvider(IdentityProviderConfig cfg) {
-    }
-
     public static void addUser(UserBean user, String username, char[] password) {
         usernameMap.put(username, new MyUser(user, username, password));
     }
@@ -124,7 +129,7 @@ public class TestIdentityProvider implements IdentityProvider {
         return;
     }
 
-    private static class TestGroupManager extends TestEntityManager implements GroupManager {
+    private class TestGroupManager extends TestEntityManager implements GroupManager {
         public Group findByPrimaryKey(String identifier) throws FindException {
             return null;
         }

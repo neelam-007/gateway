@@ -8,5 +8,6 @@
 
     <!-- server side identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.TestIdentityProviderConfigManager">
+        <property name="identityProviderFactory"><ref bean='identityProviderFactory'/></property>
     </bean>
 </beans>

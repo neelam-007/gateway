@@ -6,12 +6,12 @@
 
 package com.l7tech.server.policy;
 
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.ApplicationContexts;
 import com.l7tech.identity.TestIdentityProvider;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.Assertion;
@@ -30,13 +30,12 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.util.PolicyServiceClient;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import junit.extensions.TestSetup;
-import org.w3c.dom.Document;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
