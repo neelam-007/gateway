@@ -18,6 +18,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Constructor;
 
 /**
+ * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
  * @author alex
  * @version $Revision$
  */
