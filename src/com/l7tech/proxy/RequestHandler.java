@@ -270,10 +270,14 @@ public class RequestHandler extends AbstractHttpHandler {
             OutputStream os = response.getOutputStream();
 
             response.setStatus(status);
-            response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
 
             MultipartMessageReader multipartReader = null;
             if((multipartReader = ssgResponse.getMultipartReader()) != null) {
+                response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
+                            "; type=\"" + XmlUtil.TEXT_XML + "\"" +
+                            "; start=\"" + multipartReader.getSoapPart().getHeader(XmlUtil.CONTENT_ID).getValue() + "\"" +
+                            "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + multipartReader.getMultipartBoundary()  + "\"");
+
                 StringBuffer sb = new StringBuffer();
 
                 // add modified SOAP part
@@ -295,6 +299,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 }
                                 
             } else {
+                response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
                 os.write(ssgResponse.getResponseAsString().getBytes());
             }
             response.commit();
