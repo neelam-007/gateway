@@ -20,6 +20,7 @@ import java.util.logging.Logger;
  */
 public class TestIdentityProvider implements IdentityProvider {
     public static long PROVIDER_ID = 9898;
+    public static int PROVIDER_VERSION = 1;
     private static Logger log = Logger.getLogger(TestIdentityProvider.class.getName());
     private static Map usernameMap = Collections.synchronizedMap(new HashMap());
     private static IdentityProviderConfig config = new IdentityProviderConfig(new IdentityProviderType(9898,
@@ -29,7 +30,7 @@ public class TestIdentityProvider implements IdentityProvider {
         config.setOid(PROVIDER_ID);
         config.setName("TestIdentityProvider");
         config.setDescription("ID provider for testing");
-        config.setVersion(1);
+        config.setVersion(PROVIDER_VERSION);
     }
     private static TestUserManager userman = new TestUserManager();
     private static TestGroupManager groupman = new TestGroupManager();
