@@ -164,21 +164,35 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
             // search string for users and or groups based on passed types wanted
             String filter = null;
             if (wantUsers && wantGroups) {
-                filter = "(&(|(objectclass=" + constants.groupObjectClass() + ")" +
-                         "(objectclass=" + constants.userObjectClass() + "))" +
-                         "(" + constants.userNameAttribute() + "=" + searchString + "))";
-                        // todo, add ou
+                filter = "(|" +
+                             "(&" +
+                                 "(|" +
+                                     "(objectclass=" + constants.groupObjectClass() + ")" +
+                                     "(objectclass=" + constants.userObjectClass() + ")" +
+                                 ")" +
+                                 "(" + constants.userNameAttribute() + "=" + searchString + ")" +
+                             ")" +
+                             "(&" +
+                                 "(objectClass=" + AbstractLdapConstants.oUObjClassName() + ")" +
+                                 "(" + AbstractLdapConstants.oUObjAttrName() + "=" + searchString + ")" +
+                             ")" +
+                         ")";
             } else if (wantUsers) {
-                filter = "(&(objectclass=" + constants.userObjectClass() + ")" +
-                         "(" + constants.userNameAttribute() + "=" + searchString + "))";
+                filter = "(&" +
+                           "(objectclass=" + constants.userObjectClass() + ")" +
+                           "(" + constants.userNameAttribute() + "=" + searchString + ")" +
+                         ")";
             } else if (wantGroups) {
-                /*filter = "(&(objectclass=" + constants.groupObjectClass() + ")" +
-                         "(" + constants.groupNameAttribute() + "=" + searchString + ")" +
-                         ")";*/
-                filter = "(|(&(objectclass=" + constants.groupObjectClass() + ")" +
-                         "(" + constants.groupNameAttribute() + "=" + searchString + "))" +
-                         "(&(objectClass=" + AbstractLdapConstants.oUObjClassName() + ")" +
-                         "(" + AbstractLdapConstants.oUObjAttrName() + "=" + searchString + ")))";
+                filter = "(|" +
+                            "(&" +
+                              "(objectclass=" + constants.groupObjectClass() + ")" +
+                              "(" + constants.groupNameAttribute() + "=" + searchString + ")" +
+                            ")" +
+                            "(&" +
+                              "(objectClass=" + AbstractLdapConstants.oUObjClassName() + ")" +
+                              "(" + AbstractLdapConstants.oUObjAttrName() + "=" + searchString + ")" +
+                            ")" +
+                         ")";
             }
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
