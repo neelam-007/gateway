@@ -102,7 +102,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
               boolean isSelected,
               boolean cellHasFocus) {
                 IdentityProvider ip = (IdentityProvider)value;
-                return new JLabel(ip.getConfig().getDescription());
+                return new JLabel(ip.getConfig().getName());
             }
         });
         providersComboBox.addActionListener(new ActionListener() {
@@ -502,6 +502,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
           IdentityProviderConfig config = new IdentityProviderConfig();
 
           {
+              config.setName("No provider selected ");
               config.setDescription("No provider selected ");
           }
 
