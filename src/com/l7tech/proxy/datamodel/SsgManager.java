@@ -7,7 +7,6 @@ import java.io.IOException;
  * User: mike
  * Date: Jun 2, 2003
  * Time: 12:12:38 PM
- * To change this template use Options | File Templates.
  */
 public interface SsgManager extends SsgFinder {
     /**
@@ -20,7 +19,7 @@ public interface SsgManager extends SsgFinder {
      * is already registered.
      * @param ssg The new Ssg.
      * @return true iff. the new ssg was not already registered.
-     * @throws IllegalArgumentException if the Ssg was not obtained by calling createSsg()
+     * @throws IllegalArgumentException might be thrown if the Ssg was not obtained by calling createSsg()
      */
     boolean add(Ssg ssg);
 
