@@ -13,6 +13,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
+import com.l7tech.server.ServerConfig;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -29,7 +30,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         _manager = new JmsManager();
     }
 
-    public void init() throws LifecycleException {
+    public void init( ServerConfig config ) throws LifecycleException {
         if ( _booted ) throw new LifecycleException( "Can't boot JmsBootProcess twice!" );
 
         try {

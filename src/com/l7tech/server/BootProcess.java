@@ -37,11 +37,13 @@ public class BootProcess implements ServerComponentLifecycle {
     private Logger logger = LogManager.getInstance().getSystemLogger();
     private List _components = new ArrayList();
 
-    public void init() throws LifecycleException {
+    public void init( ServerConfig config ) throws LifecycleException {
         try {
-            setSystemProperties();
+            setSystemProperties( config );
 
-            String[] componentClassnames = ServerConfig.getInstance().getProperty( ServerConfig.PARAM_SERVERCOMPONENTS ).split("\\s.*?");
+            String classnameString = config.getProperty( ServerConfig.PARAM_SERVERCOMPONENTS );
+            String[] componentClassnames = classnameString.split("\\s.*?");
+
             ServerComponentLifecycle component = null;
             for ( int i = 0; i < componentClassnames.length; i++ ) {
                 String classname = componentClassnames[i];
@@ -58,7 +60,7 @@ public class BootProcess implements ServerComponentLifecycle {
                 }
 
                 if ( component != null ) {
-                    component.init();
+                    component.init( config );
                     _components.add( component );
                 }
             }
@@ -87,14 +89,14 @@ public class BootProcess implements ServerComponentLifecycle {
             PersistenceContext.getCurrent().commitTransaction();
             PersistenceContext.getCurrent().close();
 
-            logger.info( BuildInfo.getLongBuildString() );
-
             logger.info( "Starting server components..." );
             for ( Iterator i = _components.iterator(); i.hasNext(); ) {
                 ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
                 logger.info( "Starting component " + component );
                 component.start();
             }
+
+            logger.info( BuildInfo.getLongBuildString() );
 
             logger.info("Boot process complete.");
         } catch ( IOException ioe ) {
@@ -145,9 +147,9 @@ public class BootProcess implements ServerComponentLifecycle {
         StatusUpdater.stopUpdater();
     }
 
-    private void setSystemProperties() throws IOException {
+    private void setSystemProperties( ServerConfig config ) throws IOException {
         // Set system properties
-        String sysPropsPath = ServerConfig.getInstance().getSystemPropertiesPath();
+        String sysPropsPath = config.getSystemPropertiesPath();
         File propsFile = new File( sysPropsPath );
         Properties props = new Properties();
 

@@ -11,6 +11,7 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.logging.LogManager;
 
 import javax.naming.InitialContext;
@@ -84,7 +85,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
         this( conn, replyType, inbound, null, null );
     }
 
-    public synchronized void init() throws LifecycleException {
+    public synchronized void init( ServerConfig config ) throws LifecycleException {
         Hashtable properties = new Hashtable();
         String classname = _connection.getInitialContextFactoryClassname();
         if ( classname != null && classname.length() > 0 )

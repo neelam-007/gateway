@@ -32,7 +32,7 @@ public class BootServlet extends HttpServlet {
         boolean failure = false;
 
         try {
-            _boot.init();
+            _boot.init( ServerConfig.getInstance() );
             _boot.start();
         } catch ( LifecycleException e ) {
             logger.log(Level.SEVERE, "ERROR IN BOOT SERVLET", e);
