@@ -7,9 +7,17 @@ package com.l7tech.server.saml;
  * @version 27-Jul-2004
  */
 public class Constants {
+    /** namespaces */
+    public static final String NS_SAML = "urn:oasis:names:tc:SAML:1.0:assertion";
+    public static final String NS_SAML_PREFIX = "saml";
+    public static final String NS_SAMLP = "urn:oasis:names:tc:SAML:1.0:protocol";
+    public static final String NS_SAMLP_PREFIX = "samlp";
+
+    /** confirmations */
     public static final String CONFIRMATION_SENDER_VOUCHES = "urn:oasis:names:tc:SAML:1.0:cm:sender-vouches";
     public static final String CONFIRMATION_HOLDER_OF_KEY = "urn:oasis:names:tc:SAML:1.0:cm:holder-of-key";
 
+    /** authentications */
     public static final String PASSWORD_AUTHENTICATION = "urn:oasis:names:tc:SAML:1.0:am:password";
     public static final String KERBEROS_AUTHENTICATION = "urn:ietf:rfc:1510";
     public static final String SRP_AUTHENTICATION = "urn:ietf:rfc:2945";
@@ -22,12 +30,21 @@ public class Constants {
     public static final String XML_DSIG_AUTHENTICATION = "urn:ietf:rfc:3075";
     public static final String UNSPECIFIED_AUTHENTICATION = "urn:oasis:names:tc:SAML:1.0:am:unspecified";
 
-    public static final String NS_SAML = "urn:oasis:names:tc:SAML:1.0:assertion";
-    public static final String NS_SAML_PREFIX = "saml";
 
-    public static final String NS_SAMLP = "urn:oasis:names:tc:SAML:1.0:protocol";
-    public static final String NS_SAMLP_PREFIX = "samlp";
+    /** name identifiers */
+    public static final String NAMEIDENTIFIER_X509_SUBJECT = "urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName";
+    public static final String NAMEIDENTIFIER_EMAIL = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress";
+    public static final String NAMEIDENTIFIER_WINDOWS = "urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName";
+    public static final String NAMEIDENTIFIER_UNSPECIFIED = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified";
 
+    /** SAML response status codes see saml core spec section 3.4.3.1 */
+    public static final String STATUS_SUCCESS = "Success";
+
+    /**
+     * The request could not be performed due to an error on the part
+     * of the SAML responder or SAML authority.
+     */
+    public static final String STATUS_RESPONDER = "Responder";
 
     /**
      * Cannot instantiate this class
