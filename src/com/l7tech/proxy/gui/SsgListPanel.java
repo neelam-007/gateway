@@ -33,7 +33,7 @@ public class SsgListPanel extends JPanel {
         setLayout(new GridBagLayout());
 
         final JPanel ssgListPanel = new JPanel(new BorderLayout());
-        ssgListPanel.setMinimumSize(new Dimension(400, 300));
+        ssgListPanel.setPreferredSize(new Dimension(220, 90));
 
         final JToolBar toolBar = new JToolBar(JToolBar.HORIZONTAL);
         toolBar.setFloatable(false);
