@@ -159,7 +159,7 @@ public class Service {
         return output;
     }
 
-    private void initialiseServiceManager() throws java.rmi.RemoteException {
+    private synchronized void initialiseServiceManager() throws java.rmi.RemoteException {
         try {
             serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class);
             if (serviceManagerInstance == null) throw new java.rmi.RemoteException("Cannot instantiate the ServiceManager");
