@@ -1,10 +1,12 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.message.TcpKnob;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RemoteIpRange;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.AssertionMessages;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -22,28 +24,37 @@ import java.util.logging.Logger;
  */
 public class ServerRemoteIpRange implements ServerAssertion {
 
+    Auditor auditor = null;
+
     public ServerRemoteIpRange(RemoteIpRange rule) {
         this.rule = rule;
         calculateIPRange();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        auditor = new Auditor(context.getAuditContext(), logger);
+
         // get remote address
         TcpKnob tcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
         if (tcp == null) {
-            logger.info("Request was not received via TCP; cannot validate remote IP address");
+            auditor.logAndAudit(AssertionMessages.CANNOT_VALIDATE_IP_ADDRESS);
             return AssertionStatus.BAD_REQUEST;
         }
 
         String remoteAddress = tcp.getRemoteAddress();
         if (!RemoteIpRange.checkIPAddressFormat(remoteAddress)) {
-            logger.warning("The remote address " + remoteAddress + " is null or not in expected format.");
+            auditor.logAndAudit(AssertionMessages.CANNOT_VALIDATE_IP_ADDRESS, new String[] {remoteAddress});
+
             return AssertionStatus.FALSIFIED;
         }
         // check assertion with this address
         if (assertAddress(remoteAddress)) {
+            auditor.logAndAudit(AssertionMessages.REQUESTOR_ADDRESS_ACCEPTED, new String[] {remoteAddress});
             return AssertionStatus.NONE;
-        } else return AssertionStatus.FALSIFIED;
+        } else {
+            auditor.logAndAudit(AssertionMessages.REQUESTOR_ADDRESS_REJECTED, new String[] {remoteAddress});                        
+            return AssertionStatus.FALSIFIED;
+        }
     }
 
     /**
@@ -70,7 +81,6 @@ public class ServerRemoteIpRange implements ServerAssertion {
                         " is in assertion range " + serializedRange + " (exclusion range)");
             return false;
         }
-        logger.finest("Requestor's address (" + addressToCheck + ") is accepted.");
         return true;
     }
 
