@@ -16,11 +16,15 @@ import java.util.ArrayList;
  * @version 1.1
  */
 public class UserFolderNode implements BasicTreeNode {
+    private final Enumeration children;
+
     /**
      * construct the <CODE>UserFolderNode</CODE> instance
+     *
+     * @param ce the children enumeration
      */
-    public UserFolderNode() {
-
+    public UserFolderNode(Enumeration ce) {
+        children = ce;
     }
 
     /**
@@ -40,12 +44,7 @@ public class UserFolderNode implements BasicTreeNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-        EntityHeader[] res = new EntityHeader[0];
-        List list = new ArrayList();
-        for (int i = 0; i < res.length; i++) {
-            list.add(new UserNode(res[i]));
-        }
-        return Collections.enumeration(list);
+       return children;
     }
 
     /**
@@ -67,7 +66,7 @@ public class UserFolderNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the label; constant "Usersd" is returned
+     * Returns the label; constant "Users" is returned
      */
     public String getLabel() {
         return "Users";

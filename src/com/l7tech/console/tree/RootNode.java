@@ -1,5 +1,7 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.util.Registry;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -40,10 +42,13 @@ public class RootNode implements BasicTreeNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
+        Registry r = Registry.getDefault();
+        UserEntitiesCollection ue =
+                new UserEntitiesCollection(r.getInternalUserManager());
         List list =
                 Arrays.asList(
                         new BasicTreeNode[]{
-                            new UserFolderNode(),
+                            new UserFolderNode(new EntitiesEnumeration(ue)),
                             new GroupFolderNode(),
                             new ProvidersFolderNode(),
                             new PoliciesFolderNode(),

@@ -11,6 +11,8 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 
+import com.l7tech.objectmodel.EntityHeader;
+
 
 
 
@@ -125,7 +127,11 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
       Iterator iterator = nodes.iterator();
       int index = 0;
       while (iterator.hasNext()) {
-        insert(new EntityTreeNode((BasicTreeNode)iterator.next()), index++);
+          Object o = iterator.next();
+          if (o instanceof EntityHeader)
+              insert(new EntityTreeNode(TreeNodeFactory.getTreeNode((EntityHeader)o)), index++);
+          else if (o instanceof BasicTreeNode)
+              insert(new EntityTreeNode((BasicTreeNode)o), index++);
       }
       hasLoaded = true;
     } catch (Exception e) {

@@ -3,10 +3,9 @@ package com.l7tech.console.panels;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.UserManager;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.imp.EntityHeaderImp;
+import com.l7tech.identity.*;
 import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.util.Locator;
 
@@ -441,6 +440,27 @@ public class NewUserDialog extends JDialog {
 
     /** insert user */
     private void insertUser() {
+        user.setName(idTextField.getText());
+        user.setPassword(new String(passwordField.getPassword()));
+           SwingUtilities.invokeLater(
+                   new Runnable() {
+                       public void run() {
+                           try {
+                               EntityHeader header = new EntityHeaderImp();
+                               header.setType(User.class);
+                               header.setName(user.getName());
+                               getInternalUserManager().save(user);
+                               panelListener.onInsert(header);
+                               insertSuccess = true;
+                               } catch (SaveException e) {
+                                   e.printStackTrace();
+                           } catch (RuntimeException e) {
+                               e.printStackTrace();
+                           }
+                           NewUserDialog.this.dispose();
+                       }
+                   });
+
 
     }
 
@@ -460,7 +480,6 @@ public class NewUserDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-
                                 JPanel panel = null;
 
                                 if (panel == null) return;

@@ -327,11 +327,11 @@ public class NewGroupDialog extends JDialog {
                             EntityHeader header = new EntityHeaderImp();
                             header.setType(Group.class);
                             header.setName(group.getName());
-                            //getInternalGroupManager().save(group);
+                            getInternalGroupManager().save(group);
                             panelListener.onInsert(header);
                             insertSuccess = true;
-                            /*} catch (SaveException e) {
-                                e.printStackTrace();*/
+                            } catch (SaveException e) {
+                                e.printStackTrace();
                         } catch (RuntimeException e) {
                             e.printStackTrace();
                         }
