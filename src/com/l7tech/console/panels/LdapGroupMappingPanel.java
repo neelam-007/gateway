@@ -58,7 +58,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      * @return  String  The descritpion of the step.
      */
     public String getDescription() {
-        return "Map the attributes for each group objectclass in the LDAP Identity Provider.";
+        return "Map the attributes for each group object class in the LDAP Identity Provider.";
     }
 
     /** @return the wizard step label    */

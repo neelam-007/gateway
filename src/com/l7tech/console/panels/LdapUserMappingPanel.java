@@ -1,25 +1,24 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.UserMappingConfig;
-import com.l7tech.identity.ldap.PasswdStrategy;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.PasswdStrategy;
+import com.l7tech.identity.ldap.UserMappingConfig;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.Iterator;
 import java.util.logging.Logger;
 
 /**
@@ -62,7 +61,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
      * @return  String  The descritpion of the step.
      */
     public String getDescription() {
-        return "Map the attributes for each user objectclass in the LDAP Identity Provider.";
+        return "Map the attributes for each user object class in the LDAP Identity Provider.";
     }
 
     /** @return the wizard step label    */
