@@ -64,9 +64,39 @@ public class ClientTest extends junit.framework.TestCase {
         }
     }
 
+    public void testCreateSpockLdapIDProviderConfig() throws Exception {
+        Client me = new Client("http://localhost:8080/ssg/services/identityAdmin", "ssgadmin", "ssgadminpasswd");
+
+        // test echo
+        System.out.println(me.echoVersion());
+
+        // create a ldap id provider config
+        com.l7tech.identity.ldap.LdapIdentityProviderConfig cfg = new com.l7tech.identity.ldap.LdapIdentityProviderConfig();
+
+        cfg.setName("spock directory");
+        cfg.setDescription("spock directory as seen from the kelowna office");
+
+        cfg.setLdapHostURL("ldap://localhost:3899");
+        cfg.setSearchBase("dc=layer7-tech,dc=com");
+
+        com.l7tech.identity.imp.IdentityProviderTypeImp type = new com.l7tech.identity.imp.IdentityProviderTypeImp();
+        type.setClassName(com.l7tech.identity.ldap.LdapIdentityProviderServer.class.getName());
+        type.setDescription("LDAP Identity Provider");
+        type.setName("LDAP Identity Provider");
+        type.setOid(1925666);
+
+        cfg.setType(type);
+
+        // save it
+        long newcfgid = me.saveIdentityProviderConfig(cfg);
+
+        System.out.println("new config saved successfuly with id:" + newcfgid);
+    }
+
     public static void main(String[] args) throws Exception {
         ClientTest toto = new ClientTest();
         toto.testFinds();
+        // toto.testCreateSpockLdapIDProviderConfig();
         //junit.textui.TestRunner.run(suite());
     }
 }
