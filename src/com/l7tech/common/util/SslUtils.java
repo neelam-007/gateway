@@ -68,6 +68,23 @@ public class SslUtils {
         return certReq;
     }
 
+    public static class BadCredentialsException extends Exception {
+        public BadCredentialsException() {
+        }
+
+        public BadCredentialsException(String message) {
+            super(message);
+        }
+
+        public BadCredentialsException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public BadCredentialsException(Throwable cause) {
+            super(cause);
+        }
+    }
+
     /**
      * Transmit a CSR to the SSG and download the newly-signed certificate.
      * @param url       The URL that we should post our CSR to, whose response will be assumed to be our certificate.
@@ -77,11 +94,12 @@ public class SslUtils {
      * @return
      * @throws IOException
      * @throws CertificateException
+     * @throws SslUtils.BadCredentialsException if the username or password was rejected by the CSR signer
      */
     public static X509Certificate obtainClientCertificate(URL url, String username, char[] password,
                                                           PKCS10CertificationRequest csr)
             throws IOException, CertificateException, NoSuchAlgorithmException,
-                   InvalidKeyException, NoSuchProviderException
+                   InvalidKeyException, NoSuchProviderException, BadCredentialsException
     {
         X500Principal csrName = new X500Principal(csr.getCertificationRequestInfo().getSubject().toString());
         String csrNameString = csrName.getName(X500Principal.CANONICAL);
@@ -101,6 +119,7 @@ public class SslUtils {
 
             int result = hc.executeMethod(post);
             log.info("Post of CSR completed with status " + result);
+            if ( result == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + result );
             if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );
             X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(post.getResponseBodyAsStream());
             post.releaseConnection();
