@@ -20,7 +20,8 @@ import org.w3c.dom.Document;
  */
 public class PolicyExporterTest extends TestCase {
 
-    public void exportToDocumentTest() throws Exception  {
+    public void testExportToDocument() throws Exception  {
+        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
         PolicyExporter exporter = new PolicyExporter();
         Assertion testPolicy = createTestPolicy();
         Document resultingExport = exporter.exportToDocument(testPolicy);
@@ -41,6 +42,7 @@ public class PolicyExporterTest extends TestCase {
     }
 
     public static void main(String[] args) {
+        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
         junit.textui.TestRunner.run(suite());
     }
 }
