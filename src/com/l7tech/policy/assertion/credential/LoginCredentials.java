@@ -19,6 +19,8 @@ import java.util.Map;
  * Immutable.
  * <p>
  * Please don't ever make this class Serializable; we don't want to save anyone's password by accident.
+ * <p> 
+ * TODO move this to a better package
  *
  * @author alex
  */
