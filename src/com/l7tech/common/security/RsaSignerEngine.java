@@ -27,6 +27,15 @@ public interface RsaSignerEngine {
      */
     Certificate createCertificate(byte[] pkcs10req) throws Exception;
 
+    /**
+     * Same as other createCertificate except allows caller to request a specific expiration date
+     * @param pkcs10req the PKCS10 certificate signing request, expressed in binary form.
+     * @param expiration expiration of the cert (millis since era)
+     * @return a signed X509 client certificate
+     * @throws Exception
+     */
+    Certificate createCertificate(byte[] pkcs10req, long expiration) throws Exception;
+
     public static class CertType {
         public static final CertType CA = new CertType("CA");
         public static final CertType SSL = new CertType("SSL");

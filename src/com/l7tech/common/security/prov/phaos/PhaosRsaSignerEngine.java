@@ -105,5 +105,27 @@ public class PhaosRsaSignerEngine implements RsaSignerEngine {
         return new X509CertImpl(cert.getEncoded());
     }
 
+    /**
+     * Create a certificate from the given PKCS10 Certificate Request.
+     *
+     * @param pkcs10req  the PKCS10 certificate signing request, expressed in binary form.
+     * @return a signed X509 client certificate
+     * @throws Exception if something bad happens
+     */
+    public Certificate createCertificate(byte[] pkcs10req, long expiration) throws Exception {
+        /*CertificateRequest csr = new CertificateRequest(pkcs10req);
+        X509 phaosCaCert = new X509(caCert.getEncoded());
+        com.phaos.crypto.PrivateKey phaosPrivateKey = new com.phaos.crypto.RSAPrivateKey(privateKey.getEncoded());
+
+        byte[] serialBytes = new byte[8];
+        random.nextBytes(serialBytes);
+        BigInteger serial = new BigInteger(serialBytes);
+
+        final X509 cert = new X509(csr, phaosCaCert, phaosPrivateKey, serial, new Date(System.currentTimeMillis()), new Date(expiration));
+        return new X509CertImpl(cert.getEncoded());*/
+        // TODO, plug in code to support this. i dont have access to PHAOS doc right now --fla
+        throw new UnsupportedOperationException("this is not yet supported");
+    }
+
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

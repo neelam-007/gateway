@@ -8,6 +8,7 @@ import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.RsaCertificateSigner;
 import com.l7tech.objectmodel.*;
@@ -127,7 +128,17 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
             // sign request
             try {
-                cert = sign(csr);
+                // for internal users, if an account expiration is specified, make sure the cert created matches it
+                if (authenticatedUser instanceof InternalUser) {
+                    InternalUser iu = (InternalUser)authenticatedUser;
+                    if (iu.getExpiration() != -1) {
+                        cert = sign(csr, iu.getExpiration());
+                    } else {
+                        cert = sign(csr);
+                    }
+                } else {
+                    cert = sign(csr);
+                }
             } catch (Exception e) {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
                 logger.log(Level.SEVERE, e.getMessage(), e);
@@ -214,6 +225,13 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         RsaCertificateSigner signer = getSigner();
         // todo, refactor RsaCertificateSigner to throw more precise exceptions
         Certificate cert = signer.createCertificate(csr);
+        return cert;
+    }
+
+    private Certificate sign(byte[] csr, long expiration) throws Exception {
+        RsaCertificateSigner signer = getSigner();
+        // todo, refactor RsaCertificateSigner to throw more precise exceptions
+        Certificate cert = signer.createCertificate(csr, expiration);
         return cert;
     }
 

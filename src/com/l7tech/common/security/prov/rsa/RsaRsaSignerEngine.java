@@ -95,6 +95,18 @@ public class RsaRsaSignerEngine implements RsaSignerEngine {
      * @throws Exception if something bad happens
      */
     public Certificate createCertificate(byte[] pkcs10req) throws Exception {
+        return createCertificate(pkcs10req, -1);
+    }
+
+    /**
+     * Create a certificate from the given PKCS10 Certificate Request.
+     *
+     * @param pkcs10req  the PKCS10 certificate signing request, expressed in binary form.
+     * @param expiration the desired expiration of the cert, -1 for default value
+     * @return a signed X509 client certificate
+     * @throws Exception if something bad happens
+     */
+    public Certificate createCertificate(byte[] pkcs10req, long expiration) throws Exception {
         PKCS10CertRequest csr = new PKCS10CertRequest(pkcs10req, 0, 0);
         JSAFE_PrivateKey caKey = JSAFE_PrivateKey.getInstance(privateKey.getEncoded(), 0, "Native/Java");
         com.rsa.certj.cert.X509Certificate cert = new com.rsa.certj.cert.X509Certificate();
@@ -106,8 +118,13 @@ public class RsaRsaSignerEngine implements RsaSignerEngine {
 
         GregorianCalendar cal = new GregorianCalendar();
         Date notBefore = cal.getTime();
-        cal.add(Calendar.DAY_OF_MONTH,  CERT_DAYS_VALID);
-        Date notAfter = cal.getTime();
+        Date notAfter = null;
+        if (expiration == -1) {
+            cal.add(Calendar.DAY_OF_MONTH,  CERT_DAYS_VALID);
+            notAfter = cal.getTime();
+        } else {
+            notAfter = new Date(expiration);
+        }
         cert.setValidity(notBefore, notAfter);
 
         cert.setIssuerName(new X500Name(caCert.getSubjectDN().getName().toString()));

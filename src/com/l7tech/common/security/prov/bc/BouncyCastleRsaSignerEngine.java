@@ -85,14 +85,12 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         }
     }
 
-    private static X509V3CertificateGenerator makeCertGenerator( X509Name subject, int validity,
+    private static X509V3CertificateGenerator makeCertGenerator( X509Name subject, Date expiration,
                                                                  PublicKey publicKey, CertType type ) {
         Calendar cal = Calendar.getInstance();
         // Set back startdate ten minutes to avoid some problems with wrongly set clocks.
         cal.add(Calendar.MINUTE, -10);
         Date firstDate = cal.getTime();
-        cal.add(Calendar.DATE, validity);
-        Date lastDate = cal.getTime();
 
         X509V3CertificateGenerator certgen = new X509V3CertificateGenerator();
         // Serialnumber is random bits, where random generator is initialized with Date.getTime() when this
@@ -101,7 +99,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         random.nextBytes(serno);
         certgen.setSerialNumber((new BigInteger(serno)).abs());
         certgen.setNotBefore(firstDate);
-        certgen.setNotAfter(lastDate);
+        certgen.setNotAfter(expiration);
         certgen.setSignatureAlgorithm("SHA1WithRSA");
 
         certgen.setSubjectDN(subject);
@@ -147,8 +145,11 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     public static X509Certificate makeSelfSignedRootCertificate( String subjectDn, int validity, KeyPair keypair )
             throws SignatureException, InvalidKeyException
     {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DATE, validity);
+        Date lastDate = cal.getTime();
         X509Name subject = new X509Name(subjectDn);
-        X509V3CertificateGenerator certgen = makeCertGenerator(subject, validity, keypair.getPublic(), CertType.CA);
+        X509V3CertificateGenerator certgen = makeCertGenerator(subject, lastDate, keypair.getPublic(), CertType.CA);
 
         // Self-signed, issuer == subject
         certgen.setIssuerDN(subject);
@@ -157,13 +158,12 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         return cert;
     }
 
-    public static X509Certificate makeSignedCertificate(String subjectDn, int validity,
+    public static X509Certificate makeSignedCertificate(String subjectDn, Date expiration,
                                                         PublicKey subjectPublicKey,
                                                         X509Certificate caCert, PrivateKey caKey, CertType type)
-            throws IOException, SignatureException, InvalidKeyException
-    {
+            throws IOException, SignatureException, InvalidKeyException {
         X509Name subject = new X509Name(subjectDn);
-        X509V3CertificateGenerator certgen = makeCertGenerator(subject, validity, subjectPublicKey, type);
+        X509V3CertificateGenerator certgen = makeCertGenerator(subject, expiration, subjectPublicKey, type);
         certgen.setIssuerDN(new X509Name(caCert.getSubjectDN().getName()));
 
         // Add authority key info (fingerprint)
@@ -175,6 +175,16 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         return cert;
     }
 
+    public static X509Certificate makeSignedCertificate(String subjectDn, int validity,
+                                                        PublicKey subjectPublicKey,
+                                                        X509Certificate caCert, PrivateKey caKey, CertType type)
+            throws IOException, SignatureException, InvalidKeyException {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DATE, validity);
+        Date lastDate = cal.getTime();
+        return makeSignedCertificate(subjectDn, lastDate, subjectPublicKey, caCert, caKey, type);
+    }
+
     /**
      * Create a certificate from the given PKCS10 Certificate Request.
      *
@@ -183,6 +193,18 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
      * @throws Exception if something bad happens
      */
     public Certificate createCertificate(byte[] pkcs10req) throws Exception {
+        return createCertificate(pkcs10req, -1);
+    }
+
+    /**
+     * Create a certificate from the given PKCS10 Certificate Request.
+     *
+     * @param pkcs10req  the PKCS10 certificate signing request, expressed in binary form.
+     * @param expiration the desired expiration date of the cert, -1 to fallback on default
+     * @return a signed X509 client certificate
+     * @throws Exception if something bad happens
+     */
+    public Certificate createCertificate(byte[] pkcs10req, long expiration) throws Exception {
         PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(pkcs10req);
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
         String dn= certReqInfo.getSubject().toString();
@@ -191,9 +213,14 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             logger.severe("POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
-
-        X509Certificate cert = makeSignedCertificate(dn, CERT_DAYS_VALID, pkcs10.getPublicKey(),
-                                                     caCert, caPrivateKey, CertType.CLIENT);
+        X509Certificate cert = null;
+        if (expiration == -1) {
+            cert = makeSignedCertificate(dn, CERT_DAYS_VALID, pkcs10.getPublicKey(),
+                                         caCert, caPrivateKey, CertType.CLIENT);
+        } else {
+            cert = makeSignedCertificate(dn, new Date(expiration), pkcs10.getPublicKey(),
+                                         caCert, caPrivateKey, CertType.CLIENT);
+        }
         // Verify before returning
         cert.verify(caCert.getPublicKey());
         return cert;

@@ -81,4 +81,16 @@ public class RsaCertificateSigner {
     public Certificate createCertificate(byte[] pkcs10req) throws Exception {
         return rsaSignerEngine.createCertificate(pkcs10req);
     }
+
+    /**
+     * Create a certificate from the given PKCS10 Certificate Request.
+     *
+     * @param pkcs10req  the PKCS10 certificate signing request, expressed in binary form.
+     * @param expiration expiration of the cert (millis since era)
+     * @return a signed X509 client certificate
+     * @throws Exception if something bad happens
+     */
+    public Certificate createCertificate(byte[] pkcs10req, long expiration) throws Exception {
+        return rsaSignerEngine.createCertificate(pkcs10req, expiration);
+    }
 }

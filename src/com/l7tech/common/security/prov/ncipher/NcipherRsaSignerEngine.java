@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id: NcipherRsaSignerEngine.java,v 1.3 2004/06/16 18:31:10 alex Exp $
+ * $Id: NcipherRsaSignerEngine.java,v 1.4 2004/06/17 22:54:07 alex Exp $
  */
 
 package com.l7tech.common.security.prov.ncipher;
@@ -32,5 +32,9 @@ public class NcipherRsaSignerEngine implements RsaSignerEngine {
      */
     public Certificate createCertificate(byte[] pkcs10req) throws Exception {
         return bcengine.createCertificate(pkcs10req);
+    }
+
+    public Certificate createCertificate(byte[] pkcs10req, long expiration) throws Exception {
+        return bcengine.createCertificate(pkcs10req, expiration);
     }
 }
