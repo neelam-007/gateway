@@ -6,8 +6,8 @@
 
 package com.l7tech.service;
 
-import com.l7tech.jms.JmsAdmin;
-import com.l7tech.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;

@@ -6,9 +6,9 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.jms.JmsDestination;
-import com.l7tech.jms.JmsProvider;
-import com.l7tech.jms.JmsReplyType;
+import com.l7tech.common.transport.jms.JmsDestination;
+import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;

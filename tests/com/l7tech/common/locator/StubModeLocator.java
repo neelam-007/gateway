@@ -17,7 +17,7 @@ import com.l7tech.identity.IdentityProviderStub;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.UserManagerStub;
-import com.l7tech.jms.JmsAdmin;
+import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.service.JmsAdminStub;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceAdminStub;

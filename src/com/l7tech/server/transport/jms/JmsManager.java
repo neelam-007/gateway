@@ -10,8 +10,8 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.jms.JmsDestination;
-import com.l7tech.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsDestination;
+import com.l7tech.common.transport.jms.JmsProvider;
 
 import java.sql.SQLException;
 

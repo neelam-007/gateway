@@ -6,9 +6,9 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.jms.JmsDestination;
-import com.l7tech.jms.JmsProvider;
-import com.l7tech.jms.JmsReplyType;
+import com.l7tech.common.transport.jms.JmsDestination;
+import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsReplyType;
 
 /**
  * Message processing runtime support for JMS messages.
@@ -29,11 +29,11 @@ public class JmsReceiver {
     /**
      * Complete constructor
      *
-     * @param provider The {@link com.l7tech.jms.JmsProvider} from which to receive messages
-     * @param replyType A {@link com.l7tech.jms.JmsReplyType} value indicating this receiver's
+     * @param provider The {@link com.l7tech.common.transport.jms.JmsProvider} from which to receive messages
+     * @param replyType A {@link com.l7tech.common.transport.jms.JmsReplyType} value indicating this receiver's
      * reply semantics
-     * @param inbound The {@link com.l7tech.jms.JmsDestination} from which to receive requests
-     * @param outbound The {@link com.l7tech.jms.JmsDestination} into which to submit replies
+     * @param inbound The {@link com.l7tech.common.transport.jms.JmsDestination} from which to receive requests
+     * @param outbound The {@link com.l7tech.common.transport.jms.JmsDestination} into which to submit replies
      */
     public JmsReceiver( JmsProvider provider, JmsReplyType replyType,
                         JmsDestination inbound, JmsDestination outbound,
@@ -49,13 +49,13 @@ public class JmsReceiver {
      * Convenience constructor for one-way or reply-to-same configurations.
      * <p>
      * Use this constructor when the replyType is either
-     * {@link com.l7tech.jms.JmsReplyType#NO_REPLY} or {@link com.l7tech.jms.JmsReplyType#REPLY_TO_SAME},
+     * {@link com.l7tech.common.transport.jms.JmsReplyType#NO_REPLY} or {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_SAME},
      * since in those cases there is no meaningful outbound destination.
      *
-     * @param provider The {@link com.l7tech.jms.JmsProvider} from which to receive messages
-     * @param replyType A {@link com.l7tech.jms.JmsReplyType} value indicating this receiver's
+     * @param provider The {@link com.l7tech.common.transport.jms.JmsProvider} from which to receive messages
+     * @param replyType A {@link com.l7tech.common.transport.jms.JmsReplyType} value indicating this receiver's
      * reply semantics
-     * @param inbound The {@link com.l7tech.jms.JmsDestination} from which to receive requests
+     * @param inbound The {@link com.l7tech.common.transport.jms.JmsDestination} from which to receive requests
      */
     public JmsReceiver( JmsProvider provider, JmsReplyType replyType,
                         JmsDestination inbound ) {

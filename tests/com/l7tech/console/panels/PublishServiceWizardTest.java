@@ -16,7 +16,7 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceAdminStub;
 import com.l7tech.service.JmsAdminStub;
-import com.l7tech.jms.JmsAdmin;
+import com.l7tech.common.transport.jms.JmsAdmin;
 import org.apache.log4j.Category;
 
 import javax.swing.*;

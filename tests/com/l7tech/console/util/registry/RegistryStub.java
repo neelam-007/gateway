@@ -4,7 +4,7 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.jms.JmsAdmin;
+import com.l7tech.common.transport.jms.JmsAdmin;
 
 
 /**

@@ -8,7 +8,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.jms.JmsAdmin;
+import com.l7tech.common.transport.jms.JmsAdmin;
 
 
 

@@ -5,7 +5,7 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserManager;
-import com.l7tech.jms.JmsAdmin;
+import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.service.ServiceAdmin;
 
 

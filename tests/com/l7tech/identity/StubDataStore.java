@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.WsdlTest;
-import com.l7tech.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsProvider;
 
 import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
