@@ -3,14 +3,25 @@
  *
  * $Id$
  */
-
 package com.l7tech.console.util;
 
 /**
- * Interim-only, cheap Canadian knock-off of currently-unavailable Croatian interface Refreshable.
- * TODO: Replace with true version when it becomes available.
+ * Objects such as trees and editors may optionally implement this interface to
+ * provide the capability to refresh itself.
+ *
+ * @author emil
+ * @version 15-Apr-2004
  */
 public interface Refreshable {
-    boolean canRefresh();
+    /**
+     * Refresh the object
+     */
     void refresh();
+
+    /**
+     * Determine whether th object can be refreshed at this time
+     *
+     * @return true if can refresh, false otherwise
+     */
+    boolean canRefresh();
 }
