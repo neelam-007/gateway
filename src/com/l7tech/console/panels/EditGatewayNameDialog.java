@@ -1,21 +1,20 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.util.Registry;
+import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
-import java.util.logging.Logger;
-import java.util.ResourceBundle;
-import java.util.Locale;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.rmi.RemoteException;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
 /*
  * A class for providing a dialog window to the users for changing the gateway name.
@@ -266,7 +265,7 @@ public class EditGatewayNameDialog extends JDialog {
                     logger.info("Gateway name changed. Old name: " + oldGatewayName + " , New name: " + newName);
 
                     // update the status message on the Main Window
-                    Registry.getDefault().getComponentRegistry().getMainWindow().updateNodeNameInStatusMessage(newName);
+                    TopComponents.getInstance().getMainWindow().updateNodeNameInStatusMessage(newName);
 
                 } catch (UpdateException e) {
                     logger.warning("Cannot rename the node: " + oldGatewayName);

@@ -9,7 +9,7 @@ import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Preferences;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import net.jini.security.policy.DynamicPolicyProvider;
 import net.jini.security.policy.PolicyInitializationException;
 
@@ -19,13 +19,13 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.rmi.RMISecurityManager;
 import java.security.AccessController;
+import java.security.Permission;
 import java.security.Policy;
 import java.security.PrivilegedAction;
-import java.security.Permission;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RMISecurityManager;
 
 /**
  * This class is the SSG console Main entry point.
@@ -68,10 +68,10 @@ public class Main {
             System.setProperty("com.l7tech.common.locator.properties",
               "/com/l7tech/console/resources/services.properties");
             // Build information
-            System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
-            System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
+            System.setProperty("TopComponents.getInstance().l7tech.buildstring", BuildInfo.getBuildString());
+            System.setProperty("TopComponents.getInstance().l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
 
-            main = Registry.getDefault().getComponentRegistry().getMainWindow();
+            main = TopComponents.getInstance().getMainWindow();
             // Window listener
             main.addWindowListener(new WindowAdapter() {
                 /**

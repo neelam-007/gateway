@@ -7,7 +7,6 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -60,7 +59,7 @@ public class PublishServiceAction extends BaseAction implements ConnectionListen
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+        JFrame f = TopComponents.getInstance().getMainWindow();
         PublishServiceWizard dialog = new PublishServiceWizard(f, false);
         dialog.addEntityListener(listener);
         dialog.setResizable(false);

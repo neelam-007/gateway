@@ -5,7 +5,6 @@ import com.l7tech.console.panels.SamlPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SamlTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import java.awt.*;
@@ -56,7 +55,7 @@ public class SamlPropertiesAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+        Frame f = TopComponents.getInstance().getMainWindow();
         SamlPropertiesDialog pw = new SamlPropertiesDialog(f, assertion);
         pw.pack();
         Utilities.centerOnScreen(pw);

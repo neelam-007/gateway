@@ -73,8 +73,7 @@ public class EditServicePolicyAction extends NodeAction {
     public void performAction() {
         final ServiceNode serviceNode = (ServiceNode)node;
         try {
-            TopComponents windowManager =
-              Registry.getDefault().getComponentRegistry();
+            TopComponents windowManager = TopComponents.getInstance();
             WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
 
             // clear work space here will prompt user to save or cancel the changes in the current policy first

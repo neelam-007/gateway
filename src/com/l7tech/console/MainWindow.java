@@ -712,7 +712,7 @@ public class MainWindow extends JFrame {
               public void actionPerformed(ActionEvent event) {
                   JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
                   final boolean selected = item.isSelected();
-                  final WorkSpacePanel cw = Registry.getDefault().getComponentRegistry().getCurrentWorkspace();
+                  final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
                   final JComponent c = cw.getComponent();
                   if (c != null && c instanceof PolicyEditorPanel) {
                       PolicyEditorPanel pe = (PolicyEditorPanel)c;

@@ -4,6 +4,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.CannotDeleteAdminAccountException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -184,7 +185,7 @@ public class Actions {
 
 
     private static JFrame getMainWindow() {
-        return Registry.getDefault().getComponentRegistry().getMainWindow();
+        return TopComponents.getInstance().getMainWindow();
     }
 
     static boolean deleteAssertion(AssertionTreeNode node) {

@@ -8,7 +8,6 @@ import com.l7tech.console.panels.TimeRangePropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.TimeRangeTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import java.awt.*;
@@ -41,7 +40,7 @@ public class TimeRangePropertiesAction extends BaseAction {
     }
 
     public void performAction() {
-        Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+        Frame f = TopComponents.getInstance().getMainWindow();
         TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(f, false, subject.getTimeRange());
         dlg.addPolicyListener(listener);
         dlg.pack();

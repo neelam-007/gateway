@@ -108,8 +108,7 @@ public class EditXpathAssertionAction extends BaseAction {
         }
 
         String s =
-          (String)JOptionPane.showInputDialog(Registry.getDefault().
-          getComponentRegistry().getMainWindow(),
+          (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
             help,
             "XPath Assertion properties",
             JOptionPane.PLAIN_MESSAGE,

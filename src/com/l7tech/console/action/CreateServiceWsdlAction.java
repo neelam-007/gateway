@@ -96,7 +96,7 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                       )
                     ));
                 WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                JFrame f = TopComponents.getInstance().getMainWindow();
                 Wizard w = new WsdlCreateWizard(f, p);
                 w.addWizardListener(wizardListener);
                 w.pack();
@@ -152,7 +152,7 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                 header.setOid(oid);
                 serviceAdded(header);
             } catch (Exception e) {
-                MainWindow w = Registry.getDefault().getComponentRegistry().getMainWindow();
+                MainWindow w = TopComponents.getInstance().getMainWindow();
                 if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                     JOptionPane.showMessageDialog(w,
                       "Unable to save the service '" + service.getName() + "'\n" +

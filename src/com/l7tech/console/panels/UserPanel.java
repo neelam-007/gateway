@@ -8,7 +8,7 @@ import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
@@ -79,7 +79,7 @@ public class UserPanel extends EntityEditorPanel {
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 
     private IdentityProvider idProvider;
-    private final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
+    private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
 
     private final ActionListener closeDlgListener = new ActionListener() {
                                                       public void actionPerformed(ActionEvent e) {

@@ -7,7 +7,6 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -54,7 +53,7 @@ public class XmlSecurityPropertiesAction extends NodeAction {
      */
     public void performAction() {
         XmlSecurityTreeNode n = (XmlSecurityTreeNode)node;
-        final MainWindow mw = Registry.getDefault().getComponentRegistry().getMainWindow();
+        final MainWindow mw = TopComponents.getInstance().getMainWindow();
         XmlSecurityPropertiesDialog dialog = new XmlSecurityPropertiesDialog(mw, false, n, okListener);
         dialog.pack();
         dialog.setSize(900, 650); //todo: consider some dynamic sizing - em

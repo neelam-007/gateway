@@ -6,7 +6,6 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
@@ -429,7 +428,7 @@ public class IdentityPolicyPanel extends JPanel {
     private void scheduleValidate() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                final WorkSpacePanel cw = Registry.getDefault().getComponentRegistry().getCurrentWorkspace();
+                final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
                 final JComponent c = cw.getComponent();
                 if (c != null && c instanceof PolicyEditorPanel) {
                     PolicyEditorPanel pp = (PolicyEditorPanel)c;

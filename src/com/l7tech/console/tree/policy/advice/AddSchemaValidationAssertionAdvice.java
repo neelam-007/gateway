@@ -6,6 +6,7 @@ import com.l7tech.console.panels.SchemaValidationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 
@@ -29,7 +30,7 @@ public class AddSchemaValidationAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         SchemaValidation assertion = (SchemaValidation)assertions[0];
-        final MainWindow mw = Registry.getDefault().getComponentRegistry().getMainWindow();
+        final MainWindow mw = TopComponents.getInstance().getMainWindow();
         //SchemaValidationTreeNode fakenode = new SchemaValidationTreeNode(assertion);
         SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(mw, assertion, pc.getService());
         // show the dialog

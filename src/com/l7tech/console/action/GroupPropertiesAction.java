@@ -7,7 +7,6 @@ import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.GroupNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -62,7 +61,7 @@ public class GroupPropertiesAction extends NodeAction {
                     idProvider = getIdentityProvider((EntityHeaderNode)node);
                 }
                 GroupPanel panel = new GroupPanel();
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                JFrame f = TopComponents.getInstance().getMainWindow();
                 final EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 EditorDialog dialog = new EditorDialog(f, panel);
                 try {

@@ -43,7 +43,7 @@ public class RemoteIpRangePropertiesAction extends BaseAction {
     }
 
     public void performAction() {
-        Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+        Frame f = TopComponents.getInstance().getMainWindow();
         RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(f, false, subject.getAssertion());
         dlg.addPolicyListener(listener);
         dlg.pack();

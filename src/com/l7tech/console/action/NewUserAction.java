@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.NewUserDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -51,8 +52,7 @@ public class NewUserAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f =
-                  Registry.getDefault().getComponentRegistry().getMainWindow();
+                JFrame f = TopComponents.getInstance().getMainWindow();
                 NewUserDialog dialog = new NewUserDialog(f);
                 dialog.setResizable(false);
                 dialog.show();

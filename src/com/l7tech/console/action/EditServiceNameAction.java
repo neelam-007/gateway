@@ -7,8 +7,6 @@ import com.l7tech.console.panels.EditServiceNameDialog;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -64,7 +62,7 @@ public class EditServiceNameAction extends NodeAction {
               public void run() {
                   try {
                       TopComponents wm =
-                        Registry.getDefault().getComponentRegistry();
+                        TopComponents.getInstance();
                       PublishedService svc = ((ServiceNode)node).getPublishedService();
                       lastServiceName = svc.getName();
                       EditServiceNameDialog d =

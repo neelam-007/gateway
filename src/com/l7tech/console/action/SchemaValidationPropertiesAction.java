@@ -8,7 +8,6 @@ import com.l7tech.console.panels.SchemaValidationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -45,7 +44,7 @@ public class SchemaValidationPropertiesAction extends BaseAction {
     }
 
     public void performAction() {
-        Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+        Frame f = TopComponents.getInstance().getMainWindow();
         SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
         dlg.addPolicyListener(listener);
         dlg.pack();

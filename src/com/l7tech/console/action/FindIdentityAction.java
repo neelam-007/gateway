@@ -7,6 +7,7 @@ import com.l7tech.console.panels.FindIdentitiesDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
@@ -76,7 +77,7 @@ public class FindIdentityAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+        Frame f = TopComponents.getInstance().getMainWindow();
         FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
         fd.pack();
         fd.getSearchResultTable().getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -127,7 +128,7 @@ public class FindIdentityAction extends BaseAction {
 
         if (panel == null) return;
         panel.edit(principal);
-        JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+        JFrame f = TopComponents.getInstance().getMainWindow();
 
         EditorDialog dialog = new EditorDialog(f, panel);
         dialog.pack();

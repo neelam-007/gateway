@@ -2,7 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.FindIdentitiesDialog;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.Assertion;
@@ -71,7 +71,7 @@ public class IdentityNode extends AbstractTreeNode {
      * @return the assertion corresponding to this node or null
      */
     public Assertion[] asAssertions() {
-        Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+        Frame f = TopComponents.getInstance().getMainWindow();
         FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true);
         fd.pack();
         Utilities.centerOnScreen(fd);

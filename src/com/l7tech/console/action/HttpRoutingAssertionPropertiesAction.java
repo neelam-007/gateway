@@ -60,7 +60,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                JFrame f = TopComponents.getInstance().getMainWindow();
                 HttpRoutingAssertionDialog d =
                   new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), getServiceNodeCookie());
                 d.setModal(true);

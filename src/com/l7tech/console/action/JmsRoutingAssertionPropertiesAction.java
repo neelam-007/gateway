@@ -60,7 +60,7 @@ public class JmsRoutingAssertionPropertiesAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                JFrame f = TopComponents.getInstance().getMainWindow();
                 JmsRoutingAssertionDialog d =
                   new JmsRoutingAssertionDialog(f, (JmsRoutingAssertion)node.asAssertion());
                 d.addPolicyListener(listener);

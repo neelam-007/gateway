@@ -5,7 +5,6 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SslAssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.SslAssertion;
 
 import javax.swing.*;
@@ -66,8 +65,7 @@ public class SslPropertiesAction extends NodeAction {
         SslAssertion sslAssertion = (SslAssertion)node.asAssertion();
 
         String s =
-          (String)JOptionPane.showInputDialog(Registry.getDefault().
-          getComponentRegistry().getMainWindow(),
+          (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
             "Please select the SSL/TLS assertion options:\n",
             "SSL/TLS Assertion properties",
             JOptionPane.PLAIN_MESSAGE,

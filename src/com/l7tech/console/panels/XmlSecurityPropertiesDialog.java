@@ -18,7 +18,7 @@ import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
 import com.l7tech.console.tree.wsdl.BindingOperationTreeNode;
 import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.xmlviewer.ExchangerDocument;
 import com.l7tech.console.xmlviewer.Viewer;
 import com.l7tech.console.xmlviewer.ViewerToolBar;
@@ -49,6 +49,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -57,8 +59,6 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 
 /**
@@ -438,7 +438,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             }
         }
 
-        JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+        JFrame f = TopComponents.getInstance().getMainWindow();
         if (alreadySelected) {
             final String msg = "<html><center>The element <i><b>{0}</b></i><br>" +
               "for operation <i><b>{1}</i></b> has already been included in previous selection.<br>" +

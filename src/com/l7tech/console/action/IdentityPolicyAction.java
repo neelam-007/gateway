@@ -1,16 +1,14 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.tree.policy.IdentityPolicyView;
 import com.l7tech.console.tree.policy.IdentityAssertionTreeNode;
-import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.console.tree.policy.IdentityPolicyView;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 
 import java.awt.*;
-import java.util.logging.Logger;
-import java.rmi.RemoteException;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 
 /**
@@ -60,7 +58,7 @@ public class IdentityPolicyAction extends BaseAction {
      */
     public void performAction() {
         try {
-            Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+            Frame f = TopComponents.getInstance().getMainWindow();
             IdentityPolicyView pw = new IdentityPolicyView(f, assertion);
             pw.pack();
             Utilities.centerOnScreen(pw);

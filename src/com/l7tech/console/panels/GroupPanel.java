@@ -4,7 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.GroupManager;
@@ -66,7 +66,7 @@ public class GroupPanel extends EntityEditorPanel {
 
     private IdentityProvider idProvider;
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
-    private final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
+    private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
     private final ActionListener closeDlgListener = new ActionListener() {
                                                       public void actionPerformed(ActionEvent e) {
                                                           SwingUtilities.windowForComponent(GroupPanel.this).dispose();

@@ -4,7 +4,6 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Preferences;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.wsp.WspWriter;
 
@@ -97,9 +96,7 @@ public class SavePolicyTemplateAction extends BaseAction {
         // Allow single selection only
         chooser.setMultiSelectionEnabled(false);
         int ret =
-          chooser.showSaveDialog(Registry.
-          getDefault().
-          getComponentRegistry().getMainWindow());
+          chooser.showSaveDialog(TopComponents.getInstance().getMainWindow());
         if (JFileChooser.APPROVE_OPTION != ret) return;
         String name = chooser.getSelectedFile().getPath();
         System.out.println(name);
@@ -109,7 +106,7 @@ public class SavePolicyTemplateAction extends BaseAction {
         if (policyFileExists) {
             overwrite =
               JOptionPane.showConfirmDialog(
-                Registry.getDefault().getComponentRegistry().getMainWindow(),
+                TopComponents.getInstance().getMainWindow(),
                 "Overwrite " + name + "?",
                 "Warning",
                 JOptionPane.YES_NO_OPTION);

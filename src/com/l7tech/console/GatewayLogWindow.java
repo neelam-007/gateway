@@ -3,6 +3,7 @@ package com.l7tech.console;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.ConnectionEvent;
 
@@ -64,7 +65,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
         getHelpTopicsMenuItem().
                 addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        Registry.getDefault().getComponentRegistry().getMainWindow().showHelpTopics();
+                        TopComponents.getInstance().getMainWindow().showHelpTopics();
                     }
                 });
 

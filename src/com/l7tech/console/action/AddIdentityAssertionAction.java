@@ -70,7 +70,7 @@ public class AddIdentityAssertionAction extends BaseAction {
         SwingUtilities.invokeLater(
           new Runnable() {
             public void run() {
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                JFrame f = TopComponents.getInstance().getMainWindow();
                 FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true);
                 fd.pack();
                 Utilities.centerOnScreen(fd);

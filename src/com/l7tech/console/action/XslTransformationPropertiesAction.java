@@ -8,7 +8,6 @@ import com.l7tech.console.panels.XslTransformationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.XslTransformationTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import java.awt.*;
@@ -43,7 +42,7 @@ public class XslTransformationPropertiesAction extends BaseAction {
     }
 
     public void performAction() {
-        Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+        Frame f = TopComponents.getInstance().getMainWindow();
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, false, node.getAssertion());
         dlg.addPolicyListener(listener);
         dlg.pack();

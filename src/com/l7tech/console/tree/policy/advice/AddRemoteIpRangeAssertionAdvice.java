@@ -6,6 +6,7 @@ import com.l7tech.console.panels.RemoteIpRangePropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RemoteIpRange;
 
@@ -26,7 +27,7 @@ public class AddRemoteIpRangeAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         RemoteIpRange assertion = (RemoteIpRange)assertions[0];
-        final MainWindow mw = Registry.getDefault().getComponentRegistry().getMainWindow();
+        final MainWindow mw = TopComponents.getInstance().getMainWindow();
         RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(mw, true, assertion);
         // show the dialog
         dlg.pack();

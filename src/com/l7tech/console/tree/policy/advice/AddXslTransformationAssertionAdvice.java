@@ -6,6 +6,7 @@ import com.l7tech.console.panels.XslTransformationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
@@ -29,7 +30,7 @@ public class AddXslTransformationAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         XslTransformation assertion = (XslTransformation)assertions[0];
-        final MainWindow mw = Registry.getDefault().getComponentRegistry().getMainWindow();
+        final MainWindow mw = TopComponents.getInstance().getMainWindow();
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(mw, true, assertion);
         // show the dialog
         dlg.pack();

@@ -1,31 +1,30 @@
 package com.l7tech.console.action;
 
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.event.*;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.panels.*;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.util.Locator;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfigManager;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import java.util.EventListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.EventListener;
 
 
 /**
@@ -82,7 +81,7 @@ public class NewProviderAction extends NodeAction {
                 ), true));
 
 
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                JFrame f = TopComponents.getInstance().getMainWindow();
                 Wizard w = new CreateIdentityProviderWizard(f, configPanel);
                 w.addWizardListener(wizardListener);
 

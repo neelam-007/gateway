@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -23,10 +24,7 @@ public class HomeAction extends BaseAction {
     private ClassLoader cl = getClass().getClassLoader();
 
     public HomeAction() {
-        // Law of Demeter oh yeah
-        wpanel =
-          Registry.getDefault().
-          getComponentRegistry().getCurrentWorkspace();
+        wpanel = TopComponents.getInstance().getCurrentWorkspace();
     }
 
     /**

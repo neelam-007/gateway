@@ -72,8 +72,7 @@ public class EditPolicyTemplateNameAction extends BaseAction {
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
-                  TopComponents wm =
-                    Registry.getDefault().getComponentRegistry();
+                  TopComponents wm = TopComponents.getInstance();
 
                   EditPolicyTemplateNameDialog d =
                     new EditPolicyTemplateNameDialog(wm.getMainWindow(), nameChangeListener);

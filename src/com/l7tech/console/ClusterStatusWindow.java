@@ -432,7 +432,7 @@ public class ClusterStatusWindow extends JFrame {
         helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
         helpTopicsMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Registry.getDefault().getComponentRegistry().getMainWindow().showHelpTopics();
+                TopComponents.getInstance().getMainWindow().showHelpTopics();
             }
         });
 

@@ -7,7 +7,6 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.CustomAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 
@@ -59,7 +58,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
      */
     public void performAction() {
         CustomAssertionHolder cah = (CustomAssertionHolder)node.asAssertion();
-        final JDialog dialog = new JDialog(Registry.getDefault().getComponentRegistry().getMainWindow(), true);
+        final JDialog dialog = new JDialog(TopComponents.getInstance().getMainWindow(), true);
         final CustomAssertion ca = cah.getCustomAssertion();
         BeanEditor.Options options = new BeanEditor.Options();
         options.setDescription(ca.getName());

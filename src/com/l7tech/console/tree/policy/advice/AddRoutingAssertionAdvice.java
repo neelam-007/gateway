@@ -5,7 +5,7 @@ import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.JmsRoutingAssertionDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
@@ -55,7 +55,7 @@ public class AddRoutingAssertionAdvice implements Advice {
         } else if (assertions[0] instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion ra = (JmsRoutingAssertion) assertions[0];
             if (ra.getEndpointOid() == null) {
-                final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
+                final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
                 JmsRoutingAssertionDialog dialog = new JmsRoutingAssertionDialog(mainWindow, ra);
                 dialog.setModal(true);
                 dialog.pack();

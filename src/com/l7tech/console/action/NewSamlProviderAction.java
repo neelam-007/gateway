@@ -67,8 +67,7 @@ public class NewSamlProviderAction extends NodeAction {
                 EntityHeader header = new EntityHeader();
                 header.setType(EntityType.ID_PROVIDER_CONFIG);
                 IdentityProviderDialog dialog =
-                  new IdentityProviderDialog(Registry.getDefault().
-                  getComponentRegistry().getMainWindow(), header);
+                  new IdentityProviderDialog(TopComponents.getInstance().getMainWindow(), header);
                 dialog.addEntityListener(listener);
 
                 dialog.setResizable(false);

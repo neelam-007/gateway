@@ -7,7 +7,6 @@ import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -63,7 +62,7 @@ public class UserPropertiesAction extends NodeAction {
                 }
                 EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 UserPanel panel = new UserPanel();
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                JFrame f = TopComponents.getInstance().getMainWindow();
                 EditorDialog dialog = new EditorDialog(f, panel);
                 try {
                     panel.edit(header, idProvider);

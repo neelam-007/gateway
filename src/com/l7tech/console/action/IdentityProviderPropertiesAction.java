@@ -6,6 +6,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
@@ -69,7 +70,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
           new Runnable() {
             public void run() {
 
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                JFrame f = TopComponents.getInstance().getMainWindow();
                 EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
                 IdentityProviderConfig iProvider = null;
                 if (header.getOid() != -1) {
