@@ -519,7 +519,7 @@
         <property name="install.rel.ca.keystore" value="${install.rel.keys}/ca.ks"/>
         <property name="install.rel.ssl.keystore" value="${install.rel.keys}/ssl.ks"/>
         <property name="install.rel.ssl.csr" value="${install.rel.keys}/ssl.csr"/>
-        <property name="install.rel.ssl.crt" value="${install.rel.keys}/ssl.crt"/>
+        <property name="install.rel.ssl.cer" value="${install.rel.keys}/ssl.cer"/>
 
         <property name="install.rel.jdk" value="${install.jdk.dir}"/>
         <property name="install.rel.tomcat" value="${install.tomcat.dir}"/>
@@ -538,14 +538,14 @@
         <property name="install.src.ca.keystore" value="${install.src.base}/${install.rel.ca.keystore}"/>
         <property name="install.src.ssl.keystore" value="${install.src.base}/${install.rel.ssl.keystore}"/>
         <property name="install.src.ssl.csr" value="${install.src.base}/${install.rel.ssl.csr}"/>
-        <property name="install.src.ssl.crt" value="${install.src.base}/${install.rel.ssl.crt}"/>
+        <property name="install.src.ssl.cer" value="${install.src.base}/${install.rel.ssl.cer}"/>
 
         <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
         <property name="install.src.passwords.txt" value="${install.src.base}/passwords.txt"/>
         <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
         <property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
         <property name="install.src.server.xml" value="${install.src.tomcat}/conf/server.xml"/>
-	<property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
+	    <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
 
         <!-- Absolute target paths -->
         <property name="install.target.base" value="/ssg"/>
@@ -594,11 +594,10 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
 
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>
         <echo>Patching ${install.src.keystore.properties}...</echo>
-        <echo>${install.target.tomcat}</echo>
 
         <replaceregexp file="${install.src.keystore.properties}">
             <regexp pattern="keystoredir=.*"/>
-            <substitution expression="keystoredir=${install.target.tomcat}"/>
+            <substitution expression="keystoredir=${install.target.keys}"/>
         </replaceregexp>
         <replaceregexp file="${install.src.keystore.properties}">
             <regexp pattern="rootcakspasswd=.*"/>
@@ -617,7 +616,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         </replaceregexp>
 
 	    <!-- Extract Tomcat & JDK tarballs -->
-        <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
+        <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip" />
         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
 
         <!-- Copy WAR file into position -->
@@ -638,6 +637,17 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <arg line="-keyalg RSA"/>
             <arg line="-keypass ${install.pass.ca.keystore}"/>
             <arg line="-storepass ${install.pass.ca.keystore}"/>
+        </java>
+
+        <!-- $KEYTOOL -export -alias ssgroot -storepass "$KEYSTORE_PASSWORD" -file "$ROOT_CERT_FILE" -keystore "$ROOT_KEYSTORE_FILE" -->
+        <delete file="${install.src.ca.cer}"/>
+        <java classname="sun.security.tools.KeyTool">
+            <arg line="-keystore ${install.src.ca.keystore}"/>
+            <arg line="-export"/>
+            <arg line="-alias ${install.alias.ca.keystore}"/>
+            <arg line="-keypass ${install.pass.ca.keystore}"/>
+            <arg line="-storepass ${install.pass.ca.keystore}"/>
+            <arg line="-file ${install.src.ca.cer}"/>
         </java>
 
         <!-- Create SSL keystore -->
@@ -673,34 +683,52 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         </path>
 
         <echo>Signing SSL certificate...</echo>
-        <delete file="${install.src.ssl.crt}"/>
+        <delete file="${install.src.ssl.cer}"/>
         <java classname="com.l7tech.identity.cert.RSASigner" classpathref="classpath">
             <arg line="${install.src.ca.keystore}"/>
             <arg line="${install.pass.ca.keystore}"/>
             <arg line="${install.alias.ca.keystore}"/>
             <arg line="${install.pass.ca.keystore}"/>
             <arg line="${install.src.ssl.csr}"/>
-            <arg line="${install.src.ssl.crt}"/>
+            <arg line="${install.src.ssl.cer}"/>
         </java>
 
-        <!-- symlink ROOT-bxxxx.war to tomcat/webapps -->
-        <echo>Symlinking ${install.src.war}...</echo>
-        <exec executable="ln">
-            <arg line="-s"/>
-            <arg line="../../dist/ROOT-b${install.build.number}.war"/>
-            <arg line="${install.src.tomcat}/webapps/ROOT.war"/>
-        </exec>
+        <!--
+        $KEYTOOL -import -noprompt -file $ROOT_CERT_FILE -alias ssgroot -keystore $SSL_KEYSTORE_FILE -storepass $KEYSTORE_PASSWORD
+        $KEYTOOL -import -noprompt -file $SSL_CERT_FILE -alias tomcat -keystore $SSL_KEYSTORE_FILE -storepass $KEYSTORE_PASSWORD
+        -->
+        <echo>Importing signed SSL certificate...</echo>
+        <java classname="sun.security.tools.KeyTool">
+            <arg line="-import"/>
+            <arg line="-noprompt"/>
+            <arg line="-file ${install.src.ca.cer}"/>
+            <arg line="-alias ${install.alias.ca.keystore}"/>
+            <arg line="-keystore ${install.src.ssl.keystore}"/>
+            <arg line="-storepass ${install.pass.ssl.keystore}"/>
+        </java>
+        <java classname="sun.security.tools.KeyTool">
+            <arg line="-import"/>
+            <arg line="-noprompt"/>
+            <arg line="-file ${install.src.ssl.cer}"/>
+            <arg line="-alias ${install.alias.ssl.keystore}"/>
+            <arg line="-keystore ${install.src.ssl.keystore}"/>
+            <arg line="-storepass ${install.pass.ssl.keystore}"/>
+        </java>
+
+        <!-- Expand ROOT-bxxxx.war into tomcat/webapps -->
+        <echo>Expanding ${install.src.war}...</echo>
+        <unwar src="${install.src.war}" dest="${install.src.tomcat}/webapps/ROOT"/>
 
      	<!-- Hack server.xml -->
         <echo>Patching ${install.src.server.xml}...</echo>
 
         <replaceregexp file="${install.src.server.xml}">
-          <regexp pattern='keystoreFile=".*"'/>
+          <regexp pattern='keystoreFile\s*=\s*"[a-zA-Z0-9 \/\-\.\\]*"'/>
           <substitution expression='keystoreFile="${install.target.ssl.keystore}"'/>
         </replaceregexp>
 
         <replaceregexp file="${install.src.server.xml}">
-          <regexp pattern='keystorePass=".*"'/>
+          <regexp pattern='keystorePass\s*=\s*"[a-zA-Z0-9 \/\-\.\\]*"'/>
           <substitution expression='keystorePass="${install.pass.ssl.keystore}"'/>
         </replaceregexp>
 
@@ -708,11 +736,34 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <copy todir="${install.src.sql}" file="${src.root}/etc/db/${database.type}/ssg.sql"/>
         <copy todir="${install.src.bin}">
             <fileset dir="${src.root}/etc">
-                <include name="*.sh"/>
-                <include name="*.pl"/>
+                <include name="setkeys.sh"/>
+                <include name="resetAdmin.sh"/>
+                <include name="md5passwd.pl"/>
+                <include name="rpass.pl"/>
+                <include name="ssgruntimedefs.sh"/>
             </fileset>
         </copy>
 
+        <chmod perm="0755">
+            <fileset dir="${install.src.bin}">
+                <include name="*.sh"/>
+                <include name="*.pl"/>
+            </fileset>
+            <fileset dir="${install.src.jdk}">
+                <include name="bin/*"/>
+                <include name="jre/bin/*"/>
+            </fileset>
+            <fileset dir="${install.src.tomcat}/bin">
+                <include name="*.sh"/>
+            </fileset>
+        </chmod>
+
+        <property name="tarball" value="${build.dir}/ssg-${install.ssg.hostname}-b${install.build.number}.tar.gz"/>
+        <exec executable="tar" dir="${build.dir}/install" >
+            <arg line="-czf ${tarball}"/>
+            <arg line="."/>
+        </exec>
+        <echo>BUILD COMPLETE - Produced ${tarball}!</echo>
     </target>
 
     <target name="OFFICIAL-build" depends="init-dev">
