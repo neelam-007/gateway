@@ -99,6 +99,9 @@ public class GuiCredentialManager extends CredentialManager {
     private PasswordAuthentication getCredentials(final Ssg ssg, final boolean oldOnesWereBad)
             throws OperationCanceledException, KeyStoreCorruptException
     {
+        if (ssg.getTrustedGateway() != null)
+            throw new OperationCanceledException("Not permitted to send password credentials to a Federated Gateway");
+
         PasswordAuthentication pw = ssg.getCredentials();
         if (!oldOnesWereBad && pw != null)
             return pw;

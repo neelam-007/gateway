@@ -673,7 +673,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             }
         } catch (IllegalArgumentException e) {
             // bad client certificate format
-            badKeystore = true;
+            badKeystore = true; // TODO This will fail with arbitrary third-party PKI not using CN=username
         } catch (KeyStoreCorruptException e) {
             badKeystore = true;
         }

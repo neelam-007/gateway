@@ -110,7 +110,12 @@ public class SsgKeyStoreManager {
         try {
             X509Certificate cert = ssg.clientCert();
             if (cert != null) return cert;
-            cert = (X509Certificate) getTrustStore(ssg).getCertificate(CLIENT_CERT_ALIAS);
+            Ssg trusted = ssg.getTrustedGateway();
+            if (trusted != null) {
+                cert = (X509Certificate) getTrustStore(trusted).getCertificate(CLIENT_CERT_ALIAS);
+            } else {
+                cert = (X509Certificate) getTrustStore(ssg).getCertificate(CLIENT_CERT_ALIAS);
+            }
             cert = convertToSunCertificate(cert);
             ssg.clientCert(cert);
             return cert;
@@ -133,6 +138,8 @@ public class SsgKeyStoreManager {
     public static void deleteClientCert(Ssg ssg)
             throws IOException, KeyStoreException, KeyStoreCorruptException
     {
+        if (ssg.getTrustedGateway() != null)
+            throw new IllegalStateException("Federated SSGs may not delete their client certificate");
         synchronized (ssg) {
             KeyStore trustStore = getTrustStore(ssg);
             if (trustStore.containsAlias(CLIENT_CERT_ALIAS))
@@ -248,6 +255,9 @@ public class SsgKeyStoreManager {
      * @throws com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException if the key store is damaged
      */
     public static KeyStore getKeyStore(Ssg ssg, char[] password) throws KeyStoreCorruptException {
+        Ssg trusted = ssg.getTrustedGateway();
+        if (trusted != null)
+            return getKeyStore(trusted, password);
         synchronized (ssg) {
             if (ssg.keyStore() == null) {
                 KeyStore keyStore;
@@ -297,7 +307,7 @@ public class SsgKeyStoreManager {
      * @return an in-memory KeyStore object for this Ssg, either loaded from disk or newly created.
      * @throws com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException if the key store is damaged
      */
-    public static KeyStore getTrustStore(Ssg ssg) throws KeyStoreCorruptException {
+    private static KeyStore getTrustStore(Ssg ssg) throws KeyStoreCorruptException {
         synchronized (ssg) {
             if (ssg.trustStore() == null) {
                 KeyStore trustStore;
@@ -402,9 +412,18 @@ public class SsgKeyStoreManager {
      * @param ssg The SSG whose keystore is to be deleted.
      */
     public static void deleteStores(Ssg ssg) {
+        if (ssg.getTrustedGateway() != null)
+            throw new IllegalStateException("Not permitted to delete key stores for a Federated SSG.");
+
         synchronized (ssg) {
             FileUtils.deleteFileSafely(ssg.getKeyStoreFile().getAbsolutePath());
             FileUtils.deleteFileSafely(ssg.getTrustStoreFile().getAbsolutePath());
+            clearCachedKeystoreData(ssg);
+        }
+    }
+
+    private static void clearCachedKeystoreData(Ssg ssg) {
+        synchronized (ssg) {
             ssg.keyStore(null);
             ssg.privateKey(null);
             ssg.passwordWorkedForPrivateKey(false);
@@ -412,7 +431,6 @@ public class SsgKeyStoreManager {
             ssg.clientCert(null);
             ssg.serverCert(null);
         }
-
     }
 
     /**

@@ -196,6 +196,7 @@ public class SsgListPanel extends JPanel {
                         }
 
                         ssgTableModel.removeSsg(ssg);
+                        ssg.setTrustedGateway(null); // break federation prior to removing key stores
                         SsgKeyStoreManager.deleteStores(ssg);
                     }
                 }
@@ -298,6 +299,12 @@ public class SsgListPanel extends JPanel {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg ssg = getSelectedSsg();
                     if (ssg != null) {
+                        if (ssg.getTrustedGateway() != null) {
+                            Gui.errorMessage("This is a Federated Gateway.  You must perform this\n" +
+                                             "action on the corresponding Trusted Gateway instead." );
+                            return;
+                        }
+                                                        
                         boolean retry = true;
                         boolean prompted = false;
                         char[] newpass = null;

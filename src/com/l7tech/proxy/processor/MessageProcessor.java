@@ -172,13 +172,16 @@ public class MessageProcessor {
         if (ssg.isChainCredentialsFromClient())
             throw new HttpChallengeRequiredException(e);
 
+        if (ssg.getTrustedGateway() != null)
+            throw new OperationCanceledException("Client identity rejected by federated Gateway " + ssg.getSsgAddress());
+
         // If we have a client cert, and the current password worked to decrypt it's private key, but something
         // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
         if (SsgKeyStoreManager.isClientCertAvailabile(ssg) && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
             if (securePasswordPing(req)) {
                 // password works with our keystore, and with the SSG, so why did it fail just now?
                 String message = "Recieved password failure, but it worked with our keystore and the Gateway liked it when we double-checked it.  " +
-                        "Could be an internal error, or an attack, or the Gateway admin toggling your account on and off.";
+                        "Most likely that your account exists but is not permitted to access this service.";
                 log.severe(message);
                 throw new ConfigurationException(message, e);
             }
