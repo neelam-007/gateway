@@ -41,6 +41,13 @@ public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
         providerTypesCombo.setEnabled(false);
     }
 
+    public void storeSettings(Object settings) {
+
+        if (settings instanceof IdentityProviderConfig) {
+            ((IdentityProviderConfig) settings).setName(getProviderNameTextField().getText());
+        }
+    }
+
     /** @return the wizard step label    */
     public String getStepLabel() {
         return "Provider Configuration";

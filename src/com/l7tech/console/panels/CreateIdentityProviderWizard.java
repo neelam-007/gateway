@@ -32,10 +32,6 @@ public class CreateIdentityProviderWizard extends Wizard {
         wizardInput = new LdapIdentityProviderConfig();
         ((IdentityProviderConfig) wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
 
-/*        Definition def = new DefinitionImpl();
-        def.setExtensionRegistry(new PopulatedExtensionRegistry());
-        wizardInput = def;
-        this.addWizardListener(wizardListener);*/
         pack();
 
         getButtonHelp().addActionListener(new ActionListener() {
