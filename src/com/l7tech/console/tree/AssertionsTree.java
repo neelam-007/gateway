@@ -27,8 +27,8 @@ import java.awt.event.MouseEvent;
 import java.util.logging.Logger;
 
 /**
- * Class ServiceTree is the speciaqliced <code>JTree</code> that
- * handles service
+ * Class <code>AssertionsTree</code> is the specialized <code>JTree</code> that
+ * contains assertion elements
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
