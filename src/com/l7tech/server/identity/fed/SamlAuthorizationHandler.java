@@ -8,7 +8,7 @@ package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
@@ -44,8 +44,8 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         if (samlConfig == null) throw new AuthenticationException("SAML enabled but not configured");
         Object maybeAssertion = pc.getPayload();
 
-        if (maybeAssertion instanceof SamlHolderOfKeyAssertion) {
-            SamlHolderOfKeyAssertion assertion = (SamlHolderOfKeyAssertion)maybeAssertion;
+        if (maybeAssertion instanceof SamlAssertion) {
+            SamlAssertion assertion = (SamlAssertion)maybeAssertion;
 
             final X509Certificate subjectCertificate = assertion.getSubjectCertificate();
             String certSubjectDn = subjectCertificate.getSubjectDN().getName();
