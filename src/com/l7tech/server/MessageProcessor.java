@@ -43,10 +43,10 @@ public class MessageProcessor {
 
                 if ( status == AssertionStatus.NONE ) {
                     if ( request.isRouted() ) {
-                        LogManager.getInstance().getSystemLogger().log(Level.INFO, status.getMessage());
+                        LogManager.getInstance().getSystemLogger().log(Level.INFO, "Request was routed with status " + status.getMessage() );
                     } else {
-                        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Request was not routed, executing default RoutingAssertion");
-                        status = _defaultRoutingAssertion.checkRequest( request, response );
+                        LogManager.getInstance().getSystemLogger().log(Level.WARNING, "Request was not routed!");
+                        status = AssertionStatus.FALSIFIED;
                     }
                 } else {
                     LogManager.getInstance().getSystemLogger().log(Level.SEVERE, status.getMessage());
@@ -71,5 +71,4 @@ public class MessageProcessor {
 
     private ServiceManager _serviceManager;
     private static MessageProcessor _instance = null;
-    private transient RoutingAssertion _defaultRoutingAssertion = new RoutingAssertion();
 }
