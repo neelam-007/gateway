@@ -1030,8 +1030,7 @@ public class MainWindow extends JFrame {
             return mainJSplitPaneTop;
 
 
-        mainJSplitPaneTop =
-                new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        mainJSplitPaneTop = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 
         mainJSplitPaneTop.add(getMainSplitPaneRight(), "right");
         mainJSplitPaneTop.add(getMainLeftJPanel(), "left");

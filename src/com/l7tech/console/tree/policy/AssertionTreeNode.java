@@ -88,7 +88,20 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         if (validatorMessages.isEmpty()) {
             return super.getTooltipText();
         }
-        return ((PolicyValidatorResult.Message)validatorMessages.get(0)).getMessage();
+        StringBuffer sb = new StringBuffer();
+        sb.append("<html><strong>");
+        Iterator it = this.validatorMessages.iterator();
+        boolean first = true;
+        for (;it.hasNext();) {
+            if (!first) {
+                sb.append("<br>");
+            }
+            first = false;
+            PolicyValidatorResult.Message pm = (PolicyValidatorResult.Message)it.next();
+            sb.append(pm.getMessage());
+        }
+        sb.append("</strong></html>");
+        return sb.toString();
     }
 
     /**

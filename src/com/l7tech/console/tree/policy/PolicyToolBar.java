@@ -96,26 +96,30 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
           new EmptyBorder(2, 3, 2, 3))
         );
 
-        addSeparator();
+        Dimension d = new Dimension();
+        d.width = 16;
+        addSeparator(d);
         setOrientation(JToolBar.VERTICAL);
         putClientProperty("JToolBar.isRollover", Boolean.TRUE);
-        setFloatable(false);
+        //setFloatable(false);
 
         JButton b = add(getAddAssertionAction());
         b.setMargin(new Insets(0, 0, 0, 0));
-        addSeparator();
+        d = new Dimension();
+        d.height = 8;
+        addSeparator(d);
 
         b = add(getAssertionMoveUpAction());
         b.setMargin(new Insets(0, 0, 0, 0));
-        addSeparator();
+        addSeparator(d);
 
         b = add(getAssertionMoveDownAction());
         b.setMargin(new Insets(0, 0, 0, 0));
-        addSeparator();
+        addSeparator(d);
 
         b = add(getDeleteAssertionAction());
         b.setMargin(new Insets(0, 0, 0, 0));
-        addSeparator();
+        addSeparator(d);
     }
 
     private Action getAssertionMoveUpAction() {

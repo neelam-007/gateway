@@ -35,8 +35,7 @@ import java.awt.event.MouseEvent;
 import java.io.StringReader;
 import java.net.URI;
 import java.rmi.RemoteException;
-import java.util.Enumeration;
-import java.util.Iterator;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.beans.PropertyChangeListener;
@@ -103,7 +102,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public void validatePolicy() {
         PolicyValidatorResult result =
           PolicyValidator.getDefault().validate(rootAssertion.asAssertion());
-        displayPolicyValidateResult(result);
+        displayPolicyValidateResult(pruneDuplicates(result));
     }
 
     private void layoutComponents() {
@@ -339,9 +338,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             buttonValidate = new JButton(new ValidatePolicyAction() {
                 public void performAction() {
                     PolicyValidatorResult result
-                      = PolicyValidator.getDefault().
-                      validate(rootAssertion.asAssertion());
-                    displayPolicyValidateResult(result);
+                      = PolicyValidator.getDefault().validate(rootAssertion.asAssertion());
+                    displayPolicyValidateResult(pruneDuplicates(result));
 
                 }
 
@@ -355,6 +353,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     policyTree.getModel().removeTreeModelListener(policyTreeModellistener);
                     try {
                         renderPolicy(selected);
+                        validatePolicy();
                     } catch (FindException e1) {
                         log.log(Level.SEVERE, "Unable to retrieve the service " + service.getName(), e1);
                     } catch (RemoteException e1) {
@@ -380,12 +379,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * @param r the policy validation result
      */
     void displayPolicyValidateResult(PolicyValidatorResult r) {
-
         for (Enumeration en = rootAssertion.preorderEnumeration(); en.hasMoreElements();) {
             AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
             an.setValidatorMessages(r.messages(an.asAssertion()));
         }
-        //((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion.getRoot());
+        ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion.getRoot());
         overWriteMessageArea("");
         for (Iterator iterator = r.getErrors().iterator();
              iterator.hasNext();) {
@@ -625,6 +623,45 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             final PolicyToolBar pt = componentRegistry.getMainWindow().getPolicyToolBar();
             pt.disableAll();
         }
+    }
+
+    /**
+     * prune duplicate messsages
+     * @param result the validation result
+     * @return the result containing unique messages
+     */
+    private PolicyValidatorResult pruneDuplicates(PolicyValidatorResult result) {
+        PolicyValidatorResult pr = new PolicyValidatorResult();
+        // sort the same assertion messages together
+        Comparator c = new Comparator() {
+            public int compare(Object o1, Object o2) {
+                PolicyValidatorResult.Message m1 = (PolicyValidatorResult.Message)o1;
+                PolicyValidatorResult.Message m2 = (PolicyValidatorResult.Message)o2;
+                if (m1.getAssertion() == null) {
+                    return 1;
+                }
+                if (m1.getAssertion().equals(m2.getAssertion())) {
+                   return 0;
+                }
+                return 1;
+            }
+        };
+
+        Set errors = new TreeSet(c);
+        errors.addAll(result.getErrors());
+        for (Iterator iterator = errors.iterator(); iterator.hasNext();) {
+            pr.addError((PolicyValidatorResult.Error)iterator.next());
+        }
+        Set warnings = new TreeSet(c);
+        warnings.addAll(result.getWarnings());
+
+        for (Iterator iterator = warnings.iterator(); iterator.hasNext();) {
+            pr.addWarning((PolicyValidatorResult.Warning)iterator.next());
+
+        }
+        return pr;
+
+
     }
 
 }

@@ -131,6 +131,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
     }
 
     class TreeMouseListener extends PopUpMouseListener {
+        int initialToolTipDelay = -1;
+        int dismissToolTipDelay = -1;
         /**
          * Handle the mouse click popup when the Tree item is right clicked. The context sensitive
          * menu is displayed if the right click was over an item.
@@ -198,6 +200,28 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 ActionManager.getInstance().invokeAction(a);
             }
 
+        }
+
+        /**
+         * Invoked when the mouse enters a component.
+         */
+        public void mouseEntered(MouseEvent e) {
+            initialToolTipDelay = ToolTipManager.sharedInstance().getInitialDelay();
+            ToolTipManager.sharedInstance().setInitialDelay(100);
+            dismissToolTipDelay = ToolTipManager.sharedInstance().getDismissDelay();
+            ToolTipManager.sharedInstance().setDismissDelay(60*1000);
+        }
+
+        /**
+         * Invoked when the mouse exits a component.
+         */
+        public void mouseExited(MouseEvent e) {
+            if (initialToolTipDelay !=-1) {
+                ToolTipManager.sharedInstance().setInitialDelay(initialToolTipDelay);
+            }
+             if (dismissToolTipDelay !=-1) {
+                ToolTipManager.sharedInstance().setDismissDelay(dismissToolTipDelay);
+            }
         }
     }
 
