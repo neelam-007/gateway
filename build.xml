@@ -410,6 +410,7 @@
                 <include name="wsdl4j.jar" unless="include.systinet"/>
 
                 <include name="saxpath.jar"/>
+		<include name="xalan-2.5.2.jar"/>
                 <include name="xbean.jar"/>
                 <include name="xbean-common.jar"/>
                 <include name="xbean-saml.jar"/>
