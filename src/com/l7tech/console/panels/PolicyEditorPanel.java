@@ -148,7 +148,14 @@ public class PolicyEditorPanel extends JPanel {
             buttonSave = new JButton(new SavePolicyAction(rootAssertion));
             this.add(buttonSave);
             buttonSave.setEnabled(false);
-
+            buttonSave.addActionListener( new ActionListener() {
+                /**
+                 * Invoked when an action occurs.
+                 */
+                public void actionPerformed(ActionEvent e) {
+                    appendToMessageArea("Policy saved.");
+                }
+            });
             buttonValidate = new JButton(new ValidatePolicyAction());
             this.add(buttonValidate);
             buttonValidate.addActionListener(
