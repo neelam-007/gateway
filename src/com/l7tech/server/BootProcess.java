@@ -10,6 +10,7 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.common.xml.TarariUtil;
 import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.logging.ServerLogManager;
 import com.l7tech.server.audit.SystemAuditListener;
@@ -17,6 +18,7 @@ import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.system.*;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
+import com.tarari.xml.xpath.XPathCompilerException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -62,6 +64,17 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
     }
 
     public void setServerConfig(ServerConfig config) throws LifecycleException {
+        if (TarariUtil.isTarariPresent()) {
+            logger.info("Initializing Hardware XML Acceleration");
+            try {
+                TarariUtil.setupIsSoap();
+            } catch (XPathCompilerException e) {
+                logger.log(Level.WARNING, "Error initializing Tarari board", e);
+            }
+        } else {
+            logger.info("Hardware XML Acceleration Disabled");
+        }
+
         serverConfig = config;
         try {
             ipAddress = InetAddress.getLocalHost().getHostAddress();

@@ -6,6 +6,7 @@ import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.TarariUtil;
 import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -165,10 +166,17 @@ public class KnobblyMessageTest extends TestCase {
             // ok
         }
 
+        TarariUtil.setupIsSoap();
         msg.initialize(new ByteArrayStashManager(),
                               ContentTypeHeader.XML_DEFAULT,
                               TestDocuments.getInputStream(TestDocuments.PLACEORDER_CLEARTEXT));
         SoapKnob soapKnob = msg.getSoapKnob();
+        if (msg.isSoap()) {
+            String uri = soapKnob.getPayloadNamespaceUri();
+            boolean sec = soapKnob.isSecurityHeaderPresent();
+            logger.info("SOAP payload namespace URI = " + uri);
+            logger.info("Security header " + (sec ? "" : "not ") + "found");
+        }
         logger.info(soapKnob.getPayloadNamespaceUri());
         assertNotNull(msg.getXmlKnob());
         assertNotNull(msg.getMimeKnob());

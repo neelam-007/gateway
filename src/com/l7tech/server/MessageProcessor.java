@@ -115,16 +115,22 @@ public class MessageProcessor extends ApplicationObjectSupport {
         final Message response = context.getResponse();
         context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
         ProcessorResult wssOutput = null;
+
         // WSS-Processing Step
         boolean isSoap = false;
+        boolean hasSecurity = false;
+
         try {
             isSoap = context.getRequest().isSoap();
+            hasSecurity = context.getRequest().getSoapKnob().isSecurityHeaderPresent();
         } catch (SAXException e) {
             logger.log(Level.SEVERE, "Request XML is not well-formed", e);
             return AssertionStatus.BAD_REQUEST;
+        } catch (MessageNotSoapException e) {
+            logger.log(Level.INFO, "Message is not soap", e); // TODO remove this or downgrade to FINE
         }
 
-        if (isSoap) {
+        if (isSoap && hasSecurity) {
             WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
             try {
                 final XmlKnob reqXml = request.getXmlKnob();

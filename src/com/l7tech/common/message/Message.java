@@ -12,7 +12,6 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.util.CausedIllegalStateException;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -32,6 +31,9 @@ public final class Message {
      */
     public Message() {
     }
+
+
+
 
     /**
      * Create a Message pre-initialized with a MIME facet attached to the specified InputStream.
@@ -229,15 +231,14 @@ public final class Message {
             return true;
         if (!isXml())
             return false;
-        if (!SoapUtil.isSoapMessage(getXmlKnob().getDocument(false))) // SAXException here can't happen
-            return false;
 
-        // It's definitely soap.  Install the SOAP knob while we are here.
+        // TODO evil hack was: It's definitely soap.  Install the SOAP knob while we are here.
         try {
             getSoapKnob();
             return true;
         } catch (MessageNotSoapException e) {
-            throw new CausedIllegalStateException("Unable to create SOAP facet", e); // can't happen here
+            return false;
+//            throw new CausedIllegalStateException("Unable to create SOAP facet", e); // can't happen here
         }
     }
 

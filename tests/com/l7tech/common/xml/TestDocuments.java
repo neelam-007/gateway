@@ -22,7 +22,7 @@ import java.util.Properties;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public final class TestDocuments {
-    private static final String DIR = "com/l7tech/service/resources/";
+    public static final String DIR = "com/l7tech/service/resources/";
     private static final String PDIR = "com/l7tech/policy/resources/";
     public static final String TEST_SOAP_XML = DIR + "GetLastTradePriceSoapRequest.xml";
     public static final String WSDL2PORTS = DIR + "xmltoday-delayed-quotes-2ports.wsdl";

@@ -54,4 +54,9 @@ public interface SoapKnob extends MessageKnob {
      * @param faultDetail  the fault details to use for the new document.  May not be null.  Must include an actor at this point.
      */
     void setFaultDetail(SoapFaultDetail faultDetail);
+
+    /**
+     * True if a Security header was noticed.
+     */
+    boolean isSecurityHeaderPresent();
 }
