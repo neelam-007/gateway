@@ -17,8 +17,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
+/**
+ * This class is a panel for users to input the configuration data of a LDAP identity provider.
+ *
+ * <p> Copyright (C) 2003 Layer 7 Technologies Inc.</p>
  *
  * $Id$
  */

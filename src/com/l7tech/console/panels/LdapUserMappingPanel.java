@@ -20,10 +20,10 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Iterator;
 
-/*
+/**
  * This class provides a panel for users to add/delete/modify the LDAP attribute mapping of the user objectclass.
  *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
+ * <p>Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  *
  * $Id$
  */

@@ -16,10 +16,10 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-/*
+/**
  * This class provides a panel for users to add/delete/modify the LDAP attribute mapping of the group bjectclass.
  *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
+ * <p>Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  *
  * $Id$
  */
