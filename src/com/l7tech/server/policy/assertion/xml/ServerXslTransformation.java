@@ -99,8 +99,10 @@ public class ServerXslTransformation implements ServerAssertion {
         final Node node = outputTarget.getNode();
         if (node instanceof Document) {
             return (Document)node;
-        } else {
+        } else if (node != null) {
             return node.getOwnerDocument();
+        } else {
+            return null;
         }
     }
 
