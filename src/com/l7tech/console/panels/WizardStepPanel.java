@@ -62,6 +62,17 @@ public abstract class WizardStepPanel extends JPanel {
         return true;
     }
 
+       /**
+     * Test whether the step panel allows users to test the current settings.  This method
+     * should return quickly.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+
+    public boolean canTest() {
+        return false;
+    }
+
     /**
      * Test whether the step is finished and it is safe to finish the wizard.
      *

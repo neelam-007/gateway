@@ -530,6 +530,15 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         }
     }
 
+    /**
+     * Test whether the step panel allows testing the settings.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canTest() {
+        return false;
+    }
+
     private KeyListener keyListener = new KeyListener() {
         public void keyPressed(KeyEvent ke) {
             // don't care

@@ -230,6 +230,16 @@ public class LdapUserMappingPanel extends WizardStepPanel {
     }
 
     /**
+     * Test whether the step panel allows testing the settings.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+
+    public boolean canTest() {
+        return true;
+    }
+
+    /**
      * The button for adding the attribute mapping of a new group objectclass.
      *
      * @return JButton  The button for the add operation.

@@ -206,6 +206,15 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
     }
 
     /**
+      * Test whether the step panel allows testing the settings.
+      *
+      * @return true if the panel is valid, false otherwis
+      */
+     public boolean canTest() {
+         return false;
+     }
+
+    /**
      *  A cell renderer for displaying the name of the identity provider type in JBoxCombo component.
      *
      **/
