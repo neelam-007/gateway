@@ -4,21 +4,13 @@
 // Please first read the full copyright statement in file COPYRIGHT.html
 package com.l7tech.common.util;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.text.DateFormat;
-import java.text.ParsePosition;
-import java.text.FieldPosition;
 import java.text.ParseException;
+import java.util.*;
 
 /**
  * Date parser for ISO 8601 format 
  * http://www.w3.org/TR/1998/NOTE-datetime-19980827
- * @author  Benoît Mahé (bmahe@w3.org)
+ * @author  Benoit Mahe (bmahe@w3.org)
  */
 public class ISO8601Date {
 
