@@ -9,6 +9,7 @@ import com.l7tech.adminws.ClientCredentialManager;
 import com.l7tech.util.Locator;
 
 import java.net.PasswordAuthentication;
+import java.io.File;
 
 /**
  * Layer 7 Technologies, inc.
@@ -95,7 +96,9 @@ public class ClientTest extends junit.framework.TestCase {
         System.out.println("new config saved successfuly with id:" + newcfgid);
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {  
+        System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
+        System.setProperty("javax.net.ssl.trustStorePassword", "password");
         ClientCredentialManager credsManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
         PasswordAuthentication creds = new PasswordAuthentication("ssgadmin", "ssgadminpasswd".toCharArray());
         credsManager.login(creds);
