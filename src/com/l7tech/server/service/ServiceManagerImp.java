@@ -187,7 +187,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             }
             context = getContext();
             PersistenceManager.update(context, original);
-            logger.info( "Updated service #" + service.getOid() );
+            logger.info( "Updated service " + service.getName() + "  #" + service.getOid() );
 
         } catch ( SQLException se ) {
             logger.log( Level.SEVERE, se.toString(), se );
@@ -234,7 +234,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             context = getContext();
             PersistenceManager.delete(context, service );
             resolutionManager.deleteResolutionParameters(service.getOid());
-            logger.info("Deleted service " + service.getOid());
+            logger.info("Deleted service " + service.getName() + " #" + service.getOid());
         } catch ( SQLException se ) {
             throw new DeleteException( se.toString(), se );
         }
