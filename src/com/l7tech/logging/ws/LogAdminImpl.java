@@ -1,20 +1,16 @@
 package com.l7tech.logging.ws;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.logging.LogAdmin;
+import com.l7tech.logging.LogManager;
 import com.l7tech.logging.SSGLogRecord;
-import com.l7tech.common.util.UptimeMetrics;
-import com.l7tech.server.util.UptimeMonitor;
 import com.l7tech.objectmodel.PersistenceContext;
 
 import java.rmi.RemoteException;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.FileNotFoundException;
-import java.sql.SQLException;
 
 /**
  * AdminWS for consulting the server system log.
@@ -70,20 +66,6 @@ public class LogAdminImpl implements LogAdmin {
             }
         }
 
-    }
-
-    public UptimeMetrics getUptime() throws RemoteException {
-        try {
-            return UptimeMonitor.getLastUptime();
-        } catch (FileNotFoundException e) {
-            String msg = "cannot retrieve uptime";
-            logger.log(Level.WARNING, msg, e);
-            throw new RemoteException(msg, e);
-        } catch (IllegalStateException e) {
-            String msg = "cannot retrieve uptime";
-            logger.log(Level.WARNING, msg, e);
-            throw new RemoteException(msg, e);
-        }
     }
 
     // ************************************************

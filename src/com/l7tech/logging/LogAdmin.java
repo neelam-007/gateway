@@ -1,9 +1,7 @@
 package com.l7tech.logging;
 
-import com.l7tech.common.util.UptimeMetrics;
-
-import java.rmi.RemoteException;
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 
 /**
  * Insert comments here.
@@ -45,6 +43,4 @@ public interface LogAdmin extends Remote {
      * @return SSGLogRecord[] the array of messages retrieved
      */
     SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException;
-
-    UptimeMetrics getUptime() throws RemoteException;
 }

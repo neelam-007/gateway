@@ -1,10 +1,5 @@
 package com.l7tech.logging;
 
-import com.l7tech.common.util.UptimeMetrics;
-import java.rmi.RemoteException;
-import com.l7tech.common.util.UptimeMetrics;
-
-import java.io.IOException;
 import java.rmi.RemoteException;
 
 /*
@@ -81,14 +76,5 @@ public class LogAdminStub implements LogAdmin {
 
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         throw new UnsupportedOperationException("todo");
-    }
-
-    public UptimeMetrics getUptime() throws RemoteException {
-        long time = System.currentTimeMillis() - (25*60*60000 + 60000); // server uptime is 1 day 1 hour 1 minute
-
-        // Statistics panel shows the server up time as indicated above and the avg load (1 minute): 1.43
-        // the " 11:22:20  up 28 days, 18:57," is the hardware uptime which is not shown in Statistics panel
-        UptimeMetrics um = new UptimeMetrics(" 11:22:20  up 28 days, 18:57,  1 user,  load average: 1.43, 8.33, 0.12\n", time);
-        return um;
     }
 }

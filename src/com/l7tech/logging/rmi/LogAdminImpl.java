@@ -1,9 +1,8 @@
 package com.l7tech.logging.rmi;
 
-import com.l7tech.remote.jini.export.RemoteService;
-import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.SSGLogRecord;
+import com.l7tech.remote.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -69,10 +68,6 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
      */
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         return delegate.getSystemLog(nodeid, startMsgNumber, endMsgNumber, size);
-    }
-
-    public UptimeMetrics getUptime() throws RemoteException {
-        return delegate.getUptime();
     }
 
     // ************************************************
