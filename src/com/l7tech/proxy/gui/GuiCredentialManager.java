@@ -196,33 +196,69 @@ public class GuiCredentialManager implements CredentialManager {
      * @param ssg
      */
     public void notifyCertificateAlreadyIssued(final Ssg ssg) {
-       // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
-        if (!ssg.promptForUsernameAndPassword())
-            return;
+        // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
+         if (!ssg.promptForUsernameAndPassword())
+             return;
 
-        long now = System.currentTimeMillis();
-        synchronized(this) {
+         long now = System.currentTimeMillis();
+         synchronized(this) {
 
-            // Avoid spamming the user with reports
-            if (System.currentTimeMillis() > now + 1000)
-                return;
+             // Avoid spamming the user with reports
+             if (System.currentTimeMillis() > now + 1000)
+                 return;
 
-            try {
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    public void run() {
-                        Gui.getInstance().errorMessage("You need a client certificate to communicate with the Gateway " + ssg + ", \n" +
-                                                       "but it has already issed a client certificate to this account and cannot issue\n" +
-                                                       "a second one.  If you have lost your client certificate, you will need to\n" +
-                                                       "contact your Gateway administrator and have them revoke your old one before\n" +
-                                                       "you can obtain a new one.");
-                    }
-                });
-            } catch (InterruptedException e) {
-                log.error(e);
-            } catch (InvocationTargetException e) {
-                log.error(e);
-            }
-        }
+             try {
+                 SwingUtilities.invokeAndWait(new Runnable() {
+                     public void run() {
+                         Gui.getInstance().errorMessage("You need a client certificate to communicate with the Gateway " + ssg + ", \n" +
+                                                        "but it has already issed a client certificate to this account and cannot issue\n" +
+                                                        "a second one.  If you have lost your client certificate, you will need to\n" +
+                                                        "contact your Gateway administrator and have them revoke your old one before\n" +
+                                                        "you can obtain a new one.");
+                     }
+                 });
+             } catch (InterruptedException e) {
+                 log.error(e);
+             } catch (InvocationTargetException e) {
+                 log.error(e);
+             }
+         }
+    }
+
+    /**
+     * Notify the user that an SSL connection to the SSG could not be established because the hostname did not match
+     * the one in the certificate.
+     *
+     * @param ssg
+     * @param whatWeWanted  the expected hostname, equal to ssg.getSsgAddress()
+     * @param whatWeGotInstead  the hostname in the peer's certificate
+     */
+    public void notifySsgHostnameMismatch(final Ssg ssg, final String whatWeWanted, final String whatWeGotInstead) {
+        // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
+         if (!ssg.promptForUsernameAndPassword())
+             return;
+
+         long now = System.currentTimeMillis();
+         synchronized(this) {
+
+             // Avoid spamming the user with reports
+             if (System.currentTimeMillis() > now + 1000)
+                 return;
+
+             try {
+                 SwingUtilities.invokeAndWait(new Runnable() {
+                     public void run() {
+                         Gui.getInstance().errorMessage("The hostname in the Gateway's certificate, " + whatWeGotInstead + "\n" +
+                                                        "does not match the hostname we connected to (" + whatWeWanted + ")." +
+                                                        "Please double check the Gateway hostname for the Gateway " + ssg + ".");
+                     }
+                 });
+             } catch (InterruptedException e) {
+                 log.error(e);
+             } catch (InvocationTargetException e) {
+                 log.error(e);
+             }
+         }
     }
 
     private PleaseWaitDialog getPleaseWaitDialog() {
