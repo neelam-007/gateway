@@ -9,6 +9,7 @@
 # PREREQUISITES
 # 1. THE DIRECTORY JAVA_HOME/bin IS PART OF THE PATH
 # 2. TOMCAT_HOME is set
+# 3. The ROOT.war file is in $TOMCAT_HOME/webapps
 #
 # -----------------------------------------------------------------------------
 #
@@ -28,13 +29,13 @@ fi
 KEYTOOL="$JAVA_HOME/bin/keytool"
 KEYSTORE_DIR="$TOMCAT_HOME/kstores"
 KEYSTORE_DIR_OSPATH="$TOMCAT_HOME_OSPATH/kstores"
-KEYSTORE_FILE="$KEYSTORE_DIR/ssgroot"
-WEB_XML_FILE="$TOMCAT_HOME/webapps/ROOT/WEB-INF/web.xml"
+KEYSTORE_FILE="$KEYSTORE_DIR/ca.ks"
 WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
 WEBAPPS_PATH="$TOMCAT_HOME/webapps"
-KEYSTORE_FILE_OSPATH="$KEYSTORE_DIR_OSPATH/ssgroot"
-CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssgroot.cer"
-CERTIFICATE_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ssgroot.cer"
+KEYSTORE_PROPERTIES_FILE="$TOMCAT_HOME/webapps/ROOT/WEB-INF/classes/keystore.properties"
+KEYSTORE_FILE_OSPATH="$KEYSTORE_DIR_OSPATH/ca.ks"
+CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ca.cer"
+CERTIFICATE_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ca.cer"
 
 # VERIFY THAT THE TOMCAT_HOME VARIABLE IS SET
 if [ ! "$TOMCAT_HOME" ]; then
@@ -80,9 +81,11 @@ if [ "$PASSWORD_LENGTH" -lt 6 ]; then
 fi
 
 # ASK FOR THE HOST NAME
-echo "Please type in the host name"
-read HOSTNAME
-DN="CN="$HOSTNAME
+echo "Please type in the ca name"
+read CANAME
+DN="CN="$CANAME
+
+# GENERATE THE KEYSTORE
 $KEYTOOL -genkey -alias ssgroot -dname $DN -v -keystore "$KEYSTORE_FILE_OSPATH" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
 
 # CHECK THAT THIS KEYSTORE WAS SET SUCCESSFULLY
@@ -97,34 +100,25 @@ else
         exit 255
 fi
 
-# REMEMBER THE KEYSTORE PASSWORD IN THE WEB.XML FILE
+# REMEMBER THE KEYSTORE PASSWORD IN THE KEYSTORE.PROPERTIES FILE
 
 # IF THE WAR FILE IS PRESENT BUT NOT YET EXPANDED, EXPAND IT
-if [ -e "$WEB_XML_FILE" ]; then
+if [ -e "$KEYSTORE_PROPERTIES_FILE" ]; then
         echo
 else
         echo "expanding the war file so that web.xml can be updated with kstore password"
         unzip $WAR_FILE -d $WEBAPPS_PATH/ROOT
 fi
 
-if [ -e "$WEB_XML_FILE" ]; then
-        echo "Recording the keystore password in web.xml"
-        SUBSTITUTE_FROM='RootKeyStorePasswd\<\/param-name\>\s*\<param-value\>.*\<\/param-value\>'
-        SUBSTITUTE_TO='RootKeyStorePasswd\<\/param-name\>\<param-value\>'
-        SUBSTITUTE_TO=$SUBSTITUTE_TO${KEYSTORE_PASSWORD}
-        SUBSTITUTE_TO=$SUBSTITUTE_TO'\<\/param-value\>'
-        perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$WEB_XML_FILE"
-        echo "Recording the location of the root cert in web.xml"
-        # fla: can anyone read this next line ? ;^) I am substituing the char '/' for '\/' because this is a path
-        CERT_FILE_WITH_SLASH_SUBSTITUTED=${CERTIFICATE_FILE_OSPATH//\//\\\/}
-        SUBSTITUTE_FROM='RootCertLocation\<\/env-entry-name\>\s*\<env-entry-value\>.*\<\/env-entry-value\>'
-        SUBSTITUTE_TO='RootCertLocation\<\/env-entry-name\>\<env-entry-value\>'
-        SUBSTITUTE_TO=$SUBSTITUTE_TO$CERT_FILE_WITH_SLASH_SUBSTITUTED
-        SUBSTITUTE_TO=$SUBSTITUTE_TO'\<\/env-entry-value\>'
-        perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$WEB_XML_FILE"
+if [ -e "$KEYSTORE_PROPERTIES_FILE" ]; then
+        echo "Recording the keystore password"
+        SUBSTITUTE_FROM=rootcakspasswd=.*
+        SUBSTITUTE_TO=rootcakspasswd=${KEYSTORE_PASSWORD}
+        perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$KEYSTORE_PROPERTIES_FILE"
+        echo "Recording the location of the root cert"
 else
 # INFORM THE USER OF THE FAILURE
         echo "ERROR"
-        echo "The root keystore password was not recorded in web.xml because the file was not found."
+        echo "The root keystore password was not recorded because the properties file was not found."
         echo "This should be done manually"
 fi
