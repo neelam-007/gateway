@@ -54,6 +54,10 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
         }
     }
 
+    public void deleteOldAuditRecords() throws RemoteException {
+        throw new RemoteException("Not yet implemented."); // TODO implement this
+    }
+
     public SSGLogRecord[] getSystemLog(final String nodeid, final long startMsgNumber, final long endMsgNumber, final int size) throws RemoteException {
         try {
             Collection c = (Collection)doInTransactionAndClose(new PersistenceAction() {

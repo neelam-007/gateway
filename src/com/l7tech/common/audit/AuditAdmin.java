@@ -26,4 +26,10 @@ public interface AuditAdmin extends GenericLogAdmin {
      * Retrieves a collection of {@link AuditRecord}s matching the provided criteria.
      */ 
     Collection find(AuditSearchCriteria criteria) throws FindException, RemoteException;
+
+    /**
+     * Delete all sub-SEVERE AuditRecords that are more than 48 hours old, while producing new audit
+     * record documenting that this action has been performed (and by which administrator).
+     */
+    void deleteOldAuditRecords() throws RemoteException;
 }

@@ -11,6 +11,8 @@ import com.l7tech.identity.Group;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Collection;
+import java.util.Collections;
 
 
 /**
@@ -86,6 +88,10 @@ public class ViewGatewayLogsAction extends SecureAction {
 
             public String getPanelTitle() {
                 return "Log Browser";
+            }
+
+            public Collection getExtraFileMenuActions() {
+                return Collections.EMPTY_LIST;
             }
         });
         gatewayLogWindow.addWindowListener(new WindowAdapter() {

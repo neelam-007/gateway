@@ -28,6 +28,10 @@ public class AuditAdminStub implements AuditAdmin {
         return null;
     }
 
+    public void deleteOldAuditRecords() throws RemoteException {
+
+    }
+
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         return new SSGLogRecord[0];
     }

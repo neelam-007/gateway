@@ -13,6 +13,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.ResourceBundle;
 
 /*
@@ -44,6 +46,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         Locator getLogAdminLocator();
         String getWindowTitle();
         String getPanelTitle();
+        Collection getExtraFileMenuActions();
     }
 
     /**
@@ -130,6 +133,13 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         if (fileMenu == null) {
             fileMenu = new JMenu();
             fileMenu.setText(resapplication.getString("File"));
+            Collection extraActions = strategy.getExtraFileMenuActions();
+            if (extraActions != null) {
+                for (Iterator i = extraActions.iterator(); i.hasNext();) {
+                    Action action = (Action)i.next();
+                    fileMenu.add(new JMenuItem(action));
+                }
+            }
             fileMenu.add(getExitMenuItem());
             int mnemonic = fileMenu.getText().toCharArray()[0];
             fileMenu.setMnemonic(mnemonic);

@@ -146,7 +146,6 @@ public class LogPanel extends JPanel {
                                 } else if (arec instanceof MessageSummaryAuditRecord) {
                                     MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord)arec;
                                     msg += "Event Type : Message Summary" + "\n";
-                                    msg += "Request ID : " + sum.getReqId() + "\n";
                                     msg += "Client IP  : " + arec.getIpAddress() + "\n";
                                     msg += "Service    : " + sum.getServiceName() + "\n";
                                     msg += "Rqst Length: " + sum.getRequestContentLength() + "\n";

@@ -11,6 +11,8 @@ import com.l7tech.identity.Group;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Arrays;
+import java.util.Collection;
 
 
 /**
@@ -71,6 +73,8 @@ public class ViewGatewayAuditsAction extends SecureAction {
     private GatewayLogWindow getGatewayAuditWindow() {
         if (gatewayAuditWindow != null) return gatewayAuditWindow;
 
+        final java.util.List extraFileMenuActions = Arrays.asList(new Object[] { new DeleteAuditEventsAction() });
+
         gatewayAuditWindow = new GatewayLogWindow(new GatewayLogWindow.Strategy() {
             public Locator getLogAdminLocator() {
                 return new AbstractLocator() {
@@ -86,6 +90,10 @@ public class ViewGatewayAuditsAction extends SecureAction {
 
             public String getPanelTitle() {
                 return "Audit Events";
+            }
+
+            public Collection getExtraFileMenuActions() {
+                return extraFileMenuActions;
             }
         });
         gatewayAuditWindow.addWindowListener(new WindowAdapter() {
@@ -122,4 +130,5 @@ public class ViewGatewayAuditsAction extends SecureAction {
               return;
           gatewayAuditWindow.onLogoff(e);
     }
+
 }
