@@ -16,4 +16,5 @@ public class ExporterConstants {
     public static final String EXPORTED_POL_PREFIX = "exp";
     public static final String EXPORTED_DOCROOT_ELNAME = "Export";
     public static final String EXPORTED_REFERENCES_ELNAME = "References";
+    public static final String REF_TYPE_ATTRNAME = "RefType";
 }
