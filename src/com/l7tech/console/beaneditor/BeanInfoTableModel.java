@@ -12,39 +12,51 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Vector;
+import java.util.*;
 
 /**
+ * The <code>TableModel</code> implementation to support bean property
+ * editor.
  * @author emil
  * @version Feb 17, 2004
  */
 public class BeanInfoTableModel extends AbstractTableModel {
-    protected int numProps = 0;
-    protected Vector propertiesList;
+    protected List propertiesList;
     protected Object bean;
-
+    /**
+     *
+     * @param bean
+     * @param stopClass
+     */
     public BeanInfoTableModel(Object bean, Class stopClass) {
+        this(bean, stopClass, new String[] {});
+    }
+    /**
+     *
+     * @param bean
+     * @param stopClass
+     * @param excluded
+     */
+    public BeanInfoTableModel(Object bean, Class stopClass, String[] excluded) {
         this.bean = bean;
         try {
+            Set sortedProperties = new TreeSet(new Comparator() {
+                public int compare(Object o1, Object o2) {
+                    PropertyDescriptor p1 = (PropertyDescriptor)o1;
+                    PropertyDescriptor p2 = (PropertyDescriptor)o2;
+                    return p1.getDisplayName().compareToIgnoreCase(p2.getDisplayName());
+                }
+            });
             BeanInfo info = Introspector.getBeanInfo(bean.getClass(), stopClass);
             PropertyDescriptor[] props = info.getPropertyDescriptors();
-            numProps = props.length;
-
-            propertiesList = new Vector(numProps);
+            List excludedList = Arrays.asList(excluded);
+            int numProps = props.length;
             for (int k = 0; k < numProps; k++) {
-                String name = props[k].getDisplayName();
-                boolean added = false;
-                for (int i = 0; i < propertiesList.size(); i++) {
-                    String str = ((PropertyDescriptor)propertiesList.elementAt(i)).getDisplayName();
-                    if (name.compareToIgnoreCase(str) < 0) {
-                        propertiesList.insertElementAt(props[k], i);
-                        added = true;
-                        break;
-                    }
+                if (excludedList.indexOf(props[k].getName()) == -1) {
+                    sortedProperties.add(props[k]);
                 }
-                if (!added)
-                    propertiesList.addElement(props[k]);
             }
+            propertiesList = new ArrayList(sortedProperties);
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(null, "Error: " + ex.toString(),
@@ -53,7 +65,7 @@ public class BeanInfoTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        return numProps;
+        return propertiesList.size();
     }
 
     public int getColumnCount() {
@@ -65,14 +77,14 @@ public class BeanInfoTableModel extends AbstractTableModel {
     }
 
     public boolean isCellEditable(int nRow, int nCol) {
-        return (nCol == 1);
+        return true;
     }
 
     public Object getValueAt(int nRow, int nCol) {
         if (nRow < 0 || nRow >= getRowCount()) return "";
 
         try {
-            PropertyDescriptor prop = (PropertyDescriptor)propertiesList.elementAt(nRow);
+            PropertyDescriptor prop = (PropertyDescriptor)propertiesList.get(nRow);
             switch (nCol) {
                 case 0:
                     return prop.getDisplayName();
@@ -88,10 +100,9 @@ public class BeanInfoTableModel extends AbstractTableModel {
     }
 
     public void setValueAt(Object value, int nRow, int nCol) {
-        if (nRow < 0 || nRow >= getRowCount())
-            return;
+        if (nCol !=1) return;
         String str = value.toString();
-        PropertyDescriptor prop = (PropertyDescriptor)propertiesList.elementAt(nRow);
+        PropertyDescriptor prop = (PropertyDescriptor)propertiesList.get(nRow);
         Class cls = prop.getPropertyType();
         Object obj = stringToObj(str, cls);
         if (obj == null)

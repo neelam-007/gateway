@@ -9,6 +9,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.WeakPropertyChangeSupport;
 
 import javax.swing.*;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -45,7 +47,11 @@ public class BeanEditor extends JPanel {
     }
 
     public BeanEditor(final JFrame frame, Object bean, Class stopClass) {
-        this(bean, stopClass);
+        this(frame, bean, stopClass, new Options());
+    }
+
+    public BeanEditor(final JFrame frame, Object bean, Class stopClass, Options options) {
+        this(bean, stopClass, options);
         final Container contentPane = frame.getContentPane();
         contentPane.setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(10, 10, 20, 10));
@@ -57,8 +63,9 @@ public class BeanEditor extends JPanel {
         });
     }
 
+
     public BeanEditor(final JDialog dialog, Object bean, Class stopClass) {
-        this(bean, stopClass);
+        this(bean, stopClass, new Options());
         final Container contentPane = dialog.getContentPane();
         contentPane.setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(10, 10, 20, 10));
@@ -84,15 +91,21 @@ public class BeanEditor extends JPanel {
         }
     }
 
-    public BeanEditor(Object bean, Class stopClass) {
+    public BeanEditor(Object bean, Class stopClass, Options options) {
         this.bean = bean;
         this.stopClass = stopClass;
+        this.options = options;
         initResources();
         setLayout(new BorderLayout());
-        beanModel = new BeanInfoTableModel(bean, stopClass);
+        beanModel = new BeanInfoTableModel(bean, stopClass, options.excludeProperties);
         propertyTable = new JTable(beanModel);
         propertyTable.getTableHeader().setReorderingAllowed(false);
         propertyTable.getTableHeader().setResizingAllowed(true);
+        propertyTable.setRowHeight(20);
+        TableColumn column = propertyTable.getColumnModel().getColumn(0);
+        column.setCellRenderer(new ButtonRenderer());
+        column.setCellEditor(new ButtonEditor(new JCheckBox()));
+        column = propertyTable.getColumnModel().getColumn(1);
         JScrollPane ps = new JScrollPane();
         ps.getViewport().add(propertyTable);
         add(ps, BorderLayout.CENTER);
@@ -173,6 +186,67 @@ public class BeanEditor extends JPanel {
         Utilities.equalizeButtonSizes(new JButton[]{okButton, cancelButton});
 
         return panel;
+    }
+
+    class ButtonRenderer extends JButton implements TableCellRenderer {
+        public ButtonRenderer() {
+            setOpaque(true);
+        }
+
+        public Component
+          getTableCellRendererComponent(JTable table, Object value,
+                                        boolean isSelected, boolean hasFocus, int row, int column) {
+            setText((value == null) ? "" : value.toString());
+            return this;
+        }
+    }
+
+    class ButtonEditor extends DefaultCellEditor {
+        protected JButton button;
+        private String label;
+
+        public ButtonEditor(JCheckBox checkBox) {
+            super(checkBox);
+            button = new JButton();
+            button.setOpaque(true);
+            button.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    int row = propertyTable.getSelectedRow();
+                    fireEditingStopped();
+                    if (row !=-1) {
+                        startEditingValue(row);
+                    }
+                }
+            });
+        }
+
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                                                     boolean isSelected, int row, int column) {
+            label = (value == null) ? "" : value.toString();
+            button.setText(label);
+            return button;
+        }
+
+        public Object getCellEditorValue() {
+            return label;
+        }
+
+        public boolean stopCellEditing() {
+            return super.stopCellEditing();
+        }
+
+        protected void fireEditingStopped() {
+            super.fireEditingStopped();
+        }
+
+        protected void startEditingValue(final int row) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    propertyTable.editCellAt(row, 1);
+                }
+            });
+
+        }
     }
 
 

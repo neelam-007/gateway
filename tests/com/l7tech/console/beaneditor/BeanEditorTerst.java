@@ -15,7 +15,10 @@ public class BeanEditorTerst {
     public static void main(String[] args) {
         Person person = new Person();
         JFrame frame = new JFrame();
-        BeanEditor be = new BeanEditor(frame, person, Object.class);
+        BeanEditor.Options bopts = new BeanEditor.Options();
+        bopts.setExcludeProperties(new String[]{"age"});
+
+        BeanEditor be = new BeanEditor(frame, person, Object.class, bopts);
         frame.pack();
         frame.show();
     }
