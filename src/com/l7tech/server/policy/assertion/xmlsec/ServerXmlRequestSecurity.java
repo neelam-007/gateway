@@ -140,8 +140,6 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new PolicyAssertionException(e.getMessage(), e);
-        } catch (XSignatureException e) {
-            throw new PolicyAssertionException(e.getMessage(), e);
         }
         return clientCert;
     }

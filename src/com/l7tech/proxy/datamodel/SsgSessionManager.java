@@ -46,12 +46,27 @@ public class SsgSessionManager {
     }
 
     /**
+     * Quickly check whether we have a session open with the specified Ssg.  If this returns true, the
+     * Ssg may still reject the session next time we refer to it.
+     */
+    public static boolean isSessionAvailable(Ssg ssg) {
+        return ssg.session() != null;
+    }
+
+    /**
+     * Get the session with the specified Ssg, or null if no session currently exists.
+     */
+    public static Session getSession(Ssg ssg) {
+        return ssg.session();
+    }
+
+    /**
      * Get a session with the specified Ssg.  If no session currently exists, one will be created.
      * @param ssg
      * @return
      */
-    public static Session getSession(Ssg ssg)
-            throws OperationCanceledException, IOException, MalformedURLException,
+    public static Session getOrCreateSession(Ssg ssg)
+            throws OperationCanceledException, IOException,
             ServerCertificateUntrustedException, BadCredentialsException
     {
         synchronized (ssg) {

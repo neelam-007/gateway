@@ -13,6 +13,7 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
 
@@ -35,7 +36,7 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
      * @return the AssertionStatus.NONE if no child returned an error; the rightmost-child error otherwise.
      * @throws PolicyAssertionException
      */
-    public AssertionStatus decorateRequest(PendingRequest req) throws PolicyAssertionException, OperationCanceledException, BadCredentialsException {
+    public AssertionStatus decorateRequest(PendingRequest req) throws PolicyAssertionException, OperationCanceledException, BadCredentialsException, ServerCertificateUntrustedException {
         data.mustHaveChildren();
         AssertionStatus result = AssertionStatus.NONE;
         for ( int i = 0; i < children.length; i++ ) {

@@ -12,6 +12,9 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.logging.LogManager;
 
 import java.util.logging.Logger;
@@ -35,22 +38,18 @@ public class ClientHttpBasic extends ClientAssertion {
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
-    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
-        String username = request.getSsg().getUsername();
-        char[] password = request.getSsg().password();
-        if (username == null || password == null || username.length() < 1) {
-            log.info("HttpBasic: no credentials configured for the SSG " + request.getSsg());
-            request.setCredentialsWouldHaveHelped(true);
-            return AssertionStatus.AUTH_REQUIRED;
-        }
+    public AssertionStatus decorateRequest(PendingRequest request)
+            throws PolicyAssertionException, OperationCanceledException
+    {
+        Ssg ssg = request.getSsg();
+        if (!ssg.isCredentialsConfigured())
+            Managers.getCredentialManager().getCredentials(ssg);
         request.setBasicAuthRequired(true);
-        request.setHttpBasicUsername(username);
-        request.setHttpBasicPassword(password);
-        log.info("HttpBasic: setting credentials for SSG " + request.getSsg());
+        log.info("HttpBasic: will use HTTP basic on this request to " + request.getSsg());
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
         // no action on response
         return AssertionStatus.NONE;
     }

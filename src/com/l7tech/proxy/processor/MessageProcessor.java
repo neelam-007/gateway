@@ -10,19 +10,19 @@ import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.SslUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.ssl.ClientProxySslException;
 import com.l7tech.proxy.util.CannedSoapFaults;
@@ -38,7 +38,6 @@ import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -57,7 +56,6 @@ public class MessageProcessor {
     private static final Category log = Category.getInstance(MessageProcessor.class);
     private static final int MAX_TRIES = 8;
     private PolicyManager policyManager;
-    private ClientProxy clientProxy;
 
     /**
      * Construct a Client Proxy MessageProcessor.
@@ -66,14 +64,6 @@ public class MessageProcessor {
      */
     public MessageProcessor(PolicyManager policyManager) {
         this.policyManager = policyManager;
-    }
-
-    /**
-     * Set the ClientProxy we are working for.  This is intended to be called by the ClientProxy only.
-     * @param cp
-     */
-    public void setClientProxy(ClientProxy cp) {
-        this.clientProxy = cp;
     }
 
     /**
@@ -142,16 +132,13 @@ public class MessageProcessor {
      *
      * @param req   the PendingRequest to decorate
      * @throws PolicyAssertionException     if the policy evaluation could not be completed due to a serious error
-     * @throws com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException     if the policy evaluation should be started over
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException   if the user declined to provide a username and password
-     * @throws com.l7tech.proxy.datamodel.exceptions.ClientCertificateException   if a client certificate was required but could not be obtained
      * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
     private ClientAssertion enforcePolicy(PendingRequest req)
-            throws PolicyAssertionException, PolicyRetryableException, OperationCanceledException,
-            ClientCertificateException, ServerCertificateUntrustedException, BadCredentialsException
+            throws PolicyAssertionException, OperationCanceledException,
+            ServerCertificateUntrustedException, BadCredentialsException
     {
-        Ssg ssg = req.getSsg();
         ClientAssertion policy = policyManager.getClientPolicy(req);
         AssertionStatus result;
         try {
@@ -161,36 +148,8 @@ public class MessageProcessor {
                 throw new BadCredentialsException(e);
             throw e;
         }
-        if (result != AssertionStatus.NONE) {
-            if (req.isCredentialsWouldHaveHelped() || req.isClientCertWouldHaveHelped()) {
-                boolean gotCreds = false;
-                if (!ssg.isCredentialsConfigured()) {
-                    Managers.getCredentialManager().getCredentials(ssg);
-                    gotCreds = true;
-                }
-                if (req.isClientCertWouldHaveHelped()) {
-                    if (gotCreds) {
-                        log.info("Policy failed, possibly due to lack of client certificate, possibly because we just couldn't decrypt it yet.  Will try again now that we know the password.");
-                        throw new PolicyRetryableException();
-                    }
-
-                    log.info("Policy failed, possibly due to lack of a client certificate.  Will request one, then try again.");
-                    try {
-                        obtainClientCertificate(ssg);
-                    } catch (SSLHandshakeException e) {
-                        if (e.getCause() instanceof ServerCertificateUntrustedException)
-                            throw (ServerCertificateUntrustedException) e.getCause();
-                        throw new ClientCertificateException("Couldn't obtain a client certificate", e);
-                    } catch (GeneralSecurityException e) {
-                        throw new ClientCertificateException("Couldn't obtain a client certificate", e);
-                    } catch (IOException e) {
-                        throw new ClientCertificateException("Couldn't obtain a client certificate", e);
-                    }
-                }
-                throw new PolicyRetryableException();
-            }
+        if (result != AssertionStatus.NONE)
             log.warn("Policy evaluated with an error: " + result + "; will attempt to continue anyway.");
-        }
         return policy;
     }
 
@@ -204,66 +163,13 @@ public class MessageProcessor {
      * @throws PolicyAssertionException     if the policy evaluation could not be completed due to a serious error
      */
     private void undecorateResponse(PendingRequest req, SsgResponse res, ClientAssertion rootassertion)
-            throws PolicyAssertionException
+            throws PolicyAssertionException, OperationCanceledException,
+                   ServerCertificateUntrustedException, BadCredentialsException
     {
         log.info("undecorating response");
-        // TODO AssertionStatus result = rootassertion.unDecorateReply(req, res);
-    }
-
-    /**
-     * Generate a Certificate Signing Request, and apply to the Ssg for a certificate for the
-     * current user.  If this method returns, the certificate will have been downloaded and saved
-     * locally.
-     *
-     * @param ssg   the Ssg to which we are sending our application
-     * @throws GeneralSecurityException   if there was a problem making the CSR
-     * @throws GeneralSecurityException   if we were unable to complete SSL handshake with the Ssg
-     * @throws IOException                if there was a network problem
-     * @throws IllegalArgumentException   if no credentials are configured for this Ssg
-     * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException    if the SSG rejected the credentials we provided
-     */
-    private void obtainClientCertificate(Ssg ssg)
-            throws GeneralSecurityException, IOException, OperationCanceledException, BadCredentialsException
-    {
-        if (!ssg.isCredentialsConfigured())
-            throw new IllegalArgumentException("need credentials to apply for a certificate");
-
-        KeyPair keyPair;
-        PKCS10CertificationRequest csr;
-        try {
-            log.info("Generating new RSA key pair (could take several seconds)...");
-            Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
-            JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
-            keyPair = kpg.generateKeyPair();
-            csr = SslUtils.makeCsr(ssg.getUsername(), keyPair.getPublic(), keyPair.getPrivate());
-        } finally {
-            Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
-        }
-
-        // Since generating the RSA key takes so long, we do our own credential retry loop here
-        // rather than delegating to the main policy loop.
-        int attempts = 0;
-        for (;;) {
-            try {
-                X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
-                                                                        ssg.getUsername(),
-                                                                        ssg.password(),
-                                                                        csr);
-                // make sure private key is stored on disk encrypted with the password that was used to obtain it
-                SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
-                clientProxy.initializeSsl(); // reset global SSL state
-                return;
-            } catch (SslUtils.BadCredentialsException e) {  // note: not the same class BadCredentialsException
-                if (++attempts > 3)
-                    throw new BadCredentialsException(e);
-
-                Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-                if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) // shouldn't be necessary, but just in case
-                    SsgKeyStoreManager.deleteClientCert(ssg);
-                Managers.getCredentialManager().getCredentials(ssg);
-                // retry with new password
-            }
-        }
+        AssertionStatus result = rootassertion.unDecorateReply(req, res);
+        if (result != AssertionStatus.NONE)
+            log.warn("Response policy processing failed with status " + result + "; continuing anyway");
     }
 
     /**
@@ -380,7 +286,7 @@ public class MessageProcessor {
                     log.info("SSG indicates that our client certificate is no longer valid; deleting it");
                     try {
                         SsgKeyStoreManager.deleteClientCert(ssg);
-                        clientProxy.initializeSsl(); // flush all global SSL state
+                        req.getClientProxy().initializeSsl(); // flush all global SSL state
                     } catch (Exception e) {
                         throw new ClientCertificateException(e);
                     }
@@ -405,25 +311,39 @@ public class MessageProcessor {
      * @param state  the HttpState to adjust
      * @param postMethod  the PendingRequest to adjust
      */
-    private void setAuthenticationState(PendingRequest req, HttpState state, PostMethod postMethod) {
+    private void setAuthenticationState(PendingRequest req, HttpState state, PostMethod postMethod)
+            throws OperationCanceledException
+    {
         state.setAuthenticationPreemptive(false);
+
+        if (!req.isBasicAuthRequired() && !req.isDigestAuthRequired()) {
+            log.info("No HTTP Basic or Digest authentication required by current policy");
+            return;
+        }
+
+        Ssg ssg = req.getSsg();
+        String username;
+        String password;
+        synchronized (ssg) {
+            if (!ssg.isCredentialsConfigured())
+                Managers.getCredentialManager().getCredentials(ssg);
+            username = ssg.getUsername();
+            password = new String(ssg.password());
+        }
+
         if (req.isBasicAuthRequired()) {
-            log.info("Enabling HTTP Basic auth with username=" + req.getHttpBasicUsername());
+            log.info("Enabling HTTP Basic auth with username=" + username);
             postMethod.setDoAuthentication(true);
             state.setAuthenticationPreemptive(true);
             state.setCredentials(null, null,
-                                 new UsernamePasswordCredentials(req.getHttpBasicUsername(),
-                                                                 new String(req.getHttpBasicPassword())));
+                                 new UsernamePasswordCredentials(username, password));
         } else if (req.isDigestAuthRequired()) {
-            log.info("Enabling HTTP Digest auth with username=" + req.getHttpDigestUsername());
+            log.info("Enabling HTTP Digest auth with username=" + username);
             postMethod.setDoAuthentication(true);
             state.setCredentials(null, null,
-                                 new UsernamePasswordCredentials(req.getHttpDigestUsername(),
-                                                                 new String(req.getHttpDigestPassword())));
-        } else
-            log.info("No HTTP Basic or Digest authentication required by current policy");
+                                 new UsernamePasswordCredentials(username, password));
+        }
     }
-
 
     /**
      * Get credentials, and download and install the SSG certificate.  If this completes successfully, the

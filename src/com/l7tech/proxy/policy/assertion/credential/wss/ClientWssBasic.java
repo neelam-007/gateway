@@ -11,6 +11,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.util.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -46,17 +49,18 @@ public class ClientWssBasic extends ClientWssCredentialSource {
      * @return
      * @throws PolicyAssertionException
      */
-    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest request)
+            throws PolicyAssertionException, OperationCanceledException
+    {
         Document soapmsg = request.getSoapEnvelope();
         Element headerel = SoapUtil.getOrMakeHeader(soapmsg);
 
         // get the username and passwords
-        String username = request.getSsg().getUsername();
-        char[] password = request.getSsg().password();
-        if (username == null || password == null || username.length() < 1) {
-            request.setCredentialsWouldHaveHelped(true);
-            return AssertionStatus.AUTH_REQUIRED;
-        }
+        Ssg ssg = request.getSsg();
+        if (!ssg.isCredentialsConfigured())
+            Managers.getCredentialManager().getCredentials(ssg);
+        String username = ssg.getUsername();
+        char[] password = ssg.password();
 
         Element secElement = null;
         // todo, handle case where the security element is already present in the header
@@ -79,7 +83,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
         // no action on response
         return AssertionStatus.NONE;
     }

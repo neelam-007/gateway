@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientSslAssertion;
@@ -53,7 +54,7 @@ public class ClientPolicyTest extends TestCase {
     /** Decorate a message with an empty policy. */
     public void testNullPolicy() throws Exception {
         Ssg ssg = new Ssg(1, "Foo Ssg", "http://foo");
-        PendingRequest req = new PendingRequest(null, ssg, NullRequestInterceptor.INSTANCE);
+        PendingRequest req = new PendingRequest(null, null, ssg, NullRequestInterceptor.INSTANCE);
 
         ClientAssertion policy = new ClientTrueAssertion( TrueAssertion.getInstance() );
 
@@ -72,30 +73,32 @@ public class ClientPolicyTest extends TestCase {
 
         ssg.setUsername(null);
         ssg.password("".toCharArray());
-        result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
-        assertTrue(!AssertionStatus.NONE.equals(result));
-        assertFalse(req.isBasicAuthRequired());
+        try {
+            result = policy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
+            fail("HttpBasic was provided null username, and didn't throw");
+        } catch (OperationCanceledException e) {
+            // Ok
+        }
 
         ssg.setUsername("");
-        result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
-        assertTrue(!AssertionStatus.NONE.equals(result));
-        assertFalse(req.isBasicAuthRequired());
+        try {
+            result = policy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
+            fail("HttpBasic was provided empty username, and didn't throw");
+        } catch (OperationCanceledException e) {
+            // Ok
+        }
 
         final String USER = "fbunky";
         ssg.setUsername(USER);
-        result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
+        result = policy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
         assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(req.isBasicAuthRequired());
-        assertTrue(USER.equals(req.getHttpBasicUsername()));
-        assertTrue("".equals(new String(req.getHttpBasicPassword())));
 
         final String PASS = "s3cr3t";
         ssg.password(PASS.toCharArray());
-        result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
+        result = policy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
         assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(req.isBasicAuthRequired());
-        assertTrue(USER.equals(req.getHttpBasicUsername()));
-        assertTrue(PASS.equals(new String(req.getHttpBasicPassword())));
     }
 
     /** Test decoration of a message with an SSL policy (specifying no certificates in particular). */
@@ -106,7 +109,7 @@ public class ClientPolicyTest extends TestCase {
         PendingRequest req;
         AssertionStatus result;
 
-        result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));;
+        result = policy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));;
         assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(req.isSslRequired());
     }
@@ -132,20 +135,22 @@ public class ClientPolicyTest extends TestCase {
 
             ssg.setUsername("");
             ssg.password("".toCharArray());
-            result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
-            assertFalse(AssertionStatus.NONE.equals(result));
+            try {
+                result = clientPolicy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
+                fail("Policy was given empty username, but failed to throw");
+            } catch (OperationCanceledException e) {
+                // Ok
+            }
 
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
             ssg.password(PASS.toCharArray());
-            result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
+            result = clientPolicy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
             assertTrue(AssertionStatus.NONE.equals(result));
             assertTrue(req.isSslRequired());
             assertFalse(req.isDigestAuthRequired());
             assertTrue(req.isBasicAuthRequired());
-            assertTrue(USER.equals(req.getHttpBasicUsername()));
-            assertTrue(PASS.equals(new String(req.getHttpBasicPassword())));
         }
 
         {
@@ -162,20 +167,22 @@ public class ClientPolicyTest extends TestCase {
 
             ssg.setUsername("");
             ssg.password("".toCharArray());
-            result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
-            assertFalse(AssertionStatus.NONE.equals(result));
+            try {
+                result = clientPolicy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
+                fail("Policy was given empty username, and failed to throw");
+            } catch (OperationCanceledException e) {
+                // Ok
+            }
 
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
             ssg.password(PASS.toCharArray());
-            result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
+            result = clientPolicy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
             assertTrue(AssertionStatus.NONE.equals(result));
             assertFalse(req.isSslRequired());
             assertFalse(req.isBasicAuthRequired());
             assertTrue(req.isDigestAuthRequired());
-            assertTrue(USER.equals(req.getHttpDigestUsername()));
-            assertTrue(PASS.equals(new String(req.getHttpDigestPassword())));
         }
     }
 }

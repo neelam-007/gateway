@@ -53,4 +53,9 @@ public class CredentialManagerImpl implements CredentialManager {
     public void notifyLengthyOperationFinished(Ssg ssg) {
         log.info("Lengthy operation for Ssg " + ssg + " has completed");
     }
+
+    public void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException {
+        log.error("Key store for Ssg " + ssg + " has been damaged -- aborting");
+        throw new OperationCanceledException("Unable to authorize deletion of corrupt keystore");
+    }
 }

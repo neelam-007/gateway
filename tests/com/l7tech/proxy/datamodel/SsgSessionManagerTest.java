@@ -173,13 +173,16 @@ public class SsgSessionManagerTest extends TestCase {
 
             public void notifyLengthyOperationFinished(Ssg ssg) {
             }
+
+            public void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException {
+            }
         });
 
         Ssg ssg = new Ssg();
         ssg.setSsgAddress(getSsgUrl().getHost());
         ssg.setSslPort(getSsgUrl().getPort());
 
-        Session session = SsgSessionManager.getSession(ssg);
+        Session session = SsgSessionManager.getOrCreateSession(ssg);
 
         assertTrue(session != null);
         assertTrue(session.getId() != 0);

@@ -1,16 +1,24 @@
 package com.l7tech.proxy;
 
 import com.l7tech.proxy.datamodel.SsgFinder;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.common.util.SslUtils;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 import org.mortbay.util.MultiException;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
@@ -23,6 +31,9 @@ import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 
 /**
  * Encapsulates an HTTP proxy that processes SOAP messages.
@@ -57,7 +68,6 @@ public class ClientProxy {
                 final int bindPort, final int minThreads, final int maxThreads) {
         this.ssgFinder = ssgFinder;
         this.messageProcessor = messageProcessor;
-        messageProcessor.setClientProxy(this);
         this.bindPort = bindPort;
         this.minThreads = minThreads;
         this.maxThreads = maxThreads;
@@ -109,7 +119,7 @@ public class ClientProxy {
      */
     public synchronized RequestHandler getRequestHandler() {
         if (requestHandler == null) {
-            requestHandler = new RequestHandler(ssgFinder, messageProcessor, bindPort);
+            requestHandler = new RequestHandler(this, ssgFinder, messageProcessor, bindPort);
         }
 
         return requestHandler;
@@ -205,6 +215,62 @@ public class ClientProxy {
         }
 
         isDestroyed = true;
+    }
+
+    /**
+     * Generate a Certificate Signing Request, and apply to the Ssg for a certificate for the
+     * current user.  If this method returns, the certificate will have been downloaded and saved
+     * locally, and the SSL context for this Client Proxy will have been reinitialized.
+     *
+     * @param ssg   the Ssg to which we are sending our application
+     * @throws GeneralSecurityException   if there was a problem making the CSR
+     * @throws GeneralSecurityException   if we were unable to complete SSL handshake with the Ssg
+     * @throws IOException                if there was a network problem
+     * @throws BadCredentialsException    if the SSG rejected the credentials we provided
+     * @throws OperationCanceledException if the user cancels the logon prompt
+     */
+    public void obtainClientCertificate(Ssg ssg)
+            throws GeneralSecurityException, IOException, OperationCanceledException, BadCredentialsException
+    {
+        if (!ssg.isCredentialsConfigured())
+            Managers.getCredentialManager().getCredentials(ssg);
+
+        KeyPair keyPair;
+        PKCS10CertificationRequest csr;
+        try {
+            log.info("Generating new RSA key pair (could take several seconds)...");
+            Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
+            JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
+            keyPair = kpg.generateKeyPair();
+            csr = SslUtils.makeCsr(ssg.getUsername(), keyPair.getPublic(), keyPair.getPrivate());
+        } finally {
+            Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
+        }
+
+        // Since generating the RSA key takes so long, we do our own credential retry loop here
+        // rather than delegating to the main policy loop.
+        int attempts = 0;
+        for (;;) {
+            try {
+                X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
+                                                                        ssg.getUsername(),
+                                                                        ssg.password(),
+                                                                        csr);
+                // make sure private key is stored on disk encrypted with the password that was used to obtain it
+                SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
+                initializeSsl(); // reset global SSL state
+                return;
+            } catch (SslUtils.BadCredentialsException e) {  // note: not the same class BadCredentialsException
+                if (++attempts > 3)
+                    throw new BadCredentialsException(e);
+
+                Managers.getCredentialManager().notifyInvalidCredentials(ssg);
+                if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) // shouldn't be necessary, but just in case
+                    SsgKeyStoreManager.deleteClientCert(ssg);
+                Managers.getCredentialManager().getCredentials(ssg);
+                // retry with new password
+            }
+        }
     }
 }
 

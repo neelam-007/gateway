@@ -6,16 +6,15 @@
 
 package com.l7tech.proxy.gui;
 
+import com.l7tech.console.panels.Utilities;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.console.panels.Utilities;
+import org.apache.log4j.Category;
 
 import javax.swing.*;
-import java.net.PasswordAuthentication;
 import java.lang.reflect.InvocationTargetException;
-
-import org.apache.log4j.Category;
+import java.net.PasswordAuthentication;
 
 /**
  * GUI implementation of the CredentialManager.
@@ -126,6 +125,61 @@ public class GuiCredentialManager implements CredentialManager {
             } catch (InvocationTargetException e) {
                 log.error(e);
             }
+        }
+    }
+
+    private static class DestructionFlag {
+        public boolean destroyKeystore = false;
+    }
+
+    /**
+     * Notify the user that the key store for the given Ssg has been damaged.
+     * This should _not_ be used in cases where the user merely mistyped the password to decrypt his
+     * private key.  The user should be given the option of either canceling, which will abort the operation,
+     * or continuing, which will cause the invalid keystore to be deleted (which will require the SSG admin to revoke
+     * the client cert, if the only copy of it's private key is now gone).
+     *
+     * Whatever decision the user makes should be remembered for the rest of this session.
+     *
+     * @param ssg
+     * @throws OperationCanceledException if the user does not wish to delete the invalid keystore
+     */
+    public void notifyKeyStoreCorrupt(final Ssg ssg) throws OperationCanceledException {
+        final DestructionFlag df = new DestructionFlag();
+        df.destroyKeystore = false;
+
+        long now = System.currentTimeMillis();
+        synchronized(this) {
+
+            // Avoid spamming the user with reports
+            if (System.currentTimeMillis() > now + 1000)
+                return;
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() {
+                        String msg = "The key store for the Gateway " + ssg + "\n is irrepairably damaged.\n\n" +
+                                "Do you wish to delete it and build a new one?";
+
+                        int result = JOptionPane.showOptionDialog(Gui.getInstance().getFrame(),
+                                                                  msg,
+                                                                  "Key Store Corrupt",
+                                                                  JOptionPane.YES_NO_CANCEL_OPTION,
+                                                                  JOptionPane.ERROR_MESSAGE,
+                                                                  null,
+                                                                  null,
+                                                                  null);
+                        if (result == 0)
+                            df.destroyKeystore = true;
+                    }
+                });
+            } catch (InterruptedException e) {
+                log.error(e);
+            } catch (InvocationTargetException e) {
+                log.error(e);
+            }
+
+            if (!df.destroyKeystore)
+                throw new OperationCanceledException("KeyStore is corrupt, but user does not wish to delete it");
         }
     }
 

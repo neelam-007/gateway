@@ -8,9 +8,13 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.ClientProxy;
+import com.l7tech.xmlenc.Session;
 import org.w3c.dom.Document;
 
 import java.net.URL;
+import java.security.SecureRandom;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Holds request state while the client proxy is processing it.
@@ -19,6 +23,7 @@ import java.net.URL;
  * Time: 12:04:09 PM
  */
 public class PendingRequest {
+    private ClientProxy clientProxy;
     private Document soapEnvelope;
     private Document initialEnvelope;
     private Ssg ssg;
@@ -28,32 +33,30 @@ public class PendingRequest {
     private SsgResponse lastErrorResponse = null; // Last response received from SSG in the case of 401 or 500 status
     private boolean isPolicyUpdated = false;
     private URL originalUrl = null;
+    private Long nonce = null; // nonce.  set on-demand, and only set once
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
         private boolean isSslRequired = false;
         private boolean isClientCertRequired = false;
         private boolean isBasicAuthRequired = false;
-        private String httpBasicUsername = "";
-        private char[] httpBasicPassword = "".toCharArray();
         private boolean isDigestAuthRequired = false;
-        private String httpDigestUsername = "";
-        private char[] httpDigestPassword = "".toCharArray();
-        private boolean credentialsWouldHaveHelped = false;
-        private boolean clientCertWouldHaveHelped = false;
+        private boolean isNonceRequired = false;
+        private Session session = null; // session for the response to this request.  can't be changed once sent
     }
     private PolicySettings policySettings = new PolicySettings();
 
     /** Construct a PendingRequest around the given SOAPEnvelope going to the given SSG. */
-    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor) {
+    public PendingRequest(ClientProxy clientProxy, Document soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor) {
+        this.clientProxy = clientProxy;
         this.soapEnvelope = soapEnvelope;
         this.initialEnvelope = soapEnvelope;
         this.ssg = ssg;
         setRequestInterceptor(requestInterceptor);
     }
 
-    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor ri, URL origUrl) {
-        this(soapEnvelope, ssg, ri);
+    public PendingRequest(ClientProxy clientProxy, Document soapEnvelope, Ssg ssg, RequestInterceptor ri, URL origUrl) {
+        this(clientProxy, soapEnvelope, ssg, ri);
         this.originalUrl = origUrl;
     }
 
@@ -65,12 +68,28 @@ public class PendingRequest {
         soapEnvelope = initialEnvelope;
     }
 
+    public long getNonce() {
+        if (nonce == null)
+            try {
+                nonce = new Long(SecureRandom.getInstance("SHA1PRNG").nextLong());
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("misconfigured VM", e);  // can't happen
+            }
+        return nonce.longValue();
+   }
+
     // Getters and setters
+
+    public ClientProxy getClientProxy() {
+        return clientProxy;
+    }
 
     /**
      * Get (a copy of) the Document representing the request.  This returns a copy that can be
      * modified freely.  If you will not be modifying the returned Document in any way, you can
      * get additional performance by using getSoapEnvelopeDirect() instead.
+     *
+     * If you want your changes to stick, you'll need to save them back by calling setSoapEnvelope().
      *
      * @return A copy of the SOAP envelope Document, which may be freely modified.
      */
@@ -89,6 +108,11 @@ public class PendingRequest {
         return soapEnvelope;
     }
 
+    /**
+     * Replace the active Soap Envelope with a new one.  The original envelope is in any case kept
+     * squirreled away so that reset() will work.
+     * @param newEnvelope
+     */
     public void setSoapEnvelope(Document newEnvelope) {
         soapEnvelope = newEnvelope;
     }
@@ -139,28 +163,20 @@ public class PendingRequest {
         policySettings.isClientCertRequired = clientCertRequired;
     }
 
+    public boolean isNonceRequired() {
+        return policySettings.isNonceRequired;
+    }
+
+    public void setNonceRequired(boolean isNonceRequired) {
+        policySettings.isNonceRequired = isNonceRequired;
+    }
+
     public boolean isBasicAuthRequired() {
         return policySettings.isBasicAuthRequired;
     }
 
     public void setBasicAuthRequired(boolean basicAuthRequired) {
         policySettings.isBasicAuthRequired = basicAuthRequired;
-    }
-
-    public String getHttpBasicUsername() {
-        return policySettings.httpBasicUsername;
-    }
-
-    public void setHttpBasicUsername(String httpBasicUsername) {
-        this.policySettings.httpBasicUsername = httpBasicUsername;
-    }
-
-    public char[] getHttpBasicPassword() {
-        return policySettings.httpBasicPassword;
-    }
-
-    public void setHttpBasicPassword(char[] httpBasicPassword) {
-        this.policySettings.httpBasicPassword = httpBasicPassword;
     }
 
     public boolean isDigestAuthRequired() {
@@ -171,22 +187,6 @@ public class PendingRequest {
         policySettings.isDigestAuthRequired = digestAuthRequired;
     }
 
-    public String getHttpDigestUsername() {
-        return policySettings.httpDigestUsername;
-    }
-
-    public void setHttpDigestUsername(String httpDigestUsername) {
-        this.policySettings.httpDigestUsername = httpDigestUsername;
-    }
-
-    public char[] getHttpDigestPassword() {
-        return policySettings.httpDigestPassword;
-    }
-
-    public void setHttpDigestPassword(char[] httpDigestPassword) {
-        this.policySettings.httpDigestPassword = httpDigestPassword;
-    }
-
     public boolean isPolicyUpdated() {
         return isPolicyUpdated;
     }
@@ -195,20 +195,26 @@ public class PendingRequest {
         isPolicyUpdated = policyUpdated;
     }
 
-    public boolean isCredentialsWouldHaveHelped() {
-        return policySettings.credentialsWouldHaveHelped;
+    /**
+     * Get the sssion that was passed with the initial request.
+     *
+     * @return
+     */
+    public Session getSession() {
+        return policySettings.session;
     }
 
-    public void setCredentialsWouldHaveHelped(boolean credentialsWouldHaveHelped) {
-        this.policySettings.credentialsWouldHaveHelped = credentialsWouldHaveHelped;
-    }
-
-    public boolean isClientCertWouldHaveHelped() {
-        return policySettings.clientCertWouldHaveHelped;
-    }
-
-    public void setClientCertWouldHaveHelped(boolean clientCertWouldHaveHelped) {
-        this.policySettings.clientCertWouldHaveHelped = clientCertWouldHaveHelped;
+    /**
+     * Set the session that will be referred to in the request, and used to decrypt/etc the reply.
+     * A reference to it is kept here so that even if the real session is invalidated on the Ssg
+     * by another thread after the request is sent, we'll still be able to work with the outstanding
+     * reply for this request.  (We can't just reissue the request at that point, since it will already
+     * have been successfully passed through the ssg to the target server.)
+     *
+     * @param session
+     */
+    public void setSession(Session session) {
+        policySettings.session = session;
     }
 
     public SsgResponse getLastErrorResponse() {

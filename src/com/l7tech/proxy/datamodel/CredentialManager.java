@@ -44,4 +44,18 @@ public interface CredentialManager {
      * Tears down any "Please wait..." dialog.
      */
     void notifyLengthyOperationFinished(Ssg ssg);
+
+    /**
+     * Notify the user that the key store for the given Ssg has been damaged.
+     * This should _not_ be used in cases where the user merely mistyped the password to decrypt his
+     * private key.  The user should be given the option of either canceling, which will abort the operation,
+     * or continuing, which will cause the invalid keystore to be deleted (which will require the SSG admin to revoke
+     * the client cert, if the only copy of it's private key is now gone).
+     *
+     * Whatever decision the user makes should be remembered for the rest of this session.
+     *
+     * @param ssg
+     * @throws OperationCanceledException if the user does not wish to delete the invalid keystore
+     */
+    void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException;
 }

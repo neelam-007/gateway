@@ -10,12 +10,16 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.SsgSessionManager;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.xmlsig.SoapMsgSigner;
 import com.l7tech.xmlsig.SecureConversationTokenHandler;
 import com.l7tech.xmlenc.XmlMangler;
+import com.l7tech.xmlenc.Session;
 import org.w3c.dom.Document;
 import org.apache.log4j.Category;
 
@@ -53,12 +57,14 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
-    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
-
+    public AssertionStatus decorateRequest(PendingRequest request)
+            throws PolicyAssertionException, OperationCanceledException, BadCredentialsException,
+                   ServerCertificateUntrustedException
+    {
         // GET THE SOAP DOCUMENT
         Document soapmsg = null;
         try {
-            soapmsg = request.getSoapEnvelope();
+            soapmsg = request.getSoapEnvelope(); // this will make a defensive copy as needed
         } catch (Exception e) {
             throw new PolicyAssertionException("cannot get request document", e);
         }
@@ -66,33 +72,46 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         // GET THE CLIENT CERT AND PRIVATE KEY
         // We must have credentials to get the private key
         Ssg ssg = request.getSsg();
-        if (!ssg.isCredentialsConfigured()) {
-            request.setCredentialsWouldHaveHelped(true);
-            return AssertionStatus.FAILED;
-        }
-        // We must have a client cert
-        if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-            request.setClientCertWouldHaveHelped(true);
-            return AssertionStatus.FAILED;
-        }
         PrivateKey userPrivateKey = null;
         X509Certificate userCert = null;
-        try {
-            userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
-            userCert = SsgKeyStoreManager.getClientCert(ssg);
-        } catch (NoSuchAlgorithmException e) {
-            throw new PolicyAssertionException(e);
-        } catch (BadCredentialsException e) {
-            throw new PolicyAssertionException(e);
-        } catch (OperationCanceledException e) {
-            throw new PolicyAssertionException(e);
+        Session session;
+        synchronized (ssg) {
+            if (!ssg.isCredentialsConfigured())
+                Managers.getCredentialManager().getCredentials(ssg);
+
+            try {
+                session = SsgSessionManager.getOrCreateSession(ssg);
+            } catch (IOException e) {
+                throw new PolicyAssertionException("Unable to establish session with SSG " + ssg, e);
+            }
+
+            if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                try {
+                    request.getClientProxy().obtainClientCertificate(ssg);
+                } catch (GeneralSecurityException e) {
+                    throw new PolicyAssertionException("Unable to obtain a client certificate with SSG " + ssg, e);
+                } catch (IOException e) {
+                    throw new PolicyAssertionException("Unable to obtain a client certificate with SSG " + ssg, e);
+                }
+            }
+
+            try {
+                userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+                userCert = SsgKeyStoreManager.getClientCert(ssg);
+            } catch (NoSuchAlgorithmException e) {
+                throw new PolicyAssertionException(e);
+            } catch (BadCredentialsException e) {
+                throw new PolicyAssertionException(e);
+            } catch (OperationCanceledException e) {
+                throw new PolicyAssertionException(e);
+            }
         }
 
         // DECORATE REQUEST WITH SESSION INFO AND SEQ NR
-        long sessId = 0;
-        long seqNr = 0;
-        byte[] keyreq = null;
-        // todo, mike where to get those valu-ues?
+        request.setSession(session);
+        long sessId = session.getId();
+        long seqNr = session.nextSequenceNumber();
+        byte[] keyreq = session.getKeyReq();
         SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(soapmsg, sessId, seqNr);
 
         // ENCRYPTION
@@ -126,7 +145,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
         // no action on response
         return AssertionStatus.NONE;
     }

@@ -29,6 +29,7 @@ import java.net.MalformedURLException;
  */
 public class RequestHandler extends AbstractHttpHandler {
     private final Category log = Category.getInstance(RequestHandler.class);
+    private ClientProxy clientProxy;
     private SsgFinder ssgFinder;
     private MessageProcessor messageProcessor;
     private RequestInterceptor interceptor = NullRequestInterceptor.INSTANCE;
@@ -40,7 +41,8 @@ public class RequestHandler extends AbstractHttpHandler {
      *
      * @param ssgFinder the list of SSGs (SSG URLs and local endpoints) we support.
      */
-    public RequestHandler(final SsgFinder ssgFinder, final MessageProcessor messageProcessor, int bindPort) {
+    public RequestHandler(ClientProxy clientProxy, final SsgFinder ssgFinder, final MessageProcessor messageProcessor, int bindPort) {
+        this.clientProxy = clientProxy;
         this.ssgFinder = ssgFinder;
         this.messageProcessor = messageProcessor;
         this.bindPort = bindPort;
@@ -55,7 +57,8 @@ public class RequestHandler extends AbstractHttpHandler {
                                          Document requestEnvelope,
                                          Ssg ssg)
     {
-        PendingRequest pr = new PendingRequest(requestEnvelope,
+        PendingRequest pr = new PendingRequest(clientProxy,
+                                               requestEnvelope,
                                                ssg,
                                                interceptor,
                                                getOriginalUrl(request));

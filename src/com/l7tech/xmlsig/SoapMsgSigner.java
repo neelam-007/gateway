@@ -98,7 +98,7 @@ public class SoapMsgSigner {
      * @throws SignatureNotFoundException if no signature is found in document
      * @throws InvalidSignatureException if the signature is invalid, not in an expected format or is missing information
      */
-    public X509Certificate validateSignature(Document soapMsg) throws SignatureNotFoundException, InvalidSignatureException, XSignatureException {
+    public X509Certificate validateSignature(Document soapMsg) throws SignatureNotFoundException, InvalidSignatureException {
 
         filterOutEmptyTextNodes(soapMsg.getDocumentElement());
 
@@ -117,7 +117,12 @@ public class SoapMsgSigner {
         if (keyInfoElement == null) {
             throw new SignatureNotFoundException("KeyInfo element not found in " + sigElement.toString());
         }
-        KeyInfo keyInfo = new KeyInfo(keyInfoElement);
+        KeyInfo keyInfo = null;
+        try {
+            keyInfo = new KeyInfo(keyInfoElement);
+        } catch (XSignatureException e) {
+            throw new InvalidSignatureException("Unable to extract KeyInfo from signature", e);
+        }
 
         // Assume a single X509 certificate
         KeyInfo.X509Data[] x509DataArray = keyInfo.getX509Data();
