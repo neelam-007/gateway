@@ -6,6 +6,7 @@ import org.xml.sax.InputSource;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.http.HTTPBinding;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPBody;
@@ -287,8 +288,7 @@ public class Wsdl {
      * enclosing bindings style is searched for.
      * Note that the binding operation must be owned by this wsdl instance.
      * @param bo the binding operation
-     * @return the operation style "rpc" | "document" or <b>null</b> if it cannot
-     *         be determined
+     * @return the operation style "rpc" | "document", if undefined "rpc" is returned
      */
     public String getBindingStyle(BindingOperation bo) {
         List elements = bo.getExtensibilityElements();
@@ -296,26 +296,34 @@ public class Wsdl {
             Object o = (Object)iterator.next();
             if (o instanceof SOAPOperation) {
                 SOAPOperation so = (SOAPOperation)o;
-                return so.getStyle();
+                String style = so.getStyle();
+                if (style == null || "".equals(style)) {
+                    break;
+                }
+                return style;
             }
         }
         Iterator bindings = getBindings().iterator();
         while (bindings.hasNext()) {
             Binding binding = (Binding)bindings.next();
             if (binding.getBindingOperations().contains(bo)) {
-                elements = bo.getExtensibilityElements();
+                elements = binding.getExtensibilityElements();
                 for (Iterator iterator = elements.iterator(); iterator.hasNext();) {
                     Object o = (Object)iterator.next();
                     if (o instanceof SOAPBinding) {
                         SOAPBinding sb = (SOAPBinding)o;
                         return sb.getStyle();
+                    } else if (o instanceof HTTPBinding) {
+                        return "document"; // GET/POST uses document?
                     }
                 }
                 break;
             }
         }
-        return null;
+        return "rpc";
     }
+
+    
 
     /**
      * Finds a single Port that contains a SOAPAddress from whatever Services are in the WSDL.
