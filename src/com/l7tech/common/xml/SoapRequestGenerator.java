@@ -4,9 +4,7 @@ import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.soap.*;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -93,7 +91,7 @@ public class SoapRequestGenerator {
             BindingOperation bindingOperation = (BindingOperation)iterator.next();
             String soapAction = getSoapAction(bindingOperation);
             SOAPMessage soapMessage = generate(bindingOperation);
-            bindingMessages.add(new SOAPRequest(soapMessage, soapAction));
+            bindingMessages.add(new SOAPRequest(soapMessage, soapAction, bindingOperation.getName()));
         }
         return bindingMessages;
     }
@@ -172,13 +170,15 @@ public class SoapRequestGenerator {
     public static class SOAPRequest {
         private final SOAPMessage soapMessage;
         private final String soapAction;
+        private Object soapOperation;
 
-        public SOAPRequest(SOAPMessage sm, String sa) {
-            if (sm == null || sa == null) {
+        public SOAPRequest(SOAPMessage sm, String sa, String op) {
+            if (sm == null) {
                 throw new IllegalArgumentException();
             }
             soapMessage = sm;
             soapAction = sa;
+            soapOperation = op;
         }
 
         public String getSOAPAction() {
@@ -187,6 +187,31 @@ public class SoapRequestGenerator {
 
         public SOAPMessage getSOAPMessage() {
             return soapMessage;
+        }
+
+        public Object getSOAPOperation() {
+            return soapOperation;
+        }
+
+        public String toString() {
+            StringBuffer sb = new StringBuffer("[");
+            boolean coma = false;
+            if (soapOperation !=null) {
+                sb.append(" SOAP operation "+soapOperation);
+                coma = true;
+            }
+            sb.append("]");
+            if (soapMessage !=null) {
+                sb.append("the message is\n");
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                try {
+                    soapMessage.writeTo(bos);
+                    sb.append(bos.toString());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            return sb.toString();
         }
     }
 
