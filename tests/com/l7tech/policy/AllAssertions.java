@@ -42,6 +42,7 @@ public class AllAssertions {
         new SpecificUser(),
         new XmlResponseSecurity(),
         new XmlRequestSecurity(),
+        new RequestXpathAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
