@@ -163,19 +163,6 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
         throw new UpdateException( UNSUPPORTED );
     }
 
-    public EntityHeader userToHeader(User user) {
-        return new EntityHeader(user.getName(), EntityType.USER, user.getLogin(), null);
-    }
-
-    public User headerToUser(EntityHeader header) {
-        try {
-            return findByPrimaryKey(header.getStrId());
-        } catch (FindException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-
     public Collection findAllHeaders() throws FindException {
         AbstractLdapConstants constants = getConstants();
         if (!valid) {

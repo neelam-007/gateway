@@ -95,13 +95,6 @@ public class UserManagerStub implements UserManager {
         update(user, null);
     }
 
-    public EntityHeader userToHeader(User user) {
-        return null;
-    }
-
-    public User headerToUser(EntityHeader header) {
-        return null;
-    }
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.

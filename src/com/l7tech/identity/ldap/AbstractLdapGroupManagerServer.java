@@ -238,7 +238,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
             if (tmp != null) login = tmp.toString();
             if (login != null && userdn != null) {
                 User u = getUserManager().findByPrimaryKey(userdn);
-                memberHeaders.add(getUserManager().userToHeader(u));
+                memberHeaders.add(userToHeader(u));
             }
         }
 
@@ -258,7 +258,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
                         String member = val.toString();
                         User u = getUserFromGroupMember(member);
                         if (u != null) {
-                            memberHeaders.add(getUserManager().userToHeader(u));
+                            memberHeaders.add(userToHeader(u));
                         } else {
                             Attributes memberAttributes = context.getAttributes( member );
                             Attribute objectClassAttr = memberAttributes.get( constants.OBJCLASS_ATTR );
@@ -271,6 +271,10 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
                 }
             }
         }
+    }
+
+    private EntityHeader userToHeader(User user) {
+        return new EntityHeader(user.getName(), EntityType.USER, user.getLogin(), null);
     }
 
     private EntityType getSearchResultType(Attribute objectclasses) {

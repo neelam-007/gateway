@@ -16,7 +16,4 @@ public interface UserManager extends EntityManager {
     void update( User user ) throws UpdateException;
     String save( User user, Set groupHeaders ) throws SaveException;
     void update( User user, Set groupHeaders ) throws UpdateException;
-
-    EntityHeader userToHeader(User user);
-    User headerToUser(EntityHeader header);
 }
