@@ -6,6 +6,8 @@ import com.l7tech.common.xml.SoapMessageGenerator.Message;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.table.SecuredMessagePartsTableModel;
 import com.l7tech.console.table.SecuredMessagePartsTableModel.SecuredMessagePart;
@@ -155,6 +157,10 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                         SecuredMessagePart sp = new SecuredMessagePart();
                         sp.setOperation(null);
                         sp.setXpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH);
+                        final ElementSecurity[] elements = xmlSecAssertion.getElements();
+                        if (elements.length > 0) {
+                            sp.setEncrypt(elements[0].isEncryption());
+                        }
                         securedMessagePartsTableModel.addPart(sp);
                     }
                     securedItemsTable.setModel(securedMessagePartsTableModel);
@@ -272,6 +278,13 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 ElementSecurity elementSecurity = elements[i];
                 securedMessagePartsTableModel.addPart(toSecureMessagePart(elementSecurity));
             }
+            int width = TableUtil.getColumnWidth(securedItemsTable, 0);
+            TableUtil.adjustColumnWidth(securedItemsTable, 0, width*2);
+            width = TableUtil.getColumnWidth(securedItemsTable, 2);
+            TableUtil.adjustColumnWidth(securedItemsTable, 2, width);
+
+            //Utilities.getStringBounds(securedItemsTable, securedItemsTable.getColumnModel().getColumn(2).)
+            //securedItemsTable.getColumnModel().getColumn(2).setPreferredWidth();
             getContentPane().setLayout(new BorderLayout());
             getContentPane().add(mainPanel);
         } catch (WSDLException e) {
@@ -744,8 +757,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JTable _26;
         _26 = new JTable();
         securedItemsTable = _26;
-        _26.setAutoResizeMode(2);
         _26.setPreferredScrollableViewportSize(new Dimension(-1, -1));
+        _26.setAutoResizeMode(2);
         _25.setViewportView(_26);
         final JPanel _27;
         _27 = new JPanel();
