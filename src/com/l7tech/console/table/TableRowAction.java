@@ -52,7 +52,7 @@ public class TableRowAction {
             }
             BasicTreeNode dobj = (BasicTreeNode) o;
 
-            if (name.equals(dobj.getFqName())) {
+            if (name.equals(dobj.getName())) {
                 return tn;
             }
         }
@@ -196,7 +196,7 @@ public class TableRowAction {
         // Make sure
         if (askQuestion && ((JOptionPane.showConfirmDialog(null,
                 "Are you sure you wish to delete " +
-                realmTreeNode.getFqName() + "?",
+                realmTreeNode.getName() + "?",
                 "Delete realm",
                 JOptionPane.YES_NO_OPTION)) == 1)) {
             return false;

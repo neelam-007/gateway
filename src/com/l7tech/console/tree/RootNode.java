@@ -64,7 +64,7 @@ public class RootNode implements BasicTreeNode {
         return label;
     }
 
-    public String getFqName() {
+    public String getName() {
         return getLabel();
     }
     private String label;

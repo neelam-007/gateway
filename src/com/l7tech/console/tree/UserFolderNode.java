@@ -67,7 +67,7 @@ public class UserFolderNode implements BasicTreeNode {
      *
      * @return the FQ name as a String
      */
-    public String getFqName() {
+    public String getName() {
         if (fqName == null) {
             if (!"".equals(entry.getName())) {
                 fqName = getLabel() + "." + entry.getName();

@@ -246,7 +246,7 @@ public class FindDialog extends JDialog {
 
     // text field for context (from)
     fromField = new JTextField(15);
-    fromField.setText(entry.getFqName());
+    fromField.setText(entry.getName());
     fromField.setToolTipText(resources.getString("fromText.tooltip"));
     constraints = new GridBagConstraints();
     constraints.gridx = 1;

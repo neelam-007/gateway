@@ -44,7 +44,7 @@ public interface BasicTreeNode {
     String getLabel();
 
     /**
-     * Returns the node FQ name
+     * Returns the node name
      */
-    String getFqName();
+    String getName();
 }

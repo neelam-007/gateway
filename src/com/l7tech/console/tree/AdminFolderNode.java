@@ -63,7 +63,7 @@ public class AdminFolderNode implements BasicTreeNode {
      *
      * @return the FQ name as a String
      */
-    public String getFqName() {
+    public String getName() {
         return "Administrators";
     }
 

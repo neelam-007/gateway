@@ -64,7 +64,7 @@ public class EntityHeaderNode implements BasicTreeNode {
         return entity.getName();
     }
 
-    public String getFqName() {
+    public String getName() {
         return getLabel();
     }
 

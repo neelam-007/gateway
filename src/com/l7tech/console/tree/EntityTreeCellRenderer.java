@@ -8,7 +8,7 @@ import javax.swing.UIManager;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import com.l7tech.console.IconManager;
+import com.l7tech.console.util.IconManager;
 
 /**
  * Console custom <CODE>TreeCellRenderer</CODE>.

@@ -44,7 +44,7 @@ public class TreeNodeAction {
       }
       BasicTreeNode dobj = (BasicTreeNode)o;
 
-      if (name.equals(dobj.getFqName())) {
+      if (name.equals(dobj.getName())) {
         return tn;
       }
     }
@@ -172,7 +172,7 @@ public class TreeNodeAction {
     // Make sure
     if ((JOptionPane.showConfirmDialog(null,
                                        "Are you sure you wish to delete " +
-                                       node.getFqName() + "?",
+                                       node.getName() + "?",
                                        "Delete",
                                        JOptionPane.YES_NO_OPTION)) == 1) {
       return false;
@@ -190,7 +190,7 @@ public class TreeNodeAction {
       // Error deleting realm - display error msg
       JOptionPane.showMessageDialog(null,
                                     "Error encountered while deleting " +
-                                    node.getFqName() +
+                                    node.getName() +
                                     ". Please try again later.",
                                     "Delete realm",
                                     JOptionPane.ERROR_MESSAGE);
