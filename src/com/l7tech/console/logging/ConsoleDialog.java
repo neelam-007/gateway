@@ -8,8 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import java.io.*;
 
 /**
  * This class implements a frame that displays the applicaiton
@@ -27,6 +26,16 @@ public class ConsoleDialog extends JFrame {
         instance = new ConsoleDialog();
         return instance;
     }
+
+    /**
+     *
+     * @return the stream attached ot the console
+     */
+    public OutputStream getOutputStream() {
+        return new BufferedOutputStream(logOutputStream);
+    }
+
+
 
     private JTextArea console;
     private ConsoleDialog() {
@@ -46,8 +55,9 @@ public class ConsoleDialog extends JFrame {
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                dispose();
-                instance = null;
+                /* dispose();
+                instance = null;*/
+                hide();
             }
         });
         pack();
@@ -67,8 +77,8 @@ public class ConsoleDialog extends JFrame {
              * Invoked when an action occurs.
              */
             public void actionPerformed(ActionEvent e) {
-                // Get rid of window
-                ConsoleDialog.this.dispose();
+                // ConsoleDialog.this.dispose();
+                hide();
             }
         });
 
@@ -90,23 +100,51 @@ public class ConsoleDialog extends JFrame {
         return panel;
     }
 
-
-    /**
-     * Methods for managing stack traces that are displayed in console.
-     */
-    void appendToConsole(Exception e) {
-        ByteArrayOutputStream str = new ByteArrayOutputStream();
-        PrintStream pr = new PrintStream(str);
-        e.printStackTrace(pr);
-        pr.flush();
-        synchronized (console) {
-            console.append(str.toString());
+    private OutputStream logOutputStream = new OutputStream() {
+        /**
+         * Writes the specified byte to this output stream. The general
+         * contract for <code>write</code> is that one byte is written
+         * to the output stream. The byte to be written is the eight
+         * low-order bits of the argument <code>b</code>. The 24
+         * high-order bits of <code>b</code> are ignored.
+         * <p>
+         * Subclasses of <code>OutputStream</code> must provide an
+         * implementation for this method.
+         *
+         * @param      b   the <code>byte</code>.
+         * @exception  IOException  if an I/O error occurs. In particular,
+         *             an <code>IOException</code> may be thrown if the
+         *             output stream has been closed.
+         */
+        public void write(final int b) throws IOException {
+            SwingUtilities.
+              invokeLater(new Runnable() {
+                  public void run() {
+                      console.append(Byte.toString((byte)b));
+                  }
+              });
         }
-    }
 
-    void clearConsole() {
-        synchronized (console) {
-            console.setText("");
+        /**
+         * Writes <code>len</code> bytes from the specified byte array
+         * starting at offset <code>off</code> to this output stream.
+         *
+         * @param      b     the data.
+         * @param      off   the start offset in the data.
+         * @param      len   the number of bytes to write.
+         * @exception  IOException  if an I/O error occurs. In particular,
+         *             an <code>IOException</code> is thrown if the output
+         *             stream is closed.
+         */
+        public synchronized void write(final byte b[], int off, int len)
+          throws IOException {
+            SwingUtilities.
+              invokeLater(new Runnable() {
+                  public void run() {
+                      console.append(new String(b));
+                  }
+              });
         }
-    }
+    };
+
 }
