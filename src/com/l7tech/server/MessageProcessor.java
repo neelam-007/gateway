@@ -118,7 +118,7 @@ public class MessageProcessor {
                 logger.warning( "Service disabled" );
                 status = AssertionStatus.SERVICE_DISABLED;
             } else {
-                logger.finer( "Resolved service #" + service.getOid() );
+                logger.finer("Resolved service " + service.getName() + " #" + service.getOid());
                 request.setParameter( Request.PARAM_SERVICE, service );
 
                 // check if requestor provided a version number for published service
