@@ -7,13 +7,12 @@ import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
-import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.processor.MessageProcessor;
 import org.mortbay.util.MultiException;
 
+import java.io.File;
 import java.net.BindException;
 import java.util.logging.Logger;
-import java.io.File;
 
 /**
  * Begin execution of client proxy along with an attached GUI.
@@ -38,11 +37,16 @@ public class Main {
         }
     }
 
-    /** Start a GUI-equipped client proxy and run it until it's shut down. */
+    /**
+     * Start a GUI-equipped client proxy and run it until it's shut down.
+     */
     public static void main(final String[] argv) {
+        // apache logging layer to use the jdk logger
+        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+
         // Prepare .l7tech directory before initializing logging (Bug #1288)
         new File(ClientProxy.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
-        
+
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties");
         log.info("Starting SecureSpan Bridge; " + BuildInfo.getLongBuildString());
         JceProvider.init();
@@ -54,10 +58,10 @@ public class Main {
         int maxThreads = getIntProperty("com.l7tech.proxy.listener.maxthreads", MAX_THREADS);
 
         final ClientProxy clientProxy = new ClientProxy(ssgManager,
-                                                        new MessageProcessor(Managers.getPolicyManager()),
-                                                        port,
-                                                        minThreads,
-                                                        maxThreads);
+          new MessageProcessor(Managers.getPolicyManager()),
+          port,
+          minThreads,
+          maxThreads);
 
         // Set up the GUI
         Gui.setInstance(Gui.createGui(clientProxy, ssgManager));
@@ -72,10 +76,9 @@ public class Main {
         } catch (Exception e) {
             String message = "Unable to start the Bridge: " + e;
             if (e instanceof BindException ||
-                    (e instanceof MultiException && ((MultiException)e).getException(0) instanceof BindException))
-            {
+              (e instanceof MultiException && ((MultiException)e).getException(0) instanceof BindException)) {
                 message = "The SecureSpan Bridge is already running.  \nPlease shut down the existing " +
-                        "Bridge and try again.";
+                  "Bridge and try again.";
             }
 
             Gui.errorMessage(message);

@@ -1,12 +1,15 @@
 package com.l7tech.proxy;
 
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.MultipartUtil;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.proxy.attachments.ClientMultipartMessageReader;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.processor.MessageProcessor;
-import com.l7tech.proxy.attachments.ClientMultipartMessageReader;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
@@ -58,21 +61,21 @@ public class RequestHandler extends AbstractHttpHandler {
 
     /**
      * Construct a PendingRequest from the given request.
+     *
      * @param request
      * @return
      */
     private PendingRequest gatherRequest(final HttpRequest request,
                                          Document requestEnvelope,
                                          String endpoint,
-                                         Ssg ssg)
-    {
+                                         Ssg ssg) {
         HttpHeaders headers = new HttpHeaders(request.getFieldNames(), new HttpHeaders.ValueProvider() {
             public String getHeaderValue(String headerName) {
                 StringBuffer sb = new StringBuffer();
                 Enumeration values = request.getFieldValues(headerName);
                 boolean isFirst = true;
                 while (values.hasMoreElements()) {
-                    String value = (String) values.nextElement();
+                    String value = (String)values.nextElement();
                     if (!isFirst)
                         sb.append("; ");
                     sb.append(value);
@@ -86,11 +89,11 @@ public class RequestHandler extends AbstractHttpHandler {
         URL originalUrl = getOriginalUrl(request, endpoint);
         PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, sa, originalUrl.getFile());
         PendingRequest pr = new PendingRequest(requestEnvelope,
-                                               ssg,
-                                               interceptor,
-                                               pak,
-                                               originalUrl,
-                                               headers);
+          ssg,
+          interceptor,
+          pak,
+          originalUrl,
+          headers);
         log.finer("Request SOAPAction=" + sa + "   BodyURI=" + namespaceUri + "   originalUrl=" + originalUrl.toString() + "   isSoapRequest=" + pr.isSoapRequest());
         return pr;
     }
@@ -119,24 +122,31 @@ public class RequestHandler extends AbstractHttpHandler {
      * @param response
      */
     public void handle(final String pathInContext,
-                          final String pathParams,
-                          final HttpRequest request,
-                          final HttpResponse response)
-            throws IOException
-    {
+                       final String pathParams,
+                       final HttpRequest request,
+                       final HttpResponse response)
+      throws IOException {
+        PendingRequest pendingRequest = null;
         try {
-            doHandle(request, response);
+            pendingRequest = doHandle(request, response);
         } catch (HttpException e) {
             SsgResponse fault = SsgResponse.makeFaultResponse(e.getCode() == 404 ? "Client" : "Server",
-                                                              e.getMessage(),
-                                                              getOriginalUrl(request, request.getURI().toString()).toExternalForm());
+              e.getMessage(),
+              getOriginalUrl(request, request.getURI().toString()).toExternalForm());
             transmitResponse(e.getCode(), response, fault);
+        } catch (Error e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            throw e;
+        } finally {
+            if (pendingRequest != null) {
+                pendingRequest.close();
+            }
+
         }
     }
 
-    private void doHandle(final HttpRequest request, final HttpResponse response)
-            throws HttpException, IOException
-    {
+    private PendingRequest doHandle(final HttpRequest request, final HttpResponse response)
+      throws HttpException, IOException {
         log.info("Incoming request: " + request.getURI().getPath());
 
         // Find endpoint, and see if this is a WSDL request
@@ -151,7 +161,7 @@ public class RequestHandler extends AbstractHttpHandler {
             isWsdl = true;
         }
 
-        String[] endpointIO = new String[] { endpoint };
+        String[] endpointIO = new String[]{endpoint};
         final Ssg ssg = getDesiredSsg(endpointIO);
         endpoint = endpointIO[0]; // use translated endpoint
         log.fine("Mapped to Gateway: " + ssg);
@@ -160,12 +170,12 @@ public class RequestHandler extends AbstractHttpHandler {
 
         if (isWsdl) {
             handleWsdlRequest(request, response, ssg);
-            return;
+            return null;
         }
 
         if (request.getMethod().compareToIgnoreCase("POST") != 0) {
             handleNonPostMethod(request, response);
-            return;
+            return null;
         }
 
         String reqUsername = null;
@@ -183,7 +193,7 @@ public class RequestHandler extends AbstractHttpHandler {
             } else {
                 sendChallenge(response);
                 log.info("Send HTTP Basic auth challenge back to the client");
-                return;
+                return null;
             }
         }
 
@@ -194,13 +204,12 @@ public class RequestHandler extends AbstractHttpHandler {
             final boolean multipart = (ctype != null && ctype.startsWith(XmlUtil.MULTIPART_CONTENT_TYPE));
 
             Document envelope = null;
-            ClientMultipartMessageReader  multipartReader = null;
+            ClientMultipartMessageReader multipartReader = null;
 
             if (multipart) {
                 MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
                 String multipartBoundary = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY));
                 if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
-
                 final String innerType = MultipartUtil.unquote(((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE)));
                 if (innerType == null) throw new IOException("Missing inner Content-Type");
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
@@ -220,13 +229,15 @@ public class RequestHandler extends AbstractHttpHandler {
 
                     envelope = XmlUtil.stringToDocument(soapPart.getContent());
 
-                } else throw new IOException("Expected first part of multipart message to be XML");
+                } else
+                    throw new IOException("Expected first part of multipart message to be XML");
+
             } else {
                 envelope = XmlUtil.parse(request.getInputStream());
             }
 
             pendingRequest = gatherRequest(request, envelope, endpoint, ssg);
-            if(multipart && multipartReader != null) {
+            if (multipart && multipartReader != null) {
                 pendingRequest.setMultipart(true);
                 pendingRequest.setMultipartReader(multipartReader);
             }
@@ -249,9 +260,12 @@ public class RequestHandler extends AbstractHttpHandler {
         }
 
         transmitResponse(200, response, responseMessage);
+        return pendingRequest;
     }
 
-    /** Handle a GET request for the WSIL stylesheet. */
+    /**
+     * Handle a GET request for the WSIL stylesheet.
+     */
     private void handleStylesheet(HttpRequest request, HttpResponse response) throws HttpException {
         InputStream ss = getClass().getClassLoader().getResourceAsStream("com/l7tech/common/resources/wsil2xhtml.xml");
         if (ss == null) throw new HttpException(404);
@@ -271,12 +285,13 @@ public class RequestHandler extends AbstractHttpHandler {
             throw new HttpException(500, msg);
         } finally {
             if (ss != null) try { ss.close(); } catch (IOException e) { /* can't happen */ }
-            if (os != null) try {
-                os.flush();
-                os.close();
-            } catch (IOException e) {
-                log.log(Level.WARNING, "Unable to close connection to client: " + e.getMessage(), e);
-            }
+            if (os != null)
+                try {
+                    os.flush();
+                    os.close();
+                } catch (IOException e) {
+                    log.log(Level.WARNING, "Unable to close connection to client: " + e.getMessage(), e);
+                }
         }
     }
 
@@ -291,9 +306,10 @@ public class RequestHandler extends AbstractHttpHandler {
 
     /**
      * Send the reponse SOAPEnvelope back to the client.
-     * @param response          the interested client's HttpResponse
-     * @param ssgResponse  the response we are to send them
-     * @throws IOException      if something went wrong
+     *
+     * @param response    the interested client's HttpResponse
+     * @param ssgResponse the response we are to send them
+     * @throws IOException if something went wrong
      */
     private void transmitResponse(int status, final HttpResponse response, SsgResponse ssgResponse) throws IOException {
         try {
@@ -302,19 +318,19 @@ public class RequestHandler extends AbstractHttpHandler {
             response.setStatus(status);
 
             ClientMultipartMessageReader multipartReader = null;
-            if((multipartReader = ssgResponse.getMultipartReader()) != null) {
+            if ((multipartReader = ssgResponse.getMultipartReader()) != null) {
                 response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
-                            "; type=\"" + XmlUtil.TEXT_XML + "\"" +
-                            "; start=\"" + multipartReader.getSoapPart().getHeader(XmlUtil.CONTENT_ID).getValue() + "\"" +
-                            "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + multipartReader.getMultipartBoundary()  + "\"");
+                  "; type=\"" + XmlUtil.TEXT_XML + "\"" +
+                  "; start=\"" + multipartReader.getSoapPart().getHeader(XmlUtil.CONTENT_ID).getValue() + "\"" +
+                  "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + multipartReader.getMultipartBoundary() + "\"");
 
                 StringBuffer sb = new StringBuffer();
 
                 // add modified SOAP part
                 MultipartUtil.addModifiedSoapPart(sb,
-                        XmlUtil.XML_VERSION + ssgResponse.getResponseAsString(),
-                        multipartReader.getSoapPart(),
-                        multipartReader.getMultipartBoundary());
+                  XmlUtil.XML_VERSION + ssgResponse.getResponseAsString(),
+                  multipartReader.getSoapPart(),
+                  multipartReader.getMultipartBoundary());
 
                 PushbackInputStream pbis = multipartReader.getPushbackInputStream();
 
@@ -327,7 +343,7 @@ public class RequestHandler extends AbstractHttpHandler {
                     os.write(buf, 0, read);
                     read = pbis.read(buf, 0, buf.length);
                 }
-                                
+
             } else {
                 response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
                 os.write(ssgResponse.getResponseAsString().getBytes());
@@ -337,7 +353,7 @@ public class RequestHandler extends AbstractHttpHandler {
             interceptor.onReplyError(e);
             throw e;
         } finally {
-            if(ssgResponse.getDownstreamPostMethod() != null) {
+            if (ssgResponse.getDownstreamPostMethod() != null) {
                 ssgResponse.getDownstreamPostMethod().releaseConnection();
             }
         }
@@ -345,7 +361,8 @@ public class RequestHandler extends AbstractHttpHandler {
 
     /**
      * Handle a request method other than POST.
-     * @param request           the Request that isn't an HTTP POST
+     *
+     * @param request the Request that isn't an HTTP POST
      * @throws HttpException if the request wasn't a GET either
      */
     private void handleNonPostMethod(HttpRequest request, HttpResponse response) throws IOException {
@@ -360,6 +377,7 @@ public class RequestHandler extends AbstractHttpHandler {
     /**
      * Handle a GET request to this Bridge's message processing port.  We'll try to return a useful
      * HTML document including links to the WSIL proxies for each configured SSG.
+     *
      * @param request
      */
     private void handleGetRequest(HttpRequest request, HttpResponse response) throws IOException {
@@ -371,7 +389,7 @@ public class RequestHandler extends AbstractHttpHandler {
         response.addField(XmlUtil.CONTENT_TYPE, "text/html");
         PrintStream o = new PrintStream(response.getOutputStream());
         o.println("<html><head><title>SecureSpan Bridge</title></head>" +
-                  "<body><h2>SecureSpan Bridge</h2>");
+          "<body><h2>SecureSpan Bridge</h2>");
         List ssgs = ssgFinder.getSsgList();
         if (ssgs.isEmpty()) {
             o.println("<p>There are currently no Gateways registered with SecureSpan Bridge.");
@@ -379,9 +397,9 @@ public class RequestHandler extends AbstractHttpHandler {
             o.println("<p>SecureSpan Bridge is ready to proxy services provided by the following Gateways:</p><ul>");
             int port = clientProxy.getBindPort();
             for (Iterator i = ssgs.iterator(); i.hasNext();) {
-                Ssg ssg = (Ssg) i.next();
+                Ssg ssg = (Ssg)i.next();
                 String wsilUrl = "http://" + request.getHost() + ":" + port + "/" +
-                    ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX;
+                  ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX;
                 o.println("<li><a href=\"" + wsilUrl + "\">" + ssg.toString() + "</a></li>");
             }
             o.println("</ul>");
@@ -393,9 +411,9 @@ public class RequestHandler extends AbstractHttpHandler {
     /**
      * Figure out which SSG the client is trying to reach.
      *
-     * @param endpoint   the endpoint string sent by the client (ie, "/ssg3"), with any WSDL suffix stripped.
-     *                   on return, will be replaced with the modified endpoint.
-     * @return          the Ssg to route it to
+     * @param endpoint the endpoint string sent by the client (ie, "/ssg3"), with any WSDL suffix stripped.
+     *                 on return, will be replaced with the modified endpoint.
+     * @return the Ssg to route it to
      */
     private Ssg getDesiredSsg(String[] endpoint) throws HttpException {
         // Figure out which SSG is being invoked.
@@ -411,7 +429,7 @@ public class RequestHandler extends AbstractHttpHandler {
             }
         } catch (SsgNotFoundException e) {
             HttpException t = new HttpException(404,
-                                                "This Client Proxy has no Gateway mapped to the endpoint " + endpoint[0]);
+              "This Client Proxy has no Gateway mapped to the endpoint " + endpoint[0]);
             interceptor.onMessageError(t);
             throw t;
         }
@@ -419,12 +437,12 @@ public class RequestHandler extends AbstractHttpHandler {
 
     /**
      * Send a request to an SSG and return its response.
-     * @param request           the request to send it
-     * @return                  the response it sends back
+     *
+     * @param request the request to send it
+     * @return the response it sends back
      */
     private SsgResponse getServerResponse(PendingRequest request)
-            throws HttpChallengeRequiredException
-    {
+      throws HttpChallengeRequiredException {
         log.fine("Processing message to Gateway " + request.getSsg());
 
         try {
@@ -440,8 +458,8 @@ public class RequestHandler extends AbstractHttpHandler {
             interceptor.onReplyError(e);
             e.printStackTrace(System.err);
             SsgResponse reply = SsgResponse.makeFaultResponse("Server",
-                                                              e.getMessage(), 
-                                                              request.getOriginalUrl().toExternalForm());
+              e.getMessage(),
+              request.getOriginalUrl().toExternalForm());
             log.info("Returning fault");
             return reply;
         } finally {
@@ -451,13 +469,16 @@ public class RequestHandler extends AbstractHttpHandler {
 
     /**
      * Set the RequestInterceptor, which is called as messages come and go.
+     *
      * @param requestInterceptor
      */
     public void setRequestInterceptor(final RequestInterceptor requestInterceptor) {
         interceptor = requestInterceptor;
     }
 
-    /** Turn off message interception. */
+    /**
+     * Turn off message interception.
+     */
     public void clearRequestInterceptor() {
         setRequestInterceptor(NullRequestInterceptor.INSTANCE);
     }
@@ -479,15 +500,14 @@ public class RequestHandler extends AbstractHttpHandler {
     }
 
     private void handleWsdlRequestForWsil(HttpRequest request, HttpResponse response, Ssg ssg)
-            throws HttpException
-    {
+      throws HttpException {
         try {
             Document wsil = WsdlProxy.obtainWsilForServices(ssg);
 
             // Rewrite the wsdl URLs
             int port = clientProxy.getBindPort();
             String newUrl = "http://" + request.getHost() + ":" + port + "/" +
-                    ssg.getLocalEndpoint() + ClientProxy.WSDL_SUFFIX + "?serviceoid=";
+              ssg.getLocalEndpoint() + ClientProxy.WSDL_SUFFIX + "?serviceoid=";
             NodeList descList = wsil.getElementsByTagName("description");
             Pattern replaceService = Pattern.compile("http.*serviceoid=(-?\\d+)");
             for (int i = 0; i < descList.getLength(); ++i) {
@@ -506,7 +526,7 @@ public class RequestHandler extends AbstractHttpHandler {
             response.commit();
             return;
         } catch (WsdlProxy.ServiceNotFoundException e) {
-            log.log(Level.WARNING,  "WSIL proxy request failed: ", e);
+            log.log(Level.WARNING, "WSIL proxy request failed: ", e);
             throw new HttpException(404, e.getMessage());
         } catch (Exception e) {
             log.log(Level.WARNING, "WSIL proxy request failed: ", e);
@@ -514,7 +534,9 @@ public class RequestHandler extends AbstractHttpHandler {
         }
     }
 
-    /** Download a WSDL from the SSG and rewrite the port URL to point to our proxy endpoint for that SSG. */
+    /**
+     * Download a WSDL from the SSG and rewrite the port URL to point to our proxy endpoint for that SSG.
+     */
     private void handleWsdlRequestForOid(HttpRequest request, HttpResponse response, Ssg ssg, String oidStr) throws HttpException {
         try {
             long oid = Long.parseLong(oidStr);
@@ -523,7 +545,7 @@ public class RequestHandler extends AbstractHttpHandler {
             // Rewrite the wsdl URL
             int port = clientProxy.getBindPort();
             URL newUrl = new URL("http", request.getHost(), port,
-                                 "/" + ssg.getLocalEndpoint() + "/service/" + oid);
+              "/" + ssg.getLocalEndpoint() + "/service/" + oid);
             Port soapPort = wsdl.getSoapPort();
             if (soapPort != null)
                 wsdl.setPortUrl(soapPort, newUrl);

@@ -22,10 +22,7 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.Calendar;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,11 +58,12 @@ public class PendingRequest {
     private Calendar secureConversationExpiryDate = null;
     private boolean multipart = false;
     private ClientMultipartMessageReader multipartReader = null;
+    private Collection cleanupRunnables = new ArrayList();
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
         private Document decoratedDocument = null;
-        private Policy activePolicy= null; // the policy that we most recently started applying to this request, if any
+        private Policy activePolicy = null; // the policy that we most recently started applying to this request, if any
         private boolean isSslRequired = false;
         private boolean sslForbidden = false;  // ssl is forbidden for this request
         private boolean isBasicAuthRequired = false;
@@ -74,10 +72,12 @@ public class PendingRequest {
         private String messageId = null;
         private Map pendingDecorations = new LinkedHashMap();
     }
+
     private PolicySettings policySettings = new PolicySettings();
 
     /**
      * Construct a PendingRequest around the given SOAPEnvelope going to the given SSG.
+     *
      * @deprecated this constructor is for legacy unit tests only; it does not make a proper origUrl
      */
     public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor, PolicyAttachmentKey policyAttachmentKey) {
@@ -116,15 +116,13 @@ public class PendingRequest {
     /**
      * Ensure that a client certificate is available for the current request.  Will apply for one
      * if necessary.
-     * <p>
+     * <p/>
      * This will work for both Trusted and Federated Gateways.  In the Federated case, the cert
      * will be applied for through the Trusted gateway.
-     *
      */
     public void prepareClientCertificate() throws OperationCanceledException, KeyStoreCorruptException,
-            GeneralSecurityException, ClientCertificateException,
-            ServerCertificateUntrustedException, BadCredentialsException, PolicyRetryableException
-    {
+      GeneralSecurityException, ClientCertificateException,
+      ServerCertificateUntrustedException, BadCredentialsException, PolicyRetryableException {
         try {
             if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 log.info("PendingRequest: applying for client certificate");
@@ -149,7 +147,9 @@ public class PendingRequest {
         }
     }
 
-    /** Manually set the credentials to use throughout this request. */
+    /**
+     * Manually set the credentials to use throughout this request.
+     */
     public void setCredentials(PasswordAuthentication pw) {
         this.pw = pw;
     }
@@ -171,7 +171,7 @@ public class PendingRequest {
      * The user will be prompted for credentials if necessary.
      * If this method returns, getUsername() and getPassword() are guaranteed to return non-null
      * values for the rest of the lifetime of this request.
-     * <p>
+     * <p/>
      * This method may not be used if the current SSG is federated.
      *
      * @throws OperationCanceledException if credentials are not available, and the CredentialManager
@@ -191,7 +191,7 @@ public class PendingRequest {
      * Assert that credentials must be available to continue processing this request, and return the credentials.
      * The user will be prompted for credentials if necessary.
      * This method does not affect the subsequent behaviour of getUsername() and getPassword().
-     * <p>
+     * <p/>
      * This method may be only be used if the current SSG is federated.
      * This method returns the credentials of the Trusted Gateway, and the caller is responsible for ensuring
      * that these credentials are not exposed to the Federated Gateway at any time.
@@ -201,8 +201,7 @@ public class PendingRequest {
      *                                    the logon dialog.
      */
     public PasswordAuthentication getFederatedCredentials()
-            throws OperationCanceledException
-    {
+      throws OperationCanceledException {
         final Ssg trusted = ssg.getTrustedGateway();
         if (trusted == null)
             throw new OperationCanceledException("Trusted Gateway does not have any Federated credentials");
@@ -223,14 +222,14 @@ public class PendingRequest {
         if (nonce == null)
             nonce = new Long(new SecureRandom().nextLong());
         return nonce.longValue();
-   }
+    }
 
     // Getters and setters
 
     /**
      * Get the working copy of the Document representing the request.  This returns a copy that can be
      * modified freely.
-     *
+     * <p/>
      * If you want your changes to stick, you'll need to save them back by calling setUndecoratedDocument().
      *
      * @return A copy of the SOAP envelope Document, which may be freely modified.
@@ -238,7 +237,7 @@ public class PendingRequest {
     public Document getDecoratedDocument() {
         if (policySettings.decoratedDocument != null)
             return policySettings.decoratedDocument;
-        return policySettings.decoratedDocument = (Document) undecoratedDocument.cloneNode(true);
+        return policySettings.decoratedDocument = (Document)undecoratedDocument.cloneNode(true);
     }
 
     /**
@@ -316,7 +315,9 @@ public class PendingRequest {
         this.lastErrorResponse = lastErrorResponse;
     }
 
-    /** @return the original url, or null if there wasn't one. */
+    /**
+     * @return the original url, or null if there wasn't one.
+     */
     public URL getOriginalUrl() {
         return originalUrl;
     }
@@ -341,12 +342,16 @@ public class PendingRequest {
         return clientSidePolicy;
     }
 
-    /** @return the policy we are currently applying to this request, or null if we don't know or don't have one. */
+    /**
+     * @return the policy we are currently applying to this request, or null if we don't know or don't have one.
+     */
     public Policy getActivePolicy() {
         return this.policySettings.activePolicy;
     }
 
-    /** Set the policy we are going to apply to this request. */
+    /**
+     * Set the policy we are going to apply to this request.
+     */
     public void setActivePolicy(Policy policy) {
         this.policySettings.activePolicy = policy;
     }
@@ -355,7 +360,9 @@ public class PendingRequest {
         return policySettings.wssRequirements;
     }
 
-    /** @return the Map of (assertion instance => ClientDecorator), containing deferred decorations to apply. */
+    /**
+     * @return the Map of (assertion instance => ClientDecorator), containing deferred decorations to apply.
+     */
     public Map getPendingDecorations() {
         return policySettings.pendingDecorations;
     }
@@ -368,7 +375,9 @@ public class PendingRequest {
         policySettings.messageId = newId;
     }
 
-    /** Ensure that there is a Wsa message ID in this request. */
+    /**
+     * Ensure that there is a Wsa message ID in this request.
+     */
     public void prepareWsaMessageId() throws InvalidDocumentFormatException {
         if (getL7aMessageId() == null) {
             String id = SoapUtil.getL7aMessageId(getUndecoratedDocument());
@@ -383,18 +392,17 @@ public class PendingRequest {
     }
 
     private String establishSecureConversationSession()
-            throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
-            KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException,
-            IOException
-    {
+      throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
+      KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException,
+      IOException {
         prepareClientCertificate();
         Ssg ssg = getSsg();
         log.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString());
         TokenServiceClient.SecureConversationSession s =
-                TokenServiceClient.obtainSecureConversationSession(ssg,
-                                                                   SsgKeyStoreManager.getClientCert(ssg),
-                                                                   SsgKeyStoreManager.getClientCertPrivateKey(ssg),
-                                                                   SsgKeyStoreManager.getServerCert(ssg));
+          TokenServiceClient.obtainSecureConversationSession(ssg,
+            SsgKeyStoreManager.getClientCert(ssg),
+            SsgKeyStoreManager.getClientCertPrivateKey(ssg),
+            SsgKeyStoreManager.getServerCert(ssg));
         log.log(Level.INFO, "WS-SecureConversation session established with Gateway " + ssg.toString() + "; session ID=" + s.getSessionId());
         ssg.secureConversationId(s.getSessionId());
         secureConversationId = s.getSessionId();
@@ -416,7 +424,7 @@ public class PendingRequest {
             if (!expiry.after(now))
                 log.warning("Significant clock skew detected between local machine (currently " + now + ") and Gateway " + ssg + " (token expiry " + expiry + ").  WS-SecureConversation sessions will expire after every message.");
             else
-                log.info("WS-SecureConversation session will expire in " + Math.floor((expiry.getTime().getTime() - now.getTime().getTime())/1000) + " sec");
+                log.info("WS-SecureConversation session will expire in " + Math.floor((expiry.getTime().getTime() - now.getTime().getTime()) / 1000) + " sec");
         }
         return secureConversationId;
     }
@@ -431,7 +439,7 @@ public class PendingRequest {
                     Calendar ssgDate = ssg.secureConversationExpiryDate();
                     if (ssgDate == secureConversationExpiryDate || (ssgDate != null && !ssgDate.after(now))) {
                         log.log(Level.INFO, "Our WS-SecureConversation session has expired or will do so within the next " +
-                                            WSSC_PREEXPIRE_SEC + "seconds.  Will throw it away and get a new one.");
+                          WSSC_PREEXPIRE_SEC + "seconds.  Will throw it away and get a new one.");
                         ssg.secureConversationId(null);
                         ssg.secureConversationSharedSecret(null);
                         ssg.secureConversationExpiryDate(null);
@@ -448,6 +456,7 @@ public class PendingRequest {
     /**
      * Get the secure conversation ID.  This returns the ID that was used in this request, if any.  No checking
      * of session expiry is done by this method.
+     *
      * @return The secure conversation session ID for this session, or null if there isn't one.
      */
     public String getSecureConversationId() {
@@ -457,15 +466,15 @@ public class PendingRequest {
     /**
      * Get the secure conversation ID used for this request.
      * Establishes a new session with the SSG if necessary.
+     *
      * @return the secure conversation ID for this session, which may be newly created.  Never null.
      */
     public String getOrCreateSecureConversationId()
-            throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
-                   ClientCertificateException, BadCredentialsException, PolicyRetryableException
-    {
+      throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
+      ClientCertificateException, BadCredentialsException, PolicyRetryableException {
         checkExpiredSecureConversationSession();
         if (secureConversationId != null)
-          return secureConversationId;
+            return secureConversationId;
 
         secureConversationId = ssg.secureConversationId();
         checkExpiredSecureConversationSession();
@@ -475,7 +484,9 @@ public class PendingRequest {
         return secureConversationId = establishSecureConversationSession();
     }
 
-    /** Forget any currently-active SecureConversationSession with this SSG. */
+    /**
+     * Forget any currently-active SecureConversationSession with this SSG.
+     */
     public void closeSecureConversationSession() {
         synchronized (ssg) {
             secureConversationId = null;
@@ -489,16 +500,18 @@ public class PendingRequest {
 
     /**
      * Get the secure conversation shared secret used for this request.
+     *
      * @return the secure conversation shared secret for this session, or null if there isn't one.
      */
-    public byte[] getSecureConversationSharedSecret()
-    {
+    public byte[] getSecureConversationSharedSecret() {
         if (secureConversationSharedSecret != null)
             return secureConversationSharedSecret;
         return secureConversationSharedSecret = ssg.secureConversationSharedSecret();
     }
 
-    /** Check the expiry date of our hok, and throw it away if it has started to smell a bit off. */
+    /**
+     * Check the expiry date of our hok, and throw it away if it has started to smell a bit off.
+     */
     private void checkExpiredHolderOfKeyAssertion() {
         if (samlHolderOfKeyAssertion != null) {
             Calendar expires = samlHolderOfKeyAssertion.getExpires();
@@ -510,7 +523,7 @@ public class PendingRequest {
                     SamlHolderOfKeyAssertion ssgHok = ssg.samlHolderOfKeyAssertion();
                     if (ssgHok == samlHolderOfKeyAssertion || (ssgHok != null && !ssgHok.getExpires().after(nowUtc))) {
                         log.log(Level.INFO, "Our SAML Holder-of-key assertion has expired or will do so within the next " +
-                                            SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
+                          SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
                         ssg.samlHolderOfKeyAssertion(null);
                     }
                 }
@@ -525,18 +538,17 @@ public class PendingRequest {
      * If we don't currently hold a valid holder-of-key SAML assertion we will apply for a new one.
      *
      * @return A SAML assertion with us as the subject and our trusted SSG as the issuer.  Never null.
-     * @throws OperationCanceledException   if the user cancels the login dialog
-     * @throws GeneralSecurityException     if there is a problem with a certificate, key, or signature
-     * @throws IOException                  if there is a problem reading from the network or a file
-     * @throws KeyStoreCorruptException     if our local key store or trust store is damaged
-     * @throws ClientCertificateException   if we need a client certificate but can't obtain one
-     * @throws BadCredentialsException      if we need a certificate but our username and password is wrong
-     * @throws PolicyRetryableException     if we should retry policy processing from the beginning
+     * @throws OperationCanceledException if the user cancels the login dialog
+     * @throws GeneralSecurityException   if there is a problem with a certificate, key, or signature
+     * @throws IOException                if there is a problem reading from the network or a file
+     * @throws KeyStoreCorruptException   if our local key store or trust store is damaged
+     * @throws ClientCertificateException if we need a client certificate but can't obtain one
+     * @throws BadCredentialsException    if we need a certificate but our username and password is wrong
+     * @throws PolicyRetryableException   if we should retry policy processing from the beginning
      */
     public SamlHolderOfKeyAssertion getOrCreateSamlHolderOfKeyAssertion()
-            throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
-                   ClientCertificateException, BadCredentialsException, PolicyRetryableException
-    {
+      throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
+      ClientCertificateException, BadCredentialsException, PolicyRetryableException {
         checkExpiredHolderOfKeyAssertion();
         if (samlHolderOfKeyAssertion != null)
             return samlHolderOfKeyAssertion;
@@ -551,6 +563,7 @@ public class PendingRequest {
 
     /**
      * Get our SAML holder-of-key assertion for the current SSG (or Trusted SSG).
+     *
      * @return our currently valid SAML holder-of-key assertion or null if we don't have one.
      */
     public SamlHolderOfKeyAssertion getSamlHolderOfKeyAssertion() {
@@ -564,19 +577,18 @@ public class PendingRequest {
     }
 
     private SamlHolderOfKeyAssertion acquireSamlHolderOfKeyAssertion()
-            throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
-                   KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException, IOException
-    {
+      throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
+      KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException, IOException {
         prepareClientCertificate();
         Ssg ssg = getSsg();
         Ssg tokenServerSsg = ssg.getTrustedGateway();
         if (tokenServerSsg == null) tokenServerSsg = ssg;
         log.log(Level.INFO, "Applying for SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         SamlHolderOfKeyAssertion s =
-                TokenServiceClient.obtainSamlHolderOfKeyAssertion(tokenServerSsg,
-                                                                   SsgKeyStoreManager.getClientCert(tokenServerSsg),
-                                                                   SsgKeyStoreManager.getClientCertPrivateKey(tokenServerSsg),
-                                                                   SsgKeyStoreManager.getServerCert(tokenServerSsg));
+          TokenServiceClient.obtainSamlHolderOfKeyAssertion(tokenServerSsg,
+            SsgKeyStoreManager.getClientCert(tokenServerSsg),
+            SsgKeyStoreManager.getClientCertPrivateKey(tokenServerSsg),
+            SsgKeyStoreManager.getServerCert(tokenServerSsg));
         log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         ssg.samlHolderOfKeyAssertion(s);
         samlHolderOfKeyAssertion = s;
@@ -585,5 +597,41 @@ public class PendingRequest {
 
     public boolean isSoapRequest() {
         return isSoapRequest;
+    }
+
+    /**
+     * Close the request and run the cleanup runnables.
+     */
+    public void close() {
+        for (Iterator iterator = cleanupRunnables.iterator(); iterator.hasNext();) {
+            Runnable runnable = (Runnable)iterator.next();
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                log.log(Level.WARNING, "exception during post request cleanup", e);
+            }
+        }
+    }
+
+    /**
+     * Register a <code>Runnable</code> that will run after the request
+     * has been completely, processed, just before returning the thread
+     * to the Jetty.
+     * If Runnable throws it will be logged and ignored
+     *
+     * @param r the runnable
+     */
+    public void addCleanupRunnable(Runnable r) {
+        cleanupRunnables.add(r);
+    }
+
+    /**
+     * Unregister a cleanup runnable
+     *
+     * @param r the runnable
+     * @see PendingRequest#addCleanupRunnable(Runnable)
+     */
+    public void removeCleanupRunnable(Runnable r) {
+        cleanupRunnables.remove(r);
     }
 }

@@ -55,7 +55,7 @@ import java.util.regex.Pattern;
 
 /**
  * The core of the Client Proxy.
- *
+ * <p/>
  * User: mike
  * Date: Aug 13, 2003
  * Time: 9:51:36 AM
@@ -63,7 +63,7 @@ import java.util.regex.Pattern;
 public class MessageProcessor {
     private static final Logger log = Logger.getLogger(MessageProcessor.class.getName());
 
-    public static final String PROPERTY_LOGPOSTS    = "com.l7tech.proxy.processor.logPosts";
+    public static final String PROPERTY_LOGPOSTS = "com.l7tech.proxy.processor.logPosts";
     public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
     public static final String PROPERTY_REFORMATLOGGEDXML = "com.l7tech.proxy.processor.reformatLoggedXml";
     private static final Policy SSL_POLICY = new Policy(new SslAssertion(), null);
@@ -79,7 +79,7 @@ public class MessageProcessor {
         // Configure SSL for outgoing connections
         System.setProperty("httpclient.useragent", SecureSpanConstants.USER_AGENT);
         Protocol https = new Protocol("https", ClientProxySecureProtocolSocketFactory.getInstance(), 443);
-        Protocol.registerProtocol("https", https);        
+        Protocol.registerProtocol("https", https);
     }
 
     /**
@@ -94,33 +94,33 @@ public class MessageProcessor {
     /**
      * Process the given client request and return the corresponding response.
      *
-     * @param req  the PendingRequest to process
-     * @return     the SsgResponse containing the response from the Ssg, if processing was successful, or if
-     *             a SOAP fault is being returned to the client from either the CP or the SSG.
-     * @throws ClientCertificateException   if a client certificate was required but could not be obtained
-     * @throws OperationCanceledException   if the user declined to provide a username and password
-     * @throws ConfigurationException       if a response could not be obtained from the SSG due to a problem with
-     *                                      the client or server configuration, and retrying the operation
-     *                                      is unlikely to succeed until the configuration is changed.
-     * @throws ConfigurationException       if we were unable to conform to the policy, and did not get any useful
-     *                                      SOAP fault from the SSG.
-     * @throws GeneralSecurityException     if the SSG SSL certificate could not be obtained or installed
-     * @throws IOException                  if information couldn't be obtained from the SSG due to network trouble
-     * @throws IOException                  if a certificate could not be saved to disk
-     * @throws SAXException                 if the client request needed to be parsed and wasn't well-formed XML
-     * @throws ResponseValidationException  if the response was signed, but the signature did not validate
+     * @param req the PendingRequest to process
+     * @return the SsgResponse containing the response from the Ssg, if processing was successful, or if
+     *         a SOAP fault is being returned to the client from either the CP or the SSG.
+     * @throws ClientCertificateException     if a client certificate was required but could not be obtained
+     * @throws OperationCanceledException     if the user declined to provide a username and password
+     * @throws ConfigurationException         if a response could not be obtained from the SSG due to a problem with
+     *                                        the client or server configuration, and retrying the operation
+     *                                        is unlikely to succeed until the configuration is changed.
+     * @throws ConfigurationException         if we were unable to conform to the policy, and did not get any useful
+     *                                        SOAP fault from the SSG.
+     * @throws GeneralSecurityException       if the SSG SSL certificate could not be obtained or installed
+     * @throws IOException                    if information couldn't be obtained from the SSG due to network trouble
+     * @throws IOException                    if a certificate could not be saved to disk
+     * @throws SAXException                   if the client request needed to be parsed and wasn't well-formed XML
+     * @throws ResponseValidationException    if the response was signed, but the signature did not validate
      * @throws HttpChallengeRequiredException if an HTTP 401 should be sent back to the client
      * @throws InvalidDocumentFormatException if the request or the response from the SSG had a problem with its
      *                                        format that was too serious to ignore
-     * @throws com.l7tech.common.security.xml.processor.ProcessorException if there was a problem processing the wsse:Security header in the
-     *                                         response from the SSG 
+     * @throws com.l7tech.common.security.xml.processor.ProcessorException
+     *                                        if there was a problem processing the wsse:Security header in the
+     *                                        response from the SSG
      */
-    public SsgResponse processMessage(PendingRequest req)
-            throws ClientCertificateException, OperationCanceledException,
-            ConfigurationException, GeneralSecurityException, IOException, SAXException,
-            ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
-            InvalidDocumentFormatException, ProcessorException, BadSecurityContextException
-    {
+    public SsgResponse processMessage(final PendingRequest req)
+      throws ClientCertificateException, OperationCanceledException,
+      ConfigurationException, GeneralSecurityException, IOException, SAXException,
+      ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
+      InvalidDocumentFormatException, ProcessorException, BadSecurityContextException {
         boolean succeeded = false;
         try {
             Ssg ssg = req.getSsg();
@@ -192,19 +192,22 @@ public class MessageProcessor {
             }
 
             // clean up for SOAP request with attachment
-            if(req.isMultipart()) {
-                if(req.getMultipartReader() != null && req.getMultipartReader().getFileCache() != null) {
-                    req.getMultipartReader().deleteCacheFile();
-                }
+            if (req.isMultipart()) {
+                req.addCleanupRunnable(new Runnable() {
+                    public void run() {
+                        final ClientMultipartMessageReader multipartReader = req.getMultipartReader();
+                        if (multipartReader != null) {
+                            multipartReader.deleteCacheFile();
+                        }
+                    }
+                });
             }
         }
     }
 
     private void handleBadCredentialsException(Ssg ssg, PendingRequest req, BadCredentialsException e)
-            throws KeyStoreCorruptException, IOException, OperationCanceledException, ConfigurationException,
-                   KeyStoreException, HttpChallengeRequiredException
-
-    {
+      throws KeyStoreCorruptException, IOException, OperationCanceledException, ConfigurationException,
+      KeyStoreException, HttpChallengeRequiredException {
         if (ssg.isChainCredentialsFromClient())
             throw new HttpChallengeRequiredException(e);
 
@@ -217,7 +220,7 @@ public class MessageProcessor {
             if (securePasswordPing(req)) {
                 // password works with our keystore, and with the SSG, so why did it fail just now?
                 String message = "Recieved password failure, but it worked with our keystore and the Gateway liked it when we double-checked it.  " +
-                        "Most likely that your account exists but is not permitted to access this service.";
+                  "Most likely that your account exists but is not permitted to access this service.";
                 log.severe(message);
                 req.getNewCredentials();
                 return;
@@ -242,7 +245,7 @@ public class MessageProcessor {
     /**
      * Attempt to fix whatever caused the specified SSLException, if it was something simple like the server
      * cert being unknown.
-     * 
+     *
      * @param ssg
      * @param credentials
      * @param e
@@ -253,12 +256,11 @@ public class MessageProcessor {
      * @throws KeyStoreCorruptException
      */
     public static void handleSslException(Ssg ssg, PasswordAuthentication credentials, SSLException e)
-            throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException,
-                   KeyStoreCorruptException
-    {
+      throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException,
+      KeyStoreCorruptException {
         // Do we not have the right password to access our keystore?
         if (ExceptionUtils.causedBy(e, BadCredentialsException.class) ||
-                ExceptionUtils.causedBy(e, UnrecoverableKeyException.class)) {
+          ExceptionUtils.causedBy(e, UnrecoverableKeyException.class)) {
             log.log(Level.INFO, "SSL handshake exception was apparently due to a password which doesn't match the keystore password", e);
             throw new BadCredentialsException(e);
         }
@@ -274,14 +276,14 @@ public class MessageProcessor {
         if (scue == null) {
             // No, that wasn't the problem.  Was it a cert hostname mismatch?
             HostnameMismatchException hme = (HostnameMismatchException)
-                    ExceptionUtils.getCauseIfCausedBy(e, HostnameMismatchException.class);
+              ExceptionUtils.getCauseIfCausedBy(e, HostnameMismatchException.class);
             if (hme != null) {
                 // Notify user of the hostname mismatch and then abort this request
                 String wanted = hme.getWhatWasWanted();
                 String got = hme.getWhatWeGotInstead();
                 Managers.getCredentialManager().notifySsgHostnameMismatch(ssg,
-                                                                          wanted,
-                                                                          got);
+                  wanted,
+                  got);
                 throw e;
             }
 
@@ -297,22 +299,21 @@ public class MessageProcessor {
      * Contact the SSG and determine whether this SSG password is still valid.
      *
      * @param req request we are processing.  must be configured with the credentials you wish to validate
-     * @return  true if these credentials appear to be valid on this SSG; false otherwise
-     * @throws IOException if we were unable to validate this password either way
+     * @return true if these credentials appear to be valid on this SSG; false otherwise
+     * @throws IOException                if we were unable to validate this password either way
      * @throws OperationCanceledException if a logon dialog appeared and the user canceled it;
      *                                    this shouldn't happen unless the user clears the credentials
      */
     private boolean securePasswordPing(PendingRequest req)
-            throws IOException, OperationCanceledException
-    {
+      throws IOException, OperationCanceledException {
         Ssg ssg = req.getSsg();
         if (ssg.getTrustedGateway() != null)
             throw new OperationCanceledException("Unable to perform password ping with Federated SSG"); // can't happen
 
         // We'll just use the CertificateDownloader for this.
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
-                                                             req.getUsername(),
-                                                             req.getPassword());
+          req.getUsername(),
+          req.getPassword());
         try {
             // TODO: remove this stupid hack.  it doesn't help LDAP users anyway
             boolean worked = cd.downloadCertificate();
@@ -329,16 +330,16 @@ public class MessageProcessor {
      * associated Ssg.  On return, the PendingRequest's activePolicy will be set to the policy
      * we applied.
      *
-     * @param req   the PendingRequest to decorate
-     * @throws OperationCanceledException   if the user declined to provide a username and password
-     * @throws ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
+     * @param req the PendingRequest to decorate
+     * @throws OperationCanceledException if the user declined to provide a username and password
+     * @throws ServerCertificateUntrustedException
+     *                                    if the Ssg certificate needs to be (re)imported.
      */
     private void enforcePolicy(PendingRequest req)
-            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException,
-            IOException, SAXException, ClientCertificateException, KeyStoreCorruptException,
-            HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
-            InvalidDocumentFormatException, DecoratorException, ConfigurationException
-    {
+      throws OperationCanceledException, GeneralSecurityException, BadCredentialsException,
+      IOException, SAXException, ClientCertificateException, KeyStoreCorruptException,
+      HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
+      InvalidDocumentFormatException, DecoratorException, ConfigurationException {
         Policy policy = policyManager.getPolicy(req);
         if (policy == null || !policy.isValid()) {
             if (policy != null)
@@ -402,15 +403,14 @@ public class MessageProcessor {
      * Process the response from the SSG, stripping any stuff the end user client doesn't care about or shouldn't
      * see, according to the dictates of the policy for this request.
      *
-     * @param req  the request we are processing
-     * @param res  the reply we received from the Gateway
+     * @param req the request we are processing
+     * @param res the reply we received from the Gateway
      */
     private void undecorateResponse(PendingRequest req, SsgResponse res)
-            throws OperationCanceledException,
-            GeneralSecurityException, BadCredentialsException, IOException,
-            ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException,
-            ConfigurationException, InvalidDocumentFormatException, PolicyRetryableException
-    {
+      throws OperationCanceledException,
+      GeneralSecurityException, BadCredentialsException, IOException,
+      ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException,
+      ConfigurationException, InvalidDocumentFormatException, PolicyRetryableException {
         Policy appliedPolicy = req.getActivePolicy();
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
         if (appliedPolicy == null)
@@ -420,11 +420,10 @@ public class MessageProcessor {
         if (req.getSecureConversationId() != null) {
             // TODO we should do a proper QNAME
             if (res.isFault() && res.getFaultcode() != null &&
-                    res.getFaultcode().trim().equals(SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN))
-            {
+              res.getFaultcode().trim().equals(SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN)) {
                 // TODO we should only trust this fault if it is signed
                 log.info("Gateway reports " + SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN +
-                         ".  Will throw away the current WS-SecureConversationSession and try again.");
+                  ".  Will throw away the current WS-SecureConversationSession and try again.");
                 req.closeSecureConversationSession();
                 throw new PolicyRetryableException("Flushed bad secure conversation session.");
             }
@@ -443,7 +442,7 @@ public class MessageProcessor {
     /**
      * Get the appropriate Ssg URL for forwarding the given request.
      *
-     * @param req  the PendingRequest to process
+     * @param req the PendingRequest to process
      * @return a URL that might have had it's protocol and port modified if SSL is indicated.
      * @throws ConfigurationException if we couldn't find a valid URL in this Ssg configuration.
      */
@@ -457,15 +456,15 @@ public class MessageProcessor {
                     log.severe("Error: SSL is both forbidden and required by policy -- leaving SSL enabled");
                 if ("http".equalsIgnoreCase(url.getProtocol())) {
                     log.info("Changing http to https per policy for this request (using SSL port " +
-                             ssg.getSslPort() + ")");
+                      ssg.getSslPort() + ")");
                     url = new URL("https", url.getHost(), ssg.getSslPort(), url.getFile());
                 } else
                     throw new ConfigurationException("Couldn't find an SSL-enabled version of protocol " +
-                                                     url.getProtocol());
+                      url.getProtocol());
             }
         } catch (MalformedURLException e) {
             throw new ConfigurationException("Client Proxy: Gateway \"" + ssg + "\" has an invalid server url: " +
-                                             ssg.getServerUrl());
+              ssg.getServerUrl());
         }
 
         return url;
@@ -476,32 +475,33 @@ public class MessageProcessor {
      *
      * @param req the PendingRequest to process.  If a policy was applied, the request's activePolicy must point at it.
      * @return the SsgResponse from the SSG
-     * @throws ConfigurationException if the SSG url is invalid
-     * @throws ConfigurationException if the we downloaded a new policy for this request, but we are still being told
-     *                                the policy is out-of-date
-     * @throws ConfigurationException if the SSG sends us an invalid Policy URL
-     * @throws ConfigurationException if the PendingRequest did not contain enough information to construct a
-     *                                valid PolicyAttachmentKey
-     * @throws IOException            if there was a network problem getting the message response from the SSG
-     * @throws IOException            if there was a network problem downloading a policy from the SSG
-     * @throws PolicyRetryableException if a new policy was downloaded
-     * @throws ServerCertificateUntrustedException if a policy couldn't be downloaded because the SSG SSL certificate
-     *                                             was not recognized and needs to be (re)imported
-     * @throws OperationCanceledException if credentials were needed to continue processing, but the user canceled
-     *                                    the logon dialog (or we are running headless).
-     * @throws ClientCertificateException if our client cert is no longer valid, but we couldn't delete it from
-     *                                    the keystore.
-     * @throws BadCredentialsException if the SSG rejected our SSG username and/or password.
-     * @throws NoSuchAlgorithmException if the client certificate key was not RSA
+     * @throws ConfigurationException         if the SSG url is invalid
+     * @throws ConfigurationException         if the we downloaded a new policy for this request, but we are still being told
+     *                                        the policy is out-of-date
+     * @throws ConfigurationException         if the SSG sends us an invalid Policy URL
+     * @throws ConfigurationException         if the PendingRequest did not contain enough information to construct a
+     *                                        valid PolicyAttachmentKey
+     * @throws IOException                    if there was a network problem getting the message response from the SSG
+     * @throws IOException                    if there was a network problem downloading a policy from the SSG
+     * @throws PolicyRetryableException       if a new policy was downloaded
+     * @throws ServerCertificateUntrustedException
+     *                                        if a policy couldn't be downloaded because the SSG SSL certificate
+     *                                        was not recognized and needs to be (re)imported
+     * @throws OperationCanceledException     if credentials were needed to continue processing, but the user canceled
+     *                                        the logon dialog (or we are running headless).
+     * @throws ClientCertificateException     if our client cert is no longer valid, but we couldn't delete it from
+     *                                        the keystore.
+     * @throws BadCredentialsException        if the SSG rejected our SSG username and/or password.
+     * @throws NoSuchAlgorithmException       if the client certificate key was not RSA
      * @throws InvalidDocumentFormatException if the response from the SSG was not a valid SOAP document
-     * @throws com.l7tech.common.security.xml.processor.ProcessorException if the response from the SSG could not be undecorated
+     * @throws com.l7tech.common.security.xml.processor.ProcessorException
+     *                                        if the response from the SSG could not be undecorated
      */
     private SsgResponse obtainResponse(final PendingRequest req)
-            throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
-            OperationCanceledException, ClientCertificateException, BadCredentialsException,
-            KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
-            InvalidDocumentFormatException, ProcessorException, BadSecurityContextException
-    {
+      throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
+      OperationCanceledException, ClientCertificateException, BadCredentialsException,
+      KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
+      InvalidDocumentFormatException, ProcessorException, BadSecurityContextException {
         URL url = getUrl(req);
         final Ssg ssg = req.getSsg();
 
@@ -509,7 +509,7 @@ public class MessageProcessor {
         HttpState state = client.getState();
 
         // Forget any cached session cookies, for all services shared by this SSG        
-        if(req.isPolicyUpdated()) {
+        if (req.isPolicyUpdated()) {
             ssg.clearSessionCookies();
         }
 
@@ -544,10 +544,10 @@ public class MessageProcessor {
             }
 
             InputStream is = null;
-            if(req.isMultipart()) {
+            if (req.isMultipart()) {
                 postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
-                        "; type=" + XmlUtil.TEXT_XML  +
-                        "; " + XmlUtil.MULTIPART_BOUNDARY + "=" + req.getMultipartReader().getMultipartBoundary());
+                  "; type=" + XmlUtil.TEXT_XML +
+                  "; " + XmlUtil.MULTIPART_BOUNDARY + "=" + req.getMultipartReader().getMultipartBoundary());
 
                 StringBuffer sb = new StringBuffer();
 
@@ -555,38 +555,36 @@ public class MessageProcessor {
 
                 // add modified SOAP part
                 MultipartUtil.addModifiedSoapPart(sb,
-                        postBody,
-                        requestMultipartReader.getSoapPart(),
-                        requestMultipartReader.getMultipartBoundary());
-
-                if(requestMultipartReader.getFileCache() != null) {
-
+                  postBody,
+                  requestMultipartReader.getSoapPart(),
+                  requestMultipartReader.getMultipartBoundary());
+                long contentLength = 0;
+                if (requestMultipartReader.getFileCache() != null) {
                     // close the connection for writing data to the temp file before opening the file for read operation
                     requestMultipartReader.closeFileCache();
-
+                    contentLength = new File(requestMultipartReader.getFileCacheName()).length();
                     // read raw attachments from a temp file
                     is = new FileInputStream(requestMultipartReader.getFileCacheName());
-
                 } else {
-
                     // read raw attachments from memory
                     byte[] dataBuf = new byte[requestMultipartReader.getMemoryCacheDataLength()];
+                    contentLength = dataBuf.length;
                     byte[] data = requestMultipartReader.getMemoryCache();
-                    for(int i=0; i < dataBuf.length; i++) {
+                    for (int i = 0; i < dataBuf.length; i++) {
                         dataBuf[i] = data[i];
                     }
                     is = new ByteArrayInputStream(dataBuf);
                 }
 
                 PushbackInputStream pushbackInputStream = new PushbackInputStream(is, MultipartMessageReader.SOAP_PART_BUFFER_SIZE);
-
                 // push the modified SOAP part back to the input stream
-                pushbackInputStream.unread(sb.toString().getBytes());
-
+                final byte[] unreadBytes = sb.toString().getBytes();
+                pushbackInputStream.unread(unreadBytes);
+                contentLength += unreadBytes.length;
                 // post the request using input stream
+                postMethod.setRequestContentLength((int)contentLength);
                 postMethod.setRequestBody(pushbackInputStream);
-
-            } else {
+            } else { // non multipart
                 postMethod.setRequestBody(postBody);
                 postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             }
@@ -597,9 +595,9 @@ public class MessageProcessor {
             CurrentRequest.setPeerSsg(null);
             log.info("POST to Gateway completed with HTTP status code " + status);
 
-            if(is != null) {
+            if (is != null) {
                 is.close();
-                is =null;
+                is = null;
             }
 
             Header certStatusHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS);
@@ -662,7 +660,6 @@ public class MessageProcessor {
 
             HttpHeaders headers = new HttpHeaders(postMethod.getResponseHeaders());
 
-
             Header contentType = postMethod.getResponseHeader(XmlUtil.CONTENT_TYPE);
             log.info("Response Content-Type: " + contentType);
             if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf(XmlUtil.TEXT_XML) < 0)
@@ -670,7 +667,7 @@ public class MessageProcessor {
 
             String responseString = null;
             ClientMultipartMessageReader responseMultipartReader = null;
-            if(contentType.getValue().startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
+            if (contentType.getValue().startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
                 MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + contentType.getValue());
 
                 String multipartBoundary = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY));
@@ -686,7 +683,8 @@ public class MessageProcessor {
                     if (!part.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
                     responseString = part.getContent();
-                } else throw new IOException("Expected first part of multipart message to be XML (was '" + innerType + "')");
+                } else
+                    throw new IOException("Expected first part of multipart message to be XML (was '" + innerType + "')");
 
             } else {
                 responseString = postMethod.getResponseBodyAsString();
@@ -728,10 +726,10 @@ public class MessageProcessor {
             try {
                 boolean haveKey = SsgKeyStoreManager.isClientCertUnlocked(ssg);
                 final ProcessorResult processorResultRaw =
-                        wssProcessor.undecorateMessage(responseDocument,
-                                                       haveKey ? SsgKeyStoreManager.getClientCert(ssg) : null,
-                                                       haveKey ? SsgKeyStoreManager.getClientCertPrivateKey(ssg) : null,
-                                                       scf);
+                  wssProcessor.undecorateMessage(responseDocument,
+                    haveKey ? SsgKeyStoreManager.getClientCert(ssg) : null,
+                    haveKey ? SsgKeyStoreManager.getClientCertPrivateKey(ssg) : null,
+                    scf);
                 // Translate timestamp in result from SSG time to local time
                 final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
                 processorResult = new ProcessorResultWrapper(processorResultRaw) {
@@ -758,6 +756,7 @@ public class MessageProcessor {
 
                 throw new BadCredentialsException();
             }
+
             response.setDownstreamPostMethod(postMethod);
             return response;
 
@@ -770,7 +769,7 @@ public class MessageProcessor {
                 }
 
                 // if not deferring the connection release
-                if(response != null && response.getDownstreamPostMethod() == null) {
+                if (response != null && response.getDownstreamPostMethod() == null) {
                     postMethod.releaseConnection();
                 }
             }
@@ -804,13 +803,12 @@ public class MessageProcessor {
      * Configure HTTP Basic or Digest auth on the specified HttpState and PostMethod, if called for by
      * the specified PendingRequest.
      *
-     * @param req  the PendingRequest that might require HTTP level authentication
-     * @param state  the HttpState to adjust
-     * @param postMethod  the PostMethod to adjust
+     * @param req        the PendingRequest that might require HTTP level authentication
+     * @param state      the HttpState to adjust
+     * @param postMethod the PostMethod to adjust
      */
     private void setAuthenticationState(PendingRequest req, HttpState state, PostMethod postMethod)
-            throws OperationCanceledException
-    {
+      throws OperationCanceledException {
         state.setAuthenticationPreemptive(false);
 
         if (!req.isBasicAuthRequired() && !req.isDigestAuthRequired()) {
@@ -828,7 +826,7 @@ public class MessageProcessor {
             postMethod.setDoAuthentication(true);
             state.setAuthenticationPreemptive(req.isBasicAuthRequired() && !req.isDigestAuthRequired());
             state.setCredentials(null, null,
-                                 new UsernamePasswordCredentials(username, new String(password)));
+              new UsernamePasswordCredentials(username, new String(password)));
         }
     }
 }

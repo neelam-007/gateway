@@ -50,7 +50,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     public static final String USER_AGENT = "User-Agent";
     public static final String HOST = "Host";
     public static final String PROP_SSL_SESSION_TIMEOUT = HttpRoutingAssertion.class.getName() +
-                                                          ".sslSessionTimeoutSeconds";
+      ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion) {
@@ -65,7 +65,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         try {
             sslContext = SSLContext.getInstance("SSL");
-            sslContext.init(null, new TrustManager[] { SslClientTrustManager.getInstance() }, null);
+            sslContext.init(null, new TrustManager[]{SslClientTrustManager.getInstance()}, null);
             final int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
         } catch (Exception e) {
@@ -110,22 +110,22 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 HttpClient client = new HttpClient(connectionManager);
                 HostConfiguration hconf = null;
 
-                if ( "https".equals(url.getProtocol()) ) {
+                if ("https".equals(url.getProtocol())) {
                     final int port = url.getPort() == -1 ? 443 : url.getPort();
                     hconf = new HostConfiguration();
-                    synchronized( this ) {
-                        if ( protocol == null ) {
+                    synchronized (this) {
+                        if (protocol == null) {
                             protocol = new Protocol(url.getProtocol(), new SecureProtocolSocketFactory() {
                                 public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
-                                    return sslContext.getSocketFactory().createSocket(socket,host,port,autoClose);
+                                    return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
                                 }
 
                                 public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
-                                    return sslContext.getSocketFactory().createSocket(host,port,clientAddress,clientPort);
+                                    return sslContext.getSocketFactory().createSocket(host, port, clientAddress, clientPort);
                                 }
 
                                 public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-                                    return sslContext.getSocketFactory().createSocket(host,port);
+                                    return sslContext.getSocketFactory().createSocket(host, port);
                                 }
                             }, port);
                         }
@@ -141,11 +141,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 postMethod.setHttp11(false);
 
                 multipartReader = request.getMultipartReader();
-                if(request.isMultipart()) {
+                if (request.isMultipart()) {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
-                            "; type=\"" + XmlUtil.TEXT_XML + "\"" +
-                            "; start=\"" + multipartReader.getSoapPart().getHeader(XmlUtil.CONTENT_ID).getValue() + "\"" +
-                            "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + request.getMultipartBoundary()  + "\"");
+                      "; type=\"" + XmlUtil.TEXT_XML + "\"" +
+                      "; start=\"" + multipartReader.getSoapPart().getHeader(XmlUtil.CONTENT_ID).getValue() + "\"" +
+                      "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + request.getMultipartBoundary() + "\"");
                 } else {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
                 }
@@ -183,7 +183,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             final String login = request.getPrincipalCredentials().getLogin();
                             if (login != null && login.length() > 0) {
                                 logger.log(Level.FINE, "TAI credential chaining requested, but there is no User; " +
-                                                       "will chain pc.login " + login);
+                                  "will chain pc.login " + login);
                                 chainId = login;
                             } else
                                 logger.log(Level.WARNING, "TAI credential chaining requested, and request was authenticated, but had no User or pc.login");
@@ -208,7 +208,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 String password = httpRoutingAssertion.getPassword();
 
                 if (login != null && login.length() > 0
-                    && password != null && password.length() > 0) {
+                  && password != null && password.length() > 0) {
                     logger.fine("Using login '" + login + "'");
                     HttpState state = client.getState();
                     postMethod.setDoAuthentication(true);
@@ -223,7 +223,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                     SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
                     final TransportMetadata tm = request.getTransportMetadata();
-                    if ( tm instanceof HttpTransportMetadata ) {
+                    if (tm instanceof HttpTransportMetadata) {
                         final HttpTransportMetadata htm = (HttpTransportMetadata)tm;
                         try {
                             InetAddress clientAddress = InetAddress.getByName(htm.getRequest().getRemoteAddr());
@@ -240,58 +240,64 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     }
                 }
                 attachCookies(client, request.getTransportMetadata(), url);
-
-                if(request.isMultipart()) {
+                if (request.isMultipart()) {
+                    long contentLength = 0;
                     StringBuffer sb = new StringBuffer();
 
                     // add modified SOAP part
                     MultipartUtil.addModifiedSoapPart(sb,
-                            XmlUtil.XML_VERSION + requestXml,
-                            request.getSoapPart(),
-                            request.getMultipartBoundary());
+                      XmlUtil.XML_VERSION + requestXml,
+                      request.getSoapPart(),
+                      request.getMultipartBoundary());
 
-                    if(multipartReader.isAtLeastOneAttachmentParsed()){
-                        if(multipartReader.getFileCache() != null) {
+                    if (multipartReader.isAtLeastOneAttachmentParsed()) {
+                        if (multipartReader.getFileCache() != null) {
 
                             // close the connection for writing data to the temp file before opening the file for read operation
                             multipartReader.closeFileCache();
 
                             // read raw attachments from a temp file
-                            inputStream = new FileInputStream(multipartReader.getFileCacheName());
-
+                            final String fileCacheName = multipartReader.getFileCacheName();
+                            inputStream = new FileInputStream(fileCacheName);
+                            contentLength += new File(fileCacheName).length();
                         } else {
 
                             // read raw attachments from memory
                             byte[] dataBuf = new byte[multipartReader.getMemoryCacheDataLength()];
+                            contentLength += dataBuf.length;
                             byte[] data = multipartReader.getMemoryCache();
-                            for(int i=0; i < dataBuf.length; i++) {
+                            for (int i = 0; i < dataBuf.length; i++) {
                                 dataBuf[i] = data[i];
                             }
                             inputStream = new ByteArrayInputStream(dataBuf);
                         }
 
                         PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream, MultipartMessageReader.SOAP_PART_BUFFER_SIZE);
-                        pushbackInputStream.unread(sb.toString().getBytes());
+                        final byte[] unreadBytes = sb.toString().getBytes();
+                        contentLength += unreadBytes.length;
+                        pushbackInputStream.unread(unreadBytes);
                         postMethod.setRequestBody(pushbackInputStream);
 
                     } else {
                         PushbackInputStream pbis = multipartReader.getPushbackInputStream();
 
                         // push the modified SOAP part back to the input stream
-                        pbis.unread(sb.toString().getBytes());
+                        final byte[] unreadBytes = sb.toString().getBytes();
+                        contentLength += unreadBytes.length;
+                        pbis.unread(unreadBytes);
 
                         // post the request using input stream
                         postMethod.setRequestBody(pbis);
                     }
-
+                    postMethod.setRequestContentLength((int)contentLength);
                 } else {
                     postMethod.setRequestBody(requestXml);
                 }
 
-                if ( hconf == null ) {
+                if (hconf == null) {
                     client.executeMethod(postMethod);
                 } else {
-                    client.executeMethod(hconf,postMethod);
+                    client.executeMethod(hconf, postMethod);
                 }
 
                 int status = postMethod.getStatusCode();
@@ -344,9 +350,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 response.runOnClose(mc);
             }
 
-            if(inputStream != null) {
+            if (inputStream != null) {
                 inputStream.close();
-                inputStream =null;
+                inputStream = null;
             }
         }
 
@@ -367,11 +373,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
     /**
      * Attach cookies received by the client to the protected service
-     * @param client the http client sender
+     *
+     * @param client            the http client sender
      * @param transportMetadata the transport metadata
      * @param url
      */
-    private void attachCookies(HttpClient client, TransportMetadata transportMetadata, URL url)  {
+    private void attachCookies(HttpClient client, TransportMetadata transportMetadata, URL url) {
         if (!(transportMetadata instanceof HttpTransportMetadata)) {
             return;
         }
@@ -388,9 +395,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         if ((cookies == null || cookies.length == 0)) {
             if (updatedCookies.size() > 0) {
                 for (int i = 0; i < updatedCookies.size(); i++) {
-                    Object o = (Object) updatedCookies.elementAt(i);
+                    Object o = (Object)updatedCookies.elementAt(i);
                     if (o instanceof Cookie) {
-                        Cookie newCookie = (Cookie) o;
+                        Cookie newCookie = (Cookie)o;
                         cookieOut = new org.apache.commons.httpclient.Cookie();
                         cookieOut.setDomain(url.getHost());
                         cookieOut.setPath(url.getPath());
@@ -432,20 +439,19 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     /**
      * Find the cookie given the name.
      *
-     * @param updatedCookies  the list of cookies
-     * @param cookieName  the given cookie name
-     * @return  Cookie  the cookie object that matches the given name, null otherwise.
-     */ 
+     * @param updatedCookies the list of cookies
+     * @param cookieName     the given cookie name
+     * @return Cookie  the cookie object that matches the given name, null otherwise.
+     */
     private Cookie findCookieByName(Vector updatedCookies, String cookieName) {
 
         Cookie cookie = null;
 
         for (int i = 0; i < updatedCookies.size(); i++) {
-            Object o = (Object) updatedCookies.elementAt(i);
-            if(o instanceof Cookie) {
-                cookie = (Cookie) o;
-                if(cookie.getName().equals(cookieName))
-                {
+            Object o = (Object)updatedCookies.elementAt(i);
+            if (o instanceof Cookie) {
+                cookie = (Cookie)o;
+                if (cookie.getName().equals(cookieName)) {
                     break;
                 } else {
                     cookie = null;

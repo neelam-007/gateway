@@ -6,9 +6,9 @@ import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import com.l7tech.proxy.processor.MessageProcessor;
 
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.File;
 
 /**
  * Begin execution of daemon-mode (no UI at all) client proxy.
@@ -35,8 +35,13 @@ public class Main {
         }
     }
 
-    /** Start a text-only client proxy and run it until it's shut down. */
+    /**
+     * Start a text-only client proxy and run it until it's shut down.
+     */
     public static void main(final String[] argv) {
+        // apache logging layer to use the jdk logger
+        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+
         // Prepare .l7tech directory before initializing logging (Bug #1288)
         new File(ClientProxy.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
 
@@ -48,10 +53,10 @@ public class Main {
         int maxThreads = getIntProperty("com.l7tech.proxy.listener.maxthreads", MAX_THREADS);
 
         clientProxy = new ClientProxy(SsgFinderImpl.getSsgFinderImpl(),
-                                      new MessageProcessor(Managers.getPolicyManager()),
-                                      port,
-                                      minThreads,
-                                      maxThreads);
+          new MessageProcessor(Managers.getPolicyManager()),
+          port,
+          minThreads,
+          maxThreads);
 
         // Hook up the Message Logger facility
         clientProxy.getRequestHandler().setRequestInterceptor(new MessageLogger());
