@@ -40,7 +40,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         initResources();
         initComponents();
         setLayout(new BorderLayout());
-        add(userPanel, BorderLayout.CENTER);
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     /**
@@ -425,6 +425,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
+        mainPanel = new javax.swing.JPanel();
         userPanel = new javax.swing.JPanel();
         userListPanel = new javax.swing.JPanel();
         userListScrollPane = new javax.swing.JScrollPane();
@@ -653,6 +654,13 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
         userPanel.add(userAttributePanel, java.awt.BorderLayout.CENTER);
         userPanel.setBorder(new EtchedBorder());
+
+        JPanel spacePanel = new JPanel();
+        spacePanel.setPreferredSize(new java.awt.Dimension(500, 10));
+
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.add(spacePanel, BorderLayout.SOUTH);
+        mainPanel.add(userPanel, BorderLayout.CENTER);
     }
 
    /**
@@ -710,6 +718,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
     private javax.swing.JScrollPane userListScrollPane;
     private javax.swing.JLabel userListTitleLabel;
     private javax.swing.JPanel userPanel;
+    private javax.swing.JPanel mainPanel;
 
     private LdapIdentityProviderConfig iProviderConfig = null;
     private SortedListModel userListModel = null;

@@ -36,7 +36,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         initResources();
         initComponents();
         setLayout(new BorderLayout());
-        add(groupPanel, BorderLayout.CENTER);
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     /**
@@ -416,6 +416,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
+        mainPanel =  new javax.swing.JPanel();
         groupPanel = new javax.swing.JPanel();
         groupListPanel = new javax.swing.JPanel();
         groupListScrollPane = new javax.swing.JScrollPane();
@@ -566,6 +567,13 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
 
         groupPanel.add(groupAttributesPanel, java.awt.BorderLayout.CENTER);
         groupPanel.setBorder(new EtchedBorder());
+
+        JPanel spacePanel = new JPanel();
+        spacePanel.setPreferredSize(new java.awt.Dimension(500, 10));
+
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.add(spacePanel, BorderLayout.SOUTH);
+        mainPanel.add(groupPanel, BorderLayout.CENTER);
     }
 
     /**
@@ -606,6 +614,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
     private javax.swing.JScrollPane groupListScrollPane;
     private javax.swing.JLabel groupListTitle;
     private javax.swing.JPanel groupPanel;
+    private javax.swing.JPanel mainPanel;
     private javax.swing.JLabel mappingTitle;
     private javax.swing.JLabel memberAttributeLabel;
     private javax.swing.JLabel memberStrategyAttributeLabel;
