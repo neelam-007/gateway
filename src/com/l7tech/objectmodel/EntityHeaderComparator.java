@@ -17,6 +17,6 @@ public class EntityHeaderComparator implements Comparator {
         if (h1.getName() == null && h2.getName() == null) return 0;
         else if (h1.getName() == null) return 1;
         else if (h2.getName() == null) return -1;
-        else return h1.getName().compareTo(h2.getName());
+        else return h1.getName().compareToIgnoreCase(h2.getName());
     }
 }
