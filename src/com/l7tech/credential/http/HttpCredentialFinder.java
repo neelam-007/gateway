@@ -6,10 +6,14 @@
 
 package com.l7tech.credential.http;
 
-import com.l7tech.credential.CredentialFinder;
+import com.l7tech.credential.*;
+import com.l7tech.message.Header;
 
 /**
  * @author alex
  */
 public class HttpCredentialFinder implements CredentialFinder {
+    public PrincipalCredentials findCredentials(Header header) throws CredentialFinderException {
+        return null;
+    }
 }
