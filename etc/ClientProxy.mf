@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
-Class-Path: lib/axis.jar lib/commons-httpclient.jar lib/kunststoff.jar lib/log4j-1.2.4.jar lib/org.mortbay.jetty.jar lib/saaj.jar lib/servlet.jar lib/jaxrpc.jar lib/commons-logging.jar lib/commons-discovery.jar lib/commons-collections.jar lib/xercesImpl.jar lib/xml-apis.jar
+Class-Path: lib/axis.jar lib/commons-httpclient.jar lib/kunststoff.jar lib/log4j-1.2.4.jar lib/org.mortbay.jetty.jar lib/saaj.jar lib/servlet.jar lib/jaxrpc.jar lib/commons-logging.jar lib/commons-discovery.jar lib/commons-collections.jar lib/xercesImpl.jar lib/xml-apis.jar lib/wsdl4j.jar
 Main-Class: com.l7tech.proxy.gui.Main
 
