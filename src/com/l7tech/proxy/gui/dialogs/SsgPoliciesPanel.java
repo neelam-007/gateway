@@ -115,9 +115,10 @@ class SsgPoliciesPanel extends JPanel {
         policyTable.getColumnModel().getColumn(0).setHeaderValue("Body Namespace");
         policyTable.getColumnModel().getColumn(1).setHeaderValue("SOAPAction");
         policyTable.getColumnModel().getColumn(2).setHeaderValue("Proxy URI");
-        policyTable.getColumnModel().getColumn(3).setHeaderValue("Locked");
+        policyTable.getColumnModel().getColumn(3).setHeaderValue("Lock");
         policyTable.getColumnModel().getColumn(3).setCellRenderer(policyTable.getDefaultRenderer(Boolean.class));
         policyTable.getColumnModel().getColumn(3).setCellEditor(policyTable.getDefaultEditor(Boolean.class));
+        policyTable.getColumnModel().getColumn(3).setMaxWidth(35);
         policyTable.getTableHeader().setReorderingAllowed(false);
         JScrollPane policyTableSp = new JScrollPane(policyTable);
         policyTableSp.setPreferredSize(new Dimension(120, 120));
@@ -192,6 +193,7 @@ class SsgPoliciesPanel extends JPanel {
                                                                                              "Import Policy: Policy Attachment Key",
                                                                                              true);
                             pakDlg.setPolicyAttachmentKey(getSelectedPolicy());
+                            Utilities.centerOnScreen(pakDlg);
                             pakDlg.show();
                             PolicyAttachmentKey pak = pakDlg.getPolicyAttachmentKey();
                             if (pak != null) {
@@ -277,6 +279,26 @@ class SsgPoliciesPanel extends JPanel {
     public JButton getChangeButton() {
         if (changeButton == null) {
             changeButton = new JButton("Edit");
+            changeButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    PolicyAttachmentKey pak = getSelectedPolicy();
+                    if (pak == null) return;
+                    Policy policy = policyCache.getPolicy(pak);
+                    if (policy == null) return;
+                    PolicyAttachmentKeyDialog pakDlg = new PolicyAttachmentKeyDialog(Gui.getInstance().getFrame(),
+                                                                                     "Edit Policy Attachment Key",
+                                                                                     true);
+                    pakDlg.setPolicyAttachmentKey(pak);
+                    Utilities.centerOnScreen(pakDlg);
+                    pakDlg.show();
+                    PolicyAttachmentKey newPak = pakDlg.getPolicyAttachmentKey();
+                    if (newPak == null || newPak.equals(pak)) return;
+                    policyCache.flushPolicy(pak);
+                    policyCache.setPolicy(newPak, policy);
+                    lastSelectedPolicy = newPak;
+                    updatePolicyPanel();
+                }
+            });
         }
         return changeButton;
     }
@@ -284,6 +306,14 @@ class SsgPoliciesPanel extends JPanel {
     public JButton getDeleteButton() {
         if (deleteButton == null) {
             deleteButton = new JButton("Delete");
+            deleteButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    PolicyAttachmentKey pak = getSelectedPolicy();
+                    if (pak == null) return;
+                    policyCache.flushPolicy(pak);
+                    updatePolicyPanel();
+                }
+            });
         }
         return deleteButton;
     }
@@ -363,10 +393,9 @@ class SsgPoliciesPanel extends JPanel {
         while (erow < policyTree.getRowCount()) {
             policyTree.expandRow(erow++);
         }
-        boolean havePak = policy != null;
-        getChangeButton().setEnabled(havePak);
-        getDeleteButton().setEnabled(havePak);
-        getExportButton().setEnabled(havePak);
+        getChangeButton().setEnabled(policy != null);
+        getExportButton().setEnabled(policy != null);
+        getDeleteButton().setEnabled(policy != null && !policy.isPersistent());
     }
 
     /** Update the policy display panel with information from the Ssg bean. */
