@@ -5,9 +5,9 @@ import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.panels.IdentityProviderDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
@@ -91,9 +91,9 @@ public class NewProviderAction extends NodeAction {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     EntityHeader eh = (EntityHeader)ev.getEntity();
-                    JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+                    JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(IdentityProvidersTree.NAME);
                     if (tree == null) {
-                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                        log.log(Level.WARNING, "Unable to reach the identity tree.");
                         return;
                     }
                     if (tree.hasBeenExpanded(new TreePath(node.getPath()))) {
