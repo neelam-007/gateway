@@ -7,13 +7,14 @@ import com.l7tech.common.util.UptimeMetrics;
 import java.io.IOException;
 import java.rmi.RemoteException;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Oct 23, 2003
- * Time: 1:38:41 PM
- * To change this template use Options | File Templates.
+/*
+ * Test stub for Log Admin interface
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class LogAdminStub implements LogAdmin {
 
     public String[] getSystemLog(int offset, int size) throws RemoteException {
