@@ -51,6 +51,8 @@ public class SoapUtil {
     public static final String SIGNED_INFO_EL_NAME = "SignedInfo";
     public static final String REFERENCE_EL_NAME = "Reference";
 
+    public static final String REFERENCE_URI_ATTR_NAME = "URI";
+
     // Misc
     public static final String FC_CLIENT = "Client";
     public static final String FC_SERVER = "Server";

@@ -119,22 +119,57 @@ public abstract class SecurityProcessor {
      * The class represents the result of the security operation
      */
     public static class Result {
-        private Document document;
-        private boolean preconditionMatched;
-        private X509Certificate[] certificateChain;
+        public static class Type {
+            public static Type OK = new Type(0, "Ok");
+            public static Type NOT_APPLICABLE = new Type(1,"Assertion is not applicable to this request");
+            public static Type POLICY_VIOLATION = new Type(2,"This request violates the policy. Update policy and retry");
+            public static Type ERROR = new Type(3,"This request is erroneous and should not be retried");
+
+            public final int code;
+            public final String desc;
+
+            private Type(int code, String desc) {
+                this.code = code;
+                this.desc = desc;
+            }
+        }
+
+        private final Document document;
+        private final Type type;
+        private final X509Certificate[] certificateChain;
+        private final Throwable throwable;
+
+        static Result ok(Document document, X509Certificate[] certificateChain) {
+            return new Result(document, Type.OK, certificateChain, null);
+        }
+
+        static Result error(Throwable throwable) {
+            return new Result(null, Type.ERROR, null, throwable );
+        }
+
+        static Result policyViolation(Throwable throwable) {
+            return new Result(null, Type.POLICY_VIOLATION, null, throwable);
+        }
+
+        static Result notApplicable() {
+            return new Result(null, Type.NOT_APPLICABLE, null, null);
+        }
 
         /**
          * create the result instance with the resulting document and
          * certificate
          *
          * @param document the document, result of the processing
-         * @param preconditionMatched indicates whether this request satisfied the Xpath precondition and therefore whether the certificateChain should be non-null
+         * @param type the type of the indicates whether this request satisfied the Xpath precondition and therefore whether the certificateChain should be non-null
          * @param certificateChain the certificate that was associated with the operation, or null if the request did not satisfy the Xpath precondition
+         * @param throwable the throwable responsible for this result, if any.
+         *
          */
-        Result(Document document, boolean preconditionMatched, X509Certificate[] certificateChain ) {
+        Result(Document document, Type type, X509Certificate[] certificateChain, Throwable throwable ) {
             this.document = document;
             this.certificateChain = certificateChain;
-            this.preconditionMatched = preconditionMatched;
+            this.type = type;
+            this.throwable = throwable;
         }
 
         /** @return the result document */
@@ -142,9 +177,14 @@ public abstract class SecurityProcessor {
             return document;
         }
 
-        /** @return true if the request satisified the XPath precondition */
-        public boolean isPreconditionMatched() {
-            return preconditionMatched;
+        /** @return a {@link Type} instance indicating what type of result this is */
+        public Type getType() {
+            return type;
+        }
+
+        /** @return the Throwable responsible for this result, if any. */
+        public Throwable getThrowable() {
+            return throwable;
         }
 
         /**

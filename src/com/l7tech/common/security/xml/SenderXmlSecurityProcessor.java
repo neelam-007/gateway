@@ -146,7 +146,10 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                 signReferenceIdSuffix = doSignElement(signReferenceIdSuffix, document, element, elementXpath);
             }
 
-            return new Result(document, preconditionMatched, signerInfo.getCertificateChain());
+            return preconditionMatched
+                        ? Result.ok(document, signerInfo.getCertificateChain())
+                        : Result.notApplicable();
+            
         } catch (SignatureStructureException e) {
             SignatureException se = new SignatureException("Signing error");
             se.initCause(e);

@@ -162,7 +162,7 @@ public class XmlMangler {
 
         // Add Security element to header, referencing the encrypted body
         Element dataRefEl = document.createElementNS(SoapUtil.XMLENC_NS, "xenc:DataReference");
-        dataRefEl.setAttribute("URI", referenceId);
+        dataRefEl.setAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME, referenceId);
 
         Element refEl = document.createElementNS(SoapUtil.XMLENC_NS, "xenc:ReferenceList");
         refEl.appendChild(dataRefEl);
@@ -248,7 +248,7 @@ public class XmlMangler {
 
             for (Iterator j = dataRefEls.iterator(); j.hasNext();) {
                 Element dataRefEl = (Element)j.next();
-                String dataRefUri = dataRefEl.getAttribute("URI");
+                String dataRefUri = dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME);
                 if ( dataRefUri != null && dataRefUri.equals(messagePartId ) ) {
                     // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
                     // soapMsg document
@@ -305,7 +305,7 @@ public class XmlMangler {
         if (dataRefEl == null)
             throw new XMLSecurityElementNotFoundException("no DataReference tag in the message");
         AdHocIdResolver idResolver = new AdHocIdResolver();
-        Element encryptedDataEl = idResolver.resolveID(soapMsg, dataRefEl.getAttribute("URI"));
+        Element encryptedDataEl = idResolver.resolveID(soapMsg, dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME));
 
         // Strip out processed DataReferece element
         Element RefListEl = (Element)dataRefEl.getParentNode();

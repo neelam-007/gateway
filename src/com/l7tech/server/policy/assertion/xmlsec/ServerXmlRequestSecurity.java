@@ -92,14 +92,30 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         SecurityProcessor verifier = SecurityProcessor.getVerifier(xmlsecSession, key, elements);
 
         try {
+            // TODO clean up sender xml security processor to behave like receiver (throwless return)
             SecurityProcessor.Result result = verifier.processInPlace(soapmsg);
 
-            final X509Certificate[] xmlCertChain = result.getCertificateChain();
-            if ( !result.isPreconditionMatched() ) {
+            // Handle unsuccessful results
+            if ( result.getType() == SecurityProcessor.Result.Type.NOT_APPLICABLE ) {
                 logger.log( Level.INFO, "No XML security expected in this request" );
                 return AssertionStatus.NONE;
+            } else if ( result.getType() == SecurityProcessor.Result.Type.POLICY_VIOLATION ) {
+                if (result.getThrowable() != null)
+                    logger.log( Level.INFO, result.getType().desc, result.getThrowable() );
+                else
+                    logger.log( Level.INFO, result.getType().desc );
+                response.setAuthenticationMissing(true);
+                response.setPolicyViolated(true);
+                return AssertionStatus.AUTH_REQUIRED;
+            } else if ( result.getType() == SecurityProcessor.Result.Type.ERROR ) {
+                if (result.getThrowable() != null)
+                    logger.log( Level.WARNING, result.getType().desc, result.getThrowable() );
+                else
+                    logger.log( Level.WARNING, result.getType().desc );
+                return AssertionStatus.FAILED;
             }
 
+            final X509Certificate[] xmlCertChain = result.getCertificateChain();
             X500Name x500name = new X500Name(xmlCertChain[0].getSubjectX500Principal().getName());
             String certCN = x500name.getCommonName();
             logger.finest("cert extracted from digital signature for user " + certCN);

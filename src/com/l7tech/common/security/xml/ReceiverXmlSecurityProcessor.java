@@ -6,29 +6,35 @@
  */
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.util.CommonLogger;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CommonLogger;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
-import org.jaxen.JaxenException;
+import com.ibm.xml.dsig.util.AdHocIDResolver;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.jaxen.dom.DOMXPath;
+import org.jaxen.JaxenException;
 import org.xml.sax.SAXException;
 
+import javax.xml.soap.SOAPConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.KeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 class ReceiverXmlSecurityProcessor extends SecurityProcessor {
     static Logger logger = CommonLogger.getSystemLogger();
 
     private Key decryptionKey;
+    private long keyName;
+    private DOMXPath encryptedElementXpath;
 
     /**
      * Create the new instance with the signer information, session, optional
@@ -41,9 +47,59 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
      *                 if the encryption is requested.
      * @param elements the security elements
      */
-    ReceiverXmlSecurityProcessor(Session session, Key key, ElementSecurity[] elements) {
+    ReceiverXmlSecurityProcessor(Session session, Key key, long keyName, ElementSecurity[] elements) {
         super(elements);
+        this.keyName = keyName;
         this.decryptionKey = key;
+    }
+
+    private synchronized DOMXPath getEncryptedElementXpath() {
+        if ( encryptedElementXpath == null ) {
+            try {
+                String pattern = "//[xenc:EncryptedData/xenc:KeyInfo/xenc:KeyName='"+keyName+"']";
+                encryptedElementXpath = new DOMXPath(pattern);
+                encryptedElementXpath.addNamespace("xenc", SoapUtil.XMLENC_NS);
+            } catch ( JaxenException e ) {
+                throw new RuntimeException( "Internal server error: Invalid XPath pattern", e );
+            }
+        }
+
+        return encryptedElementXpath;
+    }
+
+
+    private static class SignedElementInfo {
+        final String id;
+        final Element element;
+        final Element securityHeader;
+        final boolean validityAchieved;
+        final X509Certificate[] certificateChain;
+        final Throwable throwable;
+        
+        SignedElementInfo(String id,
+                          Element element,
+                          Element securityHeader,
+                          X509Certificate[] certificateChain,
+                          Throwable throwable) {
+            this.id = id;
+            this.element = element;
+            this.securityHeader = securityHeader;
+            this.validityAchieved = certificateChain != null;
+            this.certificateChain = certificateChain;
+            this.throwable = throwable;
+            if ((throwable == null) == (certificateChain == null))
+                throw new IllegalArgumentException("Must have either throwable or certificateChain but not both");
+        }
+    }
+
+    private static class EncryptedElementInfo {
+        final Element element;
+        final Throwable throwable;
+
+        EncryptedElementInfo( Element element, Throwable throwable) {
+            this.element = element;
+            this.throwable = throwable;
+        }
     }
 
     /**
@@ -59,8 +115,188 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
      *                                    during element processing such as invalid or missing security
      *                                    properties, XPath error etc.
      */
-    public Result processInPlace(Document document)
-      throws SecurityProcessorException, GeneralSecurityException, IOException {
+    public SecurityProcessor.Result processInPlace_pseudo( Document document )
+            throws SecurityProcessorException, GeneralSecurityException, IOException {
+        /*
+        for each node in cipherDocument.signedElements:
+            if checkSignature:
+                successfulSigList += ( node )
+            else:
+                failedSigList += (node, throwable)
+        */
+        SoapMsgSigner.normalizeDoc( document );
+        AdHocIDResolver idResolver = new AdHocIDResolver(document);           
+        List signedElementInfos = new ArrayList();
+        try {
+            Element header = XmlUtil.findOnlyOneChildElementByName( document.getDocumentElement(),
+                                                                                    SOAPConstants.URI_NS_SOAP_ENVELOPE,
+                                                                                    SoapUtil.HEADER_EL_NAME );
+            List signatureHeaders = XmlUtil.findChildElementsByName( header,
+                                                                     SoapUtil.DIGSIG_URI,
+                                                                     SoapUtil.SIGNATURE_EL_NAME );
+            for ( Iterator i = signatureHeaders.iterator(); i.hasNext(); ) {
+                Element signature = (Element)i.next();
+
+                Element signedInfo = XmlUtil.findOnlyOneChildElementByName( signature,
+                                                                            SoapUtil.DIGSIG_URI,
+                                                                            SoapUtil.SIGNED_INFO_EL_NAME );
+
+                Element reference = XmlUtil.findOnlyOneChildElementByName( signedInfo,
+                                                                           SoapUtil.DIGSIG_URI,
+                                                                           SoapUtil.REFERENCE_EL_NAME );
+
+                String signedElementId = reference.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME);
+                if (signedElementId != null && signedElementId.length() > 0) {
+                    String id = signedElementId.startsWith("#") ? signedElementId.substring(1) : signedElementId;
+                    Element element = idResolver.resolveID( document, id );
+                    if (element == null) {
+                        String msg = "Signature header referred to nonexistent element ID " + id;
+                        logger.warning( msg );
+                        return Result.error( new SecurityProcessorException(msg) );
+                    }
+
+                    X509Certificate[] certificateChain = null;
+                    Throwable throwable = null;
+                    try {
+                        certificateChain = SoapMsgSigner.validateSignature( document, element, signature );
+                    } catch ( SignatureNotFoundException e ) {
+                        throwable = e;
+                    } catch ( InvalidSignatureException e ) {
+                        return Result.error( e );
+                    }
+
+                    SignedElementInfo sei = new SignedElementInfo(id, element, signature, certificateChain, throwable);
+                    signedElementInfos.add( sei );
+                }
+            }
+        } catch ( XmlUtil.MultipleChildElementsException e ) {
+            return Result.error(new SecurityProcessorException("Multiple " + e.getName() + " elements found", e));
+        }
+
+
+        /*
+        for each node in cipherDoc.encryptedElements:
+            if shouldBeAbleToDecryptThis:
+                if decrypt:
+                    successfulEncList += ( node )
+                else:
+                    failedEncList += ( node, throwable )
+        */
+
+        ArrayList encryptedElementInfos = new ArrayList();
+        try {
+            List xpathResult = getEncryptedElementXpath().selectNodes( document );
+            if ( xpathResult != null && xpathResult.size() > 0 ) {
+                for ( Iterator i = xpathResult.iterator(); i.hasNext(); ) {
+                    Object probablyElement = i.next();
+                    if ( probablyElement instanceof Element ) {
+                        Element encryptedElement = (Element)probablyElement;
+                        Throwable throwable = null;
+                        try {
+                            XmlMangler.decryptElement( encryptedElement, decryptionKey );
+                        } catch ( ParserConfigurationException e ) {
+                            return Result.error(e);
+                        } catch ( SAXException e ) {
+                            return Result.error(e);
+                        } catch ( XMLSecurityElementNotFoundException e ) {
+                            throwable = e;
+                        }
+
+                        EncryptedElementInfo eei = new EncryptedElementInfo( encryptedElement, throwable );
+                        encryptedElementInfos.add(eei);
+                    } else {
+                        return Result.error(new SecurityProcessorException("XPath query was expected to find an Element, but found a " +
+                                                                           probablyElement.getClass().getName() ));
+                    }
+                }
+            }
+        } catch ( JaxenException e ) {
+            return Result.error(e);
+        }
+
+        /*
+        for each es in ElementSecurity[]:
+            if !precondition.matches(clearDoc):
+                continue;
+            cipherNode = cipherDoc.xpath(es.elementXpath)
+
+            if !successfulSigList.contains(cipherNode):
+                throw failedEncList.get(cipherNode);
+
+            if es.isEncryption:
+                if !successfulEncList.contains(cipherNode):
+                    throw;
+        */
+        for ( int i = 0; i < elements.length; i++ ) {
+            ElementSecurity elementSecurity = elements[i];
+            XpathExpression preconditionXpath = elementSecurity.getPreconditionXpath();
+
+            if ( preconditionXpath == null ) {
+                // TODO
+            } else {
+                try {
+                    XpathEvaluator preconditionEval = XpathEvaluator.newEvaluator(document,preconditionXpath.getNamespaces());
+                    List preconditionMatches = preconditionEval.select( preconditionXpath.getExpression() );
+                    if ( preconditionMatches == null || preconditionMatches.size() == 0 )
+                        continue;
+
+                    XpathExpression elementXpath = elementSecurity.getElementXpath();
+
+                    // precondition satisfied
+                    XpathEvaluator elementEval = XpathEvaluator.newEvaluator(document, elementXpath.getNamespaces());
+                    List elementMatches = elementEval.select(elementXpath.getExpression());
+                    if ( elementMatches == null || elementMatches.size() == 0 ) {
+                        return Result.error(new SecurityProcessorException("Precondition matched but element not found"));
+                    }
+                    // TODO: What if multiple actionable elements are found?
+                    if (elementMatches.size() > 1)
+                        logger.warning("Multiple elements match receiver XML xpath; ignoring all but the first one " +
+                                       "(xpath = " + elementXpath.getExpression());
+                    Element targetElement = (Element) elementMatches.get(0);
+
+                    SignedElementInfo info = null;
+                    for ( Iterator sigi = signedElementInfos.iterator(); sigi.hasNext(); ) {
+                        SignedElementInfo signedElementInfo = (SignedElementInfo) sigi.next();
+                        if (targetElement == signedElementInfo.element) {
+                            info = signedElementInfo;
+                            break;
+                        }
+                    }
+
+                    if (info == null) {
+                        // This element was supposed to be signed, but we didn't find it when we
+                        // processed all the signed elements.
+                        return Result.policyViolation(new SecurityProcessorException("Element " + targetElement.getLocalName() + " was not signed"));
+                    }
+
+                    if (!info.validityAchieved) {
+                        
+                    }
+
+
+                } catch ( JaxenException e ) {
+                    return Result.error(e);
+                }
+            }
+        }
+
+        /*
+        if successfulSigList.contains(Envelope):
+            return new Result(document, preconditionMatched, documentCertificates);
+
+            return new Result( cert )
+        */
+        return null;
+    }
+
+    /**
+     * Process the document according to the security rules.
+     *
+     * @param document the input document to process
+     * @return the security processor result {@link SecurityProcessor.Result}
+     * @throws java.io.IOException        on io error such as xml processing
+     */
+    public Result processInPlace(Document document) throws IOException {
         boolean envelopeProcessed = false;
 
         try {
@@ -153,23 +389,19 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 if (elementXpath != null) {
                     List nodes = XpathEvaluator.newEvaluator(document,
                                                              elementXpath.getNamespaces()).select(elementXpath.getExpression());
-                    if (nodes.isEmpty()) {
-                        if (!preconditionMatched) continue; // Request wasn't encrypted; it's just a non-matching request
-                        final String message = "The XPath result is empty '" + elementXpath.getExpression() + "'";
-                        String logmessage = message + "\nMessage is\n" + XmlUtil.documentToString(document);
-                        logger.warning(logmessage);
-                        throw new SecurityProcessorException(message);
-                    }
+                    if (nodes.isEmpty())
+                        continue; // Request wasn't encrypted; it's just a non-matching request
+
                     messagePartElement = (Element)nodes.get(0);
                 } else {
                     messagePartElement = document.getDocumentElement();
                     envelopeProcessed = true; //signal to ignore everything else. Should scream if more elements exist?
                 }
-                // verifiy element signature
 
                 SignatureNotFoundException signatureNotFoundException = null;
                 XMLSecurityElementNotFoundException xmlSecurityElementNotFoundException = null;
 
+                // verify element signature
                 try {
                     // verify that this cert is signed with the root cert of this ssg
                     documentCertificates = SoapMsgSigner.validateSignature(document, messagePartElement);
@@ -237,29 +469,22 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
 
                 // Bug 838: Precondition must have matched; make sure these two exceptions get propagated
-                if ( signatureNotFoundException != null ) throw signatureNotFoundException;
-                if ( xmlSecurityElementNotFoundException != null ) throw xmlSecurityElementNotFoundException;
+                if ( signatureNotFoundException != null )
+                    return Result.policyViolation(signatureNotFoundException);
+                if ( xmlSecurityElementNotFoundException != null )
+                    return Result.policyViolation(xmlSecurityElementNotFoundException);
 
                 logger.fine("response message element decrypted");
             }
 
-            return new Result(document, preconditionMatched, documentCertificates);
-        } catch (JaxenException e) {
-            throw new SecurityProcessorException("XPath error", e);
-        } catch (SignatureNotFoundException e) {
-            SignatureException se = new SignatureException("Signature not found");
-            se.initCause(e);
-            throw se;
-        } catch (InvalidSignatureException e) {
-            SignatureException se = new SignatureException("Invalid signature");
-            se.initCause(e);
-            throw se;
-        } catch (ParserConfigurationException e) {
-            throw new SecurityProcessorException("Xml parser configuration error", e);
-        } catch (SAXException e) {
-            throw new SecurityProcessorException("Xml parser error", e);
-        } catch (XMLSecurityElementNotFoundException e) {
-            throw new SecurityProcessorException("Request does not contain security element", e);
+            return preconditionMatched ?
+                    Result.ok(document, documentCertificates) :
+                    Result.notApplicable();
+
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            return Result.error( e );
         }
     }
 
@@ -280,4 +505,5 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
             throw new KeyException("null decryption key, and decryption requested");
         }
     }
+
 }

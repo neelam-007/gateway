@@ -53,7 +53,7 @@ public class SoapMsgSignerTest extends TestCase {
         signAndEncryptPrice( testDoc );
 
         assertTrue( encryptedElementsEqual( testDoc, "price", getKeyReq() ));
-   }
+    }
 
     public void testSign3Elements() throws Exception {
         Document testDoc = getCleartextDocument();

@@ -2,12 +2,11 @@ package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
+import com.l7tech.common.util.CommonLogger;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CommonLogger;
 import org.w3c.dom.*;
 
-import java.lang.reflect.Method;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -148,7 +147,7 @@ public final class SoapMsgSigner {
     /**
      * Verify that a valid signature is included and that the bodyElement is signed.
      * The validity of the signer's cert is NOT verified against the local root authority.
-     * 
+     *
      * @param soapMsg the soap message that potentially contains a digital signature
      * @param bodyElement the signed bodyElement
      * @return the cert chain used as part of the message's signature (not checked against any authority) never null
@@ -157,16 +156,37 @@ public final class SoapMsgSigner {
      * @throws com.l7tech.common.security.xml.InvalidSignatureException
      *          if the signature is invalid, not in an expected format or is missing information
      */
-    public static X509Certificate[] validateSignature(Document soapMsg, final Element bodyElement)
+    public static X509Certificate[] validateSignature(Document soapMsg, final Element bodyElement )
       throws SignatureNotFoundException, InvalidSignatureException {
         normalizeDoc(soapMsg);
-
+        
         // find signature bodyElement
         final Element sigElement = getSignatureHeaderElement(soapMsg, bodyElement);
         if (sigElement == null) {
             throw new SignatureNotFoundException("No signature bodyElement in this document");
         }
 
+        return validateSignature( soapMsg, bodyElement, sigElement );
+    }
+
+    /**
+     * Verify that a valid signature is included and that the bodyElement is signed.
+     * The validity of the signer's cert is NOT verified against the local root authority.
+     * Caller is expected to have already called {@link #normalizeDoc(org.w3c.dom.Document)}.
+     *
+     * @param soapMsg the soap message that potentially contains a digital signature
+     * @param bodyElement the signed bodyElement
+     * @param sigElement the Signature element from the SOAP Security Header
+     * @return the cert chain used as part of the message's signature (not checked against any authority) never null
+     * @throws com.l7tech.common.security.xml.SignatureNotFoundException
+     *          if no signature is found in document
+     * @throws com.l7tech.common.security.xml.InvalidSignatureException
+     *          if the signature is invalid, not in an expected format or is missing information
+     */
+    public static X509Certificate[] validateSignature(Document soapMsg,
+                                                      final Element bodyElement,
+                                                      final Element sigElement)
+      throws SignatureNotFoundException, InvalidSignatureException {
         SignatureContext sigContext = new SignatureContext();
         AdHocIDResolver idResolver = new AdHocIDResolver(soapMsg);
         sigContext.setIDResolver(idResolver);
@@ -262,7 +282,7 @@ public final class SoapMsgSigner {
                 Element reference = XmlUtil.findOnlyOneChildElementByName( signedInfo,
                                                                            SoapUtil.DIGSIG_URI,
                                                                            SoapUtil.REFERENCE_EL_NAME );
-                String uri = reference.getAttribute( "URI" );
+                String uri = reference.getAttribute( SoapUtil.REFERENCE_URI_ATTR_NAME );
                 if ( uri == null || !uri.startsWith("#") || uri.length() < 2 ) {
                     logger.warning( "SignedInfo/Reference/URI is missing or points to non-local body part" );
                     return null;
@@ -298,7 +318,7 @@ public final class SoapMsgSigner {
      * ssg and the CP causes \n characters to be inserted in certain text nodes that contain space char
      * as well as empty text nodes being created all over the place.
      */
-    private static void normalizeDoc(Document doc) {
+    public static void normalizeDoc(Document doc) {
         // fla note, IBM's Normalizer.normalize is useless
         filterOutEmptyTextNodesAndNormalizeStrings(doc.getDocumentElement());
     }

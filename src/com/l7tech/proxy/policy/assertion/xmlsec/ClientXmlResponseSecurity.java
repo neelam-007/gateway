@@ -107,7 +107,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             SecurityProcessor.Result result = verifier.processInPlace(doc);
 
             // If this assertion doesn't apply to this reply, we are done
-            if (!result.isPreconditionMatched())
+            if (result.getType() == SecurityProcessor.Result.Type.NOT_APPLICABLE)
                 return AssertionStatus.NONE;
 
             Long responsenonce = SecureConversationTokenHandler.takeNonceFromDocument(doc);
@@ -150,19 +150,6 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             throw new RuntimeException("VM is misconfigured", e);
         }
         throw new RuntimeException("Response processing error", e);
-    }
-
-    /**
-     * Check whether the encryption properties are supported
-     *
-     * @param elementSecurity the security element specifying the security properties
-     * @throws ResponseValidationException on unsupported properties
-     */
-    private static void checkEncryptionProperties(ElementSecurity elementSecurity) throws ResponseValidationException {
-        if (!"AES".equals(elementSecurity.getCipher()))
-            throw new ResponseValidationException("Unable to decrypt response: unsupported cipher: " + elementSecurity.getCipher());
-        if (128 != elementSecurity.getKeyLength())
-            throw new ResponseValidationException("Unable to decrypt response: unsupported key length: " + elementSecurity.getKeyLength());
     }
 
     public String getName() {
