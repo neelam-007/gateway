@@ -249,11 +249,6 @@ class PathValidator {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by an WSS Signature assertion.", null));
             }
-        } else if(a instanceof ResponseWssIntegrity) {
-            if (!seenRouting) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "WSS Response Integrity occurs after routing assertion.", null));
-            }
         } else if (a instanceof ResponseWssConfidentiality) {
             // REASON FOR THIS RULE:
             // the server needs to encrypt a symmetric key for the recipient
