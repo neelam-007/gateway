@@ -97,6 +97,11 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             SecurityProcessor.Result result = verifier.processInPlace(soapmsg);
 
             final X509Certificate[] xmlCertChain = result.getCertificateChain();
+            if ( !result.isPreconditionMatched() ) {
+                logger.log( Level.INFO, "No XML security expected in this request" );
+                return AssertionStatus.NONE;
+            }
+
             X500Name x500name = new X500Name(xmlCertChain[0].getSubjectX500Principal().getName());
             String certCN = x500name.getCommonName();
             logger.finest("cert extracted from digital signature for user " + certCN);
@@ -199,7 +204,6 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         ((XmlRequest)request).setDocument(soapmsg);
 
         return AssertionStatus.NONE;
-
     }
 
     private synchronized X509Certificate getRootCertificate() throws CertificateException, IOException {

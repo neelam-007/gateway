@@ -62,6 +62,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
 
         try {
             X509Certificate[] documentCertificates = null;
+            boolean preconditionMatched = false;
             for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
                 ElementSecurity elementSecurity = elements[i];
                 envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
@@ -73,6 +74,8 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                     if (nodes.isEmpty()) {
                         logger.fine("The XPath precondition result is empty '" + xpath.getExpression() + "' skipping");
                         continue;
+                    } else {
+                        preconditionMatched = true;
                     }
                 }
 
@@ -108,7 +111,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
                 logger.fine("response message element decrypted");
             }
-            return new Result(document, documentCertificates);
+            return new Result(document, preconditionMatched, documentCertificates);
         } catch (JaxenException e) {
             throw new SecurityProcessorException("XPath error", e);
         } catch (SignatureNotFoundException e) {

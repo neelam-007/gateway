@@ -120,6 +120,7 @@ public abstract class SecurityProcessor {
      */
     public static class Result {
         private Document document;
+        private boolean preconditionMatched;
         private X509Certificate[] certificateChain;
 
         /**
@@ -127,16 +128,23 @@ public abstract class SecurityProcessor {
          * certificate
          *
          * @param document the document, result of the processing
-         * @param certificateChain the certificate that was associated with the operation
+         * @param preconditionMatched indicates whether this request satisfied the Xpath precondition and therefore whether the certificateChain should be non-null
+         * @param certificateChain the certificate that was associated with the operation, or null if the request did not satisfy the Xpath precondition
          */
-        Result(Document document, X509Certificate[] certificateChain) {
+        Result(Document document, boolean preconditionMatched, X509Certificate[] certificateChain ) {
             this.document = document;
             this.certificateChain = certificateChain;
+            this.preconditionMatched = preconditionMatched;
         }
 
         /** @return the result document */
         public Document getDocument() {
             return document;
+        }
+
+        /** @return true if the request satisified the XPath precondition */
+        public boolean isPreconditionMatched() {
+            return preconditionMatched;
         }
 
         /**

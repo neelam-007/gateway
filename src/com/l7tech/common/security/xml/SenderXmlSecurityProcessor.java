@@ -76,6 +76,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
             int encReferenceIdSuffix = 1;
             int signReferenceIdSuffix = 1;
             boolean envelopeProcessed = false;
+            boolean preconditionMatched = false;
 
             for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
                 ElementSecurity elementSecurity = elements[i];
@@ -87,6 +88,8 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                     if (nodes.isEmpty()) {
                         logger.fine("The XPath precondition result is empty '" + xpath.getExpression() + "' skipping");
                         continue;
+                    } else {
+                        preconditionMatched = true;
                     }
                 }
 
@@ -141,7 +144,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                 ++signReferenceIdSuffix;
                 logger.fine("signed element for XPath " + xpath.getExpression());
             }
-            return new Result(document, signerInfo.getCertificateChain());
+            return new Result(document, preconditionMatched, signerInfo.getCertificateChain());
         } catch (SignatureStructureException e) {
             SignatureException se = new SignatureException("Signing error");
             se.initCause(e);
