@@ -34,6 +34,5 @@ public interface User extends Principal {
     String getEmail();
     String getDepartment();
     String getSubjectDn();
-
     UserBean getUserBean();
 }

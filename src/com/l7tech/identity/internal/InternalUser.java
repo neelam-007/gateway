@@ -4,6 +4,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.objectmodel.InvalidPasswordException;
 
 /**
  * User from the internal identity provider.
@@ -40,7 +41,22 @@ public class InternalUser extends PersistentUser {
         setEmail(imp.getEmail());
         setFirstName(imp.getFirstName());
         setLastName(imp.getLastName());
-        setPassword( imp.getPassword() );
+        try {
+            setPassword(imp.getPassword());
+        } catch (InvalidPasswordException e) {
+            throw new RuntimeException(e); // cannot happen
+        }
         setSubjectDn( imp.getSubjectDn() );
+    }
+
+    public void setPassword(String password) throws InvalidPasswordException {
+        if (password == null) throw new InvalidPasswordException("Empty password is not valid");
+        if (!UserBean.isAlreadyEncoded(password)) {
+            if (password.length() < 6) throw new InvalidPasswordException("Password must be at least 6 " +
+                                                                          "characters long");
+            if (password.length() > 32) throw new InvalidPasswordException("Password must be no longer " +
+                                                                           "than 32 characters long");
+        }
+        bean.setPassword(password);
     }
 }

@@ -10,7 +10,6 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
-import com.l7tech.common.Authorizer;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
@@ -499,6 +498,8 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
                 userManager.update(dbuser);
             }
         } catch (FindException e) {
+            throw new UpdateException("error resetting user's password", e);
+        } catch (InvalidPasswordException e) {
             throw new UpdateException("error resetting user's password", e);
         } finally {
             try {

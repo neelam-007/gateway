@@ -91,7 +91,11 @@ public class SslUtils {
             int result = hc.executeMethod(post);
             CurrentRequest.setPeerSsg(null);
             log.info("HTTPS POST to password change service returned HTTP status " + result);
-            if (result == 400) throw new BadPasswordFormatException("Password change service rejected your new password (HTTP status " + result + ")");
+            if (result == 400) {
+                byte[] response = post.getResponseBody();
+                throw new BadPasswordFormatException("Password change service rejected your new password " +
+                                                     "(HTTP status " + result + "). " + new String(response));
+            }
             if (result == 401) throw new BadCredentialsException("Password change service indicates invalid current credentials (HTTP status " + result + ")");
             if (result == 403) throw new PasswordNotWritableException("Password change service is unable to change the password for this account (HTTP status " + result + ")");
             if (result != 200) throw new IOException("HTTPS POST to password change service returned HTTP status " + result);

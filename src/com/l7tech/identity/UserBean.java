@@ -65,7 +65,7 @@ public class UserBean implements User, Serializable {
         _providerId = providerId;
     }
 
-    public void setPassword(String password) throws  IllegalStateException {
+    public void setPassword(String password) throws IllegalStateException {
         if ( password != null && !isAlreadyEncoded(password)) {
             if (_login == null) throw new IllegalStateException("login must be set prior to encoding the password");
             _password = encodePasswd(_login, password);
@@ -89,7 +89,7 @@ public class UserBean implements User, Serializable {
         _department = department;
     }
 
-    private boolean isAlreadyEncoded(String arg) {
+    public static boolean isAlreadyEncoded(String arg) {
         if (arg == null || arg.length() != 32) return false;
         String hexmembers = "0123456789abcdef";
         for (int i = 0; i < arg.length(); i++) {

@@ -447,8 +447,8 @@ public class SsgListPanel extends JPanel {
                                 return;
                             } catch (BadPasswordFormatException e1) {
                                 log.log(Level.WARNING, e1.getMessage(), e1);
-                                Gui.errorMessage("Unable to change your password -- the Gateway has rejected your " +
-                                                 "new password.");
+                                Gui.errorMessage("Unable to change your password. The Gateway has rejected your " +
+                                                 "new password. \n" + e1.getMessage());
                                 return;
                             } catch (SslUtils.PasswordNotWritableException e1) {
                                 log.log(Level.WARNING, e1.getMessage(), e1);

@@ -152,10 +152,6 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         bean.setLastName( lastName );
     }
 
-    public void setPassword( String password ) {
-        bean.setPassword( password );
-    }
-
     public int getVersion() {
         return bean.getVersion();
     }
