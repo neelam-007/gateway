@@ -53,7 +53,8 @@ public class CSRHandler extends HttpServlet {
         }
     }
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         // make sure we come in through ssl
         if (!request.isSecure()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR requests must come through ssl port");
@@ -91,11 +92,13 @@ public class CSRHandler extends HttpServlet {
         logger.info("User " + authenticatedUser.getLogin() + " has authenticated for CSR");
 
         // check if user is allowed to generate a new cert
-        InternalUserManagerServer userMan = (InternalUserManagerServer)getConfigManager().getInternalIdentityProvider().getUserManager();
+        InternalUserManagerServer userMan =
+                (InternalUserManagerServer)getConfigManager().getInternalIdentityProvider().getUserManager();
         try {
             if (!userMan.userCanResetCert(Long.toString(authenticatedUser.getOid()))) {
                 logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden. Contact your administrator for more info.");
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
+                                            " Contact your administrator for more info.");
                 return;
             }
         } catch (FindException e) {
@@ -120,16 +123,22 @@ public class CSRHandler extends HttpServlet {
         try {
             userMan.recordNewCert(Long.toString(authenticatedUser.getOid()), cert);
         } catch (UpdateException e) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not record cert. " + e.getMessage());
-            logger.log(Level.SEVERE, "Could not record cert. " + e.getMessage(), e);
+            String msg = "Could not record cert. " + e.getMessage();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            logger.log(Level.SEVERE, msg, e);
             return;
         }
 
         // verify that the CN in the subject equals the login name
         X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
         if (!x500name.getCommonName().equals(authenticatedUser.getLogin())) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "You cannot scr for a subject different than " + authenticatedUser.getLogin());
-            logger.log(Level.SEVERE, "User " + authenticatedUser.getLogin() + " tried to csr for subject other than self (" + x500name.getCommonName() + ")");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                               "You cannot scr for a subject different than " +
+                                authenticatedUser.getLogin());
+            logger.log(Level.SEVERE, "User " +
+                                     authenticatedUser.getLogin() +
+                                     " tried to csr for subject other than self (" +
+                                     x500name.getCommonName() + ")");
             return;
         }
 
@@ -141,7 +150,8 @@ public class CSRHandler extends HttpServlet {
             response.setContentLength(certbytes.length);
             response.getOutputStream().write(certbytes);
             response.flushBuffer();
-            logger.info("sent new cert to user " + authenticatedUser.getLogin() + ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
+            logger.info("sent new cert to user " + authenticatedUser.getLogin() +
+                        ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
         } catch (CertificateEncodingException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -214,18 +224,14 @@ public class CSRHandler extends HttpServlet {
 
     private synchronized IdentityProviderConfigManager getConfigManager() {
         if (identityProviderConfigManager == null) {
-            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().
+                                             lookup(IdentityProviderConfigManager.class);
         }
         return identityProviderConfigManager;
     }
 
-    private /*synchronized*/ RSASigner getSigner() {
+    private RSASigner getSigner() {
         return new RSASigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd);
-        /*if (rsasigner == null) {
-            rsasigner = new RSASigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd);
-        }
-        return rsasigner;
-        */
     }
 
     private boolean keystorePresent() {
@@ -239,7 +245,6 @@ public class CSRHandler extends HttpServlet {
     }
 
     private IdentityProviderConfigManager identityProviderConfigManager = null;
-    //private RSASigner rsasigner = null;
     private String rootkstore = null;
     private String rootkstorepasswd = null;
     private Logger logger = null;
