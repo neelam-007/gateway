@@ -88,8 +88,6 @@ public class AllAssertions {
         new XmlRequestSecurity(),
         new RequestXpathAssertion(),
         CUSTOM_ASSERTION_HOLDER,
-        new HttpTransportAssertion(),
-        new JmsTransportAssertion(),
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
@@ -121,8 +119,6 @@ public class AllAssertions {
         new XmlRequestSecurity(),
         new RequestXpathAssertion(),
         new CustomAssertionHolder(),
-        new HttpTransportAssertion(),
-        new JmsTransportAssertion(),
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
