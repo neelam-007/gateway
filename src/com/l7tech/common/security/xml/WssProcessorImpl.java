@@ -144,16 +144,12 @@ public class WssProcessorImpl implements WssProcessor {
                 Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.DIGSIG_URI, "KeyInfo");
                 if (kinfo != null) {
                     Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
-                                                                        new String[] {SoapUtil.SECURITY_NAMESPACE,
-                                                                                      SoapUtil.SECURITY_NAMESPACE2,
-                                                                                      SoapUtil.SECURITY_NAMESPACE3},
-                                                                        "SecurityTokenReference");
+                                                                        SoapUtil.SECURITY_URIS_ARRAY,
+                                                                        SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
                     if (str != null) {
                         Element ki = XmlUtil.findOnlyOneChildElementByName(str,
-                                                                           new String[] {SoapUtil.SECURITY_NAMESPACE,
-                                                                                         SoapUtil.SECURITY_NAMESPACE2,
-                                                                                         SoapUtil.SECURITY_NAMESPACE3},
-                                                                           "KeyIdentifier");
+                                                                           SoapUtil.SECURITY_URIS_ARRAY,
+                                                                           SoapUtil.KEYIDENTIFIER_EL_NAME);
                         if (ki != null) {
                             String keyIdentifierValue = XmlUtil.getTextValue(ki);
                             byte[] keyIdValueBytes = null;
