@@ -90,6 +90,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient String secureConversationId = null;
     private transient Calendar secureConversationExpiryDate = null;
     private transient SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
+    private transient long timeOffset = 0;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -909,5 +910,52 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      */
     public SamlHolderOfKeyAssertion samlHolderOfKeyAssertion() {
         return samlHolderOfKeyAssertion;
+    }
+
+    /**
+     * Get the time offset for this SSG.  If set, this is the approximate number of milliseconds
+     * that must be added to the Agent's local UTC time to match the UTC time set on this SSG.  This
+     * value might be negative if the Agent's clock is ahead of the SSG's.
+     * <p>
+     * This is used for clock-skew workaround to enable the Agent to interoperate with multiple SSGs
+     * from different organizations, each of which might have different clocks.  As long as the Agent
+     * does not need to pass timestamps between two different SSGs with differing opinions about the
+     * current time (as when getting a SAML token from one and presenting it to the other, for example)
+     * this mechanism enables the Agent to work around the problem.
+     *
+     * @return the time offset, if set; otherwise 0.
+     */
+    public long getTimeOffset() {
+        return timeOffset;
+    }
+
+    /**
+     * Set a time offset for this SSG.  See getTimeOffset() for details.
+     * @param timeOffset the new offset to use, or 0 to disable clock translation.
+     */
+    public void setTimeOffset(long timeOffset) {
+        this.timeOffset = timeOffset;
+    }
+
+    /**
+     * Translate a date and time from the SSG's clock into our local clock.  Leaves the
+     * date unchanged if a TimeOffset is not set for this SSG.  This is used to work around
+     * clock-skew between the Agent and this SSG; see getTimeOffset() for details.
+     * @param ssgTime the Date from the SSG's clock
+     * @return the Date translated according to the Agent's local clock setting
+     */
+    public Date translateDateFromSsg(Date ssgTime) {
+        return new Date(ssgTime.getTime() - getTimeOffset());
+    }
+
+    /**
+     * Translate a date and time from the Agent's local clock into the SSG's clock.  Leaves
+     * the date unchanged if a TimeOffset is not set for this SSG.  This is used to work around
+     * clock-skew between the Agent and this SSG; see getTimeOFfset() for details.
+     * @param localTime the Date from our local clock
+     * @return the Date translated according to the SSG's clock setting
+     */
+    public Date translateDateToSsg(Date localTime) {
+        return new Date(localTime.getTime() + getTimeOffset());
     }
 }

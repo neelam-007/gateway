@@ -6,44 +6,45 @@
 
 package com.l7tech.proxy.util;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.*;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.proxy.datamodel.Policy;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.CurrentRequest;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.wsp.InvalidPolicyStreamException;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.proxy.datamodel.CurrentRequest;
+import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.xml.soap.SOAPConstants;
 import javax.net.ssl.HttpsURLConnection;
+import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.logging.Logger;
+import java.util.Date;
 import java.util.logging.Level;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.PasswordAuthentication;
-import java.net.HttpURLConnection;
+import java.util.logging.Logger;
 
 /**
  * Builds request messages for the PolicyService and helps parse the responses.
@@ -140,14 +141,27 @@ public class PolicyServiceClient {
      * @param serverCertificate the serverCertificate.  Must match the certificate that signed the response.
      * @param clientCert optional. if specified along with clientKey, encrypted responses can be processed.
      * @param clientKey optional. if specified along with clientCert, encrypted responses can be processed.
+     * @param signedResponseRequired if true, an InvalidDocumentFormatException will be thrown if the response
+     *                               does not include a signed body, timestamp, and L7a:relatesTo.
+     * @param outTimestampCreated if an array of length >= 1 is passed, its first element will be set to the signed
+     *                           Created date from the response, if any.
+     * @param outTimestampCreatedWasSigned if an array of length >= 1 is passed, its first element will be set to
+     *                                     a boolean representing true iff. the the timestamp returned in outTimestampCreated
+     *                                     was signed.  Not meaningful unless outTimestampCreate was passed.
      * @return the Policy retrieved from the policy service
      * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
      * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
      */
-    public static Policy parseGetPolicyResponse(Document originalRequest, Document response, X509Certificate serverCertificate,
-                                                X509Certificate clientCert, PrivateKey clientKey)
+    public static Policy parseGetPolicyResponse(Document originalRequest,
+                                                Document response,
+                                                X509Certificate serverCertificate,
+                                                X509Certificate clientCert,
+                                                PrivateKey clientKey,
+                                                boolean signedResponseRequired,
+                                                Date[] outTimestampCreated,
+                                                boolean[] outTimestampCreatedWasSigned)
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
-            ServerCertificateUntrustedException, BadCredentialsException
+                   ServerCertificateUntrustedException, BadCredentialsException
     {
         WssProcessor wssProcessor = new WssProcessorImpl();
         WssProcessor.ProcessorResult result;
@@ -174,6 +188,22 @@ public class PolicyServiceClient {
             }
         }
 
+        WssProcessor.SignedElement[] signedElements = result.getElementsThatWereSigned();
+        WssProcessor.Timestamp timestamp = result.getTimestamp();
+        final boolean timestampSigned = (timestamp != null && timestamp.asElement() != null &&
+            ProcessorResultUtil.nodeIsPresent(timestamp.asElement(), signedElements));
+        if (signedResponseRequired && !timestampSigned)
+                throw new InvalidDocumentFormatException("Policy server response did not include a signed timestamp, but our request required a signed response.");
+        if (outTimestampCreated != null && outTimestampCreated.length > 0 && timestamp != null && timestamp.getCreated() != null) {
+            outTimestampCreated[0] = timestamp.getCreated().asDate();
+            if (outTimestampCreatedWasSigned != null && outTimestampCreatedWasSigned.length > 0)
+                outTimestampCreatedWasSigned[0] = timestampSigned;
+        }        
+        if (signedElements == null || signedElements.length < 1 || signingCert == null) {
+            if (signedResponseRequired)
+                throw new InvalidDocumentFormatException("Policy server response was not signed, but our request required a signed response.");
+            return parseGetPolicyResponse(originalRequest, result.getUndecoratedMessage(), null);
+        }
         return parseGetPolicyResponse(originalRequest, result.getUndecoratedMessage(), result.getElementsThatWereSigned());
     }
 
@@ -274,6 +304,9 @@ public class PolicyServiceClient {
     /**
      * Connect to the specified URL and download policy using the specified already-decorated GetPolicy request.
      * The URL is assumed to belong to the specified SSG.
+     * <p>
+     * As a side-effect of downloading policy, we'll check for gross clock-skew between this SSG's clock
+     * and our own and enable compensation if some is detected.
      *
      * @param url
      * @param ssg
@@ -298,6 +331,8 @@ public class PolicyServiceClient {
     {
         log.log(Level.INFO, "Downloading policy from " + url.toString());
 
+        final long millisBefore = System.currentTimeMillis();
+        boolean usingSsl = false;
         CurrentRequest.setPeerSsg(ssg);
         URLConnection conn = url.openConnection();
         if (!(conn instanceof HttpURLConnection))
@@ -306,6 +341,7 @@ public class PolicyServiceClient {
         if (conn instanceof HttpsURLConnection) {
             HttpsURLConnection sslConn = (HttpsURLConnection)conn;
             sslConn.setSSLSocketFactory(ClientProxySecureProtocolSocketFactory.getInstance());
+            usingSsl = true;
         }
         if (httpBasicAuthorization != null)
             conn.setRequestProperty("Authorization", httpBasicAuthorization); 
@@ -315,10 +351,10 @@ public class PolicyServiceClient {
         XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
         final int code = httpConn.getResponseCode();
         log.log(Level.FINE, "Policy server responded with: " + code + " " + httpConn.getResponseMessage());
-        int len = conn.getContentLength();
+        final int len = conn.getContentLength();
         log.log(Level.FINEST, "Policy server response content length=" + len);
         CurrentRequest.setPeerSsg(null);
-        String contentType = conn.getContentType();
+        final String contentType = conn.getContentType();
         if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
             throw new IOException("Policy server returned unsupported content type " + conn.getContentType());
         Document response = null;
@@ -335,16 +371,38 @@ public class PolicyServiceClient {
         } catch (SAXException e) {
             throw new CausedIOException("Unable to XML parse GetPolicyResponse", e);
         }
+        final long millisAfter = System.currentTimeMillis();
+        final long roundTripMillis = millisAfter - millisBefore;
+        log.log(Level.FINER, "Policy download took " + roundTripMillis + "ms");
         Policy result = null;
+        Date ssgTime = null; // Trusted timestamp from the SSG
         try {
+            Date[] timestampCreatedDate = new Date[] { null };
+            boolean[] timestampWasSigned = new boolean[] { false };
             result = parseGetPolicyResponse(requestDoc,
                                             response,
                                             serverCertificate,
                                             clientCert,
-                                            clientKey);
+                                            clientKey,
+                                            !usingSsl,
+                                            timestampCreatedDate,
+                                            timestampWasSigned);
+            if (timestampCreatedDate[0] != null) {
+                if (usingSsl || timestampWasSigned[0])
+                    ssgTime = timestampCreatedDate[0];
+            }
         } catch (ProcessorException e) {
             throw new CausedIOException("Unable to obtain policy from policy server", e);
         }
+
+        if (ssgTime != null && Math.abs(ssgTime.getTime() - millisAfter) > 10000 + roundTripMillis) {
+            final long ssgDiff = ssgTime.getTime() - ((millisAfter + millisBefore / 2));
+            final long posDiff = Math.abs(ssgDiff);
+            final String aheadBehind = ssgDiff > 0 ? "ahead of" : "behind";
+            log.log(Level.INFO, "Noting that Gateway " + ssg + " clock is at about " + posDiff + "ms " + aheadBehind + " local clock.");
+            ssg.setTimeOffset(ssgDiff);
+        }
+
         return result;
     }
 

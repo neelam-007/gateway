@@ -68,7 +68,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         // If we aren't signing the entire message, find extra elements to sign
         if (decorationRequirements.isSignTimestamp() || !signList.isEmpty()) {
-            Element timestamp = addTimestamp(securityHeader, c);
+            Element timestamp = SoapUtil.addTimestamp(securityHeader, c.wsuNS, null, TIMESTAMP_TIMOUT_SEC);
             signList.add(timestamp);
         }
 
@@ -708,28 +708,6 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         return id;
-    }
-
-    private Element addTimestamp(Element securityHeader, Context c) {
-        Document message = securityHeader.getOwnerDocument();
-        Element timestamp = message.createElementNS(c.wsuNS,
-                                                    SoapUtil.TIMESTAMP_EL_NAME);
-        securityHeader.appendChild(timestamp);
-        timestamp.setPrefix(XmlUtil.getOrCreatePrefixForNamespace(timestamp, c.wsuNS, "wsu"));
-
-        Calendar now = Calendar.getInstance();
-        timestamp.appendChild(makeTimestampChildElement(timestamp, SoapUtil.CREATED_EL_NAME, now.getTime()));
-        now.add(Calendar.SECOND, TIMESTAMP_TIMOUT_SEC);
-        timestamp.appendChild(makeTimestampChildElement(timestamp, SoapUtil.EXPIRES_EL_NAME, now.getTime()));
-        return timestamp;
-    }
-
-    private Element makeTimestampChildElement(Element timestamp, String createdElName, Date time) {
-        Document factory = timestamp.getOwnerDocument();
-        Element element = factory.createElementNS(timestamp.getNamespaceURI(), createdElName);
-        element.setPrefix(timestamp.getPrefix());
-        element.appendChild(XmlUtil.createTextNode(factory, ISO8601Date.format(time)));
-        return element;
     }
 
     private Element addX509BinarySecurityToken(Element securityHeader, X509Certificate certificate, Context c)

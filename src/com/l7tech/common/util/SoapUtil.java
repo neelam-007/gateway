@@ -21,10 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author alex
@@ -807,4 +804,37 @@ public class SoapUtil {
     }
 
     private static final SecureRandom rand = new SecureRandom();
+
+    /**
+     * Append a wsu:Timestamp element to the specified parent element, showing the specified
+     * time, or the current time if it isn't specified.
+     * @param parent      element which will contain the new timestamp subelement
+     * @param wsuUri      which wsu: namespace URI to use
+     * @param timestamp   time that should be marked in this timestamp.  if null, uses current time
+     * @param timeoutSec  after how many seconds this timestamp should expirel.  If zero, uses 5 min.
+     * @return
+     */
+    public static Element addTimestamp(Element parent, String wsuUri, Date timestamp, int timeoutSec) {
+        Document message = parent.getOwnerDocument();
+        Element timestampEl = message.createElementNS(wsuUri,
+                                                      TIMESTAMP_EL_NAME);
+        parent.appendChild(timestampEl);
+        timestampEl.setPrefix(XmlUtil.getOrCreatePrefixForNamespace(timestampEl, wsuUri, "wsu"));
+
+        Calendar now = Calendar.getInstance();
+        if (timestamp != null)
+            now.setTime(timestamp);
+        timestampEl.appendChild(makeTimestampChildElement(timestampEl, CREATED_EL_NAME, now.getTime()));
+        now.add(Calendar.SECOND, timeoutSec != 0 ? timeoutSec : 300);
+        timestampEl.appendChild(makeTimestampChildElement(timestampEl, EXPIRES_EL_NAME, now.getTime()));
+        return timestampEl;
+    }
+
+    private static Element makeTimestampChildElement(Element parent, String createdElName, Date time) {
+        Document factory = parent.getOwnerDocument();
+        Element element = factory.createElementNS(parent.getNamespaceURI(), createdElName);
+        element.setPrefix(parent.getPrefix());
+        element.appendChild(XmlUtil.createTextNode(factory, ISO8601Date.format(time)));
+        return element;
+    }
 }

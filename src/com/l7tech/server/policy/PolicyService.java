@@ -117,6 +117,7 @@ public class PolicyService {
      */
     public void respondToPolicyDownloadRequest(SoapRequest request,
                                                SoapResponse response,
+                                               boolean signResponse,
                                                PolicyGetter policyGetter)
     {
         // We need a Document
@@ -235,7 +236,7 @@ public class PolicyService {
 
         try {
             String policyVersion = policyId + "|" + si.getVersion();
-            wrapFilteredPolicyInResponse(policyDoc, policyVersion, relatesTo, response);
+            wrapFilteredPolicyInResponse(policyDoc, policyVersion, relatesTo, response, signResponse);
         } catch (GeneralSecurityException e) {
             exceptionToFault(e, response);
             return;
@@ -263,7 +264,11 @@ public class PolicyService {
         response.setDocument(fault);
     }
 
-    private void wrapFilteredPolicyInResponse(Document policyDoc, String policyVersion, String relatesTo, SoapResponse response)
+    private void wrapFilteredPolicyInResponse(Document policyDoc,
+                                              String policyVersion,
+                                              String relatesTo,
+                                              SoapResponse response,
+                                              boolean signResponse)
                             throws GeneralSecurityException, WssDecorator.DecoratorException {
         Document responseDoc;
         try {
@@ -284,7 +289,10 @@ public class PolicyService {
             Element rte = null;
             if (relatesTo != null)
                 rte = SoapUtil.setL7aRelatesTo(responseDoc, relatesTo);
-            signresponse(responseDoc, pver, rte);
+            if (signResponse)
+                signresponse(responseDoc, pver, rte);
+            else
+                SoapUtil.addTimestamp(header, SoapUtil.WSU_NAMESPACE, null, 0);
             response.setResponseXml(XmlUtil.nodeToString(responseDoc));
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen

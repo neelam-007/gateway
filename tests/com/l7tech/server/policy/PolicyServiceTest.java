@@ -108,7 +108,7 @@ public class PolicyServiceTest extends TestCase {
             }
         };
 
-        ps.respondToPolicyDownloadRequest(soapReq, soapRes, policyGetter);
+        ps.respondToPolicyDownloadRequest(soapReq, soapRes, true, policyGetter);
         Document response = soapRes.getDocument();
         assertNotNull(response);
         log.info("Response (pretty-printed):" + XmlUtil.nodeToFormattedString(response));
@@ -127,6 +127,9 @@ public class PolicyServiceTest extends TestCase {
         Policy policy = PolicyServiceClient.parseGetPolicyResponse(originalRequest,
                                                                    response,
                                                                    TestDocuments.getDotNetServerCertificate(),
+                                                                   null,
+                                                                   null,
+                                                                   false,
                                                                    null,
                                                                    null);
         assertNotNull(policy);

@@ -16,11 +16,10 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.identity.IdProvConfManagerServer;
-import com.l7tech.server.policy.PolicyService;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
+import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -121,7 +120,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             HttpSoapRequest sreq = new HttpSoapRequest(htm);
             sreq.setDocument(payload);
             HttpSoapResponse sres = new HttpSoapResponse(htm);
-            service.respondToPolicyDownloadRequest(sreq, sres, normalPolicyGetter());
+            service.respondToPolicyDownloadRequest(sreq, sres, !req.isSecure(), normalPolicyGetter());
 
             Document response = null;
             try {
