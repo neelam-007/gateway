@@ -135,4 +135,26 @@ public class XmlUtilTest extends TestCase {
         List none = XmlUtil.findChildElementsByName( sctoken, SoapUtil.XMLENC_NS, "Foo" );
         assertTrue(none.isEmpty());
     }
+
+    public void testFindChildElementsByNameWithNSArray() throws Exception {
+        Document d = XmlUtil.stringToDocument("<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                                              "    <s:Header>\n" +
+                                              "        <sec1:Security xmlns:sec1=\"http://schemas.xmlsoap.org/ws/2002/xx/secext\"/>\n" +
+                                              "        <sec2:Security xmlns:sec2=\"http://schemas.xmlsoap.org/ws/2002/12/secext\"/>\n" +
+                                              "        <sec3:Security xmlns:sec3=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"/>\n" +
+                                              "        <sec4:Security xmlns:sec4=\"http://docs.oasis-open.org/asdfhalsfhasldkhf\"/>\n" +
+                                              "    </s:Header>\n" +
+                                              "    <s:Body/>\n" +
+                                              "</s:Envelope>");
+        Element env = d.getDocumentElement();
+        Element header = XmlUtil.findFirstChildElement(env);
+        List children = XmlUtil.findChildElementsByName(header, SoapUtil.SECURITY_URIS_ARRAY, SoapUtil.SECURITY_EL_NAME);
+        assertTrue(children.size() == 3);
+        Element sec1 = (Element)children.get(0);
+        Element sec2 = (Element)children.get(1);
+        Element sec3 = (Element)children.get(2);
+        assertTrue(SoapUtil.SECURITY_NAMESPACE.equals(sec1.getNamespaceURI()));
+        assertTrue(SoapUtil.SECURITY_NAMESPACE2.equals(sec2.getNamespaceURI()));
+        assertTrue(SoapUtil.SECURITY_NAMESPACE3.equals(sec3.getNamespaceURI()));
+    }
 }
