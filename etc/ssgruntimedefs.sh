@@ -15,7 +15,7 @@ esac
 export SSG_HOME=/ssg
 
 # define java home
-JAVA_HOME=${JAVA_HOME:-/usr/java/j2sdk1.4.1}
+JAVA_HOME=/ssg/j2sdk1.4.2_04_04
 if $cygwin; then
     JAVA_HOME=`cygpath --path --unix "$JAVA_HOME"`
 fi
@@ -25,17 +25,22 @@ PATH=$PATH:$JAVA_HOME/bin:$SSG_HOME/bin
 
 #add to the ld path (shared native libraries)
 if $cygwin; then
-    PATH=$PATH:$SSG_HOME/lib
+    export PATH=$PATH:$SSG_HOME/lib
 else
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SSG_HOME/lib
 fi
 export PATH
 
 # Set Java system properties
-export JAVA_OPTS=-Djini.server.hostname=`hostname`
+if  [ -e "/ssg/etc/conf/cluster_hostname" ];
+then
+	export JAVA_OPTS=-Djini.server.hostname=`cat /ssg/etc/conf/cluster_hostname`
+else
+	export JAVA_OPTS=-Djini.server.hostname=`hostname`
+fi
 
 # define tomcat home
-TOMCAT_HOME=${TOMCAT_HOME:-/usr/java/tomcat-4.1.27-l7p2}
+TOMCAT_HOME="/ssg/tomcat/"
 if $cygwin; then
     TOMCAT_HOME=`cygpath --path --unix "$TOMCAT_HOME"`
 fi
