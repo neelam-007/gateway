@@ -9,6 +9,9 @@ import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 import org.syntax.jedit.JEditTextArea;
+import org.syntax.jedit.TextAreaDefaults;
+import org.syntax.jedit.DefaultInputHandler;
+import org.syntax.jedit.SyntaxDocument;
 import org.syntax.jedit.tokenmarker.XMLTokenMarker;
 
 import javax.swing.*;
@@ -70,7 +73,7 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
             public void run() {
                 try {
                     final PublishedService ps = serviceNode.getPublishedService();
-                    new WsdlViewDialog(ps);
+                    new WsdlViewDialog(ps).show();
                 } catch (FindException e) {
                     log.log(Level.WARNING, "error retrieving service wsdl", e);
                 } catch (IOException e) {
@@ -87,6 +90,7 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
             super(ComponentRegistry.getInstance().getMainWindow(), ps.getName());
 
             wsdlTextArea = new JEditTextArea();
+            wsdlTextArea.setDocument(new SyntaxDocument());
             wsdlTextArea.setEditable(false);
             wsdlTextArea.setTokenMarker(new XMLTokenMarker());
             wsdlTextArea.setText(ps.getWsdlXml());
@@ -119,7 +123,6 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
             final int labelWidth = (int)(l.getSize().getWidth()+20);
             setSize(Math.max(600, labelWidth), 600);
             Utilities.centerOnScreen(this);
-            setVisible(true);
         }
     }
 
