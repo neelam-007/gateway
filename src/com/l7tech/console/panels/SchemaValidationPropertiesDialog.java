@@ -258,6 +258,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             return;
         }
         wsdlTextArea.setText(tmp.getSchema());
+        wsdlTextArea.setCaretPosition(0);
+        wsdlTextArea.setCaretVisible(true);
         okButton.setEnabled(true);
     }
 
@@ -309,6 +311,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 return;
             }
             wsdlTextArea.setText(printedSchema);
+            wsdlTextArea.setCaretPosition(0);
+            wsdlTextArea.setCaretVisible(true);
             okButton.setEnabled(true);
         } else {
             displayError(resources.getString("error.urlnoschema") + " " + filename, null);
@@ -370,6 +374,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 return;
             }
             wsdlTextArea.setText(printedSchema);
+            wsdlTextArea.setCaretPosition(0);
+            wsdlTextArea.setCaretVisible(true);
             okButton.setEnabled(true);
         } else {
             displayError(resources.getString("error.urlnoschema") + " " + urlstr, null);
@@ -444,10 +450,12 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
         if (subject != null && subject != null && subject.getSchema() != null) {
             wsdlTextArea.setText(reformatxml(subject.getSchema()));
+            wsdlTextArea.setCaretPosition(0);
         } else {
             okButton.setEnabled(false);
+            wsdlTextArea.setCaretVisible(false);
         }
-        wsdlTextArea.setCaretPosition(0);
+
         xmldisplayPanel.add(wsdlTextArea, BorderLayout.CENTER);
 
         // wrap this with border settings
