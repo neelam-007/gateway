@@ -44,22 +44,43 @@ public class Gui {
         return instance;
     }
 
+    /** Try to set the Kunststoff look and feel. */
+    private static void setKunststoffLnF() throws Exception {
+        final Class kunststoffClass = Class.forName(KUNSTSTOFF_CLASSNAME);
+        final Object kunststoffLnF = kunststoffClass.newInstance();
+        final Class themeClass = Class.forName(KUNSTSTOFF_THEME_CLASSNAME);
+        final Object theme = themeClass.newInstance();
+        kunststoffClass.getMethod("setCurrentTheme", new Class[] {MetalTheme.class}).invoke(kunststoffLnF,
+                                                                                            new Object[] {theme});
+        UIManager.setLookAndFeel((LookAndFeel)kunststoffLnF);
+    }
+
+    /** Try to set the Windows look and feel. */
+    private static void setWindowsLnF() throws Exception {
+
+        UIManager.LookAndFeelInfo[] feels = UIManager.getInstalledLookAndFeels();
+        for (int i = 0; i < feels.length; i++) {
+            UIManager.LookAndFeelInfo feel = feels[i];
+            if (feel.getName().indexOf("indow") >= 0) {
+                UIManager.setLookAndFeel(feel.getClassName());
+                break;
+            }
+        }
+    }
+
     /**
      * Initialize the Gui.
      */
     private Gui() {
         // Try to set up enhanced look and feel
         try {
-            final Class kunststoffClass = Class.forName(KUNSTSTOFF_CLASSNAME);
-            final Object kunststoffLnF = kunststoffClass.newInstance();
-            final Class themeClass = Class.forName(KUNSTSTOFF_THEME_CLASSNAME);
-            final Object theme = themeClass.newInstance();
-            kunststoffClass.getMethod("setCurrentTheme", new Class[] {MetalTheme.class}).invoke(kunststoffLnF,
-                                                                                                new Object[] {theme});
-            UIManager.setLookAndFeel((LookAndFeel)kunststoffLnF);
+            setKunststoffLnF();      // vvv Swap these two lines to prefer Windows look and feel vvv
         } catch (Exception e) {
-            log.warn(e);
-            // fall back to default look and feel
+            try {
+                setWindowsLnF();     // ^^^ Swap these two lines to prefer Windows look and feel ^^^
+            } catch (Exception e1) {
+                log.warn(e1);
+            }
         }
 
         // incors.org Kunststoff faq says we need the following line if we want to use Java Web Start:
