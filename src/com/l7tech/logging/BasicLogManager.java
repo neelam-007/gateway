@@ -4,11 +4,12 @@ import java.util.logging.Logger;
 import java.util.logging.LogRecord;
 
 /**
- * User: flascell
- * Date: Jul 3, 2003
- * Time: 4:37:41 PM
+ * Log manager that does nothing special.
  *
- * Log manager that basically does nothing special.
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell<br/>
+ * Date: Jul 3, 2003<br/>
  */
 public class BasicLogManager extends LogManager {
     public Logger getSystemLogger() {

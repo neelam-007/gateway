@@ -4,9 +4,12 @@ import java.util.logging.Logger;
 import java.util.logging.LogRecord;
 
 /**
+ * Parent class for LogManagers. See ServerLogManager and BasicLogManager.
+ *
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
  * User: flascell
  * Date: Jul 3, 2003
- * Time: 9:42:52 AM
  *
  */
 public abstract class LogManager {

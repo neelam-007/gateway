@@ -7,15 +7,17 @@ import java.util.TreeSet;
 import java.util.Comparator;
 
 /**
- * User: flascell
- * Date: Jul 3, 2003
- * Time: 9:06:31 AM
- *
  * Logging handler that keeps n log records in memory.
+ *
  * It differs from the java.util.logging.MemoryHandler in that you can ask for those
  * records back. It will be used by a WS when the console wants to consult recent log
  * entries from a ssg.
- *
+
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell
+ * Date: Jul 3, 2003
+ * 
  */
 public class MemHandler extends java.util.logging.Handler {
     /**
