@@ -1,10 +1,7 @@
 package com.l7tech.remote.jini.lookup;
 
-import com.l7tech.remote.jini.export.WebAppAnnotationClassProvider;
-import com.sun.jini.jeri.internal.runtime.Util;
 import net.jini.core.constraint.InvocationConstraints;
 import net.jini.core.constraint.MethodConstraints;
-import net.jini.export.ServerContext;
 import net.jini.io.context.ClientSubject;
 import net.jini.jeri.*;
 
@@ -16,12 +13,15 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.rmi.Remote;
 import java.rmi.server.ExportException;
-import java.rmi.server.ServerNotActiveException;
-import java.security.AccessController;
 import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.Principal;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Logger;
+
+import com.l7tech.identity.User;
 
 /**
  * A basic invocation layer factory, used by Jini(TM) extensible remote invocation
@@ -182,12 +182,11 @@ public class AccessILFactory extends BasicILFactory {
                 throw new NullPointerException();
             }
             Subject subject = Subject.getSubject(AccessController.getContext());
-            if (subject == null) {
+            if (subject == null || subject.getPrincipals().isEmpty()) {
                 throw new
-                  AccessControlException("Cannot dispatch the request without the subject set. " +
-                  "(Subject.getSubject(AccessController.getContext()) returns null)");
+                  AccessControlException("Cannot dispatch the request. No principal set.");
             }
-            logger.finest("invocaton handler: sending subject principals " + subject.getPrincipals());
+            logger.finest("Invoke: '"+proxy.getClass().getName()+"#"+method.getName()+"' principal : '" + extractPrincipalName(subject)+"'");
             out.writeObject(subject);
             super.marshalMethod(proxy, method, out, context);
         }
@@ -274,8 +273,9 @@ public class AccessILFactory extends BasicILFactory {
                 exisitingSubject.getPrivateCredentials().addAll(subject.getPrivateCredentials());
                 exisitingSubject.getPublicCredentials().addAll(subject.getPublicCredentials());
             }
-            logger.finest("access dispatcher: sending subject principals " + subject.getPrincipals());
-            return super.unmarshalMethod(impl, in, context);
+            Method m = super.unmarshalMethod(impl, in, context);
+            logger.finest("Invoke: '"+impl.getClass().getName()+"#"+m.getName()+"' principal : '" + extractPrincipalName(subject)+"'");
+            return m;
         }
 
         private static class ClientSubjectImpl implements ClientSubject {
@@ -290,5 +290,22 @@ public class AccessILFactory extends BasicILFactory {
             }
         }
     }
+
+
+    private static String extractPrincipalName(Subject subject) {
+        Set principals = subject.getPrincipals();
+        for (Iterator iterator = principals.iterator(); iterator.hasNext();) {
+            Object o = (Object)iterator.next();
+            if (o instanceof User) {
+               return ((User)o).getLogin();
+            } else if (o instanceof Principal) {
+                return ((Principal)o).getName();
+            } else {
+                return o.toString();
+            }
+        }
+        return "no principal set";
+    }
+
 
 }
