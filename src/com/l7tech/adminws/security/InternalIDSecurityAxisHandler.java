@@ -66,13 +66,7 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
     protected com.l7tech.identity.User findUserByLoginAndRealm(String login, String realm) {
         try {
             UserManager manager = getInternalUserManagerAndBeginTransaction();
-            Collection users = manager.findAll();
-            Iterator i = users.iterator();
-            while (i.hasNext()) {
-                User user = (User)i.next();
-                if (user.getLogin().equals(login)) return user;
-            }
-            return null;
+            return manager.findByLogin(login);
         } catch (java.sql.SQLException e) {
             e.printStackTrace(System.err);
             return null;
