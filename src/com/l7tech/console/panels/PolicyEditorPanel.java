@@ -512,7 +512,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     /**
      * Invoked when a component has been removed from the container.
      */
-    public void componentRemoved(ContainerEvent e) {}
+    public void componentRemoved(ContainerEvent e) {
+    }
 
     /**
      * Invoked when a component has to be added to the container.
@@ -532,25 +533,31 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     public void componentWillRemove(ContainerEvent e)
       throws ContainerVetoException {
-          if (e.getChild() == this) {
+        if (e.getChild() == this) {
             if (policyEditorToolbar.buttonSave.isEnabled()) {
                 int answer = (JOptionPane.showConfirmDialog(
-                              ComponentRegistry.getInstance().getMainWindow(),
-                              "<html><center><b>Do you want to save changes to service policy " +
-                              "for<br> '" + serviceNode.getName() + "' ?</b></center></html>",
-                              "Save Service policy",
-                              JOptionPane.YES_NO_CANCEL_OPTION));
+                  ComponentRegistry.getInstance().getMainWindow(),
+                  "<html><center><b>Do you want to save changes to service policy " +
+                  "for<br> '" + serviceNode.getName() + "' ?</b></center></html>",
+                  "Save Service policy",
+                  JOptionPane.YES_NO_CANCEL_OPTION));
                 if (answer == JOptionPane.YES_OPTION) {
-                    SwingUtilities.invokeLater( new Runnable() {
+                    SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
                             policyEditorToolbar.
                               buttonSave.getAction().actionPerformed(null);
                         }
                     });
-                } else if ((answer == JOptionPane.CANCEL_OPTION)){
+                } else if ((answer == JOptionPane.CANCEL_OPTION)) {
                     throw new ContainerVetoException(e, "User aborted");
                 }
             }
+            log.fine("Resetting the policy editor panel");
+            serviceNode.removePropertyChangeListener(servicePropertyChangeListener);
+            serviceNode = null;
+            policyTree.putClientProperty("service.node", null);
+            policyTree.setPolicyEditor(null);
+            policyTree.setModel(null);
         }
     }
 

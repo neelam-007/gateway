@@ -1256,6 +1256,7 @@ public class MainWindow extends JFrame {
         getMainSplitPaneRight().validate();
         getMainSplitPaneRight().repaint();
         getServicesTree().setModel(null);
+        getWorkSpacePanel().clearWorskpace();
 
         updateActions(null);
         // if inactivityTimer is running stop
