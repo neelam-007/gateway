@@ -16,6 +16,19 @@ import java.security.AccessControlException;
  */
 public interface AdminLogin extends Remote {
     /**
+     * Method that returns the SHA-1 hash over admin certificate and the admin
+     * username.
+     * This provides a way for the admin to validate the server certificate.
+     *
+     * @param username The name of the user.
+     * @return The Server certificate.
+     * @throws AccessControlException on access denied for the given credentials
+     * @throws RemoteException on remote communicatiOn error
+     */
+    public byte[] getServerCertificate(String username)
+      throws RemoteException, AccessControlException;
+
+    /**
      * Method that allows admins to login, returning an interface to
      * the server.
      *

@@ -135,6 +135,9 @@
         <property name="identityProviderFactory">
             <ref bean='identityProviderFactory'/>
         </property>
+        <property name="serverCertificate">
+            <ref bean="sslKeystoreCertificate"/>
+        </property>
     </bean>
 
     <!--    admin context exporter -->
@@ -173,7 +176,6 @@
         <constructor-arg>
             <ref bean="clusterStatusAdminRemote"/>
         </constructor-arg>
-        <!--        <property name="identityProviderConfigManager"><ref bean="identityProviderConfigManager"/></property>-->
     </bean>
 
     <!--    identity admin exporter -->

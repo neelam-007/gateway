@@ -22,6 +22,9 @@ import java.rmi.RemoteException;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.AccessControlException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -37,6 +40,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport
     private final List adminGroups = Arrays.asList(new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME});
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
+    private X509Certificate serverCertificate;
 
     public AdminContext login(String username, String password)
       throws RemoteException, AccessControlException, LoginException {
@@ -53,23 +57,57 @@ public class AdminLoginImpl extends ApplicationObjectSupport
             if (!containsAdminAccessRole(roles)) {
                 throw new AccessControlException(user.getName() + " does not have privilege to access administrative services");
             }
-            logger.info(""+getHighestRole(roles)+" user.getLogin() "+"logged in from IP " + UnicastRemoteObject.getClientHost());
+            logger.info("" + getHighestRole(roles) + " user.getLogin() " + "logged in from IP " + UnicastRemoteObject.getClientHost());
             AdminContext adminContext = (AdminContext)getApplicationContext().getBean("adminContextRemote");
             return adminContext;
         } catch (AuthenticationException e) {
             logger.trace("Authentication failed", e);
-            throw (AccessControlException) new AccessControlException("Authentication failed").initCause(e);
+            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (FindException e) {
             logger.warn("Authentication provider error", e);
-            throw (AccessControlException) new AccessControlException("Authentication failed").initCause(e);
+            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (IOException e) {
             logger.warn("Authentication provider error", e);
-            throw (AccessControlException) new AccessControlException("Authentication failed").initCause(e);
+            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (ServerNotActiveException e) {
             throw new RemoteException("Illegal state/server not exported", e);
         } catch (InvalidIdProviderCfgException e) {
             logger.warn("Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
+        }
+    }
+
+    /**
+     * Method that returns the SHA-1 hash over admin certificate and the admin
+     * username.
+     * This provides a way for the admin to validate the server certificate.
+     *
+     * @param username The name of the user.
+     * @return The Server certificate.
+     * @throws java.security.AccessControlException
+     *                                  on access denied for the given credentials
+     * @throws java.rmi.RemoteException on remote communicatiOn error
+     */
+    public byte[] getServerCertificate(String username)
+      throws RemoteException, AccessControlException {
+        if (username == null) {
+            throw new AccessControlException("Illegal username or password");
+        }
+        try {
+            User user = getInternalIdentityProvider().getUserManager().findByLogin(username);
+            return getDigest(user.getPassword(), serverCertificate);
+        } catch (FindException e) {
+            logger.warn("Authentication provider error", e);
+            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
+        } catch (InvalidIdProviderCfgException e) {
+            logger.warn("Authentication provider error", e);
+            throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
+        } catch (NoSuchAlgorithmException e) {
+            logger.warn("Server error", e);
+            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+        } catch (CertificateEncodingException e) {
+            logger.warn("Server error", e);
+               throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
         }
     }
 
@@ -89,6 +127,10 @@ public class AdminLoginImpl extends ApplicationObjectSupport
 
     public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
         this.identityProviderFactory = identityProviderFactory;
+    }
+
+    public void setServerCertificate(X509Certificate serverCertificate) {
+        this.serverCertificate = serverCertificate;
     }
 
     private String getHighestRole(String[] roles) {
@@ -132,5 +174,13 @@ public class AdminLoginImpl extends ApplicationObjectSupport
             roles.add(grp.getName());
         }
         return (String[])roles.toArray(new String[]{});
+    }
+
+    private byte[] getDigest(String password, X509Certificate serverCertificate)
+      throws NoSuchAlgorithmException, CertificateEncodingException {
+        java.security.MessageDigest d = java.security.MessageDigest.getInstance("SHA-1");
+        d.update(password.getBytes());
+        d.update(serverCertificate.getEncoded());
+        return d.digest();
     }
 }
