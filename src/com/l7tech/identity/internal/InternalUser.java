@@ -15,8 +15,7 @@ import java.util.Set;
  * User: flascelles
  * Date: Jun 24, 2003
  *
- * User either from the internal identity provider or a ldap directory.
- * In the case of ldap, the name property contains the dn.
+ * User from the internal identity provider
  * Password property is stored as HEX(MD5(login:L7SSGDigestRealm:password)). If you pass a clear text passwd in
  * setPassword, this encoding will be done ofr you (provided that login was set before).
  */
