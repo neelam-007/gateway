@@ -68,6 +68,7 @@ public class LdapGroup implements Group, Serializable {
     public String toString() {
         return "com.l7tech.identity.Group." +
                 "\n\tName=" + getName() +
+                "\n\tDN=" + getDn() +
                 "\n\tproviderId=" + providerId;
     }
 
