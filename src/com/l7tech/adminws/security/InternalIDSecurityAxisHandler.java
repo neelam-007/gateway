@@ -126,7 +126,9 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
     private UserManager getInternalUserManagerAndBeginTransaction() throws java.sql.SQLException {
         try {
             PersistenceContext.getCurrent().beginTransaction();
-            return GlobalIdentityConfigManager.getInstance().getInternalIdentityProvider().getUserManager();
+            com.l7tech.identity.GlobalIdProviderConfManager identityProviderConfigManager = (com.l7tech.identity.GlobalIdProviderConfManager)Locator.getDefault().lookup(com.l7tech.identity.GlobalIdProviderConfManager.class);
+            if (identityProviderConfigManager == null) throw new java.sql.SQLException("could not instantiate the IdentityProviderConfigManager");
+            return identityProviderConfigManager.getInternalIdentityProvider().getUserManager();
         } catch (TransactionException e) {
             e.printStackTrace(System.err);
             throw new java.sql.SQLException("TransactionException in getInternalUserManagerAndBeginTransaction "+ e.getMessage());
@@ -136,7 +138,9 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
     private GroupManager getInternalGroupManagerAndBeginTransaction() throws java.sql.SQLException {
         try {
             PersistenceContext.getCurrent().beginTransaction();
-            return GlobalIdentityConfigManager.getInstance().getInternalIdentityProvider().getGroupManager();
+            com.l7tech.identity.GlobalIdProviderConfManager identityProviderConfigManager = (com.l7tech.identity.GlobalIdProviderConfManager)Locator.getDefault().lookup(com.l7tech.identity.GlobalIdProviderConfManager.class);
+            if (identityProviderConfigManager == null) throw new java.sql.SQLException("could not instantiate the IdentityProviderConfigManager");
+            return identityProviderConfigManager.getInternalIdentityProvider().getGroupManager();
         } catch (TransactionException e) {
             e.printStackTrace(System.err);
             throw new java.sql.SQLException("TransactionException in getInternalGroupManagerAndBeginTransaction "+ e.getMessage());
