@@ -66,7 +66,7 @@ public class JarChecker {
 
     private static void log(String s) {
         // Uncomment to log some stuff
-        //System.out.println(s);
+        System.out.println(s);
     }
 
     private static void fatalErr(Throwable e) {
