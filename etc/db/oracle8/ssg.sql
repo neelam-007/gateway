@@ -131,7 +131,7 @@ CREATE TABLE client_cert (
   objectid number(38,0) NOT NULL primary key ,
   provider number(38,0) NOT NULL ,
   user_id varchar(255),
-  login varchar(255) NOT NULL ,
+  login varchar(255),
   cert varchar2(1024) DEFAULT NULL,
   reset_counter int NOT NULL 
 );

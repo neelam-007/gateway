@@ -140,7 +140,7 @@ CREATE TABLE client_cert (
   objectid bigint NOT NULL primary key default '0',
   provider bigint NOT NULL,
   user_id varchar(255),
-  login varchar(255) NOT NULL,
+  login varchar(255),
   cert text DEFAULT NULL,
   reset_counter int NOT NULL
 );

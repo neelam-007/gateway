@@ -148,7 +148,7 @@ CREATE TABLE client_cert (
   objectid bigint NOT NULL,
   provider bigint NOT NULL,
   user_id varchar(255),
-  login varchar(255) NOT NULL,
+  login varchar(255),
   cert mediumtext DEFAULT NULL,
   reset_counter int NOT NULL,
   PRIMARY KEY  (objectid)
