@@ -22,7 +22,7 @@ import java.security.cert.X509Certificate;
  * Date: Jun 27, 2003
  * Time: 10:39:29 AM
  */
-public class CredentialManagerImpl extends CredentialManagerAdapter {
+public class CredentialManagerImpl extends CredentialManager {
     private static final Logger log = Logger.getLogger(CredentialManagerImpl.class.getName());
     private static CredentialManagerImpl INSTANCE = new CredentialManagerImpl();
 
