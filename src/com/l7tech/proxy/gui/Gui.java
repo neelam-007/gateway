@@ -251,9 +251,11 @@ public class Gui {
             frame = new JFrame(WINDOW_TITLE);
             frame.setIconImage(IconManager.getAppImage());
             frame.addWindowListener(new WindowAdapter() {
+
                 public void windowIconified(WindowEvent e) {
                     if (sysTrayMenu != null) {
                         frame.hide();
+                        frame.setState(Frame.NORMAL);
                         sysTrayMenu.showIcon();
                     }
                 }
@@ -261,6 +263,7 @@ public class Gui {
                 public void windowClosing(final WindowEvent e) {
                     if (sysTrayMenu != null) {
                         frame.hide();
+                        frame.setState(Frame.NORMAL);
                         sysTrayMenu.showIcon();
                     } else
                         closeFrame();
