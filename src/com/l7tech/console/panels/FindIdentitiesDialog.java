@@ -6,14 +6,9 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.table.DynamicTableModel;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.GroupBean;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.UserBean;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -839,10 +834,25 @@ public class FindIdentitiesDialog extends JDialog {
         if (o instanceof EntityHeader) {
             EntityHeader eh = (EntityHeader)o;
             AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
-            final BaseAction a = (BaseAction)an.getPreferredAction();
-            if (a == null) {
+            BaseAction action = (BaseAction)an.getPreferredAction();
+
+            // null in the case of UserNode
+            if (action == null) {
+                if (eh.getType() == EntityType.USER) {
+                    if (searchInfo.getProvider().getConfig().type() == IdentityProviderType.FEDERATED) {
+                        action = new FederatedUserPropertiesAction((UserNode) an);
+                    } else {
+                        action = new GenericUserPropertiesAction((UserNode) an);
+                    }
+                }
+            }
+
+            if (action == null) {
                 return;
             }
+
+            final BaseAction a = action;
+
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     if (a instanceof UserPropertiesAction) {
