@@ -222,6 +222,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
             _bag = bag;
             _thread = new Thread( this, "MessageLoop_" + _connection.getOid() + "/" +
                                         _inboundRequestEndpoint.getOid() );
+            _thread.setDaemon( true );
             Session session = _bag.getSession();
             if ( session instanceof QueueSession ) {
                 QueueSession queueSession = (QueueSession)session;
