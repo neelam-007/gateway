@@ -31,15 +31,8 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
     }
 
     public Collection search(String searchString) throws FindException {
-        com.l7tech.objectmodel.EntityHeader[] array = null;
-        try {
-            array = getStub().searchGroups(config.getOid(), searchString);
-        } catch (java.rmi.RemoteException e) {
-            throw new FindException("RemoteException in findAllHeaders", e);
-        }
-        Collection output = new java.util.ArrayList();
-        for (int i = 0; i < array.length; i++) output.add(array[i]);
-        return output;
+        // moved to id provider
+        throw new FindException("not implemented");
     }
 
     public Group findByName(String name) throws FindException {
