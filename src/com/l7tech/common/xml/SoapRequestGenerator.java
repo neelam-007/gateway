@@ -102,7 +102,7 @@ public class SoapRequestGenerator {
             BindingOperation bindingOperation = (BindingOperation)iterator.next();
             String soapAction = getSoapAction(bindingOperation);
             SOAPMessage soapMessage = generate(bindingOperation);
-            bindingMessages.add(new SOAPRequest(soapMessage, soapAction, bindingOperation.getName()));
+            bindingMessages.add(new SOAPRequest(soapMessage, soapAction, binding.getQName().getLocalPart(), bindingOperation.getName()));
         }
         return bindingMessages;
     }
@@ -255,10 +255,10 @@ public class SoapRequestGenerator {
                 parameterElement = bodyElement.addChildElement(partName);
                 if (nameTypePair.type != null) {
                     value = nameTypePair.type;
-                    if (value !=null) {
+                    if (value != null) {
                         int pos = value.indexOf(':');
-                        if (pos !=-1) {
-                            value = value.substring(pos+1);
+                        if (pos != -1) {
+                            value = value.substring(pos + 1);
                         }
                     }
                 }
@@ -381,15 +381,17 @@ public class SoapRequestGenerator {
     public static class SOAPRequest {
         private final SOAPMessage soapMessage;
         private final String soapAction;
-        private Object soapOperation;
+        private String operation;
+        private String binding;
 
-        public SOAPRequest(SOAPMessage sm, String sa, String op) {
+        public SOAPRequest(SOAPMessage sm, String sa, String bi, String op) {
             if (sm == null) {
                 throw new IllegalArgumentException();
             }
             soapMessage = sm;
             soapAction = sa;
-            soapOperation = op;
+            binding = bi;
+            operation = op;
         }
 
         public String getSOAPAction() {
@@ -400,14 +402,18 @@ public class SoapRequestGenerator {
             return soapMessage;
         }
 
-        public Object getSOAPOperation() {
-            return soapOperation;
+        public String getOperation() {
+            return operation;
+        }
+
+        public String getBinding() {
+            return binding;
         }
 
         public String toString() {
             StringBuffer sb = new StringBuffer("[");
-            if (soapOperation != null) {
-                sb.append(" SOAP operation " + soapOperation);
+            if (operation != null) {
+                sb.append(" SOAP operation " + operation);
             }
             sb.append("]");
             if (soapMessage != null) {

@@ -45,7 +45,8 @@ public class XmlTree extends JTree {
 
         rootElement = element;
         this.viewer = viewer;
-
+        setRowHeight(0); // there should be a bigparade # but search does not work on javasoft.com at the moment...
+                         // the alternative description is avail at http://developer.apple.com/qa/qa2001/qa1091.html
         root = new XmlElementNode(viewer, element);
         model = new DefaultTreeModel(root);
 
