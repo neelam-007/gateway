@@ -1,12 +1,15 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.*;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyPathBuilder;
+import com.l7tech.policy.PolicyPathResult;
+import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
 
 import java.util.Iterator;
 
@@ -161,8 +164,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
 
         private boolean isCrendentialSource(Assertion a) {
-            // todo Emil might want to double check this.  added signed request as a special case
-            return a instanceof CredentialSourceAssertion || a instanceof XmlRequestSecurity;
+            return a instanceof CredentialSourceAssertion;
         }
 
         private boolean isPreconditionAssertion(Assertion a) {
