@@ -24,14 +24,9 @@ public class BootServlet extends HttpServlet {
         super.init( config );
         try {
             HibernatePersistenceManager.initialize();
-        } catch ( IOException ioe ) {
-            ioe.printStackTrace();
-            throw new ServletException( ioe );
         } catch ( SQLException se ) {
             se.printStackTrace();
             throw new ServletException( se );
-        //} catch ( NamingException ne ) {
-        //    throw new ServletException( ne );
         }
     }
 
