@@ -32,6 +32,7 @@ public class BootServlet extends HttpServlet {
     private final Logger logger = LogManager.getInstance().getSystemLogger();
 
     public void init( ServletConfig config ) throws ServletException {
+        ServerConfig.getInstance();
         super.init( config );
         // note fla, more exception catching => important to diagnose why server does not boot properly
         try {
