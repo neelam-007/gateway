@@ -171,10 +171,11 @@ public class LdapIdentityProviderTest extends TestCase {
 
         //me.localProvider = me.getSpockProvider();
         //me.localProvider = me.getMSADProvider();
-        me.localProvider = me.getOracleProvider();
-        //me.localProvider = me.getModifiedOracleProvider();
+        //me.localProvider = me.getOracleProvider();
+        me.localProvider = me.getModifiedOracleProvider();
         //me.localProvider = me.getTimTamProvider();
         //me.testAuthenticate("test_user", "passw0rd");
+        me.localProvider.test();
         me.testGetUsers();
         me.testGetGroupsAndMembers();
     }
