@@ -77,7 +77,7 @@ public class GuiCredentialManager extends CredentialManager {
                 return getCredentials(ssg, false);
             } catch (KeyStoreCorruptException e) {
                 notifyKeyStoreCorrupt(ssg);
-                SsgKeyStoreManager.deleteKeyStore(ssg);
+                SsgKeyStoreManager.deleteStores(ssg);
                 // FALLTHROUGH -- retry with newly-emptied keystore
             }
         }
@@ -89,7 +89,7 @@ public class GuiCredentialManager extends CredentialManager {
                 return getCredentials(ssg, true);
             } catch (KeyStoreCorruptException e) {
                 notifyKeyStoreCorrupt(ssg);
-                SsgKeyStoreManager.deleteKeyStore(ssg);
+                SsgKeyStoreManager.deleteStores(ssg);
                 // FALLTHROUGH -- retry with newly-emptied keystore
             }
         }

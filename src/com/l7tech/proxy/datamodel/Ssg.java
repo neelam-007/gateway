@@ -7,8 +7,6 @@ import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.util.ClientLogger;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 import org.apache.commons.httpclient.Cookie;
 
 import javax.net.ssl.SSLContext;
@@ -44,7 +42,14 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private static final String SSG_PROTOCOL = "http";
     private static final int SSG_SSL_PORT = 8443;
     private static final int SSG_PORT = 8080;
-    private static final String KEY_FILE = ClientProxy.PROXY_CONFIG + File.separator + "keyStore";
+
+    // The file that contains our client cert private key for this Ssg
+    private static final String KEY_FILE = ClientProxy.PROXY_CONFIG + File.separator + "key";
+    private static final String KEY_EXT = ".p12";
+
+    // The file that contains the trusted server cert for this Ssg
+    private static final String TRUST_FILE = ClientProxy.PROXY_CONFIG + File.separator + "certs";
+    private static final String TRUST_EXT = ".p12";
 
     // Hack to allow lazy initialization of SSL stuff
     private static class SslInstanceHolder {
@@ -60,6 +65,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private int sslPort = SSG_SSL_PORT;
     private String username = null;
     private String keyStorePath = null;
+    private String trustStorePath = null;
     private boolean defaultSsg = false;
     private boolean chainCredentialsFromClient = false;
     private boolean useSslByDefault = true;
@@ -72,6 +78,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient HashMap policyMap = new HashMap(); /* Policy cache */
     private transient boolean promptForUsernameAndPassword = true;
     private transient KeyStore keyStore = null;
+    private transient KeyStore trustStore = null;
     private transient Boolean haveClientCert = null;
     private transient int numTimesLogonDialogCanceled = 0;
     private transient long credentialsUpdatedTimeMillis = 0;
@@ -547,7 +554,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      */
     public synchronized String getKeyStorePath() {
         if (keyStorePath == null)
-            keyStorePath = KEY_FILE + getId();
+            keyStorePath = KEY_FILE + getId() + KEY_EXT;
         return keyStorePath;
     }
 
@@ -564,9 +571,33 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         flushKeyStoreData();
     }
 
+    /**
+     * Get the pathname of the trust store file this SSG will use.
+     * @return the trust store pathname
+     */
+    public synchronized String getTrustStorePath() {
+        if (trustStorePath == null)
+            trustStorePath = TRUST_FILE + getId() + TRUST_EXT;
+        return trustStorePath;
+    }
+
+    /**
+     * Set the pathname of the trust store file this SSG will use
+     * @param trustStorePath the trust store pathname
+     */
+    public void setTrustStorePath(String trustStorePath) {
+        if (trustStorePath == null)
+            throw new IllegalArgumentException("trustStorePath may not be null");
+        if (trustStorePath.length() < 1)
+            throw new IllegalArgumentException("trustStorePath may not be the empty string");
+        this.trustStorePath = trustStorePath;
+        flushKeyStoreData();
+    }
+
     /** Flush any cached data from the key store. */
     private synchronized void flushKeyStoreData() {
         keyStore = null;
+        trustStore = null;
         haveClientCert = null;
         privateKey = null;
         passwordWorkedForPrivateKey = false;
@@ -587,6 +618,11 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return new File(getKeyStorePath());
     }
 
+    /** Trust store file.  Package private; used by SsgKeyStoreManager. */
+    File getTrustStoreFile() {
+        return new File(getTrustStorePath());
+    }
+
     /** Transient in-core cache of KeyStore.  Package private; used by SsgKeyStoreManager. */
     KeyStore keyStore() {
         return keyStore;
@@ -595,6 +631,17 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     /** Transient in-core cache of KeyStore.  Package private; used by SsgKeyStoreManager. */
     void keyStore(KeyStore keyStore) {
         this.keyStore = keyStore;
+    }
+
+    /** Transient in-core cache of TrustStore.  Package private; used by SsgKeyStoreManager. */
+    KeyStore trustStore() {
+        return trustStore;
+    }
+
+
+    /** Transient in-core cache of TrustStore.  Package private; used by SsgKeyStoreManager. */
+    void trustStore(KeyStore trustStore) {
+        this.trustStore = trustStore;
     }
 
     /**

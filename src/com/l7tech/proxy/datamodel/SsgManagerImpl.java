@@ -85,9 +85,9 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
 
     /**
      * Forget all about a registered Ssg.  This does not delete the Ssg's associated keystore file, if any;
-     * to do this, use SsgKeyStoreManager.deleteKeyStore().
+     * to do this, use SsgKeyStoreManager.deleteStores().
      *
-     * @see SsgKeyStoreManager#deleteKeyStore
+     * @see SsgKeyStoreManager#deleteStores
      * @param ssg The Ssg to forget about.
      * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified Ssg was not found.
      */

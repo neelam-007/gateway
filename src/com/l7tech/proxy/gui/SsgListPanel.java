@@ -180,7 +180,7 @@ public class SsgListPanel extends JPanel {
                         } catch (KeyStoreCorruptException e1) {
                             try {
                                 Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
-                                SsgKeyStoreManager.deleteKeyStore(ssg);
+                                SsgKeyStoreManager.deleteStores(ssg);
                                 // FALLTHROUGH -- continue with newly-emptied keystore
                             } catch (OperationCanceledException e2) {
                                 return; // cancel the remove as well
@@ -188,7 +188,7 @@ public class SsgListPanel extends JPanel {
                         }
 
                         ssgTableModel.removeSsg(ssg);
-                        SsgKeyStoreManager.deleteKeyStore(ssg);
+                        SsgKeyStoreManager.deleteStores(ssg);
                     }
                 }
             };

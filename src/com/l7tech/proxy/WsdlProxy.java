@@ -161,7 +161,7 @@ public class WsdlProxy {
                                 SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
                             } catch (KeyStoreCorruptException e1) {
                                 Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
-                                SsgKeyStoreManager.deleteKeyStore(ssg);
+                                SsgKeyStoreManager.deleteStores(ssg);
                                 status = -1; // hack hack hack: fake status meaning "try again"
                                 // FALLTHROUGH -- try again with newly-emptied keystore
                             }

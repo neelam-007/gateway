@@ -137,7 +137,7 @@ public class MessageProcessor {
                 }
             } catch (KeyStoreCorruptException e) {
                 Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
-                SsgKeyStoreManager.deleteKeyStore(ssg);
+                SsgKeyStoreManager.deleteStores(ssg);
                 // FALLTHROUGH -- retry, creating new keystore
             }
             req.reset();
@@ -172,7 +172,7 @@ public class MessageProcessor {
                 SsgKeyStoreManager.deleteClientCert(ssg);
             } catch (KeyStoreCorruptException e1) {
                 Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
-                SsgKeyStoreManager.deleteKeyStore(ssg);
+                SsgKeyStoreManager.deleteStores(ssg);
             }
             ssg.resetSslContext();
             // FALLTHROUGH -- retry, creating new keystore

@@ -6,22 +6,18 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.security.CertificateRequest;
+import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.RsaSignerEngine;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.skunkworks.xss4j.Xss4jWrapper;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
-import java.security.cert.Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.KeyPair;
-
-import com.l7tech.skunkworks.xss4j.Xss4jWrapper;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.security.CertificateRequest;
-import com.l7tech.common.security.RsaSignerEngine;
-import org.bouncycastle.jce.provider.JCERSAPrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -41,15 +37,7 @@ public class SsgKeyStoreManagerTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    public void testKeyStore() {
-        try {
-            doTestKeyStore();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void doTestKeyStore() throws Exception {
+    public void testKeyStore() throws Exception {
         final Xss4jWrapper x = new Xss4jWrapper();
 
         KeyPair kp = JceProvider.generateRsaKeyPair();
@@ -64,13 +52,13 @@ public class SsgKeyStoreManagerTest extends TestCase {
         testSsg.cmPassword("tralala".toCharArray());
 
 
-        SsgKeyStoreManager.deleteKeyStore(testSsg);
+        SsgKeyStoreManager.deleteStores(testSsg);
 
-        SsgKeyStoreManager.saveClientCertificate(testSsg, kp.getPrivate(), cert);
+        SsgKeyStoreManager.saveClientCertificate(testSsg, kp.getPrivate(), cert, testSsg.cmPassword());
 
         X509Certificate haveCert = SsgKeyStoreManager.getClientCert(testSsg);
         assertTrue(haveCert.equals(cert));
 
-        //SsgKeyStoreManager.deleteKeyStore(testSsg);
+        //SsgKeyStoreManager.deleteStores(testSsg);
     }
 }
