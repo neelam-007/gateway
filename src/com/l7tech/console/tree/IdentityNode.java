@@ -72,7 +72,9 @@ public class IdentityNode extends AbstractTreeNode {
      */
     public Assertion[] asAssertions() {
         Frame f = TopComponents.getInstance().getMainWindow();
-        FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true);
+        FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+        options.disableOpenProperties();
+        FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
         fd.pack();
         Utilities.centerOnScreen(fd);
         Principal[] principals = fd.showDialog();

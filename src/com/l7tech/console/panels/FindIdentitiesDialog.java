@@ -127,6 +127,14 @@ public class FindIdentitiesDialog extends JDialog {
         }
 
         /**
+         * Disable the properties opening for the selected item
+         * Enabled by default.
+         */
+        public void disableOpenProperties() {
+            enableOpenProperties = false;
+        }
+
+        /**
          * Set the selection mode. Use one of the values from
          * <code>ListSelectionModel</code>
          *
@@ -147,6 +155,7 @@ public class FindIdentitiesDialog extends JDialog {
         }
 
         boolean enableDeleteAction = false;
+        boolean enableOpenProperties = true;
         int selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
         long initialProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
     }
@@ -656,7 +665,9 @@ public class FindIdentitiesDialog extends JDialog {
                       if (row == -1) return;
                       Object o = searchResultTable.getModel().getValueAt(row, 0);
                       if (o == null) return;
-                      showEntityDialog(o);
+                      if (options.enableOpenProperties) {
+                        showEntityDialog(o);
+                      }
                   }
               }
           });
@@ -672,12 +683,10 @@ public class FindIdentitiesDialog extends JDialog {
                   EntityHeader eh = (EntityHeader)searchResultTable.getValueAt(row, 0);
 
                   int keyCode = e.getKeyCode();
-                  if (keyCode == KeyEvent.VK_ENTER) {
+                  if (keyCode == KeyEvent.VK_ENTER && options.enableOpenProperties) {
                       showEntityDialog(eh);
                   } else if (keyCode == KeyEvent.VK_DELETE && options.enableDeleteAction) {
                       deleteEntity(eh, row);
-                  } else if (keyCode == KeyEvent.VK_ESCAPE) {
-                      dispose();
                   }
               }
           });
