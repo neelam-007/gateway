@@ -60,8 +60,10 @@ public class ServiceNode extends EntityHeaderNode {
             if (svc == null) {
                 TopComponents creg = TopComponents.getInstance();
                 JTree tree = (JTree)creg.getComponent(ServicesTree.NAME);
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                model.removeNodeFromParent(this);
+                if (tree !=null) {
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    model.removeNodeFromParent(this);
+                }
                 throw new FindException("The service '"+eh.getName()+"' does not exist any more.");
             }
         }
