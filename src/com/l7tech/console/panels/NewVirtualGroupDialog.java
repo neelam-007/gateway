@@ -12,7 +12,7 @@ import java.awt.*;
  * <p> @author fpang </p>
  * $Id$
  */
-public class FederatedVirtualGroup extends JDialog {
+public class NewVirtualGroupDialog extends JDialog {
     private JPanel mainPanel;
     private JTextField groupNameTextField;
     private JTextField x509DNPatternTextField;
@@ -21,7 +21,7 @@ public class FederatedVirtualGroup extends JDialog {
     private JButton cancelButton;
     private JTextField textField1;
 
-    public FederatedVirtualGroup() {
+    public NewVirtualGroupDialog() {
 
     }
 
