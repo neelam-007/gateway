@@ -24,6 +24,7 @@ import org.w3c.dom.Element;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -258,9 +259,22 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     private void sendChallenge(SoapRequest sreq, SoapResponse sresp,
-                               HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
-        sendFault(sreq, sresp, hreq, hresp,
-                HttpServletResponse.SC_UNAUTHORIZED, SoapFaultUtils.FC_CLIENT, "Authentication Required");
+                               HttpServletRequest hreq, HttpServletResponse hresp) throws IOException {
+        ServletOutputStream sos = null;
+        try {
+            // the challenge http header is supposed to already been appended at that point-ah
+            hresp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            PublishedService pserv = (PublishedService)sreq.getParameter(Request.PARAM_SERVICE);
+            String purl = "";
+            if (pserv != null && sresp.isPolicyViolated()) {
+                purl = makePolicyUrl(hreq, pserv.getOid());
+                hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
+            }
+            sos = hresp.getOutputStream();
+            sos.print("Authentication Required");
+        } finally {
+            if (sos != null) sos.close();
+        }
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
