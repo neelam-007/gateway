@@ -91,7 +91,6 @@ public class DistributedMessageIdManager implements MessageIdManager {
                 HibernatePersistenceContext context = null;
                 Connection conn = null;
                 PreparedStatement ps = null;
-                ResultSet rs = null;
                 try {
                     // load old message ids from database
                     context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
@@ -105,17 +104,17 @@ public class DistributedMessageIdManager implements MessageIdManager {
                 } finally {
                     if (conn != null) try {
                         conn.rollback();
-                    } finally {
-                        if (rs != null) try {
-                            rs.close();
-                        } finally {
-                            try {
-                                if (ps != null) ps.close();
-                            } finally {
-                                if (context != null) context.close();
-                            }
-                        }
+                    } catch (Exception e) {
+                        logger.log(Level.INFO, "Caught exception rolling back JDBC transaction", e);
                     }
+
+                    if (ps != null) try {
+                        ps.close();
+                    } catch (Exception e) {
+                        logger.log(Level.INFO, "Caught exception closing PreparedStatement", e);
+                    }
+
+                    if (context != null) context.close();
                 }
             } catch ( Exception e ) {
                 logger.log( Level.WARNING, "Caught exception in Message ID Garbage Collection task", e );
@@ -318,7 +317,7 @@ public class DistributedMessageIdManager implements MessageIdManager {
 
     private TreeCache tree;
 
-    private static final int GC_PERIOD = 1 * 30 * 1000;
+    private static final int GC_PERIOD = 5 * 60 * 1000;
     private static final String MESSAGEID_PARENT_NODE = DistributedMessageIdManager.class.getName() + "/messageId";
     private static final String EXPIRES_ATTR = "expires";
 }
