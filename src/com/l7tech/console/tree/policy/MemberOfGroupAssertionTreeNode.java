@@ -80,7 +80,7 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Group membership " + ((MemberOfGroup)getUserObject()).getGroupName() +
+        return "Group Membership: " + ((MemberOfGroup)getUserObject()).getGroupName() +
           " [" + idProviderName() + "]";
     }
 }
