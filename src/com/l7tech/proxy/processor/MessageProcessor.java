@@ -171,18 +171,21 @@ public class MessageProcessor {
         if (!ssg.isCredentialsConfigured())
             throw new IllegalArgumentException("need credentials to apply for a certificate");
         log.info("Generating new RSA key pair (could take several seconds)...");
-        Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
-        JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
-        KeyPair keyPair = kpg.generateKeyPair();
-        PKCS10CertificationRequest csr = SslUtils.makeCsr(ssg.getUsername(),
-                                                          keyPair.getPublic(),
-                                                          keyPair.getPrivate());
-        X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
-                                                                ssg.getUsername(),
-                                                                ssg.password(),
-                                                                csr);
-        SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
-        Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
+        try {
+            Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
+            JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
+            KeyPair keyPair = kpg.generateKeyPair();
+            PKCS10CertificationRequest csr = SslUtils.makeCsr(ssg.getUsername(),
+                                                              keyPair.getPublic(),
+                                                              keyPair.getPrivate());
+            X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
+                                                                    ssg.getUsername(),
+                                                                    ssg.password(),
+                                                                    csr);
+            SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
+        } finally {
+            Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
+        }
     }
 
     /**
