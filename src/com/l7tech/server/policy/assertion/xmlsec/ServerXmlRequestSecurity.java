@@ -102,6 +102,9 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             throw new PolicyAssertionException(e.getMessage(), e);
         }
 
+        // clean the session id from the security header
+        SecureConversationTokenHandler.consumeSessionInfoFromDocument(soapmsg);
+
         // upload cert as credentials
         String certCN = null;
         try {
