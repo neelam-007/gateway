@@ -1459,7 +1459,7 @@ public class MainWindow extends JFrame {
         getMainSplitPaneRight().validate();
         getMainSplitPaneRight().repaint();
         getServicesTree().setModel(null);
-
+        getIdentitiesTree().setModel(null);
         updateActions(null);
         fireDisconnected();
 

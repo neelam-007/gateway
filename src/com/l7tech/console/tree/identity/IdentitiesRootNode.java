@@ -92,7 +92,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
     public Action[] getActions() {
         return new Action[]{
             new NewProviderAction(this),
-            new NewSamlProviderAction(this),
+       //     new NewSamlProviderAction(this),
             new RefreshTreeNodeAction(this)};
     }
 
