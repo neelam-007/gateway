@@ -79,7 +79,7 @@ public class IdentityProviderDialog extends JDialog {
      * @param header
      */
     private void fireEventProviderAdded(EntityHeader header) {
-        EntityEvent event = new EntityEvent(header);
+        EntityEvent event = new EntityEvent(this, header);
         EventListener[] listeners = listenerList.getListeners(EntityListener.class);
         for (int i = 0; i < listeners.length; i++) {
             ((EntityListener)listeners[i]).entityAdded(event);
@@ -91,7 +91,7 @@ public class IdentityProviderDialog extends JDialog {
      * @param header
      */
     private void fireEventProviderUpdated(EntityHeader header) {
-        EntityEvent event = new EntityEvent(header);
+        EntityEvent event = new EntityEvent(this, header);
         EventListener[] listeners = listenerList.getListeners(EntityListener.class);
         for (int i = 0; i < listeners.length; i++) {
             ((EntityListener)listeners[i]).entityUpdated(event);

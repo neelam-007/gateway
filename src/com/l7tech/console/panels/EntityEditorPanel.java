@@ -42,7 +42,7 @@ public abstract class EntityEditorPanel extends JPanel {
      * @param eh the entity associated with the event
      */
     public void fireEntityUpdate(EntityHeader eh) {
-        EntityEvent event = new EntityEvent(eh);
+        EntityEvent event = new EntityEvent(this, eh);
         EventListener[] listeners = listenerList.getListeners(EntityListener.class);
         for (int i = 0; i < listeners.length; i++) {
             ((EntityListener) listeners[i]).entityUpdated(event);
@@ -56,7 +56,7 @@ public abstract class EntityEditorPanel extends JPanel {
      * @param eh the entity associated with the event
      */
     public void fireEntityAdded(EntityHeader eh) {
-        EntityEvent event = new EntityEvent(eh);
+        EntityEvent event = new EntityEvent(this, eh);
         EventListener[] listeners = listenerList.getListeners(EntityListener.class);
         for (int i = 0; i < listeners.length; i++) {
             ((EntityListener) listeners[i]).entityAdded(event);
@@ -70,7 +70,7 @@ public abstract class EntityEditorPanel extends JPanel {
      * @param eh the entity associated with the event
      */
     public void fireEntityRemoved(EntityHeader eh) {
-        EntityEvent event = new EntityEvent(eh);
+        EntityEvent event = new EntityEvent(this, eh);
         EventListener[] listeners = listenerList.getListeners(EntityListener.class);
         for (int i = 0; i < listeners.length; i++) {
             ((EntityListener) listeners[i]).entityAdded(event);

@@ -1,11 +1,22 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.panels.IdentityProviderDialog;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
+import java.util.Enumeration;
+import java.util.Collections;
+import java.util.List;
+import java.util.Iterator;
+import java.awt.*;
 
 /**
  * The <code>IdentityProviderPropertiesAction</code> edits the
@@ -54,9 +65,33 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                 JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
                 IdentityProviderDialog d =
                   new IdentityProviderDialog(f, ((EntityHeaderNode)node).getEntityHeader());
+                d.addEntityListener(entityListener);
                 d.setResizable(false);
                 d.show();
             }
         });
     }
+
+    EntityListener entityListener = new EntityListenerAdapter() {
+        public void entityUpdated(EntityEvent ev) {
+            if (tree == null) {
+                log.warning("Internal: tree has not been set.");
+                return;
+            }
+
+            try {
+                tree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                Enumeration enumeration = node.children();
+
+                while (enumeration.hasMoreElements()) {
+                    AbstractTreeNode n = (AbstractTreeNode)enumeration.nextElement();
+                    n.setHasLoadedChildren(false);
+                    model.nodeStructureChanged(n);
+                }
+            } finally {
+                tree.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            }
+        }
+    };
 }

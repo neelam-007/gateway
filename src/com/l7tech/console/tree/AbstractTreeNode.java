@@ -66,6 +66,22 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
+     * test whether the node has loaded it's child nodes
+     * @return true if the children have been loaded,
+     *         false otherwise
+     */
+    public boolean hasLoadedChildren() {
+        return hasLoadedChildren;
+    }
+
+    /**
+     * @param b the new children loaded property
+     */
+    public void setHasLoadedChildren(boolean b) {
+        this.hasLoadedChildren = b;
+    }
+
+    /**
      * Returns the number of children <code>TreeNode</code>s the receiver
      * contains.
      */

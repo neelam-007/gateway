@@ -321,7 +321,7 @@ public class PasswordDialog extends JDialog {
                 eh.setOid(user.getOid());
                 eh.setName(user.getName());
                 eh.setType(EntityType.USER);
-                listener.entityUpdated(new EntityEvent(eh));
+                listener.entityUpdated(new EntityEvent(this, eh));
             }
         } catch (Exception e) {
             log.log(Level.WARNING, "changePassword()", e);

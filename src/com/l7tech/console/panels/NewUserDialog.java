@@ -94,7 +94,7 @@ public class NewUserDialog extends JDialog {
      * @param header
      */
     private void fireEventUserAdded(EntityHeader header) {
-        EntityEvent event = new EntityEvent(header);
+        EntityEvent event = new EntityEvent(this, header);
         EventListener[] listeners = listenerList.getListeners(EntityListener.class);
         for (int i = 0; i < listeners.length; i++) {
             ((EntityListener)listeners[i]).entityAdded(event);

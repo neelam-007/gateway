@@ -251,7 +251,7 @@ public class EditServiceNameDialog extends JDialog {
                 eh.setOid(service.getOid());
                 eh.setName(service.getName());
                 eh.setType(EntityType.SERVICE);
-                listener.entityUpdated(new EntityEvent(eh));
+                listener.entityUpdated(new EntityEvent(this, eh));
             }
         } catch (Exception e) {
             ErrorManager.getDefault().notify(Level.WARNING, e,"There was an system error saving the service" );
