@@ -13,8 +13,8 @@ import org.w3c.dom.Document;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Creates a Security header and decorates a message according to instructions passed in.
@@ -59,14 +59,14 @@ public interface WssDecorator {
         /**
          * populate this with Element objects
          */
-        public List getElementsToEncrypt() {
+        public Set getElementsToEncrypt() {
             return elementsToEncrypt;
         }
 
         /**
          * populate this with Element objects
          */
-        public List getElementsToSign() {
+        public Set getElementsToSign() {
             return elementsToSign;
         }
 
@@ -82,8 +82,8 @@ public interface WssDecorator {
         private X509Certificate senderCertificate = null;
         private PrivateKey senderPrivateKey = null;
         private boolean signTimestamp;
-        private List elementsToEncrypt = new ArrayList();
-        private List elementsToSign = new ArrayList();
+        private Set elementsToEncrypt = new HashSet();
+        private Set elementsToSign = new HashSet();
         private LoginCredentials usernameTokenCredentials = null;
     }
 
