@@ -33,8 +33,10 @@ public class LogMessage {
         // Strip redundant info from detail message (Bug #1281)
         String stripex = "^.*?\\s+\\d\\d\\d\\d\\d?\\s+\\d\\d?\\:\\d\\d?\\:\\d\\d?\\s+[AP]M\\s+";
         String severity = log.getLevel().toString() + ":\\s+";
-        stripex += msgClass.replace('$', '.') + "\\s+";
-        stripex += msgMethod.replace('$', '.') + "\\s+" + severity;
+        if (msgClass != null)
+            stripex += msgClass.replace('$', '.') + "\\s+";
+        if (msgMethod != null)
+            stripex += msgMethod.replace('$', '.') + "\\s+" + severity;
         msgDetails = log.getMessage().replaceFirst(stripex, "");
     }
 
