@@ -98,6 +98,7 @@ public class WssProcessorImpl implements WssProcessor {
             } else if (securityChildToProcess.getLocalName().equals("Signature")) {
                 processSignature(securityChildToProcess);
             } else {
+                // todo, check for mustUnderstand
                 logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
             }
         }
