@@ -7,6 +7,7 @@
 package com.l7tech.common.security.xml.decorator;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Element;
 
@@ -255,6 +256,6 @@ public class DecorationRequirements {
     private String preferredWSUNamespace = SoapUtil.WSU_NAMESPACE;
     private Date timestampCreatedDate = null;
     private int timestampTimeoutMillis = 0;
-    private String securityHeaderActor = null;
+    private String securityHeaderActor = SecurityActor.L7ACTOR.getValue();
     private boolean includeSamlTokenInSignature = false;
 }

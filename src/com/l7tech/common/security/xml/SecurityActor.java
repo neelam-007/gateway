@@ -12,7 +12,7 @@ package com.l7tech.common.security.xml;
  * @author flascelles@layer7-tech.com
  */
 public class SecurityActor {
-    public static final SecurityActor L7ACTOR = new SecurityActor("l7");
+    public static final SecurityActor L7ACTOR = new SecurityActor("secure_span");
     public static final SecurityActor NOACTOR = new SecurityActor(null);
 
     private String attributeValue;

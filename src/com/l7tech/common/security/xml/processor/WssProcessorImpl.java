@@ -13,6 +13,7 @@ import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
@@ -83,7 +84,17 @@ public class WssProcessorImpl implements WssProcessor {
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
 
         // Resolve the relevent Security header
-        cntx.releventSecurityHeader = SoapUtil.getSecurityElement(cntx.processedDocument);
+        Element l7secheader = SoapUtil.getSecurityElement(cntx.processedDocument, SecurityActor.L7ACTOR.getValue());
+        Element noactorsecheader = SoapUtil.getSecurityElement(cntx.processedDocument);
+        if (l7secheader != null) {
+            cntx.releventSecurityHeader = l7secheader;
+            cntx.secHeaderActor = SecurityActor.L7ACTOR;
+        } else {
+            cntx.releventSecurityHeader = noactorsecheader;
+            if (cntx.releventSecurityHeader != null) {
+                cntx.secHeaderActor = SecurityActor.NOACTOR;
+            }
+        }
 
         // maybe there are no security headers at all in which case, there is nothing to process
         if (cntx.releventSecurityHeader == null) {
@@ -398,7 +409,23 @@ public class WssProcessorImpl implements WssProcessor {
 
         // If there's a KeyIdentifier, log whether it's talking about our key
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
-        XencUtil.checkKeyInfo(encryptedKeyElement, recipientCert);
+        try {
+            XencUtil.checkKeyInfo(encryptedKeyElement, recipientCert);
+        } catch (GeneralSecurityException e) {
+            if (cntx.secHeaderActor == SecurityActor.L7ACTOR) {
+                logger.warning("We do not appear to be the intended recipient for this EncryptedKey however the " +
+                               "security header is clearly addressed to us");
+                throw e;
+            } else if (cntx.secHeaderActor == SecurityActor.NOACTOR) {
+                logger.log(Level.INFO, "We do not appear to be the intended recipient for this " +
+                                       "EncryptedKey. Will leave it alone since the security header is not " +
+                                       "explicitely addressed to us.", e);
+                return;
+            } else {
+                throw new RuntimeException("cntx.secHeaderActor not set"); // should not happen unless there is a bug
+            }
+
+        }
 
         // verify that the algo is supported
         XencUtil.checkEncryptionMethod(encryptedKeyElement);
@@ -974,6 +1001,10 @@ public class WssProcessorImpl implements WssProcessor {
                 }
                 return null;
             }
+
+            public SecurityActor getProcessedActor() {
+                return cntx.secHeaderActor;
+            }
         };
     }
 
@@ -990,6 +1021,7 @@ public class WssProcessorImpl implements WssProcessor {
         Element releventSecurityHeader = null;
         Map x509TokensById = new HashMap();
         Map securityTokenReferenceElementToTargetElement = new HashMap();
+        SecurityActor secHeaderActor;
     }
 
     private static class X509SecurityTokenImpl extends MutableX509SigningSecurityToken implements X509SecurityToken {

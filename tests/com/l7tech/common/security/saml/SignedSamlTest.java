@@ -1,6 +1,7 @@
 package com.l7tech.common.security.saml;
 
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.util.SoapUtil;
@@ -133,7 +134,10 @@ public class SignedSamlTest extends TestCase {
         new WssDecoratorImpl().decorateMessage(request, req);
 
         // hack message so original signature refers to the saml token instead of the BST
-        Element security = SoapUtil.getSecurityElement(request);
+        Element security = SoapUtil.getSecurityElement(request, SecurityActor.L7ACTOR.getValue());
+        if (security == null) {
+            security = SoapUtil.getSecurityElement(request);
+        }
         assertNotNull(security);
         Element bst = XmlUtil.findOnlyOneChildElementByName(security, security.getNamespaceURI(), "BinarySecurityToken");
         assertNotNull(bst);
@@ -172,7 +176,10 @@ public class SignedSamlTest extends TestCase {
         new WssDecoratorImpl().decorateMessage(request, req);
 
         // Hand-hack the decorated message, replacing the BST with the saml:assertion
-        Element security = SoapUtil.getSecurityElement(request);
+        Element security = SoapUtil.getSecurityElement(request, SecurityActor.L7ACTOR.getValue());
+        if (security == null) {
+            security = SoapUtil.getSecurityElement(request);
+        }
         assertNotNull(security);
         Element bst = XmlUtil.findOnlyOneChildElementByName(security, security.getNamespaceURI(), "BinarySecurityToken");
         assertNotNull(bst);
