@@ -278,8 +278,6 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         ServiceNode sn = getServiceNodeCookie();
         if (sn == null)
             throw new IllegalArgumentException("No edited service specified");
-        // Todo, plug in new policy import logic
-
         try {
             Assertion newRoot = PolicyImporter.importPolicy(pn.getFile());
             // for some reason, the PublishedService class does not allow to set a policy
