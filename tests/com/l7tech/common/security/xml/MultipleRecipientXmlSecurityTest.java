@@ -22,6 +22,8 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 
 /**
  * Tests decoration and processing of soap messages secured for multiple recipients.
@@ -77,7 +79,6 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         // ACTOR PROMOTION
         Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
         assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
-
         alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
 
         // SECOND PROCESSING
@@ -115,13 +116,56 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         // ACTOR PROMOTION
         Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
         assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
-
         alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
 
         // SECOND PROCESSING
         res = process(doc);
 
         assertTrue("The body was signed", checkSignedElement(res, body));
+    }
+
+    public void testAdjacentEncryptedElementsForDifferentRecipients() throws Exception {
+        Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        Element body = SoapUtil.getBodyElement(doc);
+        Element prodidEl = getElementByName(doc, "productid");
+        Element acctidEl = getElementByName(doc, "accountid");
+
+        logger.info("Original document:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+        String alternaterecipient = "downstream";
+
+        // FIRST DECORATION
+        DecorationRequirements req = otherDecorationRequirements(doc, alternaterecipient);
+        req.getElementsToEncrypt().add(prodidEl);
+        decorator.decorateMessage(doc, req);
+
+        // SECOND DECORATION
+        req = defaultDecorationRequirements(doc);
+        req.getElementsToEncrypt().add(acctidEl);
+        decorator.decorateMessage(doc, req);
+
+        logger.info("Document signed for two recipients and encrypted for second:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+        // FIRST PROCESSING
+        ProcessorResult res = process(doc);
+
+        assertTrue("The body was signed", checkSignedElement(res, body));
+        assertTrue("The accountid was encrypted", checkEncryptedElement(res, acctidEl));
+
+        logger.info("Document once processed by default recipient:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+        // ACTOR PROMOTION
+        Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
+        assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
+        alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
+
+        // SECOND PROCESSING
+        res = process(doc);
+
+        logger.info("Document once processed by both recipients:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+        assertTrue("The body was signed", checkSignedElement(res, body));
+        assertTrue("The accountid was encrypted", checkEncryptedElement(res, prodidEl));
     }
 
     private boolean checkEncryptedElement(ProcessorResult res, Element el) {
@@ -144,6 +188,18 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
             }
         }
         return false;
+    }
+
+    private Element getElementByName(Document doc, String childName) throws Exception {
+        NodeList list = doc.getElementsByTagName(childName);
+        for (int i = 0; i < list.getLength(); i++) {
+            Node node = list.item(i);
+            if (node instanceof Element) {
+                Element el = (Element)node;
+                if (el.getLocalName().equals(childName)) return el;
+            }
+        }
+        throw new RuntimeException("Element " + childName + " not found in " + XmlUtil.nodeToFormattedString(doc));
     }
 
     private DecorationRequirements defaultDecorationRequirements(Document doc) throws Exception {
