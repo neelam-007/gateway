@@ -758,6 +758,7 @@
             <fileset dir="${src.root}/tests">
                 <include name="com/l7tech/**/*.properties" if="dev.build"/>
                 <include name="com/l7tech/common/security/xml/test_*" if="dev.build"/>
+                <include name="com/l7tech/common/testApplicationContext.xml" if="dev.build"/>
             </fileset>
 
 
