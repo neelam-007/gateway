@@ -135,6 +135,7 @@ public class PolicyServlet extends HttpServlet {
         }
 
         // THE POLICY SHOULD BE STRIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
+        // (this may be everything, if the user has no business seeing this policy)
         try {
             logger.log(Level.INFO, "Policy before filtering: " + targetService.getPolicyXml());
             targetService = FilterManager.getInstance().applyAllFilters(user, targetService);
