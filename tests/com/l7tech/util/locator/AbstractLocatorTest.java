@@ -2,11 +2,14 @@ package com.l7tech.util.locator;
 
 import com.l7tech.util.Locator;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.StubDataStore;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import junit.extensions.TestSetup;
 
 import java.util.logging.Logger;
+import java.io.File;
 
 /**
  * Class AbstractLocatorTest.
@@ -14,6 +17,7 @@ import java.util.logging.Logger;
  */
 public class AbstractLocatorTest extends TestCase {
     static Logger logger = Logger.getLogger(AbstractLocatorTest.class.getName());
+
     /**
      * test <code>AbstractLocatorTest</code> constructor
      */
@@ -26,8 +30,25 @@ public class AbstractLocatorTest extends TestCase {
      * AbstractLocatorTest <code>TestCase</code>
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite(AbstractLocatorTest.class);
-        return suite;
+        final TestSuite suite = new TestSuite(AbstractLocatorTest.class);
+        TestSetup wrapper = new TestSetup(suite) {
+            /**
+             * test setup that deletes the stub data store; will trigger
+             * store recreate
+             * @throws Exception on error deleting the stub data store
+             */
+            protected void setUp() throws Exception {
+                File f = new File(StubDataStore.DEFAULT_STORE_PATH);
+                if (f.exists()) {
+                    f.delete();
+                }
+            }
+
+            protected void tearDown() throws Exception {
+                ;
+            }
+        };
+        return wrapper;
     }
 
     public void setUp() throws Exception {
@@ -53,14 +74,13 @@ public class AbstractLocatorTest extends TestCase {
     public void testPropertiesLocator() throws Exception {
         LocatorStub.recycle();
         System.setProperty("com.l7tech.util.locator.properties",
-                           "/com/l7tech/console/resources/services.properties");
+          "/com/l7tech/console/resources/services.properties");
         logger.info(Locator.getDefault().toString());
         Object result =
           Locator.getDefault().lookup(IdentityProviderConfigManager.class);
         if (result == null) {
             fail("Exptected successfull lookup.");
         }
-
     }
 
     /**
@@ -80,7 +100,7 @@ public class AbstractLocatorTest extends TestCase {
      * Test <code>AbstractLocatorTest</code> main.
      */
     public static void main(String[] args) throws
-            Throwable {
+      Throwable {
         junit.textui.TestRunner.run(suite());
     }
 }
