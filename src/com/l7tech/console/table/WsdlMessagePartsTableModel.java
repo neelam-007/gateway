@@ -5,16 +5,23 @@ import javax.wsdl.Definition;
 import javax.wsdl.Message;
 import javax.wsdl.Part;
 import javax.xml.namespace.QName;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Class <code>WsdlMessagePartsTableModel</code> is an implementation
  * of <code>TableModel</code> that holds the wsdl message parts.
+ *
+ * The parts are maintained in the internal linked collection,
+ * to maintain predictable traversal order.
+ * Note that the class is not aware of the external modifications
+ * doen to the <code>Message</code> instance.
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
 public class WsdlMessagePartsTableModel extends AbstractTableModel {
     private Message message;
     private Definition definition;
+    private List partsList = new ArrayList();
 
     /**
      * Create the new <code>WsdlMessagePartsTableModel</code>
@@ -24,6 +31,10 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
     public WsdlMessagePartsTableModel(Message m, Definition d) {
         message = m;
         definition = d;
+        if (m == null || d == null) {
+            throw new IllegalArgumentException();
+        }
+        partsList.addAll(message.getParts().values());
     }
 
     /**
@@ -70,16 +81,16 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
             removePart(p.getName());
             p.setName(aValue.toString());
             addPart(p);
-        } else if (columnIndex == 1){
+        } else if (columnIndex == 1) {
             if (aValue instanceof QName) {
                 p.setTypeName((QName)aValue);
             } else {
                 throw new IllegalArgumentException(
-                  "Expected "+QName.class.getName() +
-                  "Received "+aValue.getClass());
+                  "Expected " + QName.class.getName() +
+                  "Received " + aValue.getClass());
             }
         } else {
-            throw new IndexOutOfBoundsException("" + columnIndex + " >= " +getColumnCount());
+            throw new IndexOutOfBoundsException("" + columnIndex + " >= " + getColumnCount());
         }
     }
 
@@ -92,7 +103,8 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @see #getColumnCount
      */
     public int getRowCount() {
-        return message.getParts().size();
+        // return message.getParts().size();
+        return partsList.size();
     }
 
     /**
@@ -109,10 +121,10 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
         Part p = getPartAt(rowIndex);
         if (columnIndex == 0) {
             return p.getName();
-        } else if (columnIndex == 1){
+        } else if (columnIndex == 1) {
             return p.getTypeName();
         }
-        throw new IndexOutOfBoundsException("" + columnIndex + " >= " +getColumnCount());
+        throw new IndexOutOfBoundsException("" + columnIndex + " >= " + getColumnCount());
     }
 
     /**
@@ -135,6 +147,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      */
     public void addPart(Part p) {
         message.addPart(p);
+        partsList.add(p);
         this.fireTableStructureChanged();
     }
 
@@ -142,11 +155,13 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * remove the message by name
      * @param name the message name local part
      */
-    public void removePart(String name) {
-        Object removed = message.getParts().remove(name);
+    public Part removePart(String name) {
+        Part removed = (Part)message.getParts().remove(name);
         if (removed != null) {
+            partsList.remove(removed);
             this.fireTableStructureChanged();
         }
+        return removed;
     }
 
     /**
@@ -155,9 +170,10 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      */
     public Part removePart(int index) {
         Part p = getPartAt(index);
-        Part removed = (Part)message.getParts().remove(p.getName());
-        this.fireTableStructureChanged();
-        return removed;
+        if (p != null) {
+            return removePart(p.getName());
+        }
+        return null;
     }
 
     /**
@@ -195,7 +211,8 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @return	the Part at the specified row
      */
     private Part getPartAt(int rowIndex) {
-        Iterator it = message.getParts().values().iterator();
+        //Iterator it = message.getParts().values().iterator();
+        Iterator it = partsList.iterator();
         int row = 0;
         while (it.hasNext()) {
             Object o = it.next();
@@ -204,7 +221,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
                 return p;
             }
         }
-        throw new IndexOutOfBoundsException("" + rowIndex + " > " + message.getParts().size());
+        throw new IndexOutOfBoundsException("" + rowIndex + " > " + partsList.size());
     }
 
 }

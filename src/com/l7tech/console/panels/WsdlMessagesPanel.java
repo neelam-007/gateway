@@ -30,6 +30,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JTable messagesTable;
     private WsdlMessagesTableModel messagesTableModel;
+    private JScrollPane messagesTableModelTableScrollPane;
 
     private JScrollPane partsTableScrollPane;
     private JTable partsTable;
@@ -52,7 +53,8 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     private void initialize() {
         messagesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         messagesTable.setShowGrid(false);
-        // cellEditor.setClickCountToStart(1);
+        JViewport viewport = messagesTableModelTableScrollPane.getViewport();
+        viewport.setBackground(messagesTable.getBackground());
 
         addMessageButton.addActionListener(addMessageActionListener);
         removeMessageButton.addActionListener(removeMessageActionListener);
@@ -200,13 +202,13 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                   QName on = message.getQName();
                   QName nn =
                     new QName(on.getNamespaceURI(), (String)delegate.getCellEditorValue());
-                  messagesTableModel.removeMessage(on);
-                  message.setQName(nn);
-                  messagesTableModel.addMessage(message);
-                  return message;
+                  Message nm = definition.createMessage();
+                  nm.setUndefined(false);
+                  nm.setQName(nn);
+                  return nm;
               }
           };
-        cellEditor.setClickCountToStart(1);
+        //cellEditor.setClickCountToStart(1);
         messagesTable.setDefaultEditor(Object.class, cellEditor);
         if (messagesTableModel.getRowCount() == 0) {
             addMessageActionListener.actionPerformed(null);
@@ -363,8 +365,10 @@ public class WsdlMessagesPanel extends WizardStepPanel {
           public void actionPerformed(ActionEvent e) {
               String newMessageName = null;
               boolean found = false;
+              int suffixAdd = 0;
               while (!found) {
-                  newMessageName = "NewMessage" + messagesTableModel.getRowCount();
+                  int msgSuffix = messagesTableModel.getRowCount()+ suffixAdd;
+                  newMessageName = "NewMessage" + msgSuffix;
                   found = true;
                   int rows = messagesTableModel.getRowCount();
                   for (int i = 0; i < rows; i++) {
@@ -379,6 +383,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                       messagesTableModel.addMessage(newMessageName);
                       break;
                   }
+                  suffixAdd++;
               }
           }
       };
@@ -482,14 +487,14 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         JButton _10;
         _10 = new JButton();
         removeMessagePartButton = _10;
-        _10.setText("Remove");
         _10.setLabel("Remove");
+        _10.setText("Remove");
         _9.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JButton _11;
         _11 = new JButton();
         addMessagePartButton = _11;
-        _11.setText("Add");
         _11.setLabel("Add");
+        _11.setText("Add");
         _9.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         com.intellij.uiDesigner.core.Spacer _12;
         _12 = new com.intellij.uiDesigner.core.Spacer();
@@ -504,23 +509,27 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         JButton _15;
         _15 = new JButton();
         removeMessageButton = _15;
-        _15.setText("Remove");
-        _15.setActionCommand("AddMessage");
         _15.setLabel("Remove");
+        _15.setActionCommand("AddMessage");
+        _15.setText("Remove");
         _14.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JButton _16;
         _16 = new JButton();
         addMessageButton = _16;
-        _16.setText("Add");
         _16.setLabel("Add");
+        _16.setText("Add");
         _14.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         com.intellij.uiDesigner.core.Spacer _17;
         _17 = new com.intellij.uiDesigner.core.Spacer();
         _14.add(_17, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        JTable _18;
-        _18 = new JTable();
-        messagesTable = _18;
-        _2.add(_18, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 1, 0, 3, 6, 6, new Dimension(-1, -1), new Dimension(150, 50), new Dimension(-1, -1)));
+        JScrollPane _18;
+        _18 = new JScrollPane();
+        messagesTableModelTableScrollPane = _18;
+        _2.add(_18, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 1, 0, 3, 7, 7, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JTable _19;
+        _19 = new JTable();
+        messagesTable = _19;
+        _18.setViewportView(_19);
     }
 
 
