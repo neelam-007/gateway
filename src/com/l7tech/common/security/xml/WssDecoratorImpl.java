@@ -22,6 +22,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -69,13 +70,25 @@ public class WssDecoratorImpl implements WssDecorator {
         }
     }
 
+    /**
+     * Decorate a soap message with WSS style security.
+     * @param message the soap message to decorate
+     * @param recipientCertificate todo
+     * @param senderCertificate todo
+     * @param senderPrivateKey todo
+     * @param signTimestamp todo
+     * @param elementsToEncrypt todo
+     * @param elementsToSign todo
+     * @param usernameTokenCredentials optional provide cleartext credentials here to be included in a usernametoken
+     */
     public void decorateMessage(Document message,
                                 X509Certificate recipientCertificate,
                                 X509Certificate senderCertificate,
                                 PrivateKey senderPrivateKey,
                                 boolean signTimestamp,
                                 Element[] elementsToEncrypt,
-                                Element[] elementsToSign)
+                                Element[] elementsToSign,
+                                LoginCredentials usernameTokenCredentials)
             throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException
     {
         Context c = new Context();
