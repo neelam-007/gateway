@@ -66,13 +66,6 @@ public class SecureConversationKeyDeriver {
         return output;
     }
 
-    /**
-     * @param secret the key used to compute the sha1 mac
-     */
-    /*private byte[] hmacsha1(byte[] secret, byte[] input) throws NoSuchAlgorithmException, InvalidKeyException {
-        return getHMacSHA1(secret).doFinal(input);
-    }*/
-
     private Mac getHMacSHA1(byte[] secret) throws NoSuchAlgorithmException, InvalidKeyException {
         if (hmac == null) {
             hmac = Mac.getInstance("HMacSHA1");
