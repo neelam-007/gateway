@@ -288,7 +288,9 @@ public class Service {
 
     private synchronized void initialiseConfigManager() throws java.rmi.RemoteException {
         try {
-            identityProviderConfigManager = (com.l7tech.identity.IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+            // identityProviderConfigManager = (com.l7tech.identity.IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+            // test
+            identityProviderConfigManager = new com.l7tech.identity.GlobalIdentityConfigManager();
             if (identityProviderConfigManager == null) throw new java.rmi.RemoteException("Cannot instantiate the IdentityProviderConfigManager");
         } catch (ClassCastException e) {
             e.printStackTrace(System.err);
