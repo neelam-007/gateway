@@ -1,17 +1,8 @@
-/*
- * $Header$
- */
 package com.l7tech.console.tree;
-
-import com.l7tech.adminservicestub.identities.IdentityWSService;
-import com.l7tech.adminservicestub.identities.IdentityWSServiceLocator;
-import com.l7tech.adminservicestub.identities.IdentityWS;
-import com.l7tech.adminservicestub.ListResultEntry;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.List;
-import java.util.ArrayList;
 
 
 /**
@@ -30,7 +21,7 @@ public class GroupTreeNode implements BasicTreeNode {
      * @exception IllegalArgumentException
      *                   thrown if the Entry instance is not a Comapny
      */
-    public GroupTreeNode(ListResultEntry entry)
+    public GroupTreeNode(EntityHeader entry)
       throws IllegalArgumentException {
         this.entry = entry;
     }
@@ -87,6 +78,6 @@ public class GroupTreeNode implements BasicTreeNode {
         return entry.getName();
     }
 
-    private ListResultEntry entry;
+    private EntityHeader entry;
     private String fqName;
 }

@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.adminservicestub.ListResultEntry;
 import com.l7tech.console.EditorDialog;
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.objectmodel.EntityHeader;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -42,7 +42,7 @@ public class NewUserDialog extends JDialog {
     private char[] newPassword;
 
     /* the company agent is added to */
-    private ListResultEntry cEntry;
+    private EntityHeader cEntry;
 
     /* the panel listener */
     private PanelListener panelListener;
@@ -55,7 +55,7 @@ public class NewUserDialog extends JDialog {
      * @param parent  the parent Frame. May be <B>null</B>
      * @param cEntry the company entry
      */
-    public NewUserDialog(JFrame parent, ListResultEntry cEntry) {
+    public NewUserDialog(JFrame parent, EntityHeader cEntry) {
         super(parent, true);
         this.cEntry = cEntry;
         this.parent = parent;

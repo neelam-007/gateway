@@ -1,6 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.adminservicestub.ListResultEntry;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.Enumeration;
 
@@ -28,7 +28,7 @@ public class TreeNodeFactory {
      *
      * @return the TreeNode for a given Entry
      */
-    public static BasicTreeNode getTreeNode(ListResultEntry entry) {
+    public static BasicTreeNode getTreeNode(EntityHeader entry) {
         if (entry == null) {
             throw new NullPointerException("entry");
         }

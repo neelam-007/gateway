@@ -1,9 +1,7 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.adminservicestub.ListResultEntry;
-import com.l7tech.adminservicestub.identities.IdentityWS;
-import com.l7tech.adminservicestub.identities.IdentityWSService;
-import com.l7tech.adminservicestub.identities.IdentityWSServiceLocator;
+
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +25,7 @@ public class GroupFolderTreeNode implements BasicTreeNode {
      * @exception IllegalArgumentException
      *                   thrown if the entry is <b>null
      */
-    public GroupFolderTreeNode(ListResultEntry entry)
+    public GroupFolderTreeNode(EntityHeader entry)
             throws IllegalArgumentException {
         this.entry = entry;
     }
@@ -49,9 +47,7 @@ public class GroupFolderTreeNode implements BasicTreeNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-        IdentityWSService service = new IdentityWSServiceLocator();
-        IdentityWS servicePort = service.getidentities(new java.net.URL("http://localhost:8080/ssg/services/identities"));
-        ListResultEntry[] res = servicePort.listGroupsInProvider(entry.getUid());
+        EntityHeader[] res = new EntityHeader[0];
         List list = new ArrayList();
         for (int i = 0; i < res.length; i++) {
             list.add(new GroupTreeNode(res[i]));
@@ -91,6 +87,6 @@ public class GroupFolderTreeNode implements BasicTreeNode {
         return "Groups";
     }
 
-    private ListResultEntry entry;
+    private EntityHeader entry;
     private String fqName;
 }

@@ -8,7 +8,7 @@ import com.l7tech.console.table.TableRowAction;
 import com.l7tech.console.table.TableRowMenu;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
-import com.l7tech.adminservicestub.ListResultEntry;
+import com.l7tech.objectmodel.EntityHeader;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -237,9 +237,9 @@ public class ContainerListPanel extends EditorPanel {
                             new ContextListTableModel.ObjectRowAdapter() {
                                 public Object getValue(Object o, int col) {
                                     String text = "";
-                                    if (o instanceof ListResultEntry) {
+                                    if (o instanceof EntityHeader) {
                                         if (col == 1) {
-                                            text = ((ListResultEntry) o).getName();
+                                            text = ((EntityHeader) o).getName();
                                         } else {
                                             return o;
                                         }
@@ -424,8 +424,8 @@ public class ContainerListPanel extends EditorPanel {
 
                     // based on value type and column, determine cell contents
                     setIcon(null);
-                    if (value instanceof ListResultEntry) {
-                        ListResultEntry entry = (ListResultEntry) value;
+                    if (value instanceof EntityHeader) {
+                        EntityHeader entry = (EntityHeader) value;
                         if (column == 0) {
                             setIcon(IconRepository.getIcon(entry));
                             setText(entry.getName());
@@ -591,7 +591,7 @@ public class ContainerListPanel extends EditorPanel {
          */
         public void onInsert(Object object) {
             BasicTreeNode row =
-                    TreeNodeFactory.getTreeNode((ListResultEntry) object);
+                    TreeNodeFactory.getTreeNode((EntityHeader) object);
             tableModel.addRow(row);
 
         }

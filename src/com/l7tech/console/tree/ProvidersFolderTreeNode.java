@@ -1,9 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.adminservicestub.ListResultEntry;
-import com.l7tech.adminservicestub.identities.IdentityWSService;
-import com.l7tech.adminservicestub.identities.IdentityWSServiceLocator;
-import com.l7tech.adminservicestub.identities.IdentityWS;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.*;
 
@@ -39,9 +36,7 @@ public class ProvidersFolderTreeNode implements BasicTreeNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-        IdentityWSService service = new IdentityWSServiceLocator();
-        IdentityWS servicePort = service.getidentities(new java.net.URL("http://localhost:8080/ssg/services/identities"));
-        ListResultEntry[] res = servicePort.listProviders();
+        EntityHeader[] res = new EntityHeader[0];
         List list =  new ArrayList();
         for (int i = 0;i<res.length;i++) {
             list.add(new ProviderTreeNode(res[i]));

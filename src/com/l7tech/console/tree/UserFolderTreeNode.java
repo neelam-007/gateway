@@ -1,9 +1,5 @@
 package com.l7tech.console.tree;
-
-import com.l7tech.adminservicestub.identities.IdentityWSService;
-import com.l7tech.adminservicestub.identities.IdentityWSServiceLocator;
-import com.l7tech.adminservicestub.identities.IdentityWS;
-import com.l7tech.adminservicestub.ListResultEntry;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.Collections;
 import java.util.Enumeration;
@@ -27,7 +23,7 @@ public class UserFolderTreeNode implements BasicTreeNode {
      * @exception IllegalArgumentException
      *                   thrown if the Entry instance is not a Comapny
      */
-    public UserFolderTreeNode(ListResultEntry entry)
+    public UserFolderTreeNode(EntityHeader entry)
       throws IllegalArgumentException {
         this.entry = entry;
     }
@@ -49,9 +45,7 @@ public class UserFolderTreeNode implements BasicTreeNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-        IdentityWSService service = new IdentityWSServiceLocator();
-        IdentityWS servicePort = service.getidentities(new java.net.URL("http://localhost:8080/ssg/services/identities"));
-        ListResultEntry[] res = servicePort.listUsersInProvider(entry.getUid());
+        EntityHeader[] res = new EntityHeader[0];
         List list = new ArrayList();
         for (int i = 0; i < res.length; i++) {
             list.add(new UserTreeNode(res[i]));
@@ -91,6 +85,6 @@ public class UserFolderTreeNode implements BasicTreeNode {
         return "Users";
     }
 
-    private ListResultEntry entry;
+    private EntityHeader entry;
     private String fqName;
 }

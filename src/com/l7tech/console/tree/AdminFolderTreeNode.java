@@ -1,6 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.adminservicestub.ListResultEntry;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.Collections;
 import java.util.Enumeration;
@@ -25,7 +25,7 @@ public class AdminFolderTreeNode implements BasicTreeNode {
      *                   thrown if the Entry instance is not a Root,
      *                   Realm or Company Entry
      */
-    public AdminFolderTreeNode(ListResultEntry entry) {
+    public AdminFolderTreeNode(EntityHeader entry) {
         this.entry = entry;
     }
 
@@ -74,7 +74,7 @@ public class AdminFolderTreeNode implements BasicTreeNode {
         return "Administrators";
     }
 
-    private ListResultEntry entry;
+    private EntityHeader entry;
     private String fqName;
 
 }

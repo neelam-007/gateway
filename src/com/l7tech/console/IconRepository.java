@@ -1,7 +1,7 @@
 package com.l7tech.console;
 
 import com.l7tech.console.tree.BasicTreeNode;
-import com.l7tech.adminservicestub.ListResultEntry;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 
@@ -40,7 +40,7 @@ public class IconRepository {
      * @param node   the BasicTreeNode instance
      * @return ImageIcon for the given node
      */
-    public static ImageIcon getIcon(ListResultEntry node) {
+    public static ImageIcon getIcon(EntityHeader node) {
       if (node == null) {
         throw new NullPointerException("node");
       }

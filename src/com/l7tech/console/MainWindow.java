@@ -1,11 +1,11 @@
 package com.l7tech.console;
 
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
-import com.l7tech.adminservicestub.ListResultEntry;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.sbar.JOutlookBar;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.objectmodel.EntityHeader;
 import org.apache.log4j.Category;
 
 import javax.help.HelpBroker;
@@ -842,7 +842,7 @@ public class MainWindow extends JFrame {
           dialog.show();
         } else if (TreeNodeMenu.NEW_USER.equals(e.getActionCommand())) {
           NewUserDialog dialog =
-          new NewUserDialog(MainWindow.this, (ListResultEntry)parent.getUserObject());
+          new NewUserDialog(MainWindow.this, (EntityHeader)parent.getUserObject());
           dialog.setResizable(false);
           dialog.setPanelListener(listenerBroker);
           dialog.show();
@@ -934,7 +934,7 @@ public class MainWindow extends JFrame {
      */
     public void onInsert(Object object) {
       BasicTreeNode newNode =
-      TreeNodeFactory.getTreeNode((ListResultEntry)object);
+      TreeNodeFactory.getTreeNode((EntityHeader)object);
       if (newNode.isLeaf()) return;
 
       JTree tree = getJTreeDirectoryView();
@@ -960,11 +960,11 @@ public class MainWindow extends JFrame {
      */
     public void onUpdate(Object object) {
       BasicTreeNode newNode =
-      TreeNodeFactory.getTreeNode((ListResultEntry)object);
+      TreeNodeFactory.getTreeNode((EntityHeader)object);
 
       if (newNode.isLeaf() ||
-          !(newNode instanceof ListResultEntry)) return;
-      ListResultEntry en = (ListResultEntry)newNode;
+          !(newNode instanceof EntityHeader)) return;
+      EntityHeader en = (EntityHeader)newNode;
 
       JTree tree = getJTreeDirectoryView();
       TreePath path = tree.getSelectionPath();
@@ -990,12 +990,12 @@ public class MainWindow extends JFrame {
      */
     public void onDelete(Object object) {
       BasicTreeNode newNode =
-      TreeNodeFactory.getTreeNode((ListResultEntry)object);
+      TreeNodeFactory.getTreeNode((EntityHeader)object);
 
       if (newNode.isLeaf() ||
-          !(newNode instanceof ListResultEntry)) return;
+          !(newNode instanceof EntityHeader)) return;
 
-      ListResultEntry en = (ListResultEntry)newNode;
+      EntityHeader en = (EntityHeader)newNode;
 
       JTree tree = getJTreeDirectoryView();
       TreePath path = tree.getSelectionPath().getParentPath();

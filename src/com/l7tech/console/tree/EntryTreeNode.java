@@ -2,7 +2,7 @@ package com.l7tech.console.tree;
 
 import java.util.Enumeration;
 import java.util.Collections;
-import com.l7tech.adminservicestub.ListResultEntry;
+import com.l7tech.objectmodel.EntityHeader;
 
 /**
  * The class represents an Entry gui node element in the
@@ -18,7 +18,7 @@ public class EntryTreeNode implements BasicTreeNode {
      *
      * @param entry  the entry represented by this <CODE>EntryTreeNode</CODE>
      */
-    public EntryTreeNode(ListResultEntry entry) {
+    public EntryTreeNode(EntityHeader entry) {
         this.entry = entry;
     }
 
@@ -67,5 +67,5 @@ public class EntryTreeNode implements BasicTreeNode {
         return sb.toString();
     }
 
-    private final ListResultEntry entry;
+    private final EntityHeader entry;
 }

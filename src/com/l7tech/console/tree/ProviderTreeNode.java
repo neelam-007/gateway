@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import com.l7tech.adminservicestub.ListResultEntry;
+import com.l7tech.objectmodel.EntityHeader;
 
 /**
  * The class represents an tree node gui node element that
@@ -25,7 +25,7 @@ public class ProviderTreeNode implements BasicTreeNode {
    * @exception IllegalArgumentException
    *                   thrown if the Entry instance is not a Realm
    */
-  public ProviderTreeNode(ListResultEntry entry) {
+  public ProviderTreeNode(EntityHeader entry) {
       if (entry == null) {
           throw new IllegalArgumentException("id == null");
       }
@@ -66,5 +66,5 @@ public class ProviderTreeNode implements BasicTreeNode {
         return getLabel();
     }
 
-    private ListResultEntry entry = null;
+    private EntityHeader entry = null;
 }
