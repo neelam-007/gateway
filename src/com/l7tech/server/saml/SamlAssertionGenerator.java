@@ -73,6 +73,22 @@ public class SamlAssertionGenerator {
             this.includeGroupMembership = includeGroupMembership;
         }
 
+        public boolean isSignEnvelope() {
+            return signEnvelope;
+        }
+
+        public void setSignEnvelope(boolean signEnvelope) {
+            this.signEnvelope = signEnvelope;
+        }
+
+        public boolean isSignAssertion() {
+            return signAssertion;
+        }
+
+        public void setSignAssertion(boolean signAssertion) {
+            this.signAssertion = signAssertion;
+        }
+
         public InetAddress getClientAddress() {
             return clientAddress;
         }
@@ -84,6 +100,9 @@ public class SamlAssertionGenerator {
         boolean includeGroupMembership;
         int expiryMinutes;
         InetAddress clientAddress;
+        boolean signEnvelope = true;
+        boolean signAssertion = true;
+
     }
 
 }

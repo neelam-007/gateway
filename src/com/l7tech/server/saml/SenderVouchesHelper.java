@@ -31,7 +31,7 @@ class SenderVouchesHelper extends SamlAssertionHelper {
      * @param creds
      * @param signer                the signer
      */
-    SenderVouchesHelper( Document soapDom, SamlAssertionGenerator.Options options, LoginCredentials creds, SignerInfo signer ) {
+    SenderVouchesHelper(Document soapDom, SamlAssertionGenerator.Options options, LoginCredentials creds, SignerInfo signer) {
         super(soapDom, options, creds, signer);
     }
 
@@ -49,7 +49,6 @@ class SenderVouchesHelper extends SamlAssertionHelper {
 
         SubjectConfirmationType st = at.getSubject().addNewSubjectConfirmation();
         st.addConfirmationMethod(Constants.CONFIRMATION_SENDER_VOUCHES);
-
         return getAssertionDocument( assertion );
     }
 }

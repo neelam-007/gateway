@@ -24,7 +24,6 @@ import org.w3.x2000.x09.xmldsig.KeyInfoType;
 import org.w3.x2000.x09.xmldsig.X509DataType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import x0Assertion.oasisNamesTcSAML1.*;
@@ -84,8 +83,6 @@ public abstract class SamlAssertionHelper {
             if (list.getLength() == 0) {
                 throw new IOException("Cannot locate the saml assertion in \n"+XmlUtil.nodeToString(soapMessage));
             }
-            Node node = list.item(0);
-
         } catch (Exception e) {
             SignatureException ex = new SignatureException("error signing the saml ticket");
             ex.initCause(e);
@@ -110,7 +107,7 @@ public abstract class SamlAssertionHelper {
      * @throws com.ibm.xml.dsig.XSignatureException
      *
      */
-    protected static void signEnvelope(Document soapMsg, PrivateKey privateKey, X509Certificate[] certChain)
+    protected void signEnvelope(Document soapMsg, PrivateKey privateKey, X509Certificate[] certChain)
       throws SignatureStructureException, XSignatureException
     {
         // is the envelope already ided?
@@ -139,7 +136,7 @@ public abstract class SamlAssertionHelper {
      *
      * @throws IllegalArgumentException if any of the parameters i <b>null</b>
      */
-    public static void signElement(Document document, final Element messagePart, String referenceId, PrivateKey privateKey, X509Certificate[] certChain)
+    private void signElement(Document document, final Element messagePart, String referenceId, PrivateKey privateKey, X509Certificate[] certChain)
       throws SignatureStructureException, XSignatureException {
 
         if (document == null || messagePart == null | referenceId == null ||
@@ -163,6 +160,7 @@ public abstract class SamlAssertionHelper {
         ref.addTransform(Transform.ENVELOPED);
         ref.addTransform(Transform.W3CC14N2);
         template.addReference(ref);
+
         Element emptySignatureElement = template.getSignatureElement();
 
         // Signature is inserted in Header/Security, as per WS-S
@@ -279,7 +277,7 @@ public abstract class SamlAssertionHelper {
         } else {
             ni.setFormat(Constants.NAMEIDENTIFIER_UNSPECIFIED);
         }
-
+        ni.setStringValue(credentials.getLogin());
         InetAddress clientAddress = options.getClientAddress();
         if (clientAddress != null) {
             final SubjectLocalityType subjectLocality = at.addNewSubjectLocality();
