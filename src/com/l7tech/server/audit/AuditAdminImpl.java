@@ -55,6 +55,7 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
     }
 
     public void deleteOldAuditRecords() throws RemoteException {
+        enforceAdminRole();
         throw new RemoteException("Not yet implemented."); // TODO implement this
     }
 
