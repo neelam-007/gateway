@@ -61,7 +61,6 @@ public class HttpNamespaceFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse)sresponse;
 
         String uri = request.getRequestURI();
-        logger.info("Request URI = '" + uri + "'");
 
         boolean isRouter = routers.contains(uri);
         if ( !isRouter ) {
@@ -75,14 +74,12 @@ public class HttpNamespaceFilter implements Filter {
             for ( Iterator i = prefixes.iterator(); i.hasNext(); ) {
                 String prefix = (String) i.next();
                 if ( matches(prefix, uri) ) {
-                    logger.info("Passing through to filter chain");
                     chain.doFilter(request, response);
                     return;
                 }
             }
         }
 
-        logger.info("Forwarding to SOAP Router");
         RequestDispatcher rd = config.getServletContext().getNamedDispatcher(routerServlet);
         rd.include(request, response);
     }
