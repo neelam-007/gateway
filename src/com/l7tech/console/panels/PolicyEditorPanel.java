@@ -145,6 +145,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
       throws FindException, RemoteException {
 
         this.service = serviceNode.getPublishedService();
+        if (service == null) throw new FindException("could not retrieve service");
         setName(service.getName());
         getSplitPane().setName(service.getName());
 
