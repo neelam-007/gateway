@@ -120,7 +120,9 @@
                     <preferred-size width="150" height="-1"/>
                   </grid>
                 </constraints>
-                <properties/>
+                <properties>
+                  <editable value="false"/>
+                </properties>
               </component>
               <component id="3fe6a" class="javax.swing.JTextField" binding="certIssuedByTextField">
                 <constraints>
@@ -129,7 +131,9 @@
                     <preferred-size width="150" height="-1"/>
                   </grid>
                 </constraints>
-                <properties/>
+                <properties>
+                  <editable value="false"/>
+                </properties>
               </component>
               <component id="42b49" class="javax.swing.JTextField" binding="certExpiredOnTextField">
                 <constraints>
@@ -139,6 +143,7 @@
                   </grid>
                 </constraints>
                 <properties>
+                  <editable value="false"/>
                   <text value=""/>
                 </properties>
               </component>
