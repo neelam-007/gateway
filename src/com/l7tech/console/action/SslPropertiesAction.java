@@ -66,8 +66,8 @@ public class SslPropertiesAction extends NodeAction {
 
         String s =
           (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
-            "Please select an SSL assertion option:\n",
-            "SSL Assertion Properties",
+            "Select an SSL option:\n",
+            "SSL Properties",
             JOptionPane.PLAIN_MESSAGE,
             new ImageIcon(new SslTransportNode().getIcon()),
             options,
