@@ -98,6 +98,22 @@ public class User extends NamedEntityImp implements Principal {
         _department = department;
     }
 
+    public String getCert() {
+        return _cert;
+    }
+
+    public void setCert( String cert ) {
+        _cert = cert;
+    }
+
+    public int getCertResetCounter() {
+        return _certResetCounter;
+    }
+
+    public void setCertResetCounter(int certResetCounter) {
+        _certResetCounter = certResetCounter;
+    }
+
     /**
      * this is not persisted, it is set at run time by the provider who creates the object
      */
@@ -180,6 +196,8 @@ public class User extends NamedEntityImp implements Principal {
         setGroups(objToCopy.getGroups());
         setLastName(objToCopy.getLastName());
         setTitle(objToCopy.getTitle());
+        setCert( objToCopy.getCert() );
+        setCertResetCounter( objToCopy.getCertResetCounter() );
         _password = objToCopy.getPassword();
     }
 
@@ -206,6 +224,9 @@ public class User extends NamedEntityImp implements Principal {
     private String _email;
     private String _title;
     private String _department;
+    private int _certResetCounter;
+    private String _cert;
+
     private Set _groups = Collections.EMPTY_SET;
     private Set _groupHeaders = Collections.EMPTY_SET;
     private long providerId = DEFAULT_OID;
