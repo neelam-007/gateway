@@ -63,14 +63,4 @@ public class RequestXpathAssertion extends XpathBasedAssertion {
             return getXpathExpression().getNamespaces();
         return null;
     }
-
-    public String toString() {
-        XpathExpression x = getXpathExpression();
-        StringBuffer sb = new StringBuffer(super.toString());
-        if (x != null && x.getNamespaces() != null)
-            sb.append(" namespacesmap=" + x.getNamespaces());
-        if (x != null && x.getExpression() != null)
-            sb.append(" pattern=" + x.getExpression());
-        return sb.toString();
-    }
 }

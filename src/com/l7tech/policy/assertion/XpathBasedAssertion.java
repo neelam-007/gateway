@@ -42,4 +42,14 @@ public abstract class XpathBasedAssertion extends Assertion {
         nsmap.put(NamespaceConstants.NSPREFIX_SOAP_ENVELOPE, SOAPConstants.URI_NS_SOAP_ENVELOPE);
         return nsmap;
     }
+
+    public String toString() {
+        XpathExpression x = getXpathExpression();
+        StringBuffer sb = new StringBuffer(super.toString());
+        if (x != null && x.getExpression() != null)
+            sb.append(" pattern=" + x.getExpression());
+        if (x != null && x.getNamespaces() != null)
+            sb.append(" namespacesmap=" + x.getNamespaces());
+        return sb.toString();
+    }
 }
