@@ -4,6 +4,7 @@ import com.l7tech.adminws.logging.Log;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.console.table.LogTableModel;
+import com.l7tech.console.table.FilteredLogTableModel;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceStatistics;
@@ -24,6 +25,8 @@ import java.awt.event.ComponentEvent;
 import java.rmi.RemoteException;
 import java.util.Vector;
 import java.util.HashMap;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 /**
@@ -40,6 +43,7 @@ public class StatisticsPanel extends JPanel {
     private static final String LAST_MINUTE_SERVER_LOAD_PREFIX = "Avg load (1 min): ";
     private static final String MIDDLE_SPACE = "     ";
     private static final String END_SPACE    = "   ";
+    static Logger logger = Logger.getLogger(FilteredLogTableModel.class.getName());
 
     // IMPORTANT NOTE:
     // 1. need to make sure that NUMBER_OF_SAMPLE_PER_MINUTE has no fraction when REFRESH_INTERVAL is changed
@@ -390,17 +394,18 @@ public class StatisticsPanel extends JPanel {
                             completedCountTotal += stats.getCompletedRequestCount();
                             lastMinuteCompletedCountTotal += lastMinuteCompletedCount;
                         }
-                        // todo, francis i dont think this is the best way to handle this exception (use a logger)
-                    } catch (Throwable t) {
-                        t.printStackTrace();
+
+                    } catch (RemoteException e) {
+                        logger.log( Level.SEVERE, "Unable to retrieve statistics from server", e);
                     }
 
                 }
 
             }
-            // todo, francis i think you might want to do somethign about these exceptions
         } catch (RemoteException e) {
+            logger.log( Level.SEVERE, "Remote exception when retrieving published services from server", e);
         } catch (FindException e) {
+            logger.log( Level.WARNING, "Unable to find all published services from server", e);
         }
 
         getStatTableModel().fireTableDataChanged();
@@ -424,6 +429,7 @@ public class StatisticsPanel extends JPanel {
         try {
             metrics = logstub.getUptime();
         } catch (RemoteException e) {
+            logger.log( Level.SEVERE, "Unable to retrieve server metrics from server", e);
             metrics = null;
         }
         if (metrics == null) {

@@ -6,6 +6,8 @@ import com.l7tech.logging.LogMessage;
 import com.l7tech.console.panels.LogPanel;
 
 import java.util.Vector;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.rmi.RemoteException;
 
 /**
@@ -20,6 +22,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
      private static final int MAX_MESSAGE_BLOCK_SIZE = 100;
      private static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
      private Log log = null;
+      static Logger logger = Logger.getLogger(FilteredLogTableModel.class.getName());
 
      private Vector logsCache = new Vector();
 
@@ -107,7 +110,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
                  }
 
              } catch (RemoteException e) {
-                 System.err.println("Unable to retrieve logs from server");
+                 logger.log( Level.SEVERE, "Unable to retrieve logs from server", e);
              }
          } while (rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
 
