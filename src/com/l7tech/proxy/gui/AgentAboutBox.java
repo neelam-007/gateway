@@ -8,6 +8,7 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
@@ -23,7 +24,7 @@ import java.awt.event.ActionEvent;
  */
 public class AgentAboutBox extends JDialog {
     public AgentAboutBox() {
-        super();
+        super(Gui.getInstance().getFrame(), "About " + Gui.APP_NAME);
         setModal(true);
         Container pane = getContentPane();
         pane.setLayout(new GridBagLayout());
@@ -54,6 +55,7 @@ public class AgentAboutBox extends JDialog {
                                         GridBagConstraints.NONE,
                                         new Insets(5, 0, 8, 20), 0, 0));
         pack();
+        Utilities.centerOnScreen(this);
     }
 
     public static void main(String[] args) {
