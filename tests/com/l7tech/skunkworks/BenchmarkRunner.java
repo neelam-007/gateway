@@ -40,14 +40,19 @@ public class BenchmarkRunner {
     /**
      * Test constructor
      */
-    public BenchmarkRunner(Runnable r, int times) {
+    public BenchmarkRunner(Runnable r, int times, String name) {
         this.runnable = r;
         this.runCount = times;
+        this.name = name;
 
         // block indefinitely for an available thread
         // and threads never exit
         threadPool.setTimeout(-1);
         threadPool.setIdleTimeout(-1);
+    }
+
+    public BenchmarkRunner(Runnable r, int times) {
+        this(r,times,r.toString());
     }
 
 
@@ -113,7 +118,7 @@ public class BenchmarkRunner {
      */
     private void prepareRunnables() throws InterruptedException {
         if (runCount <= 0) {
-            log.warning(" Invalid runnable count "+runCount);
+            log.warning( name +": Invalid runnable count "+runCount);
             return;
         }
 
@@ -127,7 +132,7 @@ public class BenchmarkRunner {
             adjustedThreads = threadCount + r;
         }
 
-        log.info("Runnables = " + runnableCount + " threads to use = " + adjustedThreads);
+        log.info( name + ": Runnables = " + runnableCount + " threads to use = " + adjustedThreads);
 
         rendezvous = new Rendezvous(adjustedThreads + 1);
 
@@ -178,7 +183,7 @@ public class BenchmarkRunner {
             currentSize = runnerResults.size();
         }
         if (currentSize == threadCount) {
-            log.info("all results collected.");
+            log.info( name + ": all results collected.");
 
             long start = Long.MAX_VALUE - 1;
             long end = 0;
@@ -190,7 +195,7 @@ public class BenchmarkRunner {
                 if (end < res.end) end = res.end;
                 if (start > res.start) start = res.start;
             }
-            log.info("total time = " + (end - start) + "ms");
+            log.info( name + ": total time = " + (end - start) + "ms");
             // notify done
             synchronized (this) {
                 this.notify();
@@ -267,10 +272,10 @@ public class BenchmarkRunner {
                 }
                 submitResults();
             } catch (InterruptedException e) {
-                log.severe("thread interrupted");
+                log.severe( name + ": thread interrupted");
                 Thread.currentThread().interrupt();
             } catch (BrokenBarrierException e) {
-                log.log(Level.SEVERE, "barrier synchronziation exception", e);
+                log.log(Level.SEVERE, name + ": barrier synchronziation exception", e);
             }
         }
 
@@ -282,5 +287,7 @@ public class BenchmarkRunner {
             collectResults(new Result(start, end, th));
         }
     }
+
+    private String name;
 }
 
