@@ -31,10 +31,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,78 +61,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             Long oid = new Long(certOids[i]);
             certOidSet.add(oid);
         }
-
-        updateTrustedCerts();
     }
-
-    private synchronized void updateTrustedCerts() {
-        try {
-            // Don't bother updating if it's been less than CHECK_DELAY since we did it last
-            if (lastVersionCheck >= (System.currentTimeMillis() - CHECK_DELAY)) return;
-
-            for ( Iterator i = certOidSet.iterator(); i.hasNext(); ) {
-                Long oid = (Long)i.next();
-                TrustedCert cachedCert = (TrustedCert)certsByOid.get(oid);
-                if (cachedCert == null) {
-                    // Initial load
-                    cachedCert = trustedCertManager.findByPrimaryKey(oid.longValue());
-                    cache(cachedCert);
-                } else {
-                    Integer currentVersion = trustedCertManager.getVersion(oid.longValue());
-                    if (currentVersion == null) {
-                        // Deleted
-                        logger.severe("FederatedIdentityProvider '" + providerConfig.getName() +
-                                      "' refers to TrustedCert " + oid + ", which no longer exists");
-                        continue;
-                    } else if (currentVersion.intValue() != cachedCert.getVersion()) {
-                        // Updated
-                        TrustedCert currentCert = trustedCertManager.findByPrimaryKey(oid.longValue());
-                        logger.info("TrustedCertificate '" + cachedCert.getName() + "' (" + cachedCert.getOid() +") has been updated");
-                        cache(currentCert);
-                    }
-                }
-            }
-        } catch ( FindException e ) {
-            throw new RuntimeException("Couldn't retrieve a cert from the TrustedCertManager - cannot proceed", e);
-        } finally {
-            lastVersionCheck = System.currentTimeMillis();
-        }
-    }
-
-    private void cache( TrustedCert cert ) {
-        try {
-            CertificateExpiry exp = CertUtils.checkValidity(cert.getCertificate());
-            if (exp.getDays() <= CertificateExpiry.FINE_DAYS) logWillExpire( cert, exp );
-            certsBySubjectDn.put(cert.getSubjectDn(), cert);
-            certsByOid.put(new Long(cert.getOid()), cert);
-        } catch ( CertificateNotYetValidException e ) {
-            logInvalidCert( cert, e );
-        } catch ( IOException e ) {
-            logInvalidCert( cert, e );
-        } catch ( CertificateExpiredException e ) {
-            logInvalidCert( cert, e );
-        } catch ( CertificateException e ) {
-            logInvalidCert( cert, e );
-        }
-    }
-
-    private void logInvalidCert( TrustedCert cert, Exception e ) {
-        final String msg = "Trusted cert for " + cert.getSubjectDn() +
-                           " is not valid or corrupted. Identities asserted by the corresponding authority " +
-                           "will not be authorized.";
-        if ( e == null ) {
-            logger.log( Level.SEVERE, msg);
-        } else {
-            logger.log( Level.SEVERE, msg, e );
-        }
-    }
-
-    private void logWillExpire( TrustedCert cert, CertificateExpiry e ) {
-        final String msg = "Trusted cert for " + cert.getSubjectDn() +
-                           " will expire in approximately " + e.getDays() + " days.";
-        logger.log( e.getSeverity(), msg );
-    }
-
 
     public IdentityProviderConfig getConfig() {
         return providerConfig;
@@ -148,7 +76,6 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
     }
 
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
-        updateTrustedCerts();
         if ( pc.getFormat() == CredentialFormat.CLIENTCERT )
             return authorizeX509(pc);
         else if ( pc.getFormat() == CredentialFormat.SAML ) {
@@ -174,25 +101,26 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         X509Certificate requestCert = (X509Certificate)pc.getPayload();
         String subjectDn = requestCert.getSubjectDN().getName();
 
-        if ( !certsBySubjectDn.isEmpty() ) {
+        if ( !certOidSet.isEmpty() ) {
             // There could be no trusted certs--this means that specific client certs
             // are trusted no matter who signed them
-            TrustedCert trustedCert = getTrustedCertForRequestCert( requestCert );
-            if ( trustedCert == null ) throw new BadCredentialsException("Signer is not trusted");
-            if ( !trustedCert.isTrustedForSigningClientCerts() )
-                throw new BadCredentialsException("The trusted certificate with DN '" +
-                                                  trustedCert.getSubjectDn() +
-                                                  "' is not trusted for signing client certificates");
-            try {
-                CertificateExpiry exp = CertUtils.checkValidity(trustedCert.getCertificate());
-                if (exp.getDays() <= CertificateExpiry.FINE_DAYS)
-                    logWillExpire(trustedCert, exp);
-            } catch ( CertificateException e ) {
-                logInvalidCert(trustedCert, e);
-                throw new AuthenticationException(e.getMessage(), e);
-            }
 
             try {
+                TrustedCert trustedCert = getTrustedCertForRequestCert( requestCert );
+                if ( trustedCert == null ) throw new BadCredentialsException("Signer is not trusted");
+                if ( !trustedCert.isTrustedForSigningClientCerts() )
+                    throw new BadCredentialsException("The trusted certificate with DN '" +
+                                                      trustedCert.getSubjectDn() +
+                                                      "' is not trusted for signing client certificates");
+                try {
+                    CertificateExpiry exp = CertUtils.checkValidity(trustedCert.getCertificate());
+                    if (exp.getDays() <= CertificateExpiry.FINE_DAYS)
+                        trustedCertManager.logWillExpire(trustedCert, exp);
+                } catch ( CertificateException e ) {
+                    trustedCertManager.logInvalidCert(trustedCert, e);
+                    throw new AuthenticationException(e.getMessage(), e);
+                }
+
                 // Check that cert was signed by CA key
                 requestCert.verify(trustedCert.getCertificate().getPublicKey());
             } catch ( CertificateException e ) {
@@ -215,7 +143,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
         FederatedUser u = userManager.findBySubjectDN(subjectDn);
         if (u == null) {
-            if (certsBySubjectDn.isEmpty()) {
+            if (certOidSet.isEmpty()) {
                 throw new BadCredentialsException("No Federated User with DN = '" + subjectDn +
                                                   "' could be found, and virtual groups" +
                                                   " are not permitted without trusted certs");
@@ -224,7 +152,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             X509Certificate importedCert = (X509Certificate)clientCertManager.getUserCert(u);
             if ( importedCert == null ) {
                 // This is OK as long as it was signed by a trusted cert
-                if (certsBySubjectDn.isEmpty() ) {
+                if (certOidSet.isEmpty() ) {
                     // No trusted certs means the request cert must match a previously imported client cert
                     throw new BadCredentialsException("User " + u + " has no client certificate imported, " +
                                                       "and this Federated Identity Provider has no CA certs " +
@@ -257,9 +185,9 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                                           csa.getName() );
     }
 
-    private TrustedCert getTrustedCertForRequestCert( X509Certificate requestCert ) {
+    private TrustedCert getTrustedCertForRequestCert( X509Certificate requestCert ) throws FindException, IOException, CertificateException {
         // TODO what if the client cert's issuer DN doesn't match the CA's subject DN?
-        return (TrustedCert)certsBySubjectDn.get( requestCert.getIssuerDN().getName() );
+        return trustedCertManager.getCachedCertBySubjectDn( requestCert.getIssuerDN().getName(), MAX_CACHE_AGE );
     }
 
     /**
@@ -273,23 +201,27 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         // TODO
     }
 
-    public void preSaveClientCert( User user, X509Certificate cert ) throws ClientCertManager.VetoSave {
+    public void preSaveClientCert( User user, X509Certificate[] clientCertChain ) throws ClientCertManager.VetoSave {
         FederatedUser u = (FederatedUser)userManager.cast(user);
         final String userDn = u.getSubjectDn();
-        final String certDn = cert.getSubjectDN().getName();
-        if (userDn != certDn)
+        final String clientCertDn = clientCertChain[0].getSubjectDN().getName();
+        if (userDn != clientCertDn)
             throw new ClientCertManager.VetoSave("User's X.509 Subject DN '" + userDn +
-                                                 "'doesn't match cert's Subject DN '" + certDn + "'");
+                                                 "'doesn't match cert's Subject DN '" + clientCertDn + "'");
         try {
-            if (certsBySubjectDn.isEmpty()) {
-                byte[] caCertBytes = KeystoreUtils.getInstance().readRootCert();
-                X509Certificate caCert = CertUtils.decodeCert(caCertBytes);
-
+            if (certOidSet.isEmpty()) {
+                X509Certificate caCert = KeystoreUtils.getInstance().getRootCert();
+                if (clientCertChain.length > 1) {
+                    if (caCert.equals(clientCertChain[1]) || caCert.getSubjectDN().equals(clientCertChain[1].getIssuerDN())) {
+                        throw new ClientCertManager.VetoSave("User's cert was issued by the internal certificate authority");
+                    }
+                }
             } else {
-                String caDn = cert.getIssuerDN().getName();
-                TrustedCert caTrustedCert = (TrustedCert)certsBySubjectDn.get(caDn);
+                String caDn = clientCertChain[0].getIssuerDN().getName();
+                TrustedCert caTrustedCert = trustedCertManager.getCachedCertBySubjectDn(caDn, MAX_CACHE_AGE);
                 if (caTrustedCert == null) throw new ClientCertManager.VetoSave("User's cert was not signed by any of this identity provider's trusted certs");
-                X509Certificate caCert = caTrustedCert.getCertificate();
+                X509Certificate trustedCaCert = caTrustedCert.getCertificate();
+
             }
         } catch ( Exception e ) {
             final String msg = "Couldn't deserialize trusted cert";
@@ -304,11 +236,8 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
     private final TrustedCertManager trustedCertManager;
     private final ClientCertManager clientCertManager;
 
-    private transient Map certsBySubjectDn = new HashMap();
-    private transient Map certsByOid = new HashMap();
-
-    private final Logger logger = Logger.getLogger(getClass().getName());
     private final Set certOidSet = new HashSet();
-    private long lastVersionCheck;
-    private static final long CHECK_DELAY = 5000;
+
+    private static final Logger logger = Logger.getLogger(FederatedIdentityProvider.class.getName());
+    private static final int MAX_CACHE_AGE = 5000;
 }

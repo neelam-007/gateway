@@ -53,5 +53,12 @@ public interface IdentityProvider {
 
     void test() throws InvalidIdProviderCfgException;
 
-    void preSaveClientCert(User user, X509Certificate cert) throws ClientCertManager.VetoSave;
+    /**
+     * Allows an IdentityProvider to veto the saving of a client cert. Currently only used by
+     * {@link com.l7tech.server.identity.fed.FederatedIdentityProvider}.
+     * @param user the user for whom the cert is to be saved
+     * @param certChain the client certificate chain
+     * @throws ClientCertManager.VetoSave if the provider wants to prevent the cert from being saved
+     */
+    void preSaveClientCert(User user, X509Certificate[] certChain) throws ClientCertManager.VetoSave;
 }
