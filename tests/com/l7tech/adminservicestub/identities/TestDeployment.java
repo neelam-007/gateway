@@ -13,7 +13,7 @@ import com.l7tech.adminservicestub.ListResultEntry;
 public class TestDeployment {
     public static void main(String[] args) throws Exception {
         IdentityWSService service = new IdentityWSServiceLocator();
-        IdentityWS servicePort = service.getidentities(new java.net.URL("http://localhost:8080/UneasyRooster/services/identities"));
+        IdentityWS servicePort = service.getidentities(new java.net.URL("http://localhost:8080/ssg/services/identities"));
 
         ListResultEntry[] res = servicePort.listProviders();
         printres(res);
