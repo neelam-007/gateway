@@ -202,7 +202,8 @@ public class GuiCredentialManager extends CredentialManager {
             return;
         invokeDialog(new Runnable() {
             public void run() {
-                String msg = "The certificate and/or key store for the Gateway " + ssg +
+                String msg = "Your password is incorrect for this client certificate, or the certificate\n" +
+                        "and/or key store for the Gateway " + ssg +
                         "\n is irrepairably damaged.\n\n" +
                         "Do you want to delete and rebuild them?";
                 Gui.getInstance().getFrame().toFront();
