@@ -86,7 +86,9 @@ public class PolicyServlet extends HttpServlet {
 
         // RESOLVE THE PUBLISHED SERVICE
         PublishedService targetService = null;
-        if (str_oid != null && str_oid.length() > 0)
+        if ( str_oid == null || str_oid.length() == 0 )
+            throw new ServletException( "str_oid is required" );
+        else
             targetService = resolveService(Long.parseLong(str_oid));
 
         // BEFORE SENDING BACK THIS POLICY, WE NEED TO DECIDE IF THE REQUESTOR IS ALLOWED TO SEE IT
