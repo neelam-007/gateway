@@ -39,7 +39,8 @@ public class SamlPropertiesDialog extends JDialog {
         requireSignature.setSelected(samlSecurity.isValidateSignature());
         requireEncryption.setEnabled(false);
         requireSignature.setEnabled(false);
-
+        Actions.setEscKeyStrokeDisposes(this);
+        
         requireTimeValidity.setSelected(samlSecurity.isValidateValidityPeriod());
 
         okButton.addActionListener(new ActionListener() {

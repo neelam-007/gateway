@@ -16,6 +16,7 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.event.EventListenerList;
@@ -158,6 +159,13 @@ public class PolicyTreeModel extends DefaultTreeModel {
         public boolean accept(TreeNode node) {
             if (node instanceof IdentityAssertionTreeNode) {
                 return false;
+            }
+
+            if (node instanceof CustomAssertionTreeNode) {
+                CustomAssertionTreeNode catn = (CustomAssertionTreeNode)node;
+                if (Category.ACCESS_CONTROL.equals(catn.getCategory())) {
+                    return false;
+                }
             }
 
             TreeNode[] path = ((DefaultMutableTreeNode)node).getPath();

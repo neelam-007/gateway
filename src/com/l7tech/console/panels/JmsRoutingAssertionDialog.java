@@ -7,6 +7,7 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.action.Actions;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
@@ -114,10 +115,12 @@ public class JmsRoutingAssertionDialog extends JDialog {
     private void initComponents() {
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
-        getContentPane().setLayout(new BorderLayout());
+        Container contentPane = getContentPane();
+        contentPane.setLayout(new BorderLayout());
         getServiceEndpointPanel().setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 10));
-        getContentPane().add(getServiceEndpointPanel(), BorderLayout.NORTH);
-
+        contentPane.add(getServiceEndpointPanel(), BorderLayout.NORTH);
+        Actions.setEscKeyStrokeDisposes(this);
+        
         mainPanel = new JPanel(new GridBagLayout());
         mainPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
 
@@ -146,7 +149,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
                                              GridBagConstraints.EAST,
                                              GridBagConstraints.HORIZONTAL,
                                              new Insets(0, 0, 0, 0), 0, 0));
-        getContentPane().add(mainPanel, BorderLayout.CENTER);
+        contentPane.add(mainPanel, BorderLayout.CENTER);
     }
 
     private JPanel getServiceEndpointPanel() {

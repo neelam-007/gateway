@@ -66,15 +66,21 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
     public String getName() {
         String userLogin = ((SpecificUser)getUserObject()).getUserLogin();
         if (isAnonymous()) {
-            return "User: " + userLogin;
+            return userLogin;
+        } else if (isDelegated()) {
+            return userLogin;
         }
         return "User: " + userLogin + " [" + idProviderName() + "]";
     }
 
     private boolean isAnonymous() {
         String userLogin = ((SpecificUser)getUserObject()).getUserLogin();
-        return "Anonymous".equals(userLogin);
+        return IdentityPath.ANONYMOUS.equals(userLogin);
     }
 
+    private boolean isDelegated() {
+        String userLogin = ((SpecificUser)getUserObject()).getUserLogin();
+        return userLogin.startsWith(IdentityPath.CUSTOM_ACCESS_CONTROL);
+    }
 
 }

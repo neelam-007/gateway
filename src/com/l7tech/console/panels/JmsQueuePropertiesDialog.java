@@ -12,6 +12,7 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -235,6 +236,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         pack();
         initializeView();
         enableOrDisableComponents();
+        Actions.setEscKeyStrokeDisposes(this);
+        
     }
 
     private JPanel getButtonPanel() {

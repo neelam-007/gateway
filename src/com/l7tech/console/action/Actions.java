@@ -253,6 +253,7 @@ public class Actions {
         JLayeredPane layeredPane = d.getLayeredPane();
         final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
         layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escKeyStroke, "close-it");
+        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, "close-it");
         layeredPane.getActionMap().put("close-it",
           new AbstractAction() {
               public void actionPerformed(ActionEvent evt) {

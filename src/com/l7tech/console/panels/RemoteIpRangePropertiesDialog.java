@@ -54,6 +54,8 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         contents.setLayout(new BorderLayout(0,0));
         contents.add(makeGlobalPanel(), BorderLayout.CENTER);
         contents.add(makeBottomButtonsPanel(), BorderLayout.SOUTH);
+        Actions.setEscKeyStrokeDisposes(this);
+
         setCallbacks();
         setInitialValues();
     }

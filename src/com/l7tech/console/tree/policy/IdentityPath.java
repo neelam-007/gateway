@@ -1,6 +1,9 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.AssertionPath;
@@ -25,7 +28,7 @@ public class IdentityPath {
     protected static final Comparator DEFAULT_COMPARATOR = new Comparator() {
         public int compare(Object o1, Object o2) {
             if (o1.equals(o2)) return 0;
-            if (o1 instanceof User && o2 instanceof User)  {
+            if (o1 instanceof User && o2 instanceof User) {
                 User u1 = (User)o1;
                 User u2 = (User)o2;
                 long ret = u1.getProviderId() - u2.getProviderId();
@@ -38,9 +41,13 @@ public class IdentityPath {
                 if (ret != 0) return (int)ret;
                 return g2.getName().compareTo(g1.getName());
             }
-            return o1 instanceof Group ? 1 : - 1;
+            return o1 instanceof Group ? 1 : -1;
         }
     };
+
+    /** the anonymous path label */
+    public static final String ANONYMOUS = "Anonymous";
+    public static final String CUSTOM_ACCESS_CONTROL = "Custom Access Control:";
 
     /**
      * Extract the identities from the assertion tree.
@@ -79,7 +86,7 @@ public class IdentityPath {
      * The identities are sorted according to the specified comparator.
      *
      * @param root the assertion root
-     * @param c   the the comparator that will be used to sort the identities
+     * @param c    the the comparator that will be used to sort the identities
      *             set.
      * @return the set of identity paths that exist in thi policy tree
      */
@@ -94,18 +101,24 @@ public class IdentityPath {
         if (!anonPath.getPaths().isEmpty()) {
             paths.add(anonPath);
         }
+        IdentityPath customAccesControlPath = customAccessControlPaths(root);
+        if (!customAccesControlPath.getPaths().isEmpty()) {
+            paths.add(customAccesControlPath);
+        }
         return paths;
     }
 
 
     /**
-     * Create the <code>IdentityPath</code> from the assertion for the
-     * the given principal.
+     * Determine the set of paths - <code>IdentityPath</code> that exist
+     * in the policy rooted at the <code>Assertion</code> for the the given
+     * principal.
      *
      * @param p    the principal
      * @param root the assertion root
      * @return the identity path with the collection of assertion paths
-     *         for the
+     *         for the given principal
+     * @see IdentityPath
      */
     public static IdentityPath forIdentity(Principal p, Assertion root) {
         if (!(p instanceof User || p instanceof Group)) {
@@ -133,9 +146,18 @@ public class IdentityPath {
     }
 
 
+    /**
+     * Determine the set of paths - <code>IdentityPath</code> that exist
+     * in the policy rooted at the <code>Assertion</code> that are anonymous
+     * Anonymous paths are paths that do not contain any identity check,
+     * group membership check, and custom access control check.
+     *
+     * @param root the assertion root
+     * @return the collection of aanonymous assertion paths
+     */
     private static IdentityPath anonymousPaths(Assertion root) {
         UserBean anon = new UserBean();
-        anon.setLogin("Anonymous");
+        anon.setLogin(ANONYMOUS);
         anon.setName(anon.getLogin());
         IdentityPath ipath = new IdentityPath(anon);
         PolicyPathBuilder pb = PolicyPathBuilder.getDefault();
@@ -146,12 +168,62 @@ public class IdentityPath {
             Assertion[] path = ap.getPath();
             for (int j = path.length - 1; j >= 0; j--) {
                 Assertion assertion = path[j];
-                if (isIdentity(assertion)) {
+                if (isIdentity(assertion) ||
+                  isCustomAccessControl(assertion)) {
                     continue outer;
                 }
             }
             ipath.identityPaths.add(ap);
         }
+        return ipath;
+    }
+
+
+    /**
+     * Determine the set of paths - <code>IdentityPath</code> that exist
+     * in the policy rooted at the <code>Assertion</code> that contain the
+     * access control custom assertion.
+     * Those paths are considered to have the identity check delegated to
+     * the custom assertion
+     *
+     * @param root the assertion root
+     * @return the collection of aanonymous assertion paths
+     */
+    private static IdentityPath customAccessControlPaths(Assertion root) {
+        UserBean anon = new UserBean();
+        StringBuffer sb = new StringBuffer(CUSTOM_ACCESS_CONTROL);
+
+        IdentityPath ipath = new IdentityPath(anon);
+        PolicyPathBuilder pb = PolicyPathBuilder.getDefault();
+        PolicyPathResult ppr = pb.generate(root);
+        outer:
+        for (Iterator i = ppr.paths().iterator(); i.hasNext();) {
+            AssertionPath ap = (AssertionPath)i.next();
+            Assertion[] path = ap.getPath();
+            boolean found = false;
+            for (int j = path.length - 1; j >= 0; j--) {
+                Assertion assertion = path[j];
+                if (isCustomAccessControl(assertion)) {
+                    if (found) {
+                        sb.append(", "); //multiple delegate assertions
+                    }
+                    CustomAssertionHolder cah = (CustomAssertionHolder)assertion;
+                    CustomAssertion customAssertion = cah.getCustomAssertion();
+                    if (customAssertion != null) {
+                        sb.append(customAssertion.getName());
+                    } else {
+                        sb.append("Bad or misconfigured access control assertion");
+                    }
+                    found = true;
+                }
+            }
+            if (found) {
+                ipath.identityPaths.add(ap);
+            }
+        }
+        anon.setLogin(sb.toString());
+        anon.setName(anon.getLogin());
+
         return ipath;
 
     }
@@ -238,7 +310,7 @@ public class IdentityPath {
     }
 
     /**
-     * is the object passed an identity
+     * is the object passed an identity assertion
      *
      * @param assertion
      * @return whether the assertion is an identity
@@ -248,6 +320,19 @@ public class IdentityPath {
           assertion instanceof SpecificUser ||
           assertion instanceof MemberOfGroup;
     }
+
+    /**
+     * is the object passed an custom access control assertion
+     *
+     * @param assertion
+     * @return whether the assertion is an custom asertion access control
+     */
+    private static boolean isCustomAccessControl(Object assertion) {
+        return
+          assertion instanceof CustomAssertionHolder &&
+          Category.ACCESS_CONTROL.equals(((CustomAssertionHolder)assertion).getCategory());
+    }
+
 
     /**
      * Extract the user or from the object. The expected

@@ -5,6 +5,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
@@ -118,10 +119,11 @@ public class HttpRoutingAssertionDialog extends JDialog {
         mainPanel = new JPanel();
         credentialsPanel = new JPanel();
 
-        getContentPane().setLayout(new BorderLayout());
+        Container contentPane = getContentPane();
+        contentPane.setLayout(new BorderLayout());
         getServiceUrlPanel().setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 10));
-        getContentPane().add(getServiceUrlPanel(), BorderLayout.NORTH);
-
+        contentPane.add(getServiceUrlPanel(), BorderLayout.NORTH);
+        Actions.setEscKeyStrokeDisposes(this);
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
 
@@ -185,7 +187,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         // Add buttonPanel
         mainPanel.add(getButtonPanel());
-        getContentPane().add(mainPanel, BorderLayout.CENTER);
+        contentPane.add(mainPanel, BorderLayout.CENTER);
         
         // listeners
         samlMethod.addChangeListener(new ChangeListener() {

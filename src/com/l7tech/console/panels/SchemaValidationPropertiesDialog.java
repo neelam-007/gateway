@@ -81,7 +81,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         contents.setLayout(new BorderLayout(0,0));
         contents.add(constructCentralPanel(), BorderLayout.CENTER);
         contents.add(constructBottomButtonsPanel(), BorderLayout.SOUTH);
-
+        Actions.setEscKeyStrokeDisposes(this);
+       
         // create callbacks
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

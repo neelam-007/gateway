@@ -151,6 +151,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         bg.add(entireMessage);
         bg.add(messageParts);
         tableScrollPane.getViewport().setBackground(securedItemsTable.getBackground());
+        Actions.setEscKeyStrokeDisposes(this);
 
         entireMessage.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {

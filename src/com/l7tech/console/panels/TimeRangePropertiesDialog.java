@@ -75,7 +75,8 @@ public class TimeRangePropertiesDialog extends JDialog {
 
         itemsToToggleForTimeOfDay.clear();
         itemsToToggleForDayOfWeek.clear();
-
+        Actions.setEscKeyStrokeDisposes(this);
+        
         // calculate UTC offset
         int totOffsetInMin = Calendar.getInstance().getTimeZone().getRawOffset() / (1000*60);
         hroffset = totOffsetInMin/60;

@@ -4,6 +4,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.action.CustomAssertionPropertiesAction;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.ext.Category;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -34,6 +35,14 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
         return name;
     }
 
+    /**
+     * @return the custom assertion category
+     */
+    public Category getCategory() {
+        CustomAssertionHolder cha = (CustomAssertionHolder)asAssertion();
+        return cha.getCategory();
+    }
+    
     /**
      * Test if the node can be deleted. Default is <code>true</code>
      *

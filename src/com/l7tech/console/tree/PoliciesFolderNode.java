@@ -6,11 +6,8 @@ import javax.swing.tree.MutableTreeNode;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.TreeSet;
-import java.util.Set;
 import java.util.Comparator;
-import java.util.Arrays;
+import java.util.logging.Level;
 
 
 /**
@@ -30,7 +27,7 @@ public class PoliciesFolderNode extends AbstractTreeNode {
               if (o1 instanceof PolicyTemplateNode && o2 instanceof PolicyTemplateNode) {
                   String name1 = ((PolicyTemplateNode)o1).getFile().getName();
                   String name2 = ((PolicyTemplateNode)o2).getFile().getName();
-                  return name1.compareTo(name2);
+                  return name1.compareToIgnoreCase(name2);
               }
               throw new ClassCastException("Expected "+PolicyTemplateNode.class +
                                            " received "+o1.getClass() + " and "+o2.getClass());
@@ -69,16 +66,6 @@ public class PoliciesFolderNode extends AbstractTreeNode {
     protected void loadChildren() {
         try {
             File[] files = listPolicies();
-
-            Set sorted = new TreeSet(new Comparator() {
-                public int compare(Object o1, Object o2) {
-                    File f1 = (File)o1;
-                    File f2 = (File)o2;
-                    return f1.getName().compareTo(f2.getName());
-                }
-            });
-            sorted.addAll(Arrays.asList(files));
-            files = (File[])sorted.toArray(new File[] {});
             children = null;
             for (int i = 0; i < files.length; i++) {
                 File file = files[i];

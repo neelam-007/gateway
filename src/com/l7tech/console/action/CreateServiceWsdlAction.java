@@ -6,23 +6,23 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.*;
 import com.l7tech.console.panels.*;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
@@ -189,12 +189,13 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                 public void run() {
                     JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
                     if (tree != null) {
-                        DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
+                        AbstractTreeNode root = (AbstractTreeNode)tree.getModel().getRoot();
                         TreeNode[] nodes = root.getPath();
                         TreePath nPath = new TreePath(nodes);
                         if (tree.hasBeenExpanded(nPath)) {
                             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                            model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), root, root.getChildCount());
+                            AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh);
+                            model.insertNodeInto(sn, root, root.getInsertPosition(sn));
                         }
                     } else {
                         log.log(Level.WARNING, "Service tree unreachable.");
