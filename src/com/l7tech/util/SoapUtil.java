@@ -48,7 +48,16 @@ public class SoapUtil {
         return env;
     }
 
+    public static Element getEnvelope( Document request ) {
+        Element env = request.getDocumentElement();
+        return env;
+    }
+
     public static Element getHeaderElement( Request request ) throws SAXException, IOException {
+        return getEnvelopePart( request, HEADER );
+    }
+
+    public static Element getHeaderElement( Document request ) {
         return getEnvelopePart( request, HEADER );
     }
 
@@ -57,6 +66,10 @@ public class SoapUtil {
     }
 
     static Element getEnvelopePart( Request request, String elementName ) throws SAXException, IOException {
+        return getEnvelopePart( getDocument( request ), elementName );
+    }
+
+    static Element getEnvelopePart( Document request, String elementName ) {
         Element envelope = getEnvelope( request );
         String env;
         Node node;
