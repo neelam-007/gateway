@@ -30,6 +30,8 @@ import org.w3c.dom.Element;
  */
 public class MultipleRecipientXmlSecurityTest extends TestCase {
     private static Logger logger = Logger.getLogger(MultipleRecipientXmlSecurityTest.class.getName());
+    private static WssDecorator decorator = new WssDecoratorImpl();
+    private static WssProcessor processor = new WssProcessorImpl();
 
     static {
         JceProvider.init();
@@ -53,96 +55,95 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         logger.info("Original document:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
         final String alternaterecipient = "signatureonlyrecipient";
 
+        // FIRST DECORATION
         DecorationRequirements req = otherDecorationRequirements(doc, alternaterecipient);
-        WssDecorator decorator = new WssDecoratorImpl();
         decorator.decorateMessage(doc, req);
 
+        // SECOND DECORATION
         req = defaultDecorationRequirements(doc);
         req.getElementsToEncrypt().add(body);
         decorator.decorateMessage(doc, req);
 
         logger.info("Document signed for two recipients and encrypted for second:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
-        WssProcessor processor = new WssProcessorImpl();
-        ProcessorResult res = processor.undecorateMessage(doc,
-                                                          TestDocuments.getDotNetServerCertificate(),
-                                                          TestDocuments.getDotNetServerPrivateKey(),
-                                                          null);
 
-        SignedElement[] signed = res.getElementsThatWereSigned();
-        boolean recognizedbody = false;
-        for (int i = 0; i < signed.length; i++) {
-            SignedElement signedElement = signed[i];
-            if (signedElement.asElement().getLocalName().equals(body.getLocalName())) {
-                recognizedbody = true;
-                break;
-            }
-        }
-        assertTrue("The body was signed", recognizedbody);
+        // FIRST PROCESSING
+        ProcessorResult res = process(doc);
 
-        ParsedElement[] encrypted = res.getElementsThatWereEncrypted();
-        recognizedbody = false;
-        for (int i = 0; i < encrypted.length; i++) {
-            ParsedElement encedel = encrypted[i];
-            if (encedel.asElement().getLocalName().equals(body.getLocalName())) {
-                recognizedbody = true;
-                break;
-            }
-        }
-        assertTrue("The body was encrypted", recognizedbody);
+        assertTrue("The body was signed", checkSignedElement(res, body));
+        assertTrue("The body was encrypted", checkEncryptedElement(res, body));
 
         logger.info("Document once processed by default recipient:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
-        // try to validate signature once processed once
+        // ACTOR PROMOTION
         Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
         assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
+
         alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
 
-        res = processor.undecorateMessage(doc,
-                                          TestDocuments.getDotNetServerCertificate(),
-                                          TestDocuments.getDotNetServerPrivateKey(),
-                                          null);
+        // SECOND PROCESSING
+        res = process(doc);
 
         logger.info("Document once processed by both recipients:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
-        signed = res.getElementsThatWereSigned();
-        recognizedbody = false;
-        for (int i = 0; i < signed.length; i++) {
-            SignedElement signedElement = signed[i];
-            if (signedElement.asElement().getLocalName().equals(body.getLocalName())) {
-                recognizedbody = true;
-                break;
-            }
-        }
-        assertTrue("The body was signed", recognizedbody);
+        assertTrue("The body was signed", checkSignedElement(res, body));
     }
 
     public void testBodySignedForTwoRecipients() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         Element body = SoapUtil.getBodyElement(doc);
         logger.info("Original document:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
-        DecorationRequirements req = defaultDecorationRequirements(doc);
-        WssDecorator decorator = new WssDecoratorImpl();
+
+        String alternaterecipient = "downstream";
+
+        // FIRST DECORATION
+        DecorationRequirements req = otherDecorationRequirements(doc, alternaterecipient);
         decorator.decorateMessage(doc, req);
-        req = otherDecorationRequirements(doc, "downstream");
+
+        // SECOND DECORATION
+        req = defaultDecorationRequirements(doc);
         decorator.decorateMessage(doc, req);
         logger.info("Document signed for two recipients:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
-        WssProcessor processor = new WssProcessorImpl();
-        ProcessorResult res = processor.undecorateMessage(doc,
-                                                          TestDocuments.getDotNetServerCertificate(),
-                                                          TestDocuments.getDotNetServerPrivateKey(),
-                                                          null);
 
-        SignedElement[] signed = res.getElementsThatWereSigned();
-        boolean recognizedbody = false;
-        for (int i = 0; i < signed.length; i++) {
-            SignedElement signedElement = signed[i];
-            if (signedElement.asElement().getLocalName().equals(body.getLocalName())) {
-                recognizedbody = true;
-                break;
+        // FIRST PROCESSING
+        ProcessorResult res = process(doc);
+
+        assertTrue("The body was signed", checkSignedElement(res, body));
+
+        logger.info("Document once processed:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+
+        // ACTOR PROMOTION
+        Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
+        assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
+
+        alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
+
+        // SECOND PROCESSING
+        res = process(doc);
+
+        assertTrue("The body was signed", checkSignedElement(res, body));
+    }
+
+    private boolean checkEncryptedElement(ProcessorResult res, Element el) {
+        ParsedElement[] encrypted = res.getElementsThatWereEncrypted();
+        for (int i = 0; i < encrypted.length; i++) {
+            ParsedElement encedel = encrypted[i];
+            if (encedel.asElement().getLocalName().equals(el.getLocalName())) {
+                return true;
             }
         }
-        assertTrue("The body was signed", recognizedbody);
-        logger.info("Document once processed:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+        return false;
+    }
+
+    private boolean checkSignedElement(ProcessorResult res, Element el) {
+        SignedElement[] signed = res.getElementsThatWereSigned();
+        for (int i = 0; i < signed.length; i++) {
+            SignedElement signedElement = signed[i];
+            if (signedElement.asElement().getLocalName().equals(el.getLocalName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private DecorationRequirements defaultDecorationRequirements(Document doc) throws Exception {
@@ -166,5 +167,12 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         output.getElementsToSign().add(body);
         output.setSecurityHeaderActor(actor);
         return output;
+    }
+
+    private ProcessorResult process(Document doc) throws Exception {
+        return processor.undecorateMessage(doc,
+                                          TestDocuments.getDotNetServerCertificate(),
+                                          TestDocuments.getDotNetServerPrivateKey(),
+                                          null);
     }
 }
