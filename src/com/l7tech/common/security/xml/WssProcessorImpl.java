@@ -150,17 +150,31 @@ public class WssProcessorImpl implements WssProcessor {
 
         // if there were other security headers and one with a special actor set by the agent, we
         // want to change the actor here to set it back to default value
+        // in the case of multiple wrapped actors, the one with the higest value must be stripped
+        Element secHeaderDeservingPromotion = null;
         List remainingSecurityHeaders = SoapUtil.getSecurityElements(cntx.processedDocument);
+        long currentGen = -1;
         for (Iterator secIt = remainingSecurityHeaders.iterator(); secIt.hasNext();) {
             Element secHeader = (Element)secIt.next();
             String actor = secHeader.getAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
-            if (actor.equals(SoapUtil.ACTOR_LAYER7_WRAPPED)) {
-                logger.info("Unwraping wrapped security header");
-                secHeader.removeAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
-                break;
+            if (actor.startsWith(SoapUtil.ACTOR_LAYER7_WRAPPED)) {
+                if (secHeaderDeservingPromotion == null) {
+                    secHeaderDeservingPromotion = secHeader;
+                    currentGen = Long.parseLong(actor.substring(SoapUtil.ACTOR_LAYER7_WRAPPED.length()));
+                } else {
+                    // remember this one only if it has a higher value
+                    long generationOfWrappedSecHeader = Long.parseLong(actor.substring(SoapUtil.ACTOR_LAYER7_WRAPPED.length()));
+                    if (currentGen < generationOfWrappedSecHeader) {
+                        currentGen = generationOfWrappedSecHeader;
+                        secHeaderDeservingPromotion = secHeader;
+                    }
+                }
             }
         }
-
+        if (secHeaderDeservingPromotion != null) {
+            logger.info("Unwraping wrapped security header");
+            secHeaderDeservingPromotion.removeAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
+        }
         return produceResult(cntx);
     }
 
