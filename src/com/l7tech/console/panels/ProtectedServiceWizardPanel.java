@@ -88,7 +88,8 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
     private JRadioButton getCredentialsNeededRadioButton() {
         if (credentialsNeededRadioButton == null) {
-            credentialsNeededRadioButton = new JRadioButton("The Gateway will need to provide credentials to access this Web service");
+            credentialsNeededRadioButton = new JRadioButton("The SecureSpan Gateway will need to " +
+                                                            "provide credentials to access this Web service");
             getAnonymousButtonGroup().add(credentialsNeededRadioButton);
             credentialsNeededRadioButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -102,7 +103,8 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
     private JRadioButton getAnonymousRadioButton() {
         if (anonymousRadioButton == null) {
-            anonymousRadioButton = new JRadioButton("The Gateway can access this protected Web service anonymously");
+            anonymousRadioButton = new JRadioButton("The SecureSpan Gateway can access " +
+                                                    "this protected Web service anonymously");
             getAnonymousButtonGroup().add(anonymousRadioButton);
             anonymousRadioButton.setSelected(true);
             anonymousRadioButton.addActionListener(new ActionListener() {

@@ -154,7 +154,7 @@ public class PublishServiceWizard extends JDialog {
         stepsLabel = new JLabel();
         stepPanel = new JPanel();
 
-        setTitle("Publish Web Service Wizard");
+        setTitle("Publish SOAP Web Service Wizard");
         addHierarchyListener(new HierarchyListener() {
             public void hierarchyChanged(HierarchyEvent evt) {
                 formHierarchyChanged(evt);
@@ -178,7 +178,7 @@ public class PublishServiceWizard extends JDialog {
           new EmptyBorder(new Insets(5, 5, 5, 5))));
 
         titleLabel.setHorizontalAlignment(SwingConstants.TRAILING);
-        titleLabel.setText("Publish Web Service Wizard");
+        titleLabel.setText("Publish SOAP Web Service Wizard");
         titleLabel.setFont(new Font("Dialog", 1, 14));
         titlePanel.add(titleLabel);
 
