@@ -279,6 +279,9 @@ public class RequestSwAAssertionDialog extends JDialog {
                     public void valueChanged(ListSelectionEvent e) {
                         int row = bindingOperationsTable.getSelectedRow();
                         if(row >= 0) {
+                            if (mimePartsTable.isEditing()) {
+                                mimePartsTable.getCellEditor().stopCellEditing();
+                            }
                             BindingOperationInfo boInfo = (BindingOperationInfo) bindingOperationsTable.getModel().getValueAt(row, 0);
                             populateMimePartsData(boInfo.getMultipart());
                         }
