@@ -17,5 +17,8 @@ import java.security.cert.X509Certificate;
  * @author mike
  */
 public interface WssDecorator {
-    Document decorateMessage(Document message, X509Certificate recipientCertificate, Element[] elementsToEncrypt, Element[] elementsToSign);
+    Document decorateMessage(Document message,
+                             X509Certificate recipientCertificate,
+                             Element[] elementsToEncrypt,
+                             Element[] elementsToSign);
 }
