@@ -6,6 +6,8 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.server.ServerConfig;
+
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.Serializable;
@@ -32,6 +34,7 @@ public class UptimeMetrics implements Serializable {
     private final double load1;
     private final double load2;
     private final double load3;
+    private final long serverBootTime = ServerConfig.getInstance().getServerBootTime();
 
     UptimeMetrics(String rawUptimeOutput, long timestamp, int days, int hours, int minutes, double load1, double load2, double load3) {
         this.rawUptimeOutput = rawUptimeOutput;
@@ -214,5 +217,9 @@ public class UptimeMetrics implements Serializable {
 
     public double getLoad3() {
         return load3;
+    }
+
+    public long getServerBootTime() {
+        return serverBootTime;
     }
 }
