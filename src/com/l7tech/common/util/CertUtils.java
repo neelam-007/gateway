@@ -73,6 +73,8 @@ public class CertUtils {
         l.add(new String[]{"SHA-1 fingerprint", getCertificateFingerprint(cert, "SHA1")});
         l.add(new String[]{"MD5 fingerprint", getCertificateFingerprint(cert, "MD5")});
 
+        l.add(new String[]{"Key usage", keyUsageToString(cert.getKeyUsage())});
+
         PublicKey publicKey = cert.getPublicKey();
         l.add(new String[]{"Key type", nullNa(publicKey.getAlgorithm())});
 
@@ -91,6 +93,40 @@ public class CertUtils {
         }
 
         return l;
+    }
+
+    private static final String[] KEY_USAGES = {
+        "digitalSignature",
+        "nonRepudiation",
+        "keyEncipherment",
+        "dataEncipherment",
+        "keyAgreement",
+        "keyCertSign",
+        "cRLSign",
+        "encipherOnly",
+        "decipherOnly",
+    };
+
+    /**
+     * @return A string such as "KeyEncipherment, caCert" that describes enabled key usages for a cert, or
+     * "<None premitted>" if no usage bits are enabled, or
+     * "<Not present>" if there is no key usage extension.
+     */
+    private static String keyUsageToString(boolean[] ku) {
+        if (ku == null) return "<Not present>";
+        StringBuffer sb = new StringBuffer();
+        boolean first = true;
+        for (int i = 0; i < ku.length; i++) {
+            if (ku[i]) {
+                String keyUsage = i < KEY_USAGES.length ? KEY_USAGES[i] : "<bit " + i + ">";
+                if (!first) sb.append(", ");
+                sb.append(keyUsage);
+                first = false;
+            }
+        }
+
+        String kus = sb.toString();
+        return kus.length() < 1 ? "<None permitted>" : kus;
     }
 
     /**
