@@ -28,7 +28,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
     public static final String DEFAULT_PINGSQL = "select 1";
     public static String pingStatement = DEFAULT_PINGSQL;
 
-    public static void initialise(Properties properties) throws IOException, SQLException {
+    public static void initialize(Properties properties) throws IOException, SQLException {
         HibernatePersistenceManager me = new HibernatePersistenceManager(properties);
         PersistenceManager.setInstance(me);
     }

@@ -45,7 +45,7 @@ public class HypersonicTest {
         p.setProperty("hibernate.dbcp.ps.maxWait", "120000");
         p.setProperty("hibernate.dbcp.ps.whenExhaustedAction", "1");
 
-        HibernatePersistenceManager.initialise(p);
+        HibernatePersistenceManager.initialize(p);
 
         logger.info("Initialization was successful.");
     }
