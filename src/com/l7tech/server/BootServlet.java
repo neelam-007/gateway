@@ -10,11 +10,14 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.remote.jini.Services;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceManagerImp;
 import com.l7tech.cluster.ClusterInfoManager;
+import com.l7tech.cluster.StatusUpdater;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -46,12 +49,10 @@ public class BootServlet extends HttpServlet {
                 logger.severe("Could not instantiate the ServiceManager");
             }
 
-            /*
-            ClusterInfoManager man = new ClusterInfoManager();
-            if (man.isCluster()) {
-                logger.finest("cluster");
-            } else logger.finest("not cluster");
-            */
+            PersistenceContext.getCurrent().beginTransaction();
+            initializeClusterStatusUpdate();
+            PersistenceContext.getCurrent().commitTransaction();
+            PersistenceContext.getCurrent().close();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "SQL ERROR IN BOOT SERVLET", e);
             throw new ServletException(e);
@@ -81,6 +82,8 @@ public class BootServlet extends HttpServlet {
         if (serviceManager != null && serviceManager instanceof ServiceManagerImp) {
             ((ServiceManagerImp)serviceManager).destroy();
         }
+        // if we were updating cluster status, stop doing it
+        StatusUpdater.stopUpdater();
     }
 
     protected void initializeAdminServices() {
@@ -90,6 +93,18 @@ public class BootServlet extends HttpServlet {
             logger.log(Level.WARNING,
               "There was an error in initalizing admin services.\n" +
               " The admin services may not be available.", e);
+        }
+    }
+
+    protected void initializeClusterStatusUpdate() {
+        ClusterInfoManager man = new ClusterInfoManager();
+        if (man.isCluster()) {
+            try {
+                man.updateSelfUptime();
+            } catch (UpdateException e) {
+                logger.log(Level.SEVERE, "could not record boot time", e);
+            }
+            StatusUpdater.initialize();
         }
     }
 }
