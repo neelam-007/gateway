@@ -6,6 +6,7 @@
 
 package com.l7tech.server.identity.fed;
 
+import com.l7tech.common.security.CertificateWillExpireException;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
@@ -55,14 +56,34 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         long[] certOids = this.config.getTrustedCertOids();
         for ( int i = 0; i < certOids.length; i++ ) {
             long oid = certOids[i];
+            TrustedCert cert = null;
             try {
-                TrustedCert cert = trustedCertManager.findByPrimaryKey(oid);
+                cert = trustedCertManager.findByPrimaryKey(oid);
+                cert.check();
                 trustedCerts.put(cert.getSubjectDn(), cert);
             } catch ( FindException e ) {
                 throw new RuntimeException("Couldn't retrieve a cert from the TrustedCertManager - cannot proceed", e);
+            } catch ( CertificateWillExpireException e ) {
+                logWillExpire( cert, e );
+            } catch ( Exception e ) {
+                logExpired( cert, e );
             }
         }
     }
+
+    private void logExpired( TrustedCert cert, Exception e ) {
+        final String msg = "Trusted cert for " + cert.getSubjectDn() +
+                           " is expired or corrupted. Identities asserted by the corresponding authority " +
+                           "will not be authorized.";
+        logger.log( Level.SEVERE, msg, e );
+    }
+
+    private void logWillExpire( TrustedCert cert, CertificateWillExpireException e ) {
+        final String msg = "Trusted cert for " + cert.getSubjectDn() +
+                           " will expire in approximately " + e.getDays() + " days.";
+        logger.log( e.getSeverity(), msg );
+    }
+
 
     public IdentityProviderConfig getConfig() {
         return config;
@@ -96,6 +117,16 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                     throw new BadCredentialsException("The trusted certificate with DN '" +
                                                       trustedCert.getSubjectDn() +
                                                       " is not trusted for signing client certificates");
+
+                try {
+                    trustedCert.check();
+                } catch ( CertificateWillExpireException e ) {
+                    logWillExpire(trustedCert, e);
+                    // FALLTHROUGH
+                } catch ( CertificateException e ) {
+                    logExpired(trustedCert, e);
+                    throw new AuthenticationException(e.getMessage(), e);
+                }
 
                 try {
                     // Check that cert was signed by CA key

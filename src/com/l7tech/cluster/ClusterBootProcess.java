@@ -69,6 +69,9 @@ public class ClusterBootProcess implements TransactionalComponent {
     private JChannel connectToChannel( String address ) throws ChannelException {
         String props = PROPERTIES_PREFIX + address + PROPERTIES_SUFFIX;
         JChannel channel = new JChannel(props);
+
+        channel.setOpt(Channel.AUTO_RECONNECT, Boolean.TRUE);
+
         channel.setChannelListener(new ChannelListener() {
             public void channelConnected( Channel channel ) {
                 logger.log(Level.INFO, "Connected to cluster communications channel" );
@@ -90,7 +93,7 @@ public class ClusterBootProcess implements TransactionalComponent {
                 logger.log(Level.INFO, "Reconnected to cluster communications channel" );
             }
         } );
-        
+
         channel.connect(CHANNEL_NAME);
         return channel;
     }
