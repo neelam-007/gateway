@@ -78,10 +78,10 @@ public class PolicyService extends ApplicationObjectSupport {
           new RequestWssSaml(),
           new RequestWssX509Cert(),
           new SecureConversation(),
-          new SslAssertion(true),
           new HttpDigest(),
           new WssBasic(),
-          new HttpBasic()
+          new HttpBasic(),
+          new SslAssertion(true),
         };
 
     public interface ServiceInfo {
