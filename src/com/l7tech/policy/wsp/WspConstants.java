@@ -23,6 +23,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -79,6 +80,7 @@ class WspConstants {
         new AssertionMapping(new SpecificUser(),        "SpecificUser"),
         new AssertionMapping(new XmlResponseSecurity(), "XmlResponseSecurity"),
         new AssertionMapping(new XmlRequestSecurity(),  "XmlRequestSecurity"),
+        new AssertionMapping(new SamlSecurity(),        "SamlSecurity"),
     };
 
     static AssertionMapping findAssertionMappingByAssertion(AssertionMapping[] map, Assertion a) {
