@@ -151,7 +151,7 @@ public class WssProcessorImpl implements WssProcessor {
             Element header = XmlUtil.findOnlyOneChildElementByName(soapMsg.getDocumentElement(),
                                                                    currentSoapNamespace,
                                                                    SoapUtil.HEADER_EL_NAME);
-            // (header can't be null or we woulnd't be here)
+            // (header can't be null or we wouldn't be here)
             Element timestamp = XmlUtil.findFirstChildElementByName(header,
                                                                     SoapUtil.WSU_URIS_ARRAY,
                                                                     SoapUtil.TIMESTAMP_EL_NAME);
