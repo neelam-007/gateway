@@ -331,9 +331,7 @@ class CertificatePanel extends JPanel {
             UserManagerClient umc = (UserManagerClient)um;
             Certificate clientCert = umc.retrieveUserCert(uidStr);
 
-            if (clientCert != null) {
-                cert = (X509Certificate)clientCert;
-            }
+            cert = (X509Certificate)clientCert;
         } catch (FindException e) {
             log.log(Level.WARNING, "There was an error loading the certifuc", e);
         }
