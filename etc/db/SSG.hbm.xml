@@ -64,6 +64,7 @@
         <property name="firstName" column="first_name"  type="string"/>
         <property name="lastName" column="last_name" type="string"/>
         <property name="email" type="string"/>
+        <property name="expiration" type="long"/>
 
         <!--
         <set role="groups" lazy="false" table="internal_user_group">

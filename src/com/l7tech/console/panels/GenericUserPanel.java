@@ -69,6 +69,7 @@ public class GenericUserPanel extends UserPanel {
     private JButton changePassButton;
     private JButton setExpirationButton;
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
+    private long tmpExpirationValue;
 
     public GenericUserPanel() {
         super();
@@ -549,8 +550,8 @@ public class GenericUserPanel extends UserPanel {
                     exirationChooser.show();
                     if (!exirationChooser.wasCancelled()) {
                         long newvalue = exirationChooser.getExpirationValue();
-                        iu.setExpiration(newvalue);
                         displayExpirationValue(newvalue);
+                        setModified(true);
                     }
                 }
             });
@@ -565,6 +566,7 @@ public class GenericUserPanel extends UserPanel {
             newExpiration = DateFormat.getInstance().format(new Date(value));
         }
         getSetExpirationButton().setText(newExpiration);
+        tmpExpirationValue = value; // to avoid parsing back
     }
 
     /**
@@ -626,6 +628,9 @@ public class GenericUserPanel extends UserPanel {
         getFirstNameTextField().setText(user.getFirstName());
         getLastNameTextField().setText(user.getLastName());
         getEmailTextField().setText(user.getEmail());
+        if (user instanceof InternalUser) {
+            displayExpirationValue(((InternalUser)user).getExpiration());
+        }
         setModified(false);
     }
 
@@ -635,10 +640,20 @@ public class GenericUserPanel extends UserPanel {
      * @return User the instance with changes applied
      */
     private User collectChanges() {
-        user.getUserBean().setLastName(this.getLastNameTextField().getText());
-        user.getUserBean().setFirstName(this.getFirstNameTextField().getText());
-        user.getUserBean().setEmail(getEmailTextField().getText());
-        // user.setGroupHeaders(groupPanel.getCurrentGroups());
+        if (user instanceof InternalUser) {
+            InternalUser iu = (InternalUser)user;
+            iu.setLastName(this.getLastNameTextField().getText());
+            iu.setFirstName(this.getFirstNameTextField().getText());
+            iu.setEmail(getEmailTextField().getText());
+            iu.setExpiration(tmpExpirationValue);
+        } else if (user instanceof LdapUser) {
+            LdapUser lu = (LdapUser)user;
+            lu.setLastName(this.getLastNameTextField().getText());
+            lu.setFirstName(this.getFirstNameTextField().getText());
+            lu.setEmail(getEmailTextField().getText());
+        } else {
+            throw new RuntimeException("Unsupported user type"); // should not happen
+        }
         return user;
     }
 

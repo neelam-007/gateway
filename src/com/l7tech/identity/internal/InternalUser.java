@@ -41,6 +41,7 @@ public class InternalUser extends PersistentUser {
         setEmail(imp.getEmail());
         setFirstName(imp.getFirstName());
         setLastName(imp.getLastName());
+        setExpiration(imp.getExpiration());
         try {
             setPassword(imp.getPassword());
         } catch (InvalidPasswordException e) {
