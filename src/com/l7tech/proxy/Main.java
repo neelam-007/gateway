@@ -25,7 +25,7 @@ import javax.net.ssl.TrustManager;
 public class Main {
 
     /** Hardcoded (for now) URL of SSG. */
-    private static String serverUrl = "https://localhost/cgi-bin/soapserv";
+    private static String serverUrl = "http://localhost/cgi-bin/soapserv";
 
     private static HttpServer httpServer;
 
