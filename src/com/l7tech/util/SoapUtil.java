@@ -87,4 +87,7 @@ public class SoapUtil {
         fault.setFaultString( faultString);
         return fault;
     }
+
+    public static final String FC_CLIENT = "Client";
+    public static final String FC_SERVER = "Server";
 }
