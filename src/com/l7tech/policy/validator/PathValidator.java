@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -247,6 +248,11 @@ class PathValidator {
             if (!seenWssSignature) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by an WSS Signature assertion.", null));
+            }
+        } else if(a instanceof ResponseWssIntegrity) {
+            if (!seenRouting) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "WSS Response Integrity occurs after routing assertion.", null));
             }
         } else if (a instanceof ResponseWssConfidentiality) {
             // REASON FOR THIS RULE:

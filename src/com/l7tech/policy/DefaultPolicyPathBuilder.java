@@ -63,19 +63,43 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     private Set generatePaths(Assertion assertion) {
         Set assertionPaths = new LinkedHashSet();
         Iterator preorder = assertion.preorderIterator();
-        assertionPaths.add(new AssertionPath(new Assertion[]{(Assertion)preorder.next()}));
-        pathStack.push(lastPath(assertionPaths));
+        final AssertionPath initPath = new AssertionPath(new Assertion[]{(Assertion)preorder.next()});
+        assertionPaths.add(initPath);
+        pathStack.push(initPath);
 
         for (; preorder.hasNext();) {
             Assertion anext = (Assertion)preorder.next();
             if (parentCreatesNewPaths(anext)) {
                 AssertionPath cp = (AssertionPath)pathStack.peek();
-                assertionPaths.remove(cp);
-                AssertionPath assertionPath = cp.addAssertion(anext);
-                assertionPaths.add(assertionPath);
-                if (isSplitPath(anext)) {
-                    pathStack.push(assertionPath);
+
+                Set add = new LinkedHashSet();
+                Set remove = new HashSet();
+
+                for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
+                    AssertionPath assertionPath = (AssertionPath)iterator.next();
+                    if (assertionPath.contains(anext.getParent()) &&
+                      !isSibling(assertionPath.lastAssertion(), anext)) {
+                        AssertionPath a = assertionPath.addAssertion(anext);
+                        add.add(a);
+                    }
                 }
+                AssertionPath stackPath = cp.addAssertion(anext);
+                add.add(stackPath);
+
+                assertionPaths.removeAll(remove);
+                assertionPaths.addAll(add);
+
+                List siblings = anext.getParent().getChildren();
+                // if last sibling and the parent path was pushed on stack, pop the parent
+                if (siblings.indexOf(anext) + 1 == siblings.size()) {
+                    AssertionPath p = (AssertionPath)pathStack.pop();
+                    assertionPaths.remove(p);
+                }
+
+                if (isSplitPath(anext)) {
+                    pathStack.push(stackPath);
+                }
+
             } else {
                 Set add = new LinkedHashSet();
                 Set remove = new HashSet();
@@ -103,48 +127,62 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                 assertionPaths.addAll(add);
             }
 
-            List siblings = anext.getParent().getChildren();
-            // if last sibling and the parent path was pushed on stack, pop the parent
-            if (siblings.indexOf(anext) + 1 == siblings.size()) {
-                if (parentCreatesNewPaths(anext)) {
-                    AssertionPath p = (AssertionPath)pathStack.pop();
-                    assertionPaths.remove(p);
-                }
-            }
         }
-        // return pruneEmptyComposites(assertionPaths);
-        return assertionPaths;
+        return pruneNonEmptyComposites(assertionPaths);
+    }
+
+    private boolean isSibling(Assertion assertion, Assertion anext) {
+        return assertion.getParent() == anext.getParent() && assertion != anext;
     }
 
     private Stack pathStack = new Stack();
 
 
-    private AssertionPath lastPath(Set set) {
-        AssertionPath[] apaths =
-          (AssertionPath[])set.toArray(new AssertionPath[]{});
-        if (apaths.length == 0) {
-            throw new IllegalArgumentException("path size is " + 0);
-        }
-        return apaths[apaths.length - 1];
-    }
-
     /**
-     * prune the assertion paths that end with emty composite
-     * assertions.
+     * prune the assertion paths that contain composite assertions
+     * where the assertion has children and the child is not immediate
+     * assertion node in the path. Those assertions were kept arround so
+     * the correct paths could be accumulated.
      *
      * @param assertionPaths the assertion path set to process
      * @return the new <code>Set</code> without assertion paths
-     *         that end with empty composites.
+     *         that end with composites.
      */
-    private Set pruneEmptyComposites(Set assertionPaths) {
-        Set result = new HashSet();
+    private Set pruneNonEmptyComposites(Set assertionPaths) {
+        Set remove = new HashSet();
+
+        // the last node is a composite, it has children but the path
+        // is not showing that
         for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
             AssertionPath assertionPath = (AssertionPath)iterator.next();
-            if (!(assertionPath.lastAssertion() instanceof CompositeAssertion)) {
-                result.add(assertionPath);
+            final Assertion assertion = assertionPath.lastAssertion();
+            if (assertion instanceof CompositeAssertion) {
+                CompositeAssertion ca = (CompositeAssertion)assertion;
+                if (!ca.getChildren().isEmpty()) {
+                    remove.add(assertionPath);
+                }
             }
         }
-        return result;
+        assertionPaths.removeAll(remove);
+        remove = new HashSet();
+        for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
+            AssertionPath ap = (AssertionPath)iterator.next();
+            Assertion[] path = ap.getPath();
+            for (int i = 0; i < path.length; i++) {
+                Assertion assertion = path[i];
+                if (assertion instanceof CompositeAssertion) {
+                    CompositeAssertion ca = (CompositeAssertion)assertion;
+                    final List children = ca.getChildren();
+                    if (!children.isEmpty() && !children.contains(path[i + 1])) {
+                        remove.add(ap);
+                        break;
+                    }
+                }
+            }
+        }
+
+        assertionPaths.removeAll(remove);
+        return assertionPaths;
     }
 
 
@@ -204,14 +242,17 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     }
 
     private static void printPath(AssertionPath ap) {
-        Assertion[] ass = ap.getPath();
-        StringBuffer sb = new StringBuffer("** Begin assertion path\n");
-        for (int i = 0; i < ass.length; i++) {
-            sb.append("" + (i + 1) + " " + ass[i].getClass().toString())
-              .append("\n");
-        }
-        sb.append("** End assertion path");
-        log.fine(sb.toString());
+        printPath("** Begin assertion path\n", "** End assertion path", ap);
     }
 
+    private static void printPath(String begin, String end, AssertionPath ap) {
+        Assertion[] ass = ap.getPath();
+        StringBuffer sb = new StringBuffer(begin);
+        for (int i = 0; i < ass.length; i++) {
+            sb.append("" + (i + 1) + " " + ass[i].getClass().toString() + '@' + System.identityHashCode(ass[i]))
+              .append("\n");
+        }
+        sb.append(end);
+        log.fine(sb.toString());
+    }
 }

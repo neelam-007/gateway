@@ -19,7 +19,6 @@ import junit.framework.TestSuite;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Test the default policy assertion path builder/analyzer class
@@ -27,7 +26,6 @@ import java.util.Set;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
-
  */
 public class DefaultPolicyPathBuilderTest extends TestCase {
 
@@ -57,6 +55,28 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         assertTrue(builder.generate(oom).getPathCount() == 3);
     }
 
+    public void testAllAssertionSingleDepthWithConjunctionOr() throws Exception {
+        final List kids =
+          Arrays.asList(new Assertion[]{
+              new TrueAssertion(),
+              new TrueAssertion()
+          });
+
+        final List kids2 =
+          Arrays.asList(new Assertion[]{
+              new FalseAssertion()
+          });
+
+        Assertion one = new OneOrMoreAssertion(kids);
+        Assertion two = new OneOrMoreAssertion(kids2);
+        Assertion oom = new AllAssertion(Arrays.asList(new Assertion[]{one, two}));
+        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+
+        final int pathCount = builder.generate(oom).getPathCount();
+        assertTrue("The path count value received is " + pathCount, pathCount == 2);
+    }
+
+
     public void testSingleDepthPolicyPathWithConjunctionAnd() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
@@ -71,36 +91,50 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         assertTrue(builder.generate(oom).getPathCount() == 1);
     }
 
-     public void testTwoDepthPolicyPathWithConjunctionOr() throws Exception {
+    public void testSingleDepthPolicyPathWithConjunctionAnd2() throws Exception {
         final List kids =
+          Arrays.asList(new Assertion[]{
+              new TrueAssertion(),
+              new OneOrMoreAssertion(),
+              new TrueAssertion()
+          });
+
+        Assertion oom = new AllAssertion(kids);
+        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+
+        assertTrue(builder.generate(oom).getPathCount() == 1);
+    }
+
+    public void testTwoDepthPolicyPathWithConjunctionOr() throws Exception {
+        final List kids =
+          Arrays.asList(new Assertion[]{
+              new TrueAssertion(),
+              new FalseAssertion(),
+              new FalseAssertion()
+          });
+
+        final List kids2 =
           Arrays.asList(new Assertion[]{
               new TrueAssertion(),
               new FalseAssertion(),
               new TrueAssertion()
           });
 
-         final List kids2 =
-                  Arrays.asList(new Assertion[]{
-                      new TrueAssertion(),
-                      new FalseAssertion(),
-                      new TrueAssertion()
-                  });
-
-         final List kids3 =
-                  Arrays.asList(new Assertion[]{
-                      new TrueAssertion(),
-                      new FalseAssertion(),
-                      new TrueAssertion()
-                  });
+        final List kids3 =
+          Arrays.asList(new Assertion[]{
+              new TrueAssertion(),
+              new FalseAssertion(),
+              new FalseAssertion()
+          });
 
         Assertion one = new OneOrMoreAssertion(kids);
         Assertion two = new OneOrMoreAssertion(kids2);
         Assertion three = new OneOrMoreAssertion(kids3);
 
-        Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[] {one, two, three}));
+        Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{one, two, three}));
         DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
         int count = builder.generate(oom).getPathCount();
-        assertTrue("The value received is "+count,  count == 9);
+        assertTrue("The value received is " + count, count == 63);
     }
 
     public void testTwoDepthPolicyPathWithConjunctionAnd() throws Exception {
@@ -120,12 +154,12 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
 
         Assertion one = new OneOrMoreAssertion(kids);
         Assertion two = new OneOrMoreAssertion(kids2);
-        Assertion three = new AllAssertion(Arrays.asList(new Assertion[] {new TrueAssertion()}));
-        Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[] {one, two, three}));
+        Assertion three = new AllAssertion(Arrays.asList(new Assertion[]{new TrueAssertion()}));
+        Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{one, two, three}));
         DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
 
         int count = builder.generate(oom).getPathCount();
-        assertTrue("The value received is "+count,  count == 7);
+        assertTrue("The value received is " + count, count == 31);
     }
 
     public void testBug763MonsterPolicy() throws Exception {
@@ -134,11 +168,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
 
         PolicyPathResult result = builder.generate(policy);
         int count = result.getPathCount();
-        assertTrue(count == 5);
-
-        Set paths = result.paths();
-        // TODO -- check for duplicated path subcomponents
-
+        assertTrue("The value received is " + count, count == 23);
     }
 
     public void testPerOperationDecorationsTreeFollowedByIdTree() throws Exception {
@@ -147,11 +177,6 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
 
         PolicyPathResult result = builder.generate(policy);
         int count = result.getPathCount();
-        assertTrue(count == 4);
-
-        Set paths = result.paths();                            
-        // TODO -- check for screwed up path subcomponents
-
-
+        assertTrue("The value received is " + count, count == 15);
     }
 }

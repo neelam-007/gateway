@@ -16,14 +16,15 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import javax.xml.soap.SOAPConstants;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Test the default policy assertion path validator functionality.
@@ -148,11 +149,11 @@ public class DefaultPolicyValidatorTest extends TestCase {
      * @throws Exception
      */
     public void testPartialXmlRequestSecurity() throws Exception {
-        RequestWssX509Cert xs = new RequestWssX509Cert();
+        RequestWssIntegrity xs = new RequestWssIntegrity();
         final List kids =
           Arrays.asList(new Assertion[]{
               new SslAssertion(),
-              new HttpBasic(),
+              new RequestWssX509Cert(),
               new SpecificUser(),
               xs,
               new HttpRoutingAssertion()
