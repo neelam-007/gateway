@@ -2,6 +2,7 @@ package com.l7tech.console.table;
 
 import com.l7tech.console.panels.CertManagerWindow;
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.util.CertUtils;
 
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Logger;
@@ -148,7 +149,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                 return ((TrustedCert) sortedData[row]).getName();
 
             case CERT_TABLE_ISSUER_NAME_COLUMN_INDEX:
-                return cert.getIssuerDN().getName();
+                return CertUtils.extractIssuerNameFromClientCertificate(cert);
 
             case CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
                 SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
