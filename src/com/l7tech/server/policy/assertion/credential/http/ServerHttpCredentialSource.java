@@ -16,12 +16,9 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
-import java.io.IOException;
 
 /**
  * @author alex
@@ -55,70 +52,6 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     protected void throwError( Level level, String err ) throws CredentialFinderException {
         LogManager.getInstance().getSystemLogger().log( level, err );
         throw new CredentialFinderException( err );
-    }
-
-    protected PrincipalCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
-        String authorization = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
-
-        if ( authorization == null || authorization.length() == 0 ) {
-            return null;
-        }
-
-        Map authParams = new HashMap();
-        StringTokenizer stok = new StringTokenizer( authorization, ", " );
-        String scheme = null;
-        String token, name, value;
-        while ( stok.hasMoreTokens() ) {
-            token = stok.nextToken();
-            int epos = token.indexOf("=");
-            if ( epos >= 0 ) {
-                name = token.substring(0,epos);
-                value = token.substring(epos+1);
-                if ( value.startsWith("\"") ) {
-                    if ( value.endsWith("\"") ) {
-                        // Single-word quoted string
-                        value = value.substring( 1, value.length() - 1 );
-                    } else {
-                        // Multi-word quoted string
-                        StringBuffer valueBuffer = new StringBuffer( value.substring(1) );
-                        value = null;
-                        while ( stok.hasMoreTokens() ) {
-                            token = stok.nextToken();
-                            if ( token.endsWith("\"") ) {
-                                valueBuffer.append( token.substring( 0, token.length()-1 ) );
-                                value = valueBuffer.toString();
-                                break;
-                            } else
-                                valueBuffer.append( token );
-                            valueBuffer.append( " " );
-                        }
-                        if ( value == null ) {
-                            CredentialFinderException cfe = new CredentialFinderException( "Unterminated quoted string in WWW-Authorize header" );
-                            _log.log( Level.WARNING, cfe.toString(), cfe );
-                            throw cfe;
-                        }
-                    }
-                }
-
-                authParams.put( name, value );
-            } else {
-                if ( scheme == null ) {
-                    scheme = token;
-                    authParams.put( HttpCredentialSourceAssertion.PARAM_SCHEME, scheme );
-                } else {
-                    CredentialFinderException cfe = new CredentialFinderException( "Unexpected value '" + token + "' in WWW-Authorize header" );
-                    _log.log( Level.WARNING, cfe.toString(), cfe );
-                    throw cfe;
-                }
-                if ( !scheme().equals(scheme) ) {
-                    throwError( Level.FINE, "Invalid scheme '" + scheme + "' in WWW-Authorize: Digest header" );
-                }
-            }
-        }
-
-        request.setParameter( Request.PARAM_HTTP_AUTH_PARAMS, authParams );
-
-        return doFindCredentials( request, response );
     }
 
     protected void challenge( Request request, Response response ) {
@@ -163,7 +96,6 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     }
 
     protected abstract AssertionStatus doCheckCredentials( Request request, Response response );
-    protected abstract PrincipalCredentials doFindCredentials( Request request, Response response ) throws IOException, CredentialFinderException;
     protected abstract Map challengeParams( Request request, Response response );
     protected abstract String scheme();
 

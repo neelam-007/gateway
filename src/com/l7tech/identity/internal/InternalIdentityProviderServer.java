@@ -166,11 +166,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     String authPassHash = null;
 
                     if ( format == CredentialFormat.CLEARTEXT ) {
-                        String realm = pc.getRealm();
-                        if ( realm == null )
-                            authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ), HttpDigest.REALM );
-                        else
-                            authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ), realm );
+                        authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ), HttpDigest.REALM );
                     } else if ( format == CredentialFormat.DIGEST ) {
                         Map authParams = (Map)pc.getPayload();
                         if ( authParams == null ) {

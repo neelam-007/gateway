@@ -46,6 +46,11 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
         return SCHEME;
     }
 
+    public PrincipalCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
+        String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
+        return findCredentials( wwwAuthorize );
+    }
+
     public PrincipalCredentials findCredentials( String wwwAuthorize ) throws IOException, CredentialFinderException {
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) return null;
 

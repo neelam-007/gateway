@@ -65,7 +65,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             // A CredentialFinder has already run.
             User user = pc.getUser();
 
-            if ( request.isAuthenticated() ) {
+           if ( request.isAuthenticated() ) {
                 // The user was authenticated by a previous IdentityAssertion.
                 _log.log(Level.FINEST, "Request already authenticated");
                 return checkUser( user );
