@@ -2,6 +2,8 @@ package com.l7tech.console.util.registry;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
+import com.l7tech.service.ServiceManager;
+import com.l7tech.util.Locator;
 
 import java.io.FileNotFoundException;
 
@@ -44,6 +46,13 @@ public class RegistryStub extends Registry {
      */
     public GroupManager getInternalGroupManager() {
         return gm;
+    }
+
+    /**
+     * @return the service managerr
+     */
+    public ServiceManager getServiceManager() {
+        return (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
     }
 
     StubDataStore dataStore = null;
