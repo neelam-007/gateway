@@ -2,16 +2,22 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Enforces the XML security on the message elements or entire message
- *
+ * 
  * @author flascell<br/>
  * @version Aug 27, 2003<br/>
  */
 public class XmlRequestSecurity extends CredentialSourceAssertion implements XmlSecurityAssertion {
+    /**
+     * default constructor
+     */
+    public XmlRequestSecurity() {
+        elements.add(new ElementSecurity());
+    }
 
     /**
      * Return the array of security elements that are specified
