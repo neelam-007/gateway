@@ -155,8 +155,9 @@ public class PolicyServlet extends HttpServlet {
 
     /**
      * Look up our certificate and transmit it to the client in PKCS#7 format.
-     * If a username is given, we'll include a "Cert-Check: " header containing
-     * MD5(cert . H(A1)).  (where H(A1) is the MD5 of "username:realm:password".)
+     * If a username is given, we'll include a "Cert-Check-provId: " header containing
+     * MD5(nonce . provId . cert . H(A1)), where H(A1) is the MD5 of "username:realm:password"
+     * and provId is the ID of the identity provider that contained a matching username.
      */
     private void doCertDownload(HttpServletRequest request, HttpServletResponse response,
                                 String username, String nonce)
