@@ -101,10 +101,10 @@ public class SignedSamlTest extends TestCase {
         log.info("Request including sender vouches token: " + XmlUtil.nodeToFormattedString(req));
     }
 
-    /*public void testSignedRequestWithSenderVouchesToken() throws Exception {
+    public void testSignedRequestWithSenderVouchesToken() throws Exception {
         Document req = getSignedRequestWithSenderVouchesToken();
         log.info("Request including sender vouches token: " + XmlUtil.nodeToFormattedString(req));
-    }*/
+    }
 
     public Document getRequestWithSenderVouchesToken() throws Exception {
         Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
@@ -121,7 +121,7 @@ public class SignedSamlTest extends TestCase {
         return request;
     }
 
-    /*public Document getSignedRequestWithSenderVouchesToken() throws Exception {
+    public Document getSignedRequestWithSenderVouchesToken() throws Exception {
         Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         assertNotNull(request);
         Element body = XmlUtil.findOnlyOneChildElementByName(request.getDocumentElement(),
@@ -136,17 +136,29 @@ public class SignedSamlTest extends TestCase {
         req.setSenderPrivateKey(caPrivateKey);
         new WssDecoratorImpl().decorateMessage(request, req);
 
+        // hack message so original signature refers to the saml token instead of the BST
+        Element security = SoapUtil.getSecurityElement(request);
+        assertNotNull(security);
+        Element bst = XmlUtil.findOnlyOneChildElementByName(security, security.getNamespaceURI(), "BinarySecurityToken");
+        assertNotNull(bst);
+        String bstId = bst.getAttributeNS(SoapUtil.WSU_NAMESPACE, "Id");
+        assertNotNull(bstId);
+        assertTrue(bstId.length() > 0);
+
         SamlAssertionGenerator ag = new SamlAssertionGenerator();
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setExpiryMinutes(5);
         samlOptions.setSignEnvelope(false);
+        samlOptions.setId(bstId);
         ag.attachSenderVouches(request,
                                new SignerInfo(caPrivateKey, caCertChain),
                                LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()),
                                //LoginCredentials.makePasswordCredentials("john", "ilovesheep".toCharArray(), getClass()),
                                samlOptions);
+
+        security.removeChild(bst);
         return request;
-    }*/
+    }
 
     public Document getRequestSignedWithSamlToken() throws Exception {
         Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);

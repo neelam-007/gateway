@@ -52,7 +52,11 @@ public class SamlAssertionGenerator {
             throw new IllegalArgumentException();
         }
         SenderVouchesHelper svh = new SenderVouchesHelper(document, options, creds, signer);
-        svh.attachAssertion(true);
+        if (options.getId() != null) {
+            svh.attachAssertion(true, options.getId());
+        } else {
+            svh.attachAssertion(true);
+        }
         if (options.isSignEnvelope()) svh.signEnvelope();
     }
 
@@ -97,11 +101,20 @@ public class SamlAssertionGenerator {
             this.clientAddress = clientAddress;
         }
 
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+
         boolean includeGroupMembership;
         int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
         InetAddress clientAddress;
         boolean signEnvelope = true;
         boolean signAssertion = true;
+        String id = null;
 
     }
 

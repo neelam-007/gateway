@@ -68,10 +68,19 @@ public abstract class SamlAssertionHelper {
      */
     void attachAssertion(boolean sign)
       throws IOException, SAXException, SignatureException, CertificateException {
+        attachAssertion(sign, "SamlTicket");
+    }
+
+    /**
+     *
+     * @param sign whether or not the saml assertion should be self-signed
+     * @param id the Id attribute of the saml assertion
+     */
+    void attachAssertion(boolean sign, String id) throws IOException, SAXException, SignatureException, CertificateException {
         Document doc = createAssertion(null);
 
         try {
-            doc.getDocumentElement().setAttribute("Id", "SamlTicket"); // TODO use AssertionID and better values, if at all
+            doc.getDocumentElement().setAttribute("Id", id); // TODO use AssertionID and better values, if at all
             if (sign) signAssertion(doc, signerInfo.getPrivate(), signerInfo.getCertificateChain());
             Element secElement = SoapUtil.getOrMakeSecurityElement(soapMessage);
             if ( secElement == null ) {
