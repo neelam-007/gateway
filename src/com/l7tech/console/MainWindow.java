@@ -1658,6 +1658,7 @@ public class MainWindow extends JFrame {
     }
 
     private void setMainJSplitPaneDividerLocation(){
+
         try {
             Preferences prefs = Preferences.getPreferences();
             String s = prefs.getString("main.log.split.divider.location");
@@ -1665,8 +1666,7 @@ public class MainWindow extends JFrame {
                 int l = Integer.parseInt(s);
                 mainJSplitPane.setDividerLocation(l);
             } else {
-                //getMainJSplitPane().setDividerLocation(700);
-                mainJSplitPane.setDividerLocation(mainJSplitPane.getSize().getHeight() * 0.5);
+                mainJSplitPane.setDividerLocation(0.7);
             }
         } catch (IOException e1) {
 
