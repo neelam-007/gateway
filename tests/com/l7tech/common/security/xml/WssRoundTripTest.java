@@ -241,6 +241,7 @@ public class WssRoundTripTest extends TestCase {
     /**
      * @return true iff. the two elements have the same namespace and localname and the same number of direct ancestor
      *         elements, and each pair of corresponding direct ancestor elements have the same namespace and localname.
+     * TODO I think this is broken -- I think it short-circuits as soon as one element's parent is null
      */
     private boolean localNamePathMatches(Element a, Element b) {
         Element aroot = a.getOwnerDocument().getDocumentElement();
