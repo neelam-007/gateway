@@ -24,15 +24,22 @@ public class SsgResponse {
     private String responseString = null;
     private Document responseDoc = null;
     private HttpHeaders headers;
+    private int httpStatus = 0;
 
-    public SsgResponse(String response, HttpHeaders headers) {
+    public SsgResponse(String response, int httpStatus, HttpHeaders headers) {
         this.responseString = response;
+        this.httpStatus = httpStatus;
         this.headers = headers;
     }
 
-    public SsgResponse(Document response, HttpHeaders headers) {
+    public SsgResponse(Document response, int httpStatus, HttpHeaders headers) {
         this.responseDoc = response;
+        this.httpStatus = httpStatus;
         this.headers = headers;
+    }
+
+    public int getHttpStatus() {
+        return this.httpStatus;
     }
 
     public String getResponseAsString() throws IOException {

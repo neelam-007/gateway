@@ -14,14 +14,12 @@ import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.util.ClientLogger;
 
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 
@@ -30,7 +28,6 @@ import java.security.NoSuchAlgorithmException;
  * @version $Revision$
  */
 public class ClientHttpClientCert extends ClientAssertion {
-    private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);
     public ClientHttpClientCert( HttpClientCert data ) {
         this.data = data;
     }
@@ -44,15 +41,7 @@ public class ClientHttpClientCert extends ClientAssertion {
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, ClientCertificateException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException
     {
         Ssg ssg = request.getSsg();
-        request.getCredentials();
-        if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-            log.info("ClientHttpClientCert: applying for client certificate");
-            try {
-                request.getClientProxy().obtainClientCertificate(request);
-            } catch (IOException e) {
-                throw new ClientCertificateException("Unable to obtain a client certificate: " + e, e);
-            }
-        }
+        request.prepareClientCertificate();
         try {
             // Make sure the private key is available
             SsgKeyStoreManager.getClientCertPrivateKey(ssg);

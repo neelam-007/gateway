@@ -6,17 +6,25 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.SslUtils;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.util.ClientLogger;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -337,6 +345,88 @@ public class SsgKeyStoreManager {
             saveKeyStore(ssg);
             ssg.haveClientCert(Boolean.TRUE);
             ssg.privateKey(privateKey);
+        }
+    }
+
+    /**
+     * Download and install the SSG certificate.  If this completes successfully, the
+     * next attempt to connect to the SSG via SSL should at least get past the SSL handshake.  Uses the
+     * specified credentials for the download.
+     *
+     * @throws IOException if there was a network problem downloading the server cert
+     * @throws IOException if there was a problem reading or writing the keystore for this SSG
+     * @throws BadCredentialsException if the downloaded cert could not be verified with the SSG username and password
+     * @throws OperationCanceledException if credentials were needed but the user declined to enter them
+     * @throws GeneralSecurityException for miscellaneous and mostly unlikely certificate or key store problems
+     */
+    public static void installSsgServerCertificate(Ssg ssg, PasswordAuthentication credentials)
+            throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException
+    {
+        CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
+                                                             credentials.getUserName(),
+                                                             credentials.getPassword());
+
+        boolean isValidated = cd.downloadCertificate();
+        if (!isValidated) {
+            if (cd.isUserUnknown()) {
+                // We got no cert-check headers, so this might be an LDAP user.  Prompt for manual
+                // certificate verification.
+                Managers.getCredentialManager().notifySsgCertificateUntrusted(ssg, cd.getCertificate());
+            } else
+                throw new BadCredentialsException("The downloaded Gateway server certificate could not be verified with the current username and password.");
+        }
+
+        saveSsgCertificate(ssg, cd.getCertificate());
+    }
+
+    /**
+     * Generate a Certificate Signing Request, and apply to the Ssg for a certificate for the
+     * current user.  If this method returns, the certificate will have been downloaded and saved
+     * locally, and the SSL context for this Client Proxy will have been reinitialized.
+     *
+     * @param ssg   the Gateway on to which we are sending our application
+     * @param credentials  the username and password to use for the application
+     * @throws ServerCertificateUntrustedException if we haven't yet discovered the Ssg server cert
+     * @throws GeneralSecurityException   if there was a problem making the CSR
+     * @throws GeneralSecurityException   if we were unable to complete SSL handshake with the Ssg
+     * @throws IOException                if there was a network problem
+     * @throws BadCredentialsException    if the SSG rejected the credentials we provided
+     * @throws com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException if the SSG has already issued the client certificate for this account
+     * @throws KeyStoreCorruptException   if the keystore is corrupt
+     */
+    public static void obtainClientCertificate(Ssg ssg, PasswordAuthentication credentials)
+            throws  ServerCertificateUntrustedException, GeneralSecurityException, IOException,
+                    BadCredentialsException, CertificateAlreadyIssuedException, KeyStoreCorruptException
+    {
+        KeyPair keyPair;
+        PKCS10CertificationRequest csr;
+        try {
+            log.info("Generating new RSA key pair (could take several seconds)...");
+            Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
+            JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
+            keyPair = kpg.generateKeyPair();
+            csr = SslUtils.makeCsr(ssg.getUsername(), keyPair.getPublic(), keyPair.getPrivate());
+        } finally {
+            Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
+        }
+
+        try {
+            X509Certificate caCert = getServerCert(ssg);
+            if (caCert == null)
+                throw new ServerCertificateUntrustedException(); // fault in the SSG cert
+            X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
+                                                                    credentials.getUserName(),
+                                                                    credentials.getPassword(),
+                                                                    csr,
+                                                                    caCert);
+            // make sure private key is stored on disk encrypted with the password that was used to obtain it
+            saveClientCertificate(ssg, keyPair.getPrivate(), cert);
+            ssg.resetSslContext(); // reset cached SSL state
+            return;
+        } catch (SslUtils.BadCredentialsException e) {  // note: not the same class BadCredentialsException
+            throw new BadCredentialsException(e);
+        } catch (SslUtils.CertificateAlreadyIssuedException e) {
+            throw new CertificateAlreadyIssuedException(e);
         }
     }
 }

@@ -34,12 +34,17 @@ import java.net.URL;
 public class PolicyManagerImpl implements PolicyManager {
     private static final ClientLogger log = ClientLogger.getInstance(PolicyManagerImpl.class);
     private static final PolicyManagerImpl INSTANCE = new PolicyManagerImpl();
+    public static final String PROPERTY_LOGPOLICIES    = "com.l7tech.proxy.datamodel.logPolicies";
 
     private PolicyManagerImpl() {
     }
 
     public static PolicyManagerImpl getInstance() {
         return INSTANCE;
+    }
+
+    private static class LogFlags {
+        private static final boolean logPolicies = Boolean.getBoolean(PROPERTY_LOGPOLICIES);
     }
 
     /**
@@ -52,7 +57,13 @@ public class PolicyManagerImpl implements PolicyManager {
      */
     public Policy getPolicy(PendingRequest request) {
         Policy policy = request.getSsg().lookupPolicy(request.getUri(), request.getSoapAction());
-        log.info(policy != null ? "Located policy for this request" : "No policy found for this request");
+        if (policy != null) {
+            if (LogFlags.logPolicies)
+                log.info("PolicyManager: Found a policy for this request: " + policy.getAssertion());
+            else
+                log.info("PolicyManager: Found a policy for this request");
+        } else
+            log.info("PolicyManager: No policy found for this request");
         return policy;
     }
 

@@ -86,8 +86,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 return sb.toString();
             }
         });
-        PendingRequest pr = new PendingRequest(clientProxy,
-                                               requestEnvelope,
+        PendingRequest pr = new PendingRequest(requestEnvelope,
                                                ssg,
                                                interceptor,
                                                getOriginalUrl(request),

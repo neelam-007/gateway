@@ -7,19 +7,22 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.xml.Session;
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.util.ClientLogger;
 import org.w3c.dom.Document;
 
-import java.net.URL;
-import java.net.PasswordAuthentication;
-import java.security.SecureRandom;
 import java.io.IOException;
+import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 
 /**
  * Holds request state while the client proxy is processing it.
@@ -28,7 +31,9 @@ import java.io.IOException;
  * Time: 12:04:09 PM
  */
 public class PendingRequest {
-    private ClientProxy clientProxy;
+    private static final ClientLogger log = ClientLogger.getInstance(PendingRequest.class);
+
+    //private ClientProxy clientProxy;
     private CredentialManager credentialManager = Managers.getCredentialManager();
     private Document soapEnvelope;
     private Document initialEnvelope;
@@ -56,16 +61,15 @@ public class PendingRequest {
     private PolicySettings policySettings = new PolicySettings();
 
     /** Construct a PendingRequest around the given SOAPEnvelope going to the given SSG. */
-    public PendingRequest(ClientProxy clientProxy, Document soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor) {
-        this.clientProxy = clientProxy;
+    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor) {
         this.soapEnvelope = soapEnvelope;
         this.initialEnvelope = soapEnvelope;
         this.ssg = ssg;
         setRequestInterceptor(requestInterceptor);
     }
 
-    public PendingRequest(ClientProxy clientProxy, Document soapEnvelope, Ssg ssg, RequestInterceptor ri, URL origUrl, HttpHeaders headers) {
-        this(clientProxy, soapEnvelope, ssg, ri);
+    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor ri, URL origUrl, HttpHeaders headers) {
+        this(soapEnvelope, ssg, ri);
         this.originalUrl = origUrl;
         this.headers = headers;
     }
@@ -76,6 +80,24 @@ public class PendingRequest {
     public void reset() {
         policySettings = new PolicySettings();
         soapEnvelope = initialEnvelope;
+    }
+
+    /**
+     * Ensure that a client certificate is available for the current request.  Will apply for one
+     * if necessary.
+     */
+    public void prepareClientCertificate() throws OperationCanceledException, KeyStoreCorruptException,
+            GeneralSecurityException, ClientCertificateException,
+            ServerCertificateUntrustedException, BadCredentialsException
+    {
+        try {
+            if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                log.info("PendingRequest: applying for client certificate");
+                SsgKeyStoreManager.obtainClientCertificate(ssg, getCredentials());
+            }
+        } catch (IOException e) {
+            throw new ClientCertificateException("Unable to obtain a client certificate", e);
+        }
     }
 
     /** Manually set the credentials to use throughout this request. */
@@ -128,10 +150,6 @@ public class PendingRequest {
    }
 
     // Getters and setters
-
-    public ClientProxy getClientProxy() {
-        return clientProxy;
-    }
 
     /**
      * Get (a copy of) the Document representing the request.  This returns a copy that can be

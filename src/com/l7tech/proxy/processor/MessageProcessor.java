@@ -12,7 +12,6 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.Managers;
@@ -23,21 +22,24 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.SsgSessionManager;
+import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
+import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ClientLogger;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.xml.sax.SAXException;
 
@@ -46,11 +48,11 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
-import java.security.UnrecoverableKeyException;
+import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.KeyManagementException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 
 /**
@@ -69,6 +71,13 @@ public class MessageProcessor {
 
     private static final int MAX_TRIES = 8;
     private PolicyManager policyManager;
+
+    static {
+        // Configure SSL for outgoing connections
+        System.setProperty("httpclient.useragent", SecureSpanConstants.USER_AGENT);
+        Protocol https = new Protocol("https", ClientProxySecureProtocolSocketFactory.getInstance(), 443);
+        Protocol.registerProtocol("https", https);
+    }
 
     /**
      * Construct a Client Proxy MessageProcessor.
@@ -118,7 +127,7 @@ public class MessageProcessor {
                         handleSslException(e, req);
                         // FALLTHROUGH -- retry with new server certificate
                     } catch (ServerCertificateUntrustedException e) {
-                        ClientProxy.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
+                        SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
                         // FALLTHROUGH allow policy to reset and retry
                     }
                 } catch (PolicyRetryableException e) {
@@ -206,7 +215,7 @@ public class MessageProcessor {
         }
 
         // We don't trust the server cert.  Perform certificate discovery and try again
-        ClientProxy.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
+        SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
     }
 
     /**
@@ -387,12 +396,21 @@ public class MessageProcessor {
                 log.info("Gateway response contained a certficate status:invalid header.  Will get new client cert.");
                 // Try to get a new client cert; if this succeeds, it'll replace the old one
                 try {
-                    req.getClientProxy().obtainClientCertificate(req);
+                    SsgKeyStoreManager.obtainClientCertificate(req.getSsg(), req.getCredentials());
                     throw new PolicyRetryableException(); // try again with the new cert
                 } catch (GeneralSecurityException e) {
                     throw new ClientCertificateException("Unable to obtain new client certificate", e);
                 } catch (IOException e) {
                     throw new ClientCertificateException("Unable to obtain new client certificate", e);
+                } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
+                    // Bug #380 - if we haven't updated policy yet, try that first - mlyons
+                    if (!req.isPolicyUpdated()) {
+                        Managers.getPolicyManager().flushPolicy(req);
+                        throw new PolicyRetryableException();
+                    } else {
+                        Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
+                        throw new OperationCanceledException();
+                    }
                 }
             }
 
@@ -429,9 +447,9 @@ public class MessageProcessor {
             Header contentType = postMethod.getResponseHeader("Content-Type");
             log.info("Response Content-Type: " + contentType);
             if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf("text/xml") < 0)
-                return new SsgResponse(CannedSoapFaults.RESPONSE_NOT_XML, null);
+                return new SsgResponse(CannedSoapFaults.RESPONSE_NOT_XML, 500, null);
 
-            SsgResponse response = new SsgResponse(responseString, headers);
+            SsgResponse response = new SsgResponse(responseString, status, headers);
             if (status == 401) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
@@ -452,8 +470,8 @@ public class MessageProcessor {
     }
 
     private static class LogFlags {
-        private static boolean logPosts = Boolean.getBoolean(PROPERTY_LOGPOSTS);
-        private static boolean logResponse = Boolean.getBoolean(PROPERTY_LOGRESPONSE);
+        private static final boolean logPosts = Boolean.getBoolean(PROPERTY_LOGPOSTS);
+        private static final boolean logResponse = Boolean.getBoolean(PROPERTY_LOGRESPONSE);
     }
 
     private boolean logPosts() {

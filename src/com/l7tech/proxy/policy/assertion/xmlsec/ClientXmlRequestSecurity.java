@@ -13,10 +13,10 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
@@ -59,7 +59,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest request)
             throws OperationCanceledException, BadCredentialsException,
-            GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException
+            GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, ClientCertificateException
     {
         // GET THE SOAP DOCUMENT
         Document soapmsg = null;
@@ -74,13 +74,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         request.getCredentials();
         session = request.getOrCreateSession();
 
-        if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-            try {
-                request.getClientProxy().obtainClientCertificate(request);
-            } catch (ServerCertificateUntrustedException e) {
-                throw e;
-            }
-        }
+        request.prepareClientCertificate();
 
         try {
             userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
