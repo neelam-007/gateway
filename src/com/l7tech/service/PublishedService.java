@@ -220,8 +220,8 @@ public class PublishedService extends NamedEntityImp {
      * If not soap, then service does not have wsdl and
      * it is resolved through its routing URI property.
      */
-    public void setSoap(boolean nonSoap) {
-        this.soap = nonSoap;
+    public void setSoap(boolean isSoap) {
+        this.soap = isSoap;
     }
 
     /**
