@@ -268,6 +268,7 @@
             <test name="com.l7tech.service.WsdlTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.policy.ClientPolicyFactoryTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.ServerPolicyFactoryTest" haltonfailure="no"/>
+            <test name="com.l7tech.policy.server.filter.FilterTest" haltonfailure="no"/>
             <!--
              ** add policy tests into the com.l7tech.policy.AllTests class
             -->
