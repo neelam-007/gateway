@@ -356,8 +356,9 @@ public class PolicyServlet extends HttpServlet {
                     provider.authenticate(creds);
                 } catch (AuthenticationException e) {
                     logger.info("Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
-                    return creds.getUser();
+                    continue;
                 }
+                return creds.getUser();
             }
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Exception getting id providers.", e);
