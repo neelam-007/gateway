@@ -115,7 +115,8 @@ CREATE TABLE published_service (
   name varchar(255) NOT NULL default '',
   policy_xml text,
   wsdl_url varchar(255) NOT NULL default '',
-  wsdl_xml text
+  wsdl_xml text,
+  disabled smallint NOT NULL default '0'
 );
 
 --

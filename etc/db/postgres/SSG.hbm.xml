@@ -90,6 +90,7 @@
         <property name="policyXml" column="policy_xml" type="string"/>
         <property name="wsdlUrl" column="wsdl_url" type="string"/>
         <property name="wsdlXml" column="wsdl_xml" type="string"/>
+        <property name="disabled" column="disabled" type="boolean"/>
     </class>
 
 </hibernate-mapping>

@@ -151,6 +151,7 @@ CREATE TABLE published_service (
   policy_xml text,
   wsdl_url varchar(255) NOT NULL default '',
   wsdl_xml text,
+  disabled TINYINT(1) NOT NULL default '0',
   PRIMARY KEY  (oid)
 ) TYPE=InnoDB;
 
