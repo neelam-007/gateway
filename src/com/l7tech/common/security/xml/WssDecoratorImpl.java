@@ -145,7 +145,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(elementsToSign[0].getOwnerDocument(),
-                                                           XSignature.SHA1, Canonicalizer.W3C2, signaturemethod);
+                                                           XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
         template.setPrefix("ds");
         for (int i = 0; i < elementsToSign.length; i++) {
             Reference ref = template.createReference("#" + sigedIds[i]);
