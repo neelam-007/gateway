@@ -62,7 +62,7 @@ class JmsRequestHandler {
         JmsSoapResponse soapResponse = new JmsSoapResponse( jmsMetadata );
 
         try {
-            // MQSeries doesn't like this with AUTO_ACKNOWLEDGE
+            // WebSphere MQ doesn't like this with AUTO_ACKNOWLEDGE
             // jmsRequest.acknowledge(); // TODO parameterize acknowledge semantics?
 
             try {

@@ -33,7 +33,7 @@ public class JmsConnectionManager extends HibernateEntityManager {
         if ( _allProviders == null ) {
             JmsProvider openjms = new JmsProvider( "OpenJMS", "org.exolab.jms.jndi.InitialContextFactory", "QueueConnectionFactory" );
             JmsProvider jbossmq = new JmsProvider( "JBossMQ", "org.jnp.interfaces.NamingContextFactory", "QueueConnectionFactory" );
-            JmsProvider mqLdap = new JmsProvider( "MQSeries over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "L7QueueConnectionFactory" );
+            JmsProvider mqLdap = new JmsProvider( "WebSphereMQ over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "L7QueueConnectionFactory" );
             List list = new ArrayList();
             list.add( openjms );
             list.add( jbossmq );
