@@ -7,7 +7,6 @@
 package com.l7tech.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import java.io.Serializable;
 import java.util.*;
