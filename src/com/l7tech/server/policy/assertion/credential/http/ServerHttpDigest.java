@@ -218,7 +218,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
             }
         }
 
-        request.setParameter( Request.PARAM_HTTP_AUTH_PARAMS, authParams );
+        request.setParameterIfEmpty( Request.PARAM_HTTP_AUTH_PARAMS, authParams );
 
         return doFindCredentials( request, response );
     }
