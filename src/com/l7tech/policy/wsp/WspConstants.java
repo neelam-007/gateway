@@ -688,6 +688,7 @@ class WspConstants {
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
         new AssertionMapping(new XslTransformation(), "XslTransformation"),
         new AssertionMapping(new TimeRange(), "TimeRange"),
+        new AssertionMapping(new RemoteIpRange(), "RemoteIpAddressRange"),
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
 
         // Special types
