@@ -96,6 +96,7 @@ public class StubDataStore {
         User user = new User();
         user.setOid(nextObjectId());
         user.setLogin("fred");
+        user.setName(user.getLogin());
         user.setFirstName("Fred");
         user.setLastName("Bunky");
         user.setEmail("fred@layer7-tech.com");
@@ -105,6 +106,7 @@ public class StubDataStore {
         user = new User();
         user.setOid(nextObjectId());
         user.setLogin("don");
+        user.setName(user.getLogin());
         user.setFirstName("Don");
         user.setLastName("Freeman");
         user.setEmail("don@layer7-tech.com");
@@ -114,6 +116,7 @@ public class StubDataStore {
         user = new User();
         user.setOid(nextObjectId());
         user.setLogin("schwartz");
+        user.setName(user.getLogin());
         user.setFirstName("Hertz");
         user.setLastName("Schwartz");
         user.setEmail("hertz@layer7-tech.com");
