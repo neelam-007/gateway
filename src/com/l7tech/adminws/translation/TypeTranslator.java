@@ -56,10 +56,13 @@ public class TypeTranslator {
         ret.setDescription(serviceConfig.getDescription());
         ret.setName(serviceConfig.getName());
         ret.setOid(serviceConfig.getOid());
-        ret.setTypeClassName(serviceConfig.getType().getClassName());
-        ret.setTypeDescription(serviceConfig.getType().getDescription());
-        ret.setTypeName(serviceConfig.getType().getName());
-        ret.setTypeOid(serviceConfig.getType().getOid());
+        if (serviceConfig.getType() != null)
+        {
+            ret.setTypeClassName(serviceConfig.getType().getClassName());
+            ret.setTypeDescription(serviceConfig.getType().getDescription());
+            ret.setTypeName(serviceConfig.getType().getName());
+            ret.setTypeOid(serviceConfig.getType().getOid());
+        }
         return ret;
     }
 
