@@ -122,11 +122,23 @@ public class HibernatePersistenceManager extends PersistenceManager {
         }
     }
 
+    private Type getHibernateType( Object param ) throws FindException {
+        Type type;
+        if ( param instanceof String )
+            type = Hibernate.STRING;
+        else if ( param instanceof Long )
+            type = Hibernate.LONG;
+        else
+            throw new FindException( "I don't know how to find with parameters that aren't either String or Long!" );
+        return type;
+
+    }
+
     List doFind( PersistenceContext context, String query, Object param, Class paramClass) throws FindException {
         ContextHolder h = getContextHolder( context );
         Session s = h._session;
         try {
-            return s.find( query, param, Hibernate.serializable(paramClass) );
+            return s.find( query, param, getHibernateType(param) );
         } catch ( HibernateException he ) {
             throw new FindException( he.toString(), he );
         } catch ( SQLException se ) {
@@ -139,7 +151,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
         Session s = h._session;
         Type[] types = new Type[ paramClasses.length ];
         for ( int i = 0; i < paramClasses.length; i++ )
-            types[i] = Hibernate.serializable(paramClasses[i]);
+            types[i] = getHibernateType(params[i]);
 
         try {
             return s.find( query, params, types );
