@@ -46,9 +46,10 @@ public class MessageSummaryAuditFactory {
         String userId = null;
 
         Request currentRequest = MessageProcessor.getCurrentRequest();
-        String requestId = currentRequest.getId().toString();
+        String requestId = null;
         if ( currentRequest != null ) {
-            if ( currentRequest instanceof XmlRequest ) {
+           requestId = currentRequest.getId().toString();
+           if ( currentRequest instanceof XmlRequest ) {
                 XmlRequest xreq = (XmlRequest)currentRequest;
                 try {
                     byte[] req = HexUtils.slurpStream(xreq.getFirstPart().getInputStream(true));
