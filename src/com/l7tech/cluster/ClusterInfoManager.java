@@ -346,6 +346,16 @@ public class ClusterInfoManager {
         ArrayList output = new ArrayList();
         output.addAll(getIfconfigMac());
         if (output.isEmpty()) {
+            logger.finest("cannot get mac from ifconfig, trying to get from global property");
+            // try to get mac from global property
+            String macproperty = System.getProperty("com.l7tech.cluster.macAddress");
+            if (macproperty != null && macproperty.length() > 0) {
+                output.add(macproperty);
+                return output;
+            }
+        }
+        if (output.isEmpty()) {
+            logger.finest("cannot get mac either from ifconfig nor global property, trying with ipconfig.");
             output.addAll(getIpconfigMac());
         }
         return output;
@@ -375,9 +385,9 @@ public class ClusterInfoManager {
                     up.destroy();
             }
         } catch (IOException e) {
-            logger.log(Level.FINE, "error getting ifconfig", e);
+            logger.log(Level.FINE, "Error getting ifconfig - perhaps not running on linux.", e);
         } catch (InterruptedException e) {
-            logger.log(Level.FINE, "error getting ifconfig", e);
+            logger.log(Level.FINE, "Error getting ifconfig - perhaps not running on linux", e);
         }
         // ifconfig output pattern
         //eth0    Link encap:Ethernet  HWaddr 00:0C:6E:69:8D:CA
@@ -425,9 +435,9 @@ public class ClusterInfoManager {
                     up.destroy();
             }
         } catch (IOException e) {
-            logger.log(Level.FINE, "error getting ifconfig", e);
+            logger.log(Level.FINE, "error getting ifconfig - must not be running on linux", e);
         } catch (InterruptedException e) {
-            logger.log(Level.FINE, "error getting ifconfig", e);
+            logger.log(Level.FINE, "error getting ifconfig - must not be running on linux", e);
         }
 
         // ifconfig output pattern
