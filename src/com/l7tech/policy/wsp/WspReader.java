@@ -1,9 +1,9 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.policy.assertion.Assertion;
-import org.apache.log4j.Category;
 
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.beans.XMLDecoder;
 
 /**
@@ -13,10 +13,25 @@ import java.beans.XMLDecoder;
  * Time: 3:44:19 PM
  */
 public class WspReader {
-    private static final Category log = Category.getInstance(WspReader.class);
-
-    public static Assertion parse(InputStream wspStream) {
+    /**
+     * Reads an XML-encoded policy document from the given input stream and
+     * returns the corresponding policy tree.
+     * @param wspStream the stream to read
+     * @return          the policy tree it contained, or null
+     * @throws ArrayIndexOutOfBoundsException if the stream contains no objects (or no more objects)
+     */
+    public static Assertion parse(InputStream wspStream) throws ArrayIndexOutOfBoundsException {
         XMLDecoder decoder = new XMLDecoder(wspStream);
         return (Assertion)decoder.readObject();
+    }
+
+    /**
+     * Converts an XML-encoded policy document into the corresponding policy tree.
+     * @param wspXml    the document to parse
+     * @return          the policy tree it contained, or null
+     * @throws ArrayIndexOutOfBoundsException if the string contains no objects
+     */
+    public static Assertion parse(String wspXml) throws ArrayIndexOutOfBoundsException {
+        return parse(new ByteArrayInputStream(wspXml.getBytes()));
     }
 }
