@@ -1,8 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
@@ -94,9 +91,9 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         bg.add(urlConnRadioButton);
 
         // urlConnection as the default
-        if(sslOptionAllowed) {
+        if (sslOptionAllowed) {
             urlConnRadioButton.setSelected(true);
-        }else {
+        } else {
             urlConnRadioButton.setEnabled(false);
             urlConnTextField.setEditable(false);
             fileRadioButton.setSelected(true);
@@ -288,6 +285,13 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             try {
                 certDER = HexUtils.decodeBase64(certPEM, true);
             } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.decode"),
+                                       resources.getString("view.error.title"),
+                                       JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+
+            if (certDER == null || certDER.length < 1) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.decode"),
                                        resources.getString("view.error.title"),
                                        JOptionPane.ERROR_MESSAGE);
