@@ -3,6 +3,8 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.identity.Client;
 import com.l7tech.identity.internal.imp.InternalIdentityProviderClient;
+import com.l7tech.identity.internal.imp.InternalIdentityProviderImp;
+import com.l7tech.identity.internal.InternalIDProviderConfig;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -21,8 +23,9 @@ import java.rmi.RemoteException;
 public class IdProvConfManagerClient implements GlobalIdProviderConfManager {
 
     public IdentityProvider getInternalIdentityProvider() {
-        // todo
-        return null;
+        InternalIdentityProviderImp internalProvider = new InternalIdentityProviderImp();
+        internalProvider.initialize(new InternalIDProviderConfig());
+        return internalProvider;
     }
 
     public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {

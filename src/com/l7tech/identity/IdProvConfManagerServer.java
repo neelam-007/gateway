@@ -4,7 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfigManager;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.internal.imp.InternalIdentityProviderImp;
-import com.l7tech.identity.imp.IdentityProviderConfigImp;
+import com.l7tech.identity.internal.InternalIDProviderConfig;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -20,19 +20,13 @@ import java.util.ArrayList;
  */
 public class IdProvConfManagerServer implements GlobalIdProviderConfManager {
 
-    public static final long INTERNAL_ID_PROVIDER_CONFIG_OID = -354684;
-
     public IdProvConfManagerServer() {
         // construct the ldapidentity provider
         ldapConfigManager = new LdapIdentityProviderConfigManager();
 
         // construct the internal id provider
         internalProvider = new InternalIdentityProviderImp();
-        IdentityProviderConfigImp iternalConfig = new IdentityProviderConfigImp();
-        iternalConfig.setName("Internal Identity Provider");
-        iternalConfig.setDescription("Internal Identity Provider");
-        iternalConfig.setOid(INTERNAL_ID_PROVIDER_CONFIG_OID);
-        internalProvider.initialize(iternalConfig);
+        internalProvider.initialize(new InternalIDProviderConfig());
     }
 
     public IdentityProvider getInternalIdentityProvider() {
@@ -40,7 +34,7 @@ public class IdProvConfManagerServer implements GlobalIdProviderConfManager {
     }
 
     public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
-        if (oid == INTERNAL_ID_PROVIDER_CONFIG_OID) return internalProvider.getConfig();
+        if (oid == InternalIDProviderConfig.internalProviderConfigID()) return internalProvider.getConfig();
         else return ldapConfigManager.findByPrimaryKey(oid);
     }
 
