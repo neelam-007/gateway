@@ -86,7 +86,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             PublishedService targetService = null;
             if (str_oid == null || str_oid.length() == 0) {
                 String err = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + " parameter is required";
-                logger.warning(err);
+                logger.info(err);
                 httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, err);
                 return;
             } else {
@@ -95,7 +95,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
             if (targetService == null) {
                 String err = "Incomplete request or service does not exist.";
-                logger.warning(err);
+                logger.info(err);
                 httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND, err);
                 return;
             }
@@ -124,7 +124,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             try {
                 users = authenticateRequestBasic(httpServletRequest, targetService);
             } catch (BadCredentialsException e) {
-                logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
+                logger.info("Returning 401 to requestor because invalid credentials were provided");
                 httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
                 return;
             }
@@ -166,7 +166,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     }
 
                     if (targetService == null) {
-                        logger.warning("requestor tried to download policy that " +
+                        logger.info("requestor tried to download policy that " +
                           "he should not be allowed to see - will return error");
                     }
                 } else {
@@ -174,7 +174,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     targetService = FilterManager.getInstance().applyAllFilters(null, targetService);
                 }
             } catch (FilteringException e) {
-                logger.log(Level.SEVERE, "Could not filter policy", e);
+                logger.log(Level.WARNING, "Could not filter policy", e);
                 httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                   "Could not process policy. Consult server logs.");
                 return;
@@ -186,7 +186,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             } else
                 outputPublishedServicePolicy(targetService, httpServletResponse);
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.WARNING, e.getMessage(), e);
         } finally {
             if (pc != null) pc.close();
         }
@@ -215,7 +215,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 if (info != null) {
                     String hash = null;
                     if (info.ha1 == null) {
-                        logger.warning("Server does not have access to requestor's password and cannot send a cert check.");
+                        logger.info("Server does not have access to requestor's password and cannot send a cert check.");
                         hash = SecureSpanConstants.NOPASS;
                     } else {
                         md5.reset();
