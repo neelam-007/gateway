@@ -213,15 +213,9 @@ public class RequestHandler extends AbstractHttpHandler {
         } catch (ConfigurationException e) {
             interceptor.onMessageError(e);
             throw new HttpException(500, "Invalid SSG configuration: " + e.toString());
-        } catch (SAXException e) {
-            interceptor.onMessageError(e);
-            throw new HttpException(500, "The server's response was not a valid SOAP envelope: " + e.toString());
         } catch (CertificateException e) {
             interceptor.onReplyError(e);
             throw new HttpException(500, "The SSG provided an invalid security certificate: " + e.toString());
-        } catch (NoSuchAlgorithmException e) {
-            interceptor.onReplyError(e);
-            throw new HttpException(500, "Internal error: " + e.toString());
         } catch (KeyStoreException e) {
             interceptor.onReplyError(e);
             throw new HttpException(500, "Unable to save the SSG's security certificate: " + e.toString());
