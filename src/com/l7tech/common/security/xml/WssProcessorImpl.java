@@ -848,16 +848,11 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private static final Element[] PROTOTYPE_ELEMENT_ARRAY = new Element[0];
-    private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
-    private static final WssProcessor.SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new WssProcessor.SecurityToken[0];
-
     private static class TimestampImpl implements WssProcessor.Timestamp {
         private final TimestampDate createdTimestampDate;
         private final TimestampDate expiresTimestampDate;
         private final Element timestampElement;
-        private boolean isSigned = false;
-        private X509SecurityTokenImpl signingToken;
+        private X509SecurityTokenImpl signingToken = null;
 
         public TimestampImpl(TimestampDate createdTimestampDate, TimestampDate expiresTimestampDate, Element timestampElement) {
             this.createdTimestampDate = createdTimestampDate;
@@ -874,7 +869,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         public boolean isSigned() {
-            return isSigned;
+            return signingToken != null;
         }
 
         public WssProcessor.X509SecurityToken getSigningSecurityToken() {
@@ -883,11 +878,14 @@ public class WssProcessorImpl implements WssProcessor {
 
         private void setSigningSecurityToken(X509SecurityTokenImpl token) {
             this.signingToken = token;
-            this.isSigned = true;
         }
 
         public Element asElement() {
             return timestampElement;
         }
     }
+
+    private static final Element[] PROTOTYPE_ELEMENT_ARRAY = new Element[0];
+    private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
+    private static final WssProcessor.SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new WssProcessor.SecurityToken[0];
 }
