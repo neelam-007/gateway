@@ -142,3 +142,19 @@ CREATE TABLE client_cert (
 --
 -- Dumping data for table 'client_cert'
 --
+
+--
+-- Table structure for table 'service_resolution'
+--
+
+DROP TABLE service_resolution;
+CREATE TABLE service_resolution (
+  serviceid bigint NOT NULL default '0',
+  soapaction varchar(128) NOT NULL default '',
+  urn varchar(255) NOT NULL default '',
+  primary key(soapaction, urn)
+);
+
+--
+-- Dumping data for table 'service_resolution'
+--
