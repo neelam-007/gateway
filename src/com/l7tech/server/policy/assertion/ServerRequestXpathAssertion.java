@@ -42,8 +42,8 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
 
     private synchronized DOMXPath getDOMXpath() throws JaxenException {
         if ( _domXpath == null ) {
-            String pattern = _data.getPattern();
-            Map namespaceMap = _data.getNamespaceMap();
+            String pattern = _data.pattern();
+            Map namespaceMap = _data.namespaceMap();
 
             if ( pattern != null ) {
                 _domXpath = new DOMXPath(pattern);
@@ -64,7 +64,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         if ( request instanceof XmlRequest ) {
             try {
-                String pattern = _data.getPattern();
+                String pattern = _data.pattern();
 
                 if ( pattern == null || pattern.length() == 0 ) {
                     _logger.warning( "XPath pattern cannot be null or empty!" );

@@ -7,13 +7,13 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.RequestXpathPolicyTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Cookie;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.MainWindow;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
@@ -73,8 +73,8 @@ public class EditXpathAssertionAction extends BaseAction {
         }
 
         Map namespaceMap = new HashMap();
-        Map assertionNSMap = xpathAssertion.getNamespaceMap();
-        if (assertionNSMap != null) namespaceMap.putAll(xpathAssertion.getNamespaceMap());
+        Map assertionNSMap = xpathAssertion.namespaceMap();
+        if (assertionNSMap != null) namespaceMap.putAll(xpathAssertion.namespaceMap());
         Map wsdlNamespaces = _cachedWsdl.getNamespaces();
 
         if (namespaceMap == null || namespaceMap.isEmpty()) {
@@ -116,11 +116,10 @@ public class EditXpathAssertionAction extends BaseAction {
             JOptionPane.PLAIN_MESSAGE,
             new ImageIcon(_node.getIcon()),
             null,
-            xpathAssertion.getPattern());
+            xpathAssertion.pattern());
         if (s != null) {
             if (s.length() > 0) {
-                xpathAssertion.setPattern(s);
-                xpathAssertion.setNamespaceMap(namespaceMap);
+                xpathAssertion.setXpathExpression(new XpathExpression(s, namespaceMap));
                 assertionChanged();
             } else {
                 JOptionPane.showMessageDialog(mw, "No XPath pattern specified.", "XPath Assertion Properties", JOptionPane.ERROR_MESSAGE);

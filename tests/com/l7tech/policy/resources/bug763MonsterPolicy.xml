@@ -10,17 +10,19 @@
                     <Realm stringValueNull="null"/>
                 </HttpBasic>
                 <RequestXpathAssertion>
-                    <NamespaceMap mapValue="included">
-                        <entry>
-                            <key stringValue="s0"/>
-                            <value stringValue="http://warehouse.acme.com/ws"/>
-                        </entry>
-                        <entry>
-                            <key stringValue="soapenv"/>
-                            <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
-                        </entry>
-                    </NamespaceMap>
-                    <Pattern stringValue="//"/>
+                    <XpathExpression xpathExpressionValue="included">
+                        <Expression stringValue="//"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </XpathExpression>
                 </RequestXpathAssertion>
                 <OneOrMore>
                     <SpecificUser>

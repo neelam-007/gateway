@@ -24,7 +24,7 @@ public class RequestXpathPolicyTreeNode extends LeafAssertionTreeNode {
     }
 
     public String getName() {
-        return "Request must match XPath '" + _assertion.getPattern() + "'";
+        return "Request must match XPath '" + _assertion.pattern() + "'";
     }
 
     /**

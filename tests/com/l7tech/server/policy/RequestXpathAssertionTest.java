@@ -4,6 +4,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
@@ -56,8 +57,7 @@ public class RequestXpathAssertionTest extends TestCase {
     String newXpathPolicy(String pattern, Map namespaceMap) throws IOException {
         // Set up policy with only RequestXpathAssertion
         RequestXpathAssertion rxa = new RequestXpathAssertion();
-        rxa.setPattern(pattern);
-        rxa.setNamespaceMap(namespaceMap);
+        rxa.setXpathExpression(new XpathExpression(pattern, namespaceMap));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
         WspWriter.writePolicy(rxa, baos);

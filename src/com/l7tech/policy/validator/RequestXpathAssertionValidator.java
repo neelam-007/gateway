@@ -26,7 +26,7 @@ public class RequestXpathAssertionValidator implements AssertionValidator {
     }
 
     public void validate(AssertionPath path, PolicyValidatorResult result) {
-        String pattern = assertion.getPattern();
+        String pattern = assertion.pattern();
         if (pattern == null) {
             result.addError(new PolicyValidatorResult.Error(assertion, path, "XPath pattern is missing", null));
             logger.info("XPath pattern is missing");

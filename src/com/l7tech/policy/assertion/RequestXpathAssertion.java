@@ -7,6 +7,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.common.xml.XpathExpression;
 
 import java.util.Map;
 
@@ -22,7 +23,7 @@ import java.util.Map;
  *
  * @version $Revision$
  */
-public class RequestXpathAssertion extends Assertion {
+public class RequestXpathAssertion extends XpathBasedAssertion {
     public RequestXpathAssertion() {
         super();
     }
@@ -31,31 +32,27 @@ public class RequestXpathAssertion extends Assertion {
         super( parent );
     }
 
-    public String getPattern() {
-        return _pattern;
+    /** Shortcut to get xpath pattern.  Name doesn't use get, to hide it from policy serializer. */
+    public String pattern() {
+        if (getXpathExpression() != null)
+            return getXpathExpression().getExpression();
+        return null;
     }
 
-    public void setPattern(String pattern) {
-        _pattern = pattern;
-    }
-
-    public Map getNamespaceMap() {
-        return _namespaceMap;
-    }
-
-    public void setNamespaceMap(Map namespaceMap) {
-        _namespaceMap = namespaceMap;
+    /** Shortcut to get namespace map.  Name doesn't use get, to hide it from policy serializer. */
+    public Map namespaceMap() {
+        if (getXpathExpression() != null)
+            return getXpathExpression().getNamespaces();
+        return null;
     }
 
     public String toString() {
+        XpathExpression x = getXpathExpression();
         StringBuffer sb = new StringBuffer(super.toString());
-        if (_namespaceMap != null)
-            sb.append(" namespacesmap=" + _namespaceMap);
-        if (_pattern != null)
-            sb.append(" pattern=" + _pattern);
+        if (x != null && x.getNamespaces() != null)
+            sb.append(" namespacesmap=" + x.getNamespaces());
+        if (x != null && x.getExpression() != null)
+            sb.append(" pattern=" + x.getExpression());
         return sb.toString();
     }
-
-    private String _pattern;
-    private Map _namespaceMap;
 }

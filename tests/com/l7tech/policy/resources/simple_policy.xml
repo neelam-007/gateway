@@ -55,20 +55,51 @@
                 </SpecificUser>
                 <RequestWssX509Cert/>
                 <RequestWssIntegrity>
-                    <XpathExpression xpathExpressionValueNull="null"/>
+                    <XpathExpression xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </XpathExpression>
                 </RequestWssIntegrity>
                 <RequestWssConfidentiality>
-                    <XpathExpression xpathExpressionValueNull="null"/>
+                    <XpathExpression xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </XpathExpression>
                 </RequestWssConfidentiality>
                 <ResponseWssIntegrity>
-                    <XpathExpression xpathExpressionValueNull="null"/>
+                    <XpathExpression xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </XpathExpression>
                 </ResponseWssIntegrity>
                 <ResponseWssConfidentiality>
-                    <XpathExpression xpathExpressionValueNull="null"/>
+                    <XpathExpression xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </XpathExpression>
                 </ResponseWssConfidentiality>
                 <RequestXpathAssertion>
-                    <NamespaceMap mapValueNull="null"/>
-                    <Pattern stringValueNull="null"/>
+                    <XpathExpression xpathExpressionValueNull="null"/>
                 </RequestXpathAssertion>
                 <CustomAssertion>
                     <base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgABTAAGcGFyZW50dAA6TGNvbS9sN3RlY2gvcG9saWN5L2Fzc2VydGlvbi9jb21wb3NpdGUvQ29tcG9zaXRlQXNzZXJ0aW9uO3hwcHBw</base64SerializedValue>
@@ -93,17 +124,19 @@
                 <SamlAssertionExpiry intValue="5"/>
             </HttpRoutingAssertion>
             <RequestXpathAssertion>
-                <NamespaceMap mapValue="included">
-                    <entry>
-                        <key stringValue="blee"/>
-                        <value stringValue="http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2"/>
-                    </entry>
-                    <entry>
-                        <key stringValue="abc"/>
-                        <value stringValue="http://namespaces.somewhere.com/abc#bletch"/>
-                    </entry>
-                </NamespaceMap>
-                <Pattern stringValueNull="null"/>
+                <XpathExpression xpathExpressionValue="included">
+                    <Expression stringValue="//blee:blaz"/>
+                    <Namespaces mapValue="included">
+                        <entry>
+                            <key stringValue="blee"/>
+                            <value stringValue="http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2"/>
+                        </entry>
+                        <entry>
+                            <key stringValue="abc"/>
+                            <value stringValue="http://namespaces.somewhere.com/abc#bletch"/>
+                        </entry>
+                    </Namespaces>
+                </XpathExpression>
             </RequestXpathAssertion>
         </ExactlyOne>
         <TrueAssertion/>

@@ -1,10 +1,10 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
@@ -52,8 +52,8 @@ public class AddXpathAssertionAdvice implements Advice {
         try {
             Wsdl serviceWsdl = service.parsedWsdl();
             Map namespaceMap = new HashMap();
-            Map assertionNSMap = xpathAssertion.getNamespaceMap();
-            if (assertionNSMap != null) namespaceMap.putAll(xpathAssertion.getNamespaceMap());
+            Map assertionNSMap = xpathAssertion.namespaceMap();
+            if (assertionNSMap != null) namespaceMap.putAll(xpathAssertion.namespaceMap());
             Map wsdlNamespaces = serviceWsdl.getNamespaces();
 
             if (namespaceMap == null || namespaceMap.isEmpty()) {
@@ -95,12 +95,11 @@ public class AddXpathAssertionAdvice implements Advice {
                 JOptionPane.PLAIN_MESSAGE,
                 null,
                 null,
-                xpathAssertion.getPattern());
+                xpathAssertion.pattern());
             final boolean ok = (s != null) && (s.length() > 0);
             if (s != null) {
                 if (s.length() > 0) {
-                    xpathAssertion.setPattern(s);
-                    xpathAssertion.setNamespaceMap(namespaceMap);
+                    xpathAssertion.setXpathExpression(new XpathExpression(s, namespaceMap));
                 } else {
 
                     JOptionPane.showMessageDialog(mw, "No XPath pattern specified.", "XPath Assertion Properties", JOptionPane.ERROR_MESSAGE);

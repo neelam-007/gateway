@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.common.xml.XpathExpression;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -53,7 +54,7 @@ public class WspWriterTest extends TestCase {
         Map foo = new HashMap();
         foo.put("abc", "http://namespaces.somewhere.com/abc#bletch");
         foo.put("blee", "http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2");
-        rxa.setNamespaceMap(foo);
+        rxa.setXpathExpression(new XpathExpression("//blee:blaz", foo));
 
         Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
             new AllAssertion(Arrays.asList(new Assertion[]{
@@ -94,7 +95,7 @@ public class WspWriterTest extends TestCase {
         fos.write(knownStr.getBytes());
         fos.close();
 
-        assertTrue(knownStr.equals(gotXml));
+        assertEquals(gotXml, knownStr);
         log.info("Output matched expected XML.");
 
         //Assertion tree = WspReader.parse(gotXml);
