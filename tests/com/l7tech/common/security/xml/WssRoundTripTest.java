@@ -14,10 +14,16 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.*;
 import java.lang.reflect.Method;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.IOException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import com.l7tech.common.util.XmlUtil;
+import com.ibm.xml.dsig.Canonicalizer;
+import com.ibm.xml.dsig.transform.ExclusiveC11r;
 
 /**
  * Decorate messages with WssDecorator and then send them through WssProcessor
@@ -129,6 +135,16 @@ public class WssRoundTripTest extends TestCase {
         WssDecorator martha = new WssDecoratorImpl();
         WssProcessor trogdor = new WssProcessorImpl();
 
+        // save a record of the literal encrypted elements before they get messed with
+        Element[] elementsBeforeEncryption = new Element[td.elementsToEncrypt.length];
+        String[] canonicalizedElementsBeforeEncryption = new String[td.elementsToEncrypt.length];
+        for (int i = 0; i < td.elementsToEncrypt.length; i++) {
+            Element element = td.elementsToEncrypt[i];
+            log.info("Saving canonicalizing copy of " + element.getLocalName() + " before it gets encrypted");
+            canonicalizedElementsBeforeEncryption[i] = canonicalize(element);
+            elementsBeforeEncryption[i] = (Element) element.cloneNode(true);
+        }
+
         log.info("Message before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(message));
 
         martha.decorateMessage(message,
@@ -191,19 +207,21 @@ public class WssRoundTripTest extends TestCase {
         }
 
         // Make sure all requested elements were encrypted
-        for (int i = 0; i < td.elementsToEncrypt.length; ++i) {
-            Element elementToEncrypt = td.elementsToEncrypt[i];
+        for (int i = 0; i < elementsBeforeEncryption.length; ++i) {
+            Element elementToEncrypt = elementsBeforeEncryption[i];
+            String canonicalized = canonicalizedElementsBeforeEncryption[i];
             log.info("Looking to ensure element was encrypted: " + XmlUtil.nodeToString(elementToEncrypt));
 
             boolean wasEncrypted = false;
             for (int j = 0; j < encrypted.length; ++j) {
                 Element encryptedElement = encrypted[j];
+
                 log.info("Checking if element matches: " + XmlUtil.nodeToString(encryptedElement));
                 if (localNamePathMatches(elementToEncrypt, encryptedElement)) {
-                    assertEquals("Original element " + encryptedElement.getLocalName() +
-                                 " content must match decrypted element content",
-                                 XmlUtil.nodeToString(elementToEncrypt),
-                                 XmlUtil.nodeToString(encryptedElement));
+                    assertEquals("Canonicalized original element " + encryptedElement.getLocalName() +
+                                 " content must match canonicalized decrypted element content",
+                                 canonicalized,
+                                 canonicalize(encryptedElement));
                     wasEncrypted = true;
                     break;
                 }
@@ -211,6 +229,13 @@ public class WssRoundTripTest extends TestCase {
             assertTrue("Element " + elementToEncrypt.getLocalName() + " must be encrypted", wasEncrypted);
             log.info("Element " + elementToEncrypt.getLocalName() + " verified as encrypted successfully.");
         }
+    }
+
+    private static Canonicalizer canon = new ExclusiveC11r();
+    private String canonicalize(Node node) throws IOException {
+        OutputStream baos = new ByteArrayOutputStream(1024);
+        canon.canonicalize(node, baos);
+        return baos.toString();
     }
 
     /**
@@ -223,7 +248,9 @@ public class WssRoundTripTest extends TestCase {
         while (a != null && b != null) {
             if (!a.getLocalName().equals(b.getLocalName()))
                 return false;
-            if (!a.getNamespaceURI().equals(b.getNamespaceURI()))
+            if ((a.getNamespaceURI() == null) != (b.getNamespaceURI() == null))
+                return false;
+            if (a.getNamespaceURI() != null && !a.getNamespaceURI().equals(b.getNamespaceURI()))
                 return false;
             if ((a == aroot) != (b == broot))
                 return false;
