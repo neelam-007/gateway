@@ -10,6 +10,9 @@ package com.l7tech.adminws.identity;
 import com.l7tech.adminws.translation.TypeTranslator;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.misc.Locator;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.DeleteException;
 
 public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Identity{
     public com.l7tech.adminws.identity.Header[] findAlllIdentityProviderConfig() throws java.rmi.RemoteException {
@@ -21,15 +24,30 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     }
 
     public com.l7tech.adminws.identity.IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws java.rmi.RemoteException {
-        return TypeTranslator.genericToServiceIdProviderConfig(getIdentityProviderConfigManager().findByPrimaryKey(oid));
+        try {
+            return TypeTranslator.genericToServiceIdProviderConfig(getIdentityProviderConfigManager().findByPrimaryKey(oid));
+        } catch (FindException e) {
+            throw new java.rmi.RemoteException("IdentityProviderConfigManager FindException : " + e.getMessage());
+        }
     }
 
     public long saveIdentityProviderConfig(com.l7tech.adminws.identity.IdentityProviderConfig identityProviderConfig) throws java.rmi.RemoteException {
-        return getIdentityProviderConfigManager().save(TypeTranslator.serviceIdentityProviderConfigToGenericOne(identityProviderConfig));
+        try {
+            return getIdentityProviderConfigManager().save(TypeTranslator.serviceIdentityProviderConfigToGenericOne(identityProviderConfig));
+        } catch (SaveException e) {
+            throw new java.rmi.RemoteException("IdentityProviderConfigManager SaveException : " + e.getMessage());
+        }
     }
 
     public void deleteIdentityProviderConfig(long oid) throws java.rmi.RemoteException {
-        getIdentityProviderConfigManager().delete(getIdentityProviderConfigManager().findByPrimaryKey(oid));
+        try {
+            getIdentityProviderConfigManager().delete(getIdentityProviderConfigManager().findByPrimaryKey(oid));
+        } catch (FindException e) {
+            throw new java.rmi.RemoteException("IdentityProviderConfigManager FindException : " + e.getMessage());
+        }
+        catch (DeleteException e) {
+            throw new java.rmi.RemoteException("IdentityProviderConfigManager DeleteException : " + e.getMessage());
+        }
     }
 
     public com.l7tech.adminws.identity.User findUserByPrimaryKey(long identityProviderConfigId, long userId) throws java.rmi.RemoteException {
