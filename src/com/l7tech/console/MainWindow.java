@@ -1895,6 +1895,10 @@ public class MainWindow extends JFrame {
                   log.log(Level.WARNING, "Cannot get the node name", e);
               }
 
+              if(nodeName == null) {
+                  nodeName = "unknown";
+              }
+
               statusMessage += connectionContext;
               statusMessage += getNodeNameMsg(nodeName);
 
