@@ -9,10 +9,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.attachments.MultipartMessageReader;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.MultipartUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -277,19 +274,18 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         contentLength += unreadBytes.length;
                         pushbackInputStream.unread(unreadBytes);
                         postMethod.setRequestBody(pushbackInputStream);
+                        postMethod.setRequestContentLength((int)contentLength);
 
                     } else {
                         PushbackInputStream pbis = multipartReader.getPushbackInputStream();
 
                         // push the modified SOAP part back to the input stream
                         final byte[] unreadBytes = sb.toString().getBytes();
-                        contentLength += unreadBytes.length;
                         pbis.unread(unreadBytes);
 
                         // post the request using input stream
                         postMethod.setRequestBody(pbis);
                     }
-                    postMethod.setRequestContentLength((int)contentLength);
                 } else {
                     postMethod.setRequestBody(requestXml);
                 }
