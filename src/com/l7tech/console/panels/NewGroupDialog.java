@@ -401,7 +401,13 @@ public class NewGroupDialog extends JDialog {
      * @return true validated, false othwerwise
      */
     private boolean validateInput() {
-        return true;
+        if(groupIdTextField.getText().length() < 3) {
+                   JOptionPane.showMessageDialog(this, resources.getString("groupIdTextField.error.empty"),
+                                   resources.getString("groupIdTextField.error.title"),
+                                   JOptionPane.ERROR_MESSAGE);
+                   return false;
+               }
+         return true;
     }
 
 }
