@@ -38,6 +38,7 @@ public class PendingRequest {
     private Long nonce = null; // nonce.  set on-demand, and only set once
     private HttpHeaders headers = null;
     private PasswordAuthentication pw = null;
+    private ClientSidePolicy clientSidePolicy = ClientSidePolicy.getPolicy();
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
@@ -272,5 +273,9 @@ public class PendingRequest {
 
     public HttpHeaders getHeaders() {
         return headers;
+    }
+
+    public ClientSidePolicy getClientSidePolicy() {
+        return clientSidePolicy;
     }
 }
