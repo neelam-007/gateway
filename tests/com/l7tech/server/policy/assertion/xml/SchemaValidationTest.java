@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.common.util.HexUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -39,6 +40,16 @@ public class SchemaValidationTest extends TestCase {
     public static void main(String[] args) throws Throwable {
         junit.textui.TestRunner.run(suite());
         System.out.println("Test complete: " + SchemaValidationTest.class);
+    }
+
+    public void testEcho() throws Exception {
+        SchemaValidation assertion = new SchemaValidation();
+        InputStream is = getClass().getResourceAsStream(ECHO_XSD);
+        String xsd = new String(HexUtils.slurpStream(is, 10000));
+        assertion.setSchema(xsd);
+        ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion);
+        AssertionStatus res = serverAssertion.checkRequest(getResAsDoc(ECHO_REQ));
+        System.out.println("result is " + res);
     }
 
     public void testCaseWith2BodyChildren() throws Exception {
@@ -106,6 +117,10 @@ public class SchemaValidationTest extends TestCase {
     private static final String LISTRES_PATH = RESOURCE_PATH + "listProductResponse.xml";
     private static final String DOCLIT_WSDL_WITH2BODYCHILDREN = RESOURCE_PATH + "axisDocumentLiteralWith2BodyParts.wsdl";
     private static final String DOCLIT_WITH2BODYCHILDREN_REQ = RESOURCE_PATH + "requestWith2BodyChildren.xml";
+
+    private static final String ECHO_XSD = RESOURCE_PATH + "echo.xsd";
+    private static final String ECHO2_XSD = RESOURCE_PATH + "echo2.xsd";
+    private static final String ECHO_REQ = RESOURCE_PATH + "echoReq.xml";
 
 
 }
