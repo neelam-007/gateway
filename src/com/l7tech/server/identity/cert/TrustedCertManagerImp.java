@@ -78,15 +78,25 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
 
     public long save(TrustedCert cert) throws SaveException {
         try {
+            check(cert);
             return PersistenceManager.save( getContext(), cert );
         } catch ( SQLException e ) {
             logger.log( Level.SEVERE, e.getMessage(), e );
             throw new SaveException("Couldn't save cert", e );
+        } catch ( IOException e ) {
+            final String msg = "Couldn't parse certificate";
+            logger.log( Level.WARNING, msg, e );
+            throw new SaveException(msg, e );
+        } catch ( CertificateException e ) {
+            final String msg = "Certificate not valid";
+            logger.log( Level.WARNING, msg, e );
+            throw new SaveException(msg, e );
         }
     }
 
     public void update(TrustedCert cert) throws UpdateException {
         try {
+            check(cert);
             TrustedCert original = findByPrimaryKey(cert.getOid());
             if ( original == null ) throw new UpdateException("Can't find TrustedCert #" + cert.getOid() + ": it was probably deleted by another transaction");
 
@@ -101,6 +111,14 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         } catch (FindException e) {
             logger.log(Level.WARNING, e.toString(), e);
             throw new UpdateException("Couldn't find cert to be udpated");
+        } catch ( IOException e ) {
+            final String msg = "Couldn't parse certificate";
+            logger.log( Level.WARNING, msg, e );
+            throw new UpdateException(msg, e );
+        } catch ( CertificateException e ) {
+            final String msg = "Certificate not valid";
+            logger.log( Level.WARNING, msg, e );
+            throw new UpdateException(msg, e );
         }
     }
 
