@@ -73,6 +73,8 @@ public class HttpClientCertCredentialFinder extends HttpCredentialFinder {
             throw new CredentialFinderException("cannot extract name from cert", e, AssertionStatus.AUTH_FAILED);
         }
 
+        _log.log(Level.INFO, "cert found for user " + certCN);
+
         try {
             User u = new User();
             u.setLogin(certCN);
