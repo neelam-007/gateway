@@ -9,14 +9,15 @@ import com.l7tech.console.table.SecuredMessagePartsTableModel;
 import com.l7tech.console.table.SecuredMessagePartsTableModel.SecuredMessagePart;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
 import com.l7tech.console.tree.policy.XmlRequestSecurityTreeNode;
 import com.l7tech.console.tree.policy.XmlResponseSecurityTreeNode;
+import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
 import com.l7tech.console.tree.wsdl.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
+import org.apache.xml.utils.NameSpace;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -25,10 +26,9 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
 import javax.wsdl.*;
-import javax.xml.namespace.QName;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPElement;
 import javax.xml.soap.Name;
+import javax.xml.soap.SOAPElement;
+import javax.xml.soap.SOAPException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,10 +37,6 @@ import java.awt.event.ItemListener;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
-
-import org.apache.xml.utils.NameSpace;
-import org.apache.xerces.xni.NamespaceContext;
-import org.apache.xerces.util.NamespaceSupport;
 
 
 /**
@@ -67,8 +63,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private SecuredMessagePartsTableModel memoTableModelEntireMessage;
     private SecuredMessagePartsTableModel memoTableModelMessageParts;
     private SOAPRequest[] soapRequests;
-    private static final String SOAP_BODY = "/SOAP-ENV:Envelope/SOAP-ENV:Body";
-    private static final String SOAP_ENVELOPE = "/SOAP-ENV:Envelope";
+    private static final String SOAP_BODY = "/soapenv:Envelope/soapenv:Body";
+    private static final String SOAP_ENVELOPE = "/soapenv:Envelope";
     private Map namespaces = new HashMap();
 
     /**
