@@ -140,10 +140,21 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private JComponent getAgentPolicyPane() {
         if (agentPolicyPane == null) {
             int y = 0;
-            JPanel pane = new JPanel(new GridBagLayout());
-            agentPolicyPane = new JScrollPane(pane);
+            JPanel outerPane = new JPanel(new GridBagLayout());
+            agentPolicyPane = new JScrollPane(outerPane);
             agentPolicyPane.setBorder(BorderFactory.createEmptyBorder());
-
+            JPanel pane = new JPanel(new GridBagLayout());
+            pane.setBorder(BorderFactory.createTitledBorder("  Client-side policy  "));
+            outerPane.add(pane,
+                          new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
+                                                 GridBagConstraints.NORTHWEST,
+                                                 GridBagConstraints.HORIZONTAL,
+                                                 new Insets(14, 5, 0, 5), 0, 0));
+            outerPane.add(Box.createGlue(),
+                          new GridBagConstraints(0, 99, 1, 1, 1.0, 1.0,
+                                                 GridBagConstraints.CENTER,
+                                                 GridBagConstraints.BOTH,
+                                                 new Insets(0, 0, 0, 0), 0, 0));
 
         }
         return agentPolicyPane;
