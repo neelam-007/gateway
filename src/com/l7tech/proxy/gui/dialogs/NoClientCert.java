@@ -25,7 +25,6 @@ public class NoClientCert extends JDialog {
     private JLabel lbl1;
     private JButton csrButton;
     private JButton importButton;
-    private JButton helpButton;
     private JButton closeButton;
     private JLabel lbl2;
     public static final int CLOSED = 0;
@@ -70,11 +69,6 @@ public class NoClientCert extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 exitCondition = REQUESTED_CSR;
                 NoClientCert.this.dispose();
-            }
-        });
-        helpButton.addActionListener(new ActionListener(){
-            public void actionPerformed(ActionEvent e) {
-                // todo, plug this help thing in
             }
         });
 
