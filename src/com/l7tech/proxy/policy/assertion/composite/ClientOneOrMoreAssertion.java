@@ -43,12 +43,8 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
      * @param req
      * @return the AssertionStatus.NONE if at least one child succeeded; the rightmost-child error otherwise.
      */
-    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException {
-        try {
-            data.mustHaveChildren();
-        } catch (PolicyAssertionException e) {
-            throw new RuntimeException(e);
-        }
+    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException {
+        data.mustHaveChildren();
         AssertionStatus result = AssertionStatus.FAILED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
@@ -61,13 +57,9 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
 
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException,
-                   ResponseValidationException, SAXException, KeyStoreCorruptException
+                   ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException
     {
-        try {
-            data.mustHaveChildren();
-        } catch (PolicyAssertionException e) {
-            throw new RuntimeException(e);
-        }
+        data.mustHaveChildren();
         AssertionStatus result = AssertionStatus.FAILED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];

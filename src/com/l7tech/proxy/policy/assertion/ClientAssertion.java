@@ -7,6 +7,7 @@
 package com.l7tech.proxy.policy.assertion;
 
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -30,21 +31,22 @@ public abstract class ClientAssertion {
      * ClientProxy client-side processing of the given request.
      * @param request    The request to decorate.
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
-     *
+     * @throws PolicyAssertionException if the policy was invalid
      */
     public abstract AssertionStatus decorateRequest(PendingRequest request)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
-                   ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException;
+                   ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException;
 
     /**
      * ClientProxy clinet-side processing of the given response.
      * @param request   The request that was fed to the SSG to get this response.
      * @param response  The response we received.
      * @return AssertionStatus.NONE if this Assertion was applied to the response successfully; otherwise, some error conde
+     * @throws PolicyAssertionException if the policy was invalid
      */
     public abstract AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException,
-                   SAXException, ResponseValidationException, KeyStoreCorruptException;
+                   SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException;
 
     /**
      * @return the human-readable node name that is displayed.

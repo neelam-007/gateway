@@ -20,6 +20,7 @@ public class Policy {
     private final String version;
     private final Assertion assertion;
     private ClientAssertion clientAssertion;
+    private boolean valid = true;
 
     public Policy(Assertion assertion, String version) {
         this.assertion = assertion;
@@ -40,5 +41,23 @@ public class Policy {
 
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Check if this policy has ever caused a PolicyAssertionException.  If it has, you are better off
+     * ignoring it when processing messages in the hope that the SSG will send you a new one.
+     *
+     * @return false if this policy has ever caused a PolicyAssertionException; otherwise true.
+     */
+    public boolean isValid() {
+        return valid;
+    }
+
+    /**
+     * Note that this policy is known to have caused at least one PolicyAssertionException
+     * and so should be ignored when processing messages.
+     */
+    public void invalidate() {
+        valid = false;
     }
 }

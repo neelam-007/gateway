@@ -12,6 +12,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.datamodel.HttpHeaders;
@@ -112,7 +113,7 @@ public class MessageProcessor {
     public SsgResponse processMessage(PendingRequest req)
             throws ClientCertificateException, OperationCanceledException,
             ConfigurationException, GeneralSecurityException, IOException, SAXException,
-            ResponseValidationException, HttpChallengeRequiredException
+            ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException
     {
         Ssg ssg = req.getSsg();
 
@@ -256,10 +257,12 @@ public class MessageProcessor {
      * @throws ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
     private Policy enforcePolicy(PendingRequest req)
-            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException
+            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException
     {
         Policy policy = policyManager.getPolicy(req);
-        if (policy == null) {
+        if (policy == null || !policy.isValid()) {
+            if (policy != null)
+                log.warn("Ignoring this policy -- it's thrown PolicyAssertionException before");
             if (req.getSsg().isUseSslByDefault()) {
                 // Create a fake policy requiring SSL.
                 policy = SSL_POLICY;
@@ -270,7 +273,13 @@ public class MessageProcessor {
         AssertionStatus result;
         ClientAssertion rootAssertion = policy.getClientAssertion();
         if (rootAssertion != null) {
+            try {
             result = rootAssertion.decorateRequest(req);
+            } catch (PolicyAssertionException e) {
+                // Before rethrowing, make sure we deactivate this cached policy.
+                policy.invalidate();
+                throw e;
+            }
             if (result != AssertionStatus.NONE)
                 log.warn("Policy evaluated with an error: " + result + "; will attempt to continue anyway.");
         }
@@ -288,7 +297,7 @@ public class MessageProcessor {
     private void undecorateResponse(PendingRequest req, SsgResponse res, Policy appliedPolicy)
             throws OperationCanceledException,
                    GeneralSecurityException, BadCredentialsException, IOException,
-                   ResponseValidationException, SAXException, KeyStoreCorruptException
+                   ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException
     {
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
         if (appliedPolicy == null)

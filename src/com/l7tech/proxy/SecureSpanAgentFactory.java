@@ -7,6 +7,7 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
@@ -15,11 +16,11 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
+import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
-import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
 import com.l7tech.proxy.processor.MessageProcessor;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -28,9 +29,9 @@ import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -127,6 +128,8 @@ public class SecureSpanAgentFactory {
                     throw new CausedSendException(e);
                 } catch (HttpChallengeRequiredException e) {
                     throw new CausedSendException(e); // can't happen -- no HTTP credential chaining in embedded mode
+                } catch (PolicyAssertionException e) {
+                    throw new CausedSendException(e);
                 }
             }
 

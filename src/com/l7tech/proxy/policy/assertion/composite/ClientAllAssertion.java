@@ -43,12 +43,8 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
      * @param req
      * @return the AssertionStatus.NONE if no child returned an error; the rightmost-child error otherwise.
      */
-    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException {
-        try {
-            data.mustHaveChildren();
-        } catch (PolicyAssertionException e) {
-            throw new RuntimeException(e);
-        }
+    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException {
+        data.mustHaveChildren();
         AssertionStatus result = AssertionStatus.NONE;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
@@ -61,13 +57,9 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
 
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException,
-                   IOException, ResponseValidationException, SAXException, KeyStoreCorruptException
+                   IOException, ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException
     {
-        try {
-            data.mustHaveChildren();
-        } catch (PolicyAssertionException e) {
-            throw new RuntimeException(e);
-        }
+        data.mustHaveChildren();
         AssertionStatus result = AssertionStatus.NONE;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
