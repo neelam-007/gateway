@@ -1,10 +1,11 @@
 package com.l7tech.policy.wsp;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import org.w3c.dom.Text;
+import com.l7tech.policy.assertion.UnknownAssertion;
 import org.apache.axis.encoding.Base64;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 import java.io.*;
 import java.util.List;
@@ -69,7 +70,9 @@ class SerializedJavaClassMapping extends WspConstants.BeanTypeMapping {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            UnknownAssertion ua = new UnknownAssertion();
+            ua.setDetailMessage("Unknown assertion '" + e.getMessage() + "'");
+            return new WspConstants.TypedReference(UnknownAssertion.class, ua, element.getNodeName());
         }
     }
 

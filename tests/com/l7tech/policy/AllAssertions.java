@@ -7,7 +7,6 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -16,6 +15,7 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
@@ -56,6 +56,7 @@ public class AllAssertions {
     };
 
     private static CustomAssertionHolder CUSTOM_ASSERTION_HOLDER = new CustomAssertionHolder();
+
     static {
         CUSTOM_ASSERTION_HOLDER.setCustomAssertion(new CustomAssertion() {
             public String getName() {
@@ -86,7 +87,8 @@ public class AllAssertions {
         new XmlResponseSecurity(),
         new XmlRequestSecurity(),
         new RequestXpathAssertion(),
-        CUSTOM_ASSERTION_HOLDER
+        CUSTOM_ASSERTION_HOLDER,
+        new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
@@ -116,7 +118,8 @@ public class AllAssertions {
         new XmlResponseSecurity(),
         new XmlRequestSecurity(),
         new RequestXpathAssertion(),
-        new CustomAssertionHolder()
+        new CustomAssertionHolder(),
+        new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),

@@ -119,9 +119,17 @@ public class AssertionTreeNodeFactory {
      * special assertion tree node that describesd unknown assertion
      */
     static class UnknownAssertionTreeNode extends LeafAssertionTreeNode {
+        String name = null;
 
         public UnknownAssertionTreeNode(Assertion assertion) {
             super(assertion);
+            if (assertion instanceof UnknownAssertion) {
+                UnknownAssertion unknownAssertion = (UnknownAssertion)assertion;
+                name = unknownAssertion.getDetailMessage();
+            }
+            if (name == null) {
+                name = "Unknown assertion class '" + assertion.getClass() + "'";
+            }
         }
 
         /**
@@ -133,8 +141,17 @@ public class AssertionTreeNodeFactory {
             return "com/l7tech/console/resources/unknown.gif";
         }
 
+        /**
+         * Override can delete
+         * 
+         * @return always true
+         */
+        public boolean canDelete() {
+            return true;
+        }
+
         public String getName() {
-            return "Unknown assertion " + getUserObject().getClass();
+            return name;
         }
     }
 }

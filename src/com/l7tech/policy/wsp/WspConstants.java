@@ -690,6 +690,7 @@ class WspConstants {
         new AssertionMapping(new TimeRange(), "TimeRange"),
         new AssertionMapping(new RemoteIpRange(), "RemoteIpAddressRange"),
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
+        new AssertionMapping(new UnknownAssertion(), "UnknownAssertion"),
 
         // Special types
         new BeanTypeMapping(ElementSecurity.class, "elementSecurityValue"),
