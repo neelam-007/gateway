@@ -88,8 +88,16 @@ public class HexUtils {
         return new String(buffer);
     }
 
-    public static byte[] unHexDump( String hexData ) {
-        if ( hexData.length() % 2 != 0 ) throw new IllegalArgumentException( "String must be of even length" );
+    /**
+     * Convert a string of hexidecimal digits in the form "FF0E7BCC"... into a byte array.
+     * The example would return the byte array { 0xFF, 0x0E, 0x7b, 0xCC }.  This is the inverse
+     * of the operation performed by hexDump().
+     * @param hexData the string containing the hex data to decode.  May not contain whitespace.
+     * @return the decoded byte array, which may be zero length but is never null.
+     * @throws IOException if the input string contained characters other than '0'..'9', 'a'..'f', 'A'..'F'.
+     */
+    public static byte[] unHexDump( String hexData ) throws IOException {
+        if ( hexData.length() % 2 != 0 ) throw new IOException( "String must be of even length" );
         byte[] bytes = new byte[hexData.length()/2];
         for ( int i = 0; i < hexData.length(); i+=2 ) {
             int b1 = nybble( hexData.charAt(i) );

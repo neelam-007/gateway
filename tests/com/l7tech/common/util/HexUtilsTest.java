@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 import java.util.Arrays;
 import java.security.MessageDigest;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 /**
  *
@@ -54,7 +55,7 @@ public class HexUtilsTest extends TestCase {
         assertTrue(HexUtils.hexDump(new byte[] { (byte)0xDE, (byte)0xAD, (byte)0xBE, (byte)0xEF }).equals("deadbeef"));
     }
 
-    public void testUnhexDump() {
+    public void testUnhexDump() throws IOException {
         assertTrue(Arrays.equals( HexUtils.unHexDump( "abcd" ), new byte[] { (byte)0xAB, (byte)0xCD }));
         assertTrue(Arrays.equals( HexUtils.unHexDump( "deadbeef" ), new byte[] { (byte)0xDE, (byte)0xAD, (byte)0xBE, (byte)0xEF } ));
         assertTrue( HexUtils.hexDump( HexUtils.unHexDump( "de615f787075c54bd19ba64da4128553" )).equals("de615f787075c54bd19ba64da4128553"));
