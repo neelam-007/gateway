@@ -447,6 +447,9 @@ public class MultipartMessageReader {
 
                     // reset flas
                     crSeen = false;
+                } else {
+                    // not the <cr><cf> sequence
+                    crSeen = false;
                 }
             }
         } while((writeIndex < attachmentsRawData.length) && (d != -1));
@@ -542,8 +545,8 @@ public class MultipartMessageReader {
         boolean crSeen = false;
         boolean boundaryFound = false;
         byte[] buf = new byte[ATTACHMENT_BLOCK_SIZE];
-        int startIndex = -1;
-        int endIndex = -1;
+        int startIndex = -1;      // the starting position of the data in between two <cr><lf> pairs
+        int endIndex = -1;        // the ending position of the data in between two <cr><lf> pairs
         int index = 0;
 
         // read the first byte
@@ -584,6 +587,9 @@ public class MultipartMessageReader {
                         // reset flas
                         crSeen = false;
                     }
+                } else {
+                    // not the <cr><cf> sequence
+                    crSeen = false;
                 }
                 // read the next byte
                 d = pushbackInputStream.read();
@@ -595,7 +601,9 @@ public class MultipartMessageReader {
             // if the boundary NOT found when the buffer is full, store the data first and then continue
             if(!boundaryFound) {
 
-                if(startIndex >= 0) {
+                // NOTE: we should not include the case startIndex == 0 in this if statement,
+                // otherwise the same data are being checked repeately.
+                if(startIndex > 0) {
                     // store the data up to the last <cr><lf> in the buffer to the file cache
                     writeDataToFileCache(buf, 0, startIndex);
 
