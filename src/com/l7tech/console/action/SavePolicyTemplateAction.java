@@ -74,13 +74,22 @@ public class SavePolicyTemplateAction extends BaseAction {
             throw new IllegalStateException("no node specified");
         }
 
-        File templateDir;
+        File templateDir = null;
         try {
             templateDir = new File(
               Preferences.getPreferences().getHomePath() +
               File.separator + PoliciesFolderNode.TEMPLATES_DIR);
+            if (!templateDir.exists()) {
+                if (!templateDir.mkdir())
+                    throw new IOException("Cannot create " + templateDir.getPath());
+            }
         } catch (IOException e) {
-            templateDir = new File(System.getProperty("user.home"));
+            ErrorManager.getDefault().
+              notify(Level.WARNING, e,
+                "The system reported problem in accessing or creating" +
+                "the policy template directory " + templateDir.getPath() + "\n" +
+                "The policy template is not saved.");
+            return;
         }
 
         JFileChooser chooser = new JFileChooser(templateDir);
