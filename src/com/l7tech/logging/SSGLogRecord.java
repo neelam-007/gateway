@@ -9,6 +9,7 @@ import java.util.logging.Level;
  * Log record that can be persisted.
  * It extends normal LogRecords by reffering to a request id and a node id.
  *
+ *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
@@ -98,6 +99,19 @@ public class SSGLogRecord extends LogRecord {
      */
     public void setStrRequestId(String requestId) {
         this.requestId = requestId;
+    }
+
+    public boolean equals(Object obj) {
+        SSGLogRecord theOtherOne = null;
+        if (obj instanceof SSGLogRecord) theOtherOne = (SSGLogRecord)obj;
+        else return false;
+        if (nodeId != null) {
+            if (!nodeId.equals(theOtherOne.getNodeId())) return false;
+        }
+        if (requestId != null) {
+            if (!requestId.equals(theOtherOne.getStrRequestId())) return false;
+        }
+        return super.equals(obj);
     }
 
     public String requestId;
