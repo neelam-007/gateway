@@ -5,6 +5,8 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
+import com.l7tech.console.MainWindow;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
 import org.w3c.dom.Element;
 
@@ -45,8 +47,9 @@ public class RemoteReferenceResolver {
         }
         if (!unresolved.isEmpty()) {
             ExternalReference[] unresolvedRefsArray = (ExternalReference[])unresolved.toArray(new ExternalReference[0]);
+            final MainWindow mw = TopComponents.getInstance().getMainWindow();
             ResolveExternalPolicyReferencesWizard wiz =
-                    ResolveExternalPolicyReferencesWizard.fromReferences(null, unresolvedRefsArray);
+                    ResolveExternalPolicyReferencesWizard.fromReferences(mw, unresolvedRefsArray);
             wiz.pack();
             wiz.setSize(1000, 500);
             Utilities.centerOnScreen(wiz);
