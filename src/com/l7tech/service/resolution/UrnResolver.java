@@ -42,7 +42,8 @@ public class UrnResolver extends WsdlOperationServiceResolver {
                 ee = (ExtensibilityElement)eels.next();
                 if (ee instanceof SOAPBody) {
                     SOAPBody body = (SOAPBody)ee;
-                    return body.getNamespaceURI();
+                    String uri = body.getNamespaceURI();
+                    if ( uri != null ) return uri;
                 }
             }
         }
