@@ -336,9 +336,7 @@ public class Service implements IdentityService {
             group.setMembers(members);
 
             if (group.getOid() > 0) {
-                Group originalGroup = groupManager.findByPrimaryKey(Long.toString(group.getOid()));
-                originalGroup.copyFrom(group);
-                groupManager.update(originalGroup);
+                groupManager.update(group);
                 logger.log(Level.INFO, "Updated Group: " + group.getName() + "[" + group.getOid() + "]");
                 return group.getOid();
             }

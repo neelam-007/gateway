@@ -110,7 +110,18 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
     public void update( Group group ) throws UpdateException {
         try {
-            _manager.update( getContext(), group );
+            // if this is the admin group, make sure that we are not removing all memberships
+            if (Group.ADMIN_GROUP_NAME.equals(group.getName())) {
+                if (group.getMembers().size() < 1) {
+                    logger.severe("Blocked update on admin group because all members were deleted.");
+                    throw new UpdateException("Cannot update admin group with no memberships!");
+                }
+            }
+            Group originalGroup = findByPrimaryKey(Long.toString(group.getOid()));
+            originalGroup.copyFrom(group);
+            _manager.update( getContext(), originalGroup );
+        } catch (FindException e) {
+            throw new UpdateException("Update called on group that does not already exist", e);
         } catch ( SQLException se ) {
             throw new UpdateException( se.toString(), se );
         }
