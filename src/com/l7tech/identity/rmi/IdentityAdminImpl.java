@@ -1,6 +1,7 @@
 package com.l7tech.identity.rmi;
 
 import com.l7tech.identity.*;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;
@@ -136,6 +137,10 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
 
     public Set getGroupHeaders(long providerId, String userId) throws RemoteException, FindException {
         return delegate.getGroupHeaders(providerId, userId);
+    }
+
+    public LdapIdentityProviderConfig[] getLdapTemplates() throws RemoteException, FindException {
+        return delegate.getLdapTemplates();
     }
 
 /*

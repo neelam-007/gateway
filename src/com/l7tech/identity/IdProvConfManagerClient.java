@@ -2,6 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.Locator;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -151,6 +152,14 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
             output.add(conf);
         }
         return output;
+    }
+
+    public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
+        try {
+            return getStub().getLdapTemplates();
+        } catch (RemoteException e) {
+            throw new FindException("can't get remote IdentityAdmin", e);
+        }
     }
 
     // ************************************************

@@ -1,9 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
-import com.l7tech.identity.ldap.LdapIdentityProviderServer;
-import com.l7tech.identity.ldap.LdapConfigSettings;
-import com.l7tech.identity.ldap.AbstractLdapIdentityProviderServer;
+import com.l7tech.identity.ldap.*;
 import com.l7tech.identity.msad.MsadIdentityProviderServer;
 import com.l7tech.objectmodel.*;
 
@@ -198,6 +196,10 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         return "identity_provider";
     }
 
+    public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
+        return ldapTemplateManager.getTemplates();
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -212,5 +214,5 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
     }
 
     protected InternalIdentityProviderServer internalProvider;
-
+    private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
 }

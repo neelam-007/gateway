@@ -1,6 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -24,6 +25,8 @@ public interface IdentityAdmin extends Remote {
       throws RemoteException, FindException;
 
     IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws RemoteException, FindException;
+
+    LdapIdentityProviderConfig[] getLdapTemplates() throws RemoteException, FindException;
 
     long saveIdentityProviderConfig(IdentityProviderConfig cfg)
       throws RemoteException, SaveException, UpdateException;

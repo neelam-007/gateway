@@ -7,6 +7,7 @@ import com.l7tech.common.util.HexUtils;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Collection;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.*;
@@ -41,6 +42,16 @@ public class LdapConfigTemplateManager {
         int i = 0;
         for (Iterator it = keys.iterator(); it.hasNext(); i++) {
             output[i] = (String)it.next();
+        }
+        return output;
+    }
+
+    public LdapIdentityProviderConfig[] getTemplates() {
+        Collection values = templates.values();
+        LdapIdentityProviderConfig[] output = new LdapIdentityProviderConfig[values.size()];
+        int i = 0;
+        for (Iterator it = values.iterator(); it.hasNext(); i++) {
+            output[i] = (LdapIdentityProviderConfig)it.next();
         }
         return output;
     }

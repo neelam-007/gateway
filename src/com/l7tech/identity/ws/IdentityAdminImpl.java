@@ -3,6 +3,8 @@ package com.l7tech.identity.ws;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.logging.LogManager;
@@ -368,6 +370,10 @@ public class IdentityAdminImpl implements IdentityAdmin {
         retrieveGroupManager(providerId).setUserHeaders(groupId, groupHeaders);
     }
 
+    public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
+        return ldapTemplateManager.getTemplates();
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -464,4 +470,5 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
     IdentityProviderConfigManager identityProviderConfigManager = null;
     private Logger logger = null;
+    private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
 }

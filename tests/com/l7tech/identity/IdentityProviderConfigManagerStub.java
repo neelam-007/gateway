@@ -1,6 +1,8 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapConfigTemplateManager;
 
 import java.util.*;
 
@@ -33,6 +35,15 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
 
     public void test(IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException {
         throw new InvalidIdProviderCfgException("not implemented");
+    }
+
+    public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
+        LdapIdentityProviderConfig[] output = (new LdapConfigTemplateManager()).getTemplates();
+        if (output.length < 1) {
+            throw new FindException("could not locate ldap template files. set value of " +
+                        "com.l7tech.server.ldapTemplatesPath to the path containing those template files");
+        }
+        return output;
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {

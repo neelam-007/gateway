@@ -2,6 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 
 import java.util.Collection;
 
@@ -18,6 +19,7 @@ public interface IdentityProviderConfigManager extends EntityManager {
     void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException;
     void delete( IdentityProviderConfig identityProviderConfig ) throws DeleteException;
     Collection findAllIdentityProviders() throws FindException;
+    LdapIdentityProviderConfig[] getLdapTemplates() throws FindException;
 
     /**
      * @param oid the identity provider id to look for
