@@ -6,22 +6,17 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.MessageNotSoapException;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 
+import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
 import javax.xml.transform.dom.DOMSource;
-import javax.xml.rpc.NamespaceConstants;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
-import java.util.TimeZone;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
-import com.l7tech.common.xml.TooManyChildElementsException;
-import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
+import java.util.*;
 
 /**
  * @author alex
@@ -356,6 +351,7 @@ public class SoapUtil {
      */
     public static List getSecurityElements(Document soapMsg) throws InvalidDocumentFormatException {
         Element header = getHeaderElement(soapMsg);
+        if (header == null) return Collections.EMPTY_LIST;
         return XmlUtil.findChildElementsByName(header, SECURITY_URIS_ARRAY, SECURITY_EL_NAME);
     }
 
