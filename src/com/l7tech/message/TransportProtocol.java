@@ -14,6 +14,7 @@ public class TransportProtocol {
     public static final TransportProtocol UNKNOWN = new TransportProtocol( -1, "unknown" );
     public static final TransportProtocol HTTP  = new TransportProtocol( 0, "http" );
     public static final TransportProtocol HTTPS = new TransportProtocol( 1, "https" );
+    public static final TransportProtocol JMS = new TransportProtocol( 2, "jms" );
 
     private TransportProtocol( int num, String name ) {
         _num = num;
