@@ -10,9 +10,11 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.objectmodel.*;
+import com.l7tech.logging.LogManager;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Hibernate manager for JMS connections and endpoints.  Endpoints cannot be found
@@ -25,7 +27,7 @@ public class JmsManager extends HibernateEntityManager {
     private List _allProviders = null;
 
     public Collection findAllProviders() throws FindException {
-        // TODO make this real
+        // TODO make this real, eh?!!
         if ( _allProviders == null ) {
             JmsProvider mqseries = new JmsProvider( "IBM MQSeries", "com.ibm.SomethingOrOther", "QueueConnectionFactory" );
             List list = new ArrayList();
@@ -99,6 +101,7 @@ public class JmsManager extends HibernateEntityManager {
     }
 
     public long save( final JmsConnection conn ) throws SaveException {
+        _logger.info( "Saving JmsConnection " + conn );
         try {
             addTransactionListener( conn, false );
             return PersistenceManager.save( getContext(), conn );
@@ -110,6 +113,7 @@ public class JmsManager extends HibernateEntityManager {
     }
 
     public long save( final JmsEndpoint endpoint ) throws SaveException {
+        _logger.info( "Saving JmsEndpoint " + endpoint );
         try {
             addTransactionListener( endpoint, false );
             return PersistenceManager.save( getContext(), endpoint );
@@ -121,6 +125,8 @@ public class JmsManager extends HibernateEntityManager {
     }
 
     public void update( final JmsConnection conn ) throws UpdateException {
+        _logger.info( "Updating JmsConnection " + conn );
+
         try {
             addTransactionListener( conn, false );
             PersistenceManager.update( getContext(), conn );
@@ -132,6 +138,7 @@ public class JmsManager extends HibernateEntityManager {
     }
 
     public void update( final JmsEndpoint endpoint ) throws UpdateException {
+        _logger.info( "Saving JmsEndpoint " + endpoint );
         try {
             addTransactionListener( endpoint, false );
             PersistenceManager.update( getContext(), endpoint );
@@ -144,6 +151,7 @@ public class JmsManager extends HibernateEntityManager {
 
 
     public void delete( final JmsEndpoint endpoint ) throws DeleteException {
+        _logger.info( "Deleting JmsEndpoint " + endpoint );
         try {
             addTransactionListener( endpoint, true );
             PersistenceManager.delete( getContext(), endpoint );
@@ -156,6 +164,8 @@ public class JmsManager extends HibernateEntityManager {
 
 
     public void delete( final JmsConnection connection ) throws DeleteException, FindException {
+        _logger.info( "Deleting JmsConnection " + connection );
+
         try {
             addTransactionListener( connection, true );
             EntityHeader[] endpoints = findEndpointHeadersForConnection( connection.getOid() );
@@ -191,7 +201,7 @@ public class JmsManager extends HibernateEntityManager {
         _crudListeners.remove( listener );
     }
 
-    private void fireChanged( Object source, boolean deleted ) {
+    void fireChanged( Object source, boolean deleted ) {
         for ( Iterator i = _crudListeners.iterator(); i.hasNext(); ) {
             JmsCrudListener listener = (JmsCrudListener) i.next();
             if ( source instanceof JmsEndpoint )
@@ -208,4 +218,5 @@ public class JmsManager extends HibernateEntityManager {
     }
 
     private List _crudListeners = Collections.synchronizedList( new ArrayList() );
+    private Logger _logger = LogManager.getInstance().getSystemLogger();
 }
