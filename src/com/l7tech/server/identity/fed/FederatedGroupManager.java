@@ -59,7 +59,9 @@ public class FederatedGroupManager extends PersistentGroupManager {
             Group g = super.findByPrimaryKey(oid);
             if ( g == null ) {
                 g = (PersistentGroup)PersistenceManager.findByPrimaryKey(getContext(), VirtualGroup.class, Long.parseLong(oid));
-                g.setProviderId(providerConfig.getOid());
+                if (g != null) {
+                    g.setProviderId(providerConfig.getOid());
+                }
             }
             return g;
         } catch (SQLException se) {
