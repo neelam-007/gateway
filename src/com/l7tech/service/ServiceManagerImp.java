@@ -164,7 +164,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         if (original.getVersion() != service.getVersion()) {
             logger.severe("db service has version: " + original.getVersion() + ". requestor service has version: "
                           + service.getVersion());
-            throw new VersionException("the published service you are trying to update is no longer valid.");
+            throw new VersionException("The service '"+service.getName()+"' has been changed in the meantime by another user.");
         }
 
         // try recording resolution parameters
