@@ -253,7 +253,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
             user.setProviderId(identityProviderConfigId);
 
             String id = user.getUniqueIdentifier();
-            if (id == null) {
+            if (id == null || id.equals(Long.toString(Entity.DEFAULT_OID))) {
                 id = userManager.save(user, groupHeaders);
                 logger.info("Saved User: " + user.getLogin() + " [" + id + "]");
             } else {
@@ -349,7 +349,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
             group.setProviderId(identityProviderConfigId);
 
             String id = group.getUniqueIdentifier();
-            if (id == null) {
+            if (id == null || id.equals(Long.toString(Entity.DEFAULT_OID))) {
                 id = groupManager.save(group, userHeaders);
                 logger.info("Saved Group: " + group.getName() + " [" + id + "]");
             } else {
