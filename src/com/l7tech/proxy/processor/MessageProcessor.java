@@ -271,22 +271,20 @@ public class MessageProcessor {
 
     /**
      * Get credentials, and download and install the SSG certificate.  If this completes successfully, the
-     * next attempt to connect to the SSG via SSL should succeed.
+     * next attempt to connect to the SSG via SSL should at least get past the SSL handshake.
      *
      * @throws java.security.KeyStoreException if the SSG key could not be stored in our trustStore
      */
     private void installSsgServerCertificate(Ssg ssg)
             throws IOException, GeneralSecurityException, OperationCanceledException
     {
-        CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
-                                                             ssg.getUsername(),
-                                                             ssg.password());
         if (!ssg.isCredentialsConfigured())
             if (!Managers.getCredentialManager().getCredentials(ssg))
                 throw new OperationCanceledException("Client Proxy user declined to provide credentials.");
 
-        cd.setUsername(ssg.getUsername());
-        cd.setPassword(ssg.password());
+        CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
+                                                             ssg.getUsername(),
+                                                             ssg.password());
 
         if (cd.downloadCertificate()) {
             SsgKeyStoreManager.saveSsgCertificate(ssg, (X509Certificate) cd.getCertificate());
