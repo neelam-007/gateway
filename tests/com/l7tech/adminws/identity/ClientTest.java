@@ -27,7 +27,7 @@ public class ClientTest extends junit.framework.TestCase {
     }
 
     public void testFinds() throws Exception {
-        Client me = new Client("http://localhost:8080/ssg/services/identityAdmin");
+        Client me = new Client();
 
         // test echo
         System.out.println(me.echoVersion());
@@ -76,7 +76,7 @@ public class ClientTest extends junit.framework.TestCase {
     }
 
     public void testCreateSpockLdapIDProviderConfig() throws Exception {
-        Client me = new Client("http://localhost:8080/ssg/services/identityAdmin");
+        Client me = new Client();
 
         // test echo
         System.out.println(me.echoVersion());

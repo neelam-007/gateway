@@ -3,13 +3,8 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.identity.Client;
 import com.l7tech.adminws.identity.IdentityProviderClient;
-import com.l7tech.adminws.identity.Service;
-import com.l7tech.adminws.ClientCredentialManager;
-import com.l7tech.util.Locator;
-
 import java.util.Collection;
 import java.util.Iterator;
-import java.io.IOException;
 import java.rmi.RemoteException;
 
 /**
@@ -133,27 +128,12 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
     // ************************************************
     // PRIVATES
     // ************************************************
-    private Client getStub() throws java.rmi.RemoteException {
+    private Client getStub() {
         if (localStub == null) {
-            try {
-                localStub = new Client(getServiceURL());
-            } catch (Exception e) {
-                throw new java.rmi.RemoteException("Exception getting admin ws stub", e);
-            }
-            if (localStub == null) throw new java.rmi.RemoteException("Exception getting admin ws stub");
+            localStub = new Client();
         }
         return localStub;
     }
 
-    private String getServiceURL() throws IOException {
-        String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
-        if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
-            throw new IOException("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
-            // System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
-            // prefUrl = "http://localhost:8080/ssg";
-        }
-        prefUrl += Service.SERVICE_DEPENDENT_URL_PORTION;
-        return prefUrl;
-    }
     private Client localStub = null;
 }

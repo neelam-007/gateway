@@ -1,10 +1,6 @@
 package com.l7tech.logging;
 
 import com.l7tech.adminws.logging.Client;
-import com.l7tech.adminws.ClientCredentialManager;
-import com.l7tech.util.Locator;
-
-import java.io.IOException;
 import java.rmi.RemoteException;
 
 /**
@@ -27,25 +23,10 @@ public class RemoteLogProxy {
 
     private Client getStub() throws RemoteException {
         if (localStub == null) {
-            try {
-                localStub = new Client(getServiceURL());
-            }
-            catch (Exception e) {
-                throw new java.rmi.RemoteException("Exception getting admin ws stub", e);
-            }
+            localStub = new Client();
             if (localStub == null) throw new java.rmi.RemoteException("Exception getting admin ws stub");
         }
         return localStub;
     }
-    private String getServiceURL() throws IOException {
-        String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
-        if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
-            System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
-            prefUrl = "http://localhost:8080/ssg";
-        }
-        prefUrl += "/services/loggingAdmin";
-        return prefUrl;
-    }
-
     private Client localStub = null;
 }
