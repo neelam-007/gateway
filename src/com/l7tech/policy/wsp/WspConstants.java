@@ -644,6 +644,9 @@ class WspConstants {
         },
         new BasicTypeMapping(Boolean.class, "boxedBooleanValue"),
 
+        new BeanTypeMapping(TimeOfDayRange.class, "timeOfDayRange"),
+        new BeanTypeMapping(TimeOfDay.class, "timeOfDay"),
+
         // Typesafe enumerations
         new BasicTypeMapping(SslAssertion.Option.class, "optionValue") {
             protected String objectToString(Object in) {
@@ -684,6 +687,7 @@ class WspConstants {
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
         new AssertionMapping(new XslTransformation(), "XslTransformation"),
+        new AssertionMapping(new TimeRange(), "TimeRange"),
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
 
         // Special types
