@@ -11,6 +11,7 @@ import com.l7tech.common.util.SslUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
@@ -39,6 +40,8 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyStoreException;
+import java.security.NoSuchProviderException;
+import java.security.KeyManagementException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 
@@ -50,8 +53,9 @@ import java.security.cert.CertificateException;
  */
 public class MessageProcessor {
     private static final Category log = Category.getInstance(MessageProcessor.class);
+    private static final int MAX_TRIES = 8;
     private PolicyManager policyManager;
-    private static final int MAX_TRIES = 6;
+    private ClientProxy clientProxy;
 
     /**
      * Construct a Client Proxy MessageProcessor.
@@ -60,6 +64,14 @@ public class MessageProcessor {
      */
     public MessageProcessor(PolicyManager policyManager) {
         this.policyManager = policyManager;
+    }
+
+    /**
+     * Set the ClientProxy we are working for.  This is intended to be called by the ClientProxy only.
+     * @param cp
+     */
+    public void setClientProxy(ClientProxy cp) {
+        this.clientProxy = cp;
     }
 
     /**
@@ -183,6 +195,7 @@ public class MessageProcessor {
                                                                     ssg.password(),
                                                                     csr);
             SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
+            clientProxy.initializeSsl(); // reset global SSL state
         } finally {
             Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
         }
@@ -307,6 +320,7 @@ public class MessageProcessor {
                     log.info("SSG indicates that our client certificate is no longer valid; deleting it");
                     try {
                         SsgKeyStoreManager.deleteClientCert(ssg);
+                        clientProxy.initializeSsl(); // flush all global SSL state
                         throw new PolicyRetryableException();
                     } catch (NoSuchAlgorithmException e) {
                         // can't happen
@@ -315,6 +329,10 @@ public class MessageProcessor {
                         throw new ClientCertificateException(e);
                     } catch (CertificateException e) {
                         throw new ClientCertificateException(e);
+                    } catch (NoSuchProviderException e) {
+                        throw new ClientCertificateException(e); // can't happen
+                    } catch (KeyManagementException e) {
+                        throw new ClientCertificateException(e); // can't happen
                     }
                 }
 
