@@ -23,6 +23,8 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
+ * The {@link com.l7tech.identity.UserManager} for {@link FederatedIdentityProvider}s.
+ * 
  * @author alex
  * @version $Revision$
  */

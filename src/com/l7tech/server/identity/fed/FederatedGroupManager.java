@@ -24,6 +24,10 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
+ * The {@link GroupManager} for {@link FederatedIdentityProvider}s.
+ *
+ * Supports {@link FederatedGroup}s and {@link VirtualGroup}s.
+ * 
  * @author alex
  * @version $Revision$
  */
