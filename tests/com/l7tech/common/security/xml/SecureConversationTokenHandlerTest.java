@@ -1,7 +1,7 @@
 package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.util.DOMParserNS;
-import com.ibm.xml.sax.StandardErrorHandler;
+import com.ibm.dom.util.StandardErrorHandler;
 import junit.framework.TestCase;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;

@@ -10,8 +10,7 @@ import org.apache.xml.serialize.OutputFormat;
 import javax.xml.parsers.DocumentBuilder;
 
 import com.ibm.xml.dsig.util.DOMParserNS;
-import com.ibm.xml.sax.StandardErrorHandler;
-import com.l7tech.common.util.XmlUtil;
+import com.ibm.dom.util.StandardErrorHandler;
 
 import java.io.StringReader;
 import java.io.StringWriter;

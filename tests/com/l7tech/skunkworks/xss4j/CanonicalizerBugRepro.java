@@ -9,7 +9,7 @@ package com.l7tech.skunkworks.xss4j;
 import com.ibm.xml.dsig.Canonicalizer;
 import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.dsig.transform.ExclusiveC11rWC;
-import com.ibm.xml.dsig.transform.W3CCanonicalizer;
+import com.ibm.xml.dsig.transform.W3CCanonicalizer2;
 import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -44,7 +44,7 @@ public class CanonicalizerBugRepro {
 
     public static void main(String[] args) {
         Canonicalizer[] c = new Canonicalizer[] {
-            new W3CCanonicalizer(),
+            new W3CCanonicalizer2(),
             new W3CCanonicalizer2WC(),
             new ExclusiveC11r(),
             new ExclusiveC11rWC(),
