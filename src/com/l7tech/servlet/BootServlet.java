@@ -13,6 +13,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletConfig;
 import javax.naming.NamingException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.SQLException;
 
 /**
@@ -32,7 +33,8 @@ public class BootServlet extends HttpServlet {
         }
     }
 
-    public void service( HttpServletRequest request, HttpServletResponse response ) {
-
+    public void doGet( HttpServletRequest request, HttpServletResponse response ) throws IOException, ServletException {
+        PrintWriter out = response.getWriter();
+        out.println( "<b>The server has already been initialized!</b>" );
     }
 }
