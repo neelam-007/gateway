@@ -55,6 +55,7 @@ import java.util.logging.Logger;
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
     private static final String MESSAGE_AREA_DIVIDER_KEY = "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
+    public static final String SERVICENAME_PROPERTY = "service.name";
     private PublishedService service;
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
@@ -674,7 +675,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
           public void propertyChange(PropertyChangeEvent evt) {
               log.info(evt.getPropertyName() + "changed");
               try {
-                  if ("service.name".equals(evt.getPropertyName())) {
+                  if (SERVICENAME_PROPERTY.equals(evt.getPropertyName())) {
                       renderPolicy(false);
                   } else if ("policy".equals(evt.getPropertyName())) {
                       rootAssertion = null;

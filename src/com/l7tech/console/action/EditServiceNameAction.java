@@ -7,6 +7,7 @@ import com.l7tech.console.panels.EditServiceNameDialog;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -95,7 +96,8 @@ public class EditServiceNameAction extends NodeAction {
                           model.nodeChanged(node);
                           try {
                               PublishedService svc = ((ServiceNode)node).getPublishedService();
-                              node.firePropertyChange(this, "service.name", lastServiceName, svc.getName());
+                              node.firePropertyChange(this, PolicyEditorPanel.SERVICENAME_PROPERTY,
+                                                      lastServiceName, svc.getName());
                           } catch (Exception e) {
                               e.printStackTrace();
                           }
