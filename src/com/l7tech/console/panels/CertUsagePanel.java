@@ -144,14 +144,14 @@ public class CertUsagePanel extends WizardStepPanel {
         }
 
         // diasble the cert options that are not allowed based on the key usage specified in the cert
-        boolean [] keyUsageArray = cert.getKeyUsage();
+/*        boolean [] keyUsageArray = cert.getKeyUsage();
 
 
         if(keyUsageArray != null && !keyUsageArray[CertUtils.KeyUsage.keyCertSign]) {
             signingServerCertCheckBox.setEnabled(false);
             signingSAMLTokenCheckBox.setEnabled(false);
             signingClientCertCheckBox.setEnabled(false);
-        }
+        }*/
     }
 
     /**
