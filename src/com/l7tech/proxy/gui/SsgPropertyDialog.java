@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -55,6 +56,8 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JTable policyTable;
     private ArrayList displayPolicies;
     private DisplayPolicyTableModel displayPolicyTableModel;
+    private JButton buttonFlushPolicies;
+    private boolean policyFlushRequested = false;
 
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
@@ -148,10 +151,23 @@ public class SsgPropertyDialog extends PropertyDialog {
                                             new Insets(6, 6, 6, 6), 3, 3));
 
             pane.add(new JLabel("Attachments:"),
-                     new GridBagConstraints(0, y++, 1, 1, 1.0, 1.0,
+                     new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(6, 6, 6, 6), 3, 3));
+
+            buttonFlushPolicies = new JButton("Clear Policy Cache");
+            buttonFlushPolicies.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    policyFlushRequested = true;
+                    updatePolicyPanel();
+                }
+            });
+            pane.add(buttonFlushPolicies,
+                     new GridBagConstraints(1, 0, 1, 1, 1.0, 1.0,
+                                            GridBagConstraints.EAST,
+                                            GridBagConstraints.NONE,
+                                            new Insets(0, 0, 0, 0), 0, 0));
 
             displayPolicies = new ArrayList();
             displayPolicyTableModel = new DisplayPolicyTableModel();
@@ -166,13 +182,13 @@ public class SsgPropertyDialog extends PropertyDialog {
             policyTable.getColumnModel().getColumn(1).setHeaderValue("Value");
             JScrollPane policyTableSp = new JScrollPane(policyTable);
             pane.add(policyTableSp,
-                     new GridBagConstraints(0, y++, 1, 1, 1.0, 1.0,
+                     new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(6, 6, 6, 6), 3, 3));
 
             pane.add(new JLabel("Associated policy:"),
-                     new GridBagConstraints(0, y++, 1, 1, 1.0, 1.0,
+                     new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(4, 6, 0, 6), 3, 3));
@@ -183,23 +199,27 @@ public class SsgPropertyDialog extends PropertyDialog {
             policyTree.setCellRenderer(new EntityTreeCellRenderer());
             JScrollPane policyTreeSp = new JScrollPane(policyTree);
             pane.add(policyTreeSp,
-                     new GridBagConstraints(0, y++, 1, 1, 1.0, 1.0,
+                     new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(2, 6, 6, 6), 3, 3));
 
             policyTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
                 public void valueChanged(ListSelectionEvent e) {
-                    // do this?    if (e.getValueIsAdjusting()) return;
-                    Assertion policy = null;
-                    int row = policyTable.getSelectedRow();
-                    if (row >= 0 && row < displayPolicies.size())
-                        policy = ((DisplayPolicy)displayPolicies.get(row)).policy;
-                    policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy));
+                    displaySelectedPolicy();
                 }
             });
         }
         return policiesPane;
+    }
+
+    private void displaySelectedPolicy() {
+        // do this?    if (e.getValueIsAdjusting()) return;
+        Assertion policy = null;
+        int row = policyTable.getSelectedRow();
+        if (row >= 0 && row < displayPolicies.size())
+            policy = ((DisplayPolicy)displayPolicies.get(row)).policy;
+        policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy));
     }
 
     /** Create panel controls.  Should be called only from a constructor. */
@@ -268,6 +288,38 @@ public class SsgPropertyDialog extends PropertyDialog {
         return generalPane;
     }
 
+
+    /** Update the policy display panel with information from the Ssg bean. */
+    private void updatePolicyPanel() {
+        displayPolicies.clear();
+        if (!policyFlushRequested) {
+            synchronized (ssg) {
+                Map saMap = ssg.getPoliciesBySoapAction();
+                if (saMap != null) {
+                    Collection ssgsBySoapAction = saMap.keySet();
+                    for (Iterator i = ssgsBySoapAction.iterator(); i.hasNext();) {
+                        String soapAction = (String) i.next();
+                        displayPolicies.add(new DisplayPolicy("SOAPAction header", soapAction,
+                                                              ssg.getPolicyBySoapAction(soapAction)));
+                        log.info("Noted policy for SOAPAction=" + soapAction);
+                    }
+                }
+                Map uriMap = ssg.getPoliciesByUri();
+                if (uriMap != null) {
+                    Collection ssgsByUri = uriMap.keySet();
+                    for (Iterator i = ssgsByUri.iterator(); i.hasNext();) {
+                        String uri = (String) i.next();
+                        displayPolicies.add(new DisplayPolicy("Body namespace URI", uri,
+                                                              ssg.getPolicyByUri(uri)));
+                        log.info("Noted policy for URI=" + uri);
+                    }
+                }
+            }
+        }
+        displayPolicyTableModel.fireTableDataChanged();
+        displaySelectedPolicy();
+    }
+
     /** Set the Ssg object being edited by this panel. */
     public void setSsg(final Ssg ssg) {
         this.ssg = ssg;
@@ -280,31 +332,9 @@ public class SsgPropertyDialog extends PropertyDialog {
         editPassword = ssg.getPassword();
         fieldPassword.setText(passwordToString(editPassword));
         cbPromptForPassword.setSelected(ssg.isPromptForUsernameAndPassword());
+        policyFlushRequested = false;
 
-        displayPolicies.clear();
-        synchronized (ssg) {
-            Map saMap = ssg.getPoliciesBySoapAction();
-            if (saMap != null) {
-                Collection ssgsBySoapAction = saMap.keySet();
-                for (Iterator i = ssgsBySoapAction.iterator(); i.hasNext();) {
-                    String soapAction = (String) i.next();
-                    displayPolicies.add(new DisplayPolicy("SOAPAction header", soapAction,
-                                                          ssg.getPolicyBySoapAction(soapAction)));
-                    log.info("Noted policy for SOAPAction=" + soapAction);
-                }
-            }
-            Map uriMap = ssg.getPoliciesByUri();
-            if (uriMap != null) {
-                Collection ssgsByUri = uriMap.keySet();
-                for (Iterator i = ssgsByUri.iterator(); i.hasNext();) {
-                    String uri = (String) i.next();
-                    displayPolicies.add(new DisplayPolicy("Body namespace URI", uri,
-                                                          ssg.getPolicyByUri(uri)));
-                    log.info("Noted policy for URI=" + uri);
-                }
-            }
-        }
-        displayPolicyTableModel.fireTableDataChanged();
+        updatePolicyPanel();
     }
 
     /**
@@ -313,13 +343,19 @@ public class SsgPropertyDialog extends PropertyDialog {
      * Caller is responsible for hiding and disposing of the property dialog.
      */
     protected void commitChanges() {
-        ssg.setName(fieldName.getText());
-        ssg.setLocalEndpoint(fieldLocalEndpoint.getText());
-        ssg.setServerUrl(fieldServerUrl.getText());
-        ssg.setKeyStorePath(fieldKeyStorePath.getText());
-        ssg.setUsername(fieldUsername.getText());
-        ssg.setPassword(editPassword);
-        ssg.setPromptForUsernameAndPassword(cbPromptForPassword.isSelected());
+        synchronized (ssg) {
+            ssg.setName(fieldName.getText());
+            ssg.setLocalEndpoint(fieldLocalEndpoint.getText());
+            ssg.setServerUrl(fieldServerUrl.getText());
+            ssg.setKeyStorePath(fieldKeyStorePath.getText());
+            ssg.setUsername(fieldUsername.getText());
+            ssg.setPassword(editPassword);
+            ssg.setPromptForUsernameAndPassword(cbPromptForPassword.isSelected());
+            if (policyFlushRequested) {
+                ssg.setPoliciesBySoapAction(new HashMap());
+                ssg.setPoliciesByUri(new HashMap());
+            }
+        }
         setSsg(ssg);
     }
 
