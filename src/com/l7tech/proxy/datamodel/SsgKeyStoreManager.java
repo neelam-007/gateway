@@ -59,6 +59,9 @@ public class SsgKeyStoreManager {
      * @throws KeyStoreCorruptException if the trust store is damaged
      */
     public static boolean isClientCertAvailabile(Ssg ssg) throws KeyStoreCorruptException {
+        Ssg trusted = ssg.getTrustedGateway();
+        if (trusted != null)
+            return isClientCertAvailabile(trusted);
         if (ssg.haveClientCert() == null)
             ssg.haveClientCert(getClientCert(ssg) == null ? Boolean.FALSE : Boolean.TRUE);
         return ssg.haveClientCert().booleanValue();
@@ -107,15 +110,13 @@ public class SsgKeyStoreManager {
      * @return our client certificate, or null if we haven't yet applied for one
      */
     public static X509Certificate getClientCert(Ssg ssg) throws KeyStoreCorruptException {
+        Ssg trusted = ssg.getTrustedGateway();
+        if (trusted != null)
+            return getClientCert(trusted);
         try {
             X509Certificate cert = ssg.clientCert();
             if (cert != null) return cert;
-            Ssg trusted = ssg.getTrustedGateway();
-            if (trusted != null) {
-                cert = (X509Certificate) getTrustStore(trusted).getCertificate(CLIENT_CERT_ALIAS);
-            } else {
-                cert = (X509Certificate) getTrustStore(ssg).getCertificate(CLIENT_CERT_ALIAS);
-            }
+            cert = (X509Certificate) getTrustStore(ssg).getCertificate(CLIENT_CERT_ALIAS);
             cert = convertToSunCertificate(cert);
             ssg.clientCert(cert);
             return cert;
@@ -162,6 +163,10 @@ public class SsgKeyStoreManager {
      * @return
      */
     public static X509Certificate[] getClientCertificateChain(Ssg ssg) throws KeyStoreCorruptException {
+        Ssg trusted = ssg.getTrustedGateway();
+        if (trusted != null)
+            return getClientCertificateChain(trusted);
+
         Certificate[] certs;
         try {
             certs = getTrustStore(ssg).getCertificateChain(CLIENT_CERT_ALIAS);
@@ -199,6 +204,10 @@ public class SsgKeyStoreManager {
         if (Thread.holdsLock(ssg))
             throw new IllegalStateException("Must not hold SSG monitor when calling for private key");
 
+        Ssg trusted = ssg.getTrustedGateway();
+        if (trusted != null)
+            return getClientCertPrivateKey(trusted);
+
         synchronized (ssg) {
             if (!isClientCertAvailabile(ssg))
                 return null;
@@ -206,11 +215,7 @@ public class SsgKeyStoreManager {
                 return ssg.privateKey();
         }
         PasswordAuthentication pw;
-        Ssg trusted = ssg.getTrustedGateway();
-        if (trusted != null)
-            pw = Managers.getCredentialManager().getCredentials(trusted);
-        else
-            pw = Managers.getCredentialManager().getCredentials(ssg);
+        pw = Managers.getCredentialManager().getCredentials(ssg);
         synchronized (ssg) {
             if (!isClientCertAvailabile(ssg))
                 return null;
@@ -235,6 +240,9 @@ public class SsgKeyStoreManager {
      * Check if the current SSG password matches the keystore private key password.
      */
     public static boolean isPasswordWorkedForPrivateKey(Ssg ssg) {
+        Ssg trusted = ssg.getTrustedGateway();
+        if (trusted != null)
+            return isPasswordWorkedForPrivateKey(trusted);
         return ssg.passwordWorkedForPrivateKey();
     }
 
@@ -245,6 +253,10 @@ public class SsgKeyStoreManager {
      * @return our public key, or null if we haven't yet applied for a client cert with this Ssg.
      */
     public static PublicKey getClientCertPublicKey(Ssg ssg) throws KeyStoreCorruptException {
+        Ssg trusted = ssg.getTrustedGateway();
+        if (trusted != null)
+            return getClientCertPublicKey(trusted);
+
         if (!isClientCertAvailabile(ssg))
             return null;
         return getClientCert(ssg).getPublicKey();
@@ -521,6 +533,7 @@ public class SsgKeyStoreManager {
     public static void installSsgServerCertificate(Ssg ssg, PasswordAuthentication credentials)
             throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException
     {
+        log.log(Level.FINER, "Discovering server certificate for Gateway " + ssg + " (" + ssg.getLocalEndpoint() + ")");
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
                                                              credentials != null ? credentials.getUserName() : null,
                                                              credentials != null ? credentials.getPassword() : null);
@@ -595,9 +608,11 @@ public class SsgKeyStoreManager {
         CertificateRequest csr = JceProvider.makeCsr(ssg.getUsername(), keyPair);
 
         X509Certificate caCert = getServerCert(ssg);
-        if (caCert == null)
-            throw new ServerCertificateUntrustedException(); // fault in the SSG cert
-        X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertificateSigningRequestUrl(),
+        if (caCert == null) {
+            CurrentRequest.setPeerSsg(ssg);
+            throw new ServerCertificateUntrustedException(ssg); // fault in the SSG cert
+        }
+        X509Certificate cert = SslUtils.obtainClientCertificate(ssg,
                                                                 credentials.getUserName(),
                                                                 credentials.getPassword(),
                                                                 csr,

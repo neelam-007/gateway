@@ -119,6 +119,7 @@ public class MessageProcessor {
             Ssg ssg = req.getSsg();
 
             for (int attempts = 0; attempts < MAX_TRIES; ++attempts) {
+                CurrentRequest.setPeerSsg(null); // force all SSL connections to set peer SSG first
                 try {
                     try {
                         try {
@@ -128,15 +129,27 @@ public class MessageProcessor {
                             succeeded = true;
                             return res;
                         } catch (SSLException e) {
-                            if (req.getSsg().getTrustedGateway() != null)
-                                handleSslException(req.getSsg(), null, e);
-                            else
+                            if (req.getSsg().getTrustedGateway() != null) {
+                                Ssg peerSsg = CurrentRequest.getPeerSsg();
+                                if (peerSsg == req.getSsg())
+                                    handleSslException(req.getSsg(), null, e);
+                                else if (peerSsg == req.getSsg().getTrustedGateway())
+                                    handleSslException(peerSsg, req.getFederatedCredentials(), e);
+                                else
+                                    throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.");
+                            } else
                                 handleSslException(req.getSsg(), req.getCredentials(), e);
                             // FALLTHROUGH -- retry with new server certificate
                         } catch (ServerCertificateUntrustedException e) {
-                            if (req.getSsg().getTrustedGateway() != null)
-                                SsgKeyStoreManager.installSsgServerCertificate(ssg, null);
-                            else
+                            if (req.getSsg().getTrustedGateway() != null) {
+                                Ssg peerSsg = e.getPeerSsg();
+                                if (peerSsg == req.getSsg())
+                                    SsgKeyStoreManager.installSsgServerCertificate(ssg, null);
+                                else if (peerSsg == req.getSsg().getTrustedGateway())
+                                    SsgKeyStoreManager.installSsgServerCertificate(peerSsg, req.getFederatedCredentials());
+                                else
+                                    throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.");
+                            } else
                                 SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
                             // FALLTHROUGH allow policy to reset and retry
                         }
@@ -230,7 +243,9 @@ public class MessageProcessor {
         }
 
         // Was this server cert untrusted?
-        if (!ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {
+        Throwable scuet = ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
+        ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)scuet;
+        if (scue == null) {
             // No, that wasn't the problem.  Was it a cert hostname mismatch?
             HostnameMismatchException hme = (HostnameMismatchException)
                     ExceptionUtils.getCauseIfCausedBy(e, HostnameMismatchException.class);
@@ -483,7 +498,9 @@ public class MessageProcessor {
             postMethod.setRequestBody(postBody);
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
+            CurrentRequest.setPeerSsg(ssg);
             int status = client.executeMethod(postMethod);
+            CurrentRequest.setPeerSsg(null);
             log.info("POST to Gateway completed with HTTP status code " + status);
 
             Header certStatusHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS);

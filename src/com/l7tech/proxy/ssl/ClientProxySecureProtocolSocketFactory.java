@@ -39,9 +39,9 @@ public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSoc
     public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
             throws IOException, UnknownHostException
     {
-        Ssg ssg = CurrentRequest.getCurrentSsg();
+        Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
-            throw new IllegalStateException("Unable to create SSL client socket: No current Gateway is available in this thread");
+            throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
         final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(socket, host, port, autoClose);
         return sock;
     }
@@ -49,17 +49,17 @@ public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSoc
     public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort)
             throws IOException, UnknownHostException
     {
-        Ssg ssg = CurrentRequest.getCurrentSsg();
+        Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
-            throw new IllegalStateException("Unable to create SSL client socket: No current Gateway is available in this thread");
+            throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
         final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(host, port, clientHost, clientPort);
         return sock;
     }
 
     public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-        Ssg ssg = CurrentRequest.getCurrentSsg();
+        Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
-            throw new IllegalStateException("Unable to create SSL client socket: No current Gateway is available in this thread");
+            throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
         final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(host, port);
         return sock;
     }

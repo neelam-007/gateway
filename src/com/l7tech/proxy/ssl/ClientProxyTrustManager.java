@@ -32,11 +32,13 @@ import java.util.logging.Logger;
 public class ClientProxyTrustManager implements X509TrustManager {
     private static final Logger log = Logger.getLogger(ClientProxyTrustManager.class.getName());
 
+    public ClientProxyTrustManager() {}
+
     public X509Certificate[] getAcceptedIssuers() {
         // Find our current ssg
-        Ssg ssg = CurrentRequest.getCurrentSsg();
+        Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
-            throw new IllegalStateException("No current Gateway is available in this thread");
+            throw new IllegalStateException("No peer Gateway is available in this thread");
 
         X509Certificate ssgCert = null;
         try {
@@ -57,9 +59,9 @@ public class ClientProxyTrustManager implements X509TrustManager {
             throw new IllegalArgumentException("empty certificate chain, or null auth type");
 
         // Find our current ssg
-        Ssg ssg = CurrentRequest.getCurrentSsg();
+        Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
-            throw new IllegalStateException("No current Gateway is available in this thread");
+            throw new IllegalStateException("No peer Gateway is available in this thread");
 
         // Verify the hostname
         String expectedHostname = ssg.getSsgAddress();
@@ -91,7 +93,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
         if (trustedCert == null) {
             final String msg = "We have not yet discovered this Gateway's server certificate";
             log.log(Level.INFO, msg);
-            throw new ServerCertificateUntrustedException(msg);
+            throw new ServerCertificateUntrustedException(ssg, msg);
         }
 
         try {
@@ -99,7 +101,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
             log.info("Peer certificate was signed by a trusted Gateway.");
         } catch (CertUtils.CertificateUntrustedException e) {
             log.warning(e.getMessage());
-            throw new ServerCertificateUntrustedException(e);
+            throw new ServerCertificateUntrustedException(ssg, e);
         } catch ( CertificateException e ) {
             log.warning(e.getMessage());
             throw e;

@@ -6,13 +6,13 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.security.xml.TokenServiceClient;
 import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.util.TokenServiceClient;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
@@ -377,8 +377,7 @@ public class PendingRequest {
         Ssg ssg = getSsg();
         log.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString());
         TokenServiceClient.SecureConversationSession s =
-                TokenServiceClient.obtainSecureConversationSession(ssg.getSsgAddress(),
-                                                                   ssg.getSsgPort(),
+                TokenServiceClient.obtainSecureConversationSession(ssg,
                                                                    SsgKeyStoreManager.getClientCert(ssg),
                                                                    SsgKeyStoreManager.getClientCertPrivateKey(ssg),
                                                                    SsgKeyStoreManager.getServerCert(ssg));

@@ -4,12 +4,15 @@
  * $Id$
  */
 
-package com.l7tech.common.security.xml;
+package com.l7tech.proxy.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.security.xml.*;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.CurrentRequest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -96,20 +99,21 @@ public class TokenServiceClient {
         Date getExpiryDate();
     }
 
-    public static SecureConversationSession obtainSecureConversationSession(String ssgHostname,
-                                                                            int ssgPort,
+    public static SecureConversationSession obtainSecureConversationSession(Ssg ssg,
                                                                      X509Certificate clientCertificate,
                                                                      PrivateKey clientPrivateKey,
                                                                      X509Certificate serverCertificate)
             throws IOException, GeneralSecurityException
     {
-        URL url = new URL("http", ssgHostname, ssgPort, SecureSpanConstants.TOKEN_SERVICE_FILE);
+        URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 TOKENTYPE_SECURITYCONTEXT);
         log.log(Level.INFO, "Applying for new WS-SecureConversation SecurityContextToken for " + clientCertificate.getSubjectDN() +
                             " with token server " + url.toString());
 
+        CurrentRequest.setPeerSsg(ssg);
         URLConnection conn = url.openConnection();
+        CurrentRequest.setPeerSsg(null);
         conn.setDoOutput(true);
         conn.setAllowUserInteraction(false);
         conn.setRequestProperty(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);

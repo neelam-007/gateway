@@ -56,7 +56,7 @@ public class SslUtilsTest extends TestCase {
 
         SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
 
-        SslUtils.changePasswordAndRevokeClientCertificate(ssg.getServerPasswordChangeUrl(),
+        SslUtils.changePasswordAndRevokeClientCertificate(ssg,
                                                           username,
                                                           password,
                                                           newpassword);

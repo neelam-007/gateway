@@ -198,7 +198,7 @@ public class SsgListPanel extends JPanel {
                                                               null, options, options[1]);
                     if (result == 0) {
                         try {
-                            if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                            if (ssg.getTrustedGateway() == null && SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                                 Object[] certoptions = { "Destroy Certificate", "Cancel" };
                                 int res2 = JOptionPane.showOptionDialog(null,
                                                                         "You have a Client Certificate assigned from this Gateway. \n" +
@@ -381,7 +381,7 @@ public class SsgListPanel extends JPanel {
                                     return;
 
                                 CurrentRequest.setCurrentSsg(ssg);
-                                SslUtils.changePasswordAndRevokeClientCertificate(ssg.getServerPasswordChangeUrl(),
+                                SslUtils.changePasswordAndRevokeClientCertificate(ssg,
                                                                                   pw.getUserName(),
                                                                                   pw.getPassword(),
                                                                                   newpass);

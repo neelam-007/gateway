@@ -12,13 +12,14 @@ import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
 
-import com.l7tech.common.security.xml.TokenServiceClient;
+import com.l7tech.proxy.util.TokenServiceClient;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.proxy.util.TokenServiceClient;
 import org.w3c.dom.Document;
 
 /**

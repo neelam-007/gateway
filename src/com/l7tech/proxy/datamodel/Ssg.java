@@ -148,32 +148,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return ssg;
     }
 
-    /**
-     * More user-friendly version of clone().  Caller is spared from having to catch
-     * CloneNotSupportedException, or from having to cast the return value.
-     * @param newId the Id to use for the new Ssg instance
-     */
-    public Ssg getCopy(long newId) {
-        try {
-            Ssg clone = (Ssg)clone();
-            clone.setId(0);
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            // this can't happen
-            log.log(Level.SEVERE, e.getMessage(), e);
-            return null;
-        }
-    }
-
-    /**
-     * More user-friendly version of clone().  Caller is spared from having to catch
-     * CloneNotSupportedException, or from having to cast the return value.
-     * The new Ssg will not have a valid Id.
-     */
-    public Ssg getCopy() {
-        return getCopy(0);
-    }
-
     public String toString() {
         return getSsgAddress();
     }

@@ -12,9 +12,12 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
+import com.l7tech.proxy.datamodel.CurrentRequest;
+import com.l7tech.proxy.datamodel.Ssg;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.xml.sax.SAXException;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
@@ -28,6 +31,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Utilities for SSL support.
@@ -50,7 +54,7 @@ public class SslUtils {
      * account has been forgotten on the server side.  The caller is responsible for ensuring that the client
      * certificate is reliably delete on the caller's side if and only if the password change is successful.
      *
-     * @param url  The URL of the password changing service to talk to.
+     * @param ssg  The SSG whose password changing service to talk to.
      * @param username The username of the account whose password is to be changed.
      * @param oldpassword  The account's current password.
      * @param newpassword  The new password that is desired.
@@ -59,10 +63,11 @@ public class SslUtils {
      * @throws BadCredentialsException  if the old password is incorrect, or the current client certificate was
      *                                  missing or invalid.
      */
-    public static void changePasswordAndRevokeClientCertificate(URL url, String username,
+    public static void changePasswordAndRevokeClientCertificate(Ssg ssg, String username,
                                                                 char[] oldpassword, char[] newpassword)
             throws IOException, BadCredentialsException
     {
+        URL url = ssg.getServerPasswordChangeUrl();
         HttpClient hc = new HttpClient();
         hc.getState().setAuthenticationPreemptive(true);
         hc.getState().setCredentials(null, null,
@@ -75,7 +80,9 @@ public class SslUtils {
             post.setRequestHeader(XmlUtil.CONTENT_LENGTH, String.valueOf(PASSWORD_CHANGE_BODY.length()));
             post.setRequestHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD,
                                   HexUtils.encodeBase64(new String(newpassword).getBytes(), true));
+            CurrentRequest.setPeerSsg(ssg);
             int result = hc.executeMethod(post);
+            CurrentRequest.setPeerSsg(null);
             log.info("HTTPS POST to password change service returned HTTP status " + result);
             if (result == 401) throw new BadCredentialsException("Password change service indicates invalid current credentials (HTTP status " + result + ")");
             if (result != 200) throw new IOException("HTTPS POST to password change service returned HTTP status " + result);
@@ -92,7 +99,7 @@ public class SslUtils {
      * Transmit a CSR to the SSG and download the newly-signed certificate.
      * Afterward we'll verify that the signed cert is the one we asked for, and was signed by the CA we expect.
      *
-     * @param url       The URL that we should post our CSR to, whose response will be assumed to be our certificate.
+     * @param ssg       The SSG that we should post our CSR to, whose response will be assumed to be our certificate.
      * @param username
      * @param password
      * @param csr
@@ -106,13 +113,14 @@ public class SslUtils {
      * @throws SignatureException           if the resulting cert was not signed by the correct CA key
      * @throws BadCredentialsException if the username or password was rejected by the CSR signer
      */
-    public static X509Certificate obtainClientCertificate(URL url, String username, char[] password,
+    public static X509Certificate obtainClientCertificate(Ssg ssg, String username, char[] password,
                                                           CertificateRequest csr,
                                                           X509Certificate caCert)
             throws IOException, CertificateException, NoSuchAlgorithmException,
                    InvalidKeyException, NoSuchProviderException, BadCredentialsException,
                    SignatureException, CertificateAlreadyIssuedException
     {
+        URL url = ssg.getServerCertificateSigningRequestUrl();
         X500Principal csrName = new X500Principal(csr.getSubjectAsString());
         String csrNameString = csrName.getName(X500Principal.RFC2253);
         HttpClient hc = new HttpClient();
@@ -128,7 +136,9 @@ public class SslUtils {
             post.setRequestHeader(XmlUtil.CONTENT_TYPE, "application/pkcs10");
             post.setRequestHeader(XmlUtil.CONTENT_LENGTH, String.valueOf(csrBytes.length));
 
+            CurrentRequest.setPeerSsg(ssg);
             int result = hc.executeMethod(post);
+            CurrentRequest.setPeerSsg(null);            
             if ( result == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + result );
             if ( result == 403 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + result);
             if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );

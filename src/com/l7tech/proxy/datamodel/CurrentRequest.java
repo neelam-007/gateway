@@ -15,17 +15,32 @@ package com.l7tech.proxy.datamodel;
  */
 public class CurrentRequest {
     private static ThreadLocal currentRequest = new ThreadLocal();
+    private static ThreadLocal currentPeerSsg = new ThreadLocal();
 
+    /** Set the SSG in whose context we are currently working. */
     public static void setCurrentSsg(Ssg ssg) {
         currentRequest.set(ssg);
     }
 
+    /** @return the SSG in whose context we are currently working. */
     public static Ssg getCurrentSsg() {
         return (Ssg) currentRequest.get();
     }
 
+    /** Set the SSG to which we are about to make an SSL connection. */
+    public static void setPeerSsg(Ssg ssg) {
+        currentPeerSsg.set(ssg);
+    }
+
+    /** Get the SSG to which we were about to make an SSL connection. */
+    public static Ssg getPeerSsg() {
+        return (Ssg)currentPeerSsg.get();
+    }
+
+    /** Clear the current SSG context. */
     public static void clearCurrentRequest() {
         currentRequest.set(null);
+        currentPeerSsg.set(null);
     }
 }
 

@@ -47,10 +47,15 @@ public class SsgPropertyPanel extends JPanel {
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (!(value instanceof Ssg))
+                    return c;
                 Ssg g = (Ssg) value;
 
                 if(g != null) {
-                    setText(g.getLocalEndpoint());
+                    String u = g.getUsername() == null || g.getUsername().length() < 1
+                            ? ""
+                            : " (" + g.getUsername() + ")";
+                    setText(g.getLocalEndpoint() + ": " + g.getSsgAddress() + u);
                 }
                 return c;
             }

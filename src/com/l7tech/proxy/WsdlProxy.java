@@ -12,6 +12,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
@@ -154,7 +155,9 @@ public class WsdlProxy {
                                                                                      new String(pw.getPassword())));
                 log.info("WsdlProxy: Attempting download from Gateway from URL: " + url);
                 try {
+                    CurrentRequest.setPeerSsg(ssg);
                     status = httpClient.executeMethod(getMethod);
+                    CurrentRequest.setPeerSsg(null);
                 } catch (SSLHandshakeException e) {
                     if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {
                         try {

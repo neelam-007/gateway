@@ -35,9 +35,9 @@ public class ClientProxyKeyManager implements X509KeyManager {
         try {
             log.info("ClientProxyKeyManager: getClientCertPrivateKey for " + s);
             // Find our current request
-            Ssg ssg = CurrentRequest.getCurrentSsg();
+            Ssg ssg = CurrentRequest.getPeerSsg();
             if (ssg == null)
-                throw new IllegalStateException("No current Gateway is available in this thread");
+                throw new IllegalStateException("No peer Gateway is available in this thread");
             PrivateKey pk = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
             log.info("Returning PrivateKey: " + (pk == null ? "NULL" : "<it's a real key; numbers not shown>"));
             return pk;
@@ -58,9 +58,9 @@ public class ClientProxyKeyManager implements X509KeyManager {
 
     public X509Certificate[] getCertificateChain(String s) {
         log.info("ClientProxyKeyManager: getCertificateChain for " + s);
-        Ssg ssg = CurrentRequest.getCurrentSsg();
+        Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
-            throw new IllegalStateException("No current Gateway is available in this thread");
+            throw new IllegalStateException("No peer Gateway is available in this thread");
         X509Certificate[] certs = new X509Certificate[0];
         try {
             certs = SsgKeyStoreManager.getClientCertificateChain(ssg);
@@ -94,9 +94,9 @@ public class ClientProxyKeyManager implements X509KeyManager {
 
     public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
         log.info("ClientProxyKeyManager: Gateway is asking for our client certificate");
-        Ssg ssg = CurrentRequest.getCurrentSsg();
+        Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
-            throw new IllegalStateException("No current Gateway is available in this thread");
+            throw new IllegalStateException("No peer Gateway is available in this thread");
         String hostname = ssg.getSsgAddress();
         try {
             if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {

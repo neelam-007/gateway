@@ -32,7 +32,6 @@ public class SsgManagerTest extends TestCase {
       new Ssg(2, "bunky2.foo.bar");
     private static final Ssg SSG3 =
       new Ssg(3, "bunky3.foo.bar");
-    private static final Ssg SSG3_CLONE = SSG3.getCopy();
 
     static {
         SSG2.setTrustedGateway(SSG1);
@@ -211,14 +210,7 @@ public class SsgManagerTest extends TestCase {
         // May not add two Ssgs with the same Id
         // (Actually you shouldn't even be instantiating two Ssgs with the same Id)
         sm.add(SSG3);
-        SSG3_CLONE.setId(SSG3.getId());
-        assertFalse(sm.add(SSG3_CLONE));
         assertTrue(countNames(SSG3.getSsgAddress()) == 1);
-
-        // May add two Ssgs with the same fields as long as the Ids differ.
-        SSG3_CLONE.setId(sm.nextId());
-        sm.add(SSG3_CLONE);
-        assertTrue(countNames(SSG3.getSsgAddress()) == 2);
 
         eraseAllSsgs();
         assertTrue(sm.getSsgList().size() == 0);

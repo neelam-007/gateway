@@ -266,6 +266,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         }
                     }
                 }
+                checkOk();
             }
         });
 
@@ -273,6 +274,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             public void actionPerformed(ActionEvent e) {
                 identityPane.setTrustedSSGFormEnabled(identityPane.getTrustedSSGRadioButton().isSelected());
                 identityPane.setFederatedSSGFormEnabled(!identityPane.getTrustedSSGRadioButton().isSelected());
+                checkOk();
             }
         });
 
@@ -664,7 +666,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     /** Enable or disable the Ok button, depending on whether all input is acceptable. */
     private void checkOk() {
-        getOkButton().setEnabled(fieldServerAddress.getText().length() > 1);
+        boolean ok = true;
+        if (fieldServerAddress.getText().length() < 2)
+            ok = false;
+        if (identityPane.getFederatedSSGRadioButton().isSelected() &&
+                !(identityPane.getTrustedSSGComboBox().getSelectedItem() instanceof Ssg))
+            ok = false;
+        getOkButton().setEnabled(ok);
     }
 
     /** Get the Server URL text field. */
@@ -781,8 +789,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (!isNew) {
             identityPane.getTrustedSSGRadioButton().setEnabled(false);
             identityPane.getFederatedSSGRadioButton().setEnabled(false);
+            identityPane.getTrustedSSGComboBox().setEnabled(false);
         }
-        
+
         checkOk();
     }
 
@@ -799,10 +808,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             if (!item.getLocalEndpoint().equals(ssg.getLocalEndpoint())) {
                 identityPane.getTrustedSSGComboBox().addItem(item);
             }
-
-        }
-        if (i <= 0) {
-            identityPane.getTrustedSSGComboBox().addItem("<No trusted gateways configured>");
         }
     }
 

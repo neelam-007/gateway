@@ -151,6 +151,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
         final Ssg ssg = getDesiredSsg(endpoint);
         log.fine("Mapped to Gateway: " + ssg);
+        CurrentRequest.clearCurrentRequest();
         CurrentRequest.setCurrentSsg(ssg);
 
         if (isWsdl) {

@@ -99,7 +99,9 @@ public class PolicyManagerImpl implements PolicyManager {
         getMethod.setDoAuthentication(false);
         try {
             log.info("Downloading new policy from " + policyUrl);
+            CurrentRequest.setPeerSsg(request.getSsg());
             int status = client.executeMethod(getMethod);
+            CurrentRequest.setPeerSsg(null);
 
             // fla, added - try again once after first 401
             if (status == 401) {
@@ -146,7 +148,9 @@ public class PolicyManagerImpl implements PolicyManager {
                     getMethod = new GetMethod(safeUrl.toString());
                     getMethod.setDoAuthentication(true);
                     try {
+                        CurrentRequest.setPeerSsg(request.getSsg());
                         status = client.executeMethod(getMethod);
+                        CurrentRequest.setPeerSsg(null);
                         if ((status == 401 || status == 404) && ++attempts < 10) {
                             log.info("Got " + status + " status downloading policy; will get new credentials and try download again");
                             request.getNewCredentials();
