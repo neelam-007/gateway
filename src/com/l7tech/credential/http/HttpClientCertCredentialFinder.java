@@ -12,36 +12,50 @@ import com.l7tech.credential.CredentialFormat;
 import com.l7tech.message.Request;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.identity.User;
+import com.l7tech.logging.LogManager;
 
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateEncodingException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
  */
 public class HttpClientCertCredentialFinder extends HttpCredentialFinder {
     public PrincipalCredentials findCredentials(Request request) throws CredentialFinderException {
-        Object maybeClientCert = request.getParameter( Request.PARAM_HTTP_X509CERT );
+        Object param = request.getParameter( Request.PARAM_HTTP_X509CERT );
         X509Certificate clientCert = null;
 
-        if ( maybeClientCert == null) {
-            throw new CredentialFinderException( "No Client Certificate was present in the request.", AssertionStatus.AUTH_REQUIRED );
+        if ( param == null ) {
+            String err = "No Client Certificate was present in the request.";
+            _log.log( Level.WARNING, err );
+            throw new CredentialFinderException( err, AssertionStatus.AUTH_REQUIRED );
         } else {
-            if ( maybeClientCert instanceof X509Certificate )
-                clientCert = (X509Certificate)maybeClientCert;
-            if ( clientCert == null ) {
-                throw new CredentialFinderException( "Client Certificate was of the wrong type", AssertionStatus.AUTH_FAILED );
+            Object cert = null;
+            Object[] maybeCerts;
+            try {
+                maybeCerts = (Object[])param;
+                for (int i = 0; i < maybeCerts.length; i++) {
+                    cert = maybeCerts[i];
+                    if ( cert instanceof X509Certificate ) clientCert = (X509Certificate)cert;
+                }
+            } catch ( ClassCastException cce ) {
+                _log.log( Level.WARNING, cce.toString(), cce );
+                throw new CredentialFinderException( "Client Certificate " + cert + " was of the wrong type (" + cert.getClass().getName() + ")", AssertionStatus.AUTH_FAILED );
             }
         }
 
         try {
             clientCert.checkValidity();
-        } catch (CertificateExpiredException e) {
-            throw new CredentialFinderException( "Client Certificate has expired", e, AssertionStatus.AUTH_FAILED );
-        } catch (CertificateNotYetValidException e) {
-            throw new CredentialFinderException( "Client Certificate is not yet valid", e, AssertionStatus.AUTH_FAILED );
+        } catch (CertificateExpiredException cee) {
+            _log.log( Level.WARNING, cee.toString(), cee );
+            throw new CredentialFinderException( "Client Certificate has expired", cee, AssertionStatus.AUTH_FAILED );
+        } catch (CertificateNotYetValidException cnyve ) {
+            _log.log( Level.WARNING, cnyve.toString(), cnyve );
+            throw new CredentialFinderException( "Client Certificate is not yet valid", cnyve, AssertionStatus.AUTH_FAILED );
         }
 
         // Get DN from cert, ie "CN=testuser, OU=ssg.example.com"
@@ -51,8 +65,11 @@ public class HttpClientCertCredentialFinder extends HttpCredentialFinder {
             u.setLogin( certDn );
             PrincipalCredentials pc = new PrincipalCredentials( u, clientCert.getEncoded(), CredentialFormat.CLIENTCERT );
             return pc;
-        } catch (CertificateEncodingException e) {
-            throw new CredentialFinderException( "Client certificate could not be properly encoded", e, AssertionStatus.AUTH_FAILED );
+        } catch (CertificateEncodingException cee) {
+            _log.log( Level.WARNING, cee.toString(), cee );
+            throw new CredentialFinderException( "Client certificate could not be properly encoded", cee, AssertionStatus.AUTH_FAILED );
         }
     }
+
+    protected Logger _log = LogManager.getInstance().getSystemLogger();
 }
