@@ -23,8 +23,8 @@ import java.util.logging.Level;
  * <code>ServiceLookup</code> is the utility class that  performs the
  * jini registrar service download over http.
  * <br>
- * Jini lookup and dscovery uses additional port, and this* lookup avoids
- * exposing additional port, as it reuses the servlet.
+ * Jini lookup and discovery uses additional TCP port; this lookup (hack?)
+ * avoids exposing additional port, as it reuses the HTTP engine.
  * This approach effectively disables the "spontaneous" aspect (multicast
  * discovery) on the client side.
  *

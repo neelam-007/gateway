@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Class UserEntitiesCollection.
+ * Class ProviderEntitiesCollection.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class ProviderEntitiesCollection implements EntitiesCollection {

@@ -16,8 +16,8 @@ import java.util.Arrays;
  */
 class AllAssertionTreeNode extends CompositeAssertionTreeNode {
     /**
-     * The <code>MemberOfGroupAssertionTreeNode</code> is the composite
-     * assertion node that represents the group membership.
+     * The <code>AllAssertionTreeNode</code> is the composite
+     * assertion node that represents the 'AND' conjunction.
      *
      * @param assertion the composite assertion
      */

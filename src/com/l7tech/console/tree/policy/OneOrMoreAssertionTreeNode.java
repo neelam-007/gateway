@@ -16,8 +16,8 @@ import java.util.Arrays;
  */
 public class OneOrMoreAssertionTreeNode extends CompositeAssertionTreeNode {
     /**
-     * The <code>MemberOfGroupAssertionTreeNode</code> is the composite
-     * assertion node that represents the group membership.
+     * The <code>OneOrMoreAssertionTreeNode</code> is the composite
+     * assertion that represens 'OR' conjunction
      *
      * @param assertion the composite assertion
      */
