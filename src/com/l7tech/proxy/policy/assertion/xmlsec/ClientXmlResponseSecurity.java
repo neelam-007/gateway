@@ -7,12 +7,18 @@ import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.xmlsig.InvalidSignatureException;
-import com.l7tech.xmlsig.SignatureNotFoundException;
-import com.l7tech.xmlsig.SoapMsgSigner;
+import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
+import com.l7tech.xmlsig.*;
+import com.l7tech.xmlenc.XmlMangler;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+import org.apache.log4j.Category;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.security.cert.X509Certificate;
+import java.security.Key;
+import java.security.GeneralSecurityException;
+import java.io.IOException;
 
 /**
  * User: flascell
@@ -54,7 +60,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             // todo, mike get the session id here
             // todo, mike store this sessionid in http header XmlResponseSecurity.XML_SESSID_HEADER_NAME
         }
-        
+
         return AssertionStatus.NONE;
     }
 
@@ -66,30 +72,63 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
      * @throws PolicyAssertionException
      */
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
-        SoapMsgSigner dsigHelper = new SoapMsgSigner();
+        // GET THE RESPONSE DOCUMENT
         Document doc = null;
-        //doc = response.getResponseAsSoapEnvelope();
-        // todo, get a document
-        X509Certificate cert = null;
         try {
-            cert = dsigHelper.validateSignature(doc);
-        } catch (SignatureNotFoundException e) {
-            e.printStackTrace();  //To change body of catch statement use Options | File Templates.
-        } catch (InvalidSignatureException e) {
-            // todo
-        } catch (XSignatureException e) {
-            // todo
+            doc = response.getResponseAsDocument();
+        } catch (IOException e) {
+            throw new PolicyAssertionException("could not get response document", e);
+        } catch (SAXException e) {
+            throw new PolicyAssertionException("could not get response document", e);
         }
-        // todo, verify that this cert is signed with the root cert of this ssg which we should have access to
+
+        // LOOK FOR NONCE IN WSSC TOKEN
+        try {
+            long responsenonce = SecureConversationTokenHandler.readNonceFromDocument(doc);
+            // todo, mike compare to nonce used in decorate request
+        } catch (XMLSecurityElementNotFoundException e) {
+            // if the nonce is not there, we should note that this is subject to repeat attack
+            log.warn("response did not refer to a nonce - subject to repeat attack if not on secure channel");
+        }
+
+        // VERIFY SIGNATURE OF ENVELOPE
+        SoapMsgSigner dsigHelper = new SoapMsgSigner();
+        X509Certificate serverCert = null;
+        try {
+            serverCert = dsigHelper.validateSignature(doc);
+        } catch (SignatureNotFoundException e) {
+            throw new PolicyAssertionException("could not validate signature", e);
+        } catch (InvalidSignatureException e) {
+            throw new PolicyAssertionException("could not validate signature", e);
+        } catch (XSignatureException e) {
+            throw new PolicyAssertionException("could not validate signature", e);
+        }
+
+        // VERIFY THE SERVER CERT
+        // todo, mike verify that serverCert is signed with the cert we have for this server
+        log.info("signature verified");
 
         // must we also decrypt the body?
         if (data.isEncryption()) {
-            // todo, decrypt the body
+            Key keyres = null;
+            // todo, mike get the keyres for this session
+            try {
+                XmlMangler.decryptXml(doc, keyres);
+            } catch (GeneralSecurityException e) {
+                throw new PolicyAssertionException("failure decrypting document", e);
+            } catch (ParserConfigurationException e) {
+                throw new PolicyAssertionException("failure decrypting document", e);
+            } catch (IOException e) {
+                throw new PolicyAssertionException("failure decrypting document", e);
+            } catch (SAXException e) {
+                throw new PolicyAssertionException("failure decrypting document", e);
+            }
+            log.info("message decrypted");
         }
 
-        // return AssertionStatus.NONE;
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+        return AssertionStatus.NONE;
     }
 
     private XmlResponseSecurity data = null;
+    private static final Category log = Category.getInstance(ClientHttpClientCert.class);
 }
