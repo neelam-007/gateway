@@ -1,12 +1,14 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.policy.assertion.RemoteIpRange;
 
 import javax.swing.*;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.StringTokenizer;
 
 /**
  * Dialog for viewing and editing a RemoteIpRange assertion.
@@ -19,20 +21,20 @@ import java.awt.event.ActionListener;
  *
  */
 public class RemoteIpRangePropertiesDialog extends JDialog {
-    public RemoteIpRangePropertiesDialog(Frame owner, boolean modal) {
+    public RemoteIpRangePropertiesDialog(Frame owner, boolean modal, RemoteIpRange subject) {
         super(owner, modal);
+        this.subject = subject;
         initialize();
     }
 
     private void initialize() {
         setTitle("Remote IP Range Assertion Properties");
-
         Container contents = getContentPane();
         contents.setLayout(new BorderLayout(0,0));
         contents.add(makeGlobalPanel(), BorderLayout.CENTER);
         contents.add(makeBottomButtonsPanel(), BorderLayout.SOUTH);
-
         setCallbacks();
+        setInitialValues();
     }
 
     private void cancel() {
@@ -40,7 +42,82 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     }
 
     private void ok() {
+        // get rule
+        int index = includeExcludeCombo.getSelectedIndex();
+        // get address
+        String add1Str = add1.getText();
+        if (add1Str == null || add1Str.length() < 1) {
+            bark("not valid address");
+            return;
+        }
+        String add2Str = add2.getText();
+        if (add2Str == null || add2Str.length() < 1) {
+            bark("not valid address");
+            return;
+        }
+        String add3Str = add3.getText();
+        if (add3Str == null || add3Str.length() < 1) {
+            bark("not valid address");
+            return;
+        }
+        String add4Str = add4.getText();
+        if (add4Str == null || add4Str.length() < 1) {
+            bark("not valid address");
+            return;
+        }
+        String newaddress = add1Str + "." + add2Str + "." + add3Str + "." + add4Str;
+        // get mask
+        String suffixStr = suffix.getText();
+        if (suffixStr == null || suffixStr.length() < 1) {
+            bark("not valid mask");
+            return;
+        }
+        // all is good. record values and get out o here
+        switch (index) {
+            case 0:
+                subject.setAllowRange(true);
+                break;
+            case 1:
+                subject.setAllowRange(false);
+                break;
+        }
+        subject.setStartIp(newaddress);
+        subject.setNetworkMask(Integer.parseInt(suffixStr));
         cancel();
+    }
+
+    private void bark(String woof) {
+        JOptionPane.showMessageDialog(this, woof, "Remote IP Range Assertion Properties", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void setInitialValues() {
+        add1.setText("8888");
+        Dimension preferredSize = add1.getPreferredSize();
+        // get values to populate with
+        int index = subject.isAllowRange() ? 0 : 1;
+        includeExcludeCombo.setSelectedIndex(index);
+        int[] address = decomposeAddress(subject.getStartIp());
+        add1.setText("" + address[0]);
+        add2.setText("" + address[1]);
+        add3.setText("" + address[2]);
+        add4.setText("" + address[3]);
+        suffix.setText("" + subject.getNetworkMask());
+        // resize equally
+        add1.setPreferredSize(preferredSize);
+        add2.setPreferredSize(preferredSize);
+        add3.setPreferredSize(preferredSize);
+        add4.setPreferredSize(preferredSize);
+        suffix.setPreferredSize(preferredSize);
+    }
+
+    private int[] decomposeAddress(String arg) {
+        StringTokenizer st = new StringTokenizer(arg, ".");
+        int[] output = new int[4];
+        output[0] = Integer.parseInt((String) st.nextElement());
+        output[1] = Integer.parseInt((String) st.nextElement());
+        output[2] = Integer.parseInt((String) st.nextElement());
+        output[3] = Integer.parseInt(((String) st.nextElement()).trim());
+        return output;
     }
 
     private void setCallbacks() {
@@ -161,9 +238,12 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
      * for dev purposes only, to view dlg's layout
      */
     public static void main(String[] args) {
-        RemoteIpRangePropertiesDialog me = new RemoteIpRangePropertiesDialog(null, true);
-        me.pack();
-        me.show();
+        RemoteIpRange toto = new RemoteIpRange();
+        for (int i = 0; i < 3; i++) {
+            RemoteIpRangePropertiesDialog me = new RemoteIpRangePropertiesDialog(null, true, toto);
+            me.pack();
+            me.show();
+        }
         System.exit(0);
     }
 
@@ -173,6 +253,8 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
 
     private JComboBox includeExcludeCombo;
     private JFormattedTextField add1, add2, add3, add4, suffix;
+
+    private RemoteIpRange subject;
 
     private final static int BORDER_PADDING = 20;
     private final static int CONTROL_SPACING = 5;
