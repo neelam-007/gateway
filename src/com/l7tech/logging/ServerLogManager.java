@@ -1,7 +1,10 @@
 package com.l7tech.logging;
 
 import java.util.logging.*;
+import java.util.Properties;
 import java.io.File;
+import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * Layer 7 technologies, inc.
@@ -50,19 +53,20 @@ public class ServerLogManager extends LogManager {
     // ************************************************
 
     private synchronized void initialize() {
-        // create systemLogger
         if (systemLogger == null) {
             systemLogger = Logger.getLogger(SYSTEM_LOGGER_NAME);
-            systemLogger.setLevel(Level.ALL);
+            // create system Logger
+            systemLogger.setLevel(getLevel());
+            // add custom memory handler
             systemLogMemHandler = new MemHandler();
             systemLogger.addHandler(systemLogMemHandler);
-            // add our own file handler
+            // add a file handler
             try {
-                FileHandler fileHandler = new FileHandler(System.getProperties().getProperty("user.home") +
-                                              File.separator + "ssg.log", 50000, 4);
+                String pattern = getLogFilesPath() + File.separator + "ssg_%g_%u.log";
+                FileHandler fileHandler = new FileHandler(pattern, getLogFilesSizeLimit(), getLogFileNr());
                 fileHandler.setFormatter(new SimpleFormatter());
                 systemLogger.addHandler(fileHandler);
-            } catch (Exception e) {
+            } catch (IOException e) {
                 // dont use normal logger here
                 e.printStackTrace(System.err);
                 throw new RuntimeException(e);
@@ -70,7 +74,67 @@ public class ServerLogManager extends LogManager {
         }
     }
 
+    private Level getLevel() {
+        try {
+            String strval = getProps().getProperty(LEVEL_PROP_NAME);
+            return Level.parse(strval);
+        } catch (Throwable e) {
+            e.printStackTrace(System.err);
+            // if cant' read from props file, default to all
+            return Level.ALL;
+        }
+    }
+
+    private String getLogFilesPath() {
+        try {
+            return getProps().getProperty(FILEPATH_PROP_NAME);
+        } catch (Throwable e) {
+            e.printStackTrace(System.err);
+            // if cant' read from props file, default to home dir
+            return System.getProperties().getProperty("user.home");
+        }
+    }
+
+    private int getLogFilesSizeLimit() {
+        try {
+            return Integer.parseInt(getProps().getProperty(SIZELIMIT_PROP_NAME));
+        } catch (Throwable e) {
+            e.printStackTrace(System.err);
+            // if cant' read from props file, default to 500000
+            return 500000;
+        }
+    }
+
+    private int getLogFileNr() {
+        try {
+            return Integer.parseInt(getProps().getProperty(NRFILES_PROP_NAME));
+        } catch (Throwable e) {
+            e.printStackTrace(System.err);
+            // if cant' read from props file, default to 4
+            return 4;
+        }
+    }
+
+    private synchronized Properties getProps() {
+        if (props == null) {
+            InputStream inputStream = getClass().getResourceAsStream(PROPS_PATH);
+            props = new Properties();
+            try {
+                props.load(inputStream);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return props;
+    }
+
+    public static final String PROPS_PATH = "/ssglog.properties";
+    public static final String LEVEL_PROP_NAME = "com.l7tech.server.log.level";
+    public static final String FILEPATH_PROP_NAME = "com.l7tech.server.log.FileHandler.path";
+    public static final String SIZELIMIT_PROP_NAME = "com.l7tech.server.log.FileHandler.limit";
+    public static final String NRFILES_PROP_NAME = "com.l7tech.server.log.FileHandler.count";
     private Logger systemLogger = null;
     private static final String SYSTEM_LOGGER_NAME = "com.l7tech.server.log";
     private MemHandler systemLogMemHandler = null;
+    private Properties props = null;
 }
