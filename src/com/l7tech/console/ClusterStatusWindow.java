@@ -667,8 +667,9 @@ public class ClusterStatusWindow extends JFrame {
                         setSelectedRow(nodeIdSelected);
 
                         SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
-
-                        getLastUpdateLabel().setText("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      ");
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(getCurrentClusterSystemTime());
+                        getLastUpdateLabel().setText("Last updated: " + sdf.format(cal.getTime()) + "      ");
                         getStatusRefreshTimer().start();
                     } else {
                         if (isRemoteExceptionCaught()) {

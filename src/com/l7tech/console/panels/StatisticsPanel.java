@@ -327,6 +327,20 @@ public class StatisticsPanel extends JPanel {
             }
         }
 
+        //for debug purpose
+        if (lastMinuteCompletedCount < 0) {
+            // dump the counter
+            System.out.println("Service Name: " + serviceName);
+            if (lastMinuteCounts != null) {
+                int index = lastMinuteCounts.size() - 1;
+
+                for (int i = 0; i < lastMinuteCounts.size() - 1; i++, index--) {
+
+                    System.out.println("couter " + i + ": " +  ((Long) lastMinuteCounts.get(index)).longValue());
+                }
+            }
+
+        }
         return lastMinuteCompletedCount;
     }
 
