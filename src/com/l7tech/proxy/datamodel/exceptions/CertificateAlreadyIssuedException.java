@@ -16,4 +16,8 @@ public class CertificateAlreadyIssuedException extends ClientCertificateExceptio
     public CertificateAlreadyIssuedException(Throwable cause) {
         super(cause);
     }
+
+    public CertificateAlreadyIssuedException(String message) {
+        super(message);
+    }
 }
