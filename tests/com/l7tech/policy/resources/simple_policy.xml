@@ -25,10 +25,10 @@
                     <Option optionValue="Required"/>
                 </SslAssertion>
                 <RoutingAssertion>
+                    <AttachSamlSenderVouches booleanValue="false"/>
                     <UserAgent stringValueNull="null"/>
                     <ProtectedServiceUrl stringValueNull="null"/>
                     <Login stringValueNull="null"/>
-                    <AttachSamlAssertion booleanValue="false"/>
                     <GroupMembershipStatement booleanValue="false"/>
                     <Password stringValueNull="null"/>
                     <Realm stringValueNull="null"/>
@@ -65,10 +65,10 @@
             <TrueAssertion/>
             <FalseAssertion/>
             <RoutingAssertion>
+                <AttachSamlSenderVouches booleanValue="false"/>
                 <UserAgent stringValueNull="null"/>
                 <ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
                 <Login stringValue="bob&amp;joe"/>
-                <AttachSamlAssertion booleanValue="false"/>
                 <GroupMembershipStatement booleanValue="false"/>
                 <Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
                 <Realm stringValue=""/>
