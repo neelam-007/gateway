@@ -95,7 +95,7 @@ public class MessageProcessor {
      * @return     the SsgResponse containing the response from the Ssg, if processing was successful, or if
      *             a SOAP fault is being returned to the client from either the CP or the SSG.
      * @throws ClientCertificateException   if a client certificate was required but could not be obtained
-     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException   if the user declined to provide a username and password
+     * @throws OperationCanceledException   if the user declined to provide a username and password
      * @throws ConfigurationException       if a response could not be obtained from the SSG due to a problem with
      *                                      the client or server configuration, and retrying the operation
      *                                      is unlikely to succeed until the configuration is changed.
@@ -338,14 +338,14 @@ public class MessageProcessor {
      *                                valid PolicyAttachmentKey
      * @throws IOException            if there was a network problem getting the message response from the SSG
      * @throws IOException            if there was a network problem downloading a policy from the SSG
-     * @throws com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException if a new policy was downloaded
-     * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException if a policy couldn't be downloaded because the SSG SSL certificate
+     * @throws PolicyRetryableException if a new policy was downloaded
+     * @throws ServerCertificateUntrustedException if a policy couldn't be downloaded because the SSG SSL certificate
      *                                             was not recognized and needs to be (re)imported
-     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were needed to continue processing, but the user canceled
+     * @throws OperationCanceledException if credentials were needed to continue processing, but the user canceled
      *                                    the logon dialog (or we are running headless).
-     * @throws com.l7tech.proxy.datamodel.exceptions.ClientCertificateException if our client cert is no longer valid, but we couldn't delete it from
+     * @throws ClientCertificateException if our client cert is no longer valid, but we couldn't delete it from
      *                                    the keystore.
-     * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException if the SSG rejected our SSG username and/or password.
+     * @throws BadCredentialsException if the SSG rejected our SSG username and/or password.
      */
     private SsgResponse obtainResponse(PendingRequest req, Policy policy)
             throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
