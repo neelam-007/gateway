@@ -125,14 +125,14 @@
         </set>
     </class>
 
-    <class name="com.l7tech.service.PublishedService" table="protected_service">
+    <class name="com.l7tech.service.PublishedService" table="published_service">
         <id name="oid" column="oid" type="long">
             <generator class="hilo.long"/>
         </id>
         <property name="name" column="name" type="string"/>
+        <property name="policyXml" column="policy_xml" type="string"/>
         <property name="wsdlUrl" column="wsdl_url" type="string"/>
         <property name="wsdlXml" column="wsdl_xml" type="string"/>
-        <property name="policyXml" column="policy_xml" type="string"/>
     </class>
 
 </hibernate-mapping>
