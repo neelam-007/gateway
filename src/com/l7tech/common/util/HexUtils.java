@@ -52,6 +52,30 @@ public class HexUtils {
         return new String(buffer);
     }
 
+    public static byte[] unHexDump( String hexData ) {
+        if ( hexData.length() % 2 != 0 ) throw new IllegalArgumentException( "String must be of even length" );
+        byte[] bytes = new byte[hexData.length()/2];
+        for ( int i = 0; i < hexData.length(); i+=2 ) {
+            int b1 = nybble( hexData.charAt(i) );
+            int b2 = nybble( hexData.charAt(i+1) );
+            byte b = (byte)((b1 << 4) + b2);
+            bytes[i/2] = b;
+        }
+        return bytes;
+    }
+
+    private static byte nybble( char hex ) {
+        if ( hex <= '9' && hex >= '0' ) {
+            return (byte)(hex - '0');
+        } else if ( hex >= 'a' && hex <= 'f' ) {
+            return (byte)(hex - 'a' + 10 );
+        } else if ( hex >= 'A' && hex <= 'F' ) {
+            return (byte)(hex - 'F' + 10 );
+        } else {
+            throw new IllegalArgumentException( "Invalid hex digit " + hex );
+        }
+    }
+
     /**
      * Slurp a stream into a byte array and return an array of the appropriate size.  This requires
      * reading into a buffer array, and then copying to a new array.. if you don't need the array to be
