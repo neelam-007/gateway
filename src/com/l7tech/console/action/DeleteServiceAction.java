@@ -74,7 +74,7 @@ public class DeleteServiceAction extends BaseAction {
                 if (node.getPublishedService().getOid() == svc.getOid()) {
                     ComponentRegistry.getInstance().getCurrentWorkspace().clearWorskpace();
                 }
-            } catch (FindException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

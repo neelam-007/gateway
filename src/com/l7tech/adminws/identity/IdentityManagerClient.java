@@ -1,7 +1,9 @@
 package com.l7tech.adminws.identity;
 
 import com.l7tech.identity.IdentityProviderConfig;
-import java.io.IOException;
+import com.l7tech.util.Locator;
+
+import java.rmi.RemoteException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -17,13 +19,16 @@ public class IdentityManagerClient {
     // ************************************************
     // PRIVATES
     // ************************************************
-    protected Client getStub() {
+    protected IdentityService getStub() throws RemoteException {
         if (localStub == null) {
-            localStub = new Client();
+            localStub = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+            if (localStub == null) {
+                throw new RemoteException("Cannot obtain the identity service");
+            }
         }
         return localStub;
     }
 
-    protected Client localStub = null;
+    protected IdentityService localStub = null;
     protected IdentityProviderConfig config;
 }

@@ -1,6 +1,5 @@
 package com.l7tech.objectmodel.imp;
 
-import com.l7tech.objectmodel.imp.EntityImp;
 import com.l7tech.objectmodel.NamedEntity;
 
 public abstract class NamedEntityImp extends EntityImp implements NamedEntity {

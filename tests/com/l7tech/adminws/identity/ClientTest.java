@@ -1,15 +1,18 @@
 package com.l7tech.adminws.identity;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.User;
-import com.l7tech.identity.ldap.LdapConfigSettings;
 import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.ldap.LdapConfigSettings;
 import com.l7tech.util.Locator;
+import junit.extensions.TestSetup;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import net.jini.security.policy.DynamicPolicyProvider;
 
-import java.net.PasswordAuthentication;
 import java.io.File;
+import java.net.PasswordAuthentication;
+import java.security.Policy;
 
 /**
  * Layer 7 Technologies, inc.
@@ -20,15 +23,40 @@ import java.io.File;
  * and a valid admin account with the following credentials "ssgadmin", "ssgadminpasswd".
  *
  */
-public class ClientTest extends junit.framework.TestCase {
+public class ClientTest extends TestCase {
+
+
+    /**
+     * create the <code>TestSuite</code> for the
+     * LogCLientTest <code>TestCase</code>
+     */
     public static Test suite() {
-        TestSuite suite = new TestSuite(ClientTest.class);
-        return suite;
+        final TestSuite suite = new TestSuite(ClientTest.class);
+        TestSetup wrapper = new TestSetup(suite) {
+            /**
+             * test setup that deletes the stub data store; will trigger
+             * store recreate
+             * sets the environment
+             * @throws Exception on error deleting the stub data store
+             */
+            protected void setUp() throws Exception {
+                System.setProperty("com.l7tech.util.locator.properties",
+                        "/com/l7tech/console/resources/services.properties");
+            }
+
+            protected void tearDown() throws Exception {
+                ;
+            }
+        };
+        return wrapper;
     }
 
-    public void testFinds() throws Exception {
-        Client me = new Client();
 
+    public void testFinds() throws Exception {
+        // IdentityService me = new Client();
+        IdentityService me =
+                (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        if (me == null) throw new IllegalStateException("cannot obtain identity service reference");
         // test echo
         System.out.println(me.echoVersion());
 
@@ -76,7 +104,11 @@ public class ClientTest extends junit.framework.TestCase {
     }
 
     public void testCreateSpockLdapIDProviderConfig() throws Exception {
-        Client me = new Client();
+        // IdentityService me = new Client();
+        IdentityService me =
+                (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        if (me == null) throw new IllegalStateException("cannot obtain identity service reference");
+          
 
         // test echo
         System.out.println(me.echoVersion());
@@ -96,13 +128,13 @@ public class ClientTest extends junit.framework.TestCase {
         System.out.println("new config saved successfuly with id:" + newcfgid);
     }
 
-    public static void main(String[] args) throws Exception {  
+    public static void main(String[] args) throws Exception {
         System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
         System.setProperty("javax.net.ssl.trustStorePassword", "password");
         ClientCredentialManager credsManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
         PasswordAuthentication creds = new PasswordAuthentication("ssgadmin", "ssgadminpasswd".toCharArray());
         credsManager.login(creds);
-        
+
         ClientTest toto = new ClientTest();
         toto.testFinds();
         // toto.testCreateSpockLdapIDProviderConfig();

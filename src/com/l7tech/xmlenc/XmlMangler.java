@@ -20,7 +20,6 @@ import com.ibm.xml.enc.type.KeyInfo;
 import com.ibm.xml.enc.type.KeyName;
 import com.ibm.xml.enc.util.AdHocIdResolver;
 import com.l7tech.xmlsig.XMLSecurityElementNotFoundException;
-import com.l7tech.util.SoapUtil;
 import org.apache.log4j.Category;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.w3c.dom.Document;
@@ -53,7 +52,7 @@ public class XmlMangler {
 
     // Namespace constants
     private static final String soapNS = "http://schemas.xmlsoap.org/soap/envelope/";
-    //private static final String wsseNS = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
+    private static final String wsseNS = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
     private static final String xencNS = "http://www.w3.org/2001/04/xmlenc#";
     private static final String dsNS = "http://www.w3.org/2000/09/xmldsig#";
 
@@ -162,16 +161,6 @@ public class XmlMangler {
         return hdrEl;
     }
 
-    /*private static Element findOrCreateSecurityHeader(Document soapMsg) {
-        Element hdr = findOrCreateSoapHeader(soapMsg);
-        Element sec = (Element) hdr.getElementsByTagNameNS(wsseNS, "wsse:Security").item(0);
-        if (sec == null) {
-            sec = soapMsg.createElementNS(wsseNS, "wsse:Security");
-            hdr.appendChild(sec);
-        }
-        return sec;
-    }*/
-
     /**
      * Insert a WSS style header into the specified document referring to the EncryptedData element.
      * @param soapMsg
@@ -179,7 +168,7 @@ public class XmlMangler {
     private static void addWssHeader(Document soapMsg) {
         // Add new namespaces to Envelope element, as per spec.
         Element rootEl = soapMsg.getDocumentElement();
-        //rootEl.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:wsse", wsseNS);
+        rootEl.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:wsse", wsseNS);
         rootEl.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xenc", xencNS);
         rootEl.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:ds", dsNS);
 
@@ -190,9 +179,11 @@ public class XmlMangler {
         Element refEl = soapMsg.createElementNS(xencNS, "xenc:ReferenceList");
         refEl.appendChild(dataRefEl);
 
-        //Element sec = findOrCreateSecurityHeader(soapMsg);
-        Element sec = SoapUtil.getOrMakeSecurityElement(soapMsg);
-        sec.appendChild(refEl);
+        Element securityEl = soapMsg.createElementNS(wsseNS, "wsse:Security");
+        securityEl.appendChild(refEl);
+
+        Element hdrEl = findOrCreateSoapHeader(soapMsg);
+        hdrEl.appendChild(securityEl);
     }
 
     /**

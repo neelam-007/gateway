@@ -5,7 +5,7 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.util.Locator;
-import com.l7tech.service.ServiceManager;
+import com.l7tech.adminws.service.ServiceManager;
 
 
 /**

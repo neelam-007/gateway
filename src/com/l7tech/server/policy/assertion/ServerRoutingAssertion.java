@@ -9,17 +9,20 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.message.*;
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
+import com.l7tech.message.XmlRequest;
+import com.l7tech.message.XmlResponse;
 import com.l7tech.service.PublishedService;
 import com.l7tech.logging.LogManager;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.xml.serialize.XMLSerializer;
-import org.apache.xml.serialize.OutputFormat;
-import org.w3c.dom.Document;
 
 import javax.wsdl.WSDLException;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.logging.Level;
@@ -105,13 +108,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
                 }
             }
 
-            //String requestXml = request.getRequestXml();
-            String requestXml = null;
-            try {
-                requestXml = serializeDocWithXMLSerializer(request.getDocument());
-            } catch (Exception e) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "cannot get xml request", e);
-            }
+            String requestXml = request.getRequestXml();
             postMethod.setRequestBody(requestXml);
             client.executeMethod(postMethod);
 
@@ -166,19 +163,6 @@ public class ServerRoutingAssertion implements ServerAssertion {
         }
 
         private HttpMethod _method;
-    }
-
-    public String serializeDocWithXMLSerializer(Document doc) throws Exception {
-        final StringWriter sw = new StringWriter();
-        XMLSerializer xmlSerializer = new XMLSerializer();
-        xmlSerializer.setOutputCharStream(sw);
-        try {
-            OutputFormat of = new OutputFormat();
-            of.setIndent(4);
-            xmlSerializer.setOutputFormat(of);
-            xmlSerializer.serialize(doc);
-        } catch (Exception e) {}
-        return sw.toString();
     }
 
 

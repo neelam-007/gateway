@@ -8,6 +8,7 @@ package com.l7tech.server;
 
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.logging.LogManager;
+import com.l7tech.jini.Services;
 
 import javax.servlet.http.*;
 import javax.servlet.ServletException;
@@ -27,6 +28,7 @@ public class BootServlet extends HttpServlet {
         super.init( config );
         // note fla, more exception catching => important to diagnose why server does not boot properly
         try {
+            Services.getInstance().start();
             HibernatePersistenceManager.initialize();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "SQL ERROR IN BOOT SERVLET", e);

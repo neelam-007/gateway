@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.Serializable;
 
 
 /**
@@ -112,6 +113,6 @@ public class IdentityProviderConfig extends NamedEntityImp {
     // PRIVATES
     // ************************************************
     private String description;
-    private transient IdentityProviderType type;
-    private transient HashMap props;
+    private IdentityProviderType type;
+    private HashMap props;
 }

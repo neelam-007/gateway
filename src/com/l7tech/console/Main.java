@@ -14,6 +14,10 @@ import java.io.InputStream;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.security.Policy;
+
+import net.jini.security.policy.DynamicPolicyProvider;
+import net.jini.security.policy.PolicyInitializationException;
 
 /**
  * This class is the SSG console Main entry point.
@@ -34,8 +38,11 @@ public class Main {
         try {
             // AWT event dispatching thread handler
             System.setProperty("sun.awt.exception.handler",
-              "com.l7tech.console.logging.AwtErroHandler");
-
+                    "com.l7tech.console.logging.AwtErroHandler");
+            System.setProperty("java.security.policy", "etc/jini/policy.all");
+            System.setProperty("com.l7tech.util.locator.properties",
+                    "/com/l7tech/console/resources/services.properties");
+            Policy.setPolicy(new DynamicPolicyProvider());
             final JFrame main;
 
             /* invoke the splash screen */
@@ -48,31 +55,33 @@ public class Main {
             prefs.updateSystemProperties();
             // where locator looks for implementaitons
             System.setProperty("com.l7tech.util.locator.properties",
-              "/com/l7tech/console/resources/services.properties");
+                    "/com/l7tech/console/resources/services.properties");
 
             main = Registry.getDefault().getWindowManager().getMainWindow();
             // Window listener
             main.addWindowListener(
-              new WindowAdapter() {
-                  /**
-                   * Invoked when a window has been opened.
-                   */
-                  public void windowOpened(WindowEvent e) {
-                      if (mainSplashScreen != null) {
-                          mainSplashScreen.dispose();
-                      }
-                  }
+                    new WindowAdapter() {
+                        /**
+                         * Invoked when a window has been opened.
+                         */
+                        public void windowOpened(WindowEvent e) {
+                            if (mainSplashScreen != null) {
+                                mainSplashScreen.dispose();
+                            }
+                        }
 
-                  public void windowClosed(WindowEvent e) {
-                      saveWindowPosition(main);
-                      System.exit(0);
-                  }
-              });
+                        public void windowClosed(WindowEvent e) {
+                            saveWindowPosition(main);
+                            System.exit(0);
+                        }
+                    });
 
             main.setVisible(true);
         } catch (HeadlessException e) {
             e.printStackTrace();  //To change body of catch statement use Options | File Templates.
         } catch (IOException e) {
+            e.printStackTrace();  //To change body of catch statement use Options | File Templates.
+        } catch (PolicyInitializationException e) {
             e.printStackTrace();  //To change body of catch statement use Options | File Templates.
         } finally {
         }

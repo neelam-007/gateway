@@ -45,6 +45,7 @@ import java.util.logging.Logger;
 import java.net.URI;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.rmi.RemoteException;
 
 /**
  * The class represnts the policy editor
@@ -63,7 +64,7 @@ public class PolicyEditorPanel extends JPanel {
     private JScrollPane policyTreePane;
     private ServiceNode serviceNode;
 
-    public PolicyEditorPanel(ServiceNode sn) throws FindException {
+    public PolicyEditorPanel(ServiceNode sn) throws FindException, RemoteException {
         layoutComponents();
         renderService(sn);
         addServiceListeners(sn);
@@ -116,7 +117,7 @@ public class PolicyEditorPanel extends JPanel {
      * @param sn the service node
      * @throws FindException
      */
-    private void renderService(ServiceNode sn) throws FindException {
+    private void renderService(ServiceNode sn) throws FindException, RemoteException {
         this.service = sn.getPublishedService();
         setName(service.getName());
         getSplitPane().setName(service.getName());
@@ -431,7 +432,7 @@ public class PolicyEditorPanel extends JPanel {
                   try {
                       renderService(serviceNode);
                       policyEditorToolbar.buttonSave.setEnabled(true);
-                  } catch (FindException e) {
+                  } catch (Exception e) {
                       e.printStackTrace();
                   }
               }

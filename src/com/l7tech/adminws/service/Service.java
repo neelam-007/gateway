@@ -16,7 +16,7 @@ import java.rmi.RemoteException;
  * Date: Jun 6, 2003
  *
  */
-public class Service {
+public class Service implements com.l7tech.adminws.service.ServiceManager {
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
 

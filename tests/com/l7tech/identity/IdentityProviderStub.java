@@ -55,7 +55,6 @@ public class IdentityProviderStub implements IdentityProvider {
     public String getAuthRealm() {
         return HttpDigest.REALM;
     }
-
     private IdentityProviderConfig icf = null;
 
 }

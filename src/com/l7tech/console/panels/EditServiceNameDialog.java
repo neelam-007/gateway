@@ -243,7 +243,7 @@ public class EditServiceNameDialog extends JDialog {
     private void changeServiceName(String newName) {
         try {
             service.setName(newName);
-            Registry.getDefault().getServiceManager().update(service);
+            Registry.getDefault().getServiceManager().savePublishedService(service);
             dispose();
             if (listener !=null) {
                 EntityHeader eh = new EntityHeader();

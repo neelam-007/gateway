@@ -239,7 +239,7 @@ public class PublishServiceWizard extends JDialog {
                         WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
                     }
                     long oid =
-                      Registry.getDefault().getServiceManager().save(saBundle.getService());
+                      Registry.getDefault().getServiceManager().savePublishedService(saBundle.getService());
                     EntityHeader header = new EntityHeader();
                     header.setType(EntityType.SERVICE);
                     header.setName(saBundle.service.getName());

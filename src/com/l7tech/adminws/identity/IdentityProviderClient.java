@@ -9,6 +9,7 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.util.Locator;
 
 import java.util.Collection;
 import java.rmi.RemoteException;
@@ -64,15 +65,17 @@ public class IdentityProviderClient implements com.l7tech.identity.IdentityProvi
     // ************************************************
     // PRIVATES
     // ************************************************
-
-    protected Client getStub() {
+    private IdentityService getStub() throws RemoteException {
         if (localStub == null) {
-            localStub = new Client();
+            localStub = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+            if (localStub == null) {
+                throw new RemoteException("Cannot obtain the identity service");
+            }
         }
         return localStub;
     }
 
-    protected Client localStub = null;
+    protected IdentityService localStub = null;
     private IdentityProviderConfig config;
     private UserManagerClient userManager;
     private GroupManagerClient groupManager;

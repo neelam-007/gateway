@@ -1,10 +1,11 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.service.ServiceManager;
+import com.l7tech.adminws.service.ServiceManager;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Arrays;
 
 /**
  * Class ServiceEntitiesCollection.
@@ -33,8 +34,8 @@ public class ServiceEntitiesCollection implements EntitiesCollection {
         }
         try {
             exhausted = true;
-            return manager.findAllHeaders();
-        } catch (FindException e) {
+            return Arrays.asList(manager.findAllPublishedServices());
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

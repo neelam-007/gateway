@@ -36,6 +36,10 @@
         <servlet-class>com.l7tech.server.XMLEncSessionServlet</servlet-class>
     </servlet>
 
+    <servlet>
+           <servlet-name>RegistrarServlet</servlet-name>
+           <servlet-class>com.l7tech.jini.lookup.RegistrarLookupServlet</servlet-class>
+    </servlet>
     <!-- Axis servlet properties -->
     <servlet>
         <servlet-name>AxisServlet</servlet-name>
@@ -100,6 +104,17 @@
        <servlet-name>XMLEncSessionRequestHandler</servlet-name>
        <url-pattern>/ssg/xmlencsession</url-pattern>
     </servlet-mapping>
+
+    <servlet-mapping>
+       <servlet-name>XMLEncSessionRequestHandler</servlet-name>
+       <url-pattern>/ssg/xmlencsession</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+           <servlet-name>RegistrarServlet</servlet-name>
+           <url-pattern>/ssg/registrar</url-pattern>
+     </servlet-mapping>
+
 
     <servlet-mapping>
         <servlet-name>AxisServlet</servlet-name>

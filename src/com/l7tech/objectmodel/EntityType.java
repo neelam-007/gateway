@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel;
 
 import java.util.Hashtable;
+import java.io.Serializable;
 
 /**
  * Layer 7 Technologies, inc.
@@ -8,7 +9,7 @@ import java.util.Hashtable;
  * Date: May 26, 2003
  *
  */
-public class EntityType {
+public class EntityType implements Serializable {
     public static final EntityType ID_PROVIDER_CONFIG = new EntityType(1);
     public static final EntityType USER = new EntityType(2);
     public static final EntityType GROUP = new EntityType(3);

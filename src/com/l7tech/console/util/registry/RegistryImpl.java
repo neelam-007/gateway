@@ -3,10 +3,8 @@ package com.l7tech.console.util.registry;
 import com.l7tech.identity.*;
 import com.l7tech.util.Locator;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.service.ServiceManager;
+import com.l7tech.adminws.service.ServiceManager;
 
-import java.util.Collection;
 
 
 /**
@@ -72,7 +70,7 @@ public class RegistryImpl extends Registry {
     }
 
     /**
-     * @return the service managerr
+     * @return the service manager
      */
     public ServiceManager getServiceManager() {
         ServiceManager sm =

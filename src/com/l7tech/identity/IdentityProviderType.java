@@ -1,16 +1,18 @@
 package com.l7tech.identity;
 
+import java.io.Serializable;
+import java.io.ObjectStreamException;
+
 /**
  * Layer 7 Technologies, inc.
  * User: flascelles
  * Date: Jun 23, 2003
  *
  */
-public class IdentityProviderType {
-
-    public static final IdentityProviderType INTERNAL = new IdentityProviderType(1, "internal");
-    public static final IdentityProviderType LDAP = new IdentityProviderType(2, "LDAP");
-    public static final IdentityProviderType UNDEFINED = new IdentityProviderType(-1, "undefined");
+public class IdentityProviderType implements Serializable {
+    private static int id = 1;
+    public static final IdentityProviderType INTERNAL = new IdentityProviderType(id++, "internal");
+    public static final IdentityProviderType LDAP = new IdentityProviderType(id++, "LDAP");
 
     public static IdentityProviderType fromVal(int val) {
         switch (val) {
@@ -18,9 +20,8 @@ public class IdentityProviderType {
                 return INTERNAL;
             case 2:
                 return LDAP;
-            default:
-                return UNDEFINED;
         }
+        throw new IllegalArgumentException("Unknown type id " + val);
     }
 
     public int toVal() {
@@ -37,6 +38,24 @@ public class IdentityProviderType {
         this.description = desc;
     }
 
-    private int type;
-    private String description;
+    /**
+     * Resolves instances being deserialized to the predefined constants
+     *
+     * @return the object reference of the newly created object after it is
+     *         deserialized.
+     * @exception ObjectStreamException
+     */
+    private Object readResolve() throws ObjectStreamException {
+        return VALUES[type - 1];
+    }
+
+    private static final
+    IdentityProviderType[] VALUES = {
+        INTERNAL,
+        LDAP
+    };
+    private final int type;
+    private final String description;
+
+
 }

@@ -1,0 +1,535 @@
+package com.l7tech.adminws.identity;
+
+import com.l7tech.objectmodel.*;
+import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalUserManagerServer;
+import com.l7tech.util.Locator;
+import com.l7tech.logging.LogManager;
+import com.l7tech.jini.export.RemoteService;
+import com.sun.jini.start.LifeCycle;
+
+import java.rmi.RemoteException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.io.IOException;
+
+import net.jini.config.ConfigurationException;
+
+/**
+ * Layer 7 Technologies, inc.
+ * User: flascelles
+ * Date: May 26, 2003
+ *
+ * Admin WS for identities (provider configs, users, groups)
+ */
+public class IdentityServiceImpl extends RemoteService implements IdentityService {
+
+    public static final String VERSION = "20030729";
+    private final Logger logger = LogManager.getInstance().getSystemLogger();
+
+
+    public IdentityServiceImpl(String[] configOptions, LifeCycle lc)
+      throws ConfigurationException, IOException {
+        super(configOptions, lc);
+    }
+    /**
+     * Returns a version string. This can be compared to version on client-side.
+     * @return value to be compared with the client side value of Service.VERSION;
+     * @throws RemoteException
+     */
+    public String echoVersion() throws RemoteException {
+        return VERSION;
+    }
+    /**
+     *
+     * @return Array of entity headers for all existing id provider config
+     * @throws RemoteException
+     */
+    public EntityHeader[] findAllIdentityProviderConfig() throws RemoteException {
+        try {
+            Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders();
+            return collectionToHeaderArray(res);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, "FindException in findAllIdentityProviderConfig", e);
+            throw new RemoteException("FindException in findAllIdentityProviderConfig", e);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Exception in findAllIdentityProviderConfig", e);
+            throw new RemoteException("Exception in findAllIdentityProviderConfig", e);
+        } finally {
+            endTransaction();
+        }
+    }
+    /**
+     *
+     * @return Array of entity headers for all existing id provider config
+     * @throws RemoteException
+     */
+    public EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize) throws RemoteException {
+        try {
+            Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders(offset, windowSize);
+            return collectionToHeaderArray(res);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in findAllIdentityProviderConfigByOffset", e);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("Exception in findAllIdentityProviderConfigByOffset", e);
+        } finally {
+            endTransaction();
+        }
+    }
+    /**
+     *
+     * @return An identity provider config object
+     * @throws RemoteException
+     */
+    public IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws RemoteException {
+        try {
+            return getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(oid);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in findIdentityProviderConfigByPrimaryKey", e);
+        } finally {
+            endTransaction();
+        }
+    }
+    public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig) throws RemoteException {
+        try {
+            if (identityProviderConfig.getOid() > 0) {
+                IdentityProviderConfigManager manager = getIdentityProviderConfigManagerAndBeginTransaction();
+                IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
+                originalConfig.copyFrom(identityProviderConfig);
+                manager.update(originalConfig);
+                logger.log(Level.INFO, "Updated IDProviderConfig: " + identityProviderConfig.getOid());
+                return identityProviderConfig.getOid();
+            }
+            logger.log(Level.INFO, "Saving IDProviderConfig: " + identityProviderConfig.getOid());
+            return getIdentityProviderConfigManagerAndBeginTransaction().save(identityProviderConfig);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("Exception in saveIdentityProviderConfig", e);
+        } finally {
+            endTransaction();
+        }
+    }
+    public void deleteIdentityProviderConfig(long oid) throws RemoteException {
+        try {
+            IdentityProviderConfigManager manager = getIdentityProviderConfigManagerAndBeginTransaction();
+            manager.delete(manager.findByPrimaryKey(oid));
+            logger.log(Level.INFO, "Deleted IDProviderConfig: " + oid);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in deleteIdentityProviderConfig", e);
+        }
+        catch (DeleteException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("DeleteException in deleteIdentityProviderConfig", e);
+        } finally {
+            endTransaction();
+        }
+    }
+    public EntityHeader[] findAllUsers(long identityProviderConfigId) throws RemoteException {
+        try {
+            UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+            Collection res = userManager.findAllHeaders();
+            return collectionToHeaderArray(res);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in findAllUsers", e);
+        } finally {
+            endTransaction();
+        }
+    }
+    public EntityHeader[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize) throws RemoteException {
+        try {
+            UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+            Collection res = userManager.findAllHeaders(offset, windowSize);
+            return collectionToHeaderArray(res);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in findAllUsers", e);
+        } finally {
+            endTransaction();
+        }
+    }
+
+    public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern) throws RemoteException {
+        try {
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            if (types != null) for (int i = 0; i < types.length; i++) types[i] = EntityType.fromValue(types[i].getVal());
+            Collection searchResults = provider.search(types, pattern);
+            return collectionToHeaderArray(searchResults);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in searchUsers", e);
+        } finally {
+            endTransaction();
+        }
+    }
+
+    public User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws RemoteException {
+        try {
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            GroupManager groupManager = provider.getGroupManager();
+            UserManager userManager = provider.getUserManager();
+
+            User u = userManager.findByPrimaryKey(userId);
+            User output = new User();
+            output.copyFrom(u);
+            Set groups = u.getGroups();
+            // switch groups to group headers
+            if (!groups.isEmpty()) {
+                Set groupHeaders = new HashSet();
+                Group g;
+                EntityHeader gh;
+                for (Iterator i = groups.iterator(); i.hasNext();) {
+                    g = (Group)i.next();
+                    gh = groupManager.groupToHeader(g);
+                    groupHeaders.add( gh );
+                }
+
+                output.setGroupHeaders( groupHeaders );
+                output.setGroups(new HashSet());
+            }
+            return output;
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in findUserByPrimaryKey", e);
+        } finally {
+            endTransaction();
+        }
+    }
+    public void deleteUser(long identityProviderConfigId, String userId) throws RemoteException {
+        UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+        if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
+        try {
+            User user = userManager.findByPrimaryKey(userId);
+            if (isLastAdmin(user)) {
+                String msg = "An attempt was made to nuke the last standing adminstrator";
+                logger.severe(msg);
+                throw new RemoteException(msg);
+            }
+            userManager.delete(user);
+            logger.log(Level.INFO, "Deleted User: " + user.getName());
+        } catch (DeleteException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("DeleteException in deleteUser", e);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in deleteUser", e);
+        } finally {
+            endTransaction();
+        }
+    }
+
+    public long saveUser(long identityProviderConfigId, User user) throws RemoteException {
+        try {
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            GroupManager groupManager = provider.getGroupManager();
+            UserManager userManager = provider.getUserManager();
+
+            // transfer group header into groups
+            Set groupHeaders = user.getGroupHeaders();
+            Set groups = new HashSet();
+            if (groupHeaders != null && groupHeaders.size() > 0) {
+                for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
+                    EntityHeader header = (EntityHeader)i.next();
+                    Group grp = groupManager.headerToGroup(header);
+                    groups.add(grp);
+                }
+            }
+            user.setGroups(groups);
+
+            if (user.getOid() > 0) {
+                User originalUser = userManager.findByPrimaryKey(Long.toString(user.getOid()));
+                // here, we should make sure that IF the user is an administrator, he should not
+                // delete his membership to the admin group unless there is another exsiting member
+                if (isLastAdmin(originalUser)) {
+                    // was he stupid enough to nuke his admin membership?
+                    boolean stillAdmin = false;
+                    Iterator newgrpsiterator = groups.iterator();
+                    while (newgrpsiterator.hasNext()) {
+                        Group grp = (Group)newgrpsiterator.next();
+                        if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
+                            stillAdmin = true;
+                            break;
+                        }
+                    }
+                    if (!stillAdmin) {
+                        logger.severe("An attempt was made to update the last standing administrator with no membership to the admin group!");
+                        throw new RemoteException("This update would revoke admin membership on the last standing administrator");
+                    }
+                }
+                originalUser.copyFrom(user);
+                userManager.update(originalUser);
+                logger.log(Level.INFO, "Updated User: " + user.getName() + "[" + user.getOid() + "]");
+                return user.getOid();
+            }
+            logger.log(Level.INFO, "Saving User: " + user.getName());
+            return userManager.save(user);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("Exception in saveUser", e);
+        } finally {
+            endTransaction();
+        }
+    }
+
+
+    public EntityHeader[] findAllGroups(long identityProviderConfigId) throws RemoteException {
+        try {
+            Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders();
+            return collectionToHeaderArray(res);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in findAllGroups", e);
+        } finally {
+            endTransaction();
+        }
+    }
+
+    public EntityHeader[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize) throws RemoteException {
+        try {
+            Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders(offset, windowSize);
+            return collectionToHeaderArray(res);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in findAllGroups", e);
+        } finally {
+            endTransaction();
+        }
+    }
+    public Group findGroupByPrimaryKey(long identityProviderConfigId, String groupId) throws RemoteException {
+        try {
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            GroupManager groupManager = provider.getGroupManager();
+            UserManager userManager = provider.getUserManager();
+            Group existingGroup = groupManager.findByPrimaryKey(groupId);
+            Group output = new Group();
+            output.copyFrom(existingGroup);
+            // transfer members into member headers
+            Set members = existingGroup.getMembers();
+            if (members != null && members.size() > 0) {
+                Set memberHeaders = new HashSet();
+                for (Iterator i = members.iterator(); i.hasNext();) {
+                    User usr = (User)i.next();
+                    EntityHeader header = userManager.userToHeader(usr);
+                    memberHeaders.add(header);
+                }
+                output.setMemberHeaders(memberHeaders);
+                output.setMembers(new HashSet());
+            }
+            return output;
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in findGroupByPrimaryKey", e);
+        } finally {
+            endTransaction();
+        }
+    }
+    public void deleteGroup(long identityProviderConfigId, String groupId) throws RemoteException {
+        GroupManager groupManager = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId);
+        try {
+            Group grp = groupManager.findByPrimaryKey(groupId);
+            if (grp == null) throw new RemoteException("Group does not exist");
+            groupManager.delete(grp);
+            logger.log(Level.INFO, "Deleted Group: " + grp.getName());
+        } catch (ObjectModelException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("ObjectModelException in deleteGroup", e);
+        } finally {
+            endTransaction();
+        }
+    }
+    public long saveGroup(long identityProviderConfigId, Group group) throws RemoteException {
+        try {
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            GroupManager groupManager = provider.getGroupManager();
+            UserManager userManager = provider.getUserManager();
+
+            // transfer member headers into members
+            Set memberHeaders = group.getMemberHeaders();
+            Set members = new HashSet();
+            if (memberHeaders != null) {
+                for (Iterator i = memberHeaders.iterator(); i.hasNext();) {
+                    EntityHeader header = (EntityHeader)i.next();
+                    User usr = userManager.headerToUser(header);
+                    members.add(usr);
+                }
+            }
+            group.setMembers(members);
+
+            if (group.getOid() > 0) {
+                Group originalGroup = groupManager.findByPrimaryKey(Long.toString(group.getOid()));
+                originalGroup.copyFrom(group);
+                groupManager.update(originalGroup);
+                logger.log(Level.INFO, "Updated Group: " + group.getName() + "[" + group.getOid() + "]");
+                return group.getOid();
+            }
+            logger.log(Level.INFO, "Saving Group: " + group.getName());
+            return groupManager.save(group);
+        } catch (SaveException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("SaveException in saveGroup", e);
+        } catch (UpdateException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("UpdateException in saveGroup", e);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in saveGroup", e);
+        } finally {
+            endTransaction();
+        }
+    }
+
+    public String getUserCert(long identityProviderConfigId, String userId) throws RemoteException {
+        // currently, this is only supported in the internal user manager
+        // therefore, let this cast throw if it does
+        InternalUserManagerServer userManager = (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+        try {
+            Certificate cert = userManager.retrieveUserCert(userId);
+            if (cert == null) return null;
+            sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
+            String encodedcert = encoder.encode(cert.getEncoded());
+            return encodedcert;
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in getUserCert", e);
+        } catch (CertificateEncodingException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in getUserCert", e);
+        }
+    }
+
+    public void revokeCert(long identityProviderConfigId, String userId) throws RemoteException {
+        // currently, this is only supported in the internal user manager
+        // therefore, let this cast throw if it does
+        InternalUserManagerServer userManager = (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+        try {
+            userManager.revokeCert(userId);
+        } catch (UpdateException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in getUserCert", e);
+        }
+    }
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
+
+    private IdentityProviderConfigManager getIdentityProviderConfigManagerAndBeginTransaction() throws RemoteException {
+        if (identityProviderConfigManager == null){
+            initialiseConfigManager();
+        }
+        try {
+            PersistenceContext.getCurrent().beginTransaction();
+        }
+        catch (java.sql.SQLException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("SQLException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
+        } catch (TransactionException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("TransactionException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
+        }
+        return identityProviderConfigManager;
+    }
+
+    private void endTransaction() throws RemoteException {
+        try {
+            PersistenceContext context = PersistenceContext.getCurrent();
+            context.commitTransaction();
+            context.close();
+        } catch (java.sql.SQLException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("Exception commiting", e);
+        } catch ( ObjectModelException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("Exception commiting", e);
+        }
+    }
+
+    private UserManager retrieveUserManagerAndBeginTransaction(long identityProviderConfigId) throws RemoteException {
+        UserManager ret = null;
+        try {
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
+            ret = provider.getUserManager();
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("RemoteException in retrieveUserManager", e);
+        }
+        return ret;
+    }
+
+    private GroupManager retrieveGroupManagerAndBeginTransaction(long identityProviderConfigId) throws RemoteException {
+        GroupManager ret = null;
+        try {
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
+            ret = provider.getGroupManager();
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("RemoteException in retrieveGroupManager", e);
+        }
+        return ret;
+    }
+
+    private synchronized void initialiseConfigManager() throws RemoteException {
+        try {
+            // get the config manager implementation
+            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
+            if (identityProviderConfigManager == null) throw new RemoteException("Cannot instantiate the IdentityProviderConfigManager");
+        } catch (ClassCastException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("ClassCastException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup", e);
+        } catch (RuntimeException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new RemoteException("RuntimeException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
+        }
+    }
+
+    private EntityHeader[] collectionToHeaderArray(Collection input) throws RemoteException {
+        if (input == null) return new EntityHeader[0];
+        EntityHeader[] output = new EntityHeader[input.size()];
+        int count = 0;
+        Iterator i = input.iterator();
+        while (i.hasNext()) {
+            try {
+                output[count] = (EntityHeader)i.next();
+            } catch (ClassCastException e) {
+                logger.log(Level.SEVERE, null, e);
+                throw new RemoteException("Collection contained something other than a com.l7tech.objectmodel.EntityHeader", e);
+            }
+            ++count;
+        }
+        return output;
+    }
+
+    /**
+     * check whether this user is the last standing administrator
+     * this is used at update time to prevent the last administrator to nuke his admin accout membership
+     * @param currentUser
+     * @return true is this user is an administrator and no other users are
+     */
+    private boolean isLastAdmin(User currentUser) {
+        Iterator i = currentUser.getGroups().iterator();
+        while (i.hasNext()) {
+            Group grp = (Group)i.next();
+            // is he an administrator?
+            if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
+                // is he the last one ?
+                if (grp.getMembers().size() <= 1) return true;
+                return false;
+            }
+        }
+        return false;
+    }
+
+    IdentityProviderConfigManager identityProviderConfigManager = null;
+}

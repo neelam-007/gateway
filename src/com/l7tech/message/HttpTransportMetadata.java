@@ -60,6 +60,10 @@ public class HttpTransportMetadata extends TransportMetadata {
                 ppos = name.indexOf( ".", Request.PREFIX_HTTP_HEADER.length() - 1 );
                 subname = name.substring( ppos + 1 );
                 value = _request.getHeader( subname );
+            } else if ( Request.PARAM_HTTP_REQUEST_URI.equals( name ) ) {
+                return _request.getRequestURI();
+            } else if ( Request.PARAM_HTTP_METHOD.equals( name ) ) {
+                return _request.getMethod();
             }
         }
 

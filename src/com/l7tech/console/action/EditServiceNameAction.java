@@ -98,7 +98,7 @@ public class EditServiceNameAction extends NodeAction {
                           try {
                               PublishedService svc = ((ServiceNode)node).getPublishedService();
                               node.firePropertyChange(this, "service.name", lastServiceName, svc.getName());
-                          } catch (FindException e) {
+                          } catch (Exception e) {
                               e.printStackTrace();
                           }
                       } else {

@@ -2,13 +2,8 @@ package com.l7tech.console.util.registry;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
-import com.l7tech.service.ServiceManager;
+import com.l7tech.adminws.service.ServiceManager;
 import com.l7tech.util.Locator;
-import com.l7tech.objectmodel.FindException;
-
-import java.io.FileNotFoundException;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 
 /**

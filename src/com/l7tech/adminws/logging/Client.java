@@ -12,6 +12,7 @@ import com.l7tech.adminws.AdminWSClientStub;
  * Date: Jul 3, 2003
  * Time: 12:59:51 PM
  *
+ * @deprecated This class has been repaced by the RMI/JERI admin services
  */
 public class Client extends AdminWSClientStub {
 

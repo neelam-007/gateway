@@ -8,7 +8,8 @@
 
 package com.l7tech.objectmodel;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+
+import java.io.Serializable;
 
 /**
  * Header objects are used to refer to objects in find methods
@@ -16,7 +17,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * @version $Revision$
  * @author flascelles
  */
-public class EntityHeader {
+public class EntityHeader implements Serializable {
 
     public EntityHeader(long oid, EntityType type, String name, String description) {
         setOid(oid);

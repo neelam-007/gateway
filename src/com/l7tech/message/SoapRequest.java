@@ -11,7 +11,6 @@ import java.io.Reader;
 /**
  * Encapsulates a SOAP request. Not thread-safe.
  *
- * @author alex
  * @version $Revision$
  */
 public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRequest {

@@ -251,14 +251,13 @@ public class IdentityProviderDialog extends JDialog {
      */
     private JComboBox getProviderTypes() {
         if (providerTypesCombo == null) {
-            IdentityProviderType[] types =
-              new IdentityProviderType[]
-              {
-                  IdentityProviderType.UNDEFINED,
+            Object[] items =
+              new Object[] {
+                  "Select the provider type",
                   IdentityProviderType.LDAP
               };
 
-            providerTypesCombo = new JComboBox(types);
+            providerTypesCombo = new JComboBox(items);
             providerTypesCombo.setRenderer(providerTypeRenderer);
             providerTypesCombo.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
             providerTypesCombo.addActionListener(new ActionListener() {
@@ -598,10 +597,10 @@ public class IdentityProviderDialog extends JDialog {
                                                         Object value,
                                                         int index,
                                                         boolean isSelected, boolean cellHasFocus) {
-              IdentityProviderType type = (IdentityProviderType)value;
-              if (type == IdentityProviderType.UNDEFINED) {
-                  setText("Select the identity provider type");
+              if (!(value instanceof IdentityProviderType)) {
+                  setText(value.toString());
               } else {
+                  IdentityProviderType type = (IdentityProviderType)value;
                   setText(type.description());
               }
 

@@ -76,7 +76,7 @@ public class SavePolicyAction extends BaseAction {
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(rootAssertion, bo);
             svc.setPolicyXml(bo.toString());
-            Registry.getDefault().getServiceManager().update(svc);
+            Registry.getDefault().getServiceManager().savePublishedService(svc);
             sn.clearServiceHolder(); // reread service
         } catch (Exception e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving service and policy");

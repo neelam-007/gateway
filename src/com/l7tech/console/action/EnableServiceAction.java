@@ -61,8 +61,7 @@ public class EnableServiceAction extends BaseAction {
         try {
             final PublishedService publishedService = node.getPublishedService();
             publishedService.setDisabled(false);
-            Registry.getDefault().getServiceManager().update(publishedService);
-            // cause reread
+            Registry.getDefault().getServiceManager().savePublishedService(publishedService);
             node.clearServiceHolder();
             JTree tree =
               (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);

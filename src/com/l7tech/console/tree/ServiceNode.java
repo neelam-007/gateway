@@ -15,6 +15,7 @@ import java.io.StringReader;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 
 /**
@@ -41,11 +42,11 @@ public class ServiceNode extends EntityHeaderNode {
         super(e);
     }
 
-    public PublishedService getPublishedService() throws FindException {
+    public PublishedService getPublishedService() throws FindException, RemoteException {
         if (svc == null) {
             EntityHeader eh = getEntityHeader();
             svc = Registry.getDefault().
-              getServiceManager().findByPrimaryKey(eh.getOid());
+              getServiceManager().findServiceByPrimaryKey(eh.getOid());
         }
         return svc;
     }
@@ -73,7 +74,7 @@ public class ServiceNode extends EntityHeaderNode {
             boolean disabled = getPublishedService().isDisabled();
             da.setEnabled(!disabled);
             ea.setEnabled(disabled);
-        } catch (FindException e) {
+        } catch (Exception e) {
             log.log(Level.WARNING, "Error retrieving service", e);
 
         }
@@ -139,7 +140,7 @@ public class ServiceNode extends EntityHeaderNode {
     public String getName() {
         try {
             return getPublishedService().getName();
-        } catch (FindException e) {
+        } catch (Exception e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to find the service "+getEntityHeader().getOid());
         }
         return "Error Retrieving the service";

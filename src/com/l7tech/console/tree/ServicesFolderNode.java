@@ -1,7 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.PublishServiceAction;
-import com.l7tech.service.ServiceManager;
+import com.l7tech.adminws.service.ServiceManager;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;

@@ -3,6 +3,9 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.identity.Client;
 import com.l7tech.adminws.identity.IdentityProviderClient;
+import com.l7tech.adminws.identity.IdentityService;
+import com.l7tech.util.Locator;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.rmi.RemoteException;
@@ -128,12 +131,16 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
     // ************************************************
     // PRIVATES
     // ************************************************
-    private Client getStub() {
+    private IdentityService getStub() throws RemoteException {
         if (localStub == null) {
-            localStub = new Client();
+            // localStub = new Client();
+            localStub = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+            if (localStub == null) {
+                throw new RemoteException("Cannot connect to identity service");
+            }
         }
         return localStub;
     }
 
-    private Client localStub = null;
+    private IdentityService localStub = null;
 }

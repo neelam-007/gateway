@@ -14,8 +14,9 @@ import java.rmi.RemoteException;
  * User: flascelles
  * Date: May 26, 2003
  *
+ * @deprecated This class has been repaced by the RMI/JERI admin services
  */
-public class Client extends AdminWSClientStub {
+public class Client extends AdminWSClientStub implements IdentityService {
 
     public Client() {
         super();

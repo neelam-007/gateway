@@ -394,6 +394,13 @@
             <fileset dir="${src.root}/src">
                 <include name="com/l7tech/proxy/resources/*"/>
             </fileset>
+
+            <fileset dir="${src.root}/src">
+                <include name="com/l7tech/jini/lookup/*.config"/>
+            </fileset>
+
+            <fileset dir="${src.root}/etc/jini" includes="start-services.config, services.config, services.policy"/>
+
         </copy>
 
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->

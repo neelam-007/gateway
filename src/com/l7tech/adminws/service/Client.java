@@ -11,10 +11,10 @@ import com.l7tech.adminws.AdminWSClientStub;
  * Layer 7 Technologies, inc.
  * User: flascelles
  * Date: Jun 6, 2003
- *
+ * @deprecated This class has been repaced by the RMI/JERI
  * This is the admin ws client for the service ws. It is used by the ServiceManagerClientImp class.
  */
-public class Client extends AdminWSClientStub {
+public class Client extends AdminWSClientStub implements ServiceManager {
     public Client() {
         super();
     }

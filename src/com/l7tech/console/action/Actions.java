@@ -171,7 +171,9 @@ public class Actions {
 
         // Delete the  node and update the tree
         try {
-            Registry.getDefault().getServiceManager().delete(node.getPublishedService());
+            Registry.getDefault().
+                    getServiceManager().
+                    deletePublishedService(node.getPublishedService().getOid());
             return true;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting service", e);
