@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.common.security.xml.SecurityProcessor;
 import com.l7tech.common.security.xml.SecurityProcessorException;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.server.SessionManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -57,12 +58,12 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         } catch (SAXException e) {
             String msg = "cannot get an xml document from the response to sign";
             logger.severe(msg);
-            return AssertionStatus.FALSIFIED;
+            return AssertionStatus.SERVER_ERROR;
         }
         if (soapmsg == null) {
             String msg = "cannot get an xml document from the response to sign";
             logger.severe(msg);
-            return AssertionStatus.FALSIFIED;
+            return AssertionStatus.SERVER_ERROR;
         }
 
         String nonceValue = (String)request.getParameter(Request.PARAM_HTTP_XML_NONCE);
@@ -89,14 +90,15 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
                     encryptionKey = xmlsession.getKeyRes() != null ? new AesKey(xmlsession.getKeyRes(), 128) : null;
                 } catch (SessionNotFoundException e) {
                     String msg = "Exception finding session with id=" + sessionIDHeaderValue;
-                    response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, "invalid");
-                    logger.log(Level.SEVERE, msg, e);
-                    return AssertionStatus.FALSIFIED;
+                    response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, SecureSpanConstants.INVALID);
+                    response.setPolicyViolated(true);
+                    logger.log(Level.WARNING, msg, e);
+                    return AssertionStatus.FAILED;
                 } catch (NumberFormatException e) {
                     String msg = "Session id is not long value : " + sessionIDHeaderValue;
-                    response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, "invalid");
-                    logger.log(Level.SEVERE, msg, e);
-                    return AssertionStatus.FALSIFIED;
+                    response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, SecureSpanConstants.INVALID);
+                    logger.log(Level.WARNING, msg, e);
+                    return AssertionStatus.FAILED;
                 }
             }
         }
@@ -108,11 +110,11 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         } catch (SecurityProcessorException e) {
             String msg = "error signing/encrypting response";
             logger.log(Level.SEVERE, msg, e);
-            return AssertionStatus.FALSIFIED;
+            return AssertionStatus.FAILED;
         } catch (GeneralSecurityException e) {
             String msg = "error signing response";
             logger.log(Level.SEVERE, msg, e);
-            return AssertionStatus.FALSIFIED;
+            return AssertionStatus.FAILED;
         }
         ((XmlResponse)response).setDocument(soapmsg);
         return AssertionStatus.NONE;
