@@ -17,6 +17,7 @@ import com.l7tech.server.event.GenericListener;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
+import org.springframework.context.ApplicationContext;
 
 import javax.security.auth.Subject;
 import java.rmi.server.ServerNotActiveException;
@@ -26,8 +27,6 @@ import java.security.Principal;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
@@ -42,7 +41,7 @@ public class AdminAuditListener implements GenericListener, CreateListener, Upda
         if (event instanceof PersistenceEvent) throw new IllegalArgumentException("PersistenceEvents should not be handled by receive()");
         if (!(event instanceof AdminEvent)) throw new IllegalArgumentException("Invalid event received--only AdminEvents should be handled here");
         final AuditContext currentAuditContext = AuditContext.getCurrent(applicationContext);
-        currentAuditContext.add(makeAuditRecord((AdminEvent)event));
+        currentAuditContext.setCurrentRecord(makeAuditRecord((AdminEvent)event));
         currentAuditContext.flush();
     }
 
@@ -198,19 +197,19 @@ public class AdminAuditListener implements GenericListener, CreateListener, Upda
 
     public void entityCreated( Created created ) {
         final AuditContext current = AuditContext.getCurrent(applicationContext);
-        current.add(makeAuditRecord(created));
+        current.setCurrentRecord(makeAuditRecord(created));
         current.flush();
     }
 
     public void entityUpdated( Updated updated ) {
         final AuditContext current = AuditContext.getCurrent(applicationContext);
-        current.add(makeAuditRecord(updated));
+        current.setCurrentRecord(makeAuditRecord(updated));
         current.flush();
     }
 
     public void entityDeleted( Deleted deleted ) {
         final AuditContext current = AuditContext.getCurrent(applicationContext);
-        current.add(makeAuditRecord(deleted));
+        current.setCurrentRecord(makeAuditRecord(deleted));
         current.flush();
     }
 

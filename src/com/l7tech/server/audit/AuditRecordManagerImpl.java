@@ -8,7 +8,10 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.HibernateEntityManager;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
@@ -93,21 +96,13 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
     public long save(AuditRecord rec) throws SaveException {
         try {
             logger.fine("Saving AuditRecord " + rec);
-            final Session auditSession = getSession();
-            Object id = auditSession.save(rec);
+            Object id = getSession().save(rec);
             if (id instanceof Long)
                 return ((Long)id).longValue();
             else
                 throw new SaveException("Primary key was " + id.getClass().getName() + ", expected Long");
         } catch ( HibernateException e ) {
             throw new SaveException("Couldn't save AuditRecord", e);
-        }
-    }
-
-    public void save(Collection records) throws SaveException {
-        for (Iterator iterator = records.iterator(); iterator.hasNext();) {
-            AuditRecord record = (AuditRecord)iterator.next();
-            save(record);
         }
     }
 

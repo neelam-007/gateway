@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE hibernate-mapping PUBLIC
-        "-//Hibernate/Hibernate Mapping DTD 2.0//EN"
+        "-//Hibernate/Hibernate Mapping DTD 2.1//EN"
         "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
 
 <!-- $Id$ -->
@@ -22,6 +22,11 @@
         <property name="message" column="message" type="string"/>
         <property name="ipAddress" column="ip_address" type="string"/>
         <property name="name" column="name" type="string"/>
+
+        <set name="details" lazy="false" inverse="true" cascade="all">
+            <key column="audit_oid"/>
+            <one-to-many class="com.l7tech.common.audit.AuditDetail"/>
+        </set>
 
         <joined-subclass name="com.l7tech.common.audit.MessageSummaryAuditRecord" table="audit_message" >
             <key column="objectid"/>
@@ -51,5 +56,18 @@
             <property name="component" type="string"/>
             <property name="action" type="string"/>
         </joined-subclass>
+    </class>
+
+    <class name="com.l7tech.common.audit.AuditDetail" table="audit_detail">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <property name="time" type="long"/>
+        <property name="componentOid" column="component_oid" type="long"/>
+        <property name="messageOid" column="message_oid" type="long"/>
+        <property name="ordinal" type="int"/>
+
+        <many-to-one name="auditRecord" class="com.l7tech.common.audit.AuditRecord" column="audit_oid"/>
     </class>
 </hibernate-mapping>

@@ -28,6 +28,6 @@ public class MessageProcessingAuditListener implements MessageProcessingEventLis
     }
 
     public void messageProcessed( PolicyEnforcementContext context, AssertionStatus status ) {
-        AuditContext.getCurrent(applicationContext).add(messageSummaryAuditFactory.makeEvent(context, status));
+        AuditContext.getCurrent(applicationContext).setCurrentRecord(messageSummaryAuditFactory.makeEvent(context, status));
     }
 }

@@ -8,6 +8,8 @@ package com.l7tech.common.audit;
 
 import com.l7tech.logging.SSGLogRecord;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -54,6 +56,18 @@ public abstract class AuditRecord extends SSGLogRecord {
         return name;
     }
 
+    /**
+     * Gets the list of {@link AuditDetail} records associated with this audit record.
+     * @return the list of {@link AuditDetail} records associated with this audit record.
+     */
+    public Set getDetails() {
+        return details;
+    }
+
+    public void setDetails(Set details) {
+        this.details = details;
+    }
+
     /** @deprecated to be called only for serialization and persistence purposes! */
     public void setIpAddress( String ipAddress ) {
         this.ipAddress = ipAddress;
@@ -69,4 +83,7 @@ public abstract class AuditRecord extends SSGLogRecord {
     
     /** the name of the service or system affected by event that generated the AuditRecord */
     protected String name;
+
+    /** the list of {@link com.l7tech.common.audit.AuditDetail}s associated with this AuditRecord */
+    private Set details = new HashSet();
 }

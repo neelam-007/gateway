@@ -14,10 +14,9 @@ import com.l7tech.server.event.GenericListener;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.Stopped;
 import com.l7tech.server.event.system.SystemEvent;
+import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Level;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
@@ -42,8 +41,9 @@ public class SystemAuditListener implements GenericListener {
             } if (se.getComponent() == Component.GW_AUDIT_SYSTEM) {
                 level = Level.SEVERE;
             }
-            AuditContext.getCurrent(applicationContext).add(new SystemAuditRecord(level, nodeId, se.getComponent(), se.getAction(), se.getIpAddress()));
-            AuditContext.getCurrent(applicationContext).flush();
+            AuditContext context = AuditContext.getCurrent(applicationContext);
+            context.setCurrentRecord(new SystemAuditRecord(level, nodeId, se.getComponent(), se.getAction(), se.getIpAddress()));
+            context.flush();
         }
     }
 }

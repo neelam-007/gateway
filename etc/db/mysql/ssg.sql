@@ -427,6 +427,19 @@ CREATE TABLE audit_system (
   KEY idx_action (action)
 ) TYPE=InnoDB;
 
+DROP TABLE IF EXISTS audit_detail;
+CREATE TABLE audit_detail (
+  objectid bigint(20) NOT NULL,
+  audit_oid bigint(20) NOT NULL,
+  time bigint(20) NOT NULL,
+  component_oid bigint(20) NOT NULL,
+  message_oid bigint(20) NOT NULL,
+  ordinal integer,
+  KEY idx_component_oid (component_oid),
+  KEY idx_audit_oid (audit_oid)
+) TYPE=InnoDB;
+
+
 DROP TABLE IF EXISTS message_id;
 CREATE TABLE message_id (
   messageid varchar(255) NOT NULL PRIMARY KEY,

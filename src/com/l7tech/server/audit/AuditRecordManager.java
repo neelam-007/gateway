@@ -32,11 +32,5 @@ public interface AuditRecordManager extends EntityManager {
 
     long save(AuditRecord rec) throws SaveException;
 
-    /**
-     * Save the collection of audit records.
-     * @param records the collections of records, must be instances of <code>AuditRecord</code>
-     * @throws SaveException
-     */
-    void save(Collection records) throws SaveException;
     void deleteOldAuditRecords() throws DeleteException;
 }
