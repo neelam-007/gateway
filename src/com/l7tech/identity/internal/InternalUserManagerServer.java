@@ -3,6 +3,7 @@ package com.l7tech.identity.internal;
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdProvConfManagerServer;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -23,7 +24,9 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
 
     public User findByPrimaryKey(String oid) throws FindException {
         try {
-            return (User)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
+            User out = (User)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
+            out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
+            return out;
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         } catch ( NumberFormatException nfe ) {

@@ -3,6 +3,7 @@ package com.l7tech.identity.internal;
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdProvConfManagerServer;
 
 import java.sql.SQLException;
 
@@ -19,7 +20,9 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
     public Group findByPrimaryKey(String oid) throws FindException {
         try {
-            return (Group)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid) );
+            Group out = (Group)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid) );
+            out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
+            return out;
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }
@@ -60,5 +63,4 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     public Class getInterfaceClass() {
         return Group.class;
     }
-
 }
