@@ -1,19 +1,18 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.IconManager;
-import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -31,7 +30,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -358,18 +356,11 @@ public class PolicyAddIdentitiesDialog extends JDialog {
                   getInstance().getComponent(PolicyTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    CompositeAssertion ca = (CompositeAssertion)targetNode.asAssertion();
-                    List kids = new ArrayList();
-                    kids.addAll(ca.getChildren());
-
                     for (Iterator idit = identityAssertions.iterator(); idit.hasNext();) {
                         Assertion ass = (Assertion)idit.next();
-                        kids.add(ass);
-                        model.
-                          insertNodeInto(AssertionTreeNodeFactory.asTreeNode(ass),
-                            targetNode, targetNode.getChildCount());
+                        AssertionTreeNode an = AssertionTreeNodeFactory.asTreeNode(ass);
+                        model.insertNodeInto(an, targetNode, targetNode.getChildCount());
                     }
-                    ca.setChildren(kids);
                 } else {
                     log.log(Level.WARNING, "Unable to reach the palette tree.");
                 }

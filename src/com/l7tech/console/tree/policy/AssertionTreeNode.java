@@ -8,20 +8,21 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class AssertionTreeNode.
@@ -29,7 +30,7 @@ import java.io.IOException;
  */
 public abstract class AssertionTreeNode extends AbstractTreeNode {
     private static final Logger log =
-         Logger.getLogger(AssertionTreeNode.class.getName());
+      Logger.getLogger(AssertionTreeNode.class.getName());
 
     AssertionTreeNode(Assertion assertion) {
         super(assertion);
@@ -110,29 +111,20 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         final JTree tree = ComponentRegistry.getInstance().getPolicyTree();
         final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
         final DefaultMutableTreeNode parent = (DefaultMutableTreeNode)this.getParent();
-        int indexThis = parent.getIndex(this);
-        int indexThat = parent.getIndex(target);
-        parent.insert(this, indexThat);
-        parent.insert(target, indexThis);
-        model.nodeStructureChanged(parent);
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                TreeNode[] path =
-                        ((DefaultMutableTreeNode)AssertionTreeNode.this).getPath();
-                if (path !=null) {
-                    tree.setSelectionPath(new TreePath(path));
-                }
 
-            }
-        });
-        // todo: do this with tree model listener
-        List newChildren = new ArrayList();
-        CompositeAssertion ca = (CompositeAssertion)((AssertionTreeNode)parent).asAssertion();
-        for (Enumeration e = parent.children(); e.hasMoreElements();) {
-            AssertionTreeNode an = (AssertionTreeNode)e.nextElement();
-            newChildren.add(an.asAssertion());
+        int indexThis = parent.getIndex(this);
+        model.removeNodeFromParent(this);
+        int indexThat = parent.getIndex(target);
+        model.removeNodeFromParent(target);
+
+        model.insertNodeInto(this, parent, indexThat);
+        model.insertNodeInto(target, parent, indexThis);
+
+        TreeNode[] path =
+          ((DefaultMutableTreeNode)AssertionTreeNode.this).getPath();
+        if (path != null) {
+            tree.setSelectionPath(new TreePath(path));
         }
-        ca.setChildren(newChildren);
     }
 
     /**
@@ -214,12 +206,13 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      * @return the published service cookie or null if not founds
      */
     private ServiceNode getServiceNodeCookie() {
-        for (Iterator i = ((AbstractTreeNode)getRoot()).cookies(); i.hasNext(); ) {
+        for (Iterator i = ((AbstractTreeNode)getRoot()).cookies(); i.hasNext();) {
             Object value = ((Cookie)i.next()).getValue();
             if (value instanceof ServiceNode) return (ServiceNode)value;
         }
         return null;
     }
+
     /**
      * Does the assertion node accepts the abstract tree node
      *

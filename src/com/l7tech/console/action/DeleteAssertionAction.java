@@ -3,13 +3,9 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.ComponentRegistry;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.List;
-import java.util.ArrayList;
 
 
 /**
@@ -65,14 +61,6 @@ public class DeleteAssertionAction extends BaseAction {
               (JTree)ComponentRegistry.getInstance().getComponent(PolicyTree.NAME);
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             model.removeNodeFromParent(node);
-            Assertion ass = node.asAssertion();
-            CompositeAssertion ca = ass.getParent();
-            if (ca !=null) {
-                List kids = new ArrayList();
-                kids.addAll(ca.getChildren());
-                kids.remove(ass);
-                ca.setChildren(kids);
-            }
         }
     }
 }

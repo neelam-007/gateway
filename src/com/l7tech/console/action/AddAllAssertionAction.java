@@ -71,15 +71,10 @@ public class AddAllAssertionAction extends BaseAction {
                   getInstance().getComponent(PolicyTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    CompositeAssertion ca = (CompositeAssertion)treeNode.asAssertion();
-                    List kids = new ArrayList();
-                    kids.addAll(ca.getChildren());
-                    AllAssertion aas = new AllAssertion();
-                    kids.add(aas);
-                    ca.setChildren(kids);
-                        model.
-                          insertNodeInto(AssertionTreeNodeFactory.asTreeNode(aas),
-                            treeNode, treeNode.getChildCount());
+
+                    AssertionTreeNode an =
+                      AssertionTreeNodeFactory.asTreeNode(new AllAssertion());
+                    model.insertNodeInto(an, treeNode, treeNode.getChildCount());
                 } else {
                     log.log(Level.WARNING, "Unable to reach the palette tree.");
                 }

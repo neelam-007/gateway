@@ -5,8 +5,11 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.ArrowImage;
 import com.l7tech.console.panels.PolicyEditorPanel;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.*;
@@ -21,6 +24,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.*;
 import java.io.IOException;
 
 /**
@@ -496,7 +500,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         log.fine("DROPPING: " + pathSource.getLastPathComponent());
                         DefaultTreeModel model = (DefaultTreeModel)getModel();
                         TreePath pathNewChild = null;
-                        // rework the belov with node clone or copy and then remove in dragDropEnd
+
                         final AssertionTreeNode an = (AssertionTreeNode)pathSource.getLastPathComponent();
                         final AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(an.asAssertion());
 
@@ -657,24 +661,48 @@ public class PolicyTree extends JTree implements DragSourceListener,
     }
 
     public void treeNodesInserted(TreeModelEvent e) {
-        log.fine("treeNodesInserted ");
         sayWhat(e);
-
-        // We need to reset the selection path to the node just inserted
         int nChildIndex = e.getChildIndices()[0];
         TreePath pathParent = e.getTreePath();
         setSelectionPath(getChildPath(pathParent, nChildIndex));
+
+        AssertionTreeNode parent =
+          (AssertionTreeNode)e.getTreePath().getLastPathComponent();
+        CompositeAssertion ca = (CompositeAssertion)parent.asAssertion();
+
+        java.util.List newChildren = new ArrayList();
+        Enumeration en = parent.children();
+        while (en.hasMoreElements()) {
+            newChildren.add(((AssertionTreeNode)en.nextElement()).asAssertion());
+        }
+        log.fine("set children "+newChildren);
+        ca.setChildren(newChildren);
     }
 
     public void treeNodesRemoved(TreeModelEvent e) {
-        log.fine("treeNodesRemoved ");
-        sayWhat(e);
+        java.util.List removed = new ArrayList();
+        Object[] objects = e.getChildren();
+        for (int i = 0; i < objects.length; i++) {
+            AssertionTreeNode an = (AssertionTreeNode)objects[i];
+            removed.add(an.asAssertion());
+        }
+        AssertionTreeNode parent =
+          (AssertionTreeNode)e.getTreePath().getLastPathComponent();
+        CompositeAssertion ca = (CompositeAssertion)parent.asAssertion();
+        java.util.List children = ca.getChildren();
+        java.util.List remove = new ArrayList();
+        for (Iterator iterator = ca.getChildren().iterator(); iterator.hasNext();) {
+            Assertion a = (Assertion)iterator.next();
+            if (removed.contains(a)){
+                remove.add(a);
+            }
+        }
+        log.fine("removing "+remove);
+        children.removeAll(remove);
     }
 
     public void treeStructureChanged(TreeModelEvent e) {
         log.fine("treeStructureChanged ");
         sayWhat(e);
     }
-
-
 }

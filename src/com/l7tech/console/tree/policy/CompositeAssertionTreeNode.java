@@ -1,18 +1,17 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.console.action.AddAllAssertionAction;
 import com.l7tech.console.action.AddOneOrMoreAssertionAction;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,17 +72,8 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
             Assertion nass = node.asAssertion();
 
             if (nass != null) {
-                Assertion receivingAssertion = asAssertion();
-
-                CompositeAssertion ca =
-                  (CompositeAssertion)receivingAssertion;
-                List kids = new ArrayList();
-                kids.addAll(ca.getChildren());
-                kids.add(nass);
-                ca.setChildren(kids);
-                model.
-                  insertNodeInto(AssertionTreeNodeFactory.asTreeNode(nass),
-                    this, this.getChildCount());
+                AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nass);
+                model.insertNodeInto(as, this, getChildCount());
             } else {
                 log.log(Level.WARNING, "The node has no associated assertion " + node);
             }

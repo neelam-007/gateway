@@ -9,8 +9,6 @@ import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,15 +69,9 @@ public class AddExactlyOneAssertionAction extends BaseAction {
                   getInstance().getComponent(PolicyTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    CompositeAssertion ca = (CompositeAssertion)treeNode.asAssertion();
-                    List kids = new ArrayList();
-                    kids.addAll(ca.getChildren());
                     ExactlyOneAssertion aas = new ExactlyOneAssertion();
-                    kids.add(aas);
-                    ca.setChildren(kids);
-                        model.
-                          insertNodeInto(AssertionTreeNodeFactory.asTreeNode(aas),
-                            treeNode, treeNode.getChildCount());
+                    model.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(aas),
+                                         treeNode, treeNode.getChildCount());
                 } else {
                     log.log(Level.WARNING, "Unable to reach the palette tree.");
                 }
