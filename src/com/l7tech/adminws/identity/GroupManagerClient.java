@@ -56,6 +56,14 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
         }
     }
 
+    public EntityHeader groupToHeader(Group group) {
+        return null;
+    }
+
+    public Group headerToGroup(EntityHeader header) throws FindException {
+        return null;
+    }
+
     public Collection findAllHeaders() throws FindException {
         com.l7tech.objectmodel.EntityHeader[] array = null;
         try {

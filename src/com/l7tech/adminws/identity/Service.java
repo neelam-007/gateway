@@ -7,9 +7,7 @@ import com.l7tech.logging.LogManager;
 
 import java.rmi.RemoteException;
 import java.util.logging.Level;
-import java.util.Set;
-import java.util.Iterator;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  * Layer 7 Technologies, inc.
@@ -190,34 +188,82 @@ public class Service {
             endTransaction();
         }
     }
-    public long saveUser(long identityProviderConfigId, com.l7tech.identity.User user) throws java.rmi.RemoteException {
-        // Let's try not to create nested transactions, since we're updating two classes of object
-        IdentityProvider provider = null;
-        try {
-            provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
-        } catch ( FindException fe ) {
-            throw new java.rmi.RemoteException( "Couldn't get IdentityProvider!" );
+
+    private Map groupsToMap( Set groups ) {
+        Map result = Collections.EMPTY_MAP;
+        Group group;
+        String oid;
+        for (Iterator i = groups.iterator(); i.hasNext();) {
+            group = (Group) i.next();
+            oid = new Long( group.getOid() ).toString();
+            if ( result == Collections.EMPTY_MAP ) result = new HashMap();
+            result.put( oid, group );
         }
+        return result;
+    }
 
-        UserManager userManager = provider.getUserManager();
-        if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
+    private Map headersToMap(Set headers) {
+        Map result = Collections.EMPTY_MAP;
+        EntityHeader header;
+        for (Iterator i = headers.iterator(); i.hasNext();) {
+            header = (EntityHeader)i.next();
+            if ( result == Collections.EMPTY_MAP ) result = new HashMap();
+            result.put( header.getStrId(), header );
+        }
+        return result;
+    }
+
+    public long saveUser(long identityProviderConfigId, com.l7tech.identity.User user) throws java.rmi.RemoteException {
         try {
-            Set groupHeaders = user.getGroupHeaders();
-
-            if ( !groupHeaders.isEmpty() ) {
-                Set groups = new HashSet();
-                // Let's reify the groupHeaders and copy 'em to groups
-                GroupManager groupManager = provider.getGroupManager();
-                if ( groupManager == null ) throw new java.rmi.RemoteException( "Cannot retrieve the GroupManager" );
-
-                for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
-                    EntityHeader header = (EntityHeader)i.next();
-                    Group group = groupManager.findByPrimaryKey( header.getStrId() );
-                    groups.add( group );
-                }
-
-                user.setGroups( groups );
+            // Let's try not to create nested transactions, since we're updating two classes of object
+            IdentityProvider provider = null;
+            try {
+                provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
+            } catch ( FindException fe ) {
+                throw new java.rmi.RemoteException( "Couldn't get IdentityProvider!" );
             }
+
+            UserManager userManager = provider.getUserManager();
+            if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
+            GroupManager groupManager = provider.getGroupManager();
+            if ( groupManager == null ) throw new java.rmi.RemoteException( "Cannot retrieve the GroupManager" );
+
+            Map groupHeaderMap = headersToMap( user.getGroupHeaders() );
+            Map groupMap = groupsToMap( user.getGroups() );
+
+            EntityHeader header;
+            Group group;
+            String oid;
+
+            // Add newly added headers
+            for (Iterator i = groupHeaderMap.keySet().iterator(); i.hasNext();) {
+                oid = (String) i.next();
+                header = (EntityHeader)groupHeaderMap.get( oid );
+                if ( !groupMap.containsKey( oid ) ) {
+                    // This
+                    groupMap.put( oid, groupManager.headerToGroup( header ) );
+                }
+            }
+
+            Set groups = new HashSet();
+
+            // Remove missing headers
+            for (Iterator i = groupMap.keySet().iterator(); i.hasNext();) {
+                oid = (String)i.next();
+                group = (Group)groupMap.get( oid );
+                if ( !groupHeaderMap.containsKey( oid ) ) {
+                    // This group is no longer in the headers
+                    groupMap.remove( oid );
+                }
+            }
+
+            for (Iterator i = groupMap.keySet().iterator(); i.hasNext();) {
+                oid = (String)i.next();
+                group = (Group)groupMap.get(oid);
+                groups.add( group );
+            }
+
+            user.setGroups( groups );
 
             if (user.getOid() > 0) {
                 User originalUser = userManager.findByPrimaryKey(Long.toString(user.getOid()));
