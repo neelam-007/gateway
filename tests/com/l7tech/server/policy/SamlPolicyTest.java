@@ -71,8 +71,6 @@ public class SamlPolicyTest extends TestCase {
             protected void setUp() throws Exception {
                 System.setProperty(
                   "com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
-
-                //ServiceCache.initialize(); // need to do this, otherwise is a no go
             }
 
             protected void tearDown() throws Exception {
@@ -135,6 +133,31 @@ public class SamlPolicyTest extends TestCase {
             sreqMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_SOAPACTION, soapRequest.getSOAPAction());
 
             SOAPMessage soapMessage = soapRequest.getSOAPMessage();
+            servletApi.setSoapRequest(soapMessage, soapRequest.getSOAPAction());
+            HttpServletRequest mhreq = servletApi.getServletRequest();
+            MockHttpServletResponse mhres = new MockHttpServletResponse();
+            messageProcessingServlet = new SoapMessageProcessingServlet();
+            messageProcessingServlet.init(servletApi.getServletConfig());
+            messageProcessingServlet.doPost(mhreq, mhres);
+        }
+    }
+
+
+    public void testSamlSecurityDateRange() throws Exception {
+        for (int i = 0; i < soapRequests.length; i++) {
+            MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
+            SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
+            SamlSecurity assertion = new SamlSecurity();
+            assertion.setValidateValidityPeriod(true);
+            prepareServicePolicy(assertion);
+            servletApi.setPublishedService(publishedService);
+            Mock sreqMock = servletApi.getServletRequestMock();
+            sreqMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_SOAPACTION, soapRequest.getSOAPAction());
+
+            SOAPMessage soapMessage = soapRequest.getSOAPMessage();
+            Document samlHeader = getDocument("com/l7tech/common/security/saml/saml1.xml");
+            attachAssertionHeader(soapMessage, samlHeader);
+
             servletApi.setSoapRequest(soapMessage, soapRequest.getSOAPAction());
             HttpServletRequest mhreq = servletApi.getServletRequest();
             MockHttpServletResponse mhres = new MockHttpServletResponse();
