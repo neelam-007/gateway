@@ -71,8 +71,6 @@ public class XmlUtil {
 
     private static ThreadLocal documentBuilder = new ThreadLocal() {
         protected synchronized Object initialValue() {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
             try {
                 DocumentBuilder builder = dbf.newDocumentBuilder();
                 builder.setEntityResolver(SAFE_ENTITY_RESOLVER);
@@ -623,4 +621,8 @@ public class XmlUtil {
 
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
     public static final String CONTENT_LENGTH = "Content-Length";
+    private static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    static {
+        dbf.setNamespaceAware(true);
+    }
 }
