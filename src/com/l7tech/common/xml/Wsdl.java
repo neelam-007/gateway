@@ -477,7 +477,8 @@ public class Wsdl {
         boolean soapenv = false;
         for (Iterator i = uris.keySet().iterator(); i.hasNext();) {
             String uri = (String)i.next();
-            String prefix = (String)namespaceMap.get(uri);
+            String prefix = definition.getPrefix(uri);
+            if ( prefix == null ) prefix = (String)namespaceMap.get(uri);
 
             if (soapUris.contains(uri)) {
                 result.put(prefix, uri);
