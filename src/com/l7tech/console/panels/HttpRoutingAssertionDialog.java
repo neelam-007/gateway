@@ -169,23 +169,26 @@ public class HttpRoutingAssertionDialog extends JDialog {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.insets = new Insets(0, 0, 20, 10);
-        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        gridBagConstraints.anchor = GridBagConstraints.NORTH;
         credentialsPanel.add(getCredentialsPanel(), gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        gridBagConstraints.anchor = GridBagConstraints.NORTH;
         gridBagConstraints.insets = new Insets(0, 0, 20, 10);
         credentialsPanel.add(getSamlAssertionPanel(), gridBagConstraints);
 
-        gridBagConstraints = new GridBagConstraints();
+ /*       gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = GridBagConstraints.VERTICAL;
-        credentialsPanel.add(Box.createGlue(), gridBagConstraints);
+        credentialsPanel.add(Box.createVerticalGlue(), gridBagConstraints);
 
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = GridBagConstraints.VERTICAL;
+        credentialsPanel.add(Box.createVerticalGlue(), gridBagConstraints);*/
 
         mainPanel.add(credentialsPanel);
 
