@@ -1,9 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.action.PolicyIdentityViewAction;
-import com.l7tech.console.action.SavePolicyAction;
-import com.l7tech.console.action.ValidatePolicyAction;
-import com.l7tech.console.action.SavePolicyTemplateAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.tree.ServiceNode;
@@ -224,7 +221,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
             this.add(buttonSave);
             buttonSave.getAction().setEnabled(false);
-            buttonSave.addActionListener(new ActionListener() {
+            BaseAction ba = (BaseAction)buttonSave.getAction();
+            ba.addActionListener(new ActionListener() {
                 /**
                  * Invoked when an action occurs.
                  */
@@ -313,10 +311,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
     }
 
-    /**
-     * package private method that processes actions
-     * @param actions
-     */
     public void updateActions(Action[] actions) {
         for (int i = 0; i < actions.length; i++) {
             Action action = actions[i];

@@ -1,7 +1,6 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.console.event.WeakEventListenerList;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -24,7 +23,7 @@ import java.awt.event.ActionListener;
  */
 public abstract class BaseAction extends AbstractAction {
     public static final String LARGE_ICON = "LargeIcon";
-    private EventListenerList listenerList = new WeakEventListenerList();
+    private EventListenerList listenerList = new EventListenerList();
 
     /**
      * Default constructorr. Defines an <code>Action</code> object with
@@ -44,6 +43,27 @@ public abstract class BaseAction extends AbstractAction {
             putValue(Action.SMALL_ICON, new ImageIcon(img));
         }
     }
+
+    /**
+     * Adds an <code>ActionListener</code> to the button.
+     * @param l the <code>ActionListener</code> to be added
+     */
+    public void addActionListener(ActionListener l) {
+        listenerList.add(ActionListener.class, l);
+    }
+
+    /**
+     * Removes an <code>ActionListener</code> from the button.
+     * If the listener is the currently set <code>Action</code>
+     * for the button, then the <code>Action</code>
+     * is set to <code>null</code>.
+     *
+     * @param l the listener to be removed
+     */
+    public void removeActionListener(ActionListener l) {
+        listenerList.remove(ActionListener.class, l);
+    }
+
 
     /**
      * Notifies all listeners that have registered interest for
