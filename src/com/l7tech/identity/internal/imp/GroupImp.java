@@ -17,11 +17,13 @@ public class GroupImp extends NamedEntityImp implements Group {
     }
 
     public Collection getMembers() {
+        if (_members == null) _members = new new java.util.ArrayList();
         return _members;
     }
 
     public Collection getMemberHeaders() {
-        return null;
+        if (_memberHeaders == null) _memberHeaders = new new java.util.ArrayList();
+        return _memberHeaders;
     }
 
     public void setDescription(String description) {
@@ -30,4 +32,5 @@ public class GroupImp extends NamedEntityImp implements Group {
 
     private String _description;
     private Collection _members;
+    private Collection _memberHeaders;
 }

@@ -64,7 +64,8 @@ public class UserImp extends EntityImp implements User {
     }
 
     public Collection getGroupHeaders() {
-        return null;
+        if (_groupHeaders == null) _groupHeaders = new java.util.ArrayList();
+        return _groupHeaders;
     }
 
     public void setLogin(String login) {
@@ -123,4 +124,5 @@ public class UserImp extends EntityImp implements User {
     private Address _mailingAddress;
     private Address _billingAddress;
     private Collection _groups;
+    private Collection _groupHeaders;
 }
