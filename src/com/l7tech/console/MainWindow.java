@@ -76,6 +76,7 @@ public class MainWindow extends JFrame {
     private JMenu editMenu = null;
     private JMenu viewMenu = null;
     private JMenu helpMenu = null;
+    private JMenu newProviderSubMenu = null;
 
     private JMenuItem connectMenuItem = null;
     private JMenuItem disconnectMenuItem = null;
@@ -125,7 +126,8 @@ public class MainWindow extends JFrame {
     private ClientCredentialManager credentialManager;
     private Action newInernalUserAction;
     private Action newInernalGroupAction;
-    private Action newProviderAction;
+    private Action newLDAPProviderAction;
+    private Action newPKIProviderAction;
     private HomeAction homeAction = new HomeAction();
     Action monitorAction = null;
     private ClusterStatusWindow clusterStatusWindow = null;
@@ -315,7 +317,7 @@ public class MainWindow extends JFrame {
             editMenu.setFocusable(false);
             editMenu.setText(resapplication.getString("Edit"));
 
-            editMenu.add(getNewProviderAction());
+            editMenu.add(getNewProviderSubMenu());
             editMenu.add(getNewInternalGroupAction());
             editMenu.add(getNewInternalUserAction());
             editMenu.add(getFindAction());
@@ -338,6 +340,19 @@ public class MainWindow extends JFrame {
         return editMenu;
     }
 
+    private JMenu getNewProviderSubMenu() {
+        if (newProviderSubMenu == null) {
+            newProviderSubMenu = new JMenu();
+            newProviderSubMenu.setFocusable(false);
+
+            newProviderSubMenu.setText("Create Identity Provider");
+            newProviderSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/providers16.gif")));
+
+            newProviderSubMenu.add(getNewProviderAction());
+            newProviderSubMenu.add(getNewPKIProviderAction());
+        }
+        return newProviderSubMenu;
+    }
 
     /**
      * Return the viewMenu property value.
@@ -533,10 +548,40 @@ public class MainWindow extends JFrame {
         return newInernalGroupAction;
     }
 
+    private Action getNewPKIProviderAction() {
+         if (newPKIProviderAction != null) return newPKIProviderAction;
+         newPKIProviderAction = new NewPKIProviderAction(null) {
+             /**
+              * specify the resource name for this action
+              */
+             protected String iconResource() {
+                 return "com/l7tech/console/resources/providers16.gif";
+             }
+
+             ConnectionListener listener = new ConnectionListener() {
+                 public void onConnect(ConnectionEvent e) {
+                     setEnabled(true);
+                     final DefaultMutableTreeNode root =
+                       (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
+                     node = (AbstractTreeNode)root;
+                 }
+
+                 public void onDisconnect(ConnectionEvent e) {
+                     setEnabled(false);
+                 }
+             };
+
+             {
+                 MainWindow.this.addConnectionListener(listener);
+             }
+         };
+         newPKIProviderAction.setEnabled(false);
+         return newPKIProviderAction;
+     }
 
     private Action getNewProviderAction() {
-        if (newProviderAction != null) return newProviderAction;
-        newProviderAction = new NewProviderAction(null) {
+        if (newLDAPProviderAction != null) return newLDAPProviderAction;
+        newLDAPProviderAction = new NewProviderAction(null) {
             /**
              * specify the resource name for this action
              */
@@ -561,8 +606,8 @@ public class MainWindow extends JFrame {
                 MainWindow.this.addConnectionListener(listener);
             }
         };
-        newProviderAction.setEnabled(false);
-        return newProviderAction;
+        newLDAPProviderAction.setEnabled(false);
+        return newLDAPProviderAction;
     }
 
     /**
