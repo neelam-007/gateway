@@ -149,11 +149,11 @@ public class ClientCertManagerImp implements ClientCertManager {
             try {
                 HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
                 Session session = pc.getSession();
-                Transaction trans = session.beginTransaction();
+                //Transaction trans = session.beginTransaction();
                 // update existing data
                 session.update(currentdata);
-                trans.commit();
-                pc.close();
+                //trans.commit();
+                //pc.close();
             } catch (HibernateException e) {
                 String msg = "Hibernate exception revoking cert";
                 logger.log(Level.WARNING, msg, e);
@@ -220,9 +220,9 @@ public class ClientCertManagerImp implements ClientCertManager {
         }  catch (HibernateException e) {
             hibResults = Collections.EMPTY_LIST;
             logger.log(Level.WARNING, "hibernate error finding cert entry for " + user.getLogin(), e);
-        } finally {
+        } /*finally {
             context.close();
-        }
+        }*/
 
         switch (hibResults.size()) {
             case 0:

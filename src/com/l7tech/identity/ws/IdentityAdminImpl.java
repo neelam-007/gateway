@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import java.util.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.sql.SQLException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -344,13 +345,19 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     public void revokeCert(User user) throws RemoteException, UpdateException {
+        try {
+            PersistenceContext.getCurrent().beginTransaction();
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "exception begining transaction", e);
+        } catch (ObjectModelException e) {
+            logger.log(Level.WARNING, "exception begining transaction", e);
+        }
         // revoke the cert in internal CA
         ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
         manager.revokeUserCert(user);
         // internal users should have their password "revoked" along with their cert
         try {
-            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().
-                                                findByPrimaryKey(user.getProviderId());
+            IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(user.getProviderId());
             if (cfg.type().equals(IdentityProviderType.INTERNAL)) {
                 logger.finest("Cert revoked - invalidating user's password.");
                 // must change the password now
@@ -372,7 +379,14 @@ public class IdentityAdminImpl implements IdentityAdmin {
         } catch (FindException e) {
             throw new UpdateException("error resetting user's password", e);
         } finally {
-            endTransaction();
+            try {
+                PersistenceContext.getCurrent().flush();
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.log(Level.WARNING, "exception flushing context", e);
+            } catch (ObjectModelException e) {
+                logger.log(Level.WARNING, "exception flushing context", e);
+            }
         }
 
     }
@@ -408,6 +422,13 @@ public class IdentityAdminImpl implements IdentityAdmin {
                             " from Locator.getDefault().lookup:";
             logger.log(Level.SEVERE, msg, e);
             throw new RemoteException(msg + " " + e.getMessage(), e);
+        }
+        return identityProviderConfigManager;
+    }
+
+    private IdentityProviderConfigManager getIdProvCfgMan() throws RemoteException {
+        if (identityProviderConfigManager == null) {
+            initialiseConfigManager();
         }
         return identityProviderConfigManager;
     }
