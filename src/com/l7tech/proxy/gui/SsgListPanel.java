@@ -92,13 +92,14 @@ public class SsgListPanel extends JPanel {
         };
         ssgTable.getColumnModel().getColumn(0).setHeaderValue("Gateway");
         ssgTable.getColumnModel().getColumn(1).setHeaderValue("Proxy");
-        ssgTable.getColumnModel().getColumn(2).setHeaderValue("Username");
+        ssgTable.getColumnModel().getColumn(2).setHeaderValue("Type");
+        ssgTable.getColumnModel().getColumn(3).setHeaderValue("Username");
         ssgTable.getSelectionModel().setSelectionInterval(0, 0);
         ssgTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         ssgTable.getTableHeader().setReorderingAllowed(false);
         ssgTable.getTableHeader().addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                if (ssgTableModel.getRowCount() < 2)
+                if (ssgTableModel.getRowCount() < 3)
                     return;
                 int columnIndex = ssgTable.getColumnModel().getColumnIndexAtX(e.getX());
                 int column = ssgTable.convertColumnIndexToModel(columnIndex);

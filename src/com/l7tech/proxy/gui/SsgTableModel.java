@@ -23,6 +23,9 @@ import java.util.TreeSet;
  */
 public class SsgTableModel extends AbstractTableModel implements SsgListener {
     private static final Logger log = Logger.getLogger(SsgTableModel.class.getName());
+    private final String SSG_TYPE_FEDERATED = "Federated";
+    private final String SSG_TYPE_TRUSTED = "Trusted";
+
     private SsgManager ssgManager;
     private SortedSet model = null;
     private Object[] modelArray = null;
@@ -113,10 +116,24 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
     public void setSortOrder(int sortColumn, final boolean reverse) {
         this.sortColumn = sortColumn;
         this.sortReverse = reverse;
-        if (sortColumn == 2) {
+        if (sortColumn == 3) {
             setComparator(new SsgComparator(reverse) {
                 public int compare(Ssg ssg1, Ssg ssg2) {
                     return compareStringsThatMightBeNull(ssg1.getUsername(), ssg2.getUsername());
+                }
+            });
+        } else if (sortColumn == 2) {
+            setComparator(new SsgComparator(reverse) {
+                public int compare(Ssg ssg1, Ssg ssg2) {
+                    String ssgaType = SSG_TYPE_TRUSTED;
+                    String ssgbType = SSG_TYPE_TRUSTED;
+                    if(ssg1.getTrustedGatewayId() > 0) {
+                        ssgaType = SSG_TYPE_FEDERATED;
+                    }
+                    if(ssg2.getTrustedGatewayId() > 0) {
+                        ssgbType = SSG_TYPE_FEDERATED;
+                    }
+                    return compareStringsThatMightBeNull(ssgaType, ssgbType);
                 }
             });
         } else if (sortColumn == 0) {
@@ -174,6 +191,12 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
                 case 1:
                     return ssg.getLocalEndpoint();
                 case 2:
+                    if(ssg.getTrustedGatewayId() > 0) {
+                        return SSG_TYPE_FEDERATED;
+                    } else {
+                        return SSG_TYPE_TRUSTED;
+                    }
+                case 3:
                     ssg.addSsgListener(this); // make sure we're subscribed for updates
                     return ssg.getUsername() == null ? "" : ssg.getUsername();
                 default:
@@ -187,7 +210,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
     }
 
     public int getColumnCount() {
-        return 3;
+        return 4;
     }
 
     /** Get the SSG at the specified row, or null. */
