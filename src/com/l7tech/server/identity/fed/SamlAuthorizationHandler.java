@@ -53,6 +53,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             certSubjectDn = subjectCertificate.getSubjectDN().getName();
             certIssuerDn = subjectCertificate.getIssuerDN().getName();
         }
+
         final X509Certificate signerCertificate = assertion.getIssuerCertificate();
         String samlSignerDn = signerCertificate.getSubjectDN().getName();
 
@@ -68,7 +69,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                         samlSignerDn + "', which is not trusted";
                 if (samlSignerTrust == null) {
                     throw new BadCredentialsException(untrusted);
-                } else if (!samlSignerTrust.isTrustedForSigningSamlTokens()) {
+                } else if (!samlSignerTrust.isTrustedAsSamlIssuer()) {
                     throw new BadCredentialsException(untrusted + " for signing SAML tokens");
                 } else if (!certOidSet.contains(new Long(samlSignerTrust.getOid()))) {
                     throw new BadCredentialsException(untrusted + " for this Federated Identity Provider");
@@ -122,14 +123,6 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             }
         }
 
-
-        try {
-            assertion.verifyIssuerSignature();
-        } catch ( SignatureException e ) {
-            String msg = "SAML Assertion Signature verification failed";
-            logger.log( Level.WARNING, msg, e );
-            throw new BadCredentialsException(msg,e);
-        }
 
         // Look up by cert if there is one
         if (subjectCertificate != null && certSubjectDn != null)

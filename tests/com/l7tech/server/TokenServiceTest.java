@@ -171,13 +171,14 @@ public class TokenServiceTest extends TestCase {
         assertTrue("Obtained saml token must have non-empty assertion ID", token.getAssertionId().length() > 0);
         assertTrue("Obtained saml token must have subject certificate", token.getSubjectCertificate() != null);
         assertTrue("Obtained saml token must have issuer certificate", token.getIssuerCertificate() != null);
+        assertTrue("Obtained saml token must have embedded issuer certificate", token.hasEmbeddedIssuerSignature());
         assertEquals("subject certificate must match our client certificate",
                      token.getSubjectCertificate(),
                      subjectCertificate);
         assertEquals("issuer certificate must match the expected issuer certificate",
                      token.getIssuerCertificate(),
                      issuerCertificate);
-        token.verifyIssuerSignature();
+        token.verifyEmbeddedIssuerSignature();
     }
 
     private HttpServletRequest getFakeServletRequest() {
@@ -217,7 +218,7 @@ public class TokenServiceTest extends TestCase {
         assertFalse(saml.isHolderOfKey());
         assertFalse(saml.isSenderVouches());
         assertNull(saml.getConfirmationMethod());
-        saml.verifyIssuerSignature();
+        saml.verifyEmbeddedIssuerSignature();
 
         log.info("Issuer cert = " + saml.getIssuerCertificate());
         log.info("Subject cert = " + saml.getSubjectCertificate());

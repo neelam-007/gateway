@@ -780,6 +780,26 @@ public class SoapUtil {
     }
 
     /**
+     * Tests wheteher a given element is a SOAP Body element.
+     *
+     * @param element the element to test whether it is SOAP Body element
+     * @return true if SOAP Body, false otherwise
+     * @throws InvalidDocumentFormatException if the message containing
+     *         this element is not SOAP
+     */
+    public static boolean isBody(Element element) throws InvalidDocumentFormatException {
+        if (element == null) {
+            throw new IllegalArgumentException();
+        }
+        final Document doc = element.getOwnerDocument();
+        if (doc == null) {
+            throw new IllegalArgumentException("The element does not have Owner Document.");
+        }
+        return SoapUtil.getBodyElement(doc) !=null;
+    }
+
+
+    /**
      * There is no built-in provision in jax-rpc for adding a DOM document object (that
      * represents an XML document) as a SOAP body subelement in a SOAP message. The document
      * object needs to be 'unmarshalled' into a javax.xml.soap.SOAPElement object. In other

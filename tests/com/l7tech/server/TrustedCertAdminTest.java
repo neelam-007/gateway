@@ -161,7 +161,7 @@ public class TrustedCertAdminTest extends TestCase {
     public void testSaveCert() throws Exception {
         final TrustedCert tc = getTrustedCert();
         tc.setTrustedForSigningClientCerts(true);
-        tc.setTrustedForSigningSamlTokens(true);
+        tc.setTrustedAsSamlIssuer(true);
         tc.setTrustedForSigningServerCerts(true);
         tc.setTrustedForSsl(true);
         X509Certificate cert = tc.getCertificate();

@@ -57,7 +57,7 @@ public class CertUsagePanel extends WizardStepPanel {
                 TrustedCert tc = (TrustedCert) settings;
 
                 tc.setTrustedForSigningClientCerts(signingClientCertCheckBox.isSelected());
-                tc.setTrustedForSigningSamlTokens(signingSAMLTokenCheckBox.isSelected());
+                tc.setTrustedAsSamlIssuer(signingSAMLTokenCheckBox.isSelected());
                 tc.setTrustedForSigningServerCerts(signingServerCertCheckBox.isSelected());
                 tc.setTrustedForSsl(outboundSSLConnCheckBox.isSelected());
             }

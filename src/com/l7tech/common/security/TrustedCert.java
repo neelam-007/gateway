@@ -34,7 +34,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
         this.trustedForSsl = cert.trustedForSsl;
         this.trustedForSigningClientCerts = cert.trustedForSigningClientCerts;
         this.trustedForSigningServerCerts = cert.trustedForSigningServerCerts;
-        this.trustedForSigningSamlTokens = cert.trustedForSigningSamlTokens;
+        this.trustedAsSamlIssuer = cert.trustedAsSamlIssuer;
     }
 
     public static final String CERT_FACTORY_ALGORITHM = "X.509";
@@ -45,13 +45,13 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
      */
     public String getUsageDescription() {
         StringBuffer buf = new StringBuffer();
-        if (trustedForSsl && trustedForSigningClientCerts && trustedForSigningServerCerts && trustedForSigningSamlTokens ) {
+        if (trustedForSsl && trustedForSigningClientCerts && trustedForSigningServerCerts && trustedAsSamlIssuer ) {
             buf.append("All");
         } else {
             if (trustedForSsl) add(buf, "SSL");
             if (trustedForSigningServerCerts) add(buf, "Sign Server");
             if (trustedForSigningClientCerts) add(buf, "Sign Client");
-            if (trustedForSigningSamlTokens) add(buf, "Sign SAML");
+            if (trustedAsSamlIssuer) add(buf, "Sign SAML");
             if (buf.length() == 0) buf.append("None");
         }
         return buf.toString();
@@ -177,16 +177,16 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
      * Is this cert is trusted to sign SAML tokens?
      * @return <code>true</code> if this cert is trusted to sign SAML tokens, <code>false</code> otherwise.
      */
-    public boolean isTrustedForSigningSamlTokens() {
-        return trustedForSigningSamlTokens;
+    public boolean isTrustedAsSamlIssuer() {
+        return trustedAsSamlIssuer;
     }
 
     /**
      * Is this cert is trusted to sign SAML tokens?
-     * @param trustedForSigningSamlTokens <code>true</code> if this cert is trusted to sign SAML tokens, <code>false</code> otherwise.
+     * @param trustedAsSamlIssuer <code>true</code> if this cert is trusted to sign SAML tokens, <code>false</code> otherwise.
      */
-    public void setTrustedForSigningSamlTokens( boolean trustedForSigningSamlTokens ) {
-        this.trustedForSigningSamlTokens = trustedForSigningSamlTokens;
+    public void setTrustedAsSamlIssuer( boolean trustedAsSamlIssuer ) {
+        this.trustedAsSamlIssuer = trustedAsSamlIssuer;
     }
 
     /**
@@ -212,7 +212,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
         final TrustedCert trustedCert = (TrustedCert) o;
 
         if ( trustedForSigningClientCerts != trustedCert.trustedForSigningClientCerts ) return false;
-        if ( trustedForSigningSamlTokens != trustedCert.trustedForSigningSamlTokens ) return false;
+        if ( trustedAsSamlIssuer != trustedCert.trustedAsSamlIssuer ) return false;
         if ( trustedForSigningServerCerts != trustedCert.trustedForSigningServerCerts ) return false;
         if ( trustedForSsl != trustedCert.trustedForSsl ) return false;
         if ( certBase64 != null ? !certBase64.equals( trustedCert.certBase64 ) : trustedCert.certBase64 != null ) return false;
@@ -228,7 +228,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
         result = 29 * result + (trustedForSsl ? 1 : 0);
         result = 29 * result + (trustedForSigningClientCerts ? 1 : 0);
         result = 29 * result + (trustedForSigningServerCerts ? 1 : 0);
-        result = 29 * result + (trustedForSigningSamlTokens ? 1 : 0);
+        result = 29 * result + (trustedAsSamlIssuer ? 1 : 0);
         return result;
     }
 
@@ -239,5 +239,5 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
     private boolean trustedForSsl;
     private boolean trustedForSigningClientCerts;
     private boolean trustedForSigningServerCerts;
-    private boolean trustedForSigningSamlTokens;
+    private boolean trustedAsSamlIssuer;
 }

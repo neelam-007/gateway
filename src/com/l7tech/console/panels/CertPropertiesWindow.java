@@ -249,7 +249,7 @@ public class CertPropertiesWindow extends JDialog {
             signingClientCertCheckBox.setSelected(true);
         }
 
-        if (trustedCert.isTrustedForSigningSamlTokens()) {
+        if (trustedCert.isTrustedAsSamlIssuer()) {
             signingSAMLTokenCheckBox.setSelected(true);
         }
 
@@ -289,7 +289,7 @@ public class CertPropertiesWindow extends JDialog {
         if (tc != null) {
             tc.setName(certNameTextField.getText().trim());
             tc.setTrustedForSigningClientCerts(signingClientCertCheckBox.isSelected());
-            tc.setTrustedForSigningSamlTokens(signingSAMLTokenCheckBox.isSelected());
+            tc.setTrustedAsSamlIssuer(signingSAMLTokenCheckBox.isSelected());
             tc.setTrustedForSigningServerCerts(signingServerCertCheckBox.isSelected());
             tc.setTrustedForSsl(outboundSSLConnCheckBox.isSelected());
         }

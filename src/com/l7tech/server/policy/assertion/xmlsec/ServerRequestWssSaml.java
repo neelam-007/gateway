@@ -109,7 +109,8 @@ public class ServerRequestWssSaml implements ServerAssertion {
                 return AssertionStatus.AUTH_REQUIRED;
             }
             Collection validateResults = new ArrayList();
-            assertionValidate.validate(xmlKnob.getDocumentReadOnly(), wssResults, validateResults);
+            LoginCredentials credentials = context.getCredentials();
+            assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults);
             if (validateResults.size() > 0) {
                 StringBuffer sb = new StringBuffer();
                 boolean firstPass = true;

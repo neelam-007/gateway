@@ -19,7 +19,6 @@ public interface SamlSecurityToken extends SigningSecurityToken {
     ConfirmationMethod BEARER_TOKEN = new ConfirmationMethod("Bearer token");
 
     X509Certificate getSubjectCertificate();
-    X509Certificate getIssuerCertificate();
 
     boolean isHolderOfKey();
 
@@ -37,8 +36,10 @@ public interface SamlSecurityToken extends SigningSecurityToken {
 
     boolean hasEmbeddedIssuerSignature();
 
-    /** Check signature of this saml assertion.  May only be called if isSigned() returns true. */
-    void verifyIssuerSignature() throws SignatureException;
+    /**
+     * Check embededded signature of this saml assertion.  May only be called if {@link #hasEmbeddedIssuerSignature()}  returns true.
+     * */
+    void verifyEmbeddedIssuerSignature() throws SignatureException;
 
     /** @return the name identifier format, or null if there wasn't one. {@see SamlConstants} */
     String getNameIdentifierFormat();
@@ -62,11 +63,6 @@ public interface SamlSecurityToken extends SigningSecurityToken {
      *         seconds.
      */
     boolean isExpiringSoon(int preexpireSec);
-
-    /**
-     * @return the certificate that was used to sign one or more elements of the message that contained this token
-     */
-    X509Certificate getMessageSigningCertificate();
 
     public static final class ConfirmationMethod {
         private final String name;

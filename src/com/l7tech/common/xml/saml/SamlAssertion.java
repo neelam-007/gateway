@@ -45,7 +45,7 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
     private final AssertionType assertion;
 
     private Element assertionElement = null;
-    private boolean isSigned = false;
+    private boolean hasEmbeddedSignature = false;
     private ConfirmationMethod confirmationMethod = null;
     private X509Certificate subjectCertificate = null;
     private X509Certificate issuerCertificate = null;
@@ -163,7 +163,7 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
             // Check if assertion is signed
             Element signature = XmlUtil.findOnlyOneChildElementByName(assertionElement, SoapUtil.DIGSIG_URI, "Signature");
             if (signature != null) {
-                isSigned = true;
+                hasEmbeddedSignature = true;
                 // Extract the issuer certificate
                 Element keyinfo = XmlUtil.findOnlyOneChildElementByName(signature, SoapUtil.DIGSIG_URI, "KeyInfo");
                 if (keyinfo == null) throw new SAXException("SAML issuer signature has no KeyInfo");
@@ -195,7 +195,7 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
     }
 
     public boolean hasEmbeddedIssuerSignature() {
-        return isSigned;
+        return hasEmbeddedSignature;
     }
 
     public X509Certificate getSubjectCertificate() {
@@ -220,13 +220,19 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
             return subjectCertificate;
         } else if (isSenderVouches()) {
             return issuerCertificate;
-        } else {
-            return null;
         }
+        return null;
     }
 
     public X509Certificate getIssuerCertificate() {
         return issuerCertificate;
+    }
+
+    public void setIssuerCertificate(X509Certificate issuerCertificate) {
+        if (!isSenderVouches()) {
+            throw new IllegalStateException("Can't set the issuer certificate for non Sender-Vouches assertion");
+        }
+        this.issuerCertificate = issuerCertificate;
     }
 
     public Element asElement() {
@@ -252,8 +258,8 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
         public ResolveIdException(String s) { super(s); }
     }
 
-    public void verifyIssuerSignature() throws SignatureException {
-        if (!isSigned) throw new IllegalStateException("May not verify signature; this assertion is not signed");
+    public void verifyEmbeddedIssuerSignature() throws SignatureException {
+        if (!hasEmbeddedSignature) throw new IllegalStateException("May not verify signature; this assertion is not signed");
 
         try {
             Element signature = XmlUtil.findOnlyOneChildElementByName(assertionElement, SoapUtil.DIGSIG_URI, "Signature");
