@@ -125,7 +125,7 @@ public class WssDecoratorImpl implements WssDecorator {
         template.setPrefix("ds");
         for (int i = 0; i < elementsToSign.length; i++) {
             Reference ref = template.createReference("#" + sigedIds[i]);
-            ref.addTransform(Transform.ENVELOPED);
+            // todo, add ref.addTransform(Transform.ENVELOPED); only when necessary
             ref.addTransform(Transform.W3CC14N2);
             template.addReference(ref);
         }
