@@ -38,7 +38,7 @@ if [ "$option" = "getFromRelease" -o "$option" = "getToRelease" ]; then
   # mapFile for storing buildNumber-versionNumber map
   mapFile="/ssg/bin/buildVersion.txt"
   if [ ! -e $mapFile -o -d $mapFile ]; then
-    echo "WARNING: Missing <$mapFile> - unable to derive the installed SSG version number"
+    echo "WARNING: Not applicable if there's no SSG version specific upgrade srcipt to be run - Missing <$mapFile> - unable to derive the installed SSG version number"
     exit 1
   fi
 
