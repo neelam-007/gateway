@@ -76,6 +76,7 @@ public class WssDecoratorTest extends TestCase {
                                   TestDocuments.getDotNetServerCertificate(),
                                   TestDocuments.getEttkClientCertificate(),
                                   TestDocuments.getEttkClientPrivateKey(),
+                                  false,
                                   new Element[0],
                                   new Element[0]);
 
@@ -99,13 +100,14 @@ public class WssDecoratorTest extends TestCase {
                                   TestDocuments.getDotNetServerCertificate(),
                                   TestDocuments.getEttkClientCertificate(),
                                   TestDocuments.getEttkClientPrivateKey(),
+                                  false,
                                   new Element[0],
                                   new Element[0]);
 
         log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
     }
 
-    public void testSingleEncryptionMultipleSignature() throws Exception {
+    public void testSigningOnly() throws Exception {
         Context c = new Context();
         WssDecorator decorator = new WssDecoratorImpl();
 
@@ -115,6 +117,41 @@ public class WssDecoratorTest extends TestCase {
                                   TestDocuments.getDotNetServerCertificate(),
                                   TestDocuments.getEttkClientCertificate(),
                                   TestDocuments.getEttkClientPrivateKey(),
+                                  true,
+                                  new Element[0],
+                                  new Element[] { c.message.getDocumentElement() });
+
+        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+    }
+
+    public void testEncryptionOnly() throws Exception {
+        Context c = new Context();
+        WssDecorator decorator = new WssDecoratorImpl();
+
+        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
+
+        decorator.decorateMessage(c.message,
+                                  TestDocuments.getDotNetServerCertificate(),
+                                  TestDocuments.getEttkClientCertificate(),
+                                  TestDocuments.getEttkClientPrivateKey(),
+                                  false,
+                                  new Element[] { c.body },
+                                  new Element[0]);
+
+        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+    }
+
+    public void testSingleSignatureMultipleEncryption() throws Exception {
+        Context c = new Context();
+        WssDecorator decorator = new WssDecoratorImpl();
+
+        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
+
+        decorator.decorateMessage(c.message,
+                                  TestDocuments.getDotNetServerCertificate(),
+                                  TestDocuments.getEttkClientCertificate(),
+                                  TestDocuments.getEttkClientPrivateKey(),
+                                  true,
                                   new Element[] { c.productid,  c.accountid },
                                   new Element[] { c.body });
 
@@ -131,6 +168,7 @@ public class WssDecoratorTest extends TestCase {
                                   TestDocuments.getDotNetServerCertificate(),
                                   TestDocuments.getEttkClientCertificate(),
                                   TestDocuments.getEttkClientPrivateKey(),
+                                  false,
                                   new Element[] { c.body },
                                   new Element[] { c.message.getDocumentElement() });
 

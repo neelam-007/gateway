@@ -27,6 +27,7 @@ public interface WssDecorator {
                          X509Certificate recipientCertificate,
                          X509Certificate senderCertificate,
                          PrivateKey senderPrivateKey,
+                         boolean signTimestamp,
                          Element[] elementsToEncrypt,
                          Element[] elementsToSign)
             throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException;

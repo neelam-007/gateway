@@ -36,10 +36,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.io.IOException;
 
 /**
@@ -76,6 +73,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                 X509Certificate recipientCertificate,
                                 X509Certificate senderCertificate,
                                 PrivateKey senderPrivateKey,
+                                boolean signTimestamp,
                                 Element[] elementsToEncrypt,
                                 Element[] elementsToSign)
             throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException
@@ -84,12 +82,16 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element securityHeader = createSecurityHeader(message);
 
-        addTimestamp(securityHeader);
+        Element timestamp = addTimestamp(securityHeader);
+        if (signTimestamp) {
+            List signList = new ArrayList(Arrays.asList(elementsToSign));
+            signList.add(0, timestamp);
+            elementsToSign = (Element[])signList.toArray(new Element[0]);
+        }
 
         if (senderCertificate != null)
             addX509BinarySecurityToken(securityHeader, senderCertificate);
 
-        // todo encrypt
         addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt);
 
         // todo sign
@@ -210,8 +212,6 @@ public class WssDecoratorImpl implements WssDecorator {
             dataReference.setPrefix(xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement));
             referenceList.appendChild(dataReference);
-
-            // todo go and encrypt this element now
         }
 
         return encryptedKey;
