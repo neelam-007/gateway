@@ -29,10 +29,16 @@ public class ServerRemoteIpRange implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(Request req, Response res) throws IOException, PolicyAssertionException {
-        // todo
-        // check whether request's remote ip is in range
-        // decide if that good or not based on rule
-        return AssertionStatus.NONE;
+        // get remote address
+        String remoteAddress = (String)req.getParameter(Request.PARAM_REMOTE_ADDR);
+        if (!RemoteIpRange.checkIPAddressFormat(remoteAddress)) {
+            logger.warning("The remote address " + remoteAddress + " is null or not in expected format.");
+            return AssertionStatus.FAILED;
+        }
+        // check assertion with this address
+        if (assert(remoteAddress)) {
+            return AssertionStatus.NONE;
+        } else return AssertionStatus.FAILED;
     }
 
     /**
@@ -56,7 +62,7 @@ public class ServerRemoteIpRange implements ServerAssertion {
 
         if (!rule.isAllowRange() && isInRange) {
             logger.info("This assertion is failing because address " + addressToCheck +
-                        " is in assertion range " + serializedRange);
+                        " is in assertion range " + serializedRange + " (exclusion range)");
             return false;
         }
         logger.finest("Requestor's address (" + addressToCheck + ") is accepted.");
