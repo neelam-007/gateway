@@ -11,6 +11,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
@@ -51,16 +52,22 @@ class JmsRequestHandler {
      */
     public void onMessage( JmsReceiver receiver, final JmsBag bag, final javax.jms.Message jmsRequest ) throws JmsRuntimeException {
 
+        Message jmsResponse = null;
+
         try {
             InputStream requestStream = null;
             ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
             if ( jmsRequest instanceof TextMessage ) {
                 requestStream = new ByteArrayInputStream(((TextMessage)jmsRequest).getText().getBytes("UTF-8"));
+                jmsResponse = bag.getSession().createBytesMessage();
+
             } else if ( jmsRequest instanceof BytesMessage ) {
                 requestStream = new BytesMessageInputStream((BytesMessage)jmsRequest);
                 String requestCtype = jmsRequest.getStringProperty("Content-Type");
                 if (requestCtype != null)
                     ctype = ContentTypeHeader.parseValue(requestCtype);
+                jmsResponse = bag.getSession().createBytesMessage();
+
             } else {
                 String msg = "Received message of unsupported type " + jmsRequest.getClass().getName() +
                              " on " + receiver.getInboundRequestEndpoint().getDestinationName() +
@@ -81,7 +88,6 @@ class JmsRequestHandler {
                                                                                   new com.l7tech.common.message.Message());
             AssertionStatus status = AssertionStatus.UNDEFINED;
 
-            Message jmsResponse = null;
             String faultMessage = null;
             String faultCode = null;
 
@@ -89,11 +95,19 @@ class JmsRequestHandler {
                 // WebSphere MQ doesn't like this with AUTO_ACKNOWLEDGE
                 // jmsRequest.acknowledge(); // TODO parameterize acknowledge semantics?
 
+                if( jmsRequest.getJMSReplyTo() != null ||
+                        jmsRequest.getJMSCorrelationID() != null ||
+                        jmsRequest.getJMSCorrelationIDAsBytes().length > 0) {
+                    context.setReplyExpected(true);
+                } else {
+                    context.setReplyExpected(false);
+                }
+
                 InputStream responseStream = null;
                 try {
                     status = messageProcessor.processMessage(context);
                     _logger.finest("Policy resulted in status " + status);
-                    responseStream = context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream();
+                    responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocument(false)).getBytes());
                 } catch ( PolicyVersionException pve ) {
                     String msg1 = "Request referred to an outdated version of policy";
                     _logger.log( Level.INFO, msg1 );
