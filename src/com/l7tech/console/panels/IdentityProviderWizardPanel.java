@@ -632,12 +632,14 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             g.setName(h.getName());
             g.getName();
             g.setProviderId(ip.getConfig().getOid());
+            g.setUniqueIdentifier(h.getStrId());
             return g;
         } else if (EntityType.USER.equals(h.getType())) {
             UserBean u = new UserBean();
             u.setName(h.getName());
             u.setLogin(h.getName());
             u.setProviderId(ip.getConfig().getOid());
+            u.setUniqueIdentifier(h.getStrId());
             return u;
         }
         throw new IllegalArgumentException("Unknown type " + h.getType());
