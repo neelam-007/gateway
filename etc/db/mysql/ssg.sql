@@ -281,7 +281,7 @@ DROP TABLE IF EXISTS jms_endpoint;
 CREATE TABLE jms_endpoint(
   objectid bigint NOT NULL default '0',
   version integer NOT NULL default '0',
-  connection_objectid bigint NOT NULL default '0',
+  connection_oid bigint NOT NULL default '0',
   name varchar(128) NOT NULL default '',
   destination_name varchar(128) NOT NULL default '',
   reply_type integer default '0',
