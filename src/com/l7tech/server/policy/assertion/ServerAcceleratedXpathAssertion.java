@@ -117,5 +117,6 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
             if (tarariContext != null)
                 tarariContext.remove(expr);
         }
+        super.finalize();
     }
 }
