@@ -195,14 +195,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     /**
      * Attach cookies received by the client to the protected service
      * @param client the http client sender
-     * @param transportMetadata the transport metadat
-     * @throws IllegalArgumentException thrown if transportMetadata is not
-     *                                  <code>HttpTransportMetadata</code> type
+     * @param transportMetadata the transport metadata
      */
-    private void attachCookies(HttpClient client, TransportMetadata transportMetadata)
-      throws IllegalArgumentException {
+    private void attachCookies(HttpClient client, TransportMetadata transportMetadata)  {
         if (!(transportMetadata instanceof HttpTransportMetadata)) {
-            throw new IllegalArgumentException(HttpTransportMetadata.class +" expected");
+            return;
         }
         HttpTransportMetadata httpTransportMetaData = (HttpTransportMetadata)transportMetadata;
         HttpServletRequest req = httpTransportMetaData.getRequest();
