@@ -90,6 +90,7 @@ public class MessageProcessor {
             if (wssOutput.getUndecoratedMessage() != null) {
                 req.setDocument(wssOutput.getUndecoratedMessage());
             }
+            req.setWssProcessorOutput(wssOutput);
             logger.finest("WSS processing of request complete.");
         }
         
