@@ -23,7 +23,7 @@ public interface ServerAssertion {
      * @param request       (In/Out) The request to check.  May be modified by processing.
      * @param response      (Out) The response to send back.  May be replaced during processing.
      * @return AssertionStatus.NONE if this Assertion did its business successfully; otherwise, some error code
-     * @throws PolicyAssertionException if processing should not continue due to a serious error
+     * @throws PolicyAssertionException something is wrong in the policy dont throw this if there is an issue with the request or the response
      */
     AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException;
 }
