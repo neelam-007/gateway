@@ -10,9 +10,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
-import com.l7tech.xmlsig.SoapMsgSigner;
-import com.l7tech.xmlsig.SignatureNotFoundException;
-import com.l7tech.xmlsig.InvalidSignatureException;
+import com.l7tech.xmlsig.*;
 import com.l7tech.identity.User;
 import com.l7tech.xmlenc.*;
 import com.ibm.xml.dsig.XSignatureException;
@@ -53,87 +51,46 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        // try to get credentials out of the digital signature
-        Document soapmsg = null;
-        try {
-            soapmsg = ((SoapRequest)request).getDocument();
-        } catch (SAXException e) {
-            logger.log(Level.SEVERE, "could not get request's xml document", e);
-            response.setAuthenticationMissing(true);
-            throw new PolicyAssertionException("cannot extract name from cert", e);
-        }
-        SoapMsgSigner dsigHelper = new SoapMsgSigner();
-        X509Certificate clientCert = null;
-        try {
-            clientCert = dsigHelper.validateSignature(soapmsg);
-        } catch (SignatureNotFoundException e) {
-            // no digital signature, return null
-            logger.log(Level.WARNING, e.getMessage(), e);
-            logger.info(((SoapRequest)request).getRequestXml());
-            response.setAuthenticationMissing(true);
-            throw new PolicyAssertionException(e.getMessage(), e);
-        } catch (InvalidSignatureException e) {
-            // bad signature !
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            logger.info(((SoapRequest)request).getRequestXml());
-            response.setAuthenticationMissing(true);
-            throw new PolicyAssertionException(e.getMessage(), e);
-        } catch (XSignatureException e) {
-            response.setAuthenticationMissing(true);
-            throw new PolicyAssertionException(e.getMessage(), e);
+        // get the document
+        Document soapmsg = extractDocumentFromRequest(request);
+
+        // get the session
+        Session xmlsecSession = getXmlSecSession(soapmsg);
+
+        // check validity of the session
+        if (!checkSeqNrValidity(soapmsg, xmlsecSession)) {
+            return AssertionStatus.FALSIFIED;
         }
 
-        // Get DN from cert, ie "CN=testuser, OU=ssg.example.com"
-        // String certCN = clientCert.getSubjectDN().getName();
-        // fla changed this to:
+        // validate signature
+        X509Certificate cert;
+        try {
+            cert = validateSignature(soapmsg);
+        } catch (PolicyAssertionException e) {
+            response.setAuthenticationMissing(true);
+            throw e;
+        }
+
+        // upload cert as credentials
         String certCN = null;
         try {
-            X500Name x500name = new X500Name( clientCert.getSubjectX500Principal().getName() );
+            X500Name x500name = new X500Name(cert.getSubjectX500Principal().getName());
             certCN = x500name.getCommonName();
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             response.setAuthenticationMissing(true);
             throw new PolicyAssertionException("cannot extract name from cert", e);
         }
-
         logger.log(Level.INFO, "cert extracted from digital signature for user " + certCN);
-
         User u = new User();
         u.setLogin(certCN);
         request.setPrincipalCredentials(new PrincipalCredentials(u, null, CredentialFormat.CLIENTCERT, null, clientCert));
 
+
         // if we must also do xml-encryption,
         if (data.isEncryption()) {
-
-            // look for the "keyname" which should contain the xml session id
-            String keyname = null;
             try {
-                keyname = XmlMangler.getKeyName(soapmsg);
-            } catch (NullPointerException e) {
-                // eat this, the following statement will catch it
-            }
-            if (keyname == null || keyname.length() < 1) {
-                String msg = "Could not extract key info from document's header";
-                logger.severe(msg);
-                throw new PolicyAssertionException(msg);
-            }
-
-            // retrieve the session id
-            Session xmlsession = null;
-            try {
-                xmlsession = SessionManager.getInstance().getSession(Long.parseLong(keyname));
-            } catch (SessionNotFoundException e) {
-                String msg = "Exception finding session with id=" + keyname;
-                logger.log(Level.SEVERE, msg, e);
-                throw new PolicyAssertionException(msg, e);
-            } catch (NumberFormatException e) {
-                String msg = "Session id is not long value : " + keyname;
-                logger.log(Level.SEVERE, msg, e);
-                throw new PolicyAssertionException(msg, e);
-            }
-
-            try {
-                XmlMangler.decryptXml(soapmsg, new AesKey(xmlsession.getKeyReq()));
+                XmlMangler.decryptXml(soapmsg, new AesKey(xmlsecSession.getKeyReq()));
             } catch (GeneralSecurityException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
@@ -155,6 +112,83 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private X509Certificate validateSignature(Document soapmsg) throws PolicyAssertionException {
+        SoapMsgSigner dsigHelper = new SoapMsgSigner();
+        X509Certificate clientCert = null;
+        try {
+            clientCert = dsigHelper.validateSignature(soapmsg);
+        } catch (SignatureNotFoundException e) {
+            // no digital signature, return null
+            logger.log(Level.WARNING, e.getMessage(), e);
+            throw new PolicyAssertionException(e.getMessage(), e);
+        } catch (InvalidSignatureException e) {
+            // bad signature !
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new PolicyAssertionException(e.getMessage(), e);
+        } catch (XSignatureException e) {
+            throw new PolicyAssertionException(e.getMessage(), e);
+        }
+    }
+
+    private boolean checkSeqNrValidity(Document soapmsg, Session session) {
+        long seqNr;
+        try {
+            seqNr = SecureConversationTokenHandler.readSeqNrFromDocument(soapmsg);
+        } catch (XMLSecurityElementNotFoundException e) {
+            logger.severe("request contains no sequence number");
+            return false;
+        }
+        if (seqNr < session.getHighestSeq()) {
+            logger.severe("sequence number too low (" + seqNr + "). someone is trying replay attack?");
+            return false;
+        }
+        return true;
+    }
+
+    private Session getXmlSecSession(Document soapmsg) throws PolicyAssertionException {
+        // get the session id from the security context
+        long sessionID = 0;
+        try {
+            sessionID = SecureConversationTokenHandler.readSessIdFromDocument(soapmsg);
+        } catch (XMLSecurityElementNotFoundException e) {
+            String msg = "could not extract session id from msg.";
+            logger.log(Level.SEVERE, msg, e);
+            throw new PolicyAssertionException(msg);
+        }
+
+        // retrieve the session
+        Session xmlsession = null;
+        try {
+            xmlsession = SessionManager.getInstance().getSession(sessionID);
+        } catch (SessionNotFoundException e) {
+            String msg = "Exception finding session with id=" + sessionID;
+            logger.log(Level.SEVERE, msg, e);
+            throw new PolicyAssertionException(msg, e);
+        } catch (NumberFormatException e) {
+            String msg = "Session id is not long value : " + sessionID;
+            logger.log(Level.SEVERE, msg, e);
+            throw new PolicyAssertionException(msg, e);
+        }
+
+        return xmlsession;
+    }
+
+    private Document extractDocumentFromRequest(Request req) throws PolicyAssertionException {
+        // try to get credentials out of the digital signature
+        Document soapmsg = null;
+        try {
+            soapmsg = ((SoapRequest)req).getDocument();
+        } catch (SAXException e) {
+            logger.log(Level.SEVERE, "could not get request's xml document", e);
+            throw new PolicyAssertionException("cannot extract name from cert", e);
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "could not get request's xml document", e);
+            throw new PolicyAssertionException("cannot extract name from cert", e);
+        }
+
+        return soapmsg;
     }
 
     protected XmlRequestSecurity data;
