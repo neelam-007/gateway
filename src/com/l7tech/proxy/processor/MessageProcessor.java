@@ -521,6 +521,7 @@ public class MessageProcessor {
 
         try {
             postMethod = new PostMethod(url.toString());
+            postMethod.setDoAuthentication(false); // no auth unless policy says so (Bug #1385)
             setAuthenticationState(req, state, postMethod);
             postMethod.addRequestHeader("SOAPAction", req.getPolicyAttachmentKey().getSoapAction());
             postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, req.getOriginalUrl().toString());
@@ -565,11 +566,6 @@ public class MessageProcessor {
                 if (contentLength > Integer.MAX_VALUE)
                     throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
                 postMethod.setRequestContentLength((int)contentLength);
-            } else {
-                // For singlepart messages, do the following:
-                // - do not set a content-lenght, to allow HTTP client to buffer the request
-                // - allow HTTP client to respond to HTTP challenges automatically
-                postMethod.setDoAuthentication(true);
             }
 
             final InputStream bodyInputStream = req.getEntireMessageBody();
