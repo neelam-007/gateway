@@ -171,7 +171,7 @@ public class StubDataStore {
 
     private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
       throws IOException, WSDLException, MalformedURLException {
-        String path = "tests/com/l7tech/service/StockQuoteService.wsdl";
+        String path = "tests/com/l7tech/service/resources/StockQuoteService.wsdl";
         File file = new File(path);
         Wsdl wsdl = Wsdl.newInstance(null, new FileReader(file));
         PublishedService service = new PublishedService();
