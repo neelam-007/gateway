@@ -225,6 +225,8 @@ public class Preferences extends PropertyChangeSupport {
         InputStream in = null;
 
         try {
+            System.setProperty("org.apache.commons.logging.Log",
+                              "org.apache.commons.logging.impl.Jdk14Logger");
             ClassLoader cl = getClass().getClassLoader();
             in = cl.getResourceAsStream("com/l7tech/console/resources/logging.properties");
             if (in !=null) {
