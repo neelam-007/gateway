@@ -34,9 +34,8 @@ public class WspReaderTest extends TestCase {
     }
 
     public void testParseWsp() throws IOException {
-        WspReader wspReader = new WspReader();
         InputStream wspStream = cl.getResourceAsStream(SIMPLE_POLICY);
-        Assertion policy = wspReader.parse(wspStream);
+        Assertion policy = WspReader.parse(wspStream);
         assertTrue(policy != null);
         assertTrue(policy instanceof ExactlyOneAssertion);
         ExactlyOneAssertion eoa = (ExactlyOneAssertion)policy;
