@@ -20,7 +20,9 @@ public class RequestState implements Serializable {
     public static final RequestState IDLE                   = new RequestState(n++, "Idle");
     public static final RequestState CLIENT_RECEIVING_WAIT  = new RequestState(n++, "Waiting for request from client");
     public static final RequestState CLIENT_RECEIVING_READ  = new RequestState(n++, "Receiving request from client");
+    public static final RequestState SSG_PROCESSING_WAIT    = new RequestState(n++, "Waiting to process policy");
     public static final RequestState SSG_PROCESSING         = new RequestState(n++, "Processing policy");
+    public static final RequestState SSG_PROCESSING_DONE    = new RequestState(n++, "Policy processed");
     public static final RequestState SERVICE_SENDING_WAIT   = new RequestState(n++, "Waiting to send request to service");
     public static final RequestState SERVICE_SENDING_WRITE  = new RequestState(n++, "Sending request to service");
     public static final RequestState SERVICE_RECEIVING_WAIT = new RequestState(n++, "Waiting for service to respond");
@@ -31,7 +33,9 @@ public class RequestState implements Serializable {
     private static final RequestState[] VALUES = { IDLE,
                                                    CLIENT_RECEIVING_WAIT,
                                                    CLIENT_RECEIVING_READ,
+                                                   SSG_PROCESSING_WAIT,
                                                    SSG_PROCESSING,
+                                                   SSG_PROCESSING_DONE,
                                                    SERVICE_SENDING_WAIT,
                                                    SERVICE_SENDING_WRITE,
                                                    SERVICE_RECEIVING_WAIT,
