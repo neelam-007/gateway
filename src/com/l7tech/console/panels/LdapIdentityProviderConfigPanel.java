@@ -46,7 +46,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     }
 
     public String getDescription() {
-        return "Enter the configuration data of the LDAP Identity Provider. The fields marked with '*' are mandatory. You are allowed to go to next step only when all the mandatory fields are filled. You can test the LDAP configuration by pressing the Test button.";
+        return  "This Wizard allow you to configure an LDAP Identity Provider. Fields " +
+                "marked with an asterisk \"*\" are required. Click [Test] at any time to " +
+                "test the LDAP configuration.";
     }
 
     /** @return the wizard step label    */
