@@ -119,9 +119,9 @@ public class ServiceAdminImpl implements ServiceAdmin {
                 if ( manager != null && oid != PublishedService.DEFAULT_OID ) {
                     PublishedService newService = manager.findByPrimaryKey( service.getOid() );
                     if ( exists )
-                        manager.fireUpdated( newService );
+                        manager.postUpdate( newService );
                     else
-                        manager.fireCreated( newService );
+                        manager.postCreate( newService );
                 }
             } catch ( TransactionException te ) {
                 logger.log( Level.WARNING, te.getMessage(), te );
@@ -155,7 +155,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
                 endTransaction();
 
                 if ( manager != null && service != null ) {
-                    manager.fireDeleted( service );
+                    manager.postDelete( service );
                 }
             } catch ( TransactionException te ) {
                 logger.log( Level.WARNING, te.getMessage(), te );
