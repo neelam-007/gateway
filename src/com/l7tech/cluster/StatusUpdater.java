@@ -1,16 +1,20 @@
 package com.l7tech.cluster;
 
 import com.l7tech.logging.LogManager;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.util.UptimeMonitor;
 import com.l7tech.common.util.UptimeMetrics;
+import com.l7tech.common.util.Locator;
+import com.l7tech.service.ServiceManager;
+import com.l7tech.service.ServiceStatistics;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Collection;
+import java.util.Iterator;
 import java.sql.SQLException;
 import java.io.FileNotFoundException;
+
 
 /**
  * Thread that updates server status and service usage statistics.
@@ -22,7 +26,7 @@ import java.io.FileNotFoundException;
  * User: flascell<br/>
  * Date: Dec 18, 2003<br/>
  * $Id$
- * 
+ *
  */
 public class StatusUpdater extends Thread {
     public static void initialize() {
@@ -114,7 +118,36 @@ public class StatusUpdater extends Thread {
     }
 
     public void updateServiceUsage() {
-        // todo
+        // get service usage from local cache
+        ServiceManager serviceManager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+        Collection stats = null;
+        try {
+            stats = serviceManager.getAllServiceStatistics();
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, "could not update service usage");
+        }
+        if (stats != null) {
+            try {
+                serviceUsageManager.clear();
+            } catch (DeleteException e) {
+                logger.log(Level.SEVERE, "could not update service usage");
+                return;
+            }
+            for (Iterator i = stats.iterator(); i.hasNext();) {
+                ServiceStatistics statobj = (ServiceStatistics)i.next();
+                ServiceUsage sa = new ServiceUsage();
+                sa.setServiceid(statobj.getServiceOid());
+                sa.setNodeid(clusterInfoManager.thisNodeId());
+                sa.setAuthorized(statobj.getAuthorizedRequestCount());
+                sa.setCompleted(statobj.getCompletedRequestCount());
+                sa.setRequests(statobj.getAttemptedRequestCount());
+                try {
+                    serviceUsageManager.record(sa);
+                } catch (UpdateException e) {
+                    logger.log(Level.SEVERE, "could not update service usage");
+                }
+            }
+        }
     }
 
     public void die() {
@@ -123,6 +156,7 @@ public class StatusUpdater extends Thread {
 
     private boolean die = false;
     private final ClusterInfoManager clusterInfoManager = new ClusterInfoManager();
+    private final ServiceUsageManager serviceUsageManager = new ServiceUsageManager();
 
     private static final StatusUpdater updater = new StatusUpdater();
     private final Logger logger = LogManager.getInstance().getSystemLogger();
