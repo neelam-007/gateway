@@ -500,11 +500,10 @@
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <include name="com/l7tech/identity/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
-                <exclude name="com/l7tech/common/http/**/*"/>
+                <exclude name="com/l7tech/common/http/prov/apache/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/**/*"/>
                 <exclude name="com/l7tech/common/security/saml/**/*"/>
                 <exclude name="com/l7tech/common/message/**/*"/>
-                <exclude name="com/l7tech/common/mime/**/*"/>
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
                 <exclude name="com/l7tech/common/xml/tarari/**/*"/>
                 <include name="com/l7tech/common/security/TrustedCert*.class"/>
