@@ -60,6 +60,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     private long id = 0;
+    private long trustedGatewayId = 0;
     private String localEndpoint;
     private String ssgAddress = "";
     private int ssgPort = SSG_PORT;
@@ -326,6 +327,14 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     public void setId(long id) {
         this.id = id;
     }
+
+    public long getTrustedGatewayId() {
+         return trustedGatewayId;
+     }
+
+     public void setTrustedGatewayId(long trustedGatewayId) {
+         this.trustedGatewayId = trustedGatewayId;
+     }
 
     public String getLocalEndpoint() {
         if (localEndpoint == null)

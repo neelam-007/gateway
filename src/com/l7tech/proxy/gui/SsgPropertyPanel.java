@@ -3,6 +3,7 @@ package com.l7tech.proxy.gui;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.Spacer;
+import com.l7tech.proxy.datamodel.Ssg;
 
 import javax.swing.*;
 import java.awt.*;
@@ -52,6 +53,17 @@ public class SsgPropertyPanel extends JPanel {
                      setTrustedSSGFormEnabled(trustedSSGRadioButton.isSelected());
                      setFederatedSSGFormEnabled(!trustedSSGRadioButton.isSelected());
                  }
+        });
+
+        trustedSSGComboBox.setRenderer(new DefaultListCellRenderer() {
+
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                Ssg g = (Ssg) value;
+                setText(g.getLocalEndpoint());
+                return c;
+            }
         });
 
         // select Trusted SSG form by default

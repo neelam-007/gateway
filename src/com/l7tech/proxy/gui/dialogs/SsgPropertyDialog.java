@@ -303,7 +303,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         for (; i < sslList.size(); i++) {
             Ssg item = (Ssg) sslList.get(i);
             if (!item.getLocalEndpoint().equals(ssg.getLocalEndpoint())) {
-                identityPane.getTrustedSSGComboBox().addItem(item.getLocalEndpoint());
+                identityPane.getTrustedSSGComboBox().addItem(item);
             }
 
         }
@@ -312,109 +312,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
 
         return identityPane;
-
-/*            gridY = 0;
-            JPanel pane = new JPanel(new GridBagLayout());
-            identityPane = new JScrollPane(pane);
-            identityPane.setBorder(BorderFactory.createEmptyBorder());
-
-            // Authentication panel
-
-            JPanel authp = new JPanel(new GridBagLayout());
-            authp.setBorder(BorderFactory.createTitledBorder(" Your username and password "));
-            pane.add(authp,
-                     new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
-                                            GridBagConstraints.WEST,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(14, 5, 0, 5), 0, 0));
-
-            int oy = gridY;
-            gridY = 0;
-
-            fieldUsername = new ContextMenuTextField();
-            fieldUsername.setPreferredSize(new Dimension(200, 20));
-            authp.add(new JLabel("Username:"),
-                      new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                             GridBagConstraints.EAST,
-                                             GridBagConstraints.NONE,
-                                             new Insets(5, 5, 0, 0), 0, 0));
-            authp.add(fieldUsername,
-                      new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                             GridBagConstraints.WEST,
-                                             GridBagConstraints.HORIZONTAL,
-                                             new Insets(5, 5, 0, 5), 0, 0));
-
-            fieldPassword = new JPasswordField();
-            fieldPassword.setPreferredSize(new Dimension(200, 20));
-            authp.add(new JLabel("Password:"),
-                      new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                             GridBagConstraints.EAST,
-                                             GridBagConstraints.NONE,
-                                             new Insets(5, 5, 5, 0), 0, 0));
-            authp.add(fieldPassword,
-                      new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                             GridBagConstraints.WEST,
-                                             GridBagConstraints.HORIZONTAL,
-                                             new Insets(5, 5, 5, 5), 0, 0));
-
-            cbSavePassword = new JCheckBox("Save this password to your hard disk");
-            authp.add(cbSavePassword,
-                      new GridBagConstraints(1, gridY++, 1, 1, 0.0, 0.0,
-                                             GridBagConstraints.WEST,
-                                             GridBagConstraints.NONE,
-                                             new Insets(5, 5, 0, 0), 0, 0));
-
-            cbChainFromClient = new JCheckBox("Use credentials from client (HTTP Basic Authentication)");
-            cbChainFromClient.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    updateIdentityEnableState();
-                }
-            });
-
-            authp.add(cbChainFromClient,
-                      new GridBagConstraints(1, gridY++, 1, 1, 0.0, 0.0,
-                                             GridBagConstraints.WEST,
-                                             GridBagConstraints.NONE,
-                                             new Insets(0, 5, 5, 0), 0, 0));
-
-            gridY = oy;
-
-            // Certificate buttons
-
-            JPanel cpan = new JPanel(new GridBagLayout());
-            cpan.setBorder(BorderFactory.createTitledBorder(" Certificates "));
-            pane.add(cpan,
-                     new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
-                                            GridBagConstraints.WEST,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(14, 5, 0, 5), 0, 0));
-            oy = gridY;
-            gridY = 0;
-            JButton cb = getClientCertificateButton();
-            cpan.add(cb,
-                     new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                            GridBagConstraints.EAST,
-                                            GridBagConstraints.NONE,
-                                            new Insets(5, 5, 5, 0), 0, 0));
-            JButton scb = getServerCertificateButton();
-            cpan.add(scb,
-                     new GridBagConstraints(1, gridY++, 1, 1, 0.0, 0.0,
-                                            GridBagConstraints.EAST,
-                                            GridBagConstraints.NONE,
-                                            new Insets(5, 5, 5, 5), 0, 0));
-
-            gridY = oy;
-
-            // Have a spacer eat any leftover space
-            pane.add(new JPanel(),
-                     new GridBagConstraints(0, gridY++, 1, 1, 1.0, 1.0,
-                                            GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(0, 0, 0, 0), 0, 0));
-
-        }
-
-        return identityPane;*/
     }
 
     private void updateIdentityEnableState() {
@@ -739,6 +636,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         this.ssg = ssg;
         synchronized (ssg) {
 
+            int index = 0;
+            for(; index < identityPane.getTrustedSSGComboBox().getItemCount() ; index++) {
+                if(((Ssg) identityPane.getTrustedSSGComboBox().getItemAt(index)).getId() == ssg.getTrustedGatewayId()) {
+                    identityPane.getTrustedSSGComboBox().setSelectedIndex(index);
+                    break;
+                }
+            }
+
             fieldLocalEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
                                        ssg.getLocalEndpoint());
             fieldWsdlEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
@@ -778,6 +683,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
      */
     protected void commitChanges() {
         synchronized (ssg) {
+
+            if(identityPane.getFederatedSSGRadioButton().isSelected()) {
+
+                Ssg selectedSsg = (Ssg) identityPane.getTrustedSSGComboBox().getSelectedItem();
+                ssg.setTrustedGatewayId(selectedSsg.getId());
+            }
             ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
             ssg.setUsername(identityPane.getUsernameTextField().getText().trim());
             ssg.setSavePasswordToDisk(identityPane.getSavePasswordCheckBox().isSelected());
