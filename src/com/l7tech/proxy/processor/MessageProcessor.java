@@ -728,6 +728,11 @@ public class MessageProcessor {
                 }
                 postMethod.releaseConnection();
             }
+            try {
+                client.endSession();
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Error while calling HttpClient.endSession; will ignore it and continue", e);
+            }
         }
     }
 
