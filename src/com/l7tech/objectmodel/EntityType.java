@@ -15,14 +15,6 @@ public class EntityType {
     public static final EntityType SERVICE = new EntityType(4);
     public static final EntityType UNDEFINED = new EntityType(-1);
 
-    public static EntityType fromInterface(Class interfaceType) throws IllegalArgumentException {
-        if (interfaceType.equals(com.l7tech.identity.IdentityProviderConfig.class)) return ID_PROVIDER_CONFIG;
-        else if (interfaceType.equals(com.l7tech.identity.User.class)) return USER;
-        else if (interfaceType.equals(com.l7tech.identity.Group.class)) return GROUP;
-        else if (interfaceType.equals(com.l7tech.service.PublishedService.class)) return SERVICE;
-        throw new IllegalArgumentException("no EntityType for interface " + interfaceType.getName());
-    }
-
     /**
      * Returns a hash code value for the object.
      * The method is implemented to satisfy general contract of <code>hashCode</code>
@@ -89,6 +81,32 @@ public class EntityType {
                 return "SERVICE";
             default:
                 return "?";
+        }
+    }
+
+    public static EntityType fromInterface(Class interfaceType) throws IllegalArgumentException {
+        if (interfaceType.equals(com.l7tech.identity.IdentityProviderConfig.class)) return ID_PROVIDER_CONFIG;
+        else if (interfaceType.equals(com.l7tech.identity.User.class)) return USER;
+        else if (interfaceType.equals(com.l7tech.identity.Group.class)) return GROUP;
+        else if (interfaceType.equals(com.l7tech.service.PublishedService.class)) return SERVICE;
+        throw new IllegalArgumentException("no EntityType for interface " + interfaceType.getName());
+    }
+
+    /**
+     * necessary for use in web service where those are constructed from value
+     */ 
+    public static EntityType fromValue(int value) {
+        switch (value) {
+            case 1:
+                return ID_PROVIDER_CONFIG;
+            case 2:
+                return USER;
+            case 3:
+                return GROUP;
+            case 4:
+                return SERVICE;
+            default:
+                return UNDEFINED;
         }
     }
 
