@@ -1,6 +1,5 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.common.security.Keys;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
@@ -44,7 +43,6 @@ public class SamlProtocolTest extends TestCase {
         TestSuite suite = new TestSuite(SamlProtocolTest.class);
         TestSetup wrapper = new TestSetup(suite) {
             protected void setUp() throws Exception {
-                Keys.createTestSsgKeystoreProperties();
                 servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
 
             }

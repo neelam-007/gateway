@@ -7,7 +7,6 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.security.Keys;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -59,7 +58,6 @@ public class PolicyServiceTest extends TestCase {
          TestSetup wrapper = new TestSetup(suite) {
 
              protected void setUp() throws Exception {
-                 Keys.createTestSsgKeystoreProperties();
                  applicationContext = createApplicationContext();
              }
 

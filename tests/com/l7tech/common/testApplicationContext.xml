@@ -62,8 +62,16 @@
            <ref bean="trustedCertManager"/>
        </property>
    </bean>
+
+    <!-- create test keys -->
+    <bean id="testKeys" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod">
+            <value>com.l7tech.common.security.Keys.createTestSsgKeystoreProperties</value>
+        </property>
+    </bean>
+
     <!-- ssl config  -->
-    <bean id="sslKeystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance"/>
+    <bean id="sslKeystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance" depends-on="testKeys"/>
 
     <bean id="sslKeystoreType" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">

@@ -3,12 +3,9 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.AssertionTest;
 import com.l7tech.policy.validator.DefaultPolicyValidatorTest;
 import com.l7tech.policy.wsp.WspTranslator21to30Test;
-import com.l7tech.common.security.Keys;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import java.io.IOException;
 
 /**
  * Class <code>AllPolicyTests</code> defines all tests to be run for the policy
@@ -32,13 +29,6 @@ public class AllPolicyTests extends TestCase {
      *
      */
     public static Test suite() {
-        // Set up test keystores for fake-Tomcat
-        try {
-            Keys.createTestSsgKeystoreProperties();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
         TestSuite suite = new TestSuite();
         suite.addTest(new TestSuite(AssertionTest.class));
     	suite.addTest(new TestSuite(SamplePolicyTest.class));

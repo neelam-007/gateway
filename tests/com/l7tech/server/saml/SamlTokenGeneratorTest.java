@@ -26,7 +26,6 @@ public class SamlTokenGeneratorTest extends TestCase {
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
-                System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
                 Keys.createTestSsgKeystoreProperties();
             }
 

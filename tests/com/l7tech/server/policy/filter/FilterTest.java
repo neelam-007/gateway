@@ -6,6 +6,7 @@
 
 package com.l7tech.server.policy.filter;
 
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.Assertion;
@@ -18,18 +19,15 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.security.Keys;
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import junit.extensions.TestSetup;
+import org.springframework.context.ApplicationContext;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * Test of some policy filter scenarios.
@@ -51,7 +49,6 @@ public class FilterTest extends TestCase {
         TestSetup wrapper = new TestSetup(suite) {
 
             protected void setUp() throws Exception {
-                Keys.createTestSsgKeystoreProperties();
                 applicationContext = createApplicationContext();
                 filterManager = (FilterManager)applicationContext.getBean("policyFilterManager");
 

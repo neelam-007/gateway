@@ -1,6 +1,5 @@
 package com.l7tech.server;
 
-import com.l7tech.common.security.Keys;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.EntityHeader;
@@ -45,7 +44,6 @@ public class MockServletApiTest extends TestCase {
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
-                Keys.createTestSsgKeystoreProperties();
                 servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
             }
 

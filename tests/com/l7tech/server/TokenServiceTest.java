@@ -9,7 +9,6 @@ package com.l7tech.server;
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.Keys;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -59,7 +58,6 @@ public class TokenServiceTest extends TestCase {
          TestSetup wrapper = new TestSetup(suite) {
 
              protected void setUp() throws Exception {
-                 Keys.createTestSsgKeystoreProperties();
                  applicationContext = createApplicationContext();
              }
 
