@@ -8,8 +8,9 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import org.jaxen.dom.DOMXPath;
 
 import java.util.logging.Logger;
@@ -35,6 +36,14 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
             result.addError(new PolicyValidatorResult.Error(assertion, path, "XPath pattern is missing", null));
             logger.info("XPath pattern is missing");
             return;
+        }
+
+        if (assertion instanceof ResponseWssConfidentiality || assertion instanceof RequestWssConfidentiality) {
+            if (pattern.equals("/soapenv:Envelope")) {
+                result.addError(new PolicyValidatorResult.Error(assertion, path, "The path " + pattern + " is " +
+                                                                                 "not valid for XML encryption", null));
+
+            }
         }
 
         try {
