@@ -1,10 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.PauseListener;
+import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.common.gui.widgets.SquigglyTextArea;
 import com.l7tech.console.event.BeanEditSupport;
 import com.l7tech.policy.assertion.Regex;
-import com.l7tech.common.gui.widgets.SquigglyTextArea;
-import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.common.gui.util.PauseListener;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -15,12 +15,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
+import java.text.ParseException;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * @author emil
@@ -50,19 +52,24 @@ public class RegexDialog extends JDialog {
     private JLabel replaceMentTextAreaLabel;
     private JLabel testInputTextAreaLabel;
     private JLabel testResultTextAreaLabel;
-    private JFormattedTextField mimePartField;
+    private JFormattedTextField mimePartTextField;
 
-    public RegexDialog(Frame owner, Regex regexAssertion) throws HeadlessException {
+    public RegexDialog(Frame owner, Regex regexAssertion)
+      throws HeadlessException {
         super(owner, true);
         setTitle("Regular Expression Assertion");
         if (regexAssertion == null) {
             throw new IllegalArgumentException();
         }
         this.regexAssertion = regexAssertion;
-        initialize();
+        try {
+            initialize();
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private void initialize() {
+    private void initialize() throws ParseException {
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
         contentPane.add(mainPanel);
@@ -90,14 +97,6 @@ public class RegexDialog extends JDialog {
             replaceTextArea.setText(regexAssertion.getReplacement());
         }
 
-        caseInsensitivecheckBox.setSelected(regexAssertion.isCaseInsensitive());
-
-        if (regexAssertion.getMimePart() != null) {
-            mimePartField.setValue(regexAssertion.getMimePart());
-        } else {
-            mimePartField.setValue(new Integer(0));
-        }
-
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();
@@ -112,20 +111,8 @@ public class RegexDialog extends JDialog {
                 regexAssertion.setReplacement(replaceTextArea.getText());
                 regexAssertion.setCaseInsensitive(caseInsensitivecheckBox.isSelected());
                 regexAssertion.setReplace(matchAndReplaceRadioButton.isSelected());
-                Object mimeValue = mimePartField.getValue();
-                Integer realValue = null;
-                if (mimeValue != null) {
-                    if (mimeValue instanceof Long) {
-                        realValue = new Integer(((Long)mimeValue).intValue());
-                    } else if (mimeValue instanceof String) {
-                        realValue = Integer.valueOf((String)mimeValue);
-                    } else if (mimeValue instanceof Integer) {
-                        realValue = (Integer) mimeValue;
-                    } else {
-                        throw new RuntimeException("Couldn't translate MIME part value '" + mimeValue.toString() + "' into an Integer");
-                    }
-                }
-                regexAssertion.setMimePart(realValue);
+                Object val = mimePartTextField.getValue();
+                regexAssertion.setMimePart(val != null ? ((Integer)val).intValue() : 0);
                 beanEditSupport.fireEditAccepted(regexAssertion);
             }
         });
@@ -147,7 +134,7 @@ public class RegexDialog extends JDialog {
 
                     while (matcher.find()) {
                         matcher.appendReplacement(sb, replaceText);
-                        highlights.add(new int[] {sb.length() - replaceText.length(), replaceText.length()});
+                        highlights.add(new int[]{sb.length() - replaceText.length(), replaceText.length()});
                     }
                     matcher.appendTail(sb);
 
@@ -165,7 +152,7 @@ public class RegexDialog extends JDialog {
                     }
 
                     while (matcher.find()) {
-                        highlights.add(new int[] {matcher.start(), matcher.end() - matcher.start()});
+                        highlights.add(new int[]{matcher.start(), matcher.end() - matcher.start()});
                     }
                 }
                 for (Iterator iterator = highlights.iterator(); iterator.hasNext();) {
@@ -242,6 +229,19 @@ public class RegexDialog extends JDialog {
         }, 700);
 
 
+        Integer mimePartIndex = new Integer(regexAssertion.getMimePart());
+        NumberFormat fmt = NumberFormat.getNumberInstance();
+        fmt.setMaximumIntegerDigits(2);
+        fmt.setMaximumFractionDigits(0);
+        fmt.setMinimumFractionDigits(0);
+        fmt.setMinimumIntegerDigits(1);
+        fmt.setGroupingUsed(false);
+        NumberFormatter defaultFormat = new NumberFormatter(fmt);
+        defaultFormat.setAllowsInvalid(true);
+        defaultFormat.setValueClass(Integer.class);
+        DefaultFormatterFactory fmtFactory = new DefaultFormatterFactory(defaultFormat);
+        mimePartTextField.setFormatterFactory(fmtFactory);
+        mimePartTextField.setValue(mimePartIndex);
     }
 
     private boolean shouldEnableTestButton() {

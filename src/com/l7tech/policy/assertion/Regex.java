@@ -20,7 +20,7 @@ public class Regex extends Assertion {
      * Which MIME part to do the replacement in. Use null to indicate the first (SOAP)
      * part or any other Integer (zero-based) for a specific MIME part.
      */
-    private Integer mimePart = null;
+    private int mimePart = 0;
 
     /**
      * Test whether the assertion is a credential source. The <code>RegexAssertion</code>
@@ -72,11 +72,19 @@ public class Regex extends Assertion {
         this.replace = replace;
     }
 
-    public Integer getMimePart() {
+    /**
+     * @return the mime part of the this regex will match against
+     */
+    public int getMimePart() {
         return mimePart;
     }
 
-    public void setMimePart(Integer mimePart) {
+    /**
+     * Set the mime part index of the message that this regex will match against
+     * @param mimePart
+     */
+    public void setMimePart(int mimePart) {
         this.mimePart = mimePart;
     }
+
 }
