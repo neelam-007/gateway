@@ -21,7 +21,7 @@ import com.l7tech.proxy.datamodel.Ssg;
  */
 public class HttpDigest extends HttpCredentialSourceAssertion {
     public AssertionStatus doCheckRequest(Request request, Response response) throws CredentialFinderException {
-        // TODO
+        // FIXME: Implement
         return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 

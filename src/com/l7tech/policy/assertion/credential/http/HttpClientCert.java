@@ -18,7 +18,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
  */
 public abstract class HttpClientCert extends HttpCredentialSourceAssertion {
     public AssertionStatus doCheckRequest(Request request, Response response) throws CredentialFinderException {
-        // TODO
+        // FIXME: Implement
         return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 

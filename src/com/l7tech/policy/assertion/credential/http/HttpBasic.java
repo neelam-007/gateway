@@ -20,7 +20,7 @@ import com.l7tech.proxy.datamodel.PendingRequest;
  */
 public class HttpBasic extends HttpCredentialSourceAssertion {
     public AssertionStatus doCheckRequest(Request request, Response response) throws CredentialFinderException {
-        // TODO
+        // FIXME: Implement
         return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 

@@ -19,7 +19,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
  */
 public class WssClientCert extends WssCredentialSourceAssertion {
     public AssertionStatus doCheckRequest(Request request, Response response) throws CredentialFinderException {
-        // TODO
+        // FIXME: Implement
         return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 

@@ -14,7 +14,7 @@ import com.l7tech.message.Request;
  */
 public class WssBasicCredentialFinder extends WssCredentialFinder {
     public PrincipalCredentials doFindCredentials( Request request ) throws CredentialFinderException {
-        // TODO: Implement!
+        // FIXME: Implement!
         return null;
     }
 }
