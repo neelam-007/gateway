@@ -231,24 +231,26 @@ public class SsgPropertyDialog extends PropertyDialog {
         fieldKeyStorePath.setText(ssg.getKeyStorePath());
 
         displayPolicies.clear();
-        Map saMap = ssg.getPoliciesBySoapAction();
-        if (saMap != null) {
-            Collection ssgsBySoapAction = saMap.keySet();
-            for (Iterator i = ssgsBySoapAction.iterator(); i.hasNext();) {
-                String soapAction = (String) i.next();
-                displayPolicies.add(new DisplayPolicy("SOAPAction header", soapAction,
-                                                      ssg.getPolicyBySoapAction(soapAction)));
-                log.info("Noted policy for SOAPAction=" + soapAction);
+        synchronized (ssg) {
+            Map saMap = ssg.getPoliciesBySoapAction();
+            if (saMap != null) {
+                Collection ssgsBySoapAction = saMap.keySet();
+                for (Iterator i = ssgsBySoapAction.iterator(); i.hasNext();) {
+                    String soapAction = (String) i.next();
+                    displayPolicies.add(new DisplayPolicy("SOAPAction header", soapAction,
+                                                          ssg.getPolicyBySoapAction(soapAction)));
+                    log.info("Noted policy for SOAPAction=" + soapAction);
+                }
             }
-        }
-        Map uriMap = ssg.getPoliciesByUri();
-        if (uriMap != null) {
-            Collection ssgsByUri = uriMap.keySet();
-            for (Iterator i = ssgsByUri.iterator(); i.hasNext();) {
-                String uri = (String) i.next();
-                displayPolicies.add(new DisplayPolicy("Body namespace URI", uri,
-                                                      ssg.getPolicyByUri(uri)));
-                log.info("Noted policy for URI=" + uri);
+            Map uriMap = ssg.getPoliciesByUri();
+            if (uriMap != null) {
+                Collection ssgsByUri = uriMap.keySet();
+                for (Iterator i = ssgsByUri.iterator(); i.hasNext();) {
+                    String uri = (String) i.next();
+                    displayPolicies.add(new DisplayPolicy("Body namespace URI", uri,
+                                                          ssg.getPolicyByUri(uri)));
+                    log.info("Noted policy for URI=" + uri);
+                }
             }
         }
         displayPolicyTableModel.fireTableDataChanged();
