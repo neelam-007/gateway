@@ -30,5 +30,9 @@ public abstract class PersistenceEvent extends Event {
         return note;
     }
 
-    private String note;
+    public String toString() {
+        return this.getClass().getName() + " [" + source.getClass().getName() + " #" + ((Entity)source).getOid() + "]";
+    }
+
+    protected String note;
 }

@@ -11,38 +11,23 @@ import com.l7tech.objectmodel.event.Created;
 import com.l7tech.objectmodel.event.Deleted;
 import com.l7tech.objectmodel.event.PersistenceEvent;
 import com.l7tech.objectmodel.event.Updated;
-import net.jini.export.ServerContext;
-import net.jini.io.context.ClientSubject;
 
-import java.rmi.server.ServerNotActiveException;
-import java.security.Principal;
-import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An {@link AuditRecord} that describes a single administrative action.
  * <p>
- * By default, one of these will be created by {@link com.l7tech.server.audit.AdminAuditFactory}
+ * By default, one of these will be created by {@link com.l7tech.server.audit.AdminAuditListener}
  * each time an administrator creates, deletes or updates a persistent {@link com.l7tech.objectmodel.Entity}.
  *
  * @author alex
  * @version $Revision$
  */
 public class AdminAuditRecord extends AuditRecord {
-    public AdminAuditRecord(Level level, PersistenceEvent event) {
+    public AdminAuditRecord(Level level, PersistenceEvent event, String adminLogin) {
         super(level);
-        try {
-            ClientSubject clientSubject = (ClientSubject)ServerContext.getServerContextElement(ClientSubject.class);
-            if (clientSubject != null) {
-                Set principals = clientSubject.getClientSubject().getPrincipals();
-                if (principals != null && !principals.isEmpty()) {
-                    adminLogin = ((Principal)principals.iterator().next()).getName();
-                }
-            }
-        } catch ( ServerNotActiveException e ) {
-            throw new RuntimeException(e);
-        }
-
+        logger.info("new AdminAuditRecord(" + level + ", " + event + ", " + adminLogin + ")");
         if (adminLogin == null) throw new IllegalStateException("Couldn't determine current administrator login");
 
         final Entity entity = event.getEntity();
@@ -69,4 +54,5 @@ public class AdminAuditRecord extends AuditRecord {
     protected String adminLogin;
     protected Class entityClass;
     protected long entityOid;
+    private static Logger logger = Logger.getLogger(AdminAuditRecord.class.getName());
 }

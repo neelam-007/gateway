@@ -6,6 +6,7 @@
 
 package com.l7tech.objectmodel;
 
+import com.l7tech.server.PersistenceEventInterceptor;
 import com.l7tech.server.ServerConfig;
 import net.sf.hibernate.*;
 import net.sf.hibernate.cfg.Configuration;
@@ -86,12 +87,13 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     Session makeSession() throws HibernateException, SQLException {
         if (_sessionFactory == null) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling makeSession()!");
-        Session session = _sessionFactory.openSession();
+        Session session = _sessionFactory.openSession(interceptor);
         // make sure this session is clean
         session.clear();
         return session;
     }
 
+    private PersistenceEventInterceptor interceptor = new PersistenceEventInterceptor();
     private SessionFactory _sessionFactory;
 
     List doFind(PersistenceContext context, String query) throws FindException {

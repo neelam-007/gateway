@@ -15,25 +15,25 @@ import java.util.EventListener;
  * @version $Revision$
  */
 public class Updated extends PersistenceEvent {
-    public Updated(Entity original, Entity updated, String note ) {
-        super(updated, note );
-        this.original = original;
+    public Updated(Entity entity, EntityChangeSet changes, String note ) {
+        super(entity, note );
+        this.changeSet = changes;
     }
 
-    public Updated(Entity original, Entity updated) {
-        this(original, updated, null);
+    public Updated(Entity original, EntityChangeSet changes) {
+        this(original, changes, null);
     }
 
     public Entity getOriginal() {
-        return original;
-    }
-
-    public Entity getUpdated() {
         return (Entity)source;
     }
 
     public Class getListenerClass() {
         return UpdateListener.class;
+    }
+
+    public EntityChangeSet getChangeSet() {
+        return changeSet;
     }
 
     public void sendTo(EventListener listener) {
@@ -43,5 +43,5 @@ public class Updated extends PersistenceEvent {
             super.sendTo(listener);
     }
 
-    protected Entity original;
+    private final EntityChangeSet changeSet;
 }
