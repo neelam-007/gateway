@@ -27,7 +27,9 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
     public static final String PARAM_METHOD = "method";
 
     public static final String SCHEME = "Digest";
-    public static final String REALM = "L7SSGDigestRealm";
+
+    /** The hard-coded HTTP Digest realm.  NOTE: If you change this, it will break A LOT of stuff! */
+    public static final String REALM = "L7SSGDigestRealm"; // TODO: Make this configurable on a system-wide and eventually per-identity-provider basis
 
     // Some values that are commonly found in Authorization and WWW-Authenticate headers
     public static final String QOP_AUTH = "auth";
