@@ -90,7 +90,7 @@ as Postgres:
 	GRANT ALL ON
 	    hibernate_unique_key, identity_provider, internal_group, internal_user,
 	    internal_user_group, published_service, client_cert, service_resolution,
-	    urlcache, cluster_info, service_usage
+	    urlcache, cluster_info, service_usage, ssg_logs
 	TO gateway;
 	Edit Auth file /var/lib/pgsql/data/pg_hba.conf
     Add this line:

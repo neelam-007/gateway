@@ -240,3 +240,25 @@ CREATE TABLE service_usage (
 --
 -- Dumping data for table 'service_usage'
 --
+
+--
+-- Table structure for table 'ssg_logs'
+--
+
+DROP TABLE IF EXISTS ssg_logs;
+CREATE TABLE ssg_logs (
+  nodeid varchar(18) NOT NULL default '',
+  sequencenumber bigint NOT NULL default '0',
+  message varchar(128),
+  strlvl varchar(12),
+  loggername varchar(128),
+  millis bigint,
+  sourceclassname varchar(128),
+  sourcemethodname varchar(128),
+  strrequestid varchar(40),
+  primary key(sequencenumber, nodeid)
+) TYPE=InnoDB;
+
+--
+-- Dumping data for table 'ssg_logs'
+--
