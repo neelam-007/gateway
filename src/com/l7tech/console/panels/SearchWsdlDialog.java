@@ -16,7 +16,6 @@ import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
-import javax.xml.soap.SOAPException;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -26,8 +25,6 @@ import java.util.Vector;
 import java.util.EventListener;
 import java.rmi.RemoteException;
 
-import org.systinet.uddi.client.UDDIException;
-import org.systinet.uddi.InvalidParameterException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -122,18 +119,6 @@ public class SearchWsdlDialog extends JDialog {
                             if (seriveAdmin == null) throw new RuntimeException("Service Admin reference not found");
 
                             WsdlInfo[] urls = seriveAdmin.findWsdlUrlsFromUDDIRegistry(searchString, caseSensitiveCheckBox.isSelected());
-                            if (urls != null) {
-
-                                Vector urlList = new Vector();
-                                for (int i = 0; i < urls.length; i++) {
-                                    urlList.add(urls[i]);
-                                }
-
-                                // populate the data to the table
-                                ((WsdlTableSorter) wsdlTable.getModel()).setData(urlList);
-                                retrievedRows.setText("Result: " + urlList.size());
-
-                            }
                             return urls;
                         } catch (RemoteException e) {
                             JOptionPane.showMessageDialog(SearchWsdlDialog.this, "Remote Exception, " + e.getMessage(), "Search UDDI Registry", JOptionPane.ERROR_MESSAGE);
