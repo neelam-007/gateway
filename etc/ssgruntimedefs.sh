@@ -19,5 +19,5 @@ TOMCAT_HOME=/usr/java/jakarta-tomcat-4.1.24
 export TOMCAT_HOME
 
 # aliases to start and stop ssg
-alias startssg='$TOMCAT_HOME/bin/startup.sh'
+alias startssg='$TOMCAT_HOME/bin/catalina.sh start -security'
 alias stopssg='$TOMCAT_HOME/bin/shutdown.sh'
