@@ -31,6 +31,7 @@ import org.apache.axis.encoding.Base64;
 public class ServerHttpBasic extends ServerHttpCredentialSource implements ServerAssertion {
     public static final String ENCODING = "UTF-8";
     public static final String SCHEME = "Basic";
+    public static final String REALM = "L7SSGBasicRealm";
 
     public PrincipalCredentials doFindCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
         String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
@@ -87,7 +88,9 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
     }
 
     protected String realm(Request request) {
-        return _data.getRealm();
+        String realm = _data.getRealm();
+        if ( realm == null ) realm = REALM;
+        return realm;
     }
 
     protected AssertionStatus doCheckCredentials(Request request, Response response) {
