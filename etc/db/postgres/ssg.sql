@@ -430,6 +430,18 @@ CREATE TABLE audit_system (
   INDEX idx_action (action)
 );
 
+DROP TABLE audit_detail;
+CREATE TABLE audit_detail (
+  objectid bigint NOT NULL,
+  audit_oid bigint NOT NULL,
+  time bigint NOT NULL,
+  component_oid bigint NOT NULL,
+  message_oid bigint NOT NULL,
+  ordinal integer,
+  INDEX idx_component_oid (component_oid),
+  INDEX idx_audit_oid (audit_oid)
+);
+
 DROP TABLE message_id;
 CREATE TABLE message_id (
   messageid varchar(255) NOT NULL,

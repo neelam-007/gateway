@@ -409,6 +409,18 @@ CREATE TABLE audit_system (
 CREATE INDEX i_audit_system_component ON audit_system (component);
 CREATE INDEX i_audit_system_action ON audit_system (action);
 
+DROP TABLE audit_detail;
+CREATE TABLE audit_detail (
+  objectid number(38,0) NOT NULL,
+  audit_oid number(38,0) NOT NULL,
+  time number(38,0) NOT NULL,
+  component_oid number(38,0) NOT NULL,
+  message_oid number(38,0) NOT NULL,
+  ordinal integer,
+);
+CREATE INDEX i_audit_detail_component_oid ON audit_detail (component_oid);
+CREATE INDEX i_audit_detail_audit_oid ON audit_detail (audit_oid);
+
 DROP TABLE message_id;
 CREATE TABLE message_id (
   messageid varchar(255) NOT NULL,
