@@ -192,7 +192,7 @@ public class StatisticsPanel extends JPanel {
             return statTableSorter;
         }
 
-        String[] cols = {"Web Service Name", "Requests Attempted", "Authorized", "Routed", "Routed (last min.)"};
+        String[] cols = {"Service Name", "Requests Attempted", "Authorized", "Routed", "Routed (last min.)"};
         String[][] rows = new String[][]{};
 
         DefaultTableModel tableModel = new DefaultTableModel(rows, cols) {
