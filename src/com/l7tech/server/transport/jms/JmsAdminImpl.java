@@ -79,17 +79,21 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         try {
             context = PersistenceContext.getCurrent();
             context.beginTransaction();
+
             JmsTuple tuple;
             ArrayList result = new ArrayList();
-            JmsConnection[] connections = findAllConnections();
-            for ( int i = 0; i < connections.length; i++ ) {
-                JmsConnection connection = connections[i];
-                JmsEndpoint[] endpoints = getEndpointsForConnection( connection.getOid() );
+            Collection connections = getConnectionManager().findAll();
+            JmsEndpointManager endpointManager = getEndpointManager();
+            for ( Iterator i = connections.iterator(); i.hasNext(); ) {
+                JmsConnection connection = (JmsConnection) i.next();
+                JmsEndpoint[] endpoints = endpointManager.findEndpointsForConnection( connection.getOid() );
                 for ( int j = 0; j < endpoints.length; j++ ) {
-                    tuple = new JmsTuple( connection, endpoints[j] );
-                    result.add( tuple );
+                    JmsEndpoint endpoint = endpoints[j];
+                    tuple = new JmsTuple( connection,  endpoint );
+                    result.add(tuple);
                 }
             }
+            
             context.commitTransaction();
             return (JmsTuple[])result.toArray( new JmsTuple[0] );
         } catch ( TransactionException e ) {
