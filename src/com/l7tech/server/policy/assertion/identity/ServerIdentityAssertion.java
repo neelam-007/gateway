@@ -124,7 +124,12 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
     protected IdentityProvider getIdentityProvider() throws FindException {
         if ( _configManager == null ) _configManager = new IdProvConfManagerServer();
         IdentityProviderConfig config = _configManager.findByPrimaryKey( _data.getIdentityProviderOid() );
-        return IdentityProviderFactory.makeProvider( config );
+        if (config == null) {
+            String msg = "id assertion refers to an id provider which does not exist anymore";
+            logger.warning(msg);
+            throw new FindException(msg);
+        }
+        return IdentityProviderFactory.makeProvider(config);
     }
 
     protected abstract AssertionStatus checkUser( User u );
