@@ -140,17 +140,16 @@ public class CSRHandler extends HttpServlet {
     }
 
     private byte[] readCSRFromRequest(HttpServletRequest request) throws IOException {
-        byte[] b64Encoded = HexUtils.slurpStream(request.getInputStream(), 16384);
+        return HexUtils.slurpStream(request.getInputStream(), 16384);
+        /*byte[] b64Encoded = HexUtils.slurpStream(request.getInputStream(), 16384);
         String tmpStr = new String(b64Encoded);
         String beginKey = "-----BEGIN CERTIFICATE REQUEST-----";
         String endKey = "-----END CERTIFICATE REQUEST-----";
         int beggining = tmpStr.indexOf(beginKey) + beginKey.length();
         int end = tmpStr.indexOf(endKey);
-        // return tmpStr.substring(beggining, end).getBytes();
-        // test unbased 64 the string
         String b64str = tmpStr.substring(beggining, end);
         sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
-        return base64decoder.decodeBuffer(b64str);
+        return base64decoder.decodeBuffer(b64str);*/
     }
 
     private Certificate sign(byte[] csr) throws Exception {
