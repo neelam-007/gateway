@@ -378,6 +378,7 @@
                 <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
+                <exclude name="com/l7tech/common/security/TrustedCert**" />
 
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class"/>
@@ -414,8 +415,14 @@
                 <include name="com/l7tech/common/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/**/*"/>
                 <exclude name="com/l7tech/common/security/saml/**/*"/>
-                <exclude name="com/l7tech/common/security/*.class"/>
+                <include name="com/l7tech/common/security/TrustedCert*.class" />
+                <exclude name="com/l7tech/common/security/AesKey.class"/>
+                <exclude name="com/l7tech/common/security/Cert*.class"/>
+                <exclude name="com/l7tech/common/security/Jce*.class"/>
+                <exclude name="com/l7tech/common/security/Rsa*.class"/>
                 <!-- <exclude name="com/l7tech/common/security/**/*"/>-->
+                <exclude name="com/l7tech/common/util/Pkcs12*.class"/>
+                <exclude name="com/l7tech/common/security/xml/Wss*.class"/>
                 <exclude name="com/l7tech/common/security/xml/*SecurityProcessor*.class"/>
                 <exclude name="com/l7tech/common/security/xml/SoapMsgSigner.class"/>
                 <exclude name="com/l7tech/common/security/xml/XmlMangler.class"/>
