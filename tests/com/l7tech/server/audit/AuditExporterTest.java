@@ -7,6 +7,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.objectmodel.HibernatePersistenceManager;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -43,6 +44,7 @@ public class AuditExporterTest extends TestCase {
     }
 
     public void testAuditExport() throws Exception {
+        HibernatePersistenceManager.initialize();
         FileOutputStream fileOut = null;
         try {
             fileOut = new FileOutputStream("AuditExporterTest.zip");

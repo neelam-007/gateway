@@ -32,6 +32,10 @@ public class AuditAdminStub implements AuditAdmin {
 
     }
 
+    public RemoteBulkStream downloadAllAudits() throws RemoteException {
+        throw new RemoteException("No stub mode export available");
+    }
+
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         return new SSGLogRecord[0];
     }

@@ -12,7 +12,6 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
-import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.PersistenceContext;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
@@ -27,10 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
@@ -55,50 +51,6 @@ public class AuditExporter {
 
     static String quoteMeta(String raw) {
         return badCharPattern.matcher(raw).replaceAll("\\\\$1");
-    }
-
-    static class MessageDigestOutputStream extends OutputStream {
-        private final MessageDigest digest;
-        private final OutputStream wrapped;
-
-        /**
-         * Creates a new OutputStream that wraps the specified outputstream in a layer that computes a hash as it goes.
-         * @param wrapped the OutputStream to wrap.  All output is passed through to this OutputStream.
-         * @param digest the MessageDigest algorithm to use to hash the output as it goes by.  When you are finished
-         *               writing, call digest() to retrieve the hash.
-         */
-        MessageDigestOutputStream(OutputStream wrapped, MessageDigest digest) {
-            this.wrapped = wrapped;
-            this.digest = digest;
-            digest.reset();
-        }
-
-        /**
-         * Completes the digest, and returns the digest bytes.  This causes the digest to be reset --
-         * anything further written to the OutputStream will be included in a new, unrelated digest.
-         * @return the digest bytes.
-         */
-        public byte[] digest() {
-            return digest.digest();
-        }
-
-        public void write(byte b[], int off, int len) throws IOException {
-            digest.update(b, off, len);
-            wrapped.write(b, off, len);
-        }
-
-        public void flush() throws IOException {
-            wrapped.flush();
-        }
-
-        public void close() throws IOException {
-            wrapped.close();
-        }
-
-        public void write(int b) throws IOException {
-            digest.update((byte)b);
-            wrapped.write(b);
-        }
     }
 
     interface ExportedInfo {
@@ -126,10 +78,9 @@ public class AuditExporter {
         try {
             MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
             MessageDigest md5 = MessageDigest.getInstance("MD5");
-            MessageDigestOutputStream sha1Out = new MessageDigestOutputStream(rawOut, sha1);
-            MessageDigestOutputStream md5Out = new MessageDigestOutputStream(sha1Out, md5);
+            DigestOutputStream sha1Out = new DigestOutputStream(rawOut, sha1);
+            DigestOutputStream md5Out = new DigestOutputStream(sha1Out, md5);
             PrintStream out = new PrintStream(md5Out, false, "UTF-8");
-            HibernatePersistenceManager.initialize();
 
             Session session = ((HibernatePersistenceContext)PersistenceContext.getCurrent()).getAuditSession();
             conn = session.connection();
@@ -183,8 +134,8 @@ public class AuditExporter {
             final long finalHighestId = highestId;
             final long finalLowestTime = lowestTime;
             final long finalHighestTime = highestTime;
-            final byte[] sha1Digest = sha1Out.digest();
-            final byte[] md5Digest = md5Out.digest();
+            final byte[] sha1Digest = sha1Out.getMessageDigest().digest();
+            final byte[] md5Digest = md5Out.getMessageDigest().digest();
 
             return new ExportedInfo() {
                 public long getLowestId() {

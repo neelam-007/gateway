@@ -72,7 +72,10 @@ public class ViewGatewayAuditsAction extends SecureAction {
     private GatewayLogWindow getGatewayAuditWindow() {
         if (gatewayAuditWindow != null) return gatewayAuditWindow;
 
-        final java.util.List extraFileMenuActions = Arrays.asList(new Object[] { new DeleteAuditEventsAction() });
+        final java.util.List extraFileMenuActions = Arrays.asList(new Object[] {
+            new DownloadAuditEventsAction(),
+            new DeleteAuditEventsAction(),
+        });
 
         gatewayAuditWindow = new GatewayLogWindow(new GatewayLogWindow.Strategy() {
             public Locator getLogAdminLocator() {

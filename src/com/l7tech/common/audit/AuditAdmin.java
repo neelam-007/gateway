@@ -9,6 +9,7 @@ package com.l7tech.common.audit;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.objectmodel.FindException;
 
+import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.Collection;
 
@@ -32,4 +33,12 @@ public interface AuditAdmin extends GenericLogAdmin {
      * record documenting that this action has been performed (and by which administrator).
      */
     void deleteOldAuditRecords() throws RemoteException;
+
+    interface RemoteBulkStream extends Remote {
+        /** @return the next chunk of the stream, or null if the stream has finished. */
+        byte[] nextChunk() throws RemoteException;
+    }
+
+    /** @return a RemoteBulkStream from which can be read a zip file containing the exported audit events along with a signature. */
+    RemoteBulkStream downloadAllAudits() throws RemoteException;
 }
