@@ -2,16 +2,13 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
-import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.ComponentRegistry;
-import com.l7tech.console.util.Cookie;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Logger;
-import java.util.Iterator;
 
 
 /**

@@ -68,6 +68,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
           getTreeNodeEnumeration(
             new EntitiesEnumeration(new ServiceEntitiesCollection(serviceManager)));
         int index = 0;
+        children = null;
         for (; e.hasMoreElements();) {
             insert((MutableTreeNode) e.nextElement(), index++);
         }

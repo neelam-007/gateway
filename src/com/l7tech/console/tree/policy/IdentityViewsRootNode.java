@@ -33,8 +33,8 @@ public class IdentityViewsRootNode extends AssertionTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
-
         int index = 0;
+        children = null;
         for (Iterator i = getIdentityPaths().iterator(); i.hasNext();) {
             insert(new IdentityViewTreeNode((IdentityPath)i.next(), asAssertion()), index++);
         }

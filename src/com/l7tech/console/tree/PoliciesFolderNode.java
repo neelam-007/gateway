@@ -53,6 +53,7 @@ public class PoliciesFolderNode extends AbstractTreeNode {
         try {
             File[] files = listPolicies();
             int index = 0;
+            children = null;
             for (int i = files.length - 1; i >= 0; i--) {
                 File file = files[i];
                 insert((MutableTreeNode) new PolicyTemplateNode(file), index++);

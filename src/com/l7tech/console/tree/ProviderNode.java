@@ -81,6 +81,7 @@ public class ProviderNode extends EntityHeaderNode {
                 children = Collections.enumeration(list);
             }
             int index = 0;
+            children = null;
             for (; children.hasMoreElements();) {
                 insert((MutableTreeNode)children.nextElement(), index++);
             }

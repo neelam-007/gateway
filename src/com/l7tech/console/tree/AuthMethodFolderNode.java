@@ -41,6 +41,7 @@ public class AuthMethodFolderNode extends AbstractTreeNode {
      */
     protected void loadChildren() {
         int index = 0;
+        children = null;
         insert(new HttpBasicAuthNode(), index++);
         insert(new HttpDigestAuthNode(), index++);
         insert(new HttpClientCertificateAuthNode(), index++);

@@ -96,6 +96,7 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
     protected void loadChildren() {
         CompositeAssertion assertion = (CompositeAssertion)getUserObject();
         int index = 0;
+        children = null;
         for (Iterator i = assertion.children(); i.hasNext();) {
             insert((AssertionTreeNodeFactory.asTreeNode((Assertion)i.next())), index++);
         }

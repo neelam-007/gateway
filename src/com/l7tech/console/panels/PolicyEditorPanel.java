@@ -105,9 +105,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         componentRegistry.unregisterComponent(PolicyTree.NAME);
         policyTree = (PolicyTree)componentRegistry.getPolicyTree();
         policyTree.setPolicyEditor(this);
-        componentRegistry.
-          getMainWindow().
-          getPolicyToolBar().registerPolicyTree(policyTree);
+
         policyTreePane = new JScrollPane(policyTree);
         return policyTreePane;
     }
@@ -129,6 +127,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         TreeNode root = (TreeNode)model.getRoot();
         FilteredTreeModel filteredTreeModel = new FilteredTreeModel(root);
         policyTree.setModel(filteredTreeModel);
+        componentRegistry.
+          getMainWindow().
+          getPolicyToolBar().registerPolicyTree(policyTree);
         filteredTreeModel.addTreeModelListener(policyTreeModellistener);
 
         final TreePath path = new TreePath(((DefaultMutableTreeNode)root).getPath());
@@ -401,15 +402,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     TreeModelListener policyTreeModellistener = new TreeModelListener() {
         public void treeNodesChanged(TreeModelEvent e) {
             policyEditorToolbar.buttonSave.setEnabled(true);
-            TreePath path = e.getTreePath();
+            /*TreePath path = e.getTreePath();
             TreeNode parent = (TreeNode)path.getLastPathComponent();
             int[] indices = e.getChildIndices();
             for (int i = 0; i < indices.length; i++) {
                 int indice = indices[i];
                 TreeNode node = parent.getChildAt(indice);
                 log.info("nodes changed received " + node);
-            }
-
+            } */
         }
 
         public void treeNodesInserted(final TreeModelEvent e) {

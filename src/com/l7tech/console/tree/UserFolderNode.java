@@ -100,6 +100,7 @@ public class UserFolderNode extends AbstractTreeNode {
           getTreeNodeEnumeration(
             new EntitiesEnumeration(new UserEntitiesCollection(userManager)));
         int index = 0;
+        children = null;
         for (; e.hasMoreElements();) {
             insert((MutableTreeNode)e.nextElement(), index++);
         }

@@ -52,6 +52,7 @@ public class ProvidersFolderNode extends AbstractTreeNode {
           getTreeNodeEnumeration(
             new EntitiesEnumeration(new ProviderEntitiesCollection(manager)));
         int index = 0;
+        children = null;
         for (; e.hasMoreElements();) {
             insert((MutableTreeNode) e.nextElement(), index++);
         }

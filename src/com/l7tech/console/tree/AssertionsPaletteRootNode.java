@@ -71,7 +71,7 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
                 new XmlSecurityFolderNode(),
                 new RoutingFolderNode()
             };
-
+        children = null;
         for (int i = 0; i < nodes.length; i++) {
             insert(nodes[i], i);
         }

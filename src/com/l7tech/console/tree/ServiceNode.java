@@ -123,6 +123,7 @@ public class ServiceNode extends EntityHeaderNode {
                 WsdlTreeNode node = WsdlTreeNode.newInstance(wsdl);
                 node.loadChildren();
                 int index = 0;
+                children = null;
                 for (Enumeration e = node.children(); e.hasMoreElements();) {
                     insert((MutableTreeNode) e.nextElement(), index++);
                 }

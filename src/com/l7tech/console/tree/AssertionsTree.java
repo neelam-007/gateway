@@ -13,6 +13,10 @@ import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
+import java.awt.dnd.DragSource;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragGestureEvent;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -28,15 +32,16 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class AssertionsTree extends JTree {
+public class AssertionsTree extends JTree implements DragGestureListener {
     static final Logger log = Logger.getLogger(AssertionsTree.class.getName());
     /** assertion data flavor for DnD*/
 
     public static final DataFlavor ASSERTION_DATAFLAVOR;
+
     static {
         DataFlavor df;
         try {
-             df = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType + ";class="+AbstractTreeNode.class.getName());
+            df = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType + ";class=" + AbstractTreeNode.class.getName());
         } catch (ClassNotFoundException e) {
             df = null;
         }
@@ -68,12 +73,39 @@ public class AssertionsTree extends JTree {
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
         setCellRenderer(new EntityTreeCellRenderer());
-        setDragEnabled(true);
-        setTransferHandler(new AssertionTransferHandler());
+
+        // Make this JTree a drag source
+        DragSource dragSource = DragSource.getDefaultDragSource();
+        dragSource.createDefaultDragGestureRecognizer(this, DnDConstants.ACTION_COPY, this);
+
         getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         addTreeWillExpandListener(new AssertionsTreeWillExpandListener());
         addTreeExpansionListener(new AssertionsTreeExpansionListener());
     }
+
+    public void dragGestureRecognized(DragGestureEvent dge) {
+        Point ptDragOrigin = dge.getDragOrigin();
+        TreePath path = getPathForLocation(ptDragOrigin.x, ptDragOrigin.y);
+        if (path == null)
+            return;
+        Transferable ta = createTransferable(path);
+        if (ta ==null) {
+            return;
+        }
+        setSelectionPath(path);	// Select this path in the tree
+        dge.startDrag(null, ta);
+    }
+
+    private Transferable createTransferable(TreePath path) {
+        if (path != null) {
+            AbstractTreeNode node = (AbstractTreeNode)path.getLastPathComponent();
+            if (!node.isLeaf()) return null;
+            if (node instanceof ProviderNode) return null;
+            return new AssertionTransferable(node);
+        }
+        return null;
+    }
+
 
     /**
      * KeyAdapter for the policy trees
@@ -169,40 +201,15 @@ public class AssertionsTree extends JTree {
         }
     }
 
-    /**
-     * Assertion tree custom transfer handler
-     */
-    class AssertionTransferHandler extends TransferHandler {
-        public int getSourceActions(JComponent c) {
-            return COPY;
-        }
-
-        public Transferable createTransferable(JComponent c) {
-            TreePath path = getSelectionPath();
-            if (path != null) {
-                AbstractTreeNode node = (AbstractTreeNode)path.getLastPathComponent();
-                if (!node.isLeaf()) return null;
-                if (node instanceof ProviderNode) return null;
-                return new AssertionTransferable(node);
-            }
-
-            return null;
-        }
-
-        public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
-            return false;
-        }
-    }
-
     class AssertionTransferable implements Transferable {
         private AbstractTreeNode node;
 
         public AssertionTransferable(AbstractTreeNode an) {
-            this.node= an;
+            this.node = an;
         }
 
         public DataFlavor[] getTransferDataFlavors() {
-            return new DataFlavor[]{ ASSERTION_DATAFLAVOR};
+            return new DataFlavor[]{ASSERTION_DATAFLAVOR};
         }
 
         public boolean isDataFlavorSupported(DataFlavor flavor) {

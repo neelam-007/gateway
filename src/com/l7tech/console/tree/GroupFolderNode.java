@@ -67,6 +67,8 @@ public class GroupFolderNode extends AbstractTreeNode {
           getTreeNodeEnumeration(
             new EntitiesEnumeration(new GroupEntitiesCollection(groupManager)));
         int index = 0;
+
+        children = null;
         for (; e.hasMoreElements();) {
             insert((MutableTreeNode)e.nextElement(), index++);
         }

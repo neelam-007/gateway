@@ -40,6 +40,7 @@ public class TransportLayerSecurityFolderNode extends AbstractTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
+        children = null;
         insert(new SslTransportNode(), 0);
     }
 

@@ -14,8 +14,11 @@ import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeNode;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.event.TreeModelEvent;
 import java.awt.*;
 import java.util.logging.Logger;
 
@@ -25,7 +28,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
-public class PolicyToolBar extends JToolBar  implements ConnectionListener {
+public class PolicyToolBar extends JToolBar implements ConnectionListener {
     static Logger log = Logger.getLogger(PolicyToolBar.class.getName());
     public static final String NAME = "policy.toolbar";
     private AssertionMoveUpAction assertionMoveUpAction;
@@ -53,6 +56,7 @@ public class PolicyToolBar extends JToolBar  implements ConnectionListener {
      */
     public void registerPolicyTree(JTree tree) {
         tree.addTreeSelectionListener(policyTreeListener);
+        tree.getModel().addTreeModelListener(policyTreeModelListener);
     }
 
     /**
@@ -165,20 +169,16 @@ public class PolicyToolBar extends JToolBar  implements ConnectionListener {
             disableAll();
             return;
         }
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                if (lastAssertionNode !=null) {
-                    if (lastPaletteNode !=null) {
-                        getAddAssertionAction().setEnabled(
-                          lastPaletteNode !=null &&
-                          lastAssertionNode.accept(lastPaletteNode));
-                    }
-                    getDeleteAssertionAction().setEnabled(lastAssertionNode.canDelete());
-                    getAssertionMoveDownAction().setEnabled(lastAssertionNode.canMoveDown());
-                    getAssertionMoveUpAction().setEnabled(lastAssertionNode.canMoveUp());
-                }
+        if (lastAssertionNode != null) {
+            if (lastPaletteNode != null) {
+                getAddAssertionAction().setEnabled(
+                  lastPaletteNode != null &&
+                  lastAssertionNode.accept(lastPaletteNode));
             }
-        });
+            getDeleteAssertionAction().setEnabled(lastAssertionNode.canDelete());
+            getAssertionMoveDownAction().setEnabled(lastAssertionNode.canMoveDown());
+            getAssertionMoveUpAction().setEnabled(lastAssertionNode.canMoveUp());
+        }
     }
 
     private void disableAll() {
@@ -215,6 +215,31 @@ public class PolicyToolBar extends JToolBar  implements ConnectionListener {
               }
           }
       };
+
+    private TreeModelListener
+      policyTreeModelListener  = new TreeModelListener() {
+          public void treeNodesChanged(TreeModelEvent e) {
+          }
+
+          public void treeNodesInserted(TreeModelEvent e) {
+          }
+
+          public void treeNodesRemoved(TreeModelEvent e) {
+              final Object[] children = e.getChildren();
+              for (int i = 0; i < children.length; i++) {
+                  Object o = children[i];
+                  if (o == lastAssertionNode) {
+                      lastAssertionNode = null;
+                      updateActions();
+                      break;
+                  }
+              }
+          }
+
+          public void treeStructureChanged(TreeModelEvent e) {
+          }
+      };
+
 
     private AbstractTreeNode lastPaletteNode;
     private AssertionTreeNode lastAssertionNode;

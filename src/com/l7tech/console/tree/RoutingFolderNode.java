@@ -38,6 +38,7 @@ public class RoutingFolderNode extends AbstractTreeNode {
      */
     protected void loadChildren() {
         int index = 0;
+        children = null;
         insert(new HttpRoutingNode(), index++);
         // insert(new SmtpRoutingNode(), index++);
     }

@@ -86,6 +86,7 @@ class DefinitionsTreeNode extends WsdlTreeNode {
 
     protected void loadChildren() {
         int index = 0;
+        children = null;
         FolderTreeNode ms = new FolderTreeNode(
           new FolderLister() {
               /** @return  a string representation of the object.  */
@@ -182,6 +183,7 @@ class FolderTreeNode extends WsdlTreeNode {
 
     protected void loadChildren() {
         int index = 0;
+        children = null;
         for (Iterator i = lister.list().iterator(); i.hasNext();) {
             insert((MutableTreeNode) i.next(), index++);
         }
@@ -260,6 +262,7 @@ class PortTypeTreeNode extends WsdlTreeNode {
 
     protected void loadChildren() {
         int index = 0;
+        children = null;
         for (Iterator i = portType.getOperations().iterator(); i.hasNext();) {
             insert(new OperationTreeNode((Operation) i.next()), index++);
         }
@@ -291,6 +294,7 @@ class BindingTreeNode extends WsdlTreeNode {
 
     protected void loadChildren() {
         int index = 0;
+        children = null;
         for (Iterator i = binding.getBindingOperations().iterator(); i.hasNext();) {
             insert(new BindingOperationTreeNode((BindingOperation) i.next()), index++);
         }

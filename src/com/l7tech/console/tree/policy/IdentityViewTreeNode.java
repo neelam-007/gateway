@@ -36,6 +36,7 @@ public class IdentityViewTreeNode extends AssertionTreeNode {
      */
     protected void loadChildren() {
         CompositeAssertion assertion = (CompositeAssertion)asAssertion();
+        children = null;
         insert(AssertionTreeNodeFactory.asTreeNode(assertion), 0);
     }
 
