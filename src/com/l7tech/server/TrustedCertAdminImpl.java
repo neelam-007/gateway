@@ -76,6 +76,7 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
 
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException {
         try {
+            enforceAdminRole();
             Long oid = (Long)doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
                     long oid;
@@ -96,6 +97,7 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
 
     public void deleteCert(final long oid) throws FindException, DeleteException, RemoteException {
         try {
+            enforceAdminRole();
             doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
                     getManager().delete(oid);

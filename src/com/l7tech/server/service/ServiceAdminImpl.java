@@ -105,6 +105,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
         }
 
         try {
+            enforceAdminRole();
             long oid = PublishedService.DEFAULT_OID;
             pc.beginTransaction();
 
@@ -139,6 +140,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
         PublishedService service = null;
 
         try {
+            enforceAdminRole();
             beginTransaction();
             manager = getServiceManager();
             service = manager.findByPrimaryKey(oid);

@@ -94,6 +94,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
       throws RemoteException, SaveException, UpdateException {
         beginTransaction();
         try {
+            enforceAdminRole();
             if (identityProviderConfig.getOid() > 0) {
                 IdentityProviderConfigManager manager = getIdProvCfgMan();
                 IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
@@ -182,6 +183,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
     public void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException {
         beginTransaction();
         try {
+            enforceAdminRole();
             IdentityProviderConfigManager manager = getIdProvCfgMan();
 
             final IdentityProviderConfig ipc = manager.findByPrimaryKey(oid);
@@ -282,6 +284,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
       throws RemoteException, DeleteException, ObjectNotFoundException {
         beginTransaction();
         try {
+            enforceAdminRole();
             UserManager userManager = retrieveUserManager(cfgid);
             if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
             User user = userManager.findByPrimaryKey(userId);
@@ -312,6 +315,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
+            enforceAdminRole();
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
             if ( provider == null ) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
@@ -382,6 +386,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
       throws RemoteException, DeleteException, ObjectNotFoundException {
         beginTransaction();
         try {
+            enforceAdminRole();
             GroupManager groupManager = retrieveGroupManager(cfgid);
             Group grp = groupManager.findByPrimaryKey(groupId);
             if (grp == null) throw new ObjectNotFoundException("Group does not exist");
@@ -408,6 +413,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
+            enforceAdminRole();
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
             if ( provider == null ) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
@@ -458,6 +464,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
     public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
+            enforceAdminRole();
             // revoke the cert in internal CA
             ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
             manager.revokeUserCert(user);
@@ -498,6 +505,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
     public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
         beginTransaction();
         try {
+            enforceAdminRole();
             // revoke the cert in internal CA
             ClientCertManager manager = (ClientCertManager) Locator.getDefault().lookup(ClientCertManager.class);
             manager.recordNewUserCert(user, cert);

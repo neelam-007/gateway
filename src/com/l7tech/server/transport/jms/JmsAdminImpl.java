@@ -125,6 +125,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
 
     public void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException {
         try {
+            enforceAdminRole();
             PersistenceContext.getCurrent().beginTransaction();
             JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
             endpoint.setMessageSource(isMessageSource);
@@ -152,6 +153,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
                                                                   SaveException, VersionException {
         HibernatePersistenceContext context = null;
         try {
+            enforceAdminRole();
             JmsConnectionManager manager = getConnectionManager();
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             context.beginTransaction();
@@ -288,6 +290,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
                                                             SaveException, VersionException {
         HibernatePersistenceContext context = null;
         try {
+            enforceAdminRole();
             JmsEndpointManager endManager = getEndpointManager();
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             context.beginTransaction();
@@ -313,6 +316,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
     public void deleteEndpoint( long endpointOid ) throws RemoteException, FindException, DeleteException {
         HibernatePersistenceContext context = null;
         try {
+            enforceAdminRole();
             JmsEndpointManager endManager = getEndpointManager();
 
             context = (HibernatePersistenceContext) PersistenceContext.getCurrent();
@@ -332,6 +336,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
     public void deleteConnection( long connectionOid ) throws RemoteException, FindException, DeleteException {
         HibernatePersistenceContext context = null;
         try {
+            enforceAdminRole();
             JmsConnectionManager manager = getConnectionManager();
             context = (HibernatePersistenceContext) PersistenceContext.getCurrent();
             context.beginTransaction();
