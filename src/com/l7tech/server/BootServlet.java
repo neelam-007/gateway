@@ -6,22 +6,21 @@
 
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.HibernatePersistenceManager;
-import com.l7tech.logging.LogManager;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.jini.Services;
 import com.l7tech.jini.export.RemoteService;
-import com.l7tech.common.BuildInfo;
+import com.l7tech.objectmodel.HibernatePersistenceManager;
 
-import javax.servlet.http.*;
-import javax.servlet.ServletException;
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-
-import net.jini.config.ConfigurationException;
+import java.util.logging.Logger;
 
 /**
  * @author alex
