@@ -78,17 +78,31 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             TrustedCert certIssuerTrust = null;
             try {
                 certIssuerTrust = trustedCertManager.getCachedCertBySubjectDn(certIssuerDn, MAX_CACHE_AGE);
-                final String untrusted = "Subject certificate '" + certSubjectDn + "' was signed by '" +
-                                         certIssuerDn + "', which is not trusted";
-                if (certIssuerTrust == null) {
-                    throw new BadCredentialsException(untrusted);
-                } else if (!certIssuerTrust.isTrustedForSigningClientCerts()) {
-                    throw new BadCredentialsException(untrusted + " for signing client certificates");
-                } else if (!certOidSet.contains(new Long(certIssuerTrust.getOid()))) {
-                    throw new BadCredentialsException(untrusted + " for this Federated Identity Provider");
+                if (certIssuerTrust != null) {
+                    // TODO do we care whether the client cert was signed by a trusted CA in this case?
+                    final String untrusted = "Subject certificate '" + certSubjectDn + "' was signed by '" +
+                                             certIssuerDn + "', which is not trusted";
+
+                    if (!certIssuerTrust.isTrustedForSigningClientCerts()) {
+                        throw new BadCredentialsException(untrusted + " for signing client certificates");
+                    } else if (!certOidSet.contains(new Long(certIssuerTrust.getOid()))) {
+                        throw new BadCredentialsException(untrusted + " for this Federated Identity Provider");
+                    }
+
+                    X509Certificate certIssuerCert = null;
+                    try {
+                        certIssuerCert = certIssuerTrust.getCertificate();
+                        subjectCertificate.verify(certIssuerCert.getPublicKey());
+                    } catch ( CertificateException e ) {
+                        throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
+                    } catch ( IOException e ) {
+                        throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
+                    } catch ( GeneralSecurityException e ) {
+                        throw new AuthenticationException("Couldn't verify subject certificate '" + certSubjectDn + "': " + e.getMessage(), e);
+                    }
                 }
             } catch ( FindException e ) {
-                final String msg = "Couldn't find TrustedCert entry for assertion signer";
+                final String msg = "Couldn't find TrustedCert entry for subject certificate signer";
                 logger.log( Level.SEVERE, msg, e );
                 throw new AuthenticationException(msg, e);
             } catch ( Exception e ) {
@@ -97,17 +111,6 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                 throw new AuthenticationException(msg, e);
             }
 
-            X509Certificate certIssuerCert = null;
-            try {
-                certIssuerCert = certIssuerTrust.getCertificate();
-                subjectCertificate.verify(certIssuerCert.getPublicKey());
-            } catch ( CertificateException e ) {
-                throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
-            } catch ( IOException e ) {
-                throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
-            } catch ( GeneralSecurityException e ) {
-                throw new AuthenticationException("Couldn't verify subject certificate '" + certSubjectDn + "': " + e.getMessage(), e);
-            }
 
             try {
                 assertion.verifyIssuerSignature();
