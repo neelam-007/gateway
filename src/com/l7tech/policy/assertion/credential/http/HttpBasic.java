@@ -6,10 +6,11 @@
 
 package com.l7tech.policy.assertion.credential.http;
 
+import com.l7tech.credential.CredentialFinderException;
+import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.credential.http.HttpBasicCredentialFinder;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.credential.*;
-import com.l7tech.credential.http.HttpBasicCredentialFinder;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;

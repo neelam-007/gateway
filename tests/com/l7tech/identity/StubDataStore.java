@@ -94,6 +94,7 @@ public class StubDataStore {
         IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
         config.setOid(nextObjectId());
         config.setDescription("Internal identity provider (stub)");
+        config.setName(config.getDescription());
         encoder.writeObject(config);
         populate(config);
         return config;

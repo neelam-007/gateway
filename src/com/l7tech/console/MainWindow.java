@@ -991,7 +991,7 @@ public class MainWindow extends JFrame {
 //                    dialog.setPanelListener(listenerBroker);
 //                    dialog.show();
 //                } else if (TreeNodeMenu.NEW_PROVIDER.equals(e.getActionCommand())) {
-//                    NewProviderDialog dialog = new NewProviderDialog(MainWindow.this);
+//                    IdentityProviderDialog dialog = new IdentityProviderDialog(MainWindow.this);
 //                    dialog.setResizable(false);
 //                    dialog.setPanelListener(listenerBroker);
 //                    dialog.show();

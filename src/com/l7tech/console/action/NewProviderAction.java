@@ -1,6 +1,6 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.NewProviderDialog;
+import com.l7tech.console.panels.IdentityProviderDialog;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.WindowManager;
 import com.l7tech.console.util.Registry;
@@ -9,6 +9,7 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -62,9 +63,11 @@ public class NewProviderAction extends NodeAction {
         SwingUtilities.invokeLater(
           new Runnable() {
             public void run() {
-                NewProviderDialog dialog =
-                  new NewProviderDialog(Registry.getDefault().
-                                        getWindowManager().getMainWindow());
+                EntityHeader header = new EntityHeader();
+                header.setType(EntityType.ID_PROVIDER_CONFIG);
+                IdentityProviderDialog dialog =
+                  new IdentityProviderDialog(Registry.getDefault().
+                                        getWindowManager().getMainWindow(), header);
                 dialog.addEntityListener(listener);
 
                 dialog.setResizable(false);

@@ -3,9 +3,11 @@ package com.l7tech.console.panels;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
@@ -21,12 +23,13 @@ import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.EventListener;
+import java.util.logging.Level;
 
 /**
- * This class is the New Provider dialog.
+ * This class is the Identity Provider dialog.
  */
-public class NewProviderDialog extends JDialog {
-
+public class IdentityProviderDialog extends JDialog {
+    private EntityHeader header = new EntityHeader();
     private IdentityProviderConfig iProvider = new IdentityProviderConfig();
     private EventListenerList listenerList = new EventListenerList();
     private JPanel providersPanel;
@@ -34,12 +37,14 @@ public class NewProviderDialog extends JDialog {
     private Dimension origDimension;
 
     /**
-     * Create a new NewProviderDialog
+     * Create a new IdentityProviderDialog
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
-    public NewProviderDialog(JFrame parent) {
+    public IdentityProviderDialog(JFrame parent, EntityHeader h) {
         super(parent, true);
+        addHierarchyListener(hierarchyListener);
+        header = h;
         initResources();
         initComponents();
         pack();
@@ -65,7 +70,7 @@ public class NewProviderDialog extends JDialog {
     }
 
     /**
-     * notfy the listeners
+     * notfy the listeners that the entity has been added
      * @param header
      */
     private void fireEventProviderAdded(EntityHeader header) {
@@ -76,13 +81,25 @@ public class NewProviderDialog extends JDialog {
         }
     }
 
+    /**
+     * notfy the listeners that the entity has been updated
+     * @param header
+     */
+    private void fireEventProviderUpdated(EntityHeader header) {
+        EntityEvent event = new EntityEvent(header);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((EntityListener)listeners[i]).entityUpdated(event);
+        }
+    }
+
 
     /**
      * Loads locale-specific resources: strings  etc
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-        resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewProviderDialog", locale);
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
     }
 
     /**
@@ -104,13 +121,6 @@ public class NewProviderDialog extends JDialog {
             public void windowClosing(WindowEvent event) {
                 // user hit window manager close button
                 windowAction(CMD_CANCEL);
-            }
-        });
-
-        addComponentListener(new ComponentAdapter() {
-            /** Invoked when the component has been made visible.*/
-            public void componentShown(ComponentEvent e) {
-                origDimension = NewProviderDialog.this.getSize();
             }
         });
 
@@ -173,9 +183,8 @@ public class NewProviderDialog extends JDialog {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        constraints.insets = new Insets(12, 7, 0, 0);
+        constraints.insets = new Insets(12, 7, 0, 11);
         panel.add(getProvidersPanel(), constraints);
-
 
         // Buttons
         constraints = new GridBagConstraints();
@@ -185,11 +194,11 @@ public class NewProviderDialog extends JDialog {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.weightx = 1.0;
-        constraints.insets = new Insets(12, 0, 12, 21);
+        constraints.insets = new Insets(12, 7, 12, 11);
         JPanel buttonPanel = createButtonPanel();
         panel.add(buttonPanel, constraints);
 
-        getRootPane().setDefaultButton(createButton);
+        getRootPane().setDefaultButton(saveButton);
     } // initComponents()
 
     /**
@@ -205,36 +214,30 @@ public class NewProviderDialog extends JDialog {
         providerNameTextField.setMinimumSize(new Dimension(217, 20));
         providerNameTextField.setToolTipText(resources.getString("providerNameTextField.tooltip"));
 
-        providerNameTextField.
-          setDocument(
-            new FilterDocument(24,
-              new FilterDocument.Filter() {
-                  public boolean accept(String str) {
-                      if (str == null) return false;
-                      return true;
-                  }
-              }));
-
         providerNameTextField.getDocument().
           addDocumentListener(new DocumentListener() {
               public void insertUpdate(DocumentEvent e) {
-                  createButton.
-                    setEnabled(enableCreateButton(e));
+                  saveButton.
+                    setEnabled(enableSaveButton(e));
               }
 
               public void removeUpdate(DocumentEvent e) {
-                  createButton.setEnabled(enableCreateButton(e));
+                  saveButton.setEnabled(enableSaveButton(e));
               }
 
               public void changedUpdate(DocumentEvent e) {
-                  createButton.setEnabled(enableCreateButton(e));
+                  saveButton.setEnabled(enableSaveButton(e));
               }
 
-              private boolean enableCreateButton(DocumentEvent e) {
-                  return e.getDocument().getLength() > 0 &&
+              private boolean enableSaveButton(DocumentEvent e) {
+                  boolean enable =
+                    e.getDocument().getLength() > 0 &&
                     providerTypesCombo.getSelectedIndex() != -1;
-              }
+                  enable = enable &&
+                    iProvider.getTypeVal() != IdentityProviderType.INTERNAL.toVal();
 
+                  return enable;
+              }
           });
 
         return providerNameTextField;
@@ -284,14 +287,18 @@ public class NewProviderDialog extends JDialog {
     private void selectProvidersPanel(IdentityProviderType ip) {
         providersPanel.removeAll();
         providersPanel.setLayout(new BorderLayout());
+        boolean found = false;
         if (ip == IdentityProviderType.LDAP) {
-            providerSettingsPanel = getLdapPanel();
+            providerSettingsPanel = getLdapPanel(iProvider);
             providersPanel.add(providerSettingsPanel);
+            found = true;
         }
-        Dimension size = origDimension;
-        setSize((int)size.getWidth(), (int)(size.getHeight() * 1.5));
-        validate();
-        repaint();
+        if (found) {
+            Dimension size = origDimension;
+            setSize((int)size.getWidth(), (int)(size.getHeight() * 1.5));
+            validate();
+            repaint();
+        }
     }
 
     /**
@@ -305,18 +312,18 @@ public class NewProviderDialog extends JDialog {
         panel.setLayout(new BoxLayout(panel, 0));
 
         // OK button (global variable)
-        createButton = new JButton();
-        createButton.setText(resources.getString("createButton.label"));
-        createButton.setToolTipText(resources.getString("createButton.tooltip"));
-        createButton.setEnabled(false);
-        createButton.setActionCommand(CMD_OK);
-        createButton.
+        saveButton = new JButton();
+        saveButton.setText(resources.getString("saveButton.label"));
+        saveButton.setToolTipText(resources.getString("saveButton.tooltip"));
+        saveButton.setEnabled(false);
+        saveButton.setActionCommand(CMD_OK);
+        saveButton.
           addActionListener(new ActionListener() {
               public void actionPerformed(ActionEvent event) {
                   windowAction(event.getActionCommand());
               }
           });
-        panel.add(createButton);
+        panel.add(saveButton);
 
         // space
         panel.add(Box.createRigidArea(new Dimension(5, 0)));
@@ -334,7 +341,7 @@ public class NewProviderDialog extends JDialog {
         panel.add(cancelButton);
 
         // equalize buttons
-        Utilities.equalizeButtonSizes(new JButton[]{createButton, cancelButton});
+        Utilities.equalizeButtonSizes(new JButton[]{saveButton, cancelButton});
 
         return panel;
     } // createButtonPanel()
@@ -362,16 +369,31 @@ public class NewProviderDialog extends JDialog {
         }
     }
 
+
+    /** populate the form from the provider beans */
+    private void populateForm() {
+        if (iProvider.getOid() != -1) {
+            providerNameTextField.setText(iProvider.getName());
+            // kludge, we add the internal provider, as itmaay show only in
+            // edit dsabled mode
+            providerTypesCombo.addItem(IdentityProviderType.INTERNAL);
+            for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
+                IdentityProviderType type =
+                  (IdentityProviderType)providerTypesCombo.getModel().getElementAt(i);
+                if (iProvider.getTypeVal() == type.toVal()) {
+                    providerTypesCombo.setSelectedIndex(i);
+                    break;
+                }
+            }
+            providerTypesCombo.setEnabled(false);
+        }
+    }
+
+
     /** insert the provider */
     private void insertProvider() {
         iProvider.setName(providerNameTextField.getText());
         providerSettingsPanel.readSettings(iProvider);
-        // emil, i leave this commented so you can see what i did
-        //IdentityProviderTypeImp ip = new IdentityProviderTypeImp();
-        //ip.setClassName("bla");
-        //iProvider.setType(ip);
-
-        final EntityHeader header = new EntityHeader();
 
         SwingUtilities.invokeLater(
           new Runnable() {
@@ -379,14 +401,18 @@ public class NewProviderDialog extends JDialog {
                   header.setName(iProvider.getName());
                   header.setType(EntityType.ID_PROVIDER_CONFIG);
                   try {
-                      header.setOid(getProviderConfigManager().save(iProvider));
-                      fireEventProviderAdded(header);
-                  } catch (SaveException e) {
-                      e.printStackTrace();
-                  } catch (RuntimeException e) {
-                      e.printStackTrace();
+                      if (header.getOid() == -1) {
+                          header.setOid(getProviderConfigManager().save(iProvider));
+                          fireEventProviderAdded(header);
+                      } else {
+                          getProviderConfigManager().update(iProvider);
+                          fireEventProviderUpdated(header);
+                      }
+                  } catch (Exception e) {
+                      ErrorManager.getDefault().
+                        notify(Level.WARNING, e, "Error updating the identity provider.");
                   }
-                  NewProviderDialog.this.dispose();
+                  IdentityProviderDialog.this.dispose();
               }
           });
     }
@@ -396,7 +422,7 @@ public class NewProviderDialog extends JDialog {
      * This method is called from within the constructor to
      * initialize the dialog.
      */
-    private ProviderSettingsPanel getLdapPanel() {
+    private ProviderSettingsPanel getLdapPanel(IdentityProviderConfig config) {
         final JTextField ldapHostTextField = new JTextField();
         final JTextField ldapSearchBaseTextField = new JTextField();
 
@@ -428,6 +454,8 @@ public class NewProviderDialog extends JDialog {
         ldapHostTextField.setPreferredSize(new Dimension(217, 20));
         ldapHostTextField.setMinimumSize(new Dimension(217, 20));
         ldapHostTextField.setToolTipText(resources.getString("ldapHostTextField.tooltip"));
+        ldapHostTextField.setText(config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
+
 
         // ldap host text field
         constraints = new GridBagConstraints();
@@ -458,6 +486,7 @@ public class NewProviderDialog extends JDialog {
         ldapSearchBaseTextField.setPreferredSize(new Dimension(217, 20));
         ldapSearchBaseTextField.setMinimumSize(new Dimension(217, 20));
         ldapSearchBaseTextField.setToolTipText(resources.getString("ldapSearchBaseTextField.tooltip"));
+        ldapSearchBaseTextField.setText(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE));
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 1;
@@ -465,12 +494,35 @@ public class NewProviderDialog extends JDialog {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 7, 0, 11);
+        constraints.insets = new Insets(12, 7, 0, 0);
         panel.add(ldapSearchBaseTextField, constraints);
+
+        // test ldap
+        JButton testButton = new JButton();
+        testButton.setText(resources.getString("testLdapButton.label"));
+        testButton.setToolTipText(resources.getString("testLdapButton.tooltip"));
+        testButton.setEnabled(false);
+        testButton.
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent event) {
+                  // test ldap here
+              }
+          });
+
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 2;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.EAST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets(12, 7, 0, 0);
+
+        panel.add(testButton, constraints);
+
 
         return panel;
     }
-
 
     /**
      * validate the input
@@ -481,7 +533,8 @@ public class NewProviderDialog extends JDialog {
         return true;
     }
 
-    private IdentityProviderConfigManager getProviderConfigManager() throws RuntimeException {
+    private IdentityProviderConfigManager getProviderConfigManager()
+      throws RuntimeException {
         IdentityProviderConfigManager ipc =
           (IdentityProviderConfigManager)Locator.
           getDefault().lookup(IdentityProviderConfigManager.class);
@@ -491,6 +544,32 @@ public class NewProviderDialog extends JDialog {
 
         return ipc;
     }
+
+    // hierarchy listener
+    private final HierarchyListener
+      hierarchyListener = new HierarchyListener() {
+          /** Called when the hierarchy has been changed.*/
+          public void hierarchyChanged(HierarchyEvent e) {
+              long flags = e.getChangeFlags();
+              if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
+                  if (IdentityProviderDialog.this.isShowing()) {
+                      origDimension = IdentityProviderDialog.this.getSize();
+                      if (header.getOid() != -1) {
+                          try {
+                              iProvider =
+                                getProviderConfigManager().findByPrimaryKey(header.getOid());
+
+                          } catch (Exception e1) {
+                              ErrorManager.getDefault().
+                                notify(Level.WARNING, e1, "Error retrieving provider.");
+                          }
+                          populateForm();
+                      }
+                  }
+              }
+          }
+      };
+
 
     private ListCellRenderer
       providerTypeRenderer = new DefaultListCellRenderer() {
@@ -551,7 +630,7 @@ public class NewProviderDialog extends JDialog {
 
     private String CMD_OK = "cmd.ok";
 
-    private JButton createButton = null;
+    private JButton saveButton = null;
 
     /** provider ID text field */
     private JTextField providerNameTextField = null;

@@ -50,11 +50,11 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
       throws FindException {
         List providers = new ArrayList();
         Iterator i = findAll().iterator();
-        IdentityProviderConfig config;
+
         while (i.hasNext()) {
-            config = (IdentityProviderConfig)i.next();
-            if (!IdentityProviderType.INTERNAL.equals(config.type()))
-                providers.add(makeProvider(config));
+            IdentityProviderConfig
+              config = (IdentityProviderConfig)i.next();
+              providers.add(makeProvider(config));
         }
         return Collections.unmodifiableList(providers);
     }
@@ -77,8 +77,7 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
           dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext();) {
             Long key = (Long)i.next();
             IdentityProviderConfig c = (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
-            if (!IdentityProviderType.INTERNAL.equals(c.type()))
-                list.add(fromIdentityProviderConfig(c));
+            list.add(fromIdentityProviderConfig(c));
         }
         return list;
     }
@@ -98,11 +97,10 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
           dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext(); index++) {
             Long key = (Long)i.next();
             if (index >= offset && count <= windowSize) {
-                IdentityProviderConfig c = (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
-                if (!IdentityProviderType.INTERNAL.equals(c.type())) {
-                    list.add(fromIdentityProviderConfig(c));
-                    count++;
-                }
+                IdentityProviderConfig c =
+                  (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
+                list.add(fromIdentityProviderConfig(c));
+                count++;
             }
         }
         return list;
@@ -121,8 +119,7 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
           dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext();) {
             Long key = (Long)i.next();
             IdentityProviderConfig c = (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
-            if (!IdentityProviderType.INTERNAL.equals(c.type()))
-                list.add(c);
+            list.add(c);
         }
         return list;
     }
@@ -142,11 +139,10 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
           dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext(); index++) {
             Long key = (Long)i.next();
             if (index >= offset && count <= windowSize) {
-                IdentityProviderConfig c = (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
-                if (!IdentityProviderType.INTERNAL.equals(c.type())) {
-                    list.add(c);
-                    count++;
-                }
+                IdentityProviderConfig c =
+                  (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
+                list.add(c);
+                count++;
             }
         }
         return list;

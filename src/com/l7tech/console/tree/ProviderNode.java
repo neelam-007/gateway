@@ -1,11 +1,10 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.console.action.IdentityProviderPropertiesAction;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
+import javax.swing.*;
+import java.util.*;
 
 /**
  * The class represents an tree node gui node element that
@@ -31,6 +30,22 @@ public class ProviderNode extends EntityHeaderNode {
             throw new IllegalArgumentException("entity == null");
         }
     }
+
+
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        java.util.List list = new ArrayList();
+        list.add(new IdentityProviderPropertiesAction(this));
+        list.addAll(Arrays.asList(super.getActions()));
+
+        return (Action[]) list.toArray(new Action[]{});
+    }
+
 
     /**
      * Returns the children of the reciever as an Enumeration.
