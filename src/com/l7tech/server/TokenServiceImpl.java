@@ -22,6 +22,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -140,6 +141,18 @@ public class TokenServiceImpl implements TokenService {
             return status;
         }
 
+
+        /*Document response = null;
+        if (isValidRequestForSecureConversationContext(wssOutput.getUndecoratedMessage(), wssOutput)) {
+            response = handleSecureConversationContextRequest(authenticatedUser, clientCert);
+        } else if (isValidRequestForSAMLToken(wssOutput.getUndecoratedMessage(), wssOutput)) {
+            response = handleSamlRequest(creds, clientAddress);
+        } else {
+            throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
+                                                     "RequestSecurityToken");
+        }*/
+
+
         // todo
         // change handling methods to use a context instead of straight document
         // handle request
@@ -148,23 +161,53 @@ public class TokenServiceImpl implements TokenService {
 
     }
 
+    /**
+     * Constructs the following policy (server-side version)<br/>
+     * <pre>
+     * AllAssertion:
+     *   OneOrMoreAssertion:
+     *     AllAssertion:
+     *       RequestWssIntegrity pattern=/soapenv:Envelope/soapenv:Body
+     *       OneOrMoreAssertion:
+     *         RequestWssX509Cert
+     *         SamlSecurity
+     *         SecureConversation
+     *     AllAssertion:
+     *       SslAssertion
+     *       OneOrMoreAssertion:
+     *         HttpBasic
+     *         WssBasic
+     *         HttpDigest
+     *         HttpClientCert
+     * </pre>
+     */
     private ServerAssertion getGenericEnforcementPolicy() {
         if (tokenServicePolicy == null) {
             AllAssertion base = new AllAssertion();
             OneOrMoreAssertion root = new OneOrMoreAssertion();
-            base.addChild(root);
-            root.addChild(new RequestWssX509Cert());
-            root.addChild(new SamlSecurity(SamlSecurity.CONFIRMATION_METHOD_WHATEVER));
-            root.addChild(new SecureConversation());
-            root.addChild(new HttpClientCert());
+
+            AllAssertion msgLvlBranch = new AllAssertion();
+            msgLvlBranch.addChild(new RequestWssIntegrity());
+            OneOrMoreAssertion validCredsOverMsgLvlSec = new OneOrMoreAssertion();
+            validCredsOverMsgLvlSec.addChild(new RequestWssX509Cert());
+            validCredsOverMsgLvlSec.addChild(new SamlSecurity(SamlSecurity.CONFIRMATION_METHOD_WHATEVER));
+            validCredsOverMsgLvlSec.addChild(new SecureConversation());
+            msgLvlBranch.addChild(validCredsOverMsgLvlSec);
+
+            AllAssertion sslBranch = new AllAssertion();
+            sslBranch.addChild(new SslAssertion());
             OneOrMoreAssertion validCredSrcOverSSL = new OneOrMoreAssertion();
             validCredSrcOverSSL.addChild(new HttpBasic());
             validCredSrcOverSSL.addChild(new WssBasic());
             validCredSrcOverSSL.addChild(new HttpDigest());
-            AllAssertion transportSecBranch = new AllAssertion();
-            transportSecBranch.addChild(new SslAssertion());
-            transportSecBranch.addChild(validCredSrcOverSSL);
-            root.addChild(transportSecBranch);
+            validCredSrcOverSSL.addChild(new HttpClientCert());
+            sslBranch.addChild(validCredSrcOverSSL);
+
+            root.addChild(msgLvlBranch);
+            root.addChild(sslBranch);
+
+            base.addChild(root);
+
             logger.fine("TokenService enforcing policy: " + base.toString());
             ServerPolicyFactory policyFactory = new ServerPolicyFactory();
             tokenServicePolicy = policyFactory.makeServerPolicy(base);
