@@ -13,8 +13,11 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
+import javax.servlet.ServletContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Collections;
 
 /**
  * Class <code>MockServletApi</code> creates the mock servlet API
@@ -41,9 +44,10 @@ public class MockServletApi {
     }
 
     public void reset() {
-        servletRequestMock = new MockHttpServletRequest(servletContextMock);
+        servletRequestMock = new MockHttpServletRequest24(servletContextMock);
         servletResponseMock = new MockHttpServletResponse();
         servletRequestMock.addHeader("Authorization", new String[] {});
+        servletRequestMock.addHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, new String[] {});
     }
 
     private MockServletApi(String contextLocation) {
@@ -123,5 +127,36 @@ public class MockServletApi {
      */
     public MockServletConfig getServletConfig() {
         return servletConfigMock;
+    }
+
+    public static class MockHttpServletRequest24 extends MockHttpServletRequest {
+        
+        public MockHttpServletRequest24(ServletContext servletContext) {
+            super(servletContext);
+        }
+
+        public Enumeration getHeaders(String string) {
+            try {
+                return super.getHeaders(string);
+            } catch (NullPointerException e) { // bug workaround
+                return Collections.enumeration(Collections.EMPTY_LIST);
+            }
+        }
+
+        public String getLocalAddr() {
+            return DEFAULT_REMOTE_ADDR;
+        }
+
+        public String getLocalName() {
+            return DEFAULT_SERVER_NAME;
+        }
+
+        public int getLocalPort() {
+            return DEFAULT_SERVER_PORT;
+        }
+
+        public int getRemotePort() {
+            return 1212;
+        }
     }
 }

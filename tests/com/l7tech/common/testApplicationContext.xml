@@ -28,6 +28,9 @@
      <property name="policyValidator">
          <ref bean="policyValidator"/>
      </property>
+     <property name="serviceManager">
+         <ref bean="serviceManager"/>
+     </property>
  </bean>
 
     <!-- server side service manager -->

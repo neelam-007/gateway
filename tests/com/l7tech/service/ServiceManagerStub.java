@@ -279,7 +279,11 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
     }
 
     public void afterPropertiesSet() throws Exception {
-        // build the cache if necessary
+        initializeServiceCache();
+    }
+
+    private void initializeServiceCache() throws ObjectModelException {
+// build the cache if necessary
         try {
             if (serviceCache.size() > 0) {
                 logger.finest("cache already built (?)");
@@ -292,11 +296,11 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
                     serviceCache.cache(service);
                 }
             }
+            // make sure the integrity check is running
+            serviceCache.initiateIntegrityCheckProcess();
         } catch (InterruptedException e) {
-            throw new ObjectModelException("exception building cache", e);
-        } catch (FindException e) {
-            throw new ObjectModelException("exception building cache", e);
+            throw new ObjectModelException("Exception building cache", e);
         }
-
     }
+
 }

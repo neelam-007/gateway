@@ -1,27 +1,17 @@
 package com.l7tech.service;
 
-import com.l7tech.common.xml.Wsdl;
-import com.l7tech.identity.StubDataStore;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.service.ServiceManager;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
-import javax.wsdl.WSDLException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.net.URL;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Class ServiceAdminStub.
@@ -29,12 +19,8 @@ import java.util.Map;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class ServiceAdminStub extends ApplicationObjectSupport implements ServiceAdmin, InitializingBean {
-    private Map services;
     private PolicyValidator policyValidator;
-
-    public ServiceAdminStub() {
-        services = StubDataStore.defaultStore().getPublishedServices();
-    }
+    private ServiceManager serviceManager;
 
     /**
      * Retreive the actual PublishedService object from it's oid.
@@ -43,9 +29,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @return
      * @throws RemoteException
      */
-    public PublishedService findServiceByID(String oid) throws RemoteException {
-        return
-          (PublishedService)services.get(new Long(oid));
+    public PublishedService findServiceByID(String oid) throws RemoteException, FindException {
+        return serviceManager.findByPrimaryKey(Long.getLong(oid).longValue());
     }
 
 
@@ -57,17 +42,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @return a string containing the xml document
      */
     public String resolveWsdlTarget(String url) throws RemoteException {
-        try {
-            Wsdl wsdl =
-              Wsdl.newInstance(null, new InputStreamReader(new URL(url).openStream()));
-            StringWriter sw = new StringWriter();
-            wsdl.toWriter(sw);
-            return sw.toString();
-        } catch (WSDLException e) {
-            throw new RemoteException("resolveWsdlTarget()", e);
-        } catch (java.io.IOException e) {
-            throw new RemoteException("resolveWsdlTarget()", e);
-        }
+        return serviceManager.resolveWsdlTarget(url);
     }
 
     /**
@@ -77,15 +52,10 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @return
      * @throws RemoteException
      */
-    public long savePublishedService(PublishedService service) throws RemoteException {
-        long oid = service.getOid();
-        if (oid == 0 || oid == Entity.DEFAULT_OID) {
-            oid = StubDataStore.defaultStore().nextObjectId();
-        }
-        service.setOid(oid);
-        Long key = new Long(oid);
-        services.put(key, service);
-        return oid;
+    public long savePublishedService(PublishedService service)
+      throws RemoteException, UpdateException, SaveException,
+      VersionException, ResolutionParameterTooLongException {
+        return serviceManager.save(service);
     }
 
     /**
@@ -94,21 +64,28 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @param id service id
      * @throws RemoteException
      */
-    public void deletePublishedService(String id) throws RemoteException {
-        if (services.remove(new Long(id)) == null) {
-            throw new RemoteException("Could not find service oid= " + id);
+    public void deletePublishedService(String id) throws RemoteException, DeleteException {
+        PublishedService service = null;
+        try {
+            long oid = toLong(id);
+            service = serviceManager.findByPrimaryKey(oid);
+            serviceManager.delete(service);
+            logger.info("Deleted PublishedService: " + oid);
+        } catch (FindException e) {
+            throw new DeleteException("Could not find object to delete.", e);
         }
+
 
     }
 
     public PolicyValidatorResult validatePolicy(String policyXml, long serviceId) throws RemoteException {
-        // todo
         try {
-            PublishedService service = findServiceByID(Long.toString(serviceId));
+            PublishedService service = serviceManager.findByPrimaryKey(serviceId);
             Assertion assertion = WspReader.parse(policyXml);
             return policyValidator.validate(assertion, service);
+        } catch (FindException e) {
+            throw new RemoteException("cannot get existing service: " + serviceId, e);
         } catch (IOException e) {
-            logger.warn("cannot parse passed policy xml: " + policyXml, e);
             throw new RemoteException("cannot parse passed policy xml", e);
         }
     }
@@ -121,14 +98,9 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public EntityHeader[] findAllPublishedServices() throws RemoteException {
-        Collection list = new ArrayList();
-        for (Iterator i =
-          services.keySet().iterator(); i.hasNext();) {
-            Long key = (Long)i.next();
-            list.add(fromService((PublishedService)services.get(key)));
-        }
-        return (EntityHeader[])list.toArray(new EntityHeader[]{});
+    public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
+        Collection res = serviceManager.findAllHeaders();
+        return collectionToHeaderArray(res);
     }
 
     /**
@@ -140,19 +112,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      */
     public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
       throws RemoteException {
-        Collection list = new ArrayList();
-        int index = 0;
-        int count = 0;
-        for (Iterator i =
-          services.keySet().iterator(); i.hasNext(); index++) {
-            Long key = (Long)i.next();
-
-            if (index >= offset && count <= windowSize) {
-                list.add(fromService((PublishedService)services.get(key)));
-                count++;
-            }
-        }
-        return (EntityHeader[])list.toArray(new EntityHeader[]{});
+        throw new RuntimeException("Not Implemented");
     }
 
     private EntityHeader fromService(PublishedService s) {
@@ -163,9 +123,47 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         this.policyValidator = policyValidator;
     }
 
+    public void setServiceManager(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
+    }
+
     public void afterPropertiesSet() throws Exception {
         if (policyValidator == null) {
             throw new IllegalArgumentException("Policy Validator is required");
         }
     }
+
+
+    /**
+     * Parse the String service ID to long (database format). Throws runtime exc
+     *
+     * @param serviceID the service ID, must not be null, and .
+     * @return the service ID representing <code>long</code>
+     * @throws IllegalArgumentException if service ID is null
+     * @throws NumberFormatException    on parse error
+     */
+    private long toLong(String serviceID)
+      throws IllegalArgumentException, NumberFormatException {
+        if (serviceID == null) {
+            throw new IllegalArgumentException();
+        }
+        return Long.parseLong(serviceID);
+    }
+
+    private EntityHeader[] collectionToHeaderArray(Collection input) throws RemoteException {
+        if (input == null) return new EntityHeader[0];
+        EntityHeader[] output = new EntityHeader[input.size()];
+        int count = 0;
+        java.util.Iterator i = input.iterator();
+        while (i.hasNext()) {
+            try {
+                output[count] = (EntityHeader)i.next();
+            } catch (ClassCastException e) {
+                throw new RemoteException("Collection contained something other than a EntityHeader", e);
+            }
+            ++count;
+        }
+        return output;
+    }
+
 }

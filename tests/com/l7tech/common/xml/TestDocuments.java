@@ -15,6 +15,7 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
+import java.net.URL;
 
 /**
  * The class is a container for test documents, SOAP tmessages etc
@@ -73,6 +74,25 @@ public final class TestDocuments {
         InputStream i = getInputStream(resourcetoread);
         return XmlUtil.parse(i);
     }
+
+    public static String getTestDocumentAsXml(String resourcetoread)
+      throws IOException, SAXException {
+       return XmlUtil.nodeToString(getTestDocument(resourcetoread));
+    }
+
+    public static String getTestDocumentURL(String resource)
+      throws IOException, SAXException {
+        if (resource == null) {
+            throw new IllegalArgumentException();
+        }
+        ClassLoader cl = TestDocuments.class.getClassLoader();
+        URL url = cl.getResource(resource);
+        if (url == null) {
+            throw new FileNotFoundException(resource);
+        }
+       return XmlUtil.nodeToString(getTestDocument(resource));
+    }
+
 
     public static InputStream getInputStream(String resourcetoread) throws FileNotFoundException {
         if (resourcetoread == null) {
