@@ -2,9 +2,15 @@ package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
+import com.l7tech.console.panels.JmsRoutingAssertionDialog;
+import com.l7tech.console.MainWindow;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.objectmodel.Entity;
 
 import javax.wsdl.WSDLException;
 import java.util.logging.Level;
@@ -44,7 +50,17 @@ public class AddRoutingAssertionAdvice implements Advice {
                 log.log(Level.WARNING, "Wsdl error", e);
             }
             ra.setProtectedServiceUrl(url);
+            pc.proceed();
+        } else if (assertions[0] instanceof JmsRoutingAssertion) {
+            JmsRoutingAssertion ra = (JmsRoutingAssertion) assertions[0];
+            final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
+            JmsRoutingAssertionDialog dialog = new JmsRoutingAssertionDialog(mainWindow, ra);
+            dialog.setModal(true);
+            dialog.pack();
+            Utilities.centerOnScreen(dialog);
+            dialog.show();
+            if (ra.getEndpointOid() != null && ra.getEndpointOid().longValue() != Entity.DEFAULT_OID)
+                pc.proceed();
         }
-        pc.proceed();
     }
 }
