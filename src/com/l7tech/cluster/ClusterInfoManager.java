@@ -24,6 +24,12 @@ import java.net.UnknownHostException;
 /**
  * Hibernate layer over the cluster_info table.
  *
+ * This manager will look for a row in the cluster_info that represent this server using mac addresses.
+ * If no row is found for this server, the manager will create one.
+ *
+ * This is a singleton to avoid going through the process of finding which row applies to this server
+ * using mac address every time.
+ *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
@@ -34,29 +40,14 @@ import java.net.UnknownHostException;
 public class ClusterInfoManager {
 
     /**
-     * determines whether this ssg belongs to a cluster or operates by itself
-     * @return true if this ssg is a node inside a cluster
+     * get the manager
      */
-    public boolean isCluster() {
-        synchronized (this) {
-            if (isCluster < 0) {
-                ClusterNodeInfo selfCI = getSelfNodeId();
-                if (selfCI != null) {
-                    isCluster = 1;
-                } else {
-                    isCluster = 0;
-                }
-            }
-        }
-        if (isCluster == 1) return true;
-        if (isCluster == 0) return false;
-        logger.warning("should not get here");
-        return false;
+    public static ClusterInfoManager getInstance() {
+        return SingletonHolder.singleton;
     }
 
     /**
      * returns the node id to which this server applies to
-     * @return
      */
     public String thisNodeId() {
         ClusterNodeInfo selfCI = getSelfNodeId();
@@ -147,55 +138,88 @@ public class ClusterInfoManager {
     /**
      * determines this node's nodeid value
      */
-    private ClusterNodeInfo getSelfNodeId() {
-        synchronized (this) {
+    private synchronized ClusterNodeInfo getSelfNodeId() {
+        if (selfId != null) {
+            return getNodeStatusFromDB(selfId);
+        } else {
             // special query, dont do this everytime
             // (cache return value as this will not change while the server is up)
-            if (selfId == null) {
-                Iterator macs = getMacs().iterator();
-                String anymac = null;
-                // find out which mac works for us
-                while (macs.hasNext()) {
-                    String mac = (String)macs.next();
-                    anymac = mac;
-                    ClusterNodeInfo output = getNodeStatusFromDB(mac);
-                    if (output != null) {
-                        selfId = mac;
-                        logger.finest("will update status for row: " + mac);
-                        return output;
-                    }
-                }
-
-                // no existing row for us. create one
-                if (anymac != null) {
-                    ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
-                    String add = null;
-                    try {
-                        add = InetAddress.getLocalHost().getHostAddress();
-                    } catch (UnknownHostException e) {
-                        logger.warning("cannot get localhost address: " + e.getMessage());
-                    }
-                    newClusterInfo.setAddress(add);
-                    newClusterInfo.setIsMaster(true);
-                    newClusterInfo.setMac(anymac);
-                    newClusterInfo.setName("SSG1");
-                    selfId = anymac;
-                    try {
-                        recordNodeInDB(newClusterInfo);
-                    } catch (SQLException e) {
-                        String msg = "cannot record new cluster node";
-                        logger.log(Level.SEVERE, msg, e);
-                    } catch (HibernateException e) {
-                        String msg = "cannot record new cluster node";
-                        logger.log(Level.SEVERE, msg, e);
-                    }
-                    logger.finest("no cluster status row existed for this server. created one");
-                    return newClusterInfo;
+            Iterator macs = getMacs().iterator();
+            String anymac = null;
+            // find out which mac works for us
+            while (macs.hasNext()) {
+                String mac = (String)macs.next();
+                anymac = mac;
+                ClusterNodeInfo output = getNodeStatusFromDB(mac);
+                if (output != null) {
+                    logger.finest("Using server " + output.getName() + " (" + output.getMac() + ")");
+                    selfId = mac;
+                    return output;
                 }
             }
+
+            // no existing row for us. create one
+            if (anymac != null) {
+                return selfPopulateClusterDB(anymac);
+            }
+
+            logger.severe("should not get here. this server has no mac?");
+            return null;
         }
-        if (selfId != null) return getNodeStatusFromDB(selfId);
-        else return null;
+    }
+
+    private ClusterNodeInfo selfPopulateClusterDB(String macid) {
+        ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
+        String add = null;
+        try {
+            add = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            logger.warning("cannot get localhost address: " + e.getMessage());
+        }
+        newClusterInfo.setAddress(add);
+        newClusterInfo.setIsMaster(true);
+        newClusterInfo.setMac(macid);
+        // choose first available name
+        String newnodename = null;
+        for (int i = 1; i < 25; i++) {
+            String maybenodename = "SSG" + i;
+            String query = "from " + TABLE_NAME + " in class " + ClusterNodeInfo.class.getName() +
+                           " where " + TABLE_NAME + "." + NAME_COLUMN_NAME + " = \'" + maybenodename + "\'";
+
+            HibernatePersistenceContext context = null;
+            List hibResults = null;
+            try {
+                context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+                hibResults = context.getSession().find(query);
+            } catch (SQLException e) {
+                String msg = "error looking for available node name";
+                logger.log(Level.WARNING, msg, e);
+            }  catch (HibernateException e) {
+                String msg = "error looking for available node name";
+                logger.log(Level.WARNING, msg, e);
+            }
+            if (hibResults == null || hibResults.isEmpty()) {
+                newnodename = maybenodename;
+                break;
+            }
+        }
+        if (newnodename == null) {
+            newnodename = "no_name";
+        }
+        newClusterInfo.setName(newnodename);
+        selfId = macid;
+        try {
+            recordNodeInDB(newClusterInfo);
+        } catch (SQLException e) {
+            String msg = "cannot record new cluster node";
+            logger.log(Level.SEVERE, msg, e);
+        } catch (HibernateException e) {
+            String msg = "cannot record new cluster node";
+            logger.log(Level.SEVERE, msg, e);
+        }
+        logger.finest("added cluster status row for this server. mac= " + newClusterInfo.getMac() +
+                      " name= " + newClusterInfo.getName());
+        return newClusterInfo;
     }
 
     private void recordNodeInDB(ClusterNodeInfo node) throws SQLException, HibernateException {
@@ -229,7 +253,7 @@ public class ClusterInfoManager {
                 return (ClusterNodeInfo)hibResults.get(0);
             default:
                 logger.warning("this should not happen. more than one entry found" +
-                                          "for mac: " + selfId);
+                                          "for mac: " + mac);
                 break;
         }
         return null;
@@ -364,11 +388,22 @@ public class ClusterInfoManager {
 
     private static final String TABLE_NAME = "cluster_info";
     private static final String MAC_COLUMN_NAME = "mac";
+    private static final String NAME_COLUMN_NAME = "name";
+
+    private static class SingletonHolder {
+        private static final ClusterInfoManager singleton = new ClusterInfoManager();
+    }
+
+    private ClusterInfoManager() {
+        // do nothing. just enforce the singleton pattern
+    }
+
     private static Pattern ifconfigMacPattern = Pattern.compile(".*HWaddr\\s+(\\w\\w.\\w\\w.\\w\\w." +
                                                                 "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
     private static Pattern ipconfigMacPattern = Pattern.compile(".*Physical Address.*(\\w\\w.\\w\\w.\\w\\w." +
                                                                 "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
     private final Logger logger = LogManager.getInstance().getSystemLogger();
-    private int isCluster = -1;
     private String selfId = null;
+
+
 }
