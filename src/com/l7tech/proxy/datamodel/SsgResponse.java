@@ -7,11 +7,14 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.util.SoapFaultUtils;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.MultipartMessageReader;
+import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.apache.commons.httpclient.Header;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -33,6 +36,15 @@ public class SsgResponse {
     private String responseString = null;
     private MultipartMessageReader multipartReader;
 
+    private transient Boolean isSoap = null;
+    private transient Boolean isFault = null;
+
+    // Fields that are only meaningful if this is a fault
+    private transient String faultcode = null;
+    private transient String faultstring = null;
+    private transient Element faultdetail = null;
+    private transient String faultactor = null;
+
     public SsgResponse(Document wssProcessedResponse, ProcessorResult wssProcessorResult,
                        int httpStatus, HttpHeaders headers, MultipartMessageReader multipartReader)
     {
@@ -42,6 +54,64 @@ public class SsgResponse {
         this.headers = headers;
         this.processorResult = wssProcessorResult;
         this.multipartReader = multipartReader;
+    }
+
+    /** @return true if this SSG response appears to be a SOAP message. */
+    public boolean isSoap() {
+        if (isSoap == null)
+            isSoap = Boolean.valueOf(SoapUtil.isSoapMessage(responseDoc));
+        return isSoap.booleanValue();
+    }
+
+    /** @return true if this SSG response appears to be a SOAP fault. */
+    public boolean isFault() {
+        if (isFault == null) {
+            if (!isSoap()) {
+                isFault = Boolean.FALSE;
+            } else {
+                try {
+                    Element payload = SoapUtil.getPayloadElement(responseDoc);
+                    if (payload != null && "Fault".equals(payload.getLocalName()) && payload.getNamespaceURI().equals(responseDoc.getDocumentElement().getNamespaceURI())) {
+                        Element faultcodeEl = XmlUtil.findFirstChildElementByName(payload, (String)null, "faultcode");
+                        if (faultcodeEl != null)
+                            faultcode = XmlUtil.getTextValue(faultcodeEl);
+                        Element faultstringEl = XmlUtil.findFirstChildElementByName(payload, (String)null, "faultstring");
+                        if (faultstringEl != null)
+                            faultstring = XmlUtil.getTextValue(faultstringEl);
+                        Element faultactorEl = XmlUtil.findFirstChildElementByName(payload, (String)null, "faultactor");
+                        if (faultactorEl != null)
+                            faultactor = XmlUtil.getTextValue(faultactorEl);
+                        faultdetail = XmlUtil.findFirstChildElementByName(payload, (String)null, "faultdetail");
+                        log.info("This Gateway response appears to be a SOAP fault, with faultcode " + faultcode);
+                        isFault = Boolean.TRUE;
+                    } else
+                        isFault = Boolean.FALSE;
+                } catch (InvalidDocumentFormatException e) {
+                    isFault = Boolean.FALSE;
+                }
+            }
+        }
+        return isFault.booleanValue();
+    }
+
+    public String getFaultcode() {
+        if (!isFault()) return null;
+        return faultcode;
+    }
+
+    public String getFaultstring() {
+        if (!isFault()) return null;
+        return faultstring;
+    }
+
+    public String getFaultactor() {
+        if (!isFault()) return null;
+        return faultactor;
+    }
+
+    public Element getFaultdetail() {
+        if (!isFault()) return null;
+        return faultdetail;
     }
 
     public static SsgResponse makeFaultResponse(String faultCode, String faultString, String faultActor) {

@@ -92,6 +92,9 @@ public class SecureSpanConstants {
     public static final String INVALID = "invalid";
     public static final String VALID = "valid";
 
+    /** SOAP faultcode for a stale or invalid WS-SecureConversation Security Context Token. */
+    public static final String FAULTCODE_BADCONTEXTTOKEN = "wsc:BadContextToken";
+
     /**
      * Special HTTP query parameters used by the protocol used between the SecureSpanAgent and the SecureSpanGateway.
      */

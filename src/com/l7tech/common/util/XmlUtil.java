@@ -226,18 +226,19 @@ public class XmlUtil {
      * and the name must be undecorated.
      *
      * @param parent the {@link Element} in which to search for children. Must be non-null.
-     * @param nsuri the URI of the namespace to which the child must belong, NOT THE PREFIX!  Must be non-null.
+     * @param nsuri the URI of the namespace to which the child must belong, NOT THE PREFIX!  May be null, in which
+     *              case namespaces are not considered when checking for a match.
      * @param name the name of the element to find. Must be non-null.
      * @return First matching child {@link Element} or null if the specified parent contains no matching elements
      */
     public static Element findFirstChildElementByName( Element parent, String nsuri, String name ) {
-        if ( nsuri == null || name == null ) throw new IllegalArgumentException( "nsuri and name must be non-null!" );
+        if ( name == null ) throw new IllegalArgumentException( "name must be non-null!" );
         NodeList children = parent.getChildNodes();
         for ( int i = 0; i < children.getLength(); i++ ) {
             Node n = children.item(i);
             if ( n.getNodeType() == Node.ELEMENT_NODE &&
                  name.equals( n.getLocalName()) &&
-                 nsuri.equals( n.getNamespaceURI() ) )
+                 (nsuri == null || nsuri.equals( n.getNamespaceURI() )) )
                 return (Element)n;
         }
         return null;

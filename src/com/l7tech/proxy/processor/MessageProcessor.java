@@ -36,8 +36,8 @@ import org.xml.sax.SAXException;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
 import java.io.IOException;
-import java.io.PushbackInputStream;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -393,12 +393,27 @@ public class MessageProcessor {
             throws OperationCanceledException,
             GeneralSecurityException, BadCredentialsException, IOException,
             ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException,
-            ConfigurationException, InvalidDocumentFormatException
+            ConfigurationException, InvalidDocumentFormatException, PolicyRetryableException
     {
         Policy appliedPolicy = req.getActivePolicy();
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
         if (appliedPolicy == null)
             return;
+
+        // Bug #1026 - If request used WS-SecureConversation, check if response is a BadContextToken fault.
+        if (req.getSecureConversationId() != null) {
+            // TODO we should do a proper QNAME
+            if (res.isFault() && res.getFaultcode() != null &&
+                    res.getFaultcode().trim().equals(SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN))
+            {
+                // TODO we should only trust this fault if it is signed
+                log.info("Gateway reports " + SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN +
+                         ".  Will throw away the current WS-SecureConversationSession and try again.");
+                req.closeSecureConversationSession();
+                throw new PolicyRetryableException("Flushed bad secure conversation session.");
+            }
+        }
+
         ClientAssertion rootAssertion = appliedPolicy.getClientAssertion();
         if (rootAssertion != null) {
             AssertionStatus result = rootAssertion.unDecorateReply(req, res);

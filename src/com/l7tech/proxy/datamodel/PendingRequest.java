@@ -451,10 +451,6 @@ public class PendingRequest {
      * @return The secure conversation session ID for this session, or null if there isn't one.
      */
     public String getSecureConversationId() {
-        if (secureConversationId != null) {
-            return secureConversationId;
-        }
-        secureConversationId = ssg.secureConversationId();
         return secureConversationId;
     }
 
@@ -477,6 +473,18 @@ public class PendingRequest {
             return secureConversationId;
 
         return secureConversationId = establishSecureConversationSession();
+    }
+
+    /** Forget any currently-active SecureConversationSession with this SSG. */
+    public void closeSecureConversationSession() {
+        synchronized (ssg) {
+            secureConversationId = null;
+            secureConversationExpiryDate = null;
+            secureConversationSharedSecret = null;
+            ssg.secureConversationId(null);
+            ssg.secureConversationExpiryDate(null);
+            ssg.secureConversationSharedSecret(null);
+        }
     }
 
     /**

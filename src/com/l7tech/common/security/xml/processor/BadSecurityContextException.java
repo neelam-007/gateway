@@ -6,6 +6,7 @@
 
 package com.l7tech.common.security.xml.processor;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.xml.SoapFaultDetail;
 
 /**
@@ -17,7 +18,7 @@ public class BadSecurityContextException extends Exception implements SoapFaultD
         id = contextId;
     }
     public String getFaultCode() {
-        return "wsc:BadContextToken";
+        return SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN;
     }
     public String getFaultString() {
         return "The soap message referred to a secure conversation context that was not recognized. " + id;
