@@ -14,10 +14,11 @@ package com.l7tech.common.protocol;
  */
 public class SecureSpanConstants {
 
-    /**
-     * This is the HTTP user agent sent by the current version of the Client Proxy.
-     */
+    /** The HTTP user agent sent by the current version of the Client Proxy. */
     public static final String USER_AGENT = "L7 Agent; Protocol v1.0";
+
+    /** The MIME type of the X.509 certificate sent by the certificate discovery server. */
+    public static final String CERTIFICATE_MIME_TYPE = "application/x-x509-ca-cert";
 
     public static class HttpHeaders {
         /**
@@ -67,5 +68,25 @@ public class SecureSpanConstants {
          * use the information for service routing.
          */
         public static final String ORIGINAL_URL = "L7-Original-URL";
+
+        /**
+         * Contains a hash value used for checking certificate validity.  The full header name for each
+         * cert check will be this prefix followed by the numeric ID of an authentication provider that
+         * contained a matching username.  The value of the header will be the hex encoded MD5 digest
+         * of the raw bytes of the cert (exactly as returned by the body of the response associated with
+         * this header) + H(A1), where H(A1) is the MD5 of "username:realm:password".  The hex digest
+         * will be followed by a semicolon, a space, and the realm name.
+         *
+         * <p>Here is a complete example:  <pre>L7-Cert-Check--1: 249d90d691cdd6fdb480c80aeaddbaa3; myrealm</pre>
+         *
+         * <p>This means it's the cert check header for auth provider -1 (the builtin provider).  The large hex
+         * number is the MD5 of "TheseAreSomeCertificateBytes" + "alice:myrealm:secret".  The username was
+         * provided to the certificate server with the request and is thus already known to the client.
+         * The realm is returned in plaintext since the client does not know it in advance.
+         * "secret" is the password that the client is supposed to know already; if both client and server agree
+         * about the value of the password, the client can trust that the certificate bytes were provided by someone
+         * that knows the H(A1) of his password and that they haven't been tampered with in transit.
+         */
+        public static final String CERT_CHECK_PREFIX = "L7-Cert-Check-";
     }
 }
