@@ -1,6 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.util.SwingWorker;
+import com.l7tech.common.gui.util.SwingWorker;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;

@@ -1,6 +1,7 @@
 package com.l7tech.console.util;
 
 import com.l7tech.common.util.UptimeMetrics;
+import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceStatistics;

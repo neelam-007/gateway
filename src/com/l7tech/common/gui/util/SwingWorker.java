@@ -1,4 +1,4 @@
-package com.l7tech.console.util;
+package com.l7tech.common.gui.util;
 
 import javax.swing.SwingUtilities;
 
