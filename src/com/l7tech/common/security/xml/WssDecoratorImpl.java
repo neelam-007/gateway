@@ -506,9 +506,11 @@ public class WssDecoratorImpl implements WssDecorator {
         encryptionMethod.setAttribute("Algorithm", SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO);
 
         byte[] recipSki = recipientCertificate.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
-        if (recipSki != null)
-            addKeyInfo(encryptedKey, recipSki, SoapUtil.VALUETYPE_SKI);
-        else
+        if (recipSki != null && recipSki.length > 4) {
+            byte[] goodSki = new byte[recipSki.length - 4];
+            System.arraycopy(recipSki, 4, goodSki, 0, goodSki.length);
+            addKeyInfo(encryptedKey, goodSki, SoapUtil.VALUETYPE_SKI);
+        } else
             addKeyInfo(encryptedKey, recipientCertificate.getEncoded(), SoapUtil.VALUETYPE_X509);
 
         Element cipherData = XmlUtil.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
