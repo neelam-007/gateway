@@ -86,6 +86,7 @@ public class MainWindow extends JFrame {
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
+    private Action serverLoadAction = null;
     private Action findAction = null;
     private Action prefsAction = null;
     private Action removeNodeAction = null;
@@ -120,6 +121,8 @@ public class MainWindow extends JFrame {
     private final ClassLoader cl = getClass().getClassLoader();
 
     private JMenu gotoMenu;
+    private JMenu serverLoadMenu;
+
     public static final String TITLE = "SSG Management Console";
     public static final String NAME = "main.window"; // registered
     private JTree policyTree;
@@ -345,6 +348,10 @@ public class MainWindow extends JFrame {
         int mnemonic = viewMenu.getText().toCharArray()[0];
         viewMenu.setMnemonic(mnemonic);
         viewMenu.add(getGotoSubmenu());
+        item = new JMenuItem(getServerLoadAction());
+        mnemonic = item.getText().toCharArray()[0];
+        item.setMnemonic(mnemonic);
+        viewMenu.add(item);
         viewMenu.addSeparator();
 
         JCheckBoxMenuItem logItem = new JCheckBoxMenuItem(getShowLogToggleAction());
@@ -367,7 +374,6 @@ public class MainWindow extends JFrame {
         viewMenu.add(jcm);
         return viewMenu;
     }
-
 
     /**
      * Return the newMenu property value.
@@ -495,6 +501,25 @@ public class MainWindow extends JFrame {
           };
         toggleShowLogAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return toggleShowLogAction;
+    }
+
+    private Action getServerLoadAction() {
+        if (serverLoadAction != null) return serverLoadAction;
+        String atext = resapplication.getString("ServerLoad_MenuItem_text");
+        serverLoadAction = new AbstractAction(atext) {
+            /**
+             * Invoked when an action occurs.
+             *
+             * @param event  the event that occured
+             * @see Action#removePropertyChangeListener
+             */
+            public void actionPerformed(ActionEvent event) {
+                // todo
+            }
+        };
+        serverLoadAction.setEnabled(false);
+        serverLoadAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        return serverLoadAction;
     }
 
     /**
@@ -633,6 +658,7 @@ public class MainWindow extends JFrame {
         getDisconnectAction().setEnabled(connected);
         getConnectAction().setEnabled(!connected);
         getShowLogToggleAction().setEnabled(connected);
+        getServerLoadAction().setEnabled(connected);
     }
 
 
