@@ -8,7 +8,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.util.ServerSoapUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
