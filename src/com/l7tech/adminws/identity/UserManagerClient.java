@@ -40,15 +40,28 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
     }
 
     public void delete(User user) throws DeleteException {
-        throw new DeleteException("Not supported in UserManagerClient");
+        try {
+            // todo, user must be refactored so that it's id is always a string
+            getStub().deleteUser(config.getOid(), Long.toString(user.getOid()));
+        } catch (java.rmi.RemoteException e) {
+            throw new DeleteException(e.getMessage(), e);
+        }
     }
 
     public long save(User user) throws SaveException {
-        throw new SaveException("Not supported in UserManagerClient");
+        try {
+            return getStub().saveUser(config.getOid(), user);
+        } catch (java.rmi.RemoteException e) {
+            throw new SaveException(e.getMessage(), e);
+        }
     }
 
     public void update(User user) throws UpdateException {
-        throw new UpdateException("Not supported in UserManagerClient");
+        try {
+            getStub().saveUser(config.getOid(), user);
+        } catch (java.rmi.RemoteException e) {
+            throw new UpdateException(e.getMessage(), e);
+        }
     }
 
     public Collection findAllHeaders() throws FindException {
