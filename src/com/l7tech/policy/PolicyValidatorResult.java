@@ -55,6 +55,17 @@ public class PolicyValidatorResult {
     }
 
     /**
+     * Returns the unmodifiable collection of all the messages collected.
+     *
+     * @return the <code>List</code> of all the messages
+     */
+    public List getMessages() {
+        List all = new ArrayList();
+        all.addAll(getErrors());
+        all.addAll(getWarnings());
+        return all;
+    }
+    /**
      * Add the error to this validator result.
      *
      * @param err the error to add
