@@ -30,8 +30,42 @@ public class SecureConversationKeyDeriver {
      * @param secret the secret associated with the session
      * @return the resulting derived key
      */
-    public byte[] derivedKeyTokenToKey(Element derivedKeyToken, byte[] secret) {
+    public byte[] derivedKeyTokenToKey(Element derivedKeyToken, byte[] secret) throws NoSuchAlgorithmException {
+        // make sure we got a DerivedKeyToken
+        if (derivedKeyToken.getLocalName() == null || !derivedKeyToken.getLocalName().equals(DKT_EL_NAME)) {
+            throw new IllegalArgumentException("This is no DerivedKeyToken " + derivedKeyToken.getLocalName());
+        }
+        // check which version of wsc we are dealing with
+        if (derivedKeyToken.getNamespaceURI() == null) {
+            throw new IllegalArgumentException("DerivedKeyToken must specify wsc namespace");
+        } else if (derivedKeyToken.getNamespaceURI().equals(WSC11_NS)) {
+            // we are dealing with wsc 1.1
+            // todo?
+        } else if (derivedKeyToken.getNamespaceURI().equals(WSSE11_NS)) {
+            // we are dealing with wsc 1.0
+            // todo?
+        } else {
+            throw new IllegalArgumentException("Unsuported DerivedKeyToken namespace " + derivedKeyToken.getNamespaceURI());
+        }
+
+        // check that default algorithm is in effect
+        String algo = derivedKeyToken.getAttribute(ALGO_ATTRNAME);
+        if (algo == null) {
+            derivedKeyToken.getAttributeNodeNS(WSSE11_NS, ALGO_ATTRNAME);
+        }
+        if (algo == null) {
+            derivedKeyToken.getAttributeNodeNS(WSSE11_NS, ALGO_ATTRNAME);
+        }
+        if (algo != null) {
+            throw new NoSuchAlgorithmException("Algorithm specified (" + algo + "). We only support default P_SHA-1");
+        }
+
+        // get the Nonce
         // todo
+
+        // get the subject
+        // todo
+
         return null;
     }
 
@@ -92,4 +126,9 @@ public class SecureConversationKeyDeriver {
     }
 
     private Mac hmac;
+
+    private static final String DKT_EL_NAME = "DerivedKeyToken";
+    private static final String WSC11_NS = "http://schemas.xmlsoap.org/ws/2004/04/sc";
+    private static final String WSSE11_NS = "http://schemas.xmlsoap.org/ws/2002/12/secext/";
+    private static final String ALGO_ATTRNAME = "Algorithm";
 }
