@@ -43,6 +43,7 @@ public class XmlSecurityFolderNode extends AbstractTreeNode {
         int index = 0;
         insert(new XmlRequestSecurityNode(), index++);
         insert(new XmlResponseSecurityNode(), index++);
+        insert(new SamlSecurityNode(), index++);
     }
 
     /**
