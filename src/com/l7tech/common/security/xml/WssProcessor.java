@@ -8,6 +8,7 @@ package com.l7tech.common.security.xml;
 
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.message.SoapFaultDetail;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import x0Assertion.oasisNamesTcSAML1.AssertionType;
@@ -98,6 +99,23 @@ public interface WssProcessor {
 
     public static class ProcessorException extends Exception {}
 
+    public static class BadContextException extends Exception implements SoapFaultDetail {
+        public BadContextException(String contextId) {
+            super("The context " + contextId + " cannot be resolved.");
+            id = contextId;
+        }
+        public String getFaultCode() {
+            return "wsc:BadContextToken";
+        }
+        public String getFaultString() {
+            return "The soap message referred to a secure conversation context that was not recognized. " + id;
+        }
+        public String getFaultDetails() {
+            return getFaultString();
+        }
+        private String id;
+    }
+
     /**
      * This processes a soap message. That is, the contents of the Header/Security are processed as per the WSS rules.
      *
@@ -113,5 +131,5 @@ public interface WssProcessor {
                                       X509Certificate recipientCertificate,
                                       PrivateKey recipientPrivateKey,
                                       SecurityContextFinder securityContextFinder)
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException;
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadContextException;
 }

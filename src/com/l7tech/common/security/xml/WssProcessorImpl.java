@@ -65,21 +65,6 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    public static class InvalidContextException extends ProcessorException {
-
-        public InvalidContextException(String contextId) {
-            super("The identifier " + contextId + " is not a currently recognized secure " +
-                  "conversation context on this server");
-            this.contextId = contextId;
-        }
-
-        public String getUnresolvedContextId() {
-            return contextId;
-        }
-
-        private String contextId = null;
-    }
-
     /**
      * This processes a soap message. That is, the contents of the Header/Security are processed as per the WSS rules.
      *
@@ -95,7 +80,7 @@ public class WssProcessorImpl implements WssProcessor {
                                                           X509Certificate recipientCert,
                                                           PrivateKey recipientKey,
                                                           SecurityContextFinder securityContextFinder)
-            throws WssProcessor.ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
+            throws WssProcessor.ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadContextException
     {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
@@ -177,7 +162,7 @@ public class WssProcessorImpl implements WssProcessor {
                                                          "did not provide a SecurityContextFinder");
                         final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
                         if (secContext == null) {
-                            throw new InvalidContextException(identifier);
+                            throw new BadContextException(identifier);
                         }
                         SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
                                                                                           secConTokEl,
