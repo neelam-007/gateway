@@ -57,7 +57,7 @@ public class ServerSecureConversation implements ServerAssertion {
                 User authenticatedUser = session.getUsedBy();
                 request.setAuthenticated(true);
                 request.setUser(authenticatedUser);
-                response.addDeferredAssertion(this, defferedSecureConversationResponseDecoration(session));
+                response.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
                 logger.fine("Secure COnversation session recognized for user " + authenticatedUser.getLogin());
                 return AssertionStatus.NONE;
             }
@@ -66,7 +66,7 @@ public class ServerSecureConversation implements ServerAssertion {
         return AssertionStatus.AUTH_REQUIRED;
     }
 
-    private final ServerAssertion defferedSecureConversationResponseDecoration(final SecureConversationSession session) {
+    private final ServerAssertion deferredSecureConversationResponseDecoration(final SecureConversationSession session) {
         return new ServerAssertion() {
             public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
                 if (!(response instanceof SoapResponse))
