@@ -1351,8 +1351,16 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
                 <include name="clean_db.pl"/>
                 <include name="dbfaildetect.sh"/>
                 <include name="iptables"/>
+                <include name="iptables-singlenet"/>
+                <include name="ssg-initd"/>
                 <include name="tcp_tune.sh"/>
-                <include name="db/mysql/my.cnf"/>
+	    </fileset>
+	    <fileset dir="${src.root}/etc/db/mysql/my.cnf">
+                <include name="my.cnf"/>
+            </fileset>
+            <fileset dir="${src.root}/native/linux">
+                <include name="nc"/>
+                <include name="garp"/>
             </fileset>
         </copy>
 
@@ -1373,6 +1381,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <fileset dir="${install.src.bin}">
                 <include name="*.sh"/>
                 <include name="*.pl"/>
+                <include name="nc"/>
+                <include name="garp"/>
             </fileset>
             <fileset dir="${install.src.jdk}">
                 <include name="bin/*"/>
