@@ -123,7 +123,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
         // i actually dont get the group, the console only constructs a new group and sets the oid
         try {
             Group actualGroup = findByPrimaryKey(Long.toString(group.getOid()));
-            if (actualGroup.getName() == Group.ADMIN_GROUP_NAME) return true;
+            if ( Group.ADMIN_GROUP_NAME.equals( actualGroup.getName() ) ) return true;
         } catch (FindException e) {
             // it's valid that the group does not exist here
             e.printStackTrace(System.err);
