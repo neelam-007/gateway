@@ -89,10 +89,8 @@ public class ClientWssClientCert implements ClientAssertion {
             throw new PolicyAssertionException("error signing document", e);
         }
 
-        // todo, feed back soapmsg into the PendingRequest
-
-        // return AssertionStatus.NONE;
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+        request.setSoapEnvelope(soapmsg);
+        return AssertionStatus.NONE;
     }
 
     protected WssClientCert data;
