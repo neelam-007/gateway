@@ -52,6 +52,10 @@ public class ClientWssBasic extends ClientWssCredentialSource {
     {
         Document soapmsg = request.getSoapEnvelope();
         Element headerel = SoapUtil.getOrMakeHeader(soapmsg);
+        if ( headerel == null ) {
+            log.warn("Unable to attach WSS UsernameToken to non-SOAP message");
+            return AssertionStatus.FAILED;
+        }
 
         // get the username and passwords
         String username = request.getUsername();

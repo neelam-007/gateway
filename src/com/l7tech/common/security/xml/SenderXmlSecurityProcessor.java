@@ -153,11 +153,13 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
             throw se;
         } catch (JaxenException e) {
             throw new SecurityProcessorException("XPath error", e);
+        } catch ( SoapUtil.MessageNotSoapException e ) {
+            throw new SecurityProcessorException("Can't encrypt or sign a non-SOAP message", e);
         }
     }
 
     private int doSignElement(int signId, Document document, Element element, XpathExpression elementXpath)
-            throws SignatureStructureException, XSignatureException {
+            throws SignatureStructureException, XSignatureException, SoapUtil.MessageNotSoapException {
         // dsig
         final String referenceId = SIGN_REFERENCE + signId;
         SoapMsgSigner.signElement(document, element, referenceId, signerInfo.getPrivate(), signerInfo.getCertificateChain());

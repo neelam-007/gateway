@@ -61,7 +61,7 @@ public final class SoapMsgSigner {
      *          
      */
     public static void signEnvelope(Document soapMsg, PrivateKey privateKey, X509Certificate[] certChain)
-      throws SignatureStructureException, XSignatureException {
+            throws SignatureStructureException, XSignatureException, SoapUtil.MessageNotSoapException {
         // is the envelope already ided?
         String id = SoapUtil.getElementId(soapMsg.getDocumentElement());
 
@@ -89,7 +89,7 @@ public final class SoapMsgSigner {
      * @throws IllegalArgumentException if any of the parameters i <b>null</b>
      */
     public static void signElement(Document document, final Element messagePart, String referenceId, PrivateKey privateKey, X509Certificate[] certChain)
-      throws SignatureStructureException, XSignatureException {
+            throws SignatureStructureException, XSignatureException, SoapUtil.MessageNotSoapException {
 
         if (document == null || messagePart == null | referenceId == null ||
           privateKey == null || certChain == null || certChain.length == 0) {
@@ -116,6 +116,9 @@ public final class SoapMsgSigner {
 
         // Signature is inserted in Header/Security, as per WS-S
         Element securityHeaderElement = SoapUtil.getOrMakeSecurityElement(document);
+        if ( securityHeaderElement == null ) {
+            throw new SoapUtil.MessageNotSoapException("Can't add Security header to non-SOAP message");
+        }
 
         Element signatureElement = (Element)securityHeaderElement.appendChild(emptySignatureElement);
 

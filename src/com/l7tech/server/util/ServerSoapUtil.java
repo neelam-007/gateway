@@ -21,29 +21,67 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class ServerSoapUtil extends SoapUtil {
+    /**
+     * Returns the {@link Document} from a {@link Message}, or null if the message is not XML.
+     * @param soapmsg
+     * @return the {@link Document} from the specified {@link Message}, or null if the message is not XML.
+     * @throws SAXException
+     * @throws IOException
+     */
     public static Document getDocument(Message soapmsg) throws SAXException, IOException {
         if ( soapmsg instanceof XmlMessage ) {
             XmlMessage xmsg = (XmlMessage)soapmsg;
             return xmsg.getDocument();
-        } else {
-            throw new IllegalArgumentException( "Can't find a URN in a non-XML request!" );
         }
+        return null;
     }
 
+    /**
+     * Returns the SOAP:Envelope (document) element from a {@link Request}, or null if the message is not XML.
+     * @param request
+     * @return the SOAP:Envelope (document) element for the specified {@link Request}, or null if the message is not XML.
+     * @throws SAXException
+     * @throws IOException
+     */
     public static Element getEnvelope( Request request ) throws SAXException, IOException {
         Document doc = getDocument( request );
-        Element env = doc.getDocumentElement();
-        return env;
+        if ( doc == null )
+            return null;
+        else
+            return doc.getDocumentElement();
     }
 
+    /**
+     * Returns the {@link Element} corresponding to a specified SOAP Part, or null if the message is not XML.
+     * @param request
+     * @param elementName
+     * @return the {@link Element} corresponding to a specified SOAP Part, or null if the message is not XML.
+     * @throws SAXException
+     * @throws IOException
+     */
     static Element getEnvelopePart( Request request, String elementName ) throws SAXException, IOException {
-        return getEnvelopePart( getDocument( request ), elementName );
+        Document doc = getDocument(request);
+        return doc == null ? null : getEnvelopePart( doc, elementName );
     }
 
+    /**
+     * Returns the SOAP:Header {@link Element} for the specified {@link Request}, or null if the message is not SOAP or not XML.
+     * @param request
+     * @return the SOAP:Header {@link Element} for the specified {@link Request}, or null if the message is not SOAP or not XML.
+     * @throws SAXException
+     * @throws IOException
+     */
     public static Element getHeaderElement( Request request ) throws SAXException, IOException {
         return getEnvelopePart( request, HEADER_EL_NAME );
     }
 
+    /**
+     * Returns the SOAP:Body {@link Element} for the specified {@link Request}, or null if the message is not SOAP or not XML.
+     * @param request
+     * @return the SOAP:Body {@link Element} for the specified {@link Request}, or null if the message is not SOAP or not XML.
+     * @throws SAXException
+     * @throws IOException
+     */
     public static Element getBodyElement( Request request ) throws SAXException, IOException {
         return getEnvelopePart( request, BODY_EL_NAME );
     }

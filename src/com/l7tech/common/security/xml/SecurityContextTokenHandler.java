@@ -2,7 +2,10 @@ package com.l7tech.common.security.xml;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
@@ -11,8 +14,8 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * Appends and parses out xml security session information in/out of soap messages.
@@ -28,7 +31,6 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class SecurityContextTokenHandler {
-    private static final Logger log = Logger.getLogger(SecurityContextTokenHandler.class.getName());
     private static final int SESSION_BYTES = 16;
     private static final SecurityContextTokenHandler INSTANCE = new SecurityContextTokenHandler();
 
@@ -95,8 +97,9 @@ public class SecurityContextTokenHandler {
      * TODO: should we strip any existing SecurityContextToken from the SecurityHeader?
      */
     public void appendSessionInfoToSoapMessage(Document soapmsg, byte[] sessionid, long seqnumber,
-                                                      long creationtimestamp) {
+                                                      long creationtimestamp) throws SoapUtil.MessageNotSoapException {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
+        if ( securityCtxTokEl == null ) throw new SoapUtil.MessageNotSoapException("Can't append session info to non-SOAP message");
         appendIDElement(securityCtxTokEl, sessionid);
         setMessageNumber(securityCtxTokEl, new Long(seqnumber));
         appendCreationElement(securityCtxTokEl, creationtimestamp);
@@ -210,7 +213,11 @@ public class SecurityContextTokenHandler {
         if (listSecurityElements.getLength() < 1) {
             // element does not exist
             Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
-            Element securityContxTokEl = soapMsg.createElementNS(WSC_NAMESPACE, SCTOKEN_ELNAME);            
+            if ( securityEl == null ) {
+                // Probably not SOAP
+                return null;
+            }
+            Element securityContxTokEl = soapMsg.createElementNS(WSC_NAMESPACE, SCTOKEN_ELNAME);
             securityContxTokEl.setAttribute("xmlns:" + DEF_WSC_NAMESPACE_PREFIX, WSC_NAMESPACE);
             securityContxTokEl.setPrefix(DEF_WSC_NAMESPACE_PREFIX);
             securityEl.insertBefore(securityContxTokEl, null);

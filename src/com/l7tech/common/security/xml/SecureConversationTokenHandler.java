@@ -77,8 +77,9 @@ public class SecureConversationTokenHandler {
     public static final String IDENTIFIER_EL_NAME = "Identifier";
 
 
-    public static void appendNonceToDocument(Document soapmsg, long nonce) {
+    public static void appendNonceToDocument(Document soapmsg, long nonce) throws SoapUtil.MessageNotSoapException {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
+        if ( securityCtxTokEl == null ) throw new SoapUtil.MessageNotSoapException("Can't add nonce to non-SOAP message");
         writeIdentifierElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(nonce));
     }
 
@@ -101,8 +102,9 @@ public class SecureConversationTokenHandler {
         return nonceValue == null ? null : new Long(nonceValue);
     }
 
-    public static void appendSessIdAndSeqNrToDocument(Document soapmsg, long sessId, long seqNr) {
+    public static void appendSessIdAndSeqNrToDocument(Document soapmsg, long sessId, long seqNr) throws SoapUtil.MessageNotSoapException {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
+        if ( securityCtxTokEl == null ) throw new SoapUtil.MessageNotSoapException("Can't add sequence number to non-SOAP message");
         writeIdentifierElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(sessId));
         writeL7SeqElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(seqNr));
     }
@@ -218,6 +220,11 @@ public class SecureConversationTokenHandler {
         if (listSecurityElements.getLength() < 1) {
             // element does not exist
             Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
+            if ( securityEl == null ) {
+                // Probably not SOAP
+                return null;
+            }
+
             Element securityContxTokEl = soapMsg.createElementNS(SoapUtil.SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
             // use same prefix as parent
             securityContxTokEl.setPrefix(securityEl.getPrefix());

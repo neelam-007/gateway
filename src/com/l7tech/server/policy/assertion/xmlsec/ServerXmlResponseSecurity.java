@@ -4,6 +4,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlResponse;
@@ -66,7 +67,12 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
 
         // (this is optional)
         if (nonceValue != null && nonceValue.length() > 0) {
-            SecureConversationTokenHandler.appendNonceToDocument(soapmsg, Long.parseLong(nonceValue));
+            try {
+                SecureConversationTokenHandler.appendNonceToDocument(soapmsg, Long.parseLong(nonceValue));
+            } catch ( SoapUtil.MessageNotSoapException e ) {
+                logger.log( Level.WARNING, e.getMessage(), e );
+                return AssertionStatus.FAILED;
+            }
         } else {
             logger.finest("request did not include a nonce value to use for response's signature");
         }

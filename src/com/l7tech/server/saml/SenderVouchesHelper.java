@@ -79,10 +79,13 @@ class SenderVouchesHelper {
             doc.getDocumentElement().setAttribute("Id", "SamlTicket");
             SoapMsgSigner.signEnvelope(doc, signerInfo.getPrivate(), signerInfo.getCertificateChain());
             Element secElement = SoapUtil.getOrMakeSecurityElement(soapMessage);
+            if ( secElement == null ) {
+                throw new SAXException("Can't attach SAML token to non-SOAP message");
+            }
             SoapUtil.importNode(soapMessage, doc, secElement);
             NodeList list = secElement.getElementsByTagNameNS(NS_SAML, "Assertion");
             if (list.getLength() == 0) {
-                throw new IOException("Cannot locate the samle assertion in \n"+XmlUtil.documentToString(soapMessage));
+                throw new IOException("Cannot locate the saml assertion in \n"+XmlUtil.documentToString(soapMessage));
             }
             Node node = list.item(0);
 

@@ -72,6 +72,7 @@ public class UrnResolver extends WsdlOperationServiceResolver {
                 }
             } else {
                 Element body = ServerSoapUtil.getBodyElement(request);
+                if ( body == null ) return null;
                 Node n = body.getFirstChild();
                 while (n != null) {
                     if (n.getNodeType() == Node.ELEMENT_NODE)

@@ -83,7 +83,8 @@ public class XmlMangler {
      * @throws IOException              if there was a problem reading or writing a key or a bit of xml
      */
     public static void encryptXml(Document soapMsg, byte[] keyBytes, String keyName)
-      throws GeneralSecurityException, IOException, IllegalArgumentException {
+            throws GeneralSecurityException, IOException, IllegalArgumentException, SoapUtil.MessageNotSoapException
+    {
         encryptXml(soapMsg.getDocumentElement(), keyBytes, keyName, id);
     }
 
@@ -101,7 +102,7 @@ public class XmlMangler {
      * @throws IOException              if there was a problem reading or writing a key or a bit of xml
      */
     public static void encryptXml(Element element, byte[] keyBytes, String keyName, String referenceId)
-      throws GeneralSecurityException, IOException, IllegalArgumentException {
+            throws GeneralSecurityException, IOException, IllegalArgumentException, SoapUtil.MessageNotSoapException {
         Document soapMsg = element.getOwnerDocument();
         if (keyBytes.length < 16)
             throw new IllegalArgumentException("keyBytes must be at least 16 bytes long for AES128");
@@ -156,7 +157,7 @@ public class XmlMangler {
      * @param element     the document element
      * @param referenceId the element reference id
      */
-    private static void addWssHeader(Element element, String referenceId) {
+    private static void addWssHeader(Element element, String referenceId) throws SoapUtil.MessageNotSoapException {
         Document document = element.getOwnerDocument();
         // Add new namespaces to Envelope element, as per spec.
 
@@ -173,6 +174,9 @@ public class XmlMangler {
         refEl.appendChild(dataRefEl);
 
         Element securityEl = SoapUtil.getOrMakeSecurityElement(document);
+        if ( securityEl == null ) {
+            throw new SoapUtil.MessageNotSoapException("Can't add WS-Security header to non-SOAP message");
+        }
         securityEl.appendChild(refEl);
     }
 
@@ -227,6 +231,7 @@ public class XmlMangler {
             throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there is no SOAP header");
 
         Element security = SoapUtil.getSecurityElement(header);
+        if ( security == null ) throw new XMLSecurityElementNotFoundException("Can't get Security header for non-SOAP message");
 
         List referenceListList = null;
         if (keyKefList != null) {
