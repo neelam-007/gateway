@@ -149,7 +149,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 if (status == AssertionStatus.NONE) {
                     logger.fine("servlet transport returning 200");
                     // Transmit the response and return
-                    hresponse.setContentType(response.getMimeKnob().getFirstPart().getContentType().getFullValue());
+                    hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
                     HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(),
                       hresponse.getOutputStream());
                     return;
