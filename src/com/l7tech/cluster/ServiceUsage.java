@@ -87,6 +87,21 @@ public class ServiceUsage implements Serializable {
     }
 
     /**
+     * Get the service name
+     * @return
+     */
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    /**
+     * Set the service name
+     * @param name
+     */
+    public void setServiceName(String name) {
+        serviceName = name;
+    }
+    /**
      * this must be overriden (hibernate requirement for composite id classes)
      */
     public boolean equals(Object obj) {
@@ -97,6 +112,7 @@ public class ServiceUsage implements Serializable {
         if (requests != jghmx.requests) return false;
         if (authorized != jghmx.authorized) return false;
         if (completed != jghmx.completed) return false;
+        if (serviceName != jghmx.serviceName) return false;
         return true;
     }
 
@@ -105,4 +121,5 @@ public class ServiceUsage implements Serializable {
     private long requests;
     private long authorized;
     private long completed;
+    private String serviceName;
 }
