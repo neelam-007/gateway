@@ -4,15 +4,17 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.axis.AxisEngine;
-import org.apache.axis.AxisFault;
 import org.apache.axis.client.Call;
 import org.apache.axis.encoding.DeserializationContextImpl;
-import org.apache.axis.message.*;
+import org.apache.axis.message.MessageElement;
+import org.apache.axis.message.SOAPBodyElement;
+import org.apache.axis.message.SOAPEnvelope;
+import org.apache.axis.message.SOAPHandler;
+import org.apache.axis.message.SOAPHeader;
 import org.apache.axis.soap.SOAPConstants;
 import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.soap.SOAPException;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
 
@@ -85,7 +87,7 @@ public class SsgFakerTest extends TestCase {
         reqEnvelope.addBodyElement(reqBe);
 
         Call call = new Call(ssgUrl);
-        SOAPEnvelope responseEnvelope = null;
+        SOAPEnvelope responseEnvelope;
         try {
             responseEnvelope = call.invoke(reqEnvelope);
         } catch (RemoteException e) {
