@@ -14,13 +14,12 @@ import java.awt.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.DSAParams;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAParams;
+import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
-import java.math.BigInteger;
 
 /**
  * Panel that displays the fields of an X509Certificate.
@@ -128,7 +127,6 @@ public class CertificatePanel extends JPanel {
 
         if (publicKey != null && publicKey instanceof RSAPublicKey) {
             RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
-            System.out.println(rsaKey.toString());
             String modulus = rsaKey.getModulus().toString(16);
             l.add(new String[]{"RSA strength", (modulus.length() * 4) + " bits"});
             l.add(new String[]{"RSA modulus", modulus});
