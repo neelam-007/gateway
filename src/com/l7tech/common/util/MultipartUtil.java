@@ -77,7 +77,6 @@ public class MultipartUtil {
                 sbuf.append("\n");
             }
             sbuf.append("\n" + part.getContent());
-            sbuf.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\n");
         }
 
         // the last boundary has delimiter after the boundary
