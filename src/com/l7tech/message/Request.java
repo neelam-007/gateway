@@ -62,6 +62,8 @@ public interface Request extends Message {
     public static final String PARAM_HTTP_METHOD            = PREFIX_HTTP + ".method";
     /** The name of the parameter containing the HTTP URI (i.e. /ssg/soap) */
     public static final String PARAM_HTTP_REQUEST_URI       = PREFIX_HTTP + ".request-uri";
+    /** The name of the parameter containing the original URL requested of the Client Proxy */
+    public static final String PARAM_HTTP_L7_ORIGINAL_URL   = PREFIX_HTTP + ".l7-original-url";
 
     /**
      * Returns the <code>PrincipalCredentials</code> associated with this request,
