@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  */
 public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager {
     public String resolveWsdlTarget(String url) throws RemoteException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -105,6 +105,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
         if ( matchingServices != null && !matchingServices.isEmpty() )
             throw new DuplicateObjectException( "Duplicate service resolution parameters!" );
+
     }
 
     public ServiceManagerImp() throws ObjectModelException {
@@ -161,6 +162,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             long oid = _manager.save( getContext(), service );
             putService( service );
             fireCreated( service );
+            logger.info( "Saved service #" + oid );
             return oid;
         } catch ( SQLException se ) {
             logger.log( Level.SEVERE, se.toString(), se );
@@ -221,6 +223,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             _manager.update(getContext(), original);
             putService(original);
             fireUpdated(original);
+            logger.info( "Updated service #" + service.getOid() );
         } catch ( SQLException se ) {
             logger.log( Level.SEVERE, se.toString(), se );
             throw new UpdateException( se.toString(), se );
@@ -240,6 +243,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             _manager.delete( getContext(), service );
             removeService( service );
             fireDeleted( service );
+            logger.info( "Deleted service " + service.getOid() );
         } catch ( SQLException se ) {
             throw new DeleteException( se.toString(), se );
         }
