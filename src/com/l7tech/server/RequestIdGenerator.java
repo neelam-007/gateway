@@ -19,17 +19,21 @@ import java.math.BigInteger;
 public class RequestIdGenerator {
     public static BigInteger next() {
         RequestIdGenerator instance = getInstance();
-        long seq = instance.nextSequence();
-        BigInteger next = new BigInteger( instance._seed.toString() );
+        long seq;
+        BigInteger next;
+        synchronized( instance ) {
+            seq = instance.nextSequence();
+            next = new BigInteger( instance._seed.toString() );
+        }
         return next.add( new BigInteger( new Long( seq ).toString() ) );
     }
 
-    private synchronized static RequestIdGenerator getInstance() {
+    private static synchronized RequestIdGenerator getInstance() {
         if ( _instance == null ) _instance = new RequestIdGenerator();
         return _instance;
     }
 
-    private synchronized void reseed( long time ) {
+    private void reseed( long time ) {
         BigInteger seedServerId = new BigInteger( new Byte( _serverId ).toString() ).shiftLeft(120);
         BigInteger bigTime = new BigInteger( new Long( time ).toString() ).shiftLeft(72);
 
@@ -42,7 +46,7 @@ public class RequestIdGenerator {
         reseed( config.getServerBootTime() );
     }
 
-    private synchronized long nextSequence() {
+    private long nextSequence() {
         if ( _sequence >= MAX_SEQ ) {
             _sequence = 0;
             reseed( System.currentTimeMillis() );
