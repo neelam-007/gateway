@@ -286,6 +286,7 @@ public class MessageProcessor {
             SsgResponse response = new SsgResponse(postMethod.getResponseBodyAsString());
             log.info("Got response from SSG: " + response);
             if (status == 401) {
+                req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
                 if (authHeader == null && SsgKeyStoreManager.isClientCertAvailabile(ssg) && "https".equals(url.getProtocol())) {
                     // 401 without an auth challenge, if the connection was made successfully over SSL,
@@ -304,7 +305,6 @@ public class MessageProcessor {
                     }
                 }
 
-                req.setLastErrorResponse(response);
                 Managers.getCredentialManager().notifyInvalidCredentials(ssg);
                 if (!Managers.getCredentialManager().getCredentials(req.getSsg()))
                     throw new OperationCanceledException("User declined to provide credentials");
