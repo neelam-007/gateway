@@ -36,7 +36,7 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
         }
         String remoteVersion = is.echoVersion();
         if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
-            throw new VersionException(SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
+            throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
         }
         serviceLookup = (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
     }
