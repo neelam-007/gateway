@@ -120,7 +120,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 keyInfoValueTypeURI = SoapUtil.VALUETYPE_DERIVEDKEY;
                 if (session == null)
                     throw new IllegalArgumentException("Signing is requested with SecureConversationSession, but session is null");
-                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, sct, session);
+                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, sct, null, session);
                 keyInfoReferenceTarget = derivedKeyToken.dkt;
                 senderSigningKey = new AesKey(derivedKeyToken.derivedKey, derivedKeyToken.derivedKey.length * 8);
             } else if (bst != null) {
@@ -144,13 +144,18 @@ public class WssDecoratorImpl implements WssDecorator {
         if (decorationRequirements.getElementsToEncrypt().size() > 0) {
             if (sct != null) {
                 // Encrypt using Secure Conversation session
-                // TODO
-                // TODO
-                // TODO
-                // TODO
-                // TODO
-                // TODO
-                // TODO
+                if (session == null)
+                    throw new IllegalArgumentException("Encryption is requested with SecureConversationSession, but session is null");
+                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, sct, signature, session);
+                Element keyInfoReferenceTarget = derivedKeyToken.dkt;
+                String keyInfoValueTypeURI = SoapUtil.VALUETYPE_DERIVEDKEY;
+                addEncryptedReferenceList(c,
+                                          securityHeader,
+                                          derivedKeyToken.derivedKey,
+                                          (Element[])(decorationRequirements.getElementsToEncrypt().toArray(new Element[0])),
+                                          signature,
+                                          keyInfoReferenceTarget,
+                                          keyInfoValueTypeURI);
             } else if (decorationRequirements.getRecipientCertificate() != null) {
                 // Encrypt to recipient's certificate
                 addEncryptedKey(c,
@@ -159,7 +164,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                 (Element[])(decorationRequirements.getElementsToEncrypt().toArray(new Element[0])),
                                 signature);
             } else
-                throw new IllegalArgumentException("Encryption is requested, but recipientCertificate is null");
+                throw new IllegalArgumentException("Encryption is requested, but there is no recipientCertificate or SecureConversation session.");
 
         }
 
@@ -188,6 +193,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private DerivedKeyToken addDerivedKeyToken(Context c,
                                                Element securityHeader,
                                                Element sct,
+                                               Element desiredNextSibling,
                                                WssDecorator.DecorationRequirements.SecureConversationSession session)
             throws NoSuchAlgorithmException, InvalidKeyException
     {
@@ -196,11 +202,19 @@ public class WssDecoratorImpl implements WssDecorator {
         String wsse = securityHeader.getPrefix();
         if (wsse == null) wsse = "wsse";
 
-        Element dkt = XmlUtil.createAndAppendElementNS(securityHeader,
-                                                       "DerivedKeyToken",
-                                                       SoapUtil.WSSC_NAMESPACE,
-                                                       "wssc");
-        dkt.setAttributeNS(SoapUtil.WSSC_NAMESPACE, dkt.getPrefix() + ":Algorithm", SoapUtil.ALGORITHM_PSHA);
+        Element dkt;
+        if (desiredNextSibling == null)
+            dkt = XmlUtil.createAndAppendElementNS(securityHeader,
+                                                   "DerivedKeyToken",
+                                                   SoapUtil.WSSC_NAMESPACE,
+                                                   "wssc");
+        else
+            dkt = XmlUtil.createAndInsertBeforeElementNS(desiredNextSibling,
+                                                         "DerivedKeyToken",
+                                                         SoapUtil.WSSC_NAMESPACE,
+                                                         "wssc");
+        String wssc = dkt.getPrefix() == null ? "" : dkt.getPrefix() + ":";
+        dkt.setAttributeNS(SoapUtil.WSSC_NAMESPACE, wssc + "Algorithm", SoapUtil.ALGORITHM_PSHA);
         Element str = XmlUtil.createAndAppendElementNS(dkt, "SecurityTokenReference", wsseNs, wsse);
         Element ref = XmlUtil.createAndAppendElementNS(str, "Reference", wsseNs, wsse);
         ref.setAttribute("URI", getOrCreateWsuId(c, sct, null));
@@ -391,6 +405,81 @@ public class WssDecoratorImpl implements WssDecorator {
         return untokEl;
     }
 
+
+    /** Appends a KeyInfo to the specified parent Element, referring to keyInfoReferenceTarget. */
+    private Element addKeyInfo(Context c,
+                               Element securityHeader,
+                               Element parent,
+                               Element keyInfoReferenceTarget,
+                               String keyInfoValueTypeURI)
+    {
+        Element keyInfo = XmlUtil.createAndAppendElementNS(parent,
+                                                           "KeyInfo",
+                                                           SoapUtil.DIGSIG_URI,
+                                                           "dsig");
+        Element str = XmlUtil.createAndAppendElementNS(keyInfo,
+                                                       "SecurityTokenReference",
+                                                       securityHeader.getNamespaceURI(),
+                                                       "wsse");
+        Element ref = XmlUtil.createAndAppendElementNS(str,
+                                                       "Reference",
+                                                       securityHeader.getNamespaceURI(),
+                                                       "wsse");
+        String uri = getOrCreateWsuId(c, keyInfoReferenceTarget, null);
+        ref.setAttribute("URI", uri);
+        ref.setAttribute("ValueType", keyInfoValueTypeURI);
+        return keyInfo;
+    }
+
+    /**
+     * Encrypts one or more document elements using a caller-supplied key (probaly from a DKT),
+     * and appends a ReferenceList to the Security header before the specified desiredNextSibling element
+     * (probably the Signature).
+     *
+     */
+    private Element addEncryptedReferenceList(Context c,
+                                              Element securityHeader,
+                                              byte[] keyBytes,
+                                              Element[] elementsToEncrypt,
+                                              Element desiredNextSibling,
+                                              Element keyInfoReferenceTarget,
+                                              String keyInfoValueTypeURI)
+            throws GeneralSecurityException, DecoratorException
+    {
+        Document soapMsg = securityHeader.getOwnerDocument();
+        String xencNs = SoapUtil.XMLENC_NS;
+
+        // Put the ReferenceList in the right place
+        Element referenceList;
+        if (desiredNextSibling == null) {
+            referenceList = XmlUtil.createAndAppendElementNS(securityHeader,
+                                                            "ReferenceList",
+                                                            xencNs, "xenc");
+        } else {
+            referenceList = XmlUtil.createAndInsertBeforeElementNS(desiredNextSibling,
+                                                                  "ReferenceList",
+                                                                  xencNs, "xenc");
+        }
+        String xenc = referenceList.getPrefix();
+
+        for (int i = 0; i < elementsToEncrypt.length; i++) {
+            Element element = elementsToEncrypt[i];
+            Element encryptedElement = encryptElement(element, keyBytes);
+
+            Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
+            dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
+
+            addKeyInfo(c, securityHeader, encryptedElement, keyInfoReferenceTarget, keyInfoValueTypeURI);
+        }
+
+        return referenceList;
+    }
+
+    /**
+     * Encrypts one or more document elements using a recipient cert,
+     * and appends an EncryptedKey to the Security header before the specified desiredNextSibling element
+     * (probably the Signature).
+     */
     private Element addEncryptedKey(Context c,
                                     Element securityHeader,
                                     X509Certificate recipientCertificate,
