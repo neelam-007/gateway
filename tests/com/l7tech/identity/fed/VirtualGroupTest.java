@@ -1,14 +1,13 @@
 package com.l7tech.identity.fed;
 
+import com.l7tech.common.util.CertUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 
-import java.util.*;
-
-import com.l7tech.common.util.CertUtils;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author alex
