@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <saml:Assertion AssertionID="mySamlAssertion"
+    IssueInstant="2004-08-05T21:47:32.077Z"
+    Issuer="root.locutus.l7tech.com" MajorVersion="1" MinorVersion="1"
     xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
-    <saml:Conditions NotBefore="2004-08-05T10:12:12.085-07:00" NotOnOrAfter="2004-08-05T10:14:12.085-07:00"/>
+    <saml:Conditions NotBefore="2004-08-05T21:47:32.077Z" NotOnOrAfter="2004-08-05T21:49:32.077Z"/>
     <saml:AuthenticationStatement
-        AuthenticationInstant="2004-08-05T10:12:12.085-07:00" AuthenticationMethod="urn:ietf:rfc:3075">
+        AuthenticationInstant="2004-08-05T21:47:32.077Z" AuthenticationMethod="urn:ietf:rfc:3075">
         <saml:Subject>
             <saml:NameIdentifier
                 Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName" NameQualifier="root.locutus.l7tech.com">CN=joe</saml:NameIdentifier>
@@ -17,6 +19,6 @@
                 </ds:KeyInfo>
             </saml:SubjectConfirmation>
         </saml:Subject>
-        <saml:SubjectLocality IPAddress="192.168.1.220"/>
+        <saml:SubjectLocality DNSAddress="locutus.l7tech.com" IPAddress="192.168.1.220"/>
     </saml:AuthenticationStatement>
 </saml:Assertion>

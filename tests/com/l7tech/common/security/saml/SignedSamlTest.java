@@ -3,30 +3,28 @@ package com.l7tech.common.security.saml;
 import com.ibm.xml.dsig.*;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.apache.xmlbeans.XmlOptions;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
 import org.w3.x2000.x09.xmldsig.X509DataType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.apache.xmlbeans.XmlOptions;
 import x0Assertion.oasisNamesTcSAML1.*;
 
 import javax.xml.namespace.QName;
-import java.io.StringWriter;
 import java.net.InetAddress;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.io.StringWriter;
+import java.math.BigInteger;
 
 /**
  * @author alex
@@ -97,6 +95,12 @@ public class SignedSamlTest extends TestCase {
         final String caCertCn = (String)((List)caCertDnMap.get("CN")).get(0);
         System.out.println("CA CN = " + caCertCn);
 
+        AssertionType samlAssertion = AssertionType.Factory.newInstance();
+        samlAssertion.setAssertionID(ASSERTION_ID);
+        samlAssertion.setMajorVersion(BigInteger.ONE);
+        samlAssertion.setMinorVersion(BigInteger.ONE);
+        samlAssertion.setIssuer(caCertCn);
+
         final SubjectType samlSubject = SubjectType.Factory.newInstance();
         NameIdentifierType nameIdentifier = samlSubject.addNewNameIdentifier();
         nameIdentifier.setNameQualifier(caCertCn);
@@ -111,16 +115,18 @@ public class SignedSamlTest extends TestCase {
         samlX509.addX509SubjectName(clientDn);
         samlX509.addX509Certificate(clientCertChain[0].getEncoded());
 
-        AssertionType samlAssertion = AssertionType.Factory.newInstance();
-        samlAssertion.setAssertionID(ASSERTION_ID);
-
         final Calendar cal = Calendar.getInstance();
+        cal.setTimeZone(TimeZone.getTimeZone("UTC"));
 
+        samlAssertion.setIssueInstant(cal);
         AuthenticationStatementType samlAuthStatement = samlAssertion.addNewAuthenticationStatement();
         samlAuthStatement.setAuthenticationInstant(cal);
         samlAuthStatement.setSubject(samlSubject);
         samlAuthStatement.setAuthenticationMethod(Constants.XML_DSIG_AUTHENTICATION);
-        samlAuthStatement.addNewSubjectLocality().setIPAddress(addressToString(InetAddress.getLocalHost()));
+        final SubjectLocalityType subjectLocality = samlAuthStatement.addNewSubjectLocality();
+        final InetAddress localHost = InetAddress.getLocalHost();
+        subjectLocality.setIPAddress(addressToString(localHost));
+        subjectLocality.setDNSAddress(localHost.getCanonicalHostName());
 
         ConditionsType conditions = samlAssertion.addNewConditions();
         conditions.setNotBefore(cal);
