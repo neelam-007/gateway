@@ -1,9 +1,10 @@
-package com.l7tech.console;
+package com.l7tech.console.panels;
 
 import com.l7tech.console.panels.*;
 import com.l7tech.console.table.ContextListTableModel;
 import com.l7tech.console.tree.EntityTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.MainWindow;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -109,7 +110,7 @@ public class FindDialog extends JDialog {
       this.entry = (EntityHeaderNode)o;
     } else {
       throw new
-      IllegalArgumentException("node must contain Entry. received "+o.getClass());
+              IllegalArgumentException("node must contain Entry. received "+o.getClass());
     }
 
     // Add our panel listener to the broker

@@ -1,4 +1,4 @@
-package com.l7tech.console;
+package com.l7tech.console.panels;
 
 import com.l7tech.console.panels.EntityEditorPanel;
 import com.l7tech.console.panels.PanelListener;

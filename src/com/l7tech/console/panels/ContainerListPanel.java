@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.PanelFactory;
 import com.l7tech.console.table.ContextListTableModel;
 import com.l7tech.console.table.TableRowAction;
 import com.l7tech.console.table.TableRowMenu;

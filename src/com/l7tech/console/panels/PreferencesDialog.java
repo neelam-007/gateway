@@ -1,4 +1,4 @@
-package com.l7tech.console;
+package com.l7tech.console.panels;
 
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.text.MaxLengthDocument;
@@ -493,7 +493,7 @@ public class PreferencesDialog extends JDialog {
    * 
    * @return the <CODE>Properties</CODE> containing
    *         the current Prefernces state
-   * @exception IOException
+   * @exception java.io.IOException
    */
   private Properties getPreferences() throws IOException {
     if (props == null) {
