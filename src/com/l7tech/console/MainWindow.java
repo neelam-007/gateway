@@ -96,6 +96,7 @@ public class MainWindow extends JFrame {
     private Action toggleStatusBarAction = null;
     private Action togglePolicyMessageArea = null;
     private PublishServiceAction publishServiceAction = null;
+    private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
     private CreateServiceWsdlAction createServiceAction = null;
     private ViewGatewayLogsAction viewGatewayLogWindowAction = null;
     private ViewClusterStatusAction viewClusterStatusAction = null;
@@ -445,6 +446,7 @@ public class MainWindow extends JFrame {
 
             editMenu.add(getPublishServiceAction());
             editMenu.add(getCreateServiceAction());
+            editMenu.add(getPublishNonSoapServiceAction());
             editMenu.addSeparator();
 
             editMenu.add(getManageCertificatesMenuItem());
@@ -595,6 +597,16 @@ public class MainWindow extends JFrame {
         publishServiceAction.setEnabled(false);
         this.addLogonListener(publishServiceAction);
         return publishServiceAction;
+    }
+
+    private PublishNonSoapServiceAction getPublishNonSoapServiceAction() {
+        if (publishNonSoapServiceAction != null) {
+            return publishNonSoapServiceAction;
+        }
+        publishNonSoapServiceAction = new PublishNonSoapServiceAction();
+        publishNonSoapServiceAction.setEnabled(false);
+        this.addLogonListener(publishNonSoapServiceAction);
+        return publishNonSoapServiceAction;
     }
 
 
