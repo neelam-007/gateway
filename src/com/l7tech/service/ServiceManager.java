@@ -1,10 +1,6 @@
 package com.l7tech.service;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.message.Request;
-import com.l7tech.service.resolution.ServiceResolutionException;
-
-import java.util.Map;
 
 /**
  * Layer 7 Technologies, inc.
@@ -59,17 +55,4 @@ public interface ServiceManager extends EntityManager {
      * @throws DeleteException
      */
     void delete( PublishedService service ) throws DeleteException;
-
-    /**
-     * called at run time to discover which service is being invoked based
-     * on the request headers and/or document.
-     * @param request
-     * @return
-     */
-    PublishedService resolveService( Request request ) throws ServiceResolutionException;
-
-    void addServiceListener( ServiceListener listener );
-
-    /** Returns an unmodifiable Map of service OIDs to cached PublishedService instances. */
-    Map serviceMap();
-}
+ }

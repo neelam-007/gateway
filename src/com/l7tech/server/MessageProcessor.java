@@ -6,25 +6,17 @@
 
 package com.l7tech.server;
 
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SessionNotFoundException;
-import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceListener;
-import com.l7tech.service.ServiceManager;
-import com.l7tech.service.ServiceStatistics;
+import com.l7tech.service.ServiceCache;
 import com.l7tech.service.resolution.ServiceResolutionException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -34,8 +26,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,12 +33,10 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class MessageProcessor implements ServiceListener {
+public class MessageProcessor /*implements ServiceListener*/ {
     public AssertionStatus processMessage( Request request, Response response ) throws IOException, PolicyAssertionException {
         try {
-            if ( _serviceManager == null ) throw new IllegalStateException( "ServiceManager is null!" );
-
-            PublishedService service = _serviceManager.resolveService( request );
+            PublishedService service = ServiceCache.getInstance().resolve(request);
 
             AssertionStatus status;
             if ( service == null ) {
@@ -103,59 +91,22 @@ public class MessageProcessor implements ServiceListener {
                 }
 
                 // Get the server policy
-                logger.finest("Get the server policy");
-                Assertion genericPolicy = service.rootAssertion();
-                Long oid = new Long( service.getOid() );
-                ServerAssertion serverPolicy;
-                Sync read = null;
-                Sync write = null;
-                try {
-                    read = _policyCacheLock.readLock();
-                    read.acquire();
-                    serverPolicy = (ServerAssertion)_serverPolicyCache.get( oid );
-                    if ( serverPolicy == null ) {
-                        // Upgrade to a write lock
-                        read.release();
-                        read = null;
-                        write = _policyCacheLock.writeLock();
-                        write.acquire();
-
-                        serverPolicy = ServerPolicyFactory.getInstance().makeServerPolicy( genericPolicy );
-                        _serverPolicyCache.put( oid, serverPolicy );
-
-                        write.release();
-                        write = null;
-                    } else {
-                        read.release();
-                        read = null;
-                    }
-                } catch ( InterruptedException ie ) {
-                    String msg = "Interrupted while acquiring policy cache lock!";
-                    logger.fine( msg );
-                    Thread.currentThread().interrupt();
-                    throw new PolicyAssertionException( msg, ie );
-                } finally {
-                    if (read != null) {
-                        read.release();
-                        read = null;
-                    }
-                    if (write != null) {
-                        write.release();
-                        write = null;
-                    }
+                ServerAssertion serverPolicy = ServiceCache.getInstance().getServerPolicy(service.getOid());
+                if (serverPolicy == null) {
+                    throw new ServiceResolutionException("service is resolved but no corresponding policy available.");
                 }
 
                 // Run the policy
                 logger.finest("Run the server policy");
-                getServiceStatistics( service.getOid() ).attemptedRequest();
+                ServiceCache.getInstance().getServiceStatistics(service.getOid()).attemptedRequest();
                 status = serverPolicy.checkRequest( request, response );
 
                 if ( status == AssertionStatus.NONE ) {
-                    getServiceStatistics( service.getOid() ).authorizedRequest();
+                    ServiceCache.getInstance().getServiceStatistics(service.getOid()).authorizedRequest();
                     RoutingStatus rstat = request.getRoutingStatus();
                     if ( rstat == RoutingStatus.ROUTED ) {
                         logger.fine( "Request was routed with status " + " " + status.getNumeric() + " (" + status.getMessage() + ")" );
-                        getServiceStatistics( service.getOid() ).completedRequest();
+                        ServiceCache.getInstance().getServiceStatistics(service.getOid()).completedRequest();
                     } else if ( rstat == RoutingStatus.ATTEMPTED ) {
                         logger.severe( "Request routing failed with status " + status.getNumeric() + " (" + status.getMessage() + ")" );
                         status = AssertionStatus.FALSIFIED;
@@ -169,46 +120,9 @@ public class MessageProcessor implements ServiceListener {
         } catch ( ServiceResolutionException sre ) {
             logger.log(Level.SEVERE, sre.getMessage(), sre);
             return AssertionStatus.SERVER_ERROR;
-        }
-    }
-
-    public ServiceStatistics getServiceStatistics( long serviceOid ) {
-        Long oid = new Long( serviceOid );
-        ServiceStatistics stats;
-        Sync read = null;
-        Sync write = null;
-        try {
-            read = _statsLock.readLock();
-            read.acquire();
-            stats = (ServiceStatistics)_serviceStatistics.get(oid);
-            if ( stats == null ) {
-                // Upgrade read lock to write lock
-                read.release();
-                read = null;
-                stats = new ServiceStatistics( serviceOid );
-                write = _statsLock.writeLock();
-                write.acquire();
-                _serviceStatistics.put( oid, stats );
-                write.release();
-                write = null;
-            } else {
-                read.release();
-                read = null;
-            }
-            return stats;
-        } catch ( InterruptedException ie ) {
-            logger.fine( "Interrupted while acquiring statistics lock!" );
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(ie);
-        } finally {
-            if (read != null) {
-                read.release();
-                read = null;
-            }
-            if (write != null) {
-                write.release();
-                write = null;
-            }
+        } catch (InterruptedException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return AssertionStatus.SERVER_ERROR;
         }
     }
 
@@ -227,11 +141,6 @@ public class MessageProcessor implements ServiceListener {
     }
 
     private MessageProcessor() {
-        // This only uses Locator because only one instance of ServiceManager must
-        // be active at once.
-        _serviceManager = (ServiceManager)Locator.getDefault().lookup( ServiceManager.class );
-        _serviceManager.addServiceListener( this );
-
         _dbf = DocumentBuilderFactory.newInstance();
         _dbf.setNamespaceAware(true);
         _dbf.setValidating(false);
@@ -293,31 +202,11 @@ public class MessageProcessor implements ServiceListener {
         return false;
     }
 
-    public void serviceCreated( PublishedService service ) {
-        // Lazy
-    }
-
-    public void serviceDeleted(PublishedService service) {
-        Long oid = new Long( service.getOid() );
-        _serverPolicyCache.remove( oid );
-        _serviceStatistics.remove( oid );
-    }
-
-    public void serviceUpdated(PublishedService service) {
-        _serverPolicyCache.remove( new Long( service.getOid() ) );
-    }
-
     private static MessageProcessor _instance = null;
     private static ThreadLocal _currentRequest = new ThreadLocal();
     private static ThreadLocal _currentResponse = new ThreadLocal();
 
-    private Map _serverPolicyCache = new HashMap();
-    private ServiceManager _serviceManager;
     private Logger logger = LogManager.getInstance().getSystemLogger();
-    private Map _serviceStatistics = new HashMap();
-
-    private ReadWriteLock _policyCacheLock = new ReentrantWriterPreferenceReadWriteLock();
-    private ReadWriteLock _statsLock = new ReentrantWriterPreferenceReadWriteLock();
 
     private DocumentBuilderFactory _dbf;
     private XmlPullParserFactory _xppf;

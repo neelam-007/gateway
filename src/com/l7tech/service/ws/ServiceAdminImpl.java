@@ -1,21 +1,19 @@
 package com.l7tech.service.ws;
 
-import com.l7tech.service.*;
-import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
-import com.l7tech.server.MessageProcessor;
+import com.l7tech.objectmodel.*;
+import com.l7tech.service.*;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.rmi.RemoteException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.io.InputStream;
-import java.io.IOException;
+import java.rmi.RemoteException;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Layer 7 Technologies, inc.
@@ -79,8 +77,11 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public ServiceStatistics getStatistics( long serviceOid ) throws RemoteException {
-        MessageProcessor proc = MessageProcessor.getInstance();
-        return proc.getServiceStatistics( serviceOid );
+        try {
+            return ServiceCache.getInstance().getServiceStatistics(serviceOid);
+        } catch (InterruptedException e) {
+            throw new RemoteException("cache exception", e);
+        }
     }
 
     /**
@@ -95,14 +96,12 @@ public class ServiceAdminImpl implements ServiceAdmin {
         com.l7tech.service.ServiceManagerImp manager = null;
 
         beginTransaction();
-        boolean exists = false;
         long oid = PublishedService.DEFAULT_OID;
         try {
             manager = getServiceManager();
 
             // does that object have a history?
             if (service.getOid() > 0) {
-                exists = true;
                 manager.update(service);
                 oid = service.getOid();
             } else { // ... or is it a new object
@@ -118,10 +117,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
 
                 if ( manager != null && oid != PublishedService.DEFAULT_OID ) {
                     PublishedService newService = manager.findByPrimaryKey( service.getOid() );
-                    if ( exists )
-                        manager.postUpdate( newService );
-                    else
-                        manager.postCreate( newService );
+                    ServiceCache.getInstance().cache(newService);
                 }
             } catch ( TransactionException te ) {
                 logger.log( Level.WARNING, te.getMessage(), te );
@@ -132,6 +128,12 @@ public class ServiceAdminImpl implements ServiceAdmin {
             } catch ( FindException fe ) {
                 logger.log( Level.SEVERE, fe.getMessage(), fe );
                 throw new RemoteException( fe.getMessage(), fe );
+            } catch (InterruptedException e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                throw new RemoteException(e.getMessage(), e);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                throw new RemoteException(e.getMessage(), e);
             } finally {
                 if ( pc != null ) pc.close();
             }
@@ -154,19 +156,20 @@ public class ServiceAdminImpl implements ServiceAdmin {
             try {
                 endTransaction();
 
-                if ( manager != null && service != null ) {
-                    manager.postDelete( service );
-                }
+                ServiceCache.getInstance().removeFromCache(service);
             } catch ( TransactionException te ) {
                 logger.log( Level.WARNING, te.getMessage(), te );
                 throw new RemoteException( te.getMessage(), te );
+            } catch (InterruptedException e) {
+                logger.log(Level.WARNING, e.getMessage(), e);
+                throw new RemoteException(e.getMessage(), e);
             }
         }
     }
 
-    public Map serviceMap() throws RemoteException {
+    /*public Map serviceMap() throws RemoteException {
         return serviceManagerInstance.serviceMap();
-    }
+    }*/
 
     // ************************************************
     // PRIVATES
