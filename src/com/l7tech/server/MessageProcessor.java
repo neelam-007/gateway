@@ -103,23 +103,26 @@ public class MessageProcessor implements ServiceListener {
                 }
 
                 // Get the server policy
+                logger.finest("Get the server policy");
                 Assertion genericPolicy = service.rootAssertion();
                 Long oid = new Long( service.getOid() );
                 ServerAssertion serverPolicy;
                 Sync read = _policyCacheLock.readLock();
-                Sync write = _policyCacheLock.writeLock();
                 try {
                     read.acquire();
                     serverPolicy = (ServerAssertion)_serverPolicyCache.get( oid );
                     if ( serverPolicy == null ) {
                         // Upgrade to a write lock
                         read.release();
+                        Sync write = _policyCacheLock.writeLock();
                         write.acquire();
 
                         serverPolicy = ServerPolicyFactory.getInstance().makeServerPolicy( genericPolicy );
                         _serverPolicyCache.put( oid, serverPolicy );
 
                         write.release();
+                    } else {
+                        read.release();
                     }
                 } catch ( InterruptedException ie ) {
                     String msg = "Interrupted while acquiring policy cache lock!";
@@ -129,6 +132,7 @@ public class MessageProcessor implements ServiceListener {
                 }
 
                 // Run the policy
+                logger.finest("Run the server policy");
                 getServiceStatistics( service.getOid() ).attemptedRequest();
                 status = serverPolicy.checkRequest( request, response );
 
