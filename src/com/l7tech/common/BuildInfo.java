@@ -16,8 +16,8 @@ public class BuildInfo {
     private static final String BUILD_NUMBER = "HEAD";      // ie, 1014
     private static final String PRODUCT_VERSION = "HEAD";   // ie, 0.98b
     private static final String PRODUCT_NAME = "Layer7 SecureSpan Suite";
-    private static final String BUILD_DATE = "BUILD_DATE";  // ie, 20030916
-    private static final String BUILD_TIME = "BUILD_TIME";  // ie, 153238
+    private static final String BUILD_DATE = "DATE";  // ie, 20030916
+    private static final String BUILD_TIME = "TIME";  // ie, 153238
     private static final String BUILD_USER = "BUILD_USER";  // ie, alex
     private static final String BUILD_MACHINE = "BUILD_MACHINE"; // ie, locutus.l7tech.com
 
