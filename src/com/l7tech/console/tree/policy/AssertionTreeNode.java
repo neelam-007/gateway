@@ -115,6 +115,14 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         ca.setChildren(newChildren);
     }
 
+    /**
+     * Receive the abstract tree node
+     *
+     * @param node the node to receive
+     */
+    public void receive(AbstractTreeNode node) {
+    }
+
 
     /**
      * Does the assertion node accepts the abstract tree node

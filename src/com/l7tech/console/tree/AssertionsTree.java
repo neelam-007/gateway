@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.DeleteEntityAction;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.action.DeletePolicyTemplateAction;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -64,6 +65,8 @@ public class AssertionsTree extends JTree {
                 if (!node.canDelete()) return;
                 if (node instanceof EntityHeaderNode)
                     new DeleteEntityAction((EntityHeaderNode)node).performAction();
+                else if (node instanceof PolicyTemplateNode)
+                    new DeletePolicyTemplateAction((PolicyTemplateNode)node).performAction();
             } else if (keyCode == KeyEvent.VK_ENTER) {
                 Action a = node.getPreferredAction();
                 if (a != null) {

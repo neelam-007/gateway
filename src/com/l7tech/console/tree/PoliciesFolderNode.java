@@ -1,7 +1,12 @@
 package com.l7tech.console.tree;
 
-import java.util.Collections;
-import java.util.Enumeration;
+import com.l7tech.console.logging.ErrorManager;
+
+import javax.swing.tree.MutableTreeNode;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.logging.Level;
 
 
 /**
@@ -12,13 +17,17 @@ import java.util.Enumeration;
  * @version 1.1
  */
 public class PoliciesFolderNode extends AbstractTreeNode {
+    public static final String NAME = "Policy templates";
+    public static final String TEMPLATES_DIR = "policy.templates";
+
     /**
      * construct the <CODE>PoliciesFolderNode</CODE> instance for
-     * a given entry.
-     *
+     * a given home path
      */
-    public PoliciesFolderNode() {
-        super(null);
+    public PoliciesFolderNode(String path) {
+        super(path+File.separator+TEMPLATES_DIR);
+        if (path == null)
+            throw new IllegalArgumentException();
     }
 
     /**
@@ -41,6 +50,19 @@ public class PoliciesFolderNode extends AbstractTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
+        try {
+            File[] files = listPolicies();
+            int index = 0;
+            for (int i = files.length - 1; i >= 0; i--) {
+                File file = files[i];
+                insert((MutableTreeNode) new PolicyTemplateNode(file), index++);
+            }
+        } catch (IOException e) {
+            ErrorManager.
+              getDefault().
+              notify(Level.WARNING, e, "There was an error loading policy templates.");
+
+        }
     }
 
     /**
@@ -49,7 +71,7 @@ public class PoliciesFolderNode extends AbstractTreeNode {
      * @return the name as a String
      */
     public String getName() {
-        return "Policy templates";
+        return NAME;
     }
 
     /**
@@ -64,4 +86,31 @@ public class PoliciesFolderNode extends AbstractTreeNode {
         return "com/l7tech/console/resources/folder.gif";
     }
 
+    private String getTemplatesPath() {
+        return (String)getUserObject();
+    }
+
+    private  File[] listPolicies() throws IOException {
+        File f = new File(getTemplatesPath());
+        if (!f.exists()) {
+            if (!f.mkdir()) throw new IOException("Cannot create "+f.getPath());
+        }
+        return
+        f.listFiles( new FilenameFilter() {
+            /**
+             * Tests if a specified file should be included in a file list.
+             *
+             * @param   dir    the directory in which the file was found.
+             * @param   name   the name of the file.
+             * @return  <code>true</code> if and only if the name should be
+             * included in the file list; <code>false</code> otherwise.
+             */
+            public boolean accept(File dir, String name) {
+                File f = new File(dir.getPath()+File.separator+name);
+                if (f.isFile()) return true;
+
+                return false;
+            }
+        });
+    }
 }

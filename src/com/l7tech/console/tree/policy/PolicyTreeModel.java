@@ -1,14 +1,13 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
-import com.l7tech.console.tree.AbstractTreeNode;
 
 import javax.swing.tree.DefaultTreeModel;
 import java.io.IOException;
 import java.util.Set;
-import java.util.Iterator;
 
 
 /**
@@ -53,7 +52,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
     protected PolicyTreeModel(AbstractTreeNode root) {
         super(root);
     }
-
 
     /**
      * Creates a new identity view of PolicyTreeModel for the asserton

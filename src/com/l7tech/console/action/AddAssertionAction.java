@@ -1,19 +1,18 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
-import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.WindowManager;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
-import java.util.logging.Level;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Logger;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.logging.Level;
 
 
 /**
@@ -24,9 +23,11 @@ import java.util.ArrayList;
  * @version 1.0
  */
 public class AddAssertionAction extends BaseAction {
+    private static final Logger log =
+      Logger.getLogger(AddAssertionAction.class.getName());
+
     protected AbstractTreeNode paletteNode;
     protected AssertionTreeNode assertionNode;
-    private static final Logger log = Logger.getLogger(AddAssertionAction.class.getName());
 
     /**
      * @return the action name
@@ -61,35 +62,50 @@ public class AddAssertionAction extends BaseAction {
                 if (paletteNode == null || assertionNode == null) {
                     throw new IllegalStateException();
                 }
-                JTree tree =
-                  (JTree)WindowManager.
-                  getInstance().getComponent(PolicyTree.NAME);
-                if (tree != null) {
-                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    Assertion nass = paletteNode.asAssertion();
-
-                    if (nass != null) {
-                        Assertion receivingAssertion = assertionNode.asAssertion();
-                        if (!(receivingAssertion instanceof CompositeAssertion)) {
-                            log.log(Level.WARNING, "The receiving assertion is not composite " + assertionNode);
-                            return;
-                        }
-                        CompositeAssertion ca =
-                          (CompositeAssertion)receivingAssertion;
-                        List kids = new ArrayList();
-                        kids.addAll(ca.getChildren());
-                        kids.add(nass);
-                        ca.setChildren(kids);
-                        model.
-                          insertNodeInto(AssertionTreeNodeFactory.asTreeNode(nass),
-                            assertionNode, assertionNode.getChildCount());
-                    } else {
-                        log.log(Level.WARNING, "The node has no associated assertion " + paletteNode);
-                    }
+                if (paletteNode instanceof PolicyTemplateNode) {
+                    assignPolicyTemplate((PolicyTemplateNode)paletteNode);
                 } else {
-                    log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    assertionNode.receive(paletteNode);
                 }
             }
         });
+    }
+
+    private void assignPolicyTemplate(PolicyTemplateNode pn) {
+        JTree tree = WindowManager.getInstance().getPolicyTree();
+        PublishedService svc = (PublishedService)tree.getClientProperty("service");
+        if (svc == null)
+            throw new IllegalArgumentException("No edited service specified");
+        ByteArrayOutputStream bo = null;
+        InputStream fin = null;
+        try {
+            bo = new ByteArrayOutputStream();
+            fin = new FileInputStream(pn.getFile());
+
+            byte[] buff = new byte[1024];
+            int nread = -1;
+            while ((nread = fin.read(buff)) != -1) {
+                bo.write(buff, 0, nread);
+            }
+            svc.setPolicyXml(bo.toString());
+        } catch (IOException e) {
+
+        } finally {
+            if (bo != null) {
+                try {
+                    bo.close();
+                } catch (IOException e) {
+                    log.log(Level.WARNING, "Error closing stream", e);
+                }
+            }
+            if (fin != null) {
+                try {
+                    fin.close();
+                } catch (IOException e) {
+                    log.log(Level.WARNING, "Error closing stream", e);
+                }
+            }
+        }
+
     }
 }

@@ -36,7 +36,10 @@ public class DefaultErrorManager extends ErrorManager {
     private JFrame getMainWindow() {
         if (mainFrame != null) return mainFrame;
 
-        mainFrame = WindowManager.getInstance().getMainWindow();
+        WindowManager instance = WindowManager.getInstance();
+        if (instance.hasMainWindow()) {
+            mainFrame = instance.getMainWindow();
+        }
 
         return mainFrame;
     }

@@ -43,24 +43,39 @@ public class WindowManager {
      * @return the applicaiton Main Window
      */
     public JFrame getMainWindow() {
-          synchronized (componentsRegistry) {
+        synchronized (componentsRegistry) {
             JFrame main = (JFrame)getComponent(MainWindow.NAME);
             if (main != null) return main;
-              try {
-                  MainWindow m = new MainWindow();
-                  registerComponent(MainWindow.NAME, m);
-                  return m;
-              } catch (IOException e) {
-                  throw new RuntimeException("Faile to initialize main window", e);
-              }
+            try {
+                MainWindow m = new MainWindow();
+                registerComponent(MainWindow.NAME, m);
+                return m;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to initialize main window", e);
+            }
         }
     }
+
+    /**
+     * Has the Main Window initialized.
+     * <p>
+     *
+     * @return true if the main  Window has initialized,false otherwise
+     */
+    public boolean hasMainWindow() {
+        synchronized (componentsRegistry) {
+            JFrame main = (JFrame)getComponent(MainWindow.NAME);
+
+            return (main != null);
+        }
+    }
+
 
     /**
      * Current workspace.
      */
     public WorkSpacePanel getCurrentWorkspace() {
-         synchronized (componentsRegistry) {
+        synchronized (componentsRegistry) {
             WorkSpacePanel wp =
               (WorkSpacePanel)getComponent(WorkSpacePanel.NAME);
             if (wp != null) return wp;

@@ -1,11 +1,11 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.logging.ErrorManager;
 
-import javax.swing.tree.MutableTreeNode;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.io.IOException;
+import java.util.logging.Level;
 
 /**
  * The class represents an <code>AbstractTreeNode</code>
@@ -49,12 +49,23 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
         Registry r = Registry.getDefault();
         long providerId =
           r.getInternalProvider().getConfig().getOid();
+
+        String homePath = null;
+        try {
+            homePath = Preferences.getPreferences().getHomePath();
+        } catch (IOException e) {
+            // something happened to the preferences home path
+            ErrorManager.
+                      getDefault().
+                      notify(Level.WARNING, e, "There was an error in retreiving preferences.");
+            homePath = System.getProperty("user.home");
+        }
         AbstractTreeNode[] nodes =
             new AbstractTreeNode[]{
                 new UserFolderNode(r.getInternalUserManager(), providerId),
                 new GroupFolderNode(r.getInternalGroupManager(), providerId),
                 new ProvidersFolderNode(r.getProviderConfigManager()),
-                new PoliciesFolderNode(),
+                new PoliciesFolderNode(homePath),
                 new AuthMethodFolderNode(),
                 new TransportLayerSecurityFolderNode(),
                 new XmlSecurityFolderNode(),

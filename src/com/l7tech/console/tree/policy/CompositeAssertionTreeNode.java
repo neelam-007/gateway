@@ -5,11 +5,16 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.console.action.AddAllAssertionAction;
 import com.l7tech.console.action.AddOneOrMoreAssertionAction;
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.util.WindowManager;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -18,6 +23,15 @@ import java.util.Iterator;
  * @version 1.0
  */
 public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
+    private static final Logger log =
+      Logger.getLogger(CompositeAssertionTreeNode.class.getName());
+
+    /**
+     * Instantiate composite assertion tree node wit the composite
+     * assertion
+     *
+     * @param assertion = the composite assertion
+     */
     public CompositeAssertionTreeNode(CompositeAssertion assertion) {
         super(assertion);
         if (assertion == null) {
@@ -40,6 +54,44 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
         list.add(a);
 
         return (Action[])list.toArray(new Action[]{});
+    }
+
+    /**
+     * Receive the abstract tree node
+     *
+     * @param node the node to receive
+     */
+    public void receive(AbstractTreeNode node) {
+        if (node == null) {
+            throw new IllegalArgumentException("receiving node is null");
+        }
+
+        JTree tree =
+          (JTree)WindowManager.
+          getInstance().getComponent(PolicyTree.NAME);
+        if (tree != null) {
+            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            Assertion nass = node.asAssertion();
+
+            if (nass != null) {
+                Assertion receivingAssertion = asAssertion();
+
+                CompositeAssertion ca =
+                  (CompositeAssertion)receivingAssertion;
+                List kids = new ArrayList();
+                kids.addAll(ca.getChildren());
+                kids.add(nass);
+                ca.setChildren(kids);
+                model.
+                  insertNodeInto(AssertionTreeNodeFactory.asTreeNode(nass),
+                    this, this.getChildCount());
+            } else {
+                log.log(Level.WARNING, "The node has no associated assertion " + node);
+            }
+        } else {
+            log.log(Level.WARNING, "Unable to reach the palette tree.");
+        }
+
     }
 
     protected void loadChildren() {

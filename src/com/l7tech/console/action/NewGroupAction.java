@@ -1,13 +1,14 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.NewGroupDialog;
-import com.l7tech.console.tree.*;
-import com.l7tech.console.util.WindowManager;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.MainWindow;
-import com.l7tech.console.event.EntityListenerAdapter;
-import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityListenerAdapter;
+import com.l7tech.console.panels.NewGroupDialog;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.AssertionsTree;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.WindowManager;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -79,7 +80,7 @@ public class NewGroupAction extends NodeAction {
         public void entityAdded(final EntityEvent ev) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                      EntityHeader eh = (EntityHeader)ev.getEntity();
+                    EntityHeader eh = (EntityHeader)ev.getEntity();
                     JTree tree = (JTree)WindowManager.getInstance().getComponent(AssertionsTree.NAME);
                     if (tree != null) {
                         TreeNode[] nodes = node.getPath();

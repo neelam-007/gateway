@@ -2,11 +2,14 @@ package com.l7tech.console;
 
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
-import com.l7tech.console.action.*;
+import com.l7tech.console.action.AboutAction;
+import com.l7tech.console.action.ConsoleAction;
+import com.l7tech.console.action.HomeAction;
+import com.l7tech.console.action.ImportCertificateAction;
+import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.panels.WorkSpacePanel;
-import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.*;
@@ -16,8 +19,9 @@ import javax.help.HelpSet;
 import javax.help.HelpSetException;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.event.*;
-import javax.swing.tree.*;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
@@ -26,8 +30,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -577,6 +581,7 @@ public class MainWindow extends JFrame {
         if (tree != null)
             return tree;
         tree = new AssertionsTree();
+        tree.setDragEnabled(true);
         WindowManager.getInstance().registerComponent(AssertionsTree.NAME, tree);
         return tree;
     }
@@ -743,9 +748,13 @@ public class MainWindow extends JFrame {
 
             getStatusMsgRight().setBorder(border);
             rightPanel.add(getStatusMsgRight(), BorderLayout.WEST);
+            progressBar =
+              (ProgressBar)WindowManager.getInstance().getComponent(ProgressBar.NAME);
+            if (progressBar == null) {
+                progressBar = new ProgressBar(0, 100, 20);
+                WindowManager.getInstance().registerComponent(ProgressBar.NAME, progressBar);
+            }
 
-            progressBar = new ProgressBar(0, 100, 20);
-            WindowManager.getInstance().registerComponent(ProgressBar.NAME, progressBar);
             // a bit of a hack here , set the size to the size of "disconnected" label
             progressBar.setPreferredSize(getStatusMsgLeft().getPreferredSize());
             progressBar.setMaximumSize(getStatusMsgLeft().getMaximumSize());
