@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.Transformer;
@@ -95,7 +96,12 @@ public class ServerXslTransformation implements ServerAssertion {
         Transformer transformer = makeTransformer(subject.getXslSrc());
         final DOMResult outputTarget = new DOMResult();
         transformer.transform(new DOMSource(source), outputTarget);
-        return outputTarget.getNode().getOwnerDocument();
+        final Node node = outputTarget.getNode();
+        if (node instanceof Document) {
+            return (Document)node;
+        } else {
+            return node.getOwnerDocument();
+        }
     }
 
     /**
