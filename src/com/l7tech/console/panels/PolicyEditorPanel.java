@@ -25,8 +25,11 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.plaf.SplitPaneUI;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.EditorKit;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -285,9 +288,25 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private JComponent getMessagePane() {
         if (messagesTab != null) return messagesTab;
+        JLabel label = new JLabel();
+        messagesTextPane = new JTextPane();
+        final HTMLEditorKit htmlEditorKit = new HTMLEditorKit();
+        StyleSheet ss = htmlEditorKit.getStyleSheet();
+        Style style = ss.getStyle("body");
+        System.out.println(style);
+        if (style !=null){
+            style.removeAttribute(StyleConstants.FontFamily);
+            System.out.println(style);
+            final Font font = label.getFont();
+            style.addAttribute(StyleConstants.FontFamily, font.getFamily());
+            style.removeAttribute(StyleConstants.FontSize);
+            style.addAttribute(StyleConstants.FontSize, new Integer(font.getSize()).toString());
 
-        messagesTextPane = new JTextPane(new HTMLDocument());
-        messagesTextPane.setEditorKit(new HTMLEditorKit());
+        }
+        style = ss.getStyle("body");
+        System.out.println(style);
+
+        messagesTextPane.setEditorKit(htmlEditorKit);
         // messagesTextPane.setText("");
         messagesTextPane.addHyperlinkListener(hlinkListener);
         messagesTextPane.setEditable(false);
