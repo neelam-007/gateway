@@ -362,6 +362,8 @@ public class Gui {
 
         if (getSsgListPanel().getNumSsgs() < 1)
             getSsgListPanel().getActionNewSsg().actionPerformed(new ActionEvent(this, 1, "NewDefault"));
+        else
+            getSsgListPanel().selectDefaultSsg();
     }
 
     /**
