@@ -18,6 +18,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
+import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -38,23 +39,27 @@ public class RequestXpathAssertionTest extends TestCase {
     }
 
     public void testOKExpression() throws Exception {
-        Map namespaces = new HashMap();
-        namespaces.putAll(XpathEvaluator.getNamespaces(SoapUtil.asSOAPMessage(testDoc)));
-        XpathExpression expression = new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, namespaces);
-        ServerRequestXpathAssertion serverAssertion = getAssertion(expression);
-        XmlRequest req = getTestRequest(testDoc);
-        AssertionStatus ret = serverAssertion.checkRequest(req, null);
-        assertTrue(ret == AssertionStatus.NONE);
+        for (int i = 0 ; i < passingXpaths.length; i++) {
+            AssertionStatus ret = null;
+            ret = getResultForXPath(passingXpaths[i]);
+            assertTrue(ret == AssertionStatus.NONE);
+        }
     }
 
     public void testBadExpression() throws Exception {
+        for (int i = 0 ; i < failingXpaths.length; i++) {
+            AssertionStatus ret = null;
+            ret = getResultForXPath(failingXpaths[i]);
+            assertTrue((ret == AssertionStatus.FALSIFIED || ret == AssertionStatus.SERVER_ERROR));
+        }
+    }
+
+    private AssertionStatus getResultForXPath(String expression) throws Exception {
         Map namespaces = new HashMap();
         namespaces.putAll(XpathEvaluator.getNamespaces(SoapUtil.asSOAPMessage(testDoc)));
-        XpathExpression expression = new XpathExpression("/blip:foo", namespaces);
-        ServerRequestXpathAssertion serverAssertion = getAssertion(expression);
+        ServerRequestXpathAssertion serverAssertion = getAssertion(new XpathExpression(expression, namespaces));
         XmlRequest req = getTestRequest(testDoc);
-        AssertionStatus ret = serverAssertion.checkRequest(req, null);
-        assertTrue(ret == AssertionStatus.FALSIFIED);
+        return serverAssertion.checkRequest(req, null);
     }
 
     private ServerRequestXpathAssertion getAssertion(XpathExpression expression) {
@@ -135,5 +140,22 @@ public class RequestXpathAssertionTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    public Document testDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+    private Document testDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+
+    private String[] passingXpaths =
+    {
+        "//", // sanity
+        "/soapenv:Envelope/soapenv:Body/ns1:placeOrder/productid", // contains a value
+        "/soapenv:Envelope/soapenv:Body/ns1:placeOrder/productid='-9206260647417300294'", // works with proper namespaces
+        "/*[local-name(.)='Envelope']/*[local-name(.)='Body']/*[local-name(.)='placeOrder']/productid='-9206260647417300294'", // works with no-namespace hack
+    };
+
+    private String[] failingXpaths =
+    {
+        "[", // invalid expression
+        "/Envelope/Body/placeOrder/productid='-9206260647417300294'", // fails without namespaces
+        "/foo:Envelope/bar:Body/baz:placeOrder/productid='-9206260647417300294'", // fails with bogus namespaces
+        "/soapenv:Envelope/soapenv:Body/ns1:placeOrder/productid='blah'", // wrong value with correct namespaces
+        "/Envelope/Body/placeOrder/productid='blah'", // wrong value without namespaces
+    };
 }
