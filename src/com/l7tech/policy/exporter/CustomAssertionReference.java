@@ -85,18 +85,19 @@ public class CustomAssertionReference extends ExternalReference {
         Collection assertins = null;
         try {
             assertins = cr.getAssertions();
-            // test
             for (Iterator iterator = assertins.iterator(); iterator.hasNext();) {
                 CustomAssertionHolder cah = (CustomAssertionHolder)iterator.next();
                 String thisname = cah.getCustomAssertion().getName();
                 if (thisname != null && thisname.equals(customAssertionName)) {
                     // WE HAVE A MATCH!
+                    logger.fine("Custom assertion " + customAssertionName + " found on local system.");
                     return true;
                 }
             }
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "Cannot get remote assertions", e);
         }
+        logger.warning("the custom assertion " + customAssertionName + " does not seem to exist on this system.");
         return false;
     }
 
