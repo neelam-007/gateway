@@ -6,13 +6,13 @@ import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.SoapMsgSigner;
 import com.l7tech.common.security.xml.XmlMangler;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.security.*;
@@ -84,6 +84,7 @@ class Signer extends SecurityProcessor {
 
             for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
                 ElementSecurity elementSecurity = elements[i];
+                envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
                 // XPath precondition match?
                 XpathExpression xpath = elementSecurity.getPreconditionXPath();
                 if (xpath != null) {
@@ -105,21 +106,27 @@ class Signer extends SecurityProcessor {
                         throw new SecurityProcessorException(message);
                     }
                     element = (Element)nodes.get(0);
-                    if (Node.DOCUMENT_NODE == element.getNodeType()) {
-                        envelopeProcessed = true; //signal to ignore everything else. Should scream if more eleemnts exist?
-                    }
                 } else {
                     element = document.getDocumentElement();
                     envelopeProcessed = true; //signal to ignore everything else. Should scream if more lements exist?
                 }
+
                 if (elementSecurity.isEncryption()) {
                     if (element.hasChildNodes()) {
                         check(elementSecurity);
+                        Element encElement = element;
+                        if (envelopeProcessed) { // kludge/legacy, to preserve the session elements in clear, encrypt body only
+                            encElement = SoapUtil.getBody(document);
+                            if (encElement == null) {
+                                logger.severe("Could not retrieve SOAP Body from the document \n" + XmlUtil.documentToString(document));
+                                throw new IOException("Could not retrieve SOAP Body from the document");
+                            }
+                        }
                         // we do above check to verify if the parameters are valid and everything is ready for encryption
                         final String referenceId = ENC_REFERENCE + encReferenceIdSuffix;
                         byte[] keyreq = encryptionKey.getEncoded();
                         long sessId = session.getId();
-                        XmlMangler.encryptXml(element, keyreq, Long.toString(sessId), referenceId);
+                        XmlMangler.encryptXml(encElement, keyreq, Long.toString(sessId), referenceId);
                         ++encReferenceIdSuffix;
                         logger.fine("encrypted element for XPath" + xpath.getExpression());
                     } else {

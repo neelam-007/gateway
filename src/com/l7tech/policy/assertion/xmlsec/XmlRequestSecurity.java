@@ -1,7 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.common.util.SoapUtil;
 
 /**
  * Enforces the XML security on the message elements or entire message
@@ -44,33 +43,12 @@ public class XmlRequestSecurity extends CredentialSourceAssertion implements Xml
         for (int i = 0; i < elements.length; i++) {
             ElementSecurity elementSecurity = elements[i];
             // authenticated if Xpath points to envelope
-            if (isEnvelope(elementSecurity)) {
+            if (ElementSecurity.isEnvelope(elementSecurity)) {
                 return true;
             }
         }
         return false;
     }
-
-    /**
-     * Test if this element XPath expression selects the SOAP envelope.
-     * <p/>
-     *
-     * @return true if the element selects the SOAP envelope, false otherwise
-     */
-    public static boolean isEnvelope(ElementSecurity element) {
-        return SoapUtil.SOAP_ENVELOPE_XPATH.equals(element.getxPath().getExpression());
-    }
-
-    /**
-     * Test if this element XPath expression selects the SOAP Body.
-     * <p/>
-     *
-     * @return true if the element selects the SOAP Body, false otherwise
-     */
-    public static boolean isBody(ElementSecurity element) {
-        return SoapUtil.SOAP_BODY_XPATH.equals(element.getxPath().getExpression());
-    }
-
 
     /**
      * Test if this assertion has an encryption element specified.

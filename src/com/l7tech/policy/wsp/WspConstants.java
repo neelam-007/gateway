@@ -33,6 +33,7 @@ import org.w3c.dom.NodeList;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 /**
@@ -799,6 +800,11 @@ class WspConstants {
             Method getter = (Method)getters.get(parm);
             if (getter == null)
                 throw new InvalidPolicyTreeException("Internal error"); // can't happen
+
+            if (Modifier.isStatic(getter.getModifiers())) { // ignore statics
+                continue;
+            }
+
             Method setter = (Method)setters.get(parm + ":" + getter.getReturnType());
             if (setter == null)
                 throw new InvalidPolicyTreeException("WspWriter: Warning: class " + bean.getClass() + ": no setter found for parameter " + parm);

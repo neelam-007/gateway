@@ -1,5 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.XpathExpression;
 
 import java.io.Serializable;
@@ -50,13 +51,13 @@ public class ElementSecurity implements Serializable {
     /**
      * Full constructor, instantiate the instances with all properties.
      *
-     * @param xpath the xpath expression that is evaluated in the context
-     *                        may be null
-     * @param precondition    the preconditino xpath, may be null
-     * @param encryption      whether the element is encrypted or signed only
-     * @param cipher          the cipher name for encryption, may not be null if encryption
-     *                        is requested
-     * @param keyLength       the key length, required if the encyption is requested
+     * @param xpath        the xpath expression that is evaluated in the context
+     *                     may be null
+     * @param precondition the preconditino xpath, may be null
+     * @param encryption   whether the element is encrypted or signed only
+     * @param cipher       the cipher name for encryption, may not be null if encryption
+     *                     is requested
+     * @param keyLength    the key length, required if the encyption is requested
      */
     public ElementSecurity(XpathExpression xpath, XpathExpression precondition, boolean encryption, String cipher, int keyLength) {
         this.encryption = encryption;
@@ -155,11 +156,34 @@ public class ElementSecurity implements Serializable {
 
     /**
      * Get the symmetric key length to use when encryption is enabled.
-     *
+     * 
      * @return the size of the key in bits, ie 128
      */
     public int getKeyLength() {
         return keyLength;
+    }
+
+    /**
+     * Test if this element XPath expression selects the SOAP envelope.
+     * <p/>
+     *
+     * @return true if the element selects the SOAP envelope, false otherwise
+     */
+    public static boolean isEnvelope(ElementSecurity element) {
+        if (element == null || element.getxPath() == null) return false;
+
+        return SoapUtil.SOAP_ENVELOPE_XPATH.equals(element.getxPath().getExpression());
+    }
+
+    /**
+     * Test if this element XPath expression selects the SOAP Body.
+     * <p/>
+     *
+     * @return true if the element selects the SOAP Body, false otherwise
+     */
+    public static boolean isBody(ElementSecurity element) {
+        if (element == null || element.getxPath() == null) return false;
+        return SoapUtil.SOAP_BODY_XPATH.equals(element.getxPath().getExpression());
     }
 
 }

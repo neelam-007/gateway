@@ -13,7 +13,6 @@ import com.l7tech.common.xml.XpathExpression;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -68,6 +67,8 @@ class Verifier extends SecurityProcessor {
             X509Certificate documentCertificate = null;
             for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
                 ElementSecurity elementSecurity = elements[i];
+                envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
+
                 // XPath precondition match?
                 XpathExpression xpath = elementSecurity.getPreconditionXPath();
                 if (xpath != null) {
@@ -89,9 +90,6 @@ class Verifier extends SecurityProcessor {
                         throw new SecurityProcessorException(message);
                     }
                     element = (Element)nodes.get(0);
-                    if (Node.DOCUMENT_NODE == element.getNodeType()) {
-                        envelopeProcessed = true; //signal to ignore everything else. Should scream if more elemnts exist?
-                    }
                 } else {
                     element = document.getDocumentElement();
                     envelopeProcessed = true; //signal to ignore everything else. Should scream if more elements exist?
