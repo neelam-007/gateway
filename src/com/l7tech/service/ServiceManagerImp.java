@@ -140,6 +140,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         super();
         _resolvers = new TreeSet();
 
+        // Load & cache all services
         Collection services = findAll();
 
         PublishedService service;
@@ -148,19 +149,21 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             putCachedService( service );
         }
 
+        // Initialize service resolvers
         String serviceResolvers = ServerConfig.getInstance().getServiceResolvers();
 
         StringTokenizer stok = new StringTokenizer( serviceResolvers );
         String className;
         Class resolverClass;
         ServiceResolver resolver;
+        Set serviceSet = clonedServiceSet();
 
         while ( stok.hasMoreTokens() ) {
             className = stok.nextToken();
             try {
                 resolverClass = Class.forName( className );
                 resolver = (ServiceResolver)resolverClass.newInstance();
-                resolver.setServices( clonedServiceSet() );
+                resolver.setServices( serviceSet );
                 addServiceListener( resolver );
 
                 _resolvers.add( resolver );
@@ -273,7 +276,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
-    public void fireCreated( PublishedService service ) {
+    public void postCreate( PublishedService service ) {
         Sync write = _rwlock.writeLock();
         try {
             write.acquire();
@@ -290,7 +293,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
-    public void fireUpdated( PublishedService service ) {
+    public void postUpdate( PublishedService service ) {
         Sync write = _rwlock.writeLock();
         try {
             write.acquire();
@@ -308,7 +311,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
-    public void fireDeleted( PublishedService service ) {
+    public void postDelete( PublishedService service ) {
         Sync write = _rwlock.writeLock();
         try {
             write.acquire();
