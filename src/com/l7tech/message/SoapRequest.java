@@ -111,9 +111,11 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         } else if ( _requestXml == null ) {
             BufferedReader reader = new BufferedReader( getRequestReader() );
             StringBuffer xml = new StringBuffer();
-            String line;
-            while ( ( line = reader.readLine() ) != null ) {
-                xml.append( line );
+            char[] buf = new char[1024];
+            int read = reader.read(buf);
+            while (read > 0) {
+                xml.append(buf, 0, read);
+                read = reader.read(buf);
             }
             _requestXml = xml.toString();
         }
