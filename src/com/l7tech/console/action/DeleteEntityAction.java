@@ -27,6 +27,14 @@ public class DeleteEntityAction extends SecureAction {
     static final Logger log = Logger.getLogger(DeleteEntityAction.class.getName());
     private EventListenerList listenerList = new WeakEventListenerList();
 
+    public void setNode(EntityHeaderNode node) {
+        this.node = node;
+    }
+
+    public void setConfig(IdentityProviderConfig config) {
+        this.config = config;
+    }
+
     EntityHeaderNode node;
     private IdentityProviderConfig config;
 

@@ -107,6 +107,7 @@ public class FindIdentitiesDialog extends JDialog {
     EntityHeader[] selections = new EntityHeader[]{};
 
     private Options options = new Options();
+    private DeleteEntityAction deleteIdAction;
 
     /**
      * The <code>FindIdentitiesDialog</code> Options
@@ -655,9 +656,9 @@ public class FindIdentitiesDialog extends JDialog {
         buttonPanel.add(selectButton);
         selectButton.setEnabled(false);
 
-        final JButton deleteButton = new JButton();
+        final JButton deleteButton = new JButton(getDeleteAction());
         deleteButton.setText(resources.getString("deleteButton.label"));
-        deleteButton.addActionListener(new ActionListener() {
+        /*deleteButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 int rows[] = searchResultTable.getSelectedRows();
                 for (int i = 0; rows != null && i < rows.length; i++) {
@@ -666,7 +667,7 @@ public class FindIdentitiesDialog extends JDialog {
                     deleteEntity(eh, row);
                 }
             }
-        });
+        });*/
 
         if (options.enableDeleteAction) {
             buttonPanel.add(deleteButton);
@@ -689,7 +690,9 @@ public class FindIdentitiesDialog extends JDialog {
                   } else {
                       selectButton.setEnabled(true);
                       IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBox.getSelectedItem();
-                      deleteButton.setEnabled(ipc.isWritable());
+                      if (getDeleteAction().isAuthorized()) {
+                        deleteButton.setEnabled(ipc.isWritable());
+                      } else deleteButton.setEnabled(false);
                   }
               }
           });
@@ -723,7 +726,10 @@ public class FindIdentitiesDialog extends JDialog {
                   if (keyCode == KeyEvent.VK_ENTER && options.enableOpenProperties) {
                       showEntityDialog(eh);
                   } else if (keyCode == KeyEvent.VK_DELETE && options.enableDeleteAction) {
-                      deleteEntity(eh, row);
+                      if (getDeleteAction().isAuthorized()) {
+                          getDeleteAction().invoke();
+                      }
+                      //deleteEntity(eh, row);
                   }
               }
           });
@@ -896,24 +902,33 @@ public class FindIdentitiesDialog extends JDialog {
         dialog.show();
     }
 
-    /**
-     * delete the given entity
-     *
-     * @param eh the <CODE>EntityHeader</CODE> instance
-     */
-    private void deleteEntity(EntityHeader eh, final int row) {
-        AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
-        final IdentityProviderConfig ip = (IdentityProviderConfig)providersComboBox.getSelectedItem();
-        DeleteEntityAction da = new DeleteEntityAction((EntityHeaderNode)an, ip);
-        final EntityListenerAdapter listener = new EntityListenerAdapter() {
-            public void entityRemoved(EntityEvent ev) {
-                tableModel.removeRow(row);
-            }
-        };
-        da.addEntityListener(listener);
-        da.invoke();
-    }
+    private DeleteEntityAction getDeleteAction() {
+        if (deleteIdAction == null) {
+            deleteIdAction = new DeleteEntityAction(null, null) {
+                protected void performAction() {
+                    final IdentityProviderConfig ip = (IdentityProviderConfig)providersComboBox.getSelectedItem();
+                    final int rows[] = searchResultTable.getSelectedRows();
+                    for (int i = 0; rows != null && i < rows.length; i++) {
+                        final int row = rows[i];
+                        EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
+                        EntityHeaderNode an = (EntityHeaderNode)TreeNodeFactory.asTreeNode(eh);
+                        setNode(an);
+                        setConfig(ip);
+                        final EntityListenerAdapter listener = new EntityListenerAdapter() {
+                            public void entityRemoved(EntityEvent ev) {
+                                tableModel.removeRow(row);
+                            }
+                        };
+                        deleteIdAction.addEntityListener(listener);
+                        super.performAction();
+                        super.removeEntityListener(listener);
+                    }
+                }
+            };
 
+        }
+        return deleteIdAction;
+    }
 
     /**
      * the <CODE>TableCellRenderer</CODE> instance
