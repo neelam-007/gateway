@@ -223,14 +223,14 @@
             <test name="com.l7tech.server.policy.ServerPolicyFactoryTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.server.filter.FilterTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.ExceptionUtilsTest" haltonfailure="no"/>
-            <test name="com.l7tech.server.policy.RequestXpathAssertionTest" haltonfailure="no"/>
+            <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.policy.RequestXpathAssertionTest" fork="yes" haltonfailure="no"/>
             <test name="com.l7tech.common.util.XmlUtilTest" haltonfailure="no"/>
 
             <!--
              ** add policy tests into the com.l7tech.policy.AllTests class
             -->
             <test name="com.l7tech.policy.AllTests" haltonfailure="no"/>
-            <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
             <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
