@@ -27,21 +27,27 @@ import java.util.*;
 public class IdentityPath {
     protected static final Comparator DEFAULT_COMPARATOR = new Comparator() {
         public int compare(Object o1, Object o2) {
-            if (o1.equals(o2)) return 0;
-            if (o1 instanceof User && o2 instanceof User) {
-                User u1 = (User)o1;
-                User u2 = (User)o2;
+            if (!(o1 instanceof IdentityPath && o2 instanceof IdentityPath)) {
+                throw new ClassCastException();
+            }
+            Principal p1 = ((IdentityPath)o1).getPrincipal();
+            Principal p2 = ((IdentityPath)o2).getPrincipal();
+
+            if (p1.equals(p2)) return 0;
+            if (p1 instanceof User && p2 instanceof User) {
+                User u1 = (User)p1;
+                User u2 = (User)p2;
                 long ret = u1.getProviderId() - u2.getProviderId();
                 if (ret != 0) return (int)ret;
                 return u2.getLogin().compareTo(u1.getLogin());
-            } else if (o1 instanceof Group && o2 instanceof Group) {
-                Group g1 = (Group)o1;
-                Group g2 = (Group)o2;
+            } else if (p1 instanceof Group && p2 instanceof Group) {
+                Group g1 = (Group)p1;
+                Group g2 = (Group)p2;
                 long ret = g1.getProviderId() - g2.getProviderId();
                 if (ret != 0) return (int)ret;
                 return g2.getName().compareTo(g1.getName());
             }
-            return o1 instanceof Group ? 1 : -1;
+            return p1 instanceof Group ? 1 : -1;
         }
     };
 

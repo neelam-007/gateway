@@ -37,7 +37,8 @@ public class IdentityViewRootNode extends AssertionTreeNode {
         int index = 0;
         children = null;
         for (Iterator i = getIdentityPaths().iterator(); i.hasNext();) {
-            insert(new IdentityPolicyTreeNode((IdentityPath)i.next(), asAssertion()), index++);
+            IdentityPolicyTreeNode idNode = new IdentityPolicyTreeNode((IdentityPath)i.next(), asAssertion());
+            insert(idNode, getInsertPosition(idNode));
         }
     }
 
