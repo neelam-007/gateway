@@ -33,6 +33,10 @@ public class AssertionResult {
         this( assertion, request, status, message, null, null );
     }
 
+    public AssertionResult( Assertion assertion, Request request, AssertionStatus status, String message, Throwable cause ) {
+        this( assertion, request, status, message, null, cause );
+    }
+
     public AssertionResult( Assertion assertion, Request request, AssertionStatus status, Throwable cause ) {
         this( assertion, request, status, null, null, cause );
     }
