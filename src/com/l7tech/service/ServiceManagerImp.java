@@ -181,7 +181,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         try {
             context = (HibernatePersistenceContext)getContext();
             Session s = context.getSession();
-            List results = s.find( getFieldQuery(policyId, F_VERSION) );
+            List results = s.find( getFieldQuery( new Long( policyId ).toString(), F_VERSION) );
             Integer i = (Integer)results.get(0);
             int res = i.intValue();
             return res;
@@ -282,24 +282,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         _serviceListeners.add( listener );
     }
 
-    private String getFieldQuery(long oid, String getfield ) {
-        String alias = getTableName();
-        StringBuffer sqlBuffer = new StringBuffer( "SELECT " );
-        sqlBuffer.append( alias );
-        sqlBuffer.append( "." );
-        sqlBuffer.append( getfield );
-        sqlBuffer.append( " FROM " );
-        sqlBuffer.append( alias );
-        sqlBuffer.append( " in class " );
-        sqlBuffer.append( getImpClass().getName() );
-        sqlBuffer.append( " WHERE " );
-        sqlBuffer.append( alias );
-        sqlBuffer.append( "." );
-        sqlBuffer.append( F_OID );
-        sqlBuffer.append( " = " );
-        sqlBuffer.append( Long.toString(oid) );
-        return sqlBuffer.toString();
-    }
+
 
     private static final Logger _log = LogManager.getInstance().getSystemLogger();
 
@@ -309,5 +292,4 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     protected transient List _serviceListeners = new ArrayList();
 
     private static final String F_VERSION = "version";
-    private static final String F_OID = "oid";
 }

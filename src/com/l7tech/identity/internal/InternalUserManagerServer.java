@@ -2,10 +2,10 @@ package com.l7tech.identity.internal;
 
 import cirrus.hibernate.HibernateException;
 import cirrus.hibernate.Session;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdProvConfManagerServer;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
-import com.l7tech.identity.Group;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 
@@ -20,7 +20,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -337,31 +336,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     }
 
     /**
-     * Generates a Hibernate query string for retrieving a single field from a User.
-     * @param oid The objectId of the User to query
-     * @param getfield the (aliased) name of the field to return
-     * @return
-     */
-    private String getFieldQuery( String oid, String getfield ) {
-        String alias = getTableName();
-        StringBuffer sqlBuffer = new StringBuffer( "SELECT " );
-        sqlBuffer.append( alias );
-        sqlBuffer.append( "." );
-        sqlBuffer.append( getfield );
-        sqlBuffer.append( " FROM " );
-        sqlBuffer.append( alias );
-        sqlBuffer.append( " in class " );
-        sqlBuffer.append( getImpClass().getName() );
-        sqlBuffer.append( " WHERE " );
-        sqlBuffer.append( alias );
-        sqlBuffer.append( "." );
-        sqlBuffer.append( F_OID );
-        sqlBuffer.append( " = " );
-        sqlBuffer.append( oid );
-        return sqlBuffer.toString();
-    }
-
-    /**
      * check whether this user is the last standing administrator
      * this is used at update time to prevent the last administrator to nuke his admin accout membership
      * @param currentUser
@@ -387,7 +361,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     // code, the F_CERTRESETCOUNTER value is automatically set to that value so that it cannot be regen once
     // it is used.
     private static final int CERTRESETCOUNTER_MAX = 10;
-    private static final String F_OID = "oid";
     public static final String F_CERT = "cert";
     private Logger logger = null;
 }
