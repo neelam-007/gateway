@@ -204,7 +204,7 @@
         <welcome-file>index.jws</welcome-file>
     </welcome-file-list>
 
-    <!-- enforce SSL in the admin Web service -->
+    <!-- enforce SSL in the admin Web Service -->
     <!-- uncomment security-constraint and login-config to enable   -->
 
     <security-constraint>
