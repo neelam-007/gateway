@@ -65,7 +65,13 @@ public class InternalIdentityProviderServer implements IdentityProvider {
 
         String login = authUser.getLogin();
         try {
-            User dbUser = userManager.findByLogin( login );
+            User dbUser = null;
+            try {
+                dbUser = userManager.findByLogin( login );
+            } catch (FindException e) {
+                _log.log(Level.SEVERE, "exception looking for user", e);
+                dbUser = null;
+            }
             if ( dbUser == null ) {
                 String err = "Couldn't find user with login " + login;
                 LogManager.getInstance().getSystemLogger().log(Level.INFO, err );
@@ -121,7 +127,12 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     _log.log(Level.INFO, "Verification OK - client cert is valid.");
                     // End of Check
 
-                    dbCert = userManager.retrieveUserCert(Long.toString(dbUser.getOid()));
+                    try {
+                        dbCert = userManager.retrieveUserCert(Long.toString(dbUser.getOid()));
+                    } catch (FindException e) {
+                        _log.log(Level.SEVERE, "FindException exception looking for user cert", e);
+                        dbCert = null;
+                    }
                     if ( dbCert == null ) {
                         String err = "No certificate found for user " + login;
                         _log.log( Level.WARNING, err );
@@ -214,9 +225,6 @@ public class InternalIdentityProviderServer implements IdentityProvider {
         } catch (UpdateException e ) {
             _log.log(Level.SEVERE, null, e);
             throw new AuthenticationException( e.getMessage(), e );
-        } catch ( FindException fe ) {
-            _log.log(Level.SEVERE, null, fe);
-            throw new AuthenticationException( fe.getMessage(), fe );
         } catch ( UnsupportedEncodingException uee ) {
             _log.log(Level.SEVERE, null, uee);
             throw new AuthenticationException( uee.getMessage(), uee );
