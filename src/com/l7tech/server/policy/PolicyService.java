@@ -225,10 +225,12 @@ public class PolicyService {
             }
         } else {
             returnUnauthorizedPolicyDownloadFault(response, status.getMessage());
+            return;
         }
 
         if (policyDoc == null) {
             returnUnauthorizedPolicyDownloadFault(response, "No such policy available to you.");
+            return;
         }
 
         try {
