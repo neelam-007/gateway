@@ -3,6 +3,7 @@ package com.l7tech.adminws.identity;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.CannotDeleteAdminAccountException;
 import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
@@ -35,6 +36,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
 
     public void delete(Group group) throws DeleteException {
         try {
+            if (groupIsAdminGroup(group)) throw new CannotDeleteAdminAccountException();
             // todo, group must be refactored so that it's id is always a string
             getStub().deleteGroup(config.getOid(), Long.toString(group.getOid()));
         } catch (java.rmi.RemoteException e) {
@@ -112,5 +114,21 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
             output.add(findByPrimaryKey(header.getStrId()));
         }
         return output;
+    }
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
+    private boolean groupIsAdminGroup(Group group) {
+        // i actually dont get the group, the console only constructs a new group and sets the oid
+        try {
+            Group actualGroup = findByPrimaryKey(Long.toString(group.getOid()));
+            if (actualGroup.getName() == Group.ADMIN_GROUP_NAME) return true;
+        } catch (FindException e) {
+            // it's valid that the group does not exist here
+            e.printStackTrace(System.err);
+            return false;
+        }
+        return false;
     }
 }
