@@ -49,8 +49,8 @@ public class UserPanel extends EntityEditorPanel {
     private JPanel buttonPanel;
 
     private JTabbedPane tabbedPane;
-    private final UserGroupsPanel groupPanel = new UserGroupsPanel(this); // membership
-    private CertificatePanel certPanel = new CertificatePanel(this); //certificate
+    private UserGroupsPanel groupPanel; // membership
+    private CertificatePanel certPanel; //certificate
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
@@ -81,8 +81,13 @@ public class UserPanel extends EntityEditorPanel {
      * default constructor
      */
     public UserPanel() {
+    }
+
+    public void initialize() {
         try {
             // Initialize form components
+            groupPanel = new UserGroupsPanel(this);
+            certPanel = new CertificatePanel(this);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
         } catch (Exception e) {
@@ -148,6 +153,7 @@ public class UserPanel extends EntityEditorPanel {
                 userGroups = idProvider.getGroupManager().getGroupHeaders(u.getUniqueIdentifier());
             }
             // Populate the form for insert/update
+            initialize();
             setData(user);
         } catch (Exception e) {
             log.log(Level.SEVERE, "GroupPanel Edit Exception: " + e.toString());
@@ -170,6 +176,10 @@ public class UserPanel extends EntityEditorPanel {
     Set getUserGroups() {
         if ( userGroups == null ) userGroups = new HashSet();
         return userGroups;
+    }
+
+    public IdentityProvider getProvider() {
+        return idProvider;
     }
 
 
@@ -365,6 +375,8 @@ public class UserPanel extends EntityEditorPanel {
             firstNameTextField.getDocument().addDocumentListener(documentListener);
         }
 
+        if (idProvider.isReadOnly()) firstNameTextField.setEnabled(false);
+
         // Return text field
         return firstNameTextField;
     }
@@ -396,6 +408,8 @@ public class UserPanel extends EntityEditorPanel {
             // Register listeners
             lastNameTextField.getDocument().addDocumentListener(documentListener);
         }
+
+        if (idProvider.isReadOnly()) lastNameTextField.setEnabled(false);
 
         // Return text field
         return lastNameTextField;
@@ -429,6 +443,8 @@ public class UserPanel extends EntityEditorPanel {
             emailTextField.getDocument().addDocumentListener(documentListener);
         }
 
+        if (idProvider.isReadOnly()) emailTextField.setEnabled(false);
+
         // Return text field
         return emailTextField;
     }
@@ -439,33 +455,37 @@ public class UserPanel extends EntityEditorPanel {
             buttonPanel = new JPanel();
             buttonPanel.setLayout(new GridBagLayout());
 
-            Component hStrut = Box.createHorizontalStrut(8);
+            if (!idProvider.isReadOnly()) {
+                Component hStrut = Box.createHorizontalStrut(8);
 
-            // add components
-            buttonPanel.add(hStrut,
-              new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                GridBagConstraints.CENTER,
-                GridBagConstraints.BOTH,
-                new Insets(0, 0, 0, 0), 0, 0));
+                // add components
+                buttonPanel.add(hStrut,
+                  new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                    GridBagConstraints.CENTER,
+                    GridBagConstraints.BOTH,
+                    new Insets(0, 0, 0, 0), 0, 0));
 
-            buttonPanel.add(getOKButton(),
-              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.CENTER,
-                GridBagConstraints.NONE,
-                new Insets(5, 5, 5, 5), 0, 0));
+                buttonPanel.add(getOKButton(),
+                  new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER,
+                    GridBagConstraints.NONE,
+                    new Insets(5, 5, 5, 5), 0, 0));
 
-            buttonPanel.add(getCancelButton(),
-              new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.CENTER,
-                GridBagConstraints.NONE,
-                new Insets(5, 5, 5, 5), 0, 0));
+                buttonPanel.add(getCancelButton(),
+                  new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER,
+                    GridBagConstraints.NONE,
+                    new Insets(5, 5, 5, 5), 0, 0));
 
-            JButton buttons[] = new JButton[]
-            {
-                getOKButton(),
-                getCancelButton()
-            };
-            Utilities.equalizeButtonSizes(buttons);
+                JButton buttons[] = new JButton[]
+                {
+                    getOKButton(),
+                    getCancelButton()
+                };
+                Utilities.equalizeButtonSizes(buttons);
+            } else {
+                // todo, one close button
+            }
         }
         return buttonPanel;
     }
@@ -538,6 +558,7 @@ public class UserPanel extends EntityEditorPanel {
               });
 
         }
+        if (idProvider.isReadOnly()) changePassButton.setEnabled(false);
         return changePassButton;
     }
 

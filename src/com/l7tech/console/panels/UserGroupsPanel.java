@@ -358,6 +358,7 @@ class UserGroupsPanel extends JPanel {
                 }
             });
         }
+        if (userPanel.getProvider().isReadOnly()) groupAdd.setEnabled(false);
         return groupAdd;
     }
 
@@ -385,6 +386,7 @@ class UserGroupsPanel extends JPanel {
                 }
             });
         }
+        if (userPanel.getProvider().isReadOnly()) groupRemove.setEnabled(false);
         return groupRemove;
     }
 
