@@ -8,10 +8,12 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
  */
 abstract class SamlStatementAssertion extends CredentialSourceAssertion implements SecurityHeaderAddressable {
     private String[] subjectConfirmations = new String[] {};
+    private String nameQualifier  = null;
+    private String[] nameFormats  = new String[] {};
     private String targetRestriction;
     private String audienceRestriction;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
-
+    private boolean requireProofOfPosession = true;
     private boolean checkAssertionValidity  = true;
 
     SamlStatementAssertion() {
@@ -36,8 +38,9 @@ abstract class SamlStatementAssertion extends CredentialSourceAssertion implemen
     public void setSubjectConfirmations(String[] subjectConfirmations) {
         if (subjectConfirmations == null) {
             this.subjectConfirmations = new String[] {};
+        } else {
+            this.subjectConfirmations = subjectConfirmations;
         }
-        this.subjectConfirmations = subjectConfirmations;
     }
 
     /**
@@ -89,5 +92,33 @@ abstract class SamlStatementAssertion extends CredentialSourceAssertion implemen
 
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
         this.recipientContext = recipientContext;
+    }
+
+    public boolean isRequireProofOfPosession() {
+        return requireProofOfPosession;
+    }
+
+    public void setRequireProofOfPosession(boolean requireProofOfPosession) {
+        this.requireProofOfPosession = requireProofOfPosession;
+    }
+
+    public String getNameQualifier() {
+        return nameQualifier;
+    }
+
+    public void setNameQualifier(String nameQualifier) {
+        this.nameQualifier = nameQualifier;
+    }
+
+    public String[] getNameFormats() {
+        return nameFormats;
+    }
+
+    public void setNameFormats(String[] nameFormats) {
+        if (nameFormats == null) {
+            this.nameFormats = new String[] {};
+        } else {
+            this.nameFormats = nameFormats;
+        }
     }
 }

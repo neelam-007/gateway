@@ -19,7 +19,8 @@ public class SamlAuthenticationWizardTest extends JFrame {
           new IntroductionWizardStepPanel(
             new AuthenticationMethodsWizardStepPanel(
               new SubjectConfirmationWizardStepPanel(
-                new ConditionsWizardStepPanel(null))));
+                new SubjectConfirmationNameIdentifierWizardStepPanel(
+                new ConditionsWizardStepPanel(null)))));
         Wizard w = new AuthenticationStatementWizard(frame, p);
         w.pack();
         w.show();

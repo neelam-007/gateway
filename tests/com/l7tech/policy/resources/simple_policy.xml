@@ -168,13 +168,16 @@
                 <SamlAuthenticationStatement>
                     <AudienceRestriction stringValueNull="null"/>
                     <SubjectConfirmations stringArrayValue="included"/>
-                    <AuthenticationMethods stringArrayValue="included"/>
                     <RecipientContext xmlSecurityRecipientContext="included">
                         <Base64edX509Certificate stringValueNull="null"/>
                         <Actor stringValue=""/>
                     </RecipientContext>
+                    <NameFormats stringArrayValue="included"/>
+                    <RequireProofOfPosession booleanValue="true"/>
                     <CheckAssertionValidity booleanValue="true"/>
                     <TargetRestriction stringValueNull="null"/>
+                    <NameQualifier stringValueNull="null"/>
+                    <AuthenticationMethods stringArrayValue="included"/>
                 </SamlAuthenticationStatement>
                 <SamlAuthorizationStatement>
                     <AudienceRestriction stringValueNull="null"/>
@@ -183,8 +186,11 @@
                         <Base64edX509Certificate stringValueNull="null"/>
                         <Actor stringValue=""/>
                     </RecipientContext>
+                    <NameFormats stringArrayValue="included"/>
+                    <RequireProofOfPosession booleanValue="true"/>
                     <CheckAssertionValidity booleanValue="true"/>
                     <TargetRestriction stringValueNull="null"/>
+                    <NameQualifier stringValueNull="null"/>
                 </SamlAuthorizationStatement>
                 <SalmAttributeStatement>
                     <AudienceRestriction stringValueNull="null"/>
@@ -193,8 +199,11 @@
                         <Base64edX509Certificate stringValueNull="null"/>
                         <Actor stringValue=""/>
                     </RecipientContext>
+                    <NameFormats stringArrayValue="included"/>
+                    <RequireProofOfPosession booleanValue="true"/>
                     <CheckAssertionValidity booleanValue="true"/>
                     <TargetRestriction stringValueNull="null"/>
+                    <NameQualifier stringValueNull="null"/>
                 </SalmAttributeStatement>
                 <AuditAssertion>
                     <SaveRequest booleanValue="false"/>

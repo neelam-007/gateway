@@ -39,7 +39,8 @@ public class AddSamlAuthenticationStatementAssertionAdvice implements Advice {
           new IntroductionWizardStepPanel(new
             AuthenticationMethodsWizardStepPanel(
               new SubjectConfirmationWizardStepPanel(
-                new ConditionsWizardStepPanel(null))));
+                new SubjectConfirmationNameIdentifierWizardStepPanel(
+                new ConditionsWizardStepPanel(null)))));
 
         Wizard w = new AuthenticationStatementWizard(f, p);
         w.addWizardListener(new WizardAdapter() {

@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlStatementValidate;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
@@ -17,8 +18,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -32,6 +32,7 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private ApplicationContext applicationContext;
     private PolicyFactory policyFactory;
+    private SamlStatementValidate statementValidate;
 
     /**
      * Create the server side saml security policy element
@@ -46,9 +47,10 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
         if (applicationContext == null) {
             throw new IllegalArgumentException("The Application Context is required");
         }
-        policyFactory = (PolicyFactory)applicationContext.getBean("policyFactory");
 
         assertion = sa;
+        statementValidate = SamlStatementValidate.getValidate(assertion, context);
+
     }
 
     /**
@@ -67,21 +69,10 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
                 logger.finest("Request not SOAP; cannot validate Saml Statement");
                 return AssertionStatus.BAD_REQUEST;
             }
+            Collection errors = new ArrayList();
+
             ProcessorResult wssResults = xmlKnob.getProcessorResult();
-            Element documentElement = xmlKnob.getDocumentReadOnly().getDocumentElement();
-
-            String securityNS = wssResults.getSecurityNS();
-            if (null == securityNS) {
-                logger.finest("No Security Header found");
-                return AssertionStatus.BAD_REQUEST;
-            }
-
-            String securityHeaderXpath = SoapUtil.SOAP_HEADER_XPATH +"/" + securityNS + ":Security";
-            XpathExpression shx = XpathExpression.soapBodyXpathValue();
-            shx.getNamespaces().put(SoapUtil.SECURITY_NAMESPACE_PREFIX, securityNS);
-            List verifySignatures = policyFactory.makeCompositePolicy(new AllAssertion(Arrays.asList(new Object[]{
-                new RequestWssIntegrity(), new RequestWssIntegrity(shx)
-            })));
+            //statementValidate.validate(xmlKnob.getDocumentReadOnly(), wssResults);
 
         } catch (SAXException e) {
             throw (IOException)new IOException().initCause(e);

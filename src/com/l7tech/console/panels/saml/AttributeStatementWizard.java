@@ -23,5 +23,6 @@ public class AttributeStatementWizard extends Wizard {
      */
     public AttributeStatementWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
+        setTitle("SAML Attribute Statement Constraints Wizard");
     }
  }

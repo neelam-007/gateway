@@ -17,11 +17,12 @@ import java.awt.*;
  * @author emil
  * @version Jan 18, 2005
  */
-public class AuthorizationStatementStatementWizard extends Wizard {
+public class AuthorizationStatementWizard extends Wizard {
     /**
      * Creates new wizard
      */
-    public AuthorizationStatementStatementWizard(Frame parent, WizardStepPanel panel) {
+    public AuthorizationStatementWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
+        setTitle("SAML Authorization Statement Constraints Wizard");
     }
  }
