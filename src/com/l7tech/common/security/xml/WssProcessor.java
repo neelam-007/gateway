@@ -56,6 +56,13 @@ public interface WssProcessor {
 
     public static class ProcessorException extends Exception {}
 
+    /**
+     *
+     * @param message the xml document containing the soap message. this document may be modified on exit
+     * @param recipientCertificate the recipient's cert to which encrypted keys may be encoded for
+     * @param recipientPrivateKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys 
+     * @throws ProcessorException
+     */
     ProcessorResult undecorateMessage(Document message,
                                       X509Certificate recipientCertificate,
                                       PrivateKey recipientPrivateKey) throws ProcessorException;
