@@ -225,8 +225,9 @@ public class SoapUtil {
 
     /**
      * Finds or creates a default Security element for a SOAP message, which may be partially-constructed and hence
-     * not currently valid. If the message does not have a Header yet.  If the Header does not yet contain
-     * a default Security element, one is created.
+     * not currently valid. If the message does not have a Header yet, one is created.
+     * If the Header already contains a default Security element, it is returned; otherwise a new one is created,
+     * added to the Header, and then returned.
      * <p>
      * Namespaces and element cardinality are not checked or enforced by this method.
      *
@@ -242,6 +243,19 @@ public class SoapUtil {
             if (isDefaultSecurityHeader(securityEl))
                 return securityEl;
         }
+        return makeSecurityElement(soapMsg);
+    }
+
+    /**
+     * Unconditionally creates a new Security element for a SOAP message, which may be partially-constructed
+     * and hence not currently valid.  If the message does not yet have a Header, one is created.
+     * A new Security element is created and added at the top of the Header.
+     * Existing Security elements, if any, are ignored.
+     * @param soapMsg
+     * @return
+     */
+    public static Element makeSecurityElement(Document soapMsg) {
+        Element header = getOrMakeHeader(soapMsg);
         Element securityEl = soapMsg.createElementNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
         securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, SECURITY_NAMESPACE);
