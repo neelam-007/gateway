@@ -105,13 +105,13 @@ then
     read -s CA_KEYSTORE_PASSWORD_REPEAT
     # VERIFY THAT PASSWORDS ARE EQUAL
     if [ ! "$CA_KEYSTORE_PASSWORD" = "$CA_KEYSTORE_PASSWORD_REPEAT" ]; then
-        echo "ERROR : passwords do not match"
-        exit
+        echo "ERROR : passwords do not match - please re-run $0"
+        exit 
     fi
     # VERIFY THAT THE PASSWORD IS LONG ENOUGH
     CA_PASSWORD_LENGTH=${#CA_KEYSTORE_PASSWORD}
     if [ "$CA_PASSWORD_LENGTH" -lt 6 ]; then
-        echo "ERROR : the CA keystore password must be at least 6 characters long"
+        echo "ERROR : the CA keystore password must be at least 6 characters long - please re-run $0"
         exit
     fi
 else
@@ -126,13 +126,13 @@ echo "Please repeat"
 read -s SSL_KEYSTORE_PASSWORD_REPEAT
 # VERIFY THAT PASSWORDS ARE EQUAL
 if [ ! "$SSL_KEYSTORE_PASSWORD" = "$SSL_KEYSTORE_PASSWORD_REPEAT" ]; then
-    echo "ERROR : passwords do not match"
+    echo "ERROR : passwords do not match - please re-run $0"
     exit
 fi
 # VERIFY THAT THE PASSWORD IS LONG ENOUGH
 SSL_PASSWORD_LENGTH=${#SSL_KEYSTORE_PASSWORD}
 if [ "$SSL_PASSWORD_LENGTH" -lt 6 ]; then
-    echo "ERROR : the SSL keystore password must be at least 6 characters long"
+    echo "ERROR : the SSL keystore password must be at least 6 characters long - please re-run $0"
     exit
 fi
 
