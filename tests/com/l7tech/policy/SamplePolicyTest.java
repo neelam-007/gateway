@@ -13,12 +13,12 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.IfThenAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.wsp.WspWriter;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -58,7 +58,7 @@ public class SamplePolicyTest extends TestCase {
 
     public void testBasicAuth() {
         // Require HTTP Basic auth.
-        Assertion basicAuthPolicy = new IfThenAssertion(Arrays.asList(new Assertion[] {
+        Assertion basicAuthPolicy = new AllAssertion(Arrays.asList(new Assertion[] {
             // Identify:
             new HttpBasic(),
 
@@ -72,7 +72,7 @@ public class SamplePolicyTest extends TestCase {
 
     public void testDigestAuth() {
         // Require HTTP Digest auth.  Allow Alice in, but nobody else.
-        Assertion basicAuthPolicy = new IfThenAssertion(Arrays.asList(new Assertion[] {
+        Assertion basicAuthPolicy = new AllAssertion(Arrays.asList(new Assertion[] {
             // Identify:
             new HttpDigest(),
 
@@ -86,7 +86,7 @@ public class SamplePolicyTest extends TestCase {
 
     public void testBasicSslAuth() {
         // Require HTTP Basic auth and SSL for link-level confidentiality.  Allow Bob or Alice in.
-        Assertion basicAuthPolicy = new IfThenAssertion(Arrays.asList(new Assertion[] {
+        Assertion basicAuthPolicy = new AllAssertion(Arrays.asList(new Assertion[] {
             // Preconditions:
             new SslAssertion(),
 
@@ -106,7 +106,7 @@ public class SamplePolicyTest extends TestCase {
 
     public void testDigestGroup() {
         // Require HTTP Digest auth with group.  All staff get to use this service.
-        Assertion basicAuthPolicy = new IfThenAssertion(Arrays.asList(new Assertion[] {
+        Assertion basicAuthPolicy = new AllAssertion(Arrays.asList(new Assertion[] {
             // Identify:
             new HttpDigest(),
 
@@ -120,21 +120,24 @@ public class SamplePolicyTest extends TestCase {
 
     public void testPerUserRouting() {
         // Require HTTP Digest auth.  Alice goes to service1, Bob goes to service2
-        Assertion perUserRoutingPolicy = new IfThenAssertion(Arrays.asList(new Assertion[] {
+        Assertion perUserRoutingPolicy = new AllAssertion(Arrays.asList(new Assertion[] {
             // Identify:
             new HttpBasic(),
 
             // Route:
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
-                new IfThenAssertion(Arrays.asList(new Assertion[] {
+                new AllAssertion(Arrays.asList(new Assertion[] {
                     new SpecificUser(identityProvider, userAlice),
                     new RoutingAssertion("http://backend.example.com/service1/soap")
                 })),
-                new IfThenAssertion(Arrays.asList(new Assertion[] {
+                new AllAssertion(Arrays.asList(new Assertion[] {
                     new SpecificUser(identityProvider, userBob),
                     new RoutingAssertion("http://backend.example.com/service2/soap")
                 })),
             })),
         }));
+
+        // Display this policy for Jay
+        log.info(WspWriter.getPolicyXml(perUserRoutingPolicy));
     }
 }
