@@ -1,8 +1,8 @@
 package com.l7tech.common.xml;
 
-import org.apache.xml.utils.NameSpace;
-
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Class <code>XpathExpression</code> contains the XPath expression
@@ -12,7 +12,7 @@ import java.io.Serializable;
  */
 public class XpathExpression implements Serializable {
     private String expression;
-    private NameSpace[] namespaces = new NameSpace[]{};
+    private Map namespaces = new HashMap();
 
     /**
      * default constructor for XML serialization support
@@ -32,13 +32,13 @@ public class XpathExpression implements Serializable {
      * Construct the XPath expression with optional namespaces
      *
      * @param expression the XPath expression
-     * @param namespaces the namespaces array, may be null, it will result
-     *                   in internal namespace array have zero elements.
+     * @param namespaces the namespaces map, may be null, it will result
+     *                   in internal namespace map have zero elements.
      */
-    public XpathExpression(String expression, NameSpace[] namespaces) {
+    public XpathExpression(String expression, Map namespaces) {
         this.expression = expression;
         if (namespaces != null) {
-            this.namespaces = namespaces;
+            this.namespaces.putAll(namespaces);
         }
     }
 
@@ -50,9 +50,10 @@ public class XpathExpression implements Serializable {
     }
 
     /**
-     * @return the namespace array, never <b>null</b>
+     * @return the namespace map, never <b>null</b>, note that the
+     *         this is the reference, not safe copy
      */
-    public NameSpace[] getNamespaces() {
+    public Map getNamespaces() {
         return namespaces;
     }
 
@@ -70,9 +71,10 @@ public class XpathExpression implements Serializable {
      *
      * @param namespaces
      */
-    public void setNamespaces(NameSpace[] namespaces) {
+    public void setNamespaces(Map namespaces) {
         if (namespaces != null) {
-            this.namespaces = namespaces;
+            this.namespaces.clear();
+            this.namespaces.putAll(namespaces);
         }
     }
 }

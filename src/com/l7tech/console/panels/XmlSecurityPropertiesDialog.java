@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.xml.SoapRequestGenerator;
 import com.l7tech.common.xml.SoapRequestGenerator.SOAPRequest;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.console.table.SecuredMessagePartsTableModel;
 import com.l7tech.console.table.SecuredMessagePartsTableModel.SecuredMessagePart;
@@ -29,8 +30,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -57,7 +57,9 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private SecuredMessagePartsTableModel memoTableModelEntireMessage;
     private SecuredMessagePartsTableModel memoTableModelMessageParts;
     private SOAPRequest[] soapRequests;
-
+    private static final String SOAP_BODY = "/SOAP-ENV:Envelope/SOAP-ENV:Body";
+    private static final String SOAP_ENVELOPE = "/SOAP-ENV:Envelope";
+    private Map namespaces = new HashMap();
 
     public XmlSecurityPropertiesDialog(JFrame owner, boolean modal, XmlSecurityTreeNode n) {
         super(owner, modal);
@@ -78,7 +80,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             soapRequests = sg.generate(serviceWsdl);
             for (int i = 0; i < soapRequests.length; i++) {
                 SOAPRequest soapRequest = soapRequests[i];
-                System.out.println(soapRequest);
+                //System.out.println(soapRequest);
+                namespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
             }
         } catch (Exception e) {
             throw new RuntimeException("Unable to parse the service WSDL " + serviceNode.getName());
@@ -104,7 +107,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                         securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
                         SecuredMessagePart sp = new SecuredMessagePart();
                         sp.setOperation("*");
-                        sp.setMessageAndPart("*");
+                        sp.setXpathExpression(SOAP_ENVELOPE);
                         securedMessagePartsTableModel.addPart(sp);
                     }
                     securedItemsTable.setModel(securedMessagePartsTableModel);
@@ -120,8 +123,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 boolean selected = messageParts.isSelected();
                 if (selected) {
                     wsdlMessagesTree.setEnabled(selected);
-                    //addButton.setEnabled(selected);
-                    // removeButton.setEnabled(selected);
 
                     securedMessagePartsTableModel = memoTableModelMessageParts;
                     if (securedMessagePartsTableModel == null) {
@@ -142,11 +143,14 @@ public class XmlSecurityPropertiesDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                java.util.List elements = new ArrayList();
                 Iterator it = securedMessagePartsTableModel.getSecuredMessageParts().iterator();
-                for (;it.hasNext();) {
+                for (; it.hasNext();) {
                     SecuredMessagePart sp = (SecuredMessagePartsTableModel.SecuredMessagePart)it.next();
-                    ElementSecurity es = toElementSecurity(sp);
+                    elements.add(toElementSecurity(sp));
                 }
+                xmlSecAssertion.setElements((ElementSecurity[])elements.toArray(new ElementSecurity[]{}));
+
                 XmlSecurityPropertiesDialog.this.dispose();
             }
         });
@@ -161,30 +165,42 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 if (node instanceof MessagePartTreeNode) {
                     MessagePartTreeNode mpn = (MessagePartTreeNode)node;
                     MessageTreeNode mn = (MessageTreeNode)node.getParent();
-                    String msg = mn.getMessage().getQName().getLocalPart() + "/" + mpn.getMessagePart().getName();
                     BindingOperationTreeNode bn = (BindingOperationTreeNode)mn.getParent();
+                    BindingOperation bo = bn.getOperation();
+                    String xpathExpression = SOAP_BODY;
+                    String operationNameSpacePrefix = "";
+                    if ("rpc".equals(serviceWsdl.getBindingStyle(bo))) {
+                        xpathExpression += ("/" + operationNameSpacePrefix + bn.getName());
+                    }
+                    xpathExpression += ("/" + mpn.getMessagePart().getName());
+
                     SecuredMessagePart p = new SecuredMessagePart();
-                    p.setOperation(bn.getName());
-                    p.setMessageAndPart(msg);
+                    p.setOperation(bo.getName());
+                    p.setXpathExpression(xpathExpression);
                     addSecuredPart(p);
 
                 } else if (node instanceof BindingOperationTreeNode) {
                     BindingOperationTreeNode bn = (BindingOperationTreeNode)node;
                     BindingOperation bo = bn.getOperation();
                     SecuredMessagePart p = new SecuredMessagePart();
-                    p.setOperation(bn.getName());
-                    Input input = bo.getOperation().getInput();
-                    if (input != null) {
-                        p.setMessageAndPart(input.getMessage().getQName().getLocalPart());
-                    }
+                    p.setOperation(bo.getName());
+                    String xpathExpression = SOAP_BODY;
+                    xpathExpression += ("/" + bn.getName());
+                    p.setXpathExpression(xpathExpression);
+
                     addSecuredPart(p);
-                } else if (node instanceof MessageTreeNode) {
-                    MessageTreeNode mn = (MessageTreeNode)node;
-                    String msg = mn.getMessage().getQName().getLocalPart();
-                    BindingOperationTreeNode bn = (BindingOperationTreeNode)node.getParent();
+                } else if (node instanceof XmlElementTreeNode) {
+                    XmlElementTreeNode xe = (XmlElementTreeNode)node;
                     SecuredMessagePart p = new SecuredMessagePart();
+                    BindingOperationTreeNode bn = (BindingOperationTreeNode)xe.getParent();
                     p.setOperation(bn.getName());
-                    p.setMessageAndPart(msg);
+                    if ("Envelope".equals(xe.getName())) {
+                        String xpathExpression = SOAP_ENVELOPE;
+                        p.setXpathExpression(xpathExpression);
+                    } else if ("Body".equals(xe.getName())) {
+                        String xpathExpression = SOAP_BODY;
+                        p.setXpathExpression(xpathExpression);
+                    }
                     addSecuredPart(p);
                 }
             }
@@ -220,13 +236,18 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             wsdlMessagesTree.setShowsRootHandles(true);
             wsdlMessagesTree.setCellRenderer(wsdlTreeRenderer);
             wsdlMessagesTree.getSelectionModel().addTreeSelectionListener(treeSelectionListener);
-            // securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
-            // securedItemsTable.setModel(securedMessagePartsTableModel);
             final ListSelectionModel selectionModel = securedItemsTable.getSelectionModel();
             selectionModel.addListSelectionListener(tableSelectionListener);
             selectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            entireMessage.setSelected(true);
+            final ElementSecurity[] elements = xmlSecAssertion.getElements();
+            final boolean envelopeAllOperations = isEnvelopeAllOperations(elements);
+            entireMessage.setSelected(envelopeAllOperations);
+            messageParts.setSelected(!envelopeAllOperations);
 
+            for (int i = 0; !envelopeAllOperations && i < elements.length; i++) {
+                ElementSecurity elementSecurity = elements[i];
+                securedMessagePartsTableModel.addPart(toSecureMessagePart(elementSecurity));
+            }
             setContentPane(mainPanel);
         } catch (WSDLException e) {
             throw new RuntimeException(e);
@@ -242,30 +263,22 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         es.setEncryption(sp.isEncrypt());
         es.setCipher(sp.getAlgorithm());
         es.setKeyLength(sp.getKeyLength());
-        XpathExpression xe = getXpathExpression(sp);
+        XpathExpression xe = new XpathExpression(sp.getXpathExpression(), namespaces);
         es.setXpathExpression(xe);
         return es;
-
     }
 
-    private XpathExpression getXpathExpression(SecuredMessagePart sp) {
-        final String operation = sp.getOperation();
-        String xpathOperation = "";
-        String xpathMessage = "";
-        String xpathMessageAndPart = "";
-        String prefix = "//SOAP-ENV:Envelope/SOAP-ENV:Body/";
+    private SecuredMessagePart toSecureMessagePart(ElementSecurity es) {
+        SecuredMessagePart sp = new SecuredMessagePart();
+        sp.setAlgorithm(es.getCipher());
+        sp.setXpathExpression(es.getXpathExpression().getExpression());
+        sp.setEncrypt(es.isEncryption());
+        sp.setKeyLength(es.getKeyLength());
+        return sp;
+    }
 
-        if ("*".equals(operation) ||
-            operation == null     ||
-            "".equals(operation)) {
-        } else {
-            for (int i = 0; i < soapRequests.length; i++) {
-                SOAPRequest soapRequest = soapRequests[i];
-                if (operation.equals(soapRequest.getSOAPOperation())) {
-                }
-            }
-        }
-        return null;
+    private boolean isEnvelopeAllOperations(ElementSecurity[] es) {
+        return (es.length == 1 && SOAP_ENVELOPE.equals(es[0].getXpathExpression().getExpression()));
     }
 
     private void addSecuredPart(SecuredMessagePart p) {
@@ -282,7 +295,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             final String msg = "<html><center>The message/part <i><b>{0}</b></i><br>" +
               "for operation <i><b>{1}</i></b> has already been selected or<br>" +
               "overlaps with another selection.</center></html>";
-            final Object[] params = new Object[]{p.getMessageAndPart() == null ? "" : p.getMessageAndPart(),
+            final Object[] params = new Object[]{p.getXpathExpression() == null ? "" : p.getXpathExpression(),
                                                  p.getOperation() == null ? "" : p.getOperation()};
             JOptionPane.showMessageDialog(f, MessageFormat.format(msg, params),
               "Element already exists",
@@ -332,7 +345,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
               if (path == null) {
                   addButton.setEnabled(false);
               } else {
-                  boolean enable = !(path.getLastPathComponent() instanceof BindingOperationTreeNode);
+                  boolean enable = !(path.getLastPathComponent() instanceof MessageTreeNode);
                   addButton.setEnabled(enable);
               }
           }
@@ -354,13 +367,12 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             insert(new XmlElementTreeNode("Envelope", wsdlOptions), index++);
             insert(new XmlElementTreeNode("Body", wsdlOptions), index++);
             final Input input = operation.getOperation().getInput();
-               if (input !=null) {
-                   final Message m = input.getMessage();
-                   insert(new MessageTreeNode(m, wsdlOptions), index++);
-               }
+            if (input != null) {
+                final Message m = input.getMessage();
+                insert(new MessageTreeNode(m, wsdlOptions), index++);
+            }
         }
     }
-
 
 
     private final ListSelectionListener tableSelectionListener = new ListSelectionListener() {
@@ -413,12 +425,12 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 2, 1, 6, null, null, null));
         final JPanel _7;
         _7 = new JPanel();
-        _7.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 3, new Insets(10, 0, 0, 0), -1, -1));
+        _7.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 4, new Insets(10, 0, 0, 0), -1, -1));
         _1.add(_7, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JScrollPane _8;
         _8 = new JScrollPane();
         treeScrollPane = _8;
-        _7.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, new Dimension(200, -1), new Dimension(200, -1), null));
+        _7.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 1, 7, new Dimension(200, -1), new Dimension(200, -1), null));
         final JTree _9;
         _9 = new JTree();
         wsdlMessagesTree = _9;
@@ -427,7 +439,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JScrollPane _10;
         _10 = new JScrollPane();
         tableScrollPane = _10;
-        _7.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 0, 3, 7, 7, null, null, null));
+        _7.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 3, 7, 7, null, null, null));
         final JTable _11;
         _11 = new JTable();
         securedItemsTable = _11;
@@ -435,7 +447,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JPanel _12;
         _12 = new JPanel();
         _12.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _7.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 3, 3, 3, null, null, null));
+        _7.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 0, 3, 3, 3, null, null, null));
         final JButton _13;
         _13 = new JButton();
         removeButton = _13;

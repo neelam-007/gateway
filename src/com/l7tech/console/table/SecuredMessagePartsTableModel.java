@@ -22,12 +22,12 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
             this.operation = operation;
         }
 
-        public String getMessageAndPart() {
-            return messageAndPart;
+        public String getXpathExpression() {
+            return xpathExpression;
         }
 
-        public void setMessageAndPart(String messageAndPart) {
-            this.messageAndPart = messageAndPart;
+        public void setXpathExpression(String xpathExpression) {
+            this.xpathExpression = xpathExpression;
         }
 
         public boolean isEncrypt() {
@@ -55,7 +55,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
         }
 
         private String operation;
-        private String messageAndPart;
+        private String xpathExpression;
         private boolean encrypt;
         private String algorithm;
         private int keyLength;
@@ -68,14 +68,14 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
          * @return true if the part is implied, false otherwise
          */
         public boolean implies(SecuredMessagePart p) {
-            if(equals(p))  return true;
-            if (operation != null && p.operation !=null) {
+            if (equals(p)) return true;
+            if (operation != null && p.operation != null) {
                 if (operation.equals(p.getOperation())) {
                     return true;
                 }
-            } else if(operation == null && p.operation == null) {
-                if (messageAndPart != null && p.messageAndPart != null) {
-                    return messageAndPart.startsWith(p.messageAndPart);
+            } else if (operation == null && p.operation == null) {
+                if (xpathExpression != null && p.xpathExpression != null) {
+                    return xpathExpression.startsWith(p.xpathExpression);
                 }
             }
 
@@ -88,7 +88,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
 
             final SecuredMessagePart securedMessagePart = (SecuredMessagePart)o;
 
-            if (messageAndPart != null ? !messageAndPart.equals(securedMessagePart.messageAndPart) : securedMessagePart.messageAndPart != null) return false;
+            if (xpathExpression != null ? !xpathExpression.equals(securedMessagePart.xpathExpression) : securedMessagePart.xpathExpression != null) return false;
             if (operation != null ? !operation.equals(securedMessagePart.operation) : securedMessagePart.operation != null) return false;
 
             return true;
@@ -97,7 +97,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
         public int hashCode() {
             int result;
             result = (operation != null ? operation.hashCode() : 0);
-            result = 29 * result + (messageAndPart != null ? messageAndPart.hashCode() : 0);
+            result = 29 * result + (xpathExpression != null ? xpathExpression.hashCode() : 0);
             return result;
         }
     }
@@ -157,7 +157,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
         if (column == 0) {
             return "Operation";
         } else if (column == 1) {
-            return "Message/Part";
+            return "XPath expression";
         } else if (column == 2) {
             return "Encrypt";
         } else if (column == 3) {
@@ -204,7 +204,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
         if (columnIndex == 0) {
             return sp.getOperation();
         } else if (columnIndex == 1) {
-            return sp.getMessageAndPart();
+            return sp.getXpathExpression();
         } else if (columnIndex == 2) {
             return new Boolean(sp.isEncrypt());
         } else if (columnIndex == 3) {
@@ -281,7 +281,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
             if (!(aValue instanceof String)) {
                 throw new IllegalArgumentException("Unsupported type " + aValue.getClass() + " expected " + String.class);
             }
-            sp.setMessageAndPart(aValue.toString());
+            sp.setXpathExpression(aValue.toString());
         } else if (columnIndex == 2) {
             if (!(aValue instanceof Boolean)) {
                 throw new IllegalArgumentException("Unsupported type " + aValue.getClass() + " expected " + Boolean.class);
