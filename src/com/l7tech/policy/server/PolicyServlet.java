@@ -57,15 +57,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
       throws ServletException, IOException {
-        PersistenceContext pc = null;
         try {
             // GET THE PARAMETERS PASSED
             String str_oid = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
             String getCert = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_GETCERT);
             String username = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_USERNAME);
             String nonce = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_NONCE);
-
-            pc = PersistenceContext.getCurrent();
 
             // See if it's actually a certificate download request
             if (getCert != null) {
@@ -191,10 +188,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 outputEmptyPolicy(httpServletResponse, serviceid, serviceversion);
             } else
                 outputPublishedServicePolicy(targetService, httpServletResponse);
-        } catch (SQLException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
         } finally {
-            if (pc != null) pc.close();
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.log(Level.WARNING, "Could not get current persistence context to close.", e);
+            }
         }
     }
 
