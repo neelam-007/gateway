@@ -28,17 +28,12 @@ public class RSASigner {
     private X509Certificate caCert;
     X509Name caSubjectName;
     private Long validity;
-    private Long crlperiod;
     private boolean usebc, bccritical;
     private boolean useku, kucritical;
     private boolean useski, skicritical;
     private boolean useaki, akicritical;
-    private boolean usecrln, crlncritical;
-    private boolean usesan, sancritical;
     private boolean usecrldist, crldistcritical;
     String crldisturi;
-    private boolean emailindn;
-    private boolean finishUser;
     private SecureRandom random;
 
     public static String DEFAULT_KEYSTORE_NAME = "keystore";
@@ -112,10 +107,6 @@ public class RSASigner {
 
     //CRLNumber critical? (RFC2459 says NO);
     boolean cRLNumberCritical;
-
-    //Period in hours between CRLs beeing issued;
-    Long cRLPeriod;
-
 
     //-------------------------------------------
     /**
@@ -270,8 +261,11 @@ public class RSASigner {
         Certificate ret = null;
 
         DERObject derobj = new DERInputStream(new ByteArrayInputStream(pkcs10req)).readObject();
-        DERConstructedSequence seq = (DERConstructedSequence) derobj;
-        PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(seq);
+        System.out.println("DERObject class = " + derobj.getClass().getName());
+        // DERConstructedSequence seq = (DERConstructedSequence) derobj;
+        // PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(seq);
+        // todo, fla try to fix this some error here
+        PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(pkcs10req);
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
         String dn= certReqInfo.getSubject().toString();
         System.out.println("Signing cert for subject DN="+dn);
@@ -459,10 +453,12 @@ public class RSASigner {
 
             // Get env variables and read in nessecary data
             //KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
-            KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+            // KeyStore keyStore = KeyStore.getInstance(keyStoreType); fla modif
+            KeyStore keyStore = KeyStore.getInstance("JCEKS");
 
-            InputStream is = new FileInputStream(keyStorePath);
             System.out.println("keystore:" + keyStorePath);
+            InputStream is = new FileInputStream(keyStorePath);
+
             char[] keyStorePass = getPassword(storePass, "Please enter your keystore password: ");
             keyStore.load(is, keyStorePass);
             System.out.println("privateKeyAlias: " + privateKeyAlias);
@@ -520,22 +516,10 @@ public class RSASigner {
                 ;
             }
             akicritical = authorityKeyIdentifierCritical;
-            if ((usecrln = cRLNumber) == true) {
-                ;
-            }
-            crlncritical = cRLNumberCritical;
-            if ((usesan = subjectAlternativeName) == true) {
-                ;
-            }
-            sancritical = subjectAlternativeNameCritical;
             if ((usecrldist = cRLDistributionPoint) == true) {
                 crldistcritical = cRLDistributionPointCritical;
                 crldisturi = cRLDistURI;
             }
-            // Use old style email address in DN? (really deprecated but old habits die hard...)
-            emailindn = emailInDN;
-            // The period between CRL issue
-            crlperiod = cRLPeriod;
 
             // Init random number generator for random serialnumbers
             random = SecureRandom.getInstance("SHA1PRNG");
@@ -602,7 +586,6 @@ public class RSASigner {
         emailInDN = new Boolean(props.getProperty("validity")).booleanValue();
         cRLNumber = new Boolean(props.getProperty("validity")).booleanValue();
         cRLNumberCritical = new Boolean(props.getProperty("validity")).booleanValue();
-        cRLPeriod = Long.valueOf(props.getProperty("validity"));
     }
 
     /**
@@ -669,8 +652,5 @@ public class RSASigner {
         //CRLNumber critical? (RFC2459 says NO);
         cRLNumberCritical = false;
         defaultProperties.setProperty("cRLNumberCritical", Boolean.toString(cRLNumberCritical));
-        //Period in hours between CRLs beeing issued;
-        cRLPeriod = new Long(24);
-        defaultProperties.setProperty("cRLPeriod", cRLPeriod.toString());
     }
 }
