@@ -113,7 +113,7 @@ public class ExportPolicyToFileAction extends BaseAction {
         if (JFileChooser.APPROVE_OPTION != ret) return;
         String name = chooser.getSelectedFile().getPath();
         // add extension if not present
-        if (name.indexOf('.') == -1) {
+        if (!name.endsWith(".xml") && !name.endsWith(".XML")) {
             name = name + ".xml";
         }
         int overwrite = JOptionPane.YES_OPTION;
