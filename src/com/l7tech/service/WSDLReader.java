@@ -38,7 +38,7 @@ public class WSDLReader {
         // svc.getQName().getNamespaceURI()  svc.getQName().getLocalPart()
         java.util.Set operations = extractOperations(svc);
         String url = extractURL(svc);
-        return new SOAPWebService(operations, new URL(url), svc.getQName().getNamespaceURI());
+        return new SOAPWebService( "name", operations, new URL(url), svc.getQName().getNamespaceURI());
     }
 
     private static String extractURL(javax.wsdl.Service svc) {

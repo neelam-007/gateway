@@ -13,7 +13,7 @@ import com.l7tech.message.Response;
  * @author alex
  */
 public class RoutingAssertion extends Assertion {
-    public int checkRequest(Request request, Response response) throws PolicyAssertionExcepion {
-        return 0;
+    public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
+        return AssertionError.NONE;
     }
 }

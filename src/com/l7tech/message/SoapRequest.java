@@ -6,6 +6,8 @@ import org.xml.sax.SAXException;
 import java.io.InputStream;
 import java.io.IOException;
 
+import com.l7tech.credential.PrincipalCredentials;
+
 /**
  * @author alex
  * @version $Revision$
@@ -16,6 +18,12 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
         _requestStream = requestStream;
     }
 
+    /**
+     * Returns a DOM Document, parsing the requestStream if necessary.  If the requestStream has not already been parsed, this method will begin parsing it and return a "lazy DOM" implementation.
+     * @return a "lazy dom" implementation
+     * @throws SAXException if some sort of
+     * @throws IOException
+     */
     public synchronized Document getDocument() throws SAXException, IOException {
         if ( _document == null )
             if ( _requestStream == null )
@@ -31,5 +39,25 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
         return _requestStream;
     }
 
+    /** Returns the PrincipalCredentials associated with this request.  Could be null! */
+    public PrincipalCredentials getPrincipalCredentials() {
+        return _principalCredentials;
+    }
+
+    /** Assigns a set of PrincipalCredentials to this request. */
+    public void setPrincipalCredentials( PrincipalCredentials pc ) {
+        _principalCredentials = pc;
+    }
+
+    public boolean isAuthenticated() {
+        return _authenticated;
+    }
+
+    public void setAuthenticated(boolean authenticated) {
+        _authenticated = authenticated;
+    }
+
+    protected boolean _authenticated;
+    protected PrincipalCredentials _principalCredentials;
     protected InputStream _requestStream;
 }

@@ -9,16 +9,16 @@ package com.l7tech.policy.assertion;
 /**
  * @author alex
  */
-public class PolicyAssertionExcepion extends Exception {
-    public PolicyAssertionExcepion() {
+public class PolicyAssertionException extends Exception {
+    public PolicyAssertionException() {
         super();
     }
 
-    public PolicyAssertionExcepion( String message ) {
+    public PolicyAssertionException( String message ) {
         super( message );
     }
 
-    public PolicyAssertionExcepion( String message, Throwable cause ) {
+    public PolicyAssertionException( String message, Throwable cause ) {
         super( message, cause );
     }
 }

@@ -13,13 +13,17 @@ package com.l7tech.service;
  * @version $Revision$
  */
 public class Parameter {
-    public static final Parameter NULL = new Parameter( "null", Object.class, null );
+    public static final Parameter NULL_OBJECT = new Parameter( "null", Object.class, null );
+    public static final Parameter NULL_STRING = new Parameter( "null", String.class, null );
 
     public Parameter( String name, Class type, Object value ) {
         _name = name;
         _type = type;
         _value = value;
     }
+
+    /** Default constructor, only for Hibernate. Don't call! */
+    public Parameter() { }
 
     public String getName() {
         return _name;

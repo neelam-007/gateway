@@ -7,7 +7,6 @@
 package com.l7tech.service;
 
 import java.net.URL;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -24,16 +23,16 @@ public abstract class WebService extends Service {
         String _method;
     }
 
-    public WebService( Set operations, Method method, String hostname, int port, String uri ) {
-        super( operations );
+    public WebService( String name, Set operations, Method method, String hostname, int port, String uri ) {
+        super( name, operations );
         _method = method;
         _hostname = hostname;
         _uri = uri;
         _port = port;
     }
 
-    public WebService( Set operations, Method method, URL url ) {
-        super( operations );
+    public WebService( String name, Set operations, Method method, URL url ) {
+        super( name, operations );
         String protocol = url.getProtocol();
         if ( "http".equalsIgnoreCase( protocol ) || "https".equalsIgnoreCase( protocol ) ) {
             _method = method;
@@ -41,6 +40,11 @@ public abstract class WebService extends Service {
             _port = url.getPort();
             _uri = url.getPath();
         } else throw new IllegalArgumentException( "Only http-style URLs are supported!" );
+    }
+
+    /** Default constructor. Only for Hibernate, don't call! */
+    public WebService() {
+        super();
     }
 
     public Method getMethod() {

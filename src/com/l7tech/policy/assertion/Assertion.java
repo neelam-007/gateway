@@ -19,7 +19,7 @@ import java.util.Collections;
  * @version $Revision$
  */
 public abstract class Assertion {
-    public abstract int checkRequest( Request request, Response response ) throws PolicyAssertionExcepion;
+    public abstract AssertionError checkRequest( Request request, Response response ) throws PolicyAssertionException;
     public void init( Map params ) {
         _params = params;
     }
