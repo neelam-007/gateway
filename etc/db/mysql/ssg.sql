@@ -297,6 +297,6 @@ CREATE TABLE jms_endpoint(
   username varchar(32) default '',
   password varchar(32) default '',
   max_concurrent_requests integer default '1',
-  is_message_source boolean default 'F',
+  is_message_source tinyint default '0',
   primary key(oid)
 ) TYPE=InnoDB;
