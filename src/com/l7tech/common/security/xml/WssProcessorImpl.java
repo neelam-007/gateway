@@ -94,7 +94,7 @@ public class WssProcessorImpl implements WssProcessor {
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
 
         // Resolve the relevent Security header
-        cntx.soapHeader = SoapUtil.getHeaderElement(cntx.processedDocument);
+        cntx.originalDocumentSecurityHeader = SoapUtil.getSecurityElement(cntx.originalDocument);
         cntx.releventSecurityHeader = SoapUtil.getSecurityElement(cntx.processedDocument);
 
         // maybe there are no security headers at all in which case, there is nothing to process
@@ -540,6 +540,9 @@ public class WssProcessorImpl implements WssProcessor {
             throws InvalidDocumentFormatException
     {
         logger.finest("Processing Timestamp");
+        if (ctx.timestamp != null)
+            throw new InvalidDocumentFormatException("More than one Timestamp element was encountered in the Security header");
+
         final Element created = XmlUtil.findOnlyOneChildElementByName(timestampElement,
                                                                       SoapUtil.WSU_URIS_ARRAY,
                                                                       SoapUtil.CREATED_EL_NAME);
@@ -745,11 +748,14 @@ public class WssProcessorImpl implements WssProcessor {
             // if this is a timestamp in the security header, note that it was signed
             if (SoapUtil.WSU_URIS.contains(elementCovered.getNamespaceURI()) &&
                 SoapUtil.TIMESTAMP_EL_NAME.equals(elementCovered.getLocalName()) &&
-                (cntx.releventSecurityHeader == elementCovered.getParentNode() ||
-                 cntx.soapHeader == elementCovered.getParentNode()))
+                cntx.originalDocumentSecurityHeader == elementCovered.getParentNode())
             {
                 // Make sure we've seen this timestamp
-                if (cntx.timestamp.asElement() != elementCovered)
+                // TODO: would be very, very good to verify here that elementCovered == cntx.timestamp.asElement()
+                //       Unfortunately they are in different documents :(
+                //       It looks like we are safe, though: we only allow 1 timestamp (which we look for first
+                //       in the Security header), and elementCovered is verified as being in the Security header
+                if (cntx.timestamp == null)
                     throw new InvalidDocumentFormatException("Timestamp's Signature encountered before Timestamp element");
 
                 // Update timestamp with signature information
@@ -799,11 +805,11 @@ public class WssProcessorImpl implements WssProcessor {
         final Collection elementsThatWereEncrypted = new ArrayList();
         final Collection securityTokens = new ArrayList();
         WssProcessor.Timestamp timestamp = null;
-        Element soapHeader;
         Element releventSecurityHeader = null;
         String wsaMessageId = null;
         String wsaRelatesTo = null;
         Map x509TokensById = new HashMap();
+        Element originalDocumentSecurityHeader = null;
     }
 
     private static class X509SecurityTokenImpl implements WssProcessor.X509SecurityToken {
