@@ -57,7 +57,9 @@ public class ClientWssBasic extends ClientWssCredentialSource {
 
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) {
-                DecorationRequirements wssReq = context.getWssRequirements();
+                // todo fla, look at the recipient information of the assertion before assuming it's for default
+                // recipient
+                DecorationRequirements wssReq = context.getDefaultWssRequirements();
                 wssReq.setUsernameTokenCredentials(new LoginCredentials(username, password, WssBasic.class));
                 if (!context.getClientSidePolicy().isPlaintextAuthAllowed())
                     context.setSslRequired(true); // force SSL when using WSS basic

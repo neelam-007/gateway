@@ -41,7 +41,8 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
             PolicyRetryableException, ClientCertificateException
     {
         // Prepare a client cert if we haven't seen a signature source yet
-        if (!context.getWssRequirements().hasSignatureSource())
+        // todo fla , look into all wss requirements (not just default ones)
+        if (!context.getDefaultWssRequirements().hasSignatureSource())
             context.prepareClientCertificate();
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
@@ -52,7 +53,9 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
             {
                 // get the client cert and private key
                 // We must have credentials to get the private key
-                DecorationRequirements wssReqs = context.getWssRequirements();
+                // todo fla, look at the recipient information of the assertion before assuming it's for default
+                // recipient
+                DecorationRequirements wssReqs = context.getDefaultWssRequirements();
                 wssReqs.setSignTimestamp(true);
 
                 // If we still haven't yet seen a signature method, assume a WSS signature.

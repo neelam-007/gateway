@@ -46,7 +46,9 @@ public class ClientSecureConversation extends ClientAssertion {
         // Configure outbound decoration to use WS-SecureConversation
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) {
-                DecorationRequirements wssReqs = context.getWssRequirements();
+                // todo fla, look at the recipient information of the assertion before assuming it's for default
+                // recipient
+                DecorationRequirements wssReqs = context.getDefaultWssRequirements();
                 wssReqs.setSignTimestamp(true);
                 wssReqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                     public String getId() {

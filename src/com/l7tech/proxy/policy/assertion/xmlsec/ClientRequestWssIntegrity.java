@@ -73,7 +73,9 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
 
                     // get the client cert and private key
                     // We must have credentials to get the private key
-                    DecorationRequirements wssReqs = context.getWssRequirements();
+                    // todo fla, look at the recipient information of the assertion before assuming it's for default
+                    // recipient
+                    DecorationRequirements wssReqs = context.getDefaultWssRequirements();
                     wssReqs.getElementsToSign().addAll(elements);
                     return AssertionStatus.NONE;
                 } catch (JaxenException e) {

@@ -376,13 +376,17 @@ public class MessageProcessor {
 
                     // Do all WSS processing all at once
                     if (request.isSoap()) {
+
+                        // todo, plugin here the multiple passes at the decorator (fla todo)
+
                         log.info("Running pending request through WS-Security decorator");
-                        context.getWssRequirements().setTimestampCreatedDate(context.getSsg().dateTranslatorToSsg().translate(new Date()));
+                        context.getDefaultWssRequirements().setTimestampCreatedDate(context.getSsg().dateTranslatorToSsg().translate(new Date()));
                         Integer expiryMillis = Integer.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
                         if (expiryMillis != null)
-                            context.getWssRequirements().setTimestampTimeoutMillis(expiryMillis.intValue());
+                            context.getDefaultWssRequirements().setTimestampTimeoutMillis(expiryMillis.intValue());
                         wssDecorator.decorateMessage(request.getXmlKnob().getDocumentWritable(), // upgrade to writable document
-                                                     context.getWssRequirements());
+                                                     context.getDefaultWssRequirements());
+
                     } else
                         log.info("Request isn't SOAP; skipping WS-Security decoration");
                 }

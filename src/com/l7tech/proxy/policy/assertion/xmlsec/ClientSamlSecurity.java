@@ -51,7 +51,9 @@ public class ClientSamlSecurity extends ClientAssertion {
 
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) {
-                DecorationRequirements wssReqs = context.getWssRequirements();
+                // todo fla, look at the recipient information of the assertion before assuming it's for default
+                // recipient
+                DecorationRequirements wssReqs = context.getDefaultWssRequirements();
                 wssReqs.setSignTimestamp(true);
                 wssReqs.setSenderSamlToken(ass.asElement());
                 wssReqs.setSenderPrivateKey(privateKey);

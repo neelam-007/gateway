@@ -28,10 +28,7 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.Calendar;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,7 +64,11 @@ public class PolicyApplicationContext extends ProcessingContext {
         private boolean sslForbidden = false;  // ssl is forbidden for this request
         private boolean isBasicAuthRequired = false;
         private boolean isDigestAuthRequired = false;
-        private DecorationRequirements wssRequirements = new DecorationRequirements();
+        /**
+         * these wss requirements are the default ones as opposed to the ones meant for a downstream recipient
+         */
+        private DecorationRequirements defaultWSSRequirements = new DecorationRequirements();
+        private Map downstreamRecipientWSSRequirements = new HashMap();
         private String messageId = null;
         private Map pendingDecorations = new LinkedHashMap();
     }    
@@ -206,8 +207,18 @@ public class PolicyApplicationContext extends ProcessingContext {
         this.policySettings.activePolicy = policy;
     }
 
-    public DecorationRequirements getWssRequirements() {
-        return policySettings.wssRequirements;
+    /**
+     * @return a map in which the key is the recipient's actor value and the value is a DecorationRequirements object
+     */
+    public Map getAlternateWssRequirements() {
+        return policySettings.downstreamRecipientWSSRequirements;
+    }
+
+    /**
+     * @return the decoration requirements for the immediate recipient (as opposed to further downstream recipients)
+     */
+    public DecorationRequirements getDefaultWssRequirements() {
+        return policySettings.defaultWSSRequirements;
     }
 
     /**
