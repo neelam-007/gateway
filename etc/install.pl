@@ -5,6 +5,8 @@
 # and then apply
 
 use strict;
+
+# following hash keys are used by getparams sub routine for pattern matching, if you are modifying the key, please update getparams sub routine
 my @list=(
 	hostname      => "Hostname for this SSG node (eg. hostname.company.com)                                                        ",
 	host_ip       => "Host IP for this SSG node (eg. 192.168.1.9)                                                                  ",
@@ -12,7 +14,7 @@ my @list=(
 	gc_firstnode  => "--Cluster Gateway Env, First node in gateway cluster (y/n)                                                   ",
 	gc_masternip  => "--Cluster Gateway Env, IP (reachable by this host) of the first node (eg. 10.0.0.7) to copy keys             ",
         gc_clusternm  => "--Cluster Gateway Env, Cluster host name (eg. cluster_hostname.company.com)                                  ",
-	dc_cluster    => "Cluster / Non Cluster DB Env - Node is to be connected to a cluster database environemnt (y/n)               ",
+	dc_cluster    => "Cluster / Non Cluster DB Env - Node is to be connected to a cluster database environment (y/n)               ",
 	dc_dbserver   => "--Cluster DB Env, Node is a DB Server (y/n)                                                                  ",
         dc_repluser   => "--Cluster DB Env, Replicator Username (eg. repl)                                                             ",
         dc_replpass   => "--Cluster DB Env, Replicator Password (eg. replpass)                                                         ", 
@@ -501,8 +503,19 @@ EOF
 	my %c=(@list);
 	my @fieldlist=@list;
 	{ my $i; @fieldlist= grep { ++$i % 2 } @fieldlist; }
+NEXT_PARAM:
 	foreach  my $f (@fieldlist) {
-		print "$c{$f} ($Conf{$f}):";
+		# following pattern logic for prompt filtering depends on hash key of the @list, ensure this is updated when you modify hash key
+                if ( ($Conf{gc_cluster} eq 'n' && $f =~ /gc_(.*)/) 
+			|| ($Conf{dc_cluster} eq 'n' && $f =~ /dc_(.*)/)
+			|| ($Conf{dc_cluster} eq 'y' && ($f =~ /dblocal/ || $f =~ /dbhostname/))
+			|| ($Conf{dblocal} eq 'y' && $f =~ /dbhostname/)
+			|| ($Conf{net_front} eq 'n' && $f =~ /net_front_(.*)/) 
+			|| ($Conf{net_back} eq 'n' && $f =~ /net_back_(.*)/) ){
+			next NEXT_PARAM;
+		} else { 
+			print "$c{$f} ($Conf{$f}) :";
+		}
 		my $newval=<STDIN>;
 		chomp $newval;
 		$newval = trimwhitespace($newval);
