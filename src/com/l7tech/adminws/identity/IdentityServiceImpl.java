@@ -117,6 +117,10 @@ public class IdentityServiceImpl extends RemoteService implements IdentityServic
         delegate.revokeCert(identityProviderConfigId, userId);
     }
 
+    public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig) throws RemoteException {
+        delegate.testIdProviderConfig(identityProviderConfig);
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************

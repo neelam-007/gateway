@@ -387,6 +387,16 @@ public class Service implements IdentityService {
         }
     }
 
+    public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig) throws RemoteException {
+        try {
+            getIdentityProviderConfigManagerAndBeginTransaction().test(identityProviderConfig);
+        } catch (InvalidIdProviderCfgException e) {
+            throw new RemoteException(e.getMessage(), e);
+        } finally {
+            endTransaction();
+        }
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
