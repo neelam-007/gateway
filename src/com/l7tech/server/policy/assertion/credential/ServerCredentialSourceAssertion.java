@@ -6,23 +6,22 @@
 
 package com.l7tech.server.policy.assertion.credential;
 
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.AssertionResult;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.credential.PrincipalCredentials;
-import com.l7tech.credential.CredentialFinder;
-import com.l7tech.credential.CredentialFinderException;
-import com.l7tech.logging.LogManager;
+import com.l7tech.policy.assertion.AssertionResult;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Map;
-import java.util.HashMap;
 
 /**
  * @author alex
@@ -38,17 +37,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
             PrincipalCredentials pc = request.getPrincipalCredentials();
             if ( pc == null ) {
                 // No finder has been run yet!
-                Class credFinderClass = getCredentialFinderClass();
-                String classname = credFinderClass.getName();
-                CredentialFinder finder = null;
-                synchronized( _credentialFinders ) {
-                    finder = (CredentialFinder)_credentialFinders.get( classname );
-                    if ( finder == null ) {
-                        finder = (CredentialFinder)credFinderClass.newInstance();
-                        _credentialFinders.put( classname, finder );
-                    }
-                }
-                pc = finder.findCredentials( request );
+                pc = findCredentials( request );
             }
 
             if ( pc == null ) {
@@ -71,19 +60,13 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
                     response.setAuthenticationMissing(true);
                 else
                     response.setPolicyViolated(true);
-
                 return status;
             }
-        } catch ( IllegalAccessException iae ) {
-            _log.log(Level.SEVERE, iae.getMessage(), iae);
-            throw new PolicyAssertionException( iae.getMessage(), iae );
-        } catch ( InstantiationException ie ) {
-            _log.log(Level.SEVERE, null, ie);
-            throw new PolicyAssertionException( ie.getMessage(), ie );
         }
     }
 
-    protected abstract Class getCredentialFinderClass();
+    protected abstract PrincipalCredentials findCredentials( Request request ) throws IOException, CredentialFinderException;
+
     protected abstract AssertionStatus checkCredentials( Request request, Response response ) throws CredentialFinderException;
 
     protected Logger _log = LogManager.getInstance().getSystemLogger();

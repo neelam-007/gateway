@@ -10,9 +10,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.credential.wss.WssDigestCredentialFinder;
-import com.l7tech.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+
+import java.io.IOException;
 
 /**
  * @author alex
@@ -24,12 +26,12 @@ public class ServerWssDigest extends ServerWssCredentialSource implements Server
         _data = data;
     }
 
-    public AssertionStatus checkCredentials(Request request, Response response) throws CredentialFinderException {
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+    protected PrincipalCredentials findCredentials(Request request) throws IOException, CredentialFinderException {
+        return null;
     }
 
-    public Class getCredentialFinderClass() {
-        return WssDigestCredentialFinder.class;
+    public AssertionStatus checkCredentials(Request request, Response response) throws CredentialFinderException {
+        return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 
     protected WssDigest _data;

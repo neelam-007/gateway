@@ -6,13 +6,15 @@
 
 package com.l7tech.server.policy.assertion.credential.wss;
 
-import com.l7tech.credential.wss.WssClientCertCredentialFinder;
-import com.l7tech.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.wss.WssClientCert;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+
+import java.io.IOException;
 
 /**
  * @author alex
@@ -24,8 +26,8 @@ public class ServerWssClientCert extends ServerWssCredentialSource implements Se
         _data = data;
     }
 
-    protected Class getCredentialFinderClass() {
-        return WssClientCertCredentialFinder.class;
+    protected PrincipalCredentials findCredentials(Request request) throws IOException, CredentialFinderException {
+        return null;
     }
 
     public AssertionStatus checkCredentials(Request request, Response response) throws CredentialFinderException {
