@@ -40,20 +40,6 @@ public interface PartInfo {
     public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException;
 
     /**
-     * Obtain this multipart part's content as a byte array.  Obviously, this will always require reading
-     * the entire part into memory, so only use this if you are certain you would have had to read the
-     * entire part anyway; in any other case, strongly prefer {@link #getInputStream}.
-     * <p>
-     * For parts that have already been stashed in a ByteArrayStashManager this will be more efficient than
-     * calling {@link #getInputStream}.
-     *
-     * @return the bytes that would have been returned by an InputStream from {@link #getInputStream}
-     * @throws NoSuchPartException if this PartInfo's InputStream has already been destructively read.
-     * @throws IOException if there is a problem retrieving a stashed InputStream.
-     */
-    public byte[] getBodyBytesUsingUpMemory() throws IOException, NoSuchPartException;
-
-    /**
      * Completely replace the body content of this multipart part.  This may require reading and discarding the
      * old content, and will result in the new content being stashed.
      * <p>

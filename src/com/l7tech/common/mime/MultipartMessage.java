@@ -830,21 +830,6 @@ public class MultipartMessage {
             return is;
         }
 
-        public byte[] getBodyBytesUsingUpMemory() throws IOException, NoSuchPartException {
-            if (MultipartMessage.this.stashManager.isByteArrayAvailable(ordinal))
-                try {
-                    return MultipartMessage.this.stashManager.recallBytes(ordinal);
-                } catch (NoSuchPartException e) {
-                    throw new RuntimeException(e); // can't happen, illegal state
-                }
-
-            // We are required to read the byte array
-            InputStream is = getInputStream(false);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-            HexUtils.copyStream(is, baos);
-            return baos.toByteArray();
-        }
-
         public MimeHeaders getHeaders() {
             return this.headers;
         }
