@@ -6,8 +6,6 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.proxy.datamodel.PendingRequest;
-
 import java.util.Collections;
 import java.util.Set;
 
@@ -16,10 +14,6 @@ import java.util.Set;
  * @version $Revision$
  */
 public abstract class DateTimeAssertion extends Assertion {
-    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
-        return AssertionStatus.NOT_APPLICABLE;
-    }
-
     public void setRanges( Set ranges ) {
         _ranges = ranges;
     }

@@ -6,11 +6,6 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.proxy.datamodel.PendingRequest;
-
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -19,14 +14,6 @@ import java.net.UnknownHostException;
  * @version $Revision$
  */
 public class InetAddressAssertion extends Assertion {
-    public AssertionStatus checkRequest( Request request, Response response ) throws IOException, PolicyAssertionException {
-        return null;
-    }
-
-    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
-        return AssertionStatus.NOT_APPLICABLE;
-    }
-
     public void setNetwork( String network ) throws PolicyAssertionException {
         byte[] netBytes = new byte[4];
         int ppos1 = -1, ppos2 = 0;

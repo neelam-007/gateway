@@ -6,9 +6,7 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.proxy.datamodel.PendingRequest;
+
 
 /**
  * An assertion that always returns a positive result.
@@ -23,14 +21,6 @@ public class TrueAssertion extends Assertion {
      * instantiated every time such a thing is needed.
      */
     private static final TrueAssertion INSTANCE = new TrueAssertion();
-
-    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
-        return AssertionStatus.NONE;
-    }
-
-    public AssertionStatus decorateRequest(PendingRequest requst) throws PolicyAssertionException {
-        return AssertionStatus.NONE;
-    }
 
     /**
      * Quickly get an existing TrueAssertion with no parent to use as a "do-nothing" policy tree.
