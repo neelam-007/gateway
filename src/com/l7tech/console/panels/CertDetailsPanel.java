@@ -2,9 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -190,4 +187,7 @@ public class CertDetailsPanel extends WizardStepPanel {
         return i;
     }
 
+    public X509Certificate getCert() {
+        return cert;
+    }
 }
