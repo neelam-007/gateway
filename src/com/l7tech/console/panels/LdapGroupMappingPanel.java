@@ -58,6 +58,28 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         }
     }
 
+    private boolean validateInput() {
+
+        boolean rc = true;
+        int occurrence = 0;
+
+        Iterator itr = getGroupListModel().iterator();
+        while (itr.hasNext()) {
+            Object o = itr.next();
+            if (o instanceof GroupMappingConfig) {
+                if (((GroupMappingConfig) o).getObjClass().equals(getObjectClassField().getText())) {
+                    // the selected group found
+                    occurrence++;
+                    if(occurrence >= 2) {
+                        rc = false;
+                        break;
+                    }
+                }
+            }
+        }
+        return rc;
+    }
+
     public void readSettings(Object settings) throws IllegalArgumentException {
 
         if (settings instanceof LdapIdentityProviderConfig) {
@@ -221,7 +243,16 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
                     } else {
                         currentEntry.setObjClass(objectClass.getText());
                     }
+
+                    if (!validateInput()) {
+                        JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.duplicated"),
+                                resources.getString("add.error.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                        currentEntry.setObjClass(originalObjectClass);
+                        objectClass.setText(originalObjectClass);
+                    }
                     getGroupList().setSelectedValue(currentEntry, true);
+
                 }
             }
 
