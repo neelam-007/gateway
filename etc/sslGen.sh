@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # FILE [sslGen.sh]
 # LAYER 7 TECHNOLOGIES
-# 30-06-2003, flascelles
+# $Id$
 #
 # THIS SCRIPT GENERATES A CERTIFICATE FOR SSL USE OF TOMCAT
 #
