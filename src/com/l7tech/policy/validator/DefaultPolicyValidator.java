@@ -19,6 +19,8 @@ import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
@@ -78,6 +80,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
         for (int i = 0; i < ass.length; i++) {
             pv.validate(ass[i]);
         }
+
+        // defrred validations
+        Iterator dIt = pv.getDeferredValidators().iterator();
+        while (dIt.hasNext()) {
+            DeferredValidate dv = (DeferredValidate)dIt.next();
+            dv.validate(pv, ass);
+        }
         if (!pv.seenRouting) { // no routing report that
             r.addWarning(new PolicyValidatorResult.
               Warning(ap.lastAssertion(), "No route assertion.", null));
@@ -99,7 +108,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
      * configuraiton based approach.
      */
     private static class PathValidator {
-        private PolicyValidatorResult result;
+        PolicyValidatorResult result;
+        List deferredValidators = new ArrayList();
 
         PathValidator(PolicyValidatorResult r) {
             result = r;
@@ -126,8 +136,12 @@ public class DefaultPolicyValidator extends PolicyValidator {
             }
         }
 
+        public List getDeferredValidators() {
+            return deferredValidators;
+        }
+
         private void processCustom(Assertion a) {
-            CustomAssertionHolder csh = (CustomAssertionHolder) a;
+            CustomAssertionHolder csh = (CustomAssertionHolder)a;
             if (Category.ACCESS_CONTROL.equals(csh.getCategory())) {
                 if (!seenCredentials) {
                     result.addError(new PolicyValidatorResult.Error(a, "Access control specified without authentication scheme.", null));
@@ -135,7 +149,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
                     // if the credential source is not HTTP Basic
                     if (!seenHTTPBasic) {
                         result.addError(new PolicyValidatorResult.
-                                Error(a, "Only HTTP Basic Authentication can be used as a authentication scheme when a policy involes Custom Assertion.", null));
+                          Error(a, "Only HTTP Basic Authentication can be used as a authentication scheme when a policy involes Custom Assertion.", null));
                     }
                 }
 
@@ -259,14 +273,14 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
             // Custom Assertion can only be used with HTTP Basic
             if (seenCustomAssertion && !seenHTTPBasic) {
-                 result.addError(new PolicyValidatorResult.
+                result.addError(new PolicyValidatorResult.
                   Error(a, "Only HTTP Basic Authentication can be used as a authentication scheme when a policy involes Custom Assertion.", null));
             }
 
             seenCredentials = true;
         }
 
-        private void processPrecondition(Assertion a) {
+        private void processPrecondition(final Assertion a) {
             if (a instanceof SslAssertion) {
                 seenSsl = true;
                 // ssl assertion might be there but it could be forbidden...
@@ -289,13 +303,18 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 }
                 seenXmlResponseSecurityAssertion = true;
             } else if (a instanceof HttpClientCert) {
-                if (!seenSsl) {
-                    result.addError(new PolicyValidatorResult.Error(a,
-                      "HttpClientCert requires to have SSL transport.", null));
-                } else if (sslForbidden) {
-                    result.addError(new PolicyValidatorResult.Error(a,
-                      "HttpClientCert requires to have SSL transport (not forbidden).", null));
-                }
+                DeferredValidate dv = new DeferredValidate() {
+                    public void validate(PathValidator pv, Assertion[] path) {
+                        if (!pv.seenSsl) {
+                            result.addError(new PolicyValidatorResult.Error(a,
+                              "HttpClientCert requires to have SSL transport.", null));
+                        } else if (pv.sslForbidden) {
+                            result.addError(new PolicyValidatorResult.Error(a,
+                              "HttpClientCert requires to have SSL transport (not forbidden).", null));
+                        }
+                    }
+                };
+                deferredValidators.add(dv);
                 processCredentialSource(a);
             } else if (a instanceof XslTransformation) {
                 // check that the assertion is on the right side of the routing
@@ -410,4 +429,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
         private boolean seenHTTPBasic = false;
     }
 
+    /**
+     * The implementations are invoked after the regular (sequential)
+     * validate of the assertion path. This is useful for unordered validations,
+     * that is, where some asseriton must be present but not necessarily
+     * before the assertion currently examined.
+     */
+    static interface DeferredValidate {
+        void validate(PathValidator pv, Assertion[] path);
+    }
 }
