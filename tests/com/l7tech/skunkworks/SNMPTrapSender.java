@@ -27,6 +27,7 @@ import java.io.IOException;
  * Date: Nov 30, 2004<br/>
  */
 public class SNMPTrapSender {
+    public static final String COMMUNITY = "public";
     public static final String TRAP_DESTINATION = "192.168.0.3";
     public static final OID ERROR_MSG_OID = new OID(new int[] {1,3,6,1,7,7,7,7,7,7});
 
@@ -55,7 +56,7 @@ public class SNMPTrapSender {
         dispatcher.sendPdu(new UdpAddress(InetAddress.getByName(TRAP_DESTINATION), 162),
                            SnmpConstants.version2c,
                            SecurityModel.SECURITY_MODEL_SNMPv2c,
-                           "ssg".getBytes(), // todo, this should be set to the proper community bytes
+                           COMMUNITY.getBytes(), // todo, this should be set to the proper community bytes
                            SecurityLevel.NOAUTH_NOPRIV,
                            pdu,
                            false);
