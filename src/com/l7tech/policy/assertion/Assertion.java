@@ -43,6 +43,16 @@ public abstract class Assertion implements Cloneable, Serializable {
         return clone;
     }
 
+    /** More user friendly version of clone */
+    public Assertion getCopy() {
+        try {
+            return (Assertion) clone();
+        } catch (CloneNotSupportedException e) {
+            // can't happen
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Creates and returns an iterator that traverses the assertion subtree
      * rooted at this assertion in preorder.  The first node returned by the
