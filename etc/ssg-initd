@@ -23,13 +23,9 @@ prog="SSG"
 tries=3
 count=0
 USER=`whoami`
-# The semantics of these two functions differ from the way apachectl does
-# things -- attempting to start while running is a failure, and shutdown
-# when not running is also a failure.  So we just do it the way init scripts
-# are expected to behave here.
+
 # handle 3 different cases:
 # Run as root, run as a regular user, run as same user as ssguser. 
-# 
 
 start() {
 	find_tomcat
