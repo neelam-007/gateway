@@ -31,6 +31,67 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
 
      }
 
+     public void refreshLogs(int msgFilterLevel){
+
+         Log log = (Log) Locator.getDefault().lookup(Log.class);
+         if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
+
+         String[] rawLogs = new String[]{};
+         long startMsgNumber = -1;
+         long endMsgNumber;
+         boolean cleanUp = true;
+         Vector newLogsCache = new Vector();
+
+         if(logsCache.size() <= 0){
+             // retrieve all logs
+             getLogs(msgFilterLevel);
+             return;
+         }
+         else{
+             if (cleanUp) {
+                // logsCache = new Vector();
+                 while (realModel.getRowCount() > 0) {
+                     realModel.removeRow(0);
+                 }
+                 cleanUp = false;
+             }
+
+             endMsgNumber = ((LogMessage) logsCache.firstElement()).getMsgNumber();
+
+             LogMessage logMsg = null;
+
+             do {
+                 try {
+                     rawLogs = log.getSystemLog(startMsgNumber, endMsgNumber, MAX_MESSAGE_BLOCK_SIZE);
+
+                     if (rawLogs.length > 0) {
+                         Vector newLogs = new Vector();
+                         for (int i = 0; i < rawLogs.length; i++) {
+                             logMsg = new LogMessage(rawLogs[i]);
+                             newLogs.add(logMsg);
+                         }
+
+                         // update the startMsgNumber
+                         startMsgNumber = logMsg.getMsgNumber();
+
+                         newLogsCache.addAll(newLogs);
+                         updateLogTable(newLogs, msgFilterLevel);
+                         realModel.fireTableDataChanged();
+                     }
+
+                 } catch (RemoteException e) {
+                     System.err.println("Unable to retrieve logs from server");
+                 }
+             } while (rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
+
+             updateLogTable(logsCache, msgFilterLevel);
+             realModel.fireTableDataChanged();
+             newLogsCache.addAll(logsCache);
+
+             logsCache = newLogsCache;
+         }
+     }
+
      public void getLogs(int msgFilterLevel) {
 
           Log log = (Log) Locator.getDefault().lookup(Log.class);
@@ -92,9 +153,10 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
              if (isFilteredMsg(logMsg, msgFilterLevel)) {
                  Vector newRow = new Vector();
 
+                 newRow.add(Long.toString(logMsg.getMsgNumber()));
                  newRow.add(logMsg.getTime());
                  newRow.add(logMsg.getSeverity());
-                 newRow.add(logMsg.getMessageDetail());
+                 newRow.add(logMsg.getMessageDetails());
                  newRow.add(logMsg.getMessageClass());
                  newRow.add(logMsg.getMessageMethod());
                  realModel.addRow(newRow);
