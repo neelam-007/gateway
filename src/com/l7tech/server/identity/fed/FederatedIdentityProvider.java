@@ -172,18 +172,18 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                                                   "' could be found, and virtual groups" +
                                                   " are not permitted without trusted certs");
 
-            X509Certificate storedCert = (X509Certificate)clientCertManager.getUserCert(u);
-            if ( storedCert == null ) {
+            X509Certificate importedCert = (X509Certificate)clientCertManager.getUserCert(u);
+            if ( importedCert == null ) {
                 // This is OK as long as it was signed by a trusted cert
                 if ( trustedCerts.isEmpty() ) {
-                    // No trusted certs means the request cert must match a previously stored client cert
-                    throw new BadCredentialsException("User " + u + " has no client certificate stored, " +
+                    // No trusted certs means the request cert must match a previously imported client cert
+                    throw new BadCredentialsException("User " + u + " has no client certificate imported, " +
                                                       "and this Federated Identity Provider has no CA certs " +
                                                       "that are trusted");
                 }
-            } else if ( !storedCert.equals(requestCert) ) {
+            } else if ( !importedCert.equals(requestCert) ) {
                     throw new BadCredentialsException("Request certificate for user " + u +
-                                                      " does not match previously stored certificate");
+                                                      " does not match previously imported certificate");
             }
 
             final Class csa = pc.getCredentialSourceAssertion();
