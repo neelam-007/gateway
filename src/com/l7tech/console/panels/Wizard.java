@@ -432,7 +432,9 @@ public class Wizard extends JDialog {
             buttonNext.setText("Next");
             buttonNext.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
-                    advance(evt);
+                    if (wizardIterator.current().onNextButton()) {
+                        advance(evt);
+                    }
                 }
             });
         }
