@@ -94,7 +94,13 @@ public class JmsAdminStub implements JmsAdmin {
     }
 
     public EntityHeader[] getEndpointHeaders( long connectionOid ) throws RemoteException, FindException {
-        return new EntityHeader[0];  //To change body of implemented methods use File | Settings | File Templates.
+        List headers = new ArrayList();
+        Set keys = endpoints.keySet();
+        for (Iterator i = keys.iterator(); i.hasNext();) {
+            JmsEndpoint endpoint = (JmsEndpoint) endpoints.get(i.next());
+            headers.add(endpoint.toEntityHeader());
+        }
+        return (EntityHeader[]) headers.toArray(new EntityHeader[0]);
     }
 
     public synchronized JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException {
@@ -106,16 +112,13 @@ public class JmsAdminStub implements JmsAdmin {
     }
 
     public synchronized long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, UpdateException, SaveException, VersionException {
-        JmsEndpoint oldEndpoint = null;
-        try {
-            oldEndpoint = findEndpointByPrimaryKey(endpoint.getOid());
-            if (oldEndpoint.getConnectionOid() != endpoint.getConnectionOid())
-                throw new UpdateException("New endpoint belongs to a different connection");
-            endpoints.put(new Long(endpoint.getOid()), endpoint);
-            return endpoint.getOid();
-        } catch ( FindException e ) {
-            throw new UpdateException( e.toString(), e );
+        long oid = endpoint.getOid();
+        if (oid == 0 || oid == JmsEndpoint.DEFAULT_OID) {
+            oid = StubDataStore.defaultStore().nextObjectId();
+            endpoint.setOid(oid);
         }
+        endpoints.put(new Long(oid), endpoint);
+        return oid;
     }
 
     public void deleteEndpoint( long endpointOid ) throws RemoteException, FindException, DeleteException {
