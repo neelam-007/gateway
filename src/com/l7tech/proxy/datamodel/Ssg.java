@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.xmlenc.Session;
 import org.apache.log4j.Category;
 
 import java.io.File;
@@ -39,6 +40,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private int sslPort = SSG_SSL_PORT;
     private String username = null;
     private boolean defaultSsg = false;
+    private Session session = null;
 
     // These fields are transient.  To prevent the bean serializer from saving them anyway,
     // they do not use the getFoo() / setFoo() naming convention in their accessors and mutators.
@@ -380,6 +382,16 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public void setDefaultSsg(boolean defaultSsg) {
         this.defaultSsg = defaultSsg;
+    }
+
+    /** Cached session.  Package private; used by SsgSessionManager. */
+    Session getSession() {
+        return session;
+    }
+
+    /** Set cached session.  Package private; used by SsgSessionManager. */
+    void setSession(Session session) {
+        this.session = session;
     }
 
     /** Key store file.  Package private; used by SsgKeyStoreManager. */
