@@ -25,12 +25,39 @@ import javax.xml.parsers.DocumentBuilder;
  * Test SoapMsgSigner with files
  */
 public class SoapMsgSignerTest {
-
     public static void main(String[] args) throws Exception {
+        // signmsg("/home/flascell/dev/sampleDocs/simplesoapreq.xml");
+
+        try {
+            validateSignature("/home/flascell/dev/sampleDocs/signedreq.xml");
+        } catch (Exception e) {
+            System.err.println();
+            System.err.println();
+            e.printStackTrace(System.err);
+        }
+
+        try {
+            validateSignature("/home/flascell/dev/sampleDocs/incompletesig.xml");
+        } catch (Exception e) {
+            System.err.println();
+            System.err.println();
+            e.printStackTrace(System.err);
+        }
+
+        try {
+            validateSignature("/home/flascell/dev/sampleDocs/invalidsig.xml");
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        }
+
+    }
+
+    public static Document signmsg(String doctosignpath) throws Exception {
         // get a sample document
         DocumentBuilder builder = DOMParserNS.createBuilder();
         builder.setErrorHandler(new StandardErrorHandler());
-        Document sigdoc = builder.parse("/home/flascell/dev/sampleDocs/simplesoapreq.xml");
+        Document sigdoc = builder.parse(doctosignpath);
+        Document sigdocOrig = (Document)sigdoc.cloneNode(true);
 
         // get a cert
         byte[] certbytes = HexUtils.slurpStream(new FileInputStream("/home/flascell/dev/sampleDocs/user.cer"), 16384);
@@ -58,5 +85,17 @@ public class SoapMsgSignerTest {
         wr = new OutputStreamWriter(System.out, "UTF-8");
         XPathCanonicalizer.serializeAll(sigdoc, true, wr);
         wr.flush();
+
+        return sigdoc;
+    }
+
+    public static void validateSignature(String documentpath) throws Exception {
+        DocumentBuilder builder = DOMParserNS.createBuilder();
+        builder.setErrorHandler(new StandardErrorHandler());
+        Document soapmsg = builder.parse(documentpath);
+        SoapMsgSigner signer = new SoapMsgSigner();
+
+        X509Certificate cert = signer.validateSignature(soapmsg);
+        System.out.println("signature checks. cert: " + cert);
     }
 }
