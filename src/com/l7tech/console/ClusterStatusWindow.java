@@ -244,7 +244,19 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
         getClusterStatusTable().addMouseListener(new PopUpMouseListener() {
             protected void popUpMenuHandler(MouseEvent mouseEvent) {
                 JPopupMenu menu = new JPopupMenu();
-                menu.add(new DeleteNodeEntryAction());
+
+                final int selectedRowIndex = getClusterStatusTable().getSelectedRow();
+                boolean canDelete = false;
+                if (selectedRowIndex >= 0) {
+                    Object o = getClusterStatusTable().getValueAt(selectedRowIndex, STATUS_TABLE_NODE_STATUS_COLUMN_INDEX);
+                    if (o instanceof Integer) {
+                        Integer nodeStatus = (Integer) o;
+                        if (nodeStatus.intValue() == 0) {
+                            canDelete = true;
+                        }
+                    }
+                }
+                menu.add(new DeleteNodeEntryAction(canDelete));
                 menu.add(new RenameNodeAction());
                 if (menu != null) {
                     menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
@@ -842,10 +854,11 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     };
 
     private class DeleteNodeEntryAction extends AbstractAction {
-        public DeleteNodeEntryAction() {
+        public DeleteNodeEntryAction(boolean buttonEnabled) {
             putValue(Action.NAME, "Delete Node");
             putValue(Action.SHORT_DESCRIPTION, "Delete the node entry in the database");
             putValue(Action.SMALL_ICON, new ImageIcon(cl.getResource(RESOURCE_PATH + "/delete.gif")));
+            setEnabled(buttonEnabled);
         }
 
         /**
