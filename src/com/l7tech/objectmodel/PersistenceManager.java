@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.Entity;
@@ -10,6 +14,7 @@ import java.util.List;
  * Date: 7-May-2003
  * Time: 12:06:26 PM
  * To change this template use Options | File Templates.
+ * @version $Revision$
  */
 public abstract class PersistenceManager {
     public static PersistenceManager getInstance() {
