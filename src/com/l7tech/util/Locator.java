@@ -52,13 +52,13 @@ public abstract class Locator {
         }
 
         String className =
-                System.getProperty("com.l7tech.util.locator");
+          System.getProperty("com.l7tech.util.locator");
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
         try {
             if (className != null) {
-                Class c = Class.forName(className, true, cl);
-                defaultLocator = (Locator)c.newInstance();
+                Class c = Class.forName(className);
+                defaultLocator = (Locator) c.newInstance();
                 return defaultLocator;
             }
         } catch (Exception ex) {
@@ -69,11 +69,11 @@ public abstract class Locator {
         // OK, none specified (successfully) in a system property.
         // Try PropertiesLookup as a default.
         String res =
-                System.getProperty("com.l7tech.util.locator.properties");
+          System.getProperty("com.l7tech.util.locator.properties");
         if (res == null) {
             res = PropertiesLocator.DEFAULT_PROPERTIES;
         }
-        defaultLocator = Locators.propertiesLocator(res, cl);
+        defaultLocator = Locators.propertiesLocator(res, null);
 
         return defaultLocator;
 
@@ -96,7 +96,7 @@ public abstract class Locator {
     public Object lookup(Class clazz) {
         Matches res = lookup(new Template(clazz));
         Iterator it = res.allItems().iterator();
-        return it.hasNext() ? ((Item)it.next()).getInstance() : null;
+        return it.hasNext() ? ((Item) it.next()).getInstance() : null;
     }
 
     /** The general lookup method.
@@ -181,9 +181,9 @@ public abstract class Locator {
             }
 
             hashCode =
-                    (type == null ? 1 : type.hashCode()) +
-                    (id == null ? 2 : id.hashCode()) +
-                    (instance == null ? 3 : instance.hashCode());
+              (type == null ? 1 : type.hashCode()) +
+              (id == null ? 2 : id.hashCode()) +
+              (instance == null ? 3 : instance.hashCode());
 
             return hashCode;
         }
@@ -267,10 +267,9 @@ public abstract class Locator {
     }
 
 
-    //
-    // Implementation of the default lookup
-    //
-
+    /**
+     * Implementation of the default 'no-op' lookup
+     */
     private static final class Empty extends Locator {
         Empty() {
         }
@@ -304,4 +303,12 @@ public abstract class Locator {
             return NO_RESULT;
         }
     }
+
+    /**
+     * recycle the current locator, (used by testing)
+     */
+    protected static void recycle() {
+        defaultLocator = null;
+    }
+
 }

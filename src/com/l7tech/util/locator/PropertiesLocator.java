@@ -2,6 +2,7 @@ package com.l7tech.util.locator;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.FileNotFoundException;
 import java.util.Properties;
 import java.util.Enumeration;
 
@@ -37,7 +38,7 @@ public class PropertiesLocator extends AbstractLocator {
         try {
             initialize();
         } catch (Exception e) {
-            throw new InstantiationException("Cannot load " + DEFAULT_PROPERTIES, e);
+            throw new InstantiationException("Error instantiating locator ", e);
         }
     }
 
@@ -57,8 +58,7 @@ public class PropertiesLocator extends AbstractLocator {
     }
 
     /**
-     * Initialize the instance from resource using the specified classloader.
-     * <code>ClassLoader</code> is optional.
+     * Initialize the instance from resource.
      */
     private void initialize() throws IOException {
         InputStream inputStream = null;
@@ -67,7 +67,9 @@ public class PropertiesLocator extends AbstractLocator {
         } else {
             inputStream = cl.getResourceAsStream(servicesResource);
         }
-
+        if (inputStream == null) {
+            throw new FileNotFoundException("Cannot locate "+servicesResource);
+        }
         try {
             properties.load(inputStream);
             for (Enumeration e = properties.keys(); e.hasMoreElements();) {
@@ -75,7 +77,7 @@ public class PropertiesLocator extends AbstractLocator {
                 String name = (String)properties.get(key);
                 Class cls =  null;
                 try {
-                    cls = Class.forName(name, true, cl);
+                    cls = Class.forName(name);
                     addPair(key, cls);
                 } catch (ClassNotFoundException ex) {
                     ex.printStackTrace();  // too early to use error manager

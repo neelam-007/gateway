@@ -2,8 +2,6 @@ package com.l7tech.util.locator;
 
 import com.l7tech.util.Locator;
 
-import java.util.Properties;
-
 /**
  * A convinience class with couple of static factory methods. This class cannot
  * be instantiated.

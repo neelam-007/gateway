@@ -212,6 +212,25 @@ public abstract class AbstractLocator extends Locator {
         private int hashCode = 0;
     }
 
+    /**
+     * Returns a string representation of the object, that
+     * is the list of <code>Locator.Item</code> isntances
+     * that are registered.
+     *
+     * @return  a string representation of the object.
+     */
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        Locator.Matches matches = lookup(new Locator.Template());
+        Iterator it = matches.allInstances().iterator();
+        while (it.hasNext()) {
+            sb.append(it.next()).append("\n");
+        }
+        return sb.toString();
+    }
+
+
     private Map instancesCache = new HashMap();
     private Set nameClassSet = new HashSet();
+
 }
