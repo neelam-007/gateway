@@ -536,6 +536,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         // See if the parent element contains nothing else except attributes and this EncryptedData element
         // (and possibly a whitespace node before and after it)
+        // TODO trim() throws out all CTRL characters along with whitespace.  Need to think about this.
         Node nextWhitespace = null;
         Node nextSib = encryptedDataElement.getNextSibling();
         if (nextSib != null && nextSib.getNodeType() == Node.TEXT_NODE && nextSib.getNodeValue().trim().length() < 1)
