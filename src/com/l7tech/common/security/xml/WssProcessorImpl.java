@@ -104,7 +104,7 @@ public class WssProcessorImpl implements WssProcessor {
         while (securityChildToProcess != null) {
             if (securityChildToProcess.getLocalName().equals(SoapUtil.ENCRYPTEDKEY_EL_NAME)) {
                 processEncryptedKey(securityChildToProcess, recipientKey,
-                                    recipientCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID), cntx);
+                                    recipientCert, cntx);
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.TIMESTAMP_EL_NAME)) {
                 processTimestamp(cntx, securityChildToProcess);
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
@@ -254,53 +254,80 @@ public class WssProcessorImpl implements WssProcessor {
 
     private void processEncryptedKey(Element encryptedKeyElement,
                                      PrivateKey recipientKey,
-                                     byte[] ski,
+                                     X509Certificate recipientCert,
                                      ProcessingStatusHolder cntx)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
     {
         logger.finest("Processing EncryptedKey");
 
+        // If there's a KeyIdentifier, log whether it's talking about our key
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
-        if (ski == null) {
-            logger.fine("Our own certificate has no Subject Key Identifier -- unable to confirm for sure that we " +
-                        "are the intended recipient of this EncryptedKey.  Continuing anyway");
-        } else {
-            Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.DIGSIG_URI, "KeyInfo");
-            if (kinfo != null) {
-                Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
-                                                                    SoapUtil.SECURITY_URIS_ARRAY,
-                                                                    SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
-                if (str != null) {
-                    Element ki = XmlUtil.findOnlyOneChildElementByName(str,
-                                                                       SoapUtil.SECURITY_URIS_ARRAY,
-                                                                       SoapUtil.KEYIDENTIFIER_EL_NAME);
-                    if (ki != null) {
-                        String keyIdentifierValue = XmlUtil.getTextValue(ki);
-                        byte[] keyIdValueBytes = new byte[0];
-                        try {
-                            keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue);
-                        } catch (IOException e) {
-                            throw new InvalidDocumentFormatException("Unable to parse base64 Key Identifier", e);
-                        }
-                        if (keyIdValueBytes != null) {
-                            // trim if necessary
-                            byte[] ski2 = ski;
-                            if (ski.length > keyIdValueBytes.length) {
-                                ski2 = new byte[keyIdValueBytes.length];
-                                System.arraycopy(ski, ski.length-keyIdValueBytes.length,
-                                                 ski2, 0, keyIdValueBytes.length);
-                            }
-                            if (Arrays.equals(keyIdValueBytes, ski2)) {
-                                logger.fine("the Key SKI is recognized");
+        Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.DIGSIG_URI, "KeyInfo");
+        if (kinfo != null) {
+            Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
+                                                                SoapUtil.SECURITY_URIS_ARRAY,
+                                                                SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
+            if (str != null) {
+                Element ki = XmlUtil.findOnlyOneChildElementByName(str,
+                                                                   SoapUtil.SECURITY_URIS_ARRAY,
+                                                                   SoapUtil.KEYIDENTIFIER_EL_NAME);
+                if (ki != null) {
+                    String valueType = ki.getAttribute("ValueType");
+                    String keyIdentifierValue = XmlUtil.getTextValue(ki);
+                    byte[] keyIdValueBytes = new byte[0];
+                    try {
+                        keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue, true);
+                    } catch (IOException e) {
+                        throw new InvalidDocumentFormatException("Unable to parse base64 Key Identifier", e);
+                    }
+
+                    if (keyIdValueBytes != null) {
+                        if (valueType.length() < 1 || valueType.equals(SoapUtil.VALUETYPE_SKI)) {
+                            // If not typed, assume it's a ski
+                            byte[] ski = recipientCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
+                            if (ski == null) {
+                                logger.warning("This EncryptedKey has a KeyInfo that apparently requests a specific SKI, " +
+                                            "but our certificate does not have a SKI.  Will try to decrypt anyway.");
+                                /* FALLTHROUGH */
                             } else {
-                                logger.info("the ski does not match. looking for next encryptedkey");
-                                return;
+                                // trim if necessary
+                                byte[] ski2 = ski;
+                                if (ski.length > keyIdValueBytes.length) {
+                                    ski2 = new byte[keyIdValueBytes.length];
+                                    System.arraycopy(ski, ski.length-keyIdValueBytes.length,
+                                                     ski2, 0, keyIdValueBytes.length);
+                                }
+                                if (Arrays.equals(keyIdValueBytes, ski2)) {
+                                    logger.fine("the Key SKI is recognized");
+                                    /* FALLTHROUGH */
+                                } else {
+                                    logger.warning("This EncryptedKey has a KeyInfo that apparently requests a specific SKI, " +
+                                                "but our certificate's SKI does not match.  Will try to decrypt anyway.");
+                                    /* FALLTHROUGH */
+                                }
                             }
-                        }
+                        } else if (valueType.equals(SoapUtil.VALUETYPE_X509)) {
+                            // It seems to be a complete certificate
+                            X509Certificate referencedCert = (X509Certificate)CertificateFactory.getInstance("X.509").
+                                                                generateCertificate(new ByteArrayInputStream(keyIdValueBytes));
+                            if (recipientCert.equals(referencedCert)) {
+                                logger.fine("the Key recipient cert is recognized");
+                                /* FALLTHROUGH */
+
+                            } else {
+                                logger.warning("This EncryptedKey has a KeyInfo that apparently requests a specific cert, " +
+                                            "but our certificate does not match.  Will try to decrypt anyway.");
+                                /* FALLTHROUGH */
+                            }
+                        } else
+                            throw new InvalidDocumentFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
+                                                                     "ValueType: " + valueType);
                     }
                 }
             }
         }
+
+
         // verify that the algo is supported
         Element encryptionMethodEl = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
                                                                            SoapUtil.XMLENC_NS,

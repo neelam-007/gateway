@@ -45,8 +45,6 @@ public class WssDecoratorImpl implements WssDecorator {
     private static final Logger logger = Logger.getLogger(WssDecorator.class.getName());
 
     public static final int TIMESTAMP_TIMOUT_SEC = 300;
-    public static final String VALUETYPE_SKI = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509SubjectKeyIdentifier";
-    public static final String VALUETYPE_X509 = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
 
     private static class Context {
         SecureRandom rand = new SecureRandom();
@@ -180,7 +178,7 @@ public class WssDecoratorImpl implements WssDecorator {
         secTokRefEl.appendChild(refEl);
         keyInfoEl.appendChild(secTokRefEl);
         refEl.setAttribute("URI", "#" + bstId);
-        refEl.setAttribute("ValueType", VALUETYPE_X509);
+        refEl.setAttribute("ValueType", SoapUtil.VALUETYPE_X509);
 
 
 
@@ -234,9 +232,9 @@ public class WssDecoratorImpl implements WssDecorator {
 
         byte[] recipSki = recipientCertificate.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
         if (recipSki != null)
-            addKeyInfo(encryptedKey, recipSki, VALUETYPE_SKI);
+            addKeyInfo(encryptedKey, recipSki, SoapUtil.VALUETYPE_SKI);
         else
-            addKeyInfo(encryptedKey, recipientCertificate.getEncoded(), VALUETYPE_X509);
+            addKeyInfo(encryptedKey, recipientCertificate.getEncoded(), SoapUtil.VALUETYPE_X509);
 
         Element cipherData = XmlUtil.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
