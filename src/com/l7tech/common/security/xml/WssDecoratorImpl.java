@@ -313,13 +313,6 @@ public class WssDecoratorImpl implements WssDecorator {
             final Element element = elementsToSign[i];
             final String id = signedIds[i];
 
-            // Work-around for Bug #996 - if element is not in any namespace, ensure that an explicit xmlns="" is present
-            if (element.getPrefix() == null || element.getPrefix().length() < 1) {
-                if (element.getNamespaceURI() == null || element.getNamespaceURI().length() < 1) {
-                    throw new DecoratorException("Unable to directly sign an element that has no namespace");
-                }
-            }
-
             Reference ref = template.createReference("#" + id);
             if (XmlUtil.isElementAncestor(securityHeader, element)) {
                 logger.info("Per policy, breaking Basic Security Profile rules with enveloped signature" +
