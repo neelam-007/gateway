@@ -40,6 +40,12 @@
            <servlet-name>RegistrarServlet</servlet-name>
            <servlet-class>com.l7tech.jini.lookup.RegistrarLookupServlet</servlet-class>
     </servlet>
+
+    <servlet>
+           <servlet-name>WsdlProxy</servlet-name>
+           <servlet-class>com.l7tech.server.WsdlProxyServlet</servlet-class>
+    </servlet>
+
     <!-- Axis servlet properties -->
     <servlet>
         <servlet-name>AxisServlet</servlet-name>
@@ -100,8 +106,12 @@
     <servlet-mapping>
            <servlet-name>RegistrarServlet</servlet-name>
            <url-pattern>/ssg/registrar</url-pattern>
-     </servlet-mapping>
+    </servlet-mapping>
 
+    <servlet-mapping>
+       <servlet-name>WsdlProxy</servlet-name>
+       <url-pattern>/ssg/wsdl</url-pattern>
+    </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>AxisServlet</servlet-name>
