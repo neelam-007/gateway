@@ -240,7 +240,12 @@
         <delete dir="${doc.root}"/>
         <delete dir="${build.lib}"/>
         <delete dir="${build.dir}"/>
+        <delete dir="${src.root}/installer">
+            <include name="Agent-*"/>
+            <include name="Manager-*"/>
+        </delete>
         <delete dir="${javadoc.home}"/>
+
         <delete file="${src.root}/src/com/l7tech/util/Version.java"/>
     </target>
 
