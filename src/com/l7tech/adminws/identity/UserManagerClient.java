@@ -67,6 +67,14 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         }
     }
 
+    public EntityHeader userToHeader(User user) {
+        return null;
+    }
+
+    public User headerToUser(EntityHeader header) {
+        return null;
+    }
+
     public Collection findAllHeaders() throws FindException {
         com.l7tech.objectmodel.EntityHeader[] array = null;
         try {
