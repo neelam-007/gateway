@@ -13,6 +13,7 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
@@ -286,10 +287,11 @@ public class ClientProxy {
      * @throws IOException                if there was a network problem
      * @throws BadCredentialsException    if the SSG rejected the credentials we provided
      * @throws OperationCanceledException if the user cancels the logon prompt
+     * @throws PolicyRetryableException   if the policy should be updated and the operation retried
      */
     public void obtainClientCertificate(PendingRequest request)
             throws  ServerCertificateUntrustedException, GeneralSecurityException, IOException,
-                    OperationCanceledException, BadCredentialsException, HttpChallengeRequiredException
+                    OperationCanceledException, BadCredentialsException, HttpChallengeRequiredException, PolicyRetryableException
     {
         Ssg ssg = request.getSsg();
         KeyPair keyPair;
@@ -331,8 +333,14 @@ public class ClientProxy {
                     request.getNewCredentials();
                     // FALLTHROUGH -- retry with new password
                 } catch (SslUtils.CertificateAlreadyIssuedException e) {
-                    Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
-                    throw new OperationCanceledException();
+                    // Bug #380 - if we haven't updated policy yet, try that first - mlyons
+                    if (!request.isPolicyUpdated()) {
+                        Managers.getPolicyManager().flushPolicy(request);
+                        throw new PolicyRetryableException();
+                    } else {
+                        Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
+                        throw new OperationCanceledException();
+                    }
                 }
             } catch (KeyStoreCorruptException e) {
                 Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);

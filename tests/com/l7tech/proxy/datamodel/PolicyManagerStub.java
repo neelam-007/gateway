@@ -32,6 +32,9 @@ public class PolicyManagerStub implements PolicyManager {
         return policy;
     }
 
+    public void flushPolicy(PendingRequest request) {
+    }
+
     public void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException {
     }
 }

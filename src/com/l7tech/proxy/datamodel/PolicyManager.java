@@ -32,6 +32,13 @@ public interface PolicyManager {
     Policy getPolicy(PendingRequest request);
 
     /**
+     * Notify the PolicyManager that a policy may be out-of-date and should be flushed from the cache.
+     * The PolicyManager will not attempt to download a replacement one at this time.
+     * @param request The request that failed in a way suggestive that its policy may be out-of-date.
+     */
+    void flushPolicy(PendingRequest request);
+
+    /**
      * Notify the PolicyManager that a policy may be out-of-date.
      * The PolicyManager should attempt to update the policy if it needs to do so.
      * @param request The request that failed in a way suggestive that its policy may be out-of-date.

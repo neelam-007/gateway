@@ -245,7 +245,7 @@ public class MessageProcessor {
      * @throws ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
     private Policy enforcePolicy(PendingRequest req)
-            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException, KeyStoreCorruptException, HttpChallengeRequiredException
+            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException
     {
         Policy policy = policyManager.getPolicy(req);
         if (policy == null) {

@@ -233,6 +233,23 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     /**
+     * Remove a cached policy for this SSG.
+     * @param key
+     */
+    public synchronized void removePolicy(PolicyAttachmentKey key) {
+        policyMap.remove(key);
+    }
+
+    /**
+     * Remove a cached policy for this SSG.
+     * @param uri The namespace of the first element within the SOAP message body.
+     * @param soapAction the contents of the SOAPAction HTTP header.
+     */
+    public synchronized void removePolicy(String uri, String soapAction) {
+        policyMap.remove(new PolicyAttachmentKey(uri, soapAction));
+    }
+
+    /**
      * Look up a policy by PolicyAttachmentKey.
      * @param policyAttachmentKey the URI/SoapAction/etc to look up
      * @return the associated policy, or null if no such policy was found

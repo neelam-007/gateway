@@ -15,6 +15,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public abstract class ClientAssertion {
      */
     public abstract AssertionStatus decorateRequest(PendingRequest request)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
-                   ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException;
+                   ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException;
 
     /**
      * ClientProxy clinet-side processing of the given response.
