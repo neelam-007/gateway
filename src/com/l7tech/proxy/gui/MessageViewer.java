@@ -11,6 +11,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import com.l7tech.proxy.gui.util.IconManager;
+
 /**
  * Displays a list of messages.
  * User: mike
@@ -70,6 +72,7 @@ public class MessageViewer extends JFrame {
      */
     public MessageViewer(final String title) {
         super(title);
+        setIconImage(IconManager.getAppImage());
         getContentPane().setLayout(new BorderLayout());
 
         messageViewerModel.addListDataListener(new MessageViewListener());
