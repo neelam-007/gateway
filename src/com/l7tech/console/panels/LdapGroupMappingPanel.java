@@ -59,7 +59,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
 
     /** @return the wizard step label    */
     public String getStepLabel() {
-        return "Group ObjectClass mappings";
+        return "Group Object Classes";
     }
 
     /**

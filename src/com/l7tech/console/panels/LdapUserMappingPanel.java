@@ -63,7 +63,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
     /** @return the wizard step label    */
     public String getStepLabel() {
-        return "User ObjectClass mappings";
+        return "User Object Classes";
     }
 
     /**
