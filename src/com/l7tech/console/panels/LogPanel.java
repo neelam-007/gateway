@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableModel;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.util.Preferences;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -14,6 +15,7 @@ import java.awt.event.MouseEvent;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.ResourceBundle;
+import java.io.IOException;
 
 
 /**
@@ -107,6 +109,35 @@ public class LogPanel extends JPanel {
      */
     public int getMsgFilterLevel(){
         return msgFilterLevel;
+    }
+
+    public void setLogPaneDividerLocation(){
+
+       try {
+           Preferences prefs = Preferences.getPreferences();
+           String s = prefs.getString("main.log.details.divider.location");
+           if (s != null) {
+               int l = Integer.parseInt(s);
+               getLogPaneTop().setDividerLocation(l);
+           } else {
+               getLogPaneTop().setDividerLocation(0.7);
+           }
+       } catch (IOException e1) {
+
+       } catch (NumberFormatException e1) {
+
+       }
+    }
+
+    public void saveLogDetailsDividerLocation(){
+
+         try {
+            Preferences prefs = Preferences.getPreferences();
+            int l = getLogPaneTop().getDividerLocation();
+            prefs.putProperty("main.log.details.divider.location", Integer.toString(l));
+        } catch (IOException e1) {
+        } catch (NullPointerException e1) {
+        }
     }
 
     /**
@@ -430,7 +461,7 @@ public class LogPanel extends JPanel {
 
     private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
         if (details.isSelected()) {
-            getLogPaneTop().setDividerLocation(0.7);
+            setLogPaneDividerLocation();
             getMsgDetails().setVisible(true);
         } else {
             hideMsgDetails();
@@ -439,6 +470,7 @@ public class LogPanel extends JPanel {
 
     private void hideMsgDetails() {
 
+        saveLogDetailsDividerLocation();
         getLogPaneTop().setDividerLocation(1.0);
         getMsgDetails().setVisible(false);
     }
@@ -459,6 +491,7 @@ public class LogPanel extends JPanel {
 
     public void clearMsgTable(){
        ((FilteredLogTableModel)getMsgTable().getModel()).clearTable();
+        getMsgDetails().setText("");
     }
 /*
      private JTabbedPane getLogTabbedPane() {

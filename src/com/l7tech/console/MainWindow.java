@@ -325,7 +325,12 @@ public class MainWindow extends JFrame {
         addWindowListener(new WindowAdapter() {
              /** Invoked when a window has been opened. */
              public void windowOpened(WindowEvent e) {
-                logMenuItem.setSelected(Boolean.getBoolean("gateway.log.selected"));
+                 boolean  s = Boolean.getBoolean("gateway.log.selected");
+                 logMenuItem.setSelected(s);
+
+                if(s){
+                    getLogPane().setLogPaneDividerLocation();
+                }
              }
 
              /** Invoked when a window has been closed. */
@@ -337,6 +342,9 @@ public class MainWindow extends JFrame {
                  } catch (IOException e1) {
                  } catch (NullPointerException e1) {
                  }
+
+                 // save the log details divider location
+                 getLogPane().saveLogDetailsDividerLocation();
              }
          });
 
