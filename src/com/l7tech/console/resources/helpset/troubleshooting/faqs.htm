@@ -1,0 +1,343 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>FAQs and Error Messages</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=3036>
+<meta name=layout-width content=899>
+<meta name=x-ignored-words content="TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;SSL;WS;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;WSDL;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;AES;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;IP;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.">
+
+
+
+
+ <link rel="StyleSheet" href="../console.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Troubleshooting</h1>
+
+<h2>FAQs</h2>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer1">Why does my service 
+ policy look different from the last time?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer2">I do not like the 
+ look and feel of the user interface, can I customize the appearance to 
+ suit my needs?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer3">How do I view the 
+ service policy details?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer4">Can I cancel out 
+ after revoking a certificate?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer5">Why does nothing 
+ happen after I modify a service policy?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer6">Why did the identities 
+ under the LDAP directory disappear?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer7">When performing a 
+ search on identity providers, what wild cards can I use?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer8">After revoking a 
+ user’s certificate, the Gateway does not authorize the password. &nbsp;Why?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer9">Why can't I see the 
+ logs and statistics tabs after I select the Gateway Log and Statistics 
+ items in the View menu?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer10">Why does the inactivity 
+ timeout not take effect?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer11">Why does the user 
+ certificate not revoke after I have changed the user password?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer12">Why doesn't the 
+ sliding scale Manager Log work. &nbsp;Why?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer13">I have deleted a 
+ user identity from a service policy. &nbsp;Why 
+ can the user still access the service?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer14">I added a user/group 
+ to a service policy, but the user could not be authenticated. &nbsp;Why?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer15">After entering the 
+ correct credentials for a protected Web service (requiring Identity, Password, 
+ and Realm), the Web service cannot be accessed. Why?</a></p>
+
+<p style="font-weight: normal;"><a href="#FAQAnswer16">What parameters 
+ should the I use when creating a new external identity provider such as 
+ LDAP or MS Active Directory?</a></p>
+
+<h2>Error Messages</h2>
+
+<p style="font-weight: normal;"><a href="#ErrorAnswer1">There was an error 
+ updating Group SSGAdmin</a></p>
+
+<p style="font-weight: normal;"><a href="#ErrorAnswer2">Error saving service 
+ and policy</a></p>
+
+<p style="font-weight: normal;"><a href="#ErrorAnswer3">Cannot connect 
+ to the service https://&lt;hostname&gt;:8443. &nbsp;Please 
+ check your connection settings and application log for details. &nbsp;If 
+ problem persist, contact your network administrator.</a></p>
+
+<p style="font-weight: normal;"><a href="#ErrorAnswer4">Admin service not 
+ available at host &lt;gateway hostname&gt;</a></p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<h2>FAQ Answers</h2>
+
+<p style="font-weight: bold;"><a name=FAQAnswer1></a>Why does my service 
+ policy look different from the last time?</p>
+
+<p>The Toggle view button in the Policy pane provides two different policy 
+ views: policy and identities. &nbsp;When 
+ the policy view is active, the button appears flat (unpressed) and all 
+ policy assertions are visible. &nbsp;When 
+ the identities view is active, the button appears sunken (pressed) and 
+ the identity's assertions are visible. &nbsp;You 
+ can toggle these views by clicking onto the Toggle view button.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer2></a>I do not like the 
+ look and feel of the user interface, can I customize the appearance to 
+ suit my needs?</p>
+
+<p>The Preferences button launches a dialog box where the look and feel 
+ of the user interface can be changed. Disconnect from the Manager, change 
+ the Preferences, and then reconnect.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer3></a>How do I view the 
+ service policy details?</p>
+
+<p>You can view the service policy details by right-clicking on the service 
+ name. Select Service policy from the pop-up menu. The service policy details 
+ will display in the Policy pane on the right-hand side of the user interface.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer4></a>Can I cancel out after 
+ revoking a certificate?</p>
+
+<p>No, you cannot cancel from a user certificate revoking action. &nbsp;This 
+ action takes place immediately after you choose to revoke a user certificate.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer5></a>Why does nothing happen 
+ after I modify a service policy?</p>
+
+<p>If you have multiple services defined, ensure that you are modifying 
+ the correct service. The service's Bindings folder may help you to identify 
+ the actual Web service. The name of the Service policy and the Service 
+ URL (in the routing properties) may be misleading, especially if they 
+ were incorrectly defined.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer6></a>Why did the identities 
+ under the LDAP directory disappear?</p>
+
+<p>The LDAP may have been re-configured by the administrator. &nbsp;Disconnect 
+ from the Manager, then connect again.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer7></a>When performing a 
+ search on identity providers, what wild cards can I use?</p>
+
+<p>The available search wild cards are: “?” for a single character, and 
+ “*” for a substring.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer8></a>After revoking a user’s 
+ certificate, the Gateway does not authorize the password. &nbsp;Why?</p>
+
+<p>When revoking a user certificate, the user’s password will be reset. 
+ The administrator must change the user's password after revoking the certificate.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer9></a>Why can't I see the 
+ logs and statistics tabs after I select the Gateway Log and Statistics 
+ items in the View menu?</p>
+
+<p>This may be a result of the sizing of your application window. Maximize 
+ the application window to display the Logs and Statistics tabs in the 
+ bottom of the user interface.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer10></a>Why does the inactivity 
+ timeout not take effect?</p>
+
+<p>The Inactivity Timeout option is not active when Gateway log and/or 
+ Statistics are displayed and the auto-refresh option is selected. These 
+ features stop background activities (such as the inactivity timeout) in 
+ order to continuously refresh information.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer11></a>Why does the user 
+ certificate not revoke after I have changed the user password?</p>
+
+<p>Ensure that the new password is different from the old password. &nbsp;The 
+ certificate only revokes when the new password is different from the previous 
+ password. </p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer12></a>Why doesn't the sliding 
+ scale Manager Log work. &nbsp;Why?</p>
+
+<p>The sliding scale change is to control the future logs. The scale does 
+ not filter the past logs.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer13></a>I have deleted a 
+ user identity from a service policy. &nbsp;Why 
+ can the user still access the service?</p>
+
+<p>Duplicate entries of the identity may exist in the service policy and 
+ only one has been deleted. If a service policy has a long list of identities, 
+ you may want to create a group in order to minimize security issues caused 
+ by human error.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer14></a>I added a user/group 
+ to a service policy, but the user could not be authenticated. &nbsp;Why?</p>
+
+<p>Verify that the service policy has been validated and saved.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer15></a>After entering the 
+ correct credentials for a protected Web service (requiring Identity, Password, 
+ and Realm), the Web service cannot be accessed. Why?</p>
+
+<p>Verify that the service policy was saved after updating the policy with 
+ the Web service authentication information.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=FAQAnswer16></a>What parameters should 
+ the I use when creating a new external identity provider such as LDAP 
+ or MS Active Directory?</p>
+
+<p style="font-style: italic;">LDAP Identity Provider</p>
+
+<p>Most LDAP providers can support anonymous binding and do not require 
+ search credentials. As a result, you can omit values for the Bind DN and 
+ Bind password.</p>
+
+<p>For example:</p>
+
+<p>Identity Provider: myLDAP<br>
+Provider type: LDAP<br>
+LDAP host url: &nbsp;ldap://ldapserver:389 
+ <br>
+search base: dc=layer7-tech, dc=com</p>
+
+<p style="font-style: italic;">MS Active Directory Identity Provider</p>
+
+<p>Some LDAP providers such as MS Active Directory do not support anonymous 
+ binding. The Manager needs to capture the search credentials. The search 
+ credentials are usually the username/password for an account that has 
+ search permission (not to be confused &nbsp;with 
+ the LDAP admin account).</p>
+
+<p>For example:</p>
+
+<p>Identity Provider: myMSAD<br>
+Provider type: MS Active Directory<br>
+LDAP host url: ldap://mail.l7tech.com:3268<br>
+search base: ou=Layer 7 Users,dc=L7TECH,dc=LOCAL<br>
+Bind DN: browse<br>
+Bind Password: password</p>
+
+<p>&nbsp;</p>
+
+<h2>Error Message Answers</h2>
+
+<p style="font-weight: bold;"><a name=ErrorAnswer1></a>There was an error 
+ updating Group SSGAdmin</p>
+
+<p>This is a valid error. &nbsp;The 
+ administrator is forbidden to remove all members from the “SSGAdmin” group. 
+ One user must remain as an administrator to be able to log in to the SecureSpan<symbol 
+ name=Trademark>&#8482; Manager.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=ErrorAnswer2></a>Error saving service 
+ and policy</p>
+
+<p>If multiple Manager applications attempt to modify the same policy simultaneously, 
+ conflicts occur. &nbsp;Close 
+ the error message, refresh the service policy information, then continue.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=ErrorAnswer3></a>Cannot connect to 
+ the service https://&lt;hostname&gt;:8443. &nbsp;Please 
+ check your connection settings and application log for details. &nbsp;If 
+ problem persist, contact your network administrator.</p>
+
+<p>Ensure that the IP address and the host name lookup table contains an 
+ entry (IP hostname hostname.domain) of the Gateway server you are connecting 
+ to. &nbsp;</p>
+
+<p>For example, if the operating system running the Manager is UNIX, the 
+ Gateway IP address is “192.169.12.123”, the hostname is “mygateway”, the 
+ domain is “mycompany.com”. The “/etc/hosts” file should contain an entry 
+ like: 192.169.12.123 mygateway mygateway.mycompany.com.</p>
+
+<p>&nbsp;</p>
+
+<p style="font-weight: bold;"><a name=ErrorAnswer4></a>Admin service not 
+ available at host &lt;gateway hostname&gt;</p>
+
+<p>Try to ping the Gateway hostname from the machine running the Manager. 
+ If the ping does not receive a response, check to see if the Gateway's 
+ IP address has been modified or if the Gateway resides behind a firewall.</p>
+
+</body>
+
+</html>
