@@ -27,7 +27,7 @@ import java.util.logging.Level;
  */
 public class HttpDigestCredentialFinder extends HttpCredentialFinder {
     public static final String ENCODING = "UTF-8";
-    public static final String SCHEME = "Basic";
+    public static final String SCHEME = "Digest";
 
     public PrincipalCredentials findCredentials(Request request) throws IOException, CredentialFinderException {
         String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
