@@ -4,7 +4,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdProvConfManagerServer;
-import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
 
 import java.sql.SQLException;
@@ -128,10 +127,9 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     public Set groupsToHeaders(Set groups) {
         Group group;
         EntityHeader header;
-        Set result = Collections.EMPTY_SET;
+        Set result = new HashSet();
         for (Iterator i = groups.iterator(); i.hasNext();) {
             group = (Group) i.next();
-            if ( result == Collections.EMPTY_SET ) result = new HashSet();
             header = groupToHeader( group );
             result.add( header );
         }
@@ -141,12 +139,11 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     public Set headersToGroups(Set headers) throws FindException {
         Group group;
         EntityHeader header;
-        Set result = Collections.EMPTY_SET;
+        Set result = new HashSet();
         for (Iterator i = headers.iterator(); i.hasNext();) {
             header = (EntityHeader) i.next();
             if ( header.getType() == EntityType.GROUP ) {
                 group = headerToGroup( header );
-                if ( result == Collections.EMPTY_SET ) result = new HashSet();
                 result.add( group );
             } else {
                 IllegalArgumentException iae = new IllegalArgumentException( "EntityHeader " + header + " doesn't represent a Group!" );

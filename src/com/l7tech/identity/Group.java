@@ -15,12 +15,12 @@ public class Group extends NamedEntityImp implements Principal {
     }
 
     public Set getMembers() {
-        if ( _members == null ) return new HashSet();
+        if ( _members == null ) _members = new HashSet();
         return _members;
     }
 
     public Set getMemberHeaders() {
-        if ( _memberHeaders == null ) return new HashSet();
+        if ( _memberHeaders == null ) _memberHeaders = new HashSet();
         return _memberHeaders;
     }
 
