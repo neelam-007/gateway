@@ -6,11 +6,13 @@
 
 package com.l7tech.server.util;
 
+import java.io.Serializable;
+
 /**
  * Holds an opaque message identifier, which must be encoded as a string, and an expiry time.  The expiry time
  * is not considered signifiant for purposes of equals() and hashCode().
  */
-public final class MessageId {
+public final class MessageId implements Serializable {
     private final String opaqueIdentifier;
     private final long notValidOnOrAfterDate;
 
@@ -28,7 +30,9 @@ public final class MessageId {
     }
 
     public boolean equals(Object obj) {
-        return opaqueIdentifier.equals(obj);
+        if (!(obj instanceof MessageId)) return false;
+        MessageId other = (MessageId)obj;
+        return opaqueIdentifier.equals(other.opaqueIdentifier);
     }
 
     public int hashCode() {

@@ -12,7 +12,6 @@ import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.TransactionalComponent;
-import org.jgroups.*;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -36,66 +35,8 @@ public class ClusterBootProcess implements TransactionalComponent {
         private String address;
     }
 
-    /**
-     * Ensures that the specified multicast address is available (i.e. that no other
-     * cluster is running using that address).
-     *
-     * Remembers the channel created, because doing so is expensive.
-     * @param address a multicast address (224.0.7.x) to use in establishing the channel
-     * @throws AddressAlreadyInUseException if there appears to be another cluster already using the address
-     * @throws ChannelException if the channel cannot be created or connected for whatever reason.
-     */
-    public synchronized void ensureAddressAvailable(String address) throws AddressAlreadyInUseException, ChannelException {
-        JChannel channel = null;
-        try {
-            channel = connectToChannel( address );
-            Address me = channel.getLocalAddress();
-            View view = channel.getView();
-            for ( Iterator i = view.getMembers().iterator(); i.hasNext(); ) {
-                Address member = (Address)i.next();
-                if ( !(member.equals(me) ) ) {
-                    throw new AddressAlreadyInUseException(member.toString());
-                }
-            }
-            this.channel = channel;
-        } finally {
-            if ( channel != null && this.channel == null ) {
-                channel.disconnect();
-                channel.close();
-            }
-        }
-    }
-
-    private JChannel connectToChannel( String address ) throws ChannelException {
-        String props = PROPERTIES_PREFIX + address + PROPERTIES_SUFFIX;
-        JChannel channel = new JChannel(props);
-
-        channel.setOpt(Channel.AUTO_RECONNECT, Boolean.TRUE);
-
-        channel.setChannelListener(new ChannelListener() {
-            public void channelConnected( Channel channel ) {
-                logger.log(Level.INFO, "Connected to cluster communications channel" );
-            }
-
-            public void channelDisconnected( Channel channel ) {
-                logger.log(Level.INFO, "Disconnected from cluster communications channel" );
-            }
-
-            public void channelClosed( Channel channel ) {
-                logger.log(Level.INFO, "Cluster communications channel closed" );
-            }
-
-            public void channelShunned() {
-                logger.log(Level.INFO, "Shunned from cluster communications channel" );
-            }
-
-            public void channelReconnected( Address address ) {
-                logger.log(Level.INFO, "Reconnected to cluster communications channel" );
-            }
-        } );
-
-        channel.connect(CHANNEL_NAME);
-        return channel;
+    private String jgroupsProperties( String address ) {
+        return PROPERTIES_PREFIX + address + PROPERTIES_SUFFIX;
     }
 
     public void init( ComponentConfig config ) throws LifecycleException {
@@ -126,35 +67,17 @@ public class ClusterBootProcess implements TransactionalComponent {
                 }
 
                 if (multicastAddress == null) {
-                    String addr = null;
-                    while (true) {
-                        addr = ClusterInfoManager.generateMulticastAddress();
-                        logger.info("Generated multicast address " + addr);
-                        try {
-                            ensureAddressAvailable(addr);
-                            break;
-                        } catch ( AddressAlreadyInUseException e ) {
-                            logger.log( Level.WARNING, "Cluster communication address " + addr + " appears to be in use by " + e.getAddress() +".  Will try a new address", e );
-                            continue;
-                        } catch ( ChannelException e ) {
-                            logger.log( Level.SEVERE, "Cluster communications could not be established", e );
-                            break;
-                        }
-                    }
-                    myInfo.setMulticastAddress(addr);
+                    multicastAddress = ClusterInfoManager.generateMulticastAddress();
+                    myInfo.setMulticastAddress(multicastAddress);
                     clusterInfoManager.updateSelfStatus(myInfo);
                 }
             }
 
-            try {
-                if ( channel == null ) channel = connectToChannel(multicastAddress);
-            } catch ( ChannelException e ) {
-                final String msg = "Unable to connect to configured cluster communications channel on address "  + multicastAddress;
-                logger.log( Level.SEVERE, msg, e );
-                throw new LifecycleException(msg, e);
-            }
-
             StatusUpdater.initialize();
+
+            logger.info("Initializing DistributedMessageIdManager");
+            DistributedMessageIdManager.initialize(jgroupsProperties(multicastAddress));
+            logger.info("Initialized DistributedMessageIdManager");
         } catch (UpdateException e) {
             final String msg = "error updating boot time of node.";
             logger.log(Level.WARNING, msg, e);
@@ -162,23 +85,24 @@ public class ClusterBootProcess implements TransactionalComponent {
         } catch ( FindException e ) {
             logger.log(Level.WARNING, e.getMessage(), e );
             throw new LifecycleException(e.getMessage(), e);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e );
+            throw new LifecycleException(e.getMessage(), e);
         }
     }
 
     public void stop() throws LifecycleException {
-        channel.disconnect();
     }
 
     public void close() throws LifecycleException {
         // if we were updating cluster status, stop doing it
         StatusUpdater.stopUpdater();
-        channel.close();
+        try {
+            DistributedMessageIdManager.getInstance().close();
+        } catch ( Exception e ) {
+            throw new LifecycleException("DistributedMessageIdManager couldn't shut down properly");
+        }
     }
-
-    public synchronized Channel getChannel() {
-        return this.channel;
-    }
-
 
     public static final String CHANNEL_NAME = "com.l7tech.cluster.jgroupsChannel";
     public static final String PROPERTIES_PREFIX = "UDP(mcast_addr=";
@@ -193,11 +117,11 @@ public class ClusterBootProcess implements TransactionalComponent {
             "pbcast.STABLE(desired_avg_gossip=10000):" +
             "FRAG(frag_size=8096;down_thread=false;up_thread=false):" +
             "pbcast.GMS(join_timeout=2500;join_retry_timeout=1250;" +
-            "shun=false;print_local_addr=true)";
+                "shun=false;print_local_addr=true):" +
+            "pbcast.STATE_TRANSFER:";
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private JChannel channel;
     private ClusterInfoManager clusterInfoManager;
     private String multicastAddress;
 }

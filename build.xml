@@ -174,9 +174,11 @@
             <fileset dir="${src.root}/lib/crypto/bc">
                 <include name="bcprov-*.jar"/>
             </fileset>
+
             <fileset dir="${src.root}/lib">
-                <include name="jgroups-all.jar"/>
+                <include name="jgroups-core.jar"/>
                 <include name="commons-logging.jar"/>
+                <include name="oswego-concurrent.jar"/>
             </fileset>
         </copy>
 
@@ -305,8 +307,9 @@
                 <!-- These go in the system classpath now  -->
                 <!--
                 <include name="bcprov-jdk14-124.jar"/> - because the SSL keystore is BCPKCS12
-                <include name="jgroups-all.jar"/> - ClassCircularityError
+                <include name="jgroups-core.jar"/> - ClassCircularityError
                 <include name="commons-logging.jar"/> - needed by JGroups
+                <include name="oswego-concurrent.jar"/> - needed by JGroups
                 -->
                 <include name="commons-collections.jar"/>
                 <include name="commons-dbcp-1.1.jar"/>
@@ -330,7 +333,6 @@
                 <include name="jnlp.jar"/>
                 <include name="jnlp-servlet.jar"/>
                 <include name="odmg.jar"/>
-                <include name="oswego-concurrent.jar"/>
                 <include name="qname.jar"/>
                 <include name="reggie-dl.jar"/>
                 <include name="reggie.jar"/>

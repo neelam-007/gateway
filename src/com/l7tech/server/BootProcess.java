@@ -13,8 +13,6 @@ import com.l7tech.logging.ServerLogManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.remote.jini.Services;
-import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
 
@@ -100,7 +98,6 @@ public class BootProcess implements ServerComponentLifecycle {
             context = PersistenceContext.getCurrent();
             logger.info( "Starting server" );
 
-            initializeAdminServices();
             // make sure the ServiceManager is available. this will also build the service cache
             if (Locator.getDefault().lookup(ServiceManager.class) == null) {
                 logger.severe("Could not instantiate the ServiceManager");
@@ -168,9 +165,6 @@ public class BootProcess implements ServerComponentLifecycle {
             component.close();
         }
 
-        logger.info("Stopping admin services.");
-
-        RemoteService.unexportAll();
         // stop cache integrity process if necessary
         ServiceManager serviceManager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
         if (serviceManager != null && serviceManager instanceof ServiceManagerImp) {
@@ -201,18 +195,6 @@ public class BootProcess implements ServerComponentLifecycle {
     }
 
     private void initializeAdminServices() {
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            public void run() {
-                try {
-                    Services.getInstance().start();
-                } catch (Exception e) {
-                    logger.log(Level.WARNING,
-                      "There was an error in initalizing admin services.\n" +
-                      " The admin services may not be available.", e);
-                }
-            }
-        }, 3000); 
     }
 
 }

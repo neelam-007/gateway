@@ -1,16 +1,16 @@
 package com.l7tech.message;
 
+import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.util.MessageIdManager;
-import com.l7tech.server.util.SingleNodeMessageIdManager;
-import com.l7tech.identity.User;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -66,7 +66,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
 
 
     public MessageIdManager getMessageIdManager() {
-        return _messageIdManager;
+        return DistributedMessageIdManager.getInstance();
     }
 
     public WssProcessor.ProcessorResult getWssProcessorOutput() {
@@ -190,7 +190,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         return _requestReader;
     }
 
-    private static final MessageIdManager _messageIdManager = SingleNodeMessageIdManager.getInstance();
+//    private static final MessageIdManager _messageIdManager = SingleNodeMessageIdManager.getInstance();
 
     protected abstract Reader doGetRequestReader() throws IOException;
 
