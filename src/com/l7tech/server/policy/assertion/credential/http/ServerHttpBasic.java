@@ -59,23 +59,17 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
         if ( !scheme().equals(scheme) ) throwError( "Invalid HTTP Basic header scheme" );
 
         String userPassRealm = new String( Base64.decode( base64 ), ENCODING );
-        int cpos1 = userPassRealm.indexOf(":");
-        int cpos2 = userPassRealm.indexOf(":",cpos1+1);
         String login = null;
-        String realm = null;
         String pass = null;
-        if ( cpos1 >= 0 ) {
-            login = userPassRealm.substring( 0, cpos1 );
-            if ( cpos2 >= 0 )
-                realm = userPassRealm.substring( cpos2 + 1 );
-            else
-                cpos2 = userPassRealm.length();
 
-            pass = userPassRealm.substring( cpos1 + 1, cpos2 );
+        int cpos = userPassRealm.indexOf(":");
+        if ( cpos >= 0 ) {
+            login = userPassRealm.substring( 0, cpos );
+            pass = userPassRealm.substring( cpos + 1 );
 
             logger.fine( "Found HTTP Basic credentials for user " + login );
 
-            return new LoginCredentials( login, pass.getBytes(ENCODING), CredentialFormat.CLEARTEXT, realm );
+            return new LoginCredentials( login, pass.getBytes(ENCODING), CredentialFormat.CLEARTEXT, null );
         } else {
             // No colons
             String err = "Invalid HTTP Basic format!";
