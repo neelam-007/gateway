@@ -374,6 +374,11 @@ public class MessageProcessor {
         HttpClient client = new HttpClient();
         HttpState state = client.getState();
 
+        // Forget any cached session cookies, for all services shared by this SSG        
+        if(req.isPolicyUpdated()) {
+            ssg.clearSessionCookies();
+        }
+
         Cookie[] cookies = req.getSsg().retrieveSessionCookies();
         if (cookies != null) {
             for (int i = 0; i < cookies.length; i++) {
