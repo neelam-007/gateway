@@ -13,7 +13,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
-import com.l7tech.xmlenc.AesKey;
+import com.l7tech.common.security.AesKey;
 import com.l7tech.xmlenc.Session;
 import com.l7tech.xmlenc.XmlMangler;
 import com.l7tech.xmlsig.InvalidSignatureException;

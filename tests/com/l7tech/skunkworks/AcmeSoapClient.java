@@ -20,7 +20,7 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.w3c.dom.Document;
 import com.l7tech.util.XmlUtil;
 import com.l7tech.xmlenc.XmlMangler;
-import com.l7tech.xmlenc.AesKey;
+import com.l7tech.common.security.AesKey;
 
 /**
  *

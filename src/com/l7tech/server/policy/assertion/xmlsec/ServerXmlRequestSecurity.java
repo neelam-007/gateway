@@ -14,6 +14,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.SessionManager;
 import com.l7tech.xmlenc.*;
 import com.l7tech.xmlsig.*;
+import com.l7tech.common.security.AesKey;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;

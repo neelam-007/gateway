@@ -20,6 +20,7 @@ import com.ibm.xml.enc.type.KeyInfo;
 import com.ibm.xml.enc.type.KeyName;
 import com.ibm.xml.enc.util.AdHocIdResolver;
 import com.l7tech.xmlsig.XMLSecurityElementNotFoundException;
+import com.l7tech.common.security.AesKey;
 import org.apache.log4j.Category;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.w3c.dom.Document;
