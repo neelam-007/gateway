@@ -101,7 +101,7 @@ public class PublishServiceWizardTest extends Locator {
     }
 
     public static void main(String[] args) throws IOException {
-        System.setProperty("com.l7tech.common.locator", "com.l7tech.console.panels.PublishServiceWizardTest");
+        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
