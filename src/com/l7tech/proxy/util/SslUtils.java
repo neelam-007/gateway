@@ -37,6 +37,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.PasswordAuthentication;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -202,6 +203,7 @@ public class SslUtils {
         params.setContentType(ContentTypeHeader.parseValue("application/pkcs10"));
         final byte[] csrBytes = csr.getEncoded();
         params.setContentLength(new Long(csrBytes.length));
+        params.setPasswordAuthentication(new PasswordAuthentication(username, password));
         SimpleHttpClient.SimpleHttpResponse result = client.post(params, csrBytes);
         int status = result.getStatus();
         if ( status == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + status );
