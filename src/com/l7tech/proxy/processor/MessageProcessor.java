@@ -242,6 +242,11 @@ public class MessageProcessor {
             throw new BadCredentialsException(e);
         }
 
+        // Was our keystore corrupt?
+        Throwable ksce = ExceptionUtils.getCauseIfCausedBy(e, KeyStoreCorruptException.class);
+        if (ksce != null)
+            throw (KeyStoreCorruptException)ksce;
+
         // Was this server cert untrusted?
         Throwable scuet = ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
         ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)scuet;
