@@ -37,12 +37,10 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
-import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.util.SslUtils;
 import org.apache.commons.httpclient.Cookie;
-import org.apache.commons.httpclient.protocol.Protocol;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -69,10 +67,6 @@ import java.util.regex.Pattern;
 
 /**
  * The core of the Client Proxy.
- * <p/>
- * User: mike<br/>
- * Date: Aug 13, 2003<br/>
- * Time: 9:51:36 AM<br/>
  */
 public class MessageProcessor {
     private static final Logger log = Logger.getLogger(MessageProcessor.class.getName());
@@ -91,13 +85,6 @@ public class MessageProcessor {
     private WssProcessor wssProcessor = new WssProcessorImpl();
     private WssDecorator wssDecorator = new WssDecoratorImpl();
     public static final String ENCODING = "UTF-8";
-
-    static {
-        // Configure SSL for outgoing connections
-        System.setProperty("httpclient.useragent", SecureSpanConstants.USER_AGENT);
-        Protocol https = new Protocol("https", ClientProxySecureProtocolSocketFactory.getInstance(), 443);
-        Protocol.registerProtocol("https", https);
-    }
 
     /**
      * Construct a Client Proxy MessageProcessor.
@@ -569,6 +556,7 @@ public class MessageProcessor {
 
         List headers = new ArrayList();
         headers.add(new GenericHttpHeader("Cookie", context.getSsg().getRuntime().getSessionCookiesHeaderValue()));
+        headers.add(new GenericHttpHeader("User-Agent", SecureSpanConstants.USER_AGENT));
 
         final Message request = context.getRequest();
         final Message response = context.getResponse();
