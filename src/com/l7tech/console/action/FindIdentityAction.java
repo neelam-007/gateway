@@ -17,6 +17,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.security.Principal;
 import java.util.logging.Logger;
+import java.util.ResourceBundle;
 
 
 /**
@@ -29,6 +30,10 @@ import java.util.logging.Logger;
 public class FindIdentityAction extends BaseAction {
     static final Logger log = Logger.getLogger(FindIdentityAction.class.getName());
     FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+    
+    private static
+       ResourceBundle resapplication =
+         java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     /**
      * create the action with the default find dialog options
@@ -53,7 +58,8 @@ public class FindIdentityAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Find";
+        String name = resapplication.getString("Find_MenuItem_text_name");
+        return name;
     }
 
     /**

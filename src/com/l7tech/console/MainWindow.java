@@ -264,7 +264,7 @@ public class MainWindow extends JFrame {
     private JMenuItem getHelpTopicsMenuItem() {
         if (helpTopicsMenuItem == null) {
             helpTopicsMenuItem = new JMenuItem();
-            helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text"));
+            helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text_name"));
             helpTopicsMenuItem.setToolTipText(resapplication.getString("Help_TopicsMenuItem_text_description"));
             int mnemonic = helpTopicsMenuItem.getText().toCharArray()[0];
             helpTopicsMenuItem.setMnemonic(mnemonic);
@@ -307,6 +307,7 @@ public class MainWindow extends JFrame {
             editMenu.add(getNewProviderAction());
             editMenu.add(getNewInternalGroupAction());
             editMenu.add(getNewInternalUserAction());
+            editMenu.add(getFindAction());
 
             editMenu.addSeparator();
 
@@ -347,12 +348,9 @@ public class MainWindow extends JFrame {
 
         viewMenu.add(getStatMenuItem());
         viewMenu.add(getLogMenuItem());
-        viewMenu.add(new ConsoleAction());
+        //viewMenu.add(new ConsoleAction());
 
         viewMenu.addSeparator();
-
-        viewMenu.add(getFindAction());
-        viewMenu.add(getGotoSubmenu());
 
         JMenuItem item = new JMenuItem(getRefreshAction());
         item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
@@ -751,11 +749,15 @@ public class MainWindow extends JFrame {
      */
     private Action getFindAction() {
         if (findAction != null) return findAction;
+
         FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
         options.enableDeleteAction();
         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         findAction = new FindIdentityAction(options);
+        String aDesc = resapplication.getString("Find_MenuItem_text_description");
+        findAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
+
         return findAction;
     }
 
@@ -1354,13 +1356,6 @@ public class MainWindow extends JFrame {
         b = toolBarPane.add(homeAction);
         b.setFont(new Font("Dialog", 1, 10));
         b.setText((String)homeAction.getValue(Action.NAME));
-        b.setMargin(new Insets(0, 0, 0, 0));
-        b.setHorizontalTextPosition(SwingConstants.RIGHT);
-
-
-        b = toolBarPane.add(getFindAction());
-        b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getFindAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
