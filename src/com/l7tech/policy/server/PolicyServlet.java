@@ -257,6 +257,10 @@ public class PolicyServlet extends HttpServlet {
         if (serviceManagerInstance == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
     }
 
+    /**
+     * Decides whether a policy should be downloadable without providing credentials. This will return true if the
+     * service described by this policy could be consumed anonymouly.
+     */ 
     private boolean policyAllowAnonymous(PublishedService policy) throws IOException {
         // todo, validate the following assumption
         // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
