@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.message.Request;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
@@ -15,17 +16,18 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceManager;
-import com.l7tech.message.Request;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
-import java.security.cert.X509Certificate;
 import java.io.IOException;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,7 +35,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.Certificate;
 
 /**
  * Base class for servlets that share the capability of authenticating requests against

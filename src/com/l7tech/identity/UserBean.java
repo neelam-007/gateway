@@ -6,8 +6,8 @@
 
 package com.l7tech.identity;
 
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import java.io.Serializable;
 
@@ -150,6 +150,14 @@ public class UserBean implements User, Serializable {
         _name = name;
     }
 
+    public String getSubjectDn() {
+        return subjectDn;
+    }
+
+    public void setSubjectDn( String subjectDn ) {
+        this.subjectDn = subjectDn;
+    }
+
     public int getVersion() {
         return _version;
     }
@@ -187,5 +195,6 @@ public class UserBean implements User, Serializable {
     protected String _email;
     protected String _title;
     protected String _department;
+    protected String subjectDn;
     protected int _version;
 }

@@ -44,7 +44,7 @@
 
     <servlet>
         <servlet-name>CSRServlet</servlet-name>
-        <servlet-class>com.l7tech.identity.cert.CSRHandler</servlet-class>
+        <servlet-class>com.l7tech.server.identity.cert.CSRHandler</servlet-class>
     </servlet>
 
     <servlet>
@@ -242,9 +242,9 @@
         <description>List of concrete ServiceResolver implementations</description>
         <env-entry-name>ServiceResolvers</env-entry-name>
         <env-entry-value>
-            com.l7tech.service.resolution.SoapActionResolver
-            com.l7tech.service.resolution.UrnResolver
-            com.l7tech.service.resolution.HttpUriResolver
+            com.l7tech.server.service.resolution.SoapActionResolver
+            com.l7tech.server.service.resolution.UrnResolver
+            com.l7tech.server.service.resolution.HttpUriResolver
         </env-entry-value>
         <env-entry-type>java.lang.String</env-entry-type>
     </env-entry>

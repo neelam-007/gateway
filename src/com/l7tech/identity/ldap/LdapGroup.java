@@ -2,7 +2,6 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
-import com.l7tech.identity.IdProvConfManagerServer;
 
 import java.io.Serializable;
 
@@ -109,5 +108,5 @@ public class LdapGroup implements Group, Serializable {
 
     private GroupBean _groupBean;
 
-    private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
+    private long providerId;
 }

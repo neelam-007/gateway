@@ -1,13 +1,13 @@
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.objectmodel.*;
 
+import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.ArrayList;
-import java.rmi.RemoteException;
 
 /**
  * Main entry point for the console for everything that has to do with identity including the internal id provider
@@ -24,7 +24,7 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
     public IdentityProvider getInternalIdentityProvider() {
         IdentityProviderClient internalProvider = new IdentityProviderClient();
         IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
-        cfg.setOid(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
+        cfg.setOid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         cfg.setDescription("Internal identity provider");
         internalProvider.initialize(cfg);
         return internalProvider;

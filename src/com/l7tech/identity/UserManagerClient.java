@@ -81,6 +81,10 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         }
     }
 
+    public Class getImpClass() {
+        return User.class;
+    }
+
 
     public Collection findAllHeaders() throws FindException {
         EntityHeader[] array = null;

@@ -92,7 +92,7 @@
         <property name="disabled" column="disabled" type="boolean"/>
     </class>
 
-    <class name="com.l7tech.identity.cert.CertEntryRow" table="client_cert">
+    <class name="com.l7tech.server.identity.cert.CertEntryRow" table="client_cert">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -102,7 +102,7 @@
         <property name="resetCounter" column="reset_counter" type="int"/>
     </class>
 
-    <class name="com.l7tech.service.resolution.ResolutionParameters" table="service_resolution">
+    <class name="com.l7tech.server.service.resolution.ResolutionParameters" table="service_resolution">
         <id name="oid" column="objectid" type="long">
             <generator class="hilo"/>
         </id>

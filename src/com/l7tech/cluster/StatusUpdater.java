@@ -3,8 +3,8 @@ package com.l7tech.cluster;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.UptimeMonitor;
-import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceStatistics;
 
 import java.io.FileNotFoundException;

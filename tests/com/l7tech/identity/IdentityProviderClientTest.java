@@ -1,21 +1,19 @@
 package com.l7tech.identity;
 
-import com.l7tech.identity.*;
-import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.common.util.Locator;
+import com.l7tech.console.security.ClientCredentialManager;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-
-import java.net.PasswordAuthentication;
-import java.util.Collection;
-import java.util.Iterator;
-import java.io.File;
-
+import com.l7tech.server.identity.IdProvConfManagerServer;
 import org.apache.axis.client.Call;
 
 import javax.xml.namespace.QName;
+import java.io.File;
+import java.net.PasswordAuthentication;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * User: flascell

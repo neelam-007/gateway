@@ -119,7 +119,7 @@
   <parameter name="allowedMethods" value="echoVersion findAllIdentityProviderConfig findAllIdentityProviderConfigByOffset findIdentityProviderConfigByPrimaryKey saveIdentityProviderConfig deleteIdentityProviderConfig findAllUsers findAllUsersByOffset findUserByPrimaryKey deleteUser saveUser findAllGroups findAllGroupsByOffset findGroupByPrimaryKey deleteGroup saveGroup searchIdentities getUserCert revokeCert"/>
   <parameter name="wsdlPortType" value="identityPortType"/>
   <parameter name="scope" value="Application"/>
-  <parameter name="className" value="com.l7tech.identity.ws.IdentityAdminImpl"/>
+  <parameter name="className" value="com.l7tech.server.identity.IdentityAdminImpl"/>
   <parameter name="wsdlServicePort" value="identityPort"/>
   <parameter name="wsdlTargetNamespace" value="http://www.layer7-tech.com/identity"/>
   <parameter name="wsdlServiceElement" value="identityService"/>
@@ -140,7 +140,7 @@
   <parameter name="allowedMethods" value="resolveWsdlTarget findServiceByPrimaryKey findAllPublishedServices findAllPublishedServicesByOffset savePublishedService deletePublishedService"/>
   <parameter name="wsdlPortType" value="servicePortType"/>
   <parameter name="scope" value="Application"/>
-  <parameter name="className" value="com.l7tech.service.ws.ServiceAdminImpl"/>
+  <parameter name="className" value="com.l7tech.server.service.ServiceAdminImpl"/>
   <parameter name="wsdlServicePort" value="servicePort"/>
   <parameter name="wsdlTargetNamespace" value="http://www.layer7-tech.com/service"/>
   <parameter name="wsdlServiceElement" value="svcService"/>

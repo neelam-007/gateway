@@ -6,10 +6,10 @@
 
 package com.l7tech.server;
 
-import com.l7tech.service.ServiceAdmin;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.identity.*;
+import com.l7tech.service.ServiceAdmin;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -51,7 +51,7 @@ public class ListEverything extends SsgAdminSession {
 
             if ( header.getType() == EntityType.ID_PROVIDER_CONFIG ) {
                 long oid = header.getOid();
-                if ( oid == IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID ) {
+                if ( oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID ) {
                     internalProvider = ipc.getIdentityProvider( oid );
                 }
             }

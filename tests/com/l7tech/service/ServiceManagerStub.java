@@ -5,7 +5,9 @@ import com.l7tech.identity.StubDataStore;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.resolution.ServiceResolutionException;
 
 import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;

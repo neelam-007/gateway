@@ -12,7 +12,7 @@ import java.util.logging.Logger;
  * or update of persistent entities.
  *
  * This is a generic version of functionality that was previously implemented in
- * {@link com.l7tech.service.ServiceCache}.  ServiceCache should extend this class
+ * {@link com.l7tech.server.service.ServiceCache}.  ServiceCache should extend this class
  * and implement its abstract methods.
  *
  * @author alex

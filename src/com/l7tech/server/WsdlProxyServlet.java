@@ -16,8 +16,8 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.server.filter.IdentityRule;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceManager;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;

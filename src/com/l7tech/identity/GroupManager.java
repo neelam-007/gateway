@@ -16,6 +16,7 @@ public interface GroupManager extends EntityManager {
     void update( Group group ) throws UpdateException, ObjectNotFoundException;
     String save( Group group, Set userHeaders ) throws SaveException;
     void update( Group group, Set userHeaders ) throws UpdateException, ObjectNotFoundException;
+    Class getImpClass();
 
     /**
      * Test whether a given User is a member of the specified Group.

@@ -6,10 +6,10 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.common.security.xml.WssDecoratorImpl;
+import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
@@ -21,15 +21,15 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceStatistics;
-import com.l7tech.service.resolution.ServiceResolutionException;
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
-import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -42,9 +42,9 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Iterator;
 
 /**
  * @author alex

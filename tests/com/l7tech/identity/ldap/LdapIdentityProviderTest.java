@@ -4,6 +4,8 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import junit.framework.TestCase;
 
 import java.io.IOException;

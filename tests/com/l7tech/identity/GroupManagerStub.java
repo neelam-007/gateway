@@ -63,6 +63,10 @@ public class GroupManagerStub extends GroupManagerAdapter {
         dataStore.getGroups().put(imp.getUniqueIdentifier(), group);
     }
 
+    public Class getImpClass() {
+        return InternalGroup.class;
+    }
+
 
     public Set getGroupHeaders(String userId) throws FindException {
         long uid = 0;

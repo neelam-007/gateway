@@ -18,8 +18,8 @@ import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.remote.jini.Services;
 import com.l7tech.remote.jini.export.RemoteService;
-import com.l7tech.service.ServiceManager;
-import com.l7tech.service.ServiceManagerImp;
+import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.ServiceManagerImp;
 
 import java.io.File;
 import java.io.FileInputStream;

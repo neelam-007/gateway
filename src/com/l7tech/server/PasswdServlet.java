@@ -1,20 +1,21 @@
 package com.l7tech.server;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
-import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.server.identity.IdProvConfManagerServer;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import sun.misc.BASE64Decoder;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
-import java.util.Iterator;
-import java.util.logging.Level;
 import java.sql.SQLException;
-
-import sun.misc.BASE64Decoder;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
 
 /**
  * This servlet lets a client change the password of his internal account.

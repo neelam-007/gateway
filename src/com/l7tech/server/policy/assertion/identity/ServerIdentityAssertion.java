@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.util.logging.Level;

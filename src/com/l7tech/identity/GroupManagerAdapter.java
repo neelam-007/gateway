@@ -48,6 +48,10 @@ public class GroupManagerAdapter implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
+    public Class getImpClass() {
+        throw new UnsupportedOperationException();
+    }
+
     public boolean isMember( User user, Group group ) throws FindException {
         throw new UnsupportedOperationException();
     }

@@ -75,6 +75,6 @@ public class GroupBean implements Group, Serializable {
     private String _uniqueId;
     private String _name;
     private String _description;
-    private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
+    private long providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
     private int _version;
 }

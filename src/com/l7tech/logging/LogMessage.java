@@ -1,10 +1,8 @@
 package com.l7tech.logging;
 
-import com.l7tech.common.RequestId;
-
-import java.util.StringTokenizer;
-import java.util.Calendar;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.StringTokenizer;
 
 /*
  * This class encapsulates the log message.
@@ -126,7 +124,7 @@ public class LogMessage {
     }
 
     public static void main(String[] args) {
-        LogMessage logRec = new LogMessage("11|20030917 13:07:36.281|INFO|com.l7tech.identity.internal.InternalIdentityProviderServer|authenticate|Couldn't find user with login admin");
+        LogMessage logRec = new LogMessage("11|20030917 13:07:36.281|INFO|com.l7tech.server.identity.internal.InternalIdentityProviderServer|authenticate|Couldn't find user with login admin");
         System.out.println("msgNumber : " + logRec.getMsgNumber());
         System.out.println("time: " + logRec.getTime());
         System.out.println("severity: " + logRec.getSeverity());

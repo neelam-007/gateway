@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-4 Layer 7 Technologies Inc.
  *
  * $Id$
  */
@@ -8,9 +8,10 @@ package com.l7tech.identity.internal;
 
 import java.io.Serializable;
 
-
 /**
- * A row in the internal_user_group table.
+ * A row in a user-group intersect table.
+ *
+ * Each row constitutes an edge in the many-to-many relationship between Users and Groups.
  *
  * @author alex
  * @version $Revision$
@@ -40,11 +41,11 @@ public class GroupMembership implements Serializable {
         _groupOid = groupOid;
     }
 
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof GroupMembership)) return false;
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (!(other instanceof GroupMembership)) return false;
 
-        final GroupMembership groupMembership = (GroupMembership) o;
+        final GroupMembership groupMembership = (GroupMembership)other;
 
         if (_groupOid != groupMembership._groupOid) return false;
         if (_userOid != groupMembership._userOid) return false;

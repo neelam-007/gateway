@@ -1,6 +1,5 @@
 package com.l7tech.identity.ldap;
 
-import com.l7tech.identity.IdProvConfManagerServer;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
@@ -115,14 +114,13 @@ public class LdapUser implements User, Serializable {
      * this is not persisted, it is set at run time by the provider who creates the object
      */
     public long getProviderId() {
-        return providerId;
+        return _userBean.getProviderId();
     }
 
     /**
      * this is not persisted, it is set at run time by the provider who creates the object
      */
     public void setProviderId( long providerId) {
-        this.providerId = providerId;
         _userBean.setProviderId(providerId);
     }
 
@@ -132,7 +130,7 @@ public class LdapUser implements User, Serializable {
                 "\n\tFirst name=" + getFirstName() +
                 "\n\tLast name=" + getLastName() +
                 "\n\tLogin=" + getLogin() +
-                "\n\tproviderId=" + providerId;
+                "\n\tproviderId=" + _userBean.getProviderId();
     }
 
     public String getDn() {
@@ -156,7 +154,8 @@ public class LdapUser implements User, Serializable {
         if (this == o) return true;
         if (!(o instanceof LdapUser)) return false;
         final LdapUser userImp = (LdapUser) o;
-        if ( providerId != IdentityProviderConfig.DEFAULT_OID ? !( providerId== userImp.providerId ) : userImp.providerId != IdentityProviderConfig.DEFAULT_OID ) return false;
+        final long providerId = _userBean.getProviderId();
+        if ( providerId != IdentityProviderConfig.DEFAULT_OID ? !( providerId == userImp.getProviderId() ) : userImp.getProviderId() != IdentityProviderConfig.DEFAULT_OID ) return false;
         String login = _userBean.getLogin();
         String ologin = userImp.getLogin();
         if ( login != null ? !login.equals(ologin) : ologin != null) return false;
@@ -167,7 +166,7 @@ public class LdapUser implements User, Serializable {
         if ( _dn == null ) return System.identityHashCode(this);
 
         int hash = _dn.hashCode();
-        hash += 29 * (int)providerId;
+        hash += 29 * (int)getProviderId();
         return hash;
     }
 
@@ -213,5 +212,4 @@ public class LdapUser implements User, Serializable {
     private String _dn;
 
     private UserBean _userBean;
-    private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
 }

@@ -265,4 +265,9 @@ public class SecureSpanConstants {
      * hash of the password is stored in the database.
      */
     public static final String NOPASS = "NOPASS";
+
+    /**
+     * Default character encoding used by passwords on the SSG
+     */
+    public static final String PASSWORD_ENCODING = "UTF-8";
 }

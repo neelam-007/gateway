@@ -116,6 +116,10 @@ public class UserManagerStub implements UserManager {
         }
     }
 
+    public Class getImpClass() {
+        return InternalUser.class;
+    }
+
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.

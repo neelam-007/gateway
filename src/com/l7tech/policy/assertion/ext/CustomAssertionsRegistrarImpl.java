@@ -10,8 +10,8 @@ import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceManager;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
