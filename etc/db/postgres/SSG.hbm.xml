@@ -70,6 +70,8 @@
         <property name="lastName" column="last_name" type="string"/>
         <property name="email" type="string"/>
         <property name="title" type="string"/>
+	<property name="cert" type="string"/>
+	<property name="certResetCounter" column="cert_reset_counter" type="int"/>
 
         <set role="groups" lazy="false" table="internal_user_group">
             <key column="internal_user"/>
