@@ -36,7 +36,6 @@ import java.util.regex.Pattern;
  * User: mike
  * Date: May 15, 2003
  * Time: 5:14:26 PM
- * To change this template use Options | File Templates.
  */
 public class RequestHandler extends AbstractHttpHandler {
     private static final ClientLogger log = ClientLogger.getInstance(RequestHandler.class);
