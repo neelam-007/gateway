@@ -24,23 +24,37 @@ import javax.xml.namespace.QName;
  */
 public class IdentityProviderClientTest {
 
-    public static String testEcho(Client testee) throws Exception {
-        return testee.echoVersion();
+    public IdentityProviderClientTest() throws Exception {
+        System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
+        System.setProperty("javax.net.ssl.trustStorePassword", "password");
+
+        ClientCredentialManager credsManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+        PasswordAuthentication creds = new PasswordAuthentication("ssgadmin", "ssgadminpasswd".toCharArray());
+        credsManager.login(creds);
+
+        // construct the provider to test
+        IdentityProviderClient internalProvider = new IdentityProviderClient();
+        IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
+        cfg.setOid(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
+        cfg.setDescription("Internal identity provider");
+        internalProvider.initialize(cfg);
+
+        idProvider = internalProvider;
     }
 
-    public static void testListAll(IdentityProviderClient testee) throws Exception {
+    public void testListAll() throws Exception {
         System.out.println("READING ALL USERS");
-        Collection headers = testee.getUserManager().findAllHeaders();
+        Collection headers = idProvider.getUserManager().findAllHeaders();
         for (Iterator i = headers.iterator(); i.hasNext();) {
             EntityHeader header = (EntityHeader)i.next();
             System.out.println(header);
-            User usr = testee.getUserManager().findByPrimaryKey(header.getStrId());
+            User usr = idProvider.getUserManager().findByPrimaryKey(header.getStrId());
             System.out.println(usr);
         }
         System.out.println("DONE READING USERS");
     }
 
-    public static void testCreateDeleteUser(IdentityProviderClient testee) throws Exception {
+    public void testCreateDeleteUser() throws Exception {
         System.out.println("creating user");
         User newuser = new User();
         newuser.setName("test user");
@@ -48,7 +62,7 @@ public class IdentityProviderClientTest {
         newuser.setPassword("i am the grand cornolio");
         newuser.setEmail("blah@foo.bar");
         System.out.println("getting user manager");
-        UserManager userManager = testee.getUserManager();
+        UserManager userManager = idProvider.getUserManager();
         System.out.println("saving user");
         long userId = userManager.save(newuser);
         System.out.println("user saved, oid=" + userId);
@@ -58,8 +72,8 @@ public class IdentityProviderClientTest {
         System.out.println("done testCreateDeleteUser");
     }
 
-    public static void testDeleteAdminUser(IdentityProviderClient testee) throws Exception {
-        UserManager userMan = testee.getUserManager();
+    public void testDeleteAdminUser() throws Exception {
+        UserManager userMan = idProvider.getUserManager();
         System.out.println("getting admin dude");
         User administrator = userMan.findByLogin("ssgadmin");
         if (administrator != null) {
@@ -78,20 +92,20 @@ public class IdentityProviderClientTest {
         System.out.println("done testDeleteAdminUser");
     }
 
-    public static void testSearchIdentities(IdentityProviderClient testee) throws Exception {
+    public void testSearchIdentities() throws Exception {
         String pattern = "j*";
         System.out.println("SEARCHING USERS " + pattern);
-        Collection headers = testee.search(new EntityType[] {EntityType.GROUP, EntityType.USER}, pattern);
+        Collection headers = idProvider.search(new EntityType[] {EntityType.GROUP, EntityType.USER}, pattern);
         for (Iterator i = headers.iterator(); i.hasNext();) {
             EntityHeader header = (EntityHeader)i.next();
             System.out.println(header);
-            User usr = testee.getUserManager().findByPrimaryKey(header.getStrId());
+            User usr = idProvider.getUserManager().findByPrimaryKey(header.getStrId());
             System.out.println(usr);
         }
         System.out.println("DONE SEARCHING USERS");
     }
 
-    public static void testAxisVersion() throws Exception {
+    public void testAxisVersion() throws Exception {
         Call call = (Call)(new org.apache.axis.client.Service()).createCall();
         call.setTargetEndpointAddress(new java.net.URL("https://localhost:8443/ssg/services/Version"));
         call.setUsername("ssgadmin");
@@ -106,28 +120,10 @@ public class IdentityProviderClientTest {
     }
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
-        System.setProperty("javax.net.ssl.trustStorePassword", "password");
-
-        ClientCredentialManager credsManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
-        PasswordAuthentication creds = new PasswordAuthentication("ssgadmin", "ssgadminpasswd".toCharArray());
-        credsManager.login(creds);
-
-        // construct the provider to test
-        IdentityProviderClient internalProvider = new IdentityProviderClient();
-        IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
-        cfg.setOid(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
-        cfg.setDescription("Internal identity provider");
-        internalProvider.initialize(cfg);
-
-        // test create and delete
-        // testCreateDeleteUser(internalProvider);
-        // test DeleteAdminUser
-        // testDeleteAdminUser(internalProvider);
-        testSearchIdentities(internalProvider);
-
-
-        System.out.println("done");
+        IdentityProviderClientTest testee = new IdentityProviderClientTest();
+        testee.testSearchIdentities();
         System.exit(0);
     }
+
+    IdentityProviderClient idProvider;
 }
