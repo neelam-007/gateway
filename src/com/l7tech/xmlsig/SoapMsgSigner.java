@@ -67,9 +67,9 @@ public class SoapMsgSigner {
         template.addReference(ref);
         Element sigEl = template.getSignatureElement();
 
-        // Signature is applied in header, as per WS-S
-        Element headerEl = SoapUtil.getOrMakeHeader(soapMsg);
-        Element envelopedSigEl = (Element) headerEl.appendChild(sigEl);
+        // Signature is inserted in Header/Security, as per WS-S
+        Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
+        Element envelopedSigEl = (Element) securityEl.appendChild(sigEl);
 
         // Include KeyInfo element in signature and embed cert into subordinate X509Data element
         KeyInfo keyInfo = new KeyInfo();
