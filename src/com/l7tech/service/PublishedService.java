@@ -31,7 +31,6 @@ import java.util.logging.Logger;
  */
 public class PublishedService extends NamedEntityImp {
     public synchronized ServerAssertion rootAssertion() throws IOException {
-        // TODO: Transform the abstract policy tree into the Server version!
         String policyXml = getPolicyXml();
         if ( policyXml == null || policyXml.length() == 0 ) {
             _log.warning( "Service " + _oid + " has an invalid or empty policy_xml field.  Using null policy." );
