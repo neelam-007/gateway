@@ -222,7 +222,7 @@ public class CertPropertiesWindow extends JDialog {
         cal.setTime(cert.getNotAfter());
         certExpiredOnTextField.setText(sdf.format(cal.getTime()));
 
-        certIssuedToTextField.setText(CertUtils.extractUsernameFromClientCertificate(cert));
+        certIssuedToTextField.setText(CertUtils.extractCommonNameFromClientCertificate(cert));
         certIssuedByTextField.setText(CertUtils.extractIssuerNameFromClientCertificate(cert));
         certNameTextField.setText(trustedCert.getName());
 

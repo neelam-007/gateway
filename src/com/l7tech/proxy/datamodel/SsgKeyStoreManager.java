@@ -656,7 +656,7 @@ public class SsgKeyStoreManager {
             if (isClientCertAvailabile(ssg)) {
                 X509Certificate cert = null;
                 cert = getClientCert(ssg);
-                return CertUtils.extractUsernameFromClientCertificate(cert);
+                return CertUtils.extractCommonNameFromClientCertificate(cert);
             }
         } catch (IllegalArgumentException e) {
             // bad client certificate format

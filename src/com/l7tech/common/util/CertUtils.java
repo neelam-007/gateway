@@ -379,7 +379,7 @@ public class CertUtils {
      * @return the username from the certificate.  Might be empty string, but won't be null.
      * @throws IllegalArgumentException if the certificate does not contain a subject DN.
      */
-    public static String extractUsernameFromClientCertificate(X509Certificate cert) throws IllegalArgumentException {
+    public static String extractCommonNameFromClientCertificate(X509Certificate cert) throws IllegalArgumentException {
         Principal principal = cert.getSubjectDN();
         if (principal == null)
             throw new IllegalArgumentException("Cert contains no user subject DN");

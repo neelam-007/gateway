@@ -292,7 +292,7 @@ public class CertSearchPanel extends JDialog {
             return false;
         }
 
-        String subjectName = CertUtils.extractUsernameFromClientCertificate(cert);
+        String subjectName = CertUtils.extractCommonNameFromClientCertificate(cert);
         String issuerName = CertUtils.extractIssuerNameFromClientCertificate(cert);
 
         boolean show1 = true;

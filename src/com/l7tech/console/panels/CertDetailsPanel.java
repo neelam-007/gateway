@@ -100,7 +100,7 @@ public class CertDetailsPanel extends WizardStepPanel {
 
                         // retrieve the value of cn
                         String subjectName = cert.getSubjectDN().getName();
-                        String cn = CertUtils.extractUsernameFromClientCertificate(cert);
+                        String cn = CertUtils.extractCommonNameFromClientCertificate(cert);
 
                         if(cn.length() > 0) {
                              certNameTextField.setText(cn);

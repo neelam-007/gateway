@@ -239,7 +239,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             // retrieve the value of cn
             String subjectName = cert.getSubjectDN().getName();
-            String cn = CertUtils.extractUsernameFromClientCertificate(cert);
+            String cn = CertUtils.extractCommonNameFromClientCertificate(cert);
 
             // use the subjectDN name if the CN attribute not found
             if (cn.length() == 0) {

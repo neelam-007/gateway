@@ -149,7 +149,7 @@ class GuiCredentialManager extends CredentialManager {
             if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 final X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
                 if (cert != null) {
-                    holder.showUsername = CertUtils.extractUsernameFromClientCertificate(cert);
+                    holder.showUsername = CertUtils.extractCommonNameFromClientCertificate(cert);
                     holder.lockUsername = true;
                 }
             }
