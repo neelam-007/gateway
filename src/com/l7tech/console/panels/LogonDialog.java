@@ -9,6 +9,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Preferences;
@@ -49,7 +50,7 @@ public class LogonDialog extends JDialog {
     static final Logger log = Logger.getLogger(LogonDialog.class.getName());
 
     /* the PasswordAuthentication instance with user supplied credentials */
-    private PasswordAuthentication authentication = null;
+    private PasswordAuthentication authenticationCredentials = null;
 
     /**
      * True if "remember id" pref is enabled and a remembered ID was found.
@@ -439,7 +440,7 @@ public class LogonDialog extends JDialog {
      */
     private void windowAction(String actionCommand) {
 
-        authentication = new PasswordAuthentication("", new char[]{});
+        authenticationCredentials = new PasswordAuthentication("", new char[]{});
         if (actionCommand == null) {
             // do nothing
         } else if (actionCommand.equals(CMD_CANCEL)) {
@@ -455,8 +456,7 @@ public class LogonDialog extends JDialog {
     }
 
     private void doLogon() {
-        authentication = new PasswordAuthentication(userNameTextField.getText(),
-          passwordField.getPassword());
+        authenticationCredentials = new PasswordAuthentication(userNameTextField.getText(),    passwordField.getPassword());
         Container parentContainer = getParent();
         // service URL
         final String selectedURL = (String)serverComboBox.getSelectedItem();
@@ -488,7 +488,7 @@ public class LogonDialog extends JDialog {
 
                   public Object construct() {
                       try {
-                          securityProvider.getAuthenticationProvider().login(authentication, adminServiceNamingURL.toString());
+                          securityProvider.getAuthenticationProvider().login(authenticationCredentials, adminServiceNamingURL.toString());
                       } catch (Exception e) {
                           if (!Thread.currentThread().isInterrupted()) {
                               memoException = e;
@@ -520,7 +520,7 @@ public class LogonDialog extends JDialog {
                           }
                           // invoke the listener
                           if (logonListener != null) {
-                              logonListener.onAuthSuccess(authentication.getUserName(), sNamingUrl);
+                              logonListener.onAuthSuccess(authenticationCredentials.getUserName(), sNamingUrl);
                           }
                       } else {
                           serverCertificateChain = null; // reset if we recorded something
@@ -605,6 +605,15 @@ public class LogonDialog extends JDialog {
         SslRMIClientSocketFactory.setTrustFailureHandler(new SSLTrustFailureHandler() {
             public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
                 if (chain == null) {
+                    return false;
+                }
+                final AuthenticationProvider authenticationProvider = getCredentialManager().getAuthenticationProvider();
+                try {
+                    authenticationProvider.validateServerCertificate(authenticationCredentials,
+                                                                     serverCertificateChain[0],
+                                                                     adminServiceNamingURL.toString());
+                } catch (RemoteException rex) {
+                    log.log(Level.SEVERE, "Remote error validating the server certificate", e);
                     return false;
                 }
                 serverCertificateChain = chain;

@@ -4,6 +4,8 @@ import com.l7tech.common.VersionException;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
+import java.rmi.RemoteException;
 
 /**
  * The client credential manager stub mode. Just collect the credentials and
@@ -18,5 +20,16 @@ public class SecurityProviderStub extends SecurityProvider {
     public void login(PasswordAuthentication creds, String host)
       throws LoginException, VersionException {
         setCredentials(creds);
+    }
+
+    /**
+     * Retrieve the targewt server certificate
+     *
+     * @param serverCertificate
+     * @see SecurityProviderImpl
+     */
+    public void validateServerCertificate(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
+      throws RemoteException, SecurityException {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

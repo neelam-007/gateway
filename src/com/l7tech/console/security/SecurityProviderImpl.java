@@ -14,6 +14,7 @@ import org.springframework.context.ApplicationListener;
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
+import java.security.cert.X509Certificate;
 
 /**
  * Default SSM <code>SecurityProvider</code> implementaiton that is a central security
@@ -62,6 +63,17 @@ public class SecurityProviderImpl extends SecurityProvider
     public void logoff() {
         LogonEvent le = new LogonEvent(this, LogonEvent.LOGOFF);
         applicationContext.publishEvent(le);
+    }
+
+    /**
+     * Retrieve the targewt server certificate
+     *
+     * @see com.l7tech.console.security.SecurityProviderImpl
+     * @param serverCertificate
+     * @param namingURL the naming url
+     */
+    public void validateServerCertificate(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
+      throws RemoteException, SecurityException {
     }
 
     /**

@@ -10,6 +10,7 @@ import com.l7tech.common.VersionException;
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
+import java.security.cert.X509Certificate;
 
 /**
  * The SSM <code>AuthenticationProvider</code> implementations provide authentications
@@ -28,6 +29,15 @@ public interface AuthenticationProvider {
      */
     void login(PasswordAuthentication creds, String namingURL)
       throws LoginException, VersionException, RemoteException;
+
+    /**
+     * Retrieve the targewt server certificate
+     *
+     * @param serverCertificate
+     * @see com.l7tech.console.security.SecurityProviderImpl
+     */
+    void validateServerCertificate(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
+      throws RemoteException, SecurityException;
 
     /**
      * Logoff the session
