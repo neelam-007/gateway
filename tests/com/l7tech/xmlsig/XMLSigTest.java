@@ -44,6 +44,9 @@ public class XMLSigTest extends TestCase {
         cert = getTestCert();
     }
 
+    /**
+     * Create and validate a valid signature
+     */
     public void testAndValidateDSig() throws Exception {
         // get document
         Document doc = readDocFromString(simpleDoc);
@@ -64,6 +67,31 @@ public class XMLSigTest extends TestCase {
         X509Certificate cert2 = signer.validateSignature(doc);
 
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
+    }
+
+    /**
+     * Try to validate an invalid signature
+     */
+    public void testAndInvalidateDSig() throws Exception {
+        // get document
+        Document doc = readDocFromString(simpleDoc);
+
+        // sign it
+        SoapMsgSigner signer = new SoapMsgSigner();
+        signer.signEnvelope(doc, privateKey, cert);
+
+        // append something AFTER the signature is made so that signature is no longer valid
+        SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
+
+        // validate the signature (will throw if doesn't validate)
+        boolean signaturevalid = true;
+        try {
+            signer.validateSignature(doc);
+        } catch (InvalidSignatureException e) {
+            signaturevalid = false;
+        }
+
+        assertTrue("SIGNATURE SHOULD NOT VALIDATE", !signaturevalid);
     }
 
     private Document readDocFromString(String docStr)  throws Exception {
