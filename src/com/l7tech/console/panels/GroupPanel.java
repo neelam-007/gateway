@@ -89,6 +89,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     private static final String OK_BUTTON = "OK";
     private static final String CANCEL_BUTTON = "Cancel";
+    private static final int MAX_DESC_LENGTH = 256;
     private boolean formModified;
 
     protected IdentityProviderConfig config;
@@ -315,7 +316,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
             descriptionTextField.setMinimumSize(new Dimension(200, 20));
             descriptionTextField.setPreferredSize(new Dimension(200, 20));
             descriptionTextField.setEditable(true);
-            descriptionTextField.setDocument(new MaxLengthDocument(50));
+            descriptionTextField.setDocument(new MaxLengthDocument(MAX_DESC_LENGTH));
             // Register listeners
             descriptionTextField.getDocument().addDocumentListener(documentListener);
         }
@@ -426,7 +427,11 @@ public abstract class GroupPanel extends EntityEditorPanel {
     protected void setData(Group group) {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(group.getName());
-        getDescriptionTextField().setText(group.getDescription());
+        String desc = group.getDescription();
+        if (desc.length() > MAX_DESC_LENGTH) {
+            desc = desc.substring(0, MAX_DESC_LENGTH-1);
+        }
+        getDescriptionTextField().setText(desc);
         setModified(false);
     }
 
