@@ -1,14 +1,13 @@
 package com.l7tech.identity.ldap;
 
+import com.l7tech.credential.CredentialFormat;
+import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.identity.*;
+import com.l7tech.objectmodel.EntityHeader;
 import junit.framework.Test;
 import junit.framework.TestSuite;
-
 import java.util.Collection;
 import java.util.Iterator;
-
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.identity.*;
-import com.l7tech.credential.PrincipalCredentials;
 
 /**
  * Layer 7 Technologies, inc.
@@ -28,9 +27,9 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
     public void testFindAllUsers() throws Exception {
         IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
         // use this url when ssh forwarding locally
-        // config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
+        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
         // use this url when in the office
-        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
+        // config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
         config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
 
         // create the provider
@@ -58,9 +57,9 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
     public void testFindAllGroups() throws Exception {
         IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
         // use this url when ssh forwarding locally
-        // config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
+        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
         // use this url when in the office
-        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
+        // config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
         config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
 
         // create the provider
@@ -87,9 +86,9 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
     public void testAuthenticate() throws Exception {
         IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
         // use this url when ssh forwarding locally
-        // config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
+        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
         // use this url when in the office
-        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
+        // config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
         config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
 
         // create the provider
@@ -102,8 +101,12 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
         User francois = me.findByLogin("flascelles");
         System.out.println(francois);
         System.out.println("authenticating");
-        if (provider.authenticate( new PrincipalCredentials( francois, "rockclimbing".getBytes() ) )) System.out.println("OK");
-        else System.out.println("not authenticated");
+
+        PrincipalCredentials validcreds = new PrincipalCredentials(francois, "rockclimbing".getBytes(), CredentialFormat.CLEARTEXT);
+        PrincipalCredentials invalidcreds = new PrincipalCredentials(francois, "i like to golf".getBytes(), CredentialFormat.CLEARTEXT);
+        
+        assertTrue("authenticate succeeds with valid credentials", provider.authenticate(validcreds));
+        assertTrue("authenticate fails with invalid credentials", !provider.authenticate(invalidcreds));
     }
 
     public static void main(String[] args) throws Exception {
