@@ -2,10 +2,10 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.panels.XmlSecurityPropertiesDialog;
+import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
+import com.l7tech.console.tree.policy.XpathBasedAssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
@@ -17,10 +17,10 @@ import java.util.logging.Logger;
 /**
  * Action for editing XML security assertion properties
  */
-public class XmlSecurityPropertiesAction extends NodeAction {
-    static final Logger log = Logger.getLogger(XmlSecurityPropertiesAction.class.getName());
+public class XpathBasedAssertionPropertiesAction extends NodeAction {
+    static final Logger log = Logger.getLogger(XpathBasedAssertionPropertiesAction.class.getName());
 
-    public XmlSecurityPropertiesAction(XmlSecurityTreeNode node) {
+    public XpathBasedAssertionPropertiesAction(XpathBasedAssertionTreeNode node) {
         super(node);
     }
 
@@ -28,14 +28,14 @@ public class XmlSecurityPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "XML Security Properties";
+        return "Edit XPath Expression";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/Edit XML Security Properties";
+        return "Edit XPath Expression";
     }
 
     /**
@@ -52,9 +52,9 @@ public class XmlSecurityPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        XmlSecurityTreeNode n = (XmlSecurityTreeNode)node;
+        XpathBasedAssertionTreeNode n = (XpathBasedAssertionTreeNode)node;
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        XmlSecurityPropertiesDialog dialog = new XmlSecurityPropertiesDialog(mw, false, n, okListener);
+        XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener);
         dialog.pack();
         dialog.setSize(900, 650); //todo: consider some dynamic sizing - em
         Utilities.centerOnScreen(dialog);

@@ -9,7 +9,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
  * <p>
  * @author flascell
  */
-public class RequestWssIntegrityTreeNode extends XmlSecurityTreeNode {
+public class RequestWssIntegrityTreeNode extends XpathBasedAssertionTreeNode {
 
     public RequestWssIntegrityTreeNode(RequestWssIntegrity assertion) {
         super(assertion);

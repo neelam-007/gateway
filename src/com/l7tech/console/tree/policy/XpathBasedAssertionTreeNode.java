@@ -1,7 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.console.action.XmlSecurityPropertiesAction;
+import com.l7tech.console.action.XpathBasedAssertionPropertiesAction;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
@@ -14,9 +14,9 @@ import java.util.Arrays;
  * <p>
  * @author flascell
  */
-public abstract class XmlSecurityTreeNode extends LeafAssertionTreeNode {
+public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode {
 
-    public XmlSecurityTreeNode(Assertion assertion) {
+    public XpathBasedAssertionTreeNode(Assertion assertion) {
         super(assertion);
     }
 
@@ -35,7 +35,7 @@ public abstract class XmlSecurityTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        Action a = new XmlSecurityPropertiesAction(this);
+        Action a = new XpathBasedAssertionPropertiesAction(this);
         list.add(a);
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[]) list.toArray(new Action[]{});
@@ -47,7 +47,7 @@ public abstract class XmlSecurityTreeNode extends LeafAssertionTreeNode {
        * @return <code>null</code> indicating there should be none default action
        */
       public Action getPreferredAction() {
-          return new XmlSecurityPropertiesAction(this);
+          return new XpathBasedAssertionPropertiesAction(this);
       }
 
     /**

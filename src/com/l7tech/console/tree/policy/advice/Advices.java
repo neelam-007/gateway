@@ -84,7 +84,6 @@ public class Advices {
     // the advice that applies to the assertion
     static {
         advicesMap.put(Assertion.class, new Class[]{PolicyValidatorAdvice.class});
-        advicesMap.put(RequestXpathAssertion.class, new Class[]{AddXpathAssertionAdvice.class});
         advicesMap.put(RoutingAssertion.class, new Class[]{AddRoutingAssertionAdvice.class});
         advicesMap.put(SchemaValidation.class, new Class[]{AddSchemaValidationAssertionAdvice.class});
         advicesMap.put(XslTransformation.class, new Class[]{AddXslTransformationAssertionAdvice.class});

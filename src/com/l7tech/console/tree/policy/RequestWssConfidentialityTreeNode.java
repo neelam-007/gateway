@@ -9,7 +9,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
  * <p>
  * @author flascell
  */
-public class RequestWssConfidentialityTreeNode extends XmlSecurityTreeNode {
+public class RequestWssConfidentialityTreeNode extends XpathBasedAssertionTreeNode {
 
     public RequestWssConfidentialityTreeNode(RequestWssConfidentiality assertion) {
         super(assertion);

@@ -6,8 +6,8 @@
 
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.action.EditXpathAssertionAction;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.console.action.XpathBasedAssertionPropertiesAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -17,40 +17,14 @@ import java.util.Arrays;
  * @author alex
  * @version $Revision$
  */
-public class RequestXpathPolicyTreeNode extends LeafAssertionTreeNode {
+public class RequestXpathPolicyTreeNode extends XpathBasedAssertionTreeNode {
     public RequestXpathPolicyTreeNode( RequestXpathAssertion assertion ) {
         super( assertion );
         _assertion = assertion;
     }
 
-    public String getName() {
-        return "Request must match XPath '" + _assertion.pattern() + "'";
-    }
-
-    /**
-     * Get the set of actions associated with this node.
-     * This may be used e.g. in constructing a context menu.
-     *
-     * @return actions appropriate to the node
-     */
-    public Action[] getActions() {
-        java.util.List list = new ArrayList();
-        Action a = new EditXpathAssertionAction(this);
-        list.add(a);
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[]) list.toArray(new Action[]{});
-    }
-    /**
-       * Gets the default action for this node.
-       *
-       * @return <code>null</code> indicating there should be none default action
-       */
-      public Action getPreferredAction() {
-          return new EditXpathAssertionAction(this);
-      }
-
-    public boolean canDelete() {
-        return true;
+    public String getBaseName() {
+        return "Request must match XPath " + _assertion.getXpathExpression().getExpression();
     }
 
     protected String iconResource(boolean open) {

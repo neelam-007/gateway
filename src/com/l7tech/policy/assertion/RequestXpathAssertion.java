@@ -8,8 +8,11 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.util.SoapUtil;
 
+import javax.xml.soap.SOAPConstants;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Data for an assertion that verifies whether a request matches a specified
@@ -26,10 +29,28 @@ import java.util.Map;
 public class RequestXpathAssertion extends XpathBasedAssertion {
     public RequestXpathAssertion() {
         super();
+        initDefaultXpath();
     }
 
     public RequestXpathAssertion( CompositeAssertion parent ) {
         super( parent );
+        initDefaultXpath();
+    }
+
+    public RequestXpathAssertion( XpathExpression xpath ) {
+        super();
+        setXpathExpression( xpath );
+    }
+
+    public RequestXpathAssertion( CompositeAssertion parent, XpathExpression xpath ) {
+        super( parent );
+        setXpathExpression( xpath );
+    }
+
+    private void initDefaultXpath() {
+        Map nsmap = new HashMap();
+        nsmap.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        setXpathExpression( new XpathExpression( "/soapenv:Envelope", nsmap ) );
     }
 
     /** Shortcut to get xpath pattern.  Name doesn't use get, to hide it from policy serializer. */
