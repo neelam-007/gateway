@@ -2,7 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.identity.Client;
-import com.l7tech.identity.internal.imp.InternalIdentityProviderClient;
+import com.l7tech.identity.internal.InternalIdentityProviderClient;
 
 import java.util.Collection;
 import java.util.Iterator;
