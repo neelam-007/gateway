@@ -6,28 +6,28 @@
 
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.HibernatePersistenceManager;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.common.util.Locator;
-import com.l7tech.common.BuildInfo;
-import com.l7tech.service.ServiceManager;
-import com.l7tech.service.ServiceManagerImp;
-import com.l7tech.logging.LogManager;
-import com.l7tech.logging.ServerLogManager;
-import com.l7tech.remote.jini.Services;
-import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.StatusUpdater;
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.Locator;
+import com.l7tech.logging.LogManager;
+import com.l7tech.logging.ServerLogManager;
+import com.l7tech.objectmodel.HibernatePersistenceManager;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.remote.jini.Services;
+import com.l7tech.remote.jini.export.RemoteService;
+import com.l7tech.service.ServiceManager;
+import com.l7tech.service.ServiceManagerImp;
 
-import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
 
 /**
  * @author alex
@@ -37,42 +37,42 @@ public class BootProcess implements ServerComponentLifecycle {
     private Logger logger = LogManager.getInstance().getSystemLogger();
     private List _components = new ArrayList();
 
-    public void init( ServerConfig config ) throws LifecycleException {
+    public void init(ComponentConfig config) throws LifecycleException {
         try {
-            setSystemProperties( config );
+            setSystemProperties(config);
             HibernatePersistenceManager.initialize();
 
-            String classnameString = config.getProperty( ServerConfig.PARAM_SERVERCOMPONENTS );
+            String classnameString = config.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
             String[] componentClassnames = classnameString.split("\\s.*?");
 
             ServerComponentLifecycle component = null;
-            for ( int i = 0; i < componentClassnames.length; i++ ) {
+            for (int i = 0; i < componentClassnames.length; i++) {
                 String classname = componentClassnames[i];
-                logger.info( "Initializing server component '" + classname + "'" );
+                logger.info("Initializing server component '" + classname + "'");
                 try {
-                    Class clazz = Class.forName( classname );
+                    Class clazz = Class.forName(classname);
                     component = (ServerComponentLifecycle)clazz.newInstance();
-                } catch ( ClassNotFoundException cnfe ) {
-                    logger.log( Level.WARNING, "Couldn't initialize server component '" + classname + "'", cnfe );
-                } catch ( InstantiationException e ) {
-                    logger.log( Level.WARNING, "Couldn't initialize server component '" + classname + "'", e );
-                } catch ( IllegalAccessException e ) {
-                    logger.log( Level.WARNING, "Couldn't initialize server component '" + classname + "'", e );
+                } catch (ClassNotFoundException cnfe) {
+                    logger.log(Level.WARNING, "Couldn't initialize server component '" + classname + "'", cnfe);
+                } catch (InstantiationException e) {
+                    logger.log(Level.WARNING, "Couldn't initialize server component '" + classname + "'", e);
+                } catch (IllegalAccessException e) {
+                    logger.log(Level.WARNING, "Couldn't initialize server component '" + classname + "'", e);
                 }
 
-                if ( component != null ) {
+                if (component != null) {
                     try {
-                        component.init( config );
-                        _components.add( component );
-                    } catch ( LifecycleException e ) {
-                        logger.log( Level.WARNING, "Component " + component + " failed to initialize!", e );
+                        component.init(config);
+                        _components.add(component);
+                    } catch (LifecycleException e) {
+                        logger.log(Level.WARNING, "Component " + component + " failed to initialize!", e);
                     }
                 }
             }
-        } catch ( IOException e ) {
-            throw new LifecycleException( e.toString(), e );
-        } catch ( SQLException e ) {
-            throw new LifecycleException( e.toString(), e );
+        } catch (IOException e) {
+            throw new LifecycleException(e.toString(), e);
+        } catch (SQLException e) {
+            throw new LifecycleException(e.toString(), e);
         }
     }
 
@@ -95,47 +95,47 @@ public class BootProcess implements ServerComponentLifecycle {
             PersistenceContext.getCurrent().commitTransaction();
             PersistenceContext.getCurrent().close();
 
-            logger.info( "Starting server components..." );
-            for ( Iterator i = _components.iterator(); i.hasNext(); ) {
+            logger.info("Starting server components...");
+            for (Iterator i = _components.iterator(); i.hasNext();) {
                 ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
-                logger.info( "Starting component " + component );
+                logger.info("Starting component " + component);
                 component.start();
             }
 
-            logger.info( BuildInfo.getLongBuildString() );
+            logger.info(BuildInfo.getLongBuildString());
 
             logger.info("Boot process complete.");
-        } catch ( SQLException se ) {
-            throw new LifecycleException( se.toString(), se );
-        } catch ( TransactionException te ) {
-            throw new LifecycleException( te.toString(), te );
+        } catch (SQLException se) {
+            throw new LifecycleException(se.toString(), se);
+        } catch (TransactionException te) {
+            throw new LifecycleException(te.toString(), te);
         }
     }
 
     public void stop() throws LifecycleException {
-        logger.info( "Stopping server components" );
+        logger.info("Stopping server components");
 
         List stnenopmoc = new ArrayList();
-        stnenopmoc.addAll( _components );
-        Collections.reverse( stnenopmoc );
+        stnenopmoc.addAll(_components);
+        Collections.reverse(stnenopmoc);
 
-        for ( Iterator i = stnenopmoc.iterator(); i.hasNext(); ) {
+        for (Iterator i = stnenopmoc.iterator(); i.hasNext();) {
             ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
-            logger.info( "Stopping component " + component );
+            logger.info("Stopping component " + component);
             component.stop();
         }
     }
 
     public void close() throws LifecycleException {
-        logger.info( "Closing server components" );
+        logger.info("Closing server components");
 
         List stnenopmoc = new ArrayList();
-        stnenopmoc.addAll( _components );
-        Collections.reverse( stnenopmoc );
+        stnenopmoc.addAll(_components);
+        Collections.reverse(stnenopmoc);
 
-        for ( Iterator i = stnenopmoc.iterator(); i.hasNext(); ) {
+        for (Iterator i = stnenopmoc.iterator(); i.hasNext();) {
             ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
-            logger.info( "Closing component " + component );
+            logger.info("Closing component " + component);
             component.close();
         }
 
@@ -151,24 +151,24 @@ public class BootProcess implements ServerComponentLifecycle {
         StatusUpdater.stopUpdater();
     }
 
-    private void setSystemProperties( ServerConfig config ) throws IOException {
+    private void setSystemProperties(ComponentConfig config) throws IOException {
         // Set system properties
-        String sysPropsPath = config.getSystemPropertiesPath();
-        File propsFile = new File( sysPropsPath );
+        String sysPropsPath = config.getProperty(ServerConfig.PARAM_SYSTEMPROPS);
+        File propsFile = new File(sysPropsPath);
         Properties props = new Properties();
 
         // Set default properties
-        props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", new Integer( 30 * 1000 ).toString() );
+        props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", new Integer(30 * 1000).toString());
 
-        if ( propsFile.exists() ) {
-            FileInputStream fis = new FileInputStream( propsFile );
+        if (propsFile.exists()) {
+            FileInputStream fis = new FileInputStream(propsFile);
             props.load(fis);
         }
 
         for (Iterator i = props.keySet().iterator(); i.hasNext();) {
             String name = (String)i.next();
             String value = (String)props.get(name);
-            System.setProperty( name, value );
+            System.setProperty(name, value);
         }
     }
 

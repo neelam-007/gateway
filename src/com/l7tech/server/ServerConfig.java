@@ -11,6 +11,10 @@ import com.l7tech.message.TransportProtocol;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -18,27 +22,23 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class ServerConfig {
+public class ServerConfig implements ComponentConfig {
     public static final String PARAM_SERVICE_RESOLVERS = "serviceResolvers";
-    public static final String PARAM_SERVER_ID         = "serverId";
-    public static final String PARAM_KEYSTORE          = "keystorePropertiesPath";
-    public static final String PARAM_LDAP_TEMPLATES    = "ldapTemplatesPath";
-    public static final String PARAM_HIBERNATE         = "hibernatePropertiesPath";
-    public static final String PARAM_IPS               = "ipAddresses";
-    public static final String PARAM_HTTP_PORTS        = "httpPorts";
-    public static final String PARAM_HTTPS_PORTS       = "httpsPorts";
-    public static final String PARAM_HOSTNAME          = "hostname";
-    public static final String PARAM_SYSTEMPROPS       = "systemPropertiesPath";
-    public static final String PARAM_SERVERCOMPONENTS  = "serverComponents";
+    public static final String PARAM_SERVER_ID = "serverId";
+    public static final String PARAM_KEYSTORE = "keystorePropertiesPath";
+    public static final String PARAM_LDAP_TEMPLATES = "ldapTemplatesPath";
+    public static final String PARAM_HIBERNATE = "hibernatePropertiesPath";
+    public static final String PARAM_IPS = "ipAddresses";
+    public static final String PARAM_HTTP_PORTS = "httpPorts";
+    public static final String PARAM_HTTPS_PORTS = "httpsPorts";
+    public static final String PARAM_HOSTNAME = "hostname";
+    public static final String PARAM_SYSTEMPROPS = "systemPropertiesPath";
+    public static final String PARAM_SERVERCOMPONENTS = "serverComponents";
     public static final String PARAM_JMS_THREAD_POOL_SIZE = "jmsThreadPoolSize";
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
 
@@ -52,55 +52,55 @@ public class ServerConfig {
     private static final String SUFFIX_DEFAULT = ".default";
 
     public static ServerConfig getInstance() {
-        if ( _instance == null ) _instance = new ServerConfig();
+        if (_instance == null) _instance = new ServerConfig();
         return _instance;
     }
 
-    public String getProperty( String propName ) {
+    public String getProperty(String propName) {
         String sysPropProp = propName + SUFFIX_SYSPROP;
         String jndiProp = propName + SUFFIX_JNDI;
         String dfltProp = propName + SUFFIX_DEFAULT;
 
-        String systemValue = getPropertyValue( sysPropProp );
-        String jndiValue = getPropertyValue( jndiProp );
-        String defaultValue = getPropertyValue( dfltProp );
+        String systemValue = getPropertyValue(sysPropProp);
+        String jndiValue = getPropertyValue(jndiProp);
+        String defaultValue = getPropertyValue(dfltProp);
 
-        logger.fine( "Checking System property " + systemValue );
-        String value = System.getProperty( systemValue );
-        if ( value == null && jndiValue != null ) {
+        logger.fine("Checking System property " + systemValue);
+        String value = System.getProperty(systemValue);
+        if (value == null && jndiValue != null) {
             try {
-                logger.fine( "Checking JNDI property " + jndiValue );
-                if ( _icontext == null ) _icontext = new InitialContext();
-                value = (String)_icontext.lookup( jndiValue );
-            } catch ( NamingException ne ) {
-                logger.fine( ne.getMessage() );
+                logger.fine("Checking JNDI property " + jndiValue);
+                if (_icontext == null) _icontext = new InitialContext();
+                value = (String)_icontext.lookup(jndiValue);
+            } catch (NamingException ne) {
+                logger.fine(ne.getMessage());
             }
         }
 
-        if ( value == null ) {
-            logger.fine( "Using default value " + defaultValue );
+        if (value == null) {
+            logger.fine("Using default value " + defaultValue);
             value = defaultValue;
         }
 
         return value;
     }
 
-    private String getPropertyValue( String prop ) {
+    private String getPropertyValue(String prop) {
         String val = (String)_properties.get(prop);
-        if ( val == null ) return null;
-        if ( val.length() == 0 ) return val;
+        if (val == null) return null;
+        if (val.length() == 0) return val;
 
         StringBuffer val2 = new StringBuffer();
         int pos = val.indexOf('$');
-        if ( pos >= 0 ) {
-            while ( pos >= 0 ) {
-                if ( val.charAt(pos+1) == '{' ) {
-                    int pos2 = val.indexOf( '}', pos+1 );
-                    if ( pos2 >= 0 ) {
+        if (pos >= 0) {
+            while (pos >= 0) {
+                if (val.charAt(pos + 1) == '{') {
+                    int pos2 = val.indexOf('}', pos + 1);
+                    if (pos2 >= 0) {
                         // there's a reference
-                        String prop2 = val.substring( pos+2, pos2 );
-                        String ref = getPropertyValue( prop2 );
-                        if ( ref == null ) {
+                        String prop2 = val.substring(pos + 2, pos2);
+                        String ref = getPropertyValue(prop2);
+                        if (ref == null) {
                             val2.append("${");
                             val2.append(prop2);
                             val2.append("}");
@@ -108,11 +108,11 @@ public class ServerConfig {
                             val2.append(ref);
                         }
 
-                        pos = val.indexOf('$',pos+1);
-                        if ( pos >= 0 ) {
-                            val2.append( val.substring( pos2+1, pos ) );
+                        pos = val.indexOf('$', pos + 1);
+                        if (pos >= 0) {
+                            val2.append(val.substring(pos2 + 1, pos));
                         } else {
-                            val2.append( val.substring( pos2+1 ) );
+                            val2.append(val.substring(pos2 + 1));
                         }
                     } else {
                         // there's no terminating }, pass it through literally
@@ -131,145 +131,126 @@ public class ServerConfig {
     private ServerConfig() {
         _properties = new Properties();
 
-        String configPropertiesPath = System.getProperty( PROPS_PATH_PROPERTY );
-        if ( configPropertiesPath == null ) configPropertiesPath = PROPS_PATH_DEFAULT;
+        String configPropertiesPath = System.getProperty(PROPS_PATH_PROPERTY);
+        if (configPropertiesPath == null) configPropertiesPath = PROPS_PATH_DEFAULT;
 
         try {
             InputStream propStream = null;
 
-            File file = new File( configPropertiesPath );
-            if ( file.exists() )
-                propStream = new FileInputStream( file );
+            File file = new File(configPropertiesPath);
+            if (file.exists())
+                propStream = new FileInputStream(file);
             else
-                propStream = getClass().getClassLoader().getResourceAsStream( PROPS_RESOURCE_PATH );
+                propStream = getClass().getClassLoader().getResourceAsStream(PROPS_RESOURCE_PATH);
 
-            if ( propStream != null ) {
-                _properties.load( propStream );
+            if (propStream != null) {
+                _properties.load(propStream);
             } else {
-                logger.severe( "Couldn't load serverconfig.properties!" );
-                throw new RuntimeException( "Couldn't load serverconfig.properties!" );
+                logger.severe("Couldn't load serverconfig.properties!");
+                throw new RuntimeException("Couldn't load serverconfig.properties!");
             }
-        } catch ( IOException ioe ) {
-            logger.severe( "Couldn't load serverconfig.properties!" );
-            throw new RuntimeException( "Couldn't load serverconfig.properties!" );
+        } catch (IOException ioe) {
+            logger.severe("Couldn't load serverconfig.properties!");
+            throw new RuntimeException("Couldn't load serverconfig.properties!");
         }
     }
 
-    private String print( InetAddress ip ) {
+    private String print(InetAddress ip) {
         StringBuffer result = new StringBuffer();
         byte[] addr = ip.getAddress();
         for (int i = 0; i < addr.length; i++) {
-            result.append( addr[i] & 0xff );
-            if ( i < addr.length-1 ) result.append( "." );
+            result.append(addr[i] & 0xff);
+            if (i < addr.length - 1) result.append(".");
         }
         return result.toString();
     }
 
     public static void main(String[] args) {
-        ServerConfig config = ServerConfig.getInstance();
+        ComponentConfig config = ServerConfig.getInstance();
     }
 
     public int getServerId() {
-        if ( _serverId == 0 ) {
+        if (_serverId == 0) {
             try {
-                String sid = getProperty( PARAM_SERVER_ID );
-                if ( sid != null && sid.length() > 0 )
-                    _serverId = new Byte( sid ).byteValue();
-            } catch ( NumberFormatException nfe ) {
+                String sid = getProperty(PARAM_SERVER_ID);
+                if (sid != null && sid.length() > 0)
+                    _serverId = new Byte(sid).byteValue();
+            } catch (NumberFormatException nfe) {
             }
 
-            if ( _serverId == 0 ) {
+            if (_serverId == 0) {
                 try {
                     InetAddress localhost = InetAddress.getLocalHost();
                     byte[] ip = localhost.getAddress();
                     _serverId = ip[3] & 0xff;
-                    logger.info( "ServerId parameter not set, assigning server ID " + _serverId +
-                                  " from server's IP address");
-                } catch ( UnknownHostException e ) {
+                    logger.info("ServerId parameter not set, assigning server ID " + _serverId +
+                      " from server's IP address");
+                } catch (UnknownHostException e) {
                     _serverId = 1;
-                    logger.severe( "Couldn't get server's local host!  Using server ID " + _serverId );
+                    logger.severe("Couldn't get server's local host!  Using server ID " + _serverId);
                 }
             }
         }
         return _serverId;
     }
 
-    public String getServiceResolvers() {
-        return getProperty( PARAM_SERVICE_RESOLVERS );
-    }
 
     public long getServerBootTime() {
-        if ( _serverBootTime == -1 ) _serverBootTime = System.currentTimeMillis();
+        if (_serverBootTime == -1) _serverBootTime = System.currentTimeMillis();
         return _serverBootTime;
     }
 
-    public String getLdapTemplatesPath() {
-        return getProperty( PARAM_LDAP_TEMPLATES );
-    }
-
-    public String getKeystorePropertiesPath() {
-        return getProperty( PARAM_KEYSTORE );
-    }
-
-    public String getHibernatePropertiesPath() {
-        return getProperty( PARAM_HIBERNATE );
-    }
-
-    public String getSystemPropertiesPath() {
-        return getProperty( PARAM_SYSTEMPROPS );
-    }
-
     public Iterator getIpProtocolPorts() {
-        if ( _ipProtocolPorts == null ) {
-            String[] sHttpPorts = getProperty( PARAM_HTTP_PORTS ).trim().split(",\\s*");
+        if (_ipProtocolPorts == null) {
+            String[] sHttpPorts = getProperty(PARAM_HTTP_PORTS).trim().split(",\\s*");
             ArrayList httpPortsList = new ArrayList();
             for (int i = 0; i < sHttpPorts.length; i++) {
                 String s = sHttpPorts[i];
                 try {
-                    httpPortsList.add( new Integer(s) );
-                } catch ( NumberFormatException nfe ) {
-                    logger.log( Level.SEVERE, "Couldn't parse HTTP port '" + s + "'" );
+                    httpPortsList.add(new Integer(s));
+                } catch (NumberFormatException nfe) {
+                    logger.log(Level.SEVERE, "Couldn't parse HTTP port '" + s + "'");
                 }
             }
 
             int[] httpPorts = new int[httpPortsList.size()];
             int j = 0;
             for (Iterator i = httpPortsList.iterator(); i.hasNext();) {
-                Integer integer = (Integer) i.next();
+                Integer integer = (Integer)i.next();
                 httpPorts[j++] = integer.intValue();
             }
 
-            String[] sHttpsPorts = getProperty( PARAM_HTTPS_PORTS ).trim().split(",\\s*");
+            String[] sHttpsPorts = getProperty(PARAM_HTTPS_PORTS).trim().split(",\\s*");
             ArrayList httpsPortsList = new ArrayList();
             for (int i = 0; i < sHttpsPorts.length; i++) {
                 String s = sHttpsPorts[i];
                 try {
-                    httpsPortsList.add( new Integer(s) );
-                } catch ( NumberFormatException nfe ) {
-                    logger.log( Level.SEVERE, "Couldn't parse HTTPS port '" + s + "'" );
+                    httpsPortsList.add(new Integer(s));
+                } catch (NumberFormatException nfe) {
+                    logger.log(Level.SEVERE, "Couldn't parse HTTPS port '" + s + "'");
                 }
             }
 
             int[] httpsPorts = new int[httpsPortsList.size()];
             j = 0;
             for (Iterator i = httpsPortsList.iterator(); i.hasNext();) {
-                Integer integer = (Integer) i.next();
+                Integer integer = (Integer)i.next();
                 httpsPorts[j++] = integer.intValue();
             }
 
             // Collect local IP addresses (default to all addresses on all interfaces)
             ArrayList localIps = new ArrayList();
-            String ipAddressesProperty = getProperty( PARAM_IPS );
-            if ( ipAddressesProperty != null ) {
-                String[] sips = ipAddressesProperty.split( ",\\s*" );
+            String ipAddressesProperty = getProperty(PARAM_IPS);
+            if (ipAddressesProperty != null) {
+                String[] sips = ipAddressesProperty.split(",\\s*");
                 for (int i = 0; i < sips.length; i++) {
                     String sip = sips[i];
                     try {
-                        InetAddress addr = InetAddress.getByName( sip );
-                        logger.info( "Found IP address " + print(addr) + " from configuration. " );
-                        localIps.add( addr );
-                    } catch ( UnknownHostException uhe ) {
-                        logger.log( Level.WARNING, "Got UnknownHostException trying to resolve IP address" + sip, uhe );
+                        InetAddress addr = InetAddress.getByName(sip);
+                        logger.info("Found IP address " + print(addr) + " from configuration. ");
+                        localIps.add(addr);
+                    } catch (UnknownHostException uhe) {
+                        logger.log(Level.WARNING, "Got UnknownHostException trying to resolve IP address" + sip, uhe);
                     }
                 }
             } else {
@@ -278,34 +259,34 @@ public class ServerConfig {
                     NetworkInterface net;
                     InetAddress ip;
 
-                    while ( ints.hasMoreElements() ) {
+                    while (ints.hasMoreElements()) {
                         net = (NetworkInterface)ints.nextElement();
                         Enumeration ips = net.getInetAddresses();
-                        while ( ips.hasMoreElements() ) {
+                        while (ips.hasMoreElements()) {
                             ip = (InetAddress)ips.nextElement();
-                            if ( ( ip.getAddress()[0] & 0xff ) != 127 ) {
+                            if ((ip.getAddress()[0] & 0xff) != 127) {
                                 // Ignore localhost for autoconfigured IPs
-                                logger.info( "Automatically found IP address " + print(ip) + " on network interface " + net.getName() );
-                                localIps.add( ip );
+                                logger.info("Automatically found IP address " + print(ip) + " on network interface " + net.getName());
+                                localIps.add(ip);
                             }
                         }
                     }
-                } catch ( SocketException se ) {
-                    logger.log( Level.SEVERE, "Got SocketException while enumerating IP addresses!", se );
+                } catch (SocketException se) {
+                    logger.log(Level.SEVERE, "Got SocketException while enumerating IP addresses!", se);
                 }
             }
 
             for (Iterator i = localIps.iterator(); i.hasNext();) {
-                InetAddress ip = (InetAddress) i.next();
+                InetAddress ip = (InetAddress)i.next();
 
                 for (j = 0; j < httpPorts.length; j++) {
-                    _ipProtocolPorts.add( new HttpTransport.IpProtocolPort( ip, TransportProtocol.HTTP, httpPorts[j] ) );
-                    logger.info( "Configured HTTP on " + print(ip) + ":" + httpPorts[j] );
+                    _ipProtocolPorts.add(new HttpTransport.IpProtocolPort(ip, TransportProtocol.HTTP, httpPorts[j]));
+                    logger.info("Configured HTTP on " + print(ip) + ":" + httpPorts[j]);
                 }
 
                 for (j = 0; j < httpsPorts.length; j++) {
-                    _ipProtocolPorts.add( new HttpTransport.IpProtocolPort( ip, TransportProtocol.HTTPS, httpsPorts[j] ) );
-                    logger.info( "Configured HTTPS on " + print(ip) + ":" + httpsPorts[j] );
+                    _ipProtocolPorts.add(new HttpTransport.IpProtocolPort(ip, TransportProtocol.HTTPS, httpsPorts[j]));
+                    logger.info("Configured HTTPS on " + print(ip) + ":" + httpsPorts[j]);
                 }
             }
         }
@@ -314,14 +295,14 @@ public class ServerConfig {
     }
 
     public String getHostname() {
-        if ( _hostname == null ) {
-            _hostname = getProperty( PARAM_HOSTNAME );
+        if (_hostname == null) {
+            _hostname = getProperty(PARAM_HOSTNAME);
 
-            if ( _hostname == null ) {
+            if (_hostname == null) {
                 try {
                     _hostname = InetAddress.getLocalHost().getHostName();
                 } catch (UnknownHostException e) {
-                    logger.fine( "HostName parameter not set, assigning hostname " + _hostname );
+                    logger.fine("HostName parameter not set, assigning hostname " + _hostname);
                 }
             }
         }

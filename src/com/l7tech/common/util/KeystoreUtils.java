@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 /**
  * Knows about the location and passwords for keystores, server certificates, etc.
- *
+ * <p/>
  * <br/><br/>
  * User: flascell<br/>
  * Date: Aug 26, 2003
@@ -144,7 +144,7 @@ public class KeystoreUtils {
         } catch (KeyStoreException e) {
             String msg = "cannot get ssl private key";
             logger.severe(msg);
-            IOException ioe =  new IOException(msg);
+            IOException ioe = new IOException(msg);
             ioe.initCause(e);
             throw ioe;
         }
@@ -161,7 +161,7 @@ public class KeystoreUtils {
 
     private synchronized Properties getProps() {
         if (props == null) {
-            String propsPath = ServerConfig.getInstance().getKeystorePropertiesPath();
+            String propsPath = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_KEYSTORE);
             InputStream inputStream = null;
             if (propsPath != null && propsPath.length() > 0) {
                 File f = new File(propsPath);

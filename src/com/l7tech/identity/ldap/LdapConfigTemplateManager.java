@@ -1,29 +1,28 @@
 package com.l7tech.identity.ldap;
 
-import com.l7tech.server.ServerConfig;
-import com.l7tech.logging.LogManager;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.logging.LogManager;
+import com.l7tech.server.ServerConfig;
 
+import java.io.*;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.Collection;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.io.*;
+import java.util.logging.Logger;
 
 /**
  * Provides partially configured LdapIdenityProviderConfig to simplify the addition of a new connector.
- *
+ * <p/>
  * Once the template is chosen, it can be used to create a new config object.
- *
- *
+ * <p/>
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
  * $Id$<br/>
- *
  */
 public class LdapConfigTemplateManager {
 
@@ -37,6 +36,7 @@ public class LdapConfigTemplateManager {
 
     /**
      * returns the names of the templates
+     *
      * @return an array of template names that can be used in getTemplate()
      */
     public String[] getTemplateNames() {
@@ -62,6 +62,7 @@ public class LdapConfigTemplateManager {
     /**
      * get a template, given its name. the actual template is not returned but a new config object
      * based on this template.
+     * 
      * @return the config object if found, null if not found
      */
     public LdapIdentityProviderConfig getTemplate(String templateName) throws IOException {
@@ -72,7 +73,7 @@ public class LdapConfigTemplateManager {
     }
 
     private void populateTemplatesFromFile() {
-        String rootPath = ServerConfig.getInstance().getLdapTemplatesPath();
+        String rootPath = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_LDAP_TEMPLATES);
         File rootFile = new File(rootPath);
         if (!rootFile.exists()) {
             logger.warning("templates not available!");
@@ -82,14 +83,14 @@ public class LdapConfigTemplateManager {
             public boolean accept(File dir, String name) {
                 int length = name.length();
                 if (length < 4) return false;
-                String extension = name.substring(length-4, length);
+                String extension = name.substring(length - 4, length);
                 if (!extension.equals(".xml")) return false;
                 return true;
             }
         });
         for (int i = 0; i < output.length; i++) {
             LdapIdentityProviderConfig template = new LdapIdentityProviderConfig();
-            template.setName(output[i].substring(0, output[i].length()-4));
+            template.setName(output[i].substring(0, output[i].length() - 4));
 
             String fulltemplatefilename = rootPath + File.separatorChar + output[i];
             FileInputStream fis = null;

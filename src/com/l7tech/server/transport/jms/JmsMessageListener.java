@@ -6,18 +6,18 @@
 
 package com.l7tech.server.transport.jms;
 
+import EDU.oswego.cs.dl.util.concurrent.PooledExecutor;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.logging.LogManager;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.transport.jms.JmsEndpoint;
 
 import javax.jms.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import EDU.oswego.cs.dl.util.concurrent.PooledExecutor;
 
 /**
  * @author alex
@@ -28,13 +28,13 @@ public class JmsMessageListener implements MessageListener, ServerComponentLifec
         _session = session;
         _receiver = receiver;
 
-        String jmsThreadpoolSize = ServerConfig.getInstance().getProperty( ServerConfig.PARAM_JMS_THREAD_POOL_SIZE );
+        String jmsThreadpoolSize = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_JMS_THREAD_POOL_SIZE);
         int poolsize = ServerConfig.DEFAULT_JMS_THREAD_POOL_SIZE;
-        if ( jmsThreadpoolSize != null && jmsThreadpoolSize.length() > 0 ) {
+        if (jmsThreadpoolSize != null && jmsThreadpoolSize.length() > 0) {
             try {
                 poolsize = Integer.parseInt(jmsThreadpoolSize);
-            } catch ( NumberFormatException nfe ) {
-                _logger.info( "Invalid JMS thread pool size parameter '" + jmsThreadpoolSize + "'... Using default of " + poolsize );
+            } catch (NumberFormatException nfe) {
+                _logger.info("Invalid JMS thread pool size parameter '" + jmsThreadpoolSize + "'... Using default of " + poolsize);
             }
         }
         _threadPool = new PooledExecutor(poolsize);
@@ -45,25 +45,25 @@ public class JmsMessageListener implements MessageListener, ServerComponentLifec
         TextMessage jmsResponse = null;
         try {
             jmsResponse = _session.createTextMessage();
-            JmsTransportMetadata jtm = new JmsTransportMetadata( jmsRequest, jmsResponse );
-            JmsRequestHandler handler = new JmsRequestHandler(this, jtm );
-            _threadPool.execute( handler );
+            JmsTransportMetadata jtm = new JmsTransportMetadata(jmsRequest, jmsResponse);
+            JmsRequestHandler handler = new JmsRequestHandler(this, jtm);
+            _threadPool.execute(handler);
         } catch (JMSException e) {
-            _logger.log( Level.WARNING, "Couldn't create response message!", e );
+            _logger.log(Level.WARNING, "Couldn't create response message!", e);
         } catch (InterruptedException e) {
-            _logger.log( Level.WARNING, e.toString(), e );
+            _logger.log(Level.WARNING, e.toString(), e);
         }
     }
 
-    void setSession( QueueSession session ) {
+    void setSession(QueueSession session) {
         _session = session;
     }
 
-    public void init(ServerConfig config) throws LifecycleException {
+    public void init(ComponentConfig config) throws LifecycleException {
     }
 
     public void start() throws LifecycleException {
-        if ( _session == null ) throw new LifecycleException( "Can't start without a session!" );
+        if (_session == null) throw new LifecycleException("Can't start without a session!");
     }
 
     public void stop() throws LifecycleException {
@@ -74,12 +74,12 @@ public class JmsMessageListener implements MessageListener, ServerComponentLifec
         _session = null;
     }
 
-    public void sendResponse( JmsSoapRequest soapRequest, JmsSoapResponse soapResponse,
-                              AssertionStatus status ) {
+    public void sendResponse(JmsSoapRequest soapRequest, JmsSoapResponse soapResponse,
+                             AssertionStatus status) {
         JmsEndpoint out = _receiver.getOutboundResponseEndpoint();
         JmsEndpoint fail = _receiver.getFailureEndpoint();
-        if ( status == AssertionStatus.NONE ) {
-            if ( out != null ) {
+        if (status == AssertionStatus.NONE) {
+            if (out != null) {
                 String qname = out.getDestinationName();
             }
         }
