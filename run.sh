@@ -90,6 +90,10 @@ case "$foo" in
 		;;
 	proxy)
 		target="com.l7tech.proxy.gui.Main";
+                exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
+                ;;
+	agent)
+		target="com.l7tech.proxy.gui.Main";
 		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
 		;;
 	*)
