@@ -27,20 +27,18 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class MessageProcessor {
-    public AssertionStatus processMessage( Request request, Response response ) throws IOException, PolicyAssertionException, MessageProcessingException {
+    public AssertionStatus processMessage( Request request, Response response ) throws IOException, PolicyAssertionException {
         try {
             if ( _serviceManager == null ) throw new IllegalStateException( "ServiceManager is null!" );
 
             PublishedService service = _serviceManager.resolveService( request );
             AssertionStatus status;
-            if ( service == null || service.isDisabled() ) {
-                if ( service == null ) {
-                    _log.info( "Service not found" );
-                    status = AssertionStatus.SERVICE_NOT_FOUND;
-                } else {
-                    _log.warning( "Service disabled" );
-                    status = AssertionStatus.SERVICE_DISABLED;
-                }
+            if ( service == null ) {
+                _log.info( "Service not found" );
+                status = AssertionStatus.SERVICE_NOT_FOUND;
+            } else if ( service.isDisabled() ) {
+                _log.warning( "Service disabled" );
+                status = AssertionStatus.SERVICE_DISABLED;
             } else {
                 _log.finer( "Resolved service #" + service.getOid() );
                 request.setParameter( Request.PARAM_SERVICE, service );
