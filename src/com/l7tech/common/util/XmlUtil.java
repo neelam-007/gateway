@@ -36,6 +36,12 @@ public class XmlUtil {
             throw new SAXException(msg);
         }
     };
+    
+    /** This is the namespace that the special namespace prefix "xmlns" logically belongs to. */
+    public static final String XMLNS_NS = "http://www.w3.org/2000/xmlns/";
+    
+    /** This is the namespace that the special namespace prefix "xml" logically belongs to. */
+    //public static final String XML_NS = "http://www.w3.org/XML/1998/namespace";
 
     /**
      * Returns a stateless, thread-safe {@link EntityResolver} that throws a SAXException upon encountering
@@ -452,10 +458,47 @@ public class XmlUtil {
         if (existingPrefix != null)
             return existingPrefix;
         String prefix = findUnusedNamespacePrefix(element, desiredPrefix);
-        Attr decl = element.getOwnerDocument().createAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:" + prefix);
+        Attr decl = element.getOwnerDocument().createAttributeNS(XMLNS_NS, "xmlns:" + prefix);
         decl.setValue(namespace);
         element.setAttributeNodeNS(decl);
         return prefix;
+    }
+    
+    /**
+     * Creates an element and appends it to the end of Parent.  The element will be in the requested namespace.
+     * If the namespace is already declared in parent or a direct ancestor then that prefix will be reused;
+     * otherwise a new prefix will be declared in the new element that is as close as possible to desiredPrefix.
+     * @param parent
+     * @param namespace
+     * @param desiredPrefix
+     * @return
+     */ 
+    public static Element createAndAppendElementNS(Element parent, String localName, String namespace, String desiredPrefix) {
+        Element element = parent.getOwnerDocument().createElementNS(namespace, localName);
+        parent.appendChild(element);
+        element.setPrefix(getOrCreatePrefixForNamespace(element, namespace, desiredPrefix));
+        return element;
+    }
+
+    /**
+     * Creates an element and inserts it before desiredNextSibling, under desiredNextSibling's parent element.
+     * The element will be in the requested namespace.  If the namespace is already declared in desiredNextSibling's
+     * parent or a direct ancestor then that prefix will be reused; otherwise a new prefix will be declared in
+     * the new element that is as close as possible to desiredPrefix.
+     * @param desiredNextSibling
+     * @param localName
+     * @param namespace
+     * @param desiredPrefix
+     * @return
+     */
+    public static Element createAndInsertBeforeElementNS(Element desiredNextSibling, String localName,
+                                                         String namespace, String desiredPrefix)
+    {
+        Element parent = (Element)desiredNextSibling.getParentNode();
+        Element element = parent.getOwnerDocument().createElementNS(namespace, localName);
+        parent.insertBefore(element, desiredNextSibling);
+        element.setPrefix(getOrCreatePrefixForNamespace(element, namespace, desiredPrefix));
+        return element;
     }
 
     /** @return true iff. prospectiveAncestor is a direct ancestor of element (or is the same element). */
