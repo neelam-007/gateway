@@ -69,7 +69,6 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
 
     public void setChildren(List children) {
         this.children = reparentedChildren(this, children);
-        final CompositeAssertion parent = getParent();
         super.treeChanged();
     }
 
@@ -146,7 +145,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         b.append(":\n");
         for (Iterator i = children.iterator(); i.hasNext();) {
             Assertion a = (Assertion) i.next();
-            b.append(toIndentedString(a, indentLevel + 1));
+            b.append(a.toIndentedString(indentLevel + 1));
         }
         return b.toString();
     }
