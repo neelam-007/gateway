@@ -82,29 +82,26 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return set;
     }
 
-    private boolean validate( PublishedService candidateService ) {
-        try {
-            // Make sure WSDL is valid
-            candidateService.parsedWsdl();
-            ServiceResolver resolver;
-            Map services = _oidToServiceMap;
+    private void validate( PublishedService candidateService ) throws WSDLException, DuplicateObjectException {
+        // Make sure WSDL is valid
+        candidateService.parsedWsdl();
+        ServiceResolver resolver;
+        Map services = _oidToServiceMap;
 
-            Map matchingServices = null;
+        // Check for duplicate services
+        Map matchingServices = null;
 
-            for (Iterator i = _resolvers.iterator(); i.hasNext(); ) {
-                resolver = (ServiceResolver)i.next();
-                matchingServices = resolver.matchingServices( candidateService, services );
-                if ( matchingServices != null && matchingServices.size() > 0 ) {
-                    // One or more matched... Let's see if anyone else matches.
-                    services = matchingServices;
-                }
+        for (Iterator i = _resolvers.iterator(); i.hasNext(); ) {
+            resolver = (ServiceResolver)i.next();
+            matchingServices = resolver.matchingServices( candidateService, services );
+            if ( matchingServices != null && matchingServices.size() > 0 ) {
+                // One or more matched... Let's see if anyone else matches.
+                services = matchingServices;
             }
-
-            return ( matchingServices == null || matchingServices.isEmpty() );
-        } catch ( WSDLException we ) {
-            _log.log( Level.SEVERE, we.toString(), we );
-            return false;
         }
+
+        if ( matchingServices != null && !matchingServices.isEmpty() )
+            throw new DuplicateObjectException( "Duplicate service resolution parameters!" );
     }
 
     public ServiceManagerImp() throws ObjectModelException {
@@ -173,32 +170,42 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public long save(PublishedService service) throws SaveException {
         try {
-            if ( !validate( service ) ) {
-                SaveException se = new SaveException( "Duplicate service resolution parameters" );
-                _log.log( Level.SEVERE, se.toString(), se );
-                throw se;
-            }
+            validate( service );
             long oid = _manager.save( getContext(), service );
             putService( service );
             fireCreated( service );
             return oid;
         } catch ( SQLException se ) {
+            _log.log( Level.SEVERE, se.toString(), se );
             throw new SaveException( se.toString(), se );
+        } catch ( WSDLException we ) {
+            SaveException se = new SaveException( "Missing or invalid WSDL", we );
+            _log.log( Level.SEVERE, se.toString(), se );
+            throw se;
+        } catch ( DuplicateObjectException doe ) {
+            SaveException se = new SaveException( "Duplicate service resolution parameters", doe );
+            _log.log( Level.SEVERE, se.toString(), se );
+            throw se;
         }
     }
 
     public void update(PublishedService service) throws UpdateException {
         try {
-            if ( !validate( service ) ) {
-                UpdateException ue = new UpdateException( "Duplicate service resolution parameters" );
-                _log.log( Level.SEVERE, ue.toString(), ue );
-                throw ue;
-            }
+            validate( service );
             _manager.update( getContext(), service );
             putService( service );
             fireUpdated( service );
         } catch ( SQLException se ) {
+            _log.log( Level.SEVERE, se.toString(), se );
             throw new UpdateException( se.toString(), se );
+        } catch ( WSDLException we ) {
+            UpdateException ue = new UpdateException( "Missing or invalid WSDL", we );
+            _log.log( Level.SEVERE, ue.toString(), ue );
+            throw ue;
+        } catch ( DuplicateObjectException doe ) {
+            UpdateException ue = new UpdateException( "Duplicate service resolution parameters" );
+            _log.log( Level.SEVERE, ue.toString(), ue );
+            throw ue;
         }
     }
 
