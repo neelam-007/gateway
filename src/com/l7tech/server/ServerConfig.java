@@ -165,7 +165,6 @@ public class ServerConfig {
 
     public static void main(String[] args) {
         ServerConfig config = ServerConfig.getInstance();
-        String foo = config.getSystemPropertiesPath();
     }
 
     public int getServerId() {
