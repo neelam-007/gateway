@@ -28,9 +28,7 @@ public class LdapIdentityProviderConfigManager  extends HibernateEntityManager i
     }
 
     public Collection findAllIdentityProviders() throws FindException {
-        //return IdentityProviderFactory.findAllIdentityProviders(this);
-        // todo
-        return null;
+        return IdentityProviderFactory.findAllIdentityProviders(this);
     }
 
     public IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException {
@@ -56,7 +54,6 @@ public class LdapIdentityProviderConfigManager  extends HibernateEntityManager i
             throw new UpdateException( se.toString(), se );
         }
     }
-
 
     public Collection findAll(int offset, int windowSize) throws FindException {
         throw new IllegalArgumentException( "Not yet implemented!" );
