@@ -9,6 +9,6 @@ objectmodel		server.war, console.jar
 policy			everywhere
 proxy			clientproxy.jar
 server			server.war
-service         server.war
+service         server.war, console.jar
 
 
