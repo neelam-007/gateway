@@ -308,14 +308,14 @@
                 <include name="xss4j.jar"/>
 
                 <!-- Include OpenJMS on dev builds -->
-                <include name="openjms-client-0.7.6.jar" if="dev.build"/>
-                <include name="exolabcore-0.3.7.jar" if="dev.build"/>
+                <include name="openjms-client-0.7.6.jar" if="dev.build, include.jms.openjms"/>
+                <include name="exolabcore-0.3.7.jar" if="dev.build, include.jms.openjms"/>
 
                 <!-- Include MQSeries on dev builds -->
-                <include name="com.ibm.mqbind.jar" if="dev.build"/>
-                <include name="com.ibm.mq.jar" if="dev.build"/>
-                <include name="com.ibm.mqjms.jar" if="dev.build"/>
-                <include name="connector.jar" if="dev.build"/>
+                <include name="com.ibm.mqbind.jar" if="dev.build, include.jms.mqseries"/>
+                <include name="com.ibm.mq.jar" if="dev.build, include.jms.mqseries"/>
+                <include name="com.ibm.mqjms.jar" if="dev.build, include.jms.mqseries"/>
+                <include name="connector.jar" if="dev.build, include.jms.mqseries"/>
 
             </lib>
 
@@ -505,10 +505,10 @@
                 <exclude name="**/jsdk23.jar"/>
             </fileset>
             <fileset dir="${src.root}/lib/gateway/jms/openjms">
-                <include name="**/*.jar" if="dev.build"/>
+                <include name="**/*.jar" if="dev.build, include.jms.openjms"/>
             </fileset>
             <fileset dir="${src.root}/lib/gateway/jms/mqseries">
-                <include name="**/*.jar" if="dev.build"/>
+                <include name="**/*.jar" if="dev.build, include.jms.mqseries"/>
             </fileset>
         </copy>
 
