@@ -3,13 +3,11 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.*;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.logging.LogManager;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.XmlRequest;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -121,7 +119,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                 String msg =  "XmlRequestSecurity unable to validate partial signature because " +
                                 "no credential source has been identified yet";
                 logger.warning( msg );
-                return AssertionStatus.FALSIFIED;
+                return AssertionStatus.AUTH_REQUIRED;
             }
 
             if ( request.isAuthenticated() ) {
@@ -141,17 +139,19 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                         knownCert = (X509Certificate)ccm.getUserCert( user );
                         if ( knownCert == null ) {
                             logger.log( Level.WARNING, "User '" + user.getLogin() + "' does not currently have a certificate" );
-                            return AssertionStatus.FALSIFIED;
+                            response.setParameter(Response.PARAM_HTTP_CERT_STATUS, SecureSpanConstants.INVALID);
+                            return AssertionStatus.AUTH_FAILED;
                         }
                     } catch ( FindException e ) {
                         logger.log( Level.WARNING, "Caught FindException retrieving cert for user " + user.getLogin(), e );
-                        return AssertionStatus.FALSIFIED;
+                        return AssertionStatus.SERVER_ERROR;
                     }
                 }
 
                 if ( !knownCert.equals( xmlCertChain[0] ) ) {
                     logger.log( Level.WARNING,
                                 "XmlRequestSecurity signing certificate did not match previously issued certificate" );
+                    response.setParameter(Response.PARAM_HTTP_CERT_STATUS, SecureSpanConstants.INVALID);
                     return AssertionStatus.AUTH_FAILED;
                 }
 
@@ -166,7 +166,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         } catch (SecurityProcessorException e) {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
-            return AssertionStatus.FALSIFIED;
+            return AssertionStatus.SERVER_ERROR;
         } catch (SignatureException e) {
             if (ExceptionUtils.causedBy(e, SignatureNotFoundException.class)) {
                 // no digital signature
@@ -177,18 +177,18 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             }
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
-            return AssertionStatus.FALSIFIED;
+            return AssertionStatus.AUTH_FAILED;
         } catch (CertUtils.CertificateUntrustedException e) {
             // bad signature !            
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            return AssertionStatus.FALSIFIED;
+            logger.log(Level.WARNING, e.getMessage(), e);
+            return AssertionStatus.AUTH_FAILED;
         } catch (GeneralSecurityException e) {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
-            return AssertionStatus.FALSIFIED;
+            return AssertionStatus.SERVER_ERROR;
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
-            return AssertionStatus.FALSIFIED;
+            return AssertionStatus.SERVER_ERROR;
         }
 
         // so mark this sequence number as used up
