@@ -3,9 +3,6 @@ package com.l7tech.common.security.saml;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import junit.framework.Test;
-import oasisNamesTcSAML10Assertion.AssertionDocument;
-import oasisNamesTcSAML10Assertion.AssertionType;
-import oasisNamesTcSAML10Assertion.ConditionsType;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -13,8 +10,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Calendar;
 
-import com.bea.xml.XmlOptions;
-import com.bea.xml.XmlError;
+import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlError;
+import x0Assertion.oasisNamesTcSAML1.AssertionDocument;
+import x0Assertion.oasisNamesTcSAML1.AssertionType;
+import x0Assertion.oasisNamesTcSAML1.ConditionsType;
+
 
 /**
  */
@@ -36,7 +37,7 @@ public class XmlBeansSamlTest extends TestCase {
 
     public void testParseAssertionFromFile() throws Exception {
         ClassLoader cl = getClass().getClassLoader();
-        URL assertionUrl = cl.getResource("com/l7tech/saml/saml1.xml");
+        URL assertionUrl = cl.getResource("com/l7tech/common/security/saml/saml1.xml");
         assertTrue("Could not locate the resource", assertionUrl != null);
 
         XmlOptions xo = new XmlOptions();
