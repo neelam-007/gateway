@@ -7,6 +7,8 @@
 package com.l7tech.server;
 
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.security.xml.SessionNotFoundException;
+import com.l7tech.common.security.xml.Session;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -57,6 +59,14 @@ public class MessageProcessor {
                     }
                 } else {
                     _log.info("Requestor did not provide policy id.");
+                }
+
+                // If an xml-enc session id is provided, make sure it's still valid
+                // (because we can't wait for the XmlResponseSecurity to fail because it happens after routing)
+                if (checkForInvalidXmlSessIdRef(request)) {
+                    response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
+                    _log.info("Request refered to a session id that is not valid. Policy will not be executed.");
+                    return AssertionStatus.FALSIFIED;
                 }
 
                 // run the policy
@@ -112,6 +122,39 @@ public class MessageProcessor {
 
     public static void setCurrentResponse( Response response ) {
         _currentResponse.set( response );
+    }
+
+    /**
+     * This looks a http header containing a reference to an xml session id which has become invalid.
+     * This prevents ServerXmlResponseSecurity to fail after the routing assertion succeeds.
+     * @return If there is indeed a reference to an invalid session id, then this returns true
+     */
+    private boolean checkForInvalidXmlSessIdRef(Request request) {
+        // RETREIVE SESSION ID
+        // get the header containing the xml session id
+        String sessionIDHeaderValue = (String)request.getParameter( Request.PARAM_HTTP_XML_SESSID );
+        if (sessionIDHeaderValue == null || sessionIDHeaderValue.length() < 1) {
+            // no trace of this, no worries then
+            return false;
+        }
+        // retrieve the session
+        Session xmlsession = null;
+        try {
+            xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
+        } catch (SessionNotFoundException e) {
+            String msg = "Exception finding session with id=" + sessionIDHeaderValue;
+            _log.log(Level.WARNING, msg, e);
+            return true;
+        } catch (NumberFormatException e) {
+            String msg = "Session id is not long value : " + sessionIDHeaderValue;
+            _log.log(Level.WARNING, msg, e);
+            return true;
+        }
+
+        // upload this session into the request message's context
+        request.setParameter(Request.PARAM_HTTP_XML_SESSID, xmlsession);
+
+        return false;
     }
 
     private static MessageProcessor _instance = null;
