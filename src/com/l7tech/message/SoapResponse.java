@@ -1,19 +1,23 @@
 package com.l7tech.message;
 
+import com.l7tech.policy.assertion.AssertionResult;
+import com.l7tech.policy.assertion.AssertionStatus;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 
-import com.l7tech.policy.assertion.AssertionResult;
-import com.l7tech.policy.assertion.AssertionStatus;
-
 /**
+ * Encapsulates a SOAP response.  Not thread-safe.
+ *
  * @author alex
  * @version $Revision$
  */
-public class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlResponse {
+public abstract class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlResponse {
     public static final String ENCODING = "UTF-8";
 
     public SoapResponse( TransportMetadata tm ) {
@@ -27,7 +31,6 @@ public class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlR
     public synchronized void setProtectedResponseStream( InputStream is ) {
         _responseStream = is;
     }
-
 
     public synchronized void setResponseXml( String xml ) {
         _responseXml = xml;
