@@ -22,7 +22,7 @@ public class RegistryStub extends Registry {
      * @return the identity provider config manager
      */
     public IdentityProviderConfigManager getProviderConfigManager() {
-        return null;
+        return cm;
     }
 
     /**
@@ -54,7 +54,7 @@ public class RegistryStub extends Registry {
             throw new RuntimeException(e);
         }
     }
-
+    private IdentityProviderConfigManager cm = new IdentityProviderConfigManagerStub(dataStore);
     private UserManager um = new UserManagerStub(dataStore);
     private GroupManager gm = new GroupManagerStub(dataStore);
 

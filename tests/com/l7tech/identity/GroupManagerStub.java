@@ -83,7 +83,6 @@ public class GroupManagerStub implements GroupManager {
             }
         }
         return list;
-
     }
 
     /**

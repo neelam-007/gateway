@@ -1,6 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.identity.imp.IdentityProviderConfigImp;
+import com.l7tech.identity.imp.IdentityProviderTypeImp;
 import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
@@ -44,7 +45,9 @@ public class StubDataStore {
         return groups;
     }
 
-
+    Map getIdentityProviderConfigs() {
+        return providerConfigs;
+    }
     /**
      * @return the next sequence
      */
@@ -52,11 +55,15 @@ public class StubDataStore {
         return ++objectIdSequence;
     }
 
+
     private long initialInternalProvider(XMLEncoder encoder) {
         IdentityProviderConfig config = new IdentityProviderConfigImp();
         config.setOid(nextObjectId());
-        config.setDescription("test identity provider");
+        config.setDescription("Internal identity provider (stub)");
         encoder.writeObject(config);
+        IdentityProviderType type = new IdentityProviderTypeImp();
+        //type.setDescription(); //todo finish this!!!
+
         return config.getOid();
     }
 
@@ -133,7 +140,7 @@ public class StubDataStore {
         try {
             decoder = new XMLDecoder(
                     new BufferedInputStream(
-                            new FileInputStream(path + "/data.xml")));
+                            new FileInputStream(path + File.separator + "data.xml")));
             while (true) {
                 populate(decoder.readObject());
                 this.nextObjectId();
@@ -169,7 +176,7 @@ public class StubDataStore {
             if (target.exists()) target.delete();
             encoder =
                     new XMLEncoder(
-                            new BufferedOutputStream(new FileOutputStream(path + "/data.xml")));
+                            new BufferedOutputStream(new FileOutputStream(path + File.separator + "data.xml")));
             long providerId = initialInternalProvider(encoder);
             initialUsers(encoder, providerId);
             initialGroups(encoder, providerId);
