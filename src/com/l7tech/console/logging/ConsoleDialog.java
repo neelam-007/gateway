@@ -39,7 +39,7 @@ public class ConsoleDialog extends JFrame {
     private JTextArea logTextArea;
 
     private ConsoleDialog() {
-        super("Application Console and logs");
+        super("Manager Log");
 
         logTextArea = new JTextArea();
         logTextArea.setEditable(false);
