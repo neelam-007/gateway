@@ -194,6 +194,7 @@ public class AssertionPath {
      * @param o the Object to compare
      */
     public boolean equals(Object o) {
+        if (o == null) return false;
         if (o == this)
             return true;
         if (o instanceof AssertionPath) {
