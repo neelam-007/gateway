@@ -122,7 +122,7 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
     private Client getStub() throws java.rmi.RemoteException {
         if (localStub == null) {
             try {
-                localStub = new Client(getServiceURL());
+                localStub = new Client(getServiceURL(), getAdminUsername(), getAdminPassword());
             }
             catch (Exception e) {
                 throw new java.rmi.RemoteException("Exception getting admin ws stub", e);
@@ -140,6 +140,14 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
         prefUrl += "/services/identityAdmin";
         return prefUrl;
         //return "http://localhost:8080/UneasyRooster/services/identities";
+    }
+    private String getAdminUsername() throws IOException {
+        // todo, read this from somewhere
+        return null;
+    }
+    private String getAdminPassword() throws IOException {
+        // todo, read this from somewhere
+        return null;
     }
 
     private Client localStub = null;
