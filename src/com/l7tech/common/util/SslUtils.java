@@ -100,7 +100,6 @@ public class SslUtils {
      * @throws NoSuchAlgorithmException     if one of the keys uses an algorithm that isn't installed
      * @throws InvalidKeyException          if one of the keys is invalid
      * @throws NoSuchProviderException      if no X.509 cert provider is installed (can't happen)
-     * @throws BadCredentialsException      if the signing service rejected the username and/or password
      * @throws SignatureException           if the resulting cert was not signed by the correct CA key
      * @throws SslUtils.BadCredentialsException if the username or password was rejected by the CSR signer
      */
@@ -108,7 +107,8 @@ public class SslUtils {
                                                           PKCS10CertificationRequest csr,
                                                           X509Certificate caCert)
             throws IOException, CertificateException, NoSuchAlgorithmException,
-                   InvalidKeyException, NoSuchProviderException, BadCredentialsException, SignatureException
+                   InvalidKeyException, NoSuchProviderException, SslUtils.BadCredentialsException,
+                   SignatureException
     {
         X500Principal csrName = new X500Principal(csr.getCertificationRequestInfo().getSubject().toString());
         String csrNameString = csrName.getName(X500Principal.CANONICAL);
