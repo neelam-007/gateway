@@ -283,7 +283,7 @@
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib">
                 <include name="axis.jar"/>
-                <include name="bcprov-jdk14-119.jar"/>
+                <include name="bcprov-jdk14-123.jar"/>
                 <include name="commons-collections.jar"/>
                 <include name="commons-dbcp-1.1.jar"/>
                 <include name="commons-discovery.jar"/>
