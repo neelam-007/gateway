@@ -99,8 +99,12 @@ public class Descriptions {
          * @return the <CODE>Object[]</CODE> array of assertion parameters
          */
         protected Object[] parameters() {
+            SpecificUser userassertion = (SpecificUser)assertion;
+            String param = userassertion.getUserLogin();
+            if (param == null || param.length() < 1) param = userassertion.getUserName();
+            if (param == null || param.length() < 1) param = userassertion.getUserUid();
             return new Object[]{
-                ((SpecificUser)assertion).getUserLogin()
+                param
             };
         }
     }
