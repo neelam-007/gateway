@@ -358,7 +358,7 @@ public class SsgListPanel extends JPanel {
                                     String message;
                                     if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                                         certoptions = new Object[] {"Revoke Certificate", "Cancel"};
-                                        title = "Gateway " + ssg + ": Change Password and Revoke Client Certificate";
+                                        title = "Revoke Client Certificate";
                                         message = "You are about to send a request to\n" +
                                                 "the Gateway \"" + ssg + "\" for it\n" +
                                                 "to change your password for this account\n" +
@@ -367,7 +367,7 @@ public class SsgListPanel extends JPanel {
                                                 "This action cannot be undone.";
                                     } else {
                                         certoptions = new Object[] {"Change Password", "Cancel"};
-                                        title = "Gateway " + ssg + ": Change Password";
+                                        title = "Change Password";
                                         message = "You are about to send a request to\n" +
                                                 "the Gateway \"" + ssg + "\" for it\n" +
                                                 "to change your password for this account.\n" +
