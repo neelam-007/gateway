@@ -158,6 +158,8 @@ public class SoapMsgSigner {
             }
             if (envelopeURI.equals(validity.getReferenceURI(i))) {
                 // SUCCESS, RETURN THE CERT
+                // first, consume the signature element by removing it
+                sigElement.getParentNode().removeChild(sigElement);
                 return cert;
             }
         }
