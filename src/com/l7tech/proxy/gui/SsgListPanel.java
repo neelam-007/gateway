@@ -3,6 +3,7 @@ package com.l7tech.proxy.gui;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.proxy.ClientProxy;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -25,8 +26,10 @@ public class SsgListPanel extends JPanel {
     private Action actionNewSsg;
     private Action actionEditSsg;
     private Action actionDeleteSsg;
+    private ClientProxy clientProxy;
 
-    SsgListPanel(SsgManager ssgManager) {
+    SsgListPanel(ClientProxy clientProxy, SsgManager ssgManager) {
+        this.clientProxy = clientProxy;
         init(ssgManager);
     }
 
@@ -85,6 +88,7 @@ public class SsgListPanel extends JPanel {
             actionDeleteSsg = new AbstractAction("Delete", IconManager.getRemove()) {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg ssg = (Ssg)ssgList.getSelectedValue();
+                    log.info("Removing SSG " + ssg);
                     if (ssg == null)
                         return;
 
@@ -109,18 +113,14 @@ public class SsgListPanel extends JPanel {
         if (actionEditSsg == null) {
             actionEditSsg = new AbstractAction("Properties", IconManager.getEdit()) {
                 public void actionPerformed(final ActionEvent e) {
-                    try {
-                        final Ssg ssg = (Ssg)ssgList.getSelectedValue();
-                        if (ssg != null) {
-                            if (PropertyDialog.getPropertyDialogForObject(ssg).runDialog()) {
-                                if (ssg.isDefaultSsg())
-                                    ssgListModel.setDefaultSsg(ssg);
-                                ssgListModel.editedSsg();
-                            }
+                    final Ssg ssg = (Ssg)ssgList.getSelectedValue();
+                    log.info("Editing ssg " + ssg);
+                    if (ssg != null) {
+                        if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg).runDialog()) {
+                            if (ssg.isDefaultSsg())
+                                ssgListModel.setDefaultSsg(ssg);
+                            ssgListModel.editedSsg();
                         }
-                    } catch (ClassNotFoundException e1) {
-                        // No property editor for Ssg objects.  this can't happen
-                        log.error(e1);
                     }
                 }
             };
@@ -134,16 +134,12 @@ public class SsgListPanel extends JPanel {
             actionNewSsg = new AbstractAction("New", IconManager.getAdd()) {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg newSsg = ssgListModel.createSsg();
+                    log.info("Creating new SSG " + newSsg);
                     newSsg.setName("New SSG");
                     if (ssgListModel.getSize() < 1)
                         newSsg.setDefaultSsg(true);
-                    try {
-                        if (PropertyDialog.getPropertyDialogForObject(newSsg).runDialog())
+                        if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, newSsg).runDialog())
                             ssgListModel.addSsg(newSsg);
-                    } catch (ClassNotFoundException e1) {
-                        // No property editor for Ssg objects.  this can't happen
-                        log.error(e1);
-                    }
                 }
             };
             actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new SSG with this Client Proxy");

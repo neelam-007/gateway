@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.ssl;
 
-import com.l7tech.proxy.datamodel.ClientKeyManager;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import org.apache.log4j.Category;
@@ -40,7 +40,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
             Ssg ssg = (Ssg) i.next();
             try {
-                X509Certificate cert = ClientKeyManager.getServerCert(ssg);
+                X509Certificate cert = SsgKeyStoreManager.getServerCert(ssg);
                 if (cert != null)
                     certs.add(cert);
             } catch (Exception e) {

@@ -3,7 +3,6 @@ package com.l7tech.proxy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import org.apache.log4j.Category;
-import org.mortbay.util.MultiException;
 
 /**
  * Begin execution of daemon-mode (no UI at all) client proxy.
@@ -19,15 +18,30 @@ public class Main {
 
     private static ClientProxy clientProxy;
 
+    private static int getIntProperty(String name, int def) {
+        try {
+            String p = System.getProperty(name);
+            if (p == null || p.length() < 1)
+                return def;
+            return Integer.parseInt(p);
+        } catch (NumberFormatException e) {
+            return def;
+        }
+    }
+
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
         log.info("Starting Layer7 Client Proxy in daemon mode");
 
+        int port = getIntProperty("com.l7tech.proxy.listener.port", DEFAULT_PORT);
+        int minThreads = getIntProperty("com.l7tech.proxy.listener.minthreads", MIN_THREADS);
+        int maxThreads = getIntProperty("com.l7tech.proxy.listener.maxthreads", MAX_THREADS);
+
         clientProxy = new ClientProxy(SsgFinderImpl.getSsgFinderImpl(),
                                       new MessageProcessor(Managers.getPolicyManager()),
-                                      DEFAULT_PORT,
-                                      MIN_THREADS,
-                                      MAX_THREADS);
+                                      port,
+                                      minThreads,
+                                      maxThreads);
 
         // Hook up the Message Logger facility
         clientProxy.getRequestHandler().setRequestInterceptor(new MessageLogger());

@@ -6,23 +6,22 @@
 
 package com.l7tech.proxy.gui;
 
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.FalseAssertion;
+import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgManagerStub;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.logging.Logger;
 import java.util.Arrays;
-
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.Managers;
-import com.l7tech.proxy.datamodel.SsgManagerStub;
-import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import java.util.logging.Logger;
 
 /**
  * Manual test of SsgPropertyDialog
@@ -139,8 +138,10 @@ public class SsgPropertyDialogTest extends TestCase {
         ssg.attachPolicy("http://exampdles.com/Quzoter", "http://gwerfg.asdf.gfa", new TrueAssertion());
         ssg.attachPolicy("http://exsample.com/Quoater", "http://gwserg.asd.gfs", new TrueAssertion());
 
-        Gui.setInstance(Gui.createGui(new SsgManagerStub()));
-        SsgPropertyDialog.getPropertyDialogForObject(ssg).show();
+        log.info("Firing up an example SsgPropertyDialog");
+        ClientProxy clientProxy = new ClientProxyStub(9797);
+        Gui.setInstance(Gui.createGui(clientProxy, new SsgManagerStub()));
+        SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg).show();
         System.exit(0);
     }
 }

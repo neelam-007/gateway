@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.ssl;
 
-import com.l7tech.proxy.datamodel.ClientKeyManager;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgNotFoundException;
@@ -42,7 +42,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
         try {
             log.info("ClientProxyKeyManager: getPrivateKey for " + s);
             Ssg ssg = ssgFinder.getSsgByHostname(s);
-            return ClientKeyManager.getPrivateKey(ssg);
+            return SsgKeyStoreManager.getPrivateKey(ssg);
         } catch (SsgNotFoundException e) {
             log.error(e);
             throw new ClientProxySslException(e);
@@ -59,7 +59,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
         try {
             log.info("ClientProxyKeyManager: getCertificateChain for " + s);
             Ssg ssg = ssgFinder.getSsgByHostname(s);
-            return ClientKeyManager.getClientCertificateChain(ssg);
+            return SsgKeyStoreManager.getClientCertificateChain(ssg);
         } catch (SsgNotFoundException e) {
             log.error(e);
             throw new ClientProxySslException(e);

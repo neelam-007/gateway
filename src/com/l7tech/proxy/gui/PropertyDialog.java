@@ -135,18 +135,6 @@ public abstract class PropertyDialog extends JDialog {
     }
 
     /**
-     * Attempt to build an "edit properties" dialog box for the given object.
-     * @param obj The object whose properties we intend to edit
-     * @return The property dialog that will edit said properties.  Call show() on it to run it.
-     * @throws ClassNotFoundException if no proerty dialog could be found for the given object.
-     */
-    public static PropertyDialog getPropertyDialogForObject(final Object obj) throws ClassNotFoundException {
-        if (obj.getClass().equals(Ssg.class))
-            return SsgPropertyDialog.getPropertyDialogForObject((Ssg)obj);
-        throw new ClassNotFoundException("No property dialog for " + obj.getClass());
-    }
-
-    /**
      * Called when the Ok button is pressed.
      * Should copy any updated properties into the target object and return normally.
      * Caller is responsible for hiding and disposing of the property dialog.

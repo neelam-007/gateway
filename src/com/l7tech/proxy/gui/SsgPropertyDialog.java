@@ -6,6 +6,7 @@ import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.ClientProxy;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -56,11 +57,13 @@ public class SsgPropertyDialog extends PropertyDialog {
     private DisplayPolicyTableModel displayPolicyTableModel;
     private JButton buttonFlushPolicies;
     private boolean policyFlushRequested = false;
+    private ClientProxy clientProxy;
 
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
-    private SsgPropertyDialog(final Ssg ssg) {
+    private SsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg) {
         super("SSG Properties");
+        this.clientProxy = clientProxy;
         tabbedPane.add("General", getGeneralPane());
         tabbedPane.add("Policies", getPoliciesPane());
         setSsg(ssg);
@@ -72,8 +75,8 @@ public class SsgPropertyDialog extends PropertyDialog {
      * @param ssg The ssg whose properties we intend to edit
      * @return The property dialog that will edit said properties.  Call show() on it to run it.
      */
-    public static PropertyDialog getPropertyDialogForObject(final Ssg ssg) {
-        return new SsgPropertyDialog(ssg);
+    public static SsgPropertyDialog makeSsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg) {
+        return new SsgPropertyDialog(clientProxy, ssg);
     }
 
     private class DisplayPolicyTableModel extends AbstractTableModel {
@@ -372,7 +375,8 @@ public class SsgPropertyDialog extends PropertyDialog {
         this.ssg = ssg;
 
         fieldName.setText(ssg.getName());
-        fieldLocalEndpoint.setText("http://localhost:5555/" + ssg.getLocalEndpoint());
+        fieldLocalEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
+                                       ssg.getLocalEndpoint());
         fieldServerAddress.setText(ssg.getSsgAddress());
         fieldUsername.setText(ssg.getUsername());
         editPassword = ssg.getPassword();

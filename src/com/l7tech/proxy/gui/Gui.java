@@ -3,6 +3,7 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.util.JavaVersionChecker;
@@ -44,6 +45,7 @@ public class Gui {
     private JCheckBoxMenuItem showMessages;
     private SsgListPanel ssgListPanel;
     private SsgManager ssgManager = null;
+    private ClientProxy clientProxy;
 
     /** Get the singleton Gui. */
    public static Gui getInstance() {
@@ -58,8 +60,8 @@ public class Gui {
     }
 
     /** Configure a Gui instance. */
-    public static Gui createGui(SsgManager ssgManager) {
-        return new Gui(ssgManager);
+    public static Gui createGui(ClientProxy clientProxy, SsgManager ssgManager) {
+        return new Gui(clientProxy, ssgManager);
     }
 
     private static interface LnfSetter {
@@ -96,7 +98,8 @@ public class Gui {
     /**
      * Initialize the Gui.
      */
-    private Gui(SsgManager ssgManager) {
+    private Gui(ClientProxy clientProxy, SsgManager ssgManager) {
+        this.clientProxy = clientProxy;
         this.ssgManager = ssgManager;
 
         boolean haveXpLnf = JavaVersionChecker.isJavaVersionAtLeast(new int[] {1, 4, 2});
@@ -191,7 +194,7 @@ public class Gui {
 
     private SsgListPanel getSsgListPanel() {
         if (ssgListPanel == null)
-            ssgListPanel = new SsgListPanel(ssgManager);
+            ssgListPanel = new SsgListPanel(clientProxy, ssgManager);
         return ssgListPanel;
     }
 

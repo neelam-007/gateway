@@ -9,7 +9,7 @@ package com.l7tech.policy.assertion.credential.http;
 import com.l7tech.credential.http.HttpClientCertCredentialFinder;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.proxy.datamodel.ClientKeyManager;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import org.apache.log4j.Category;
 
@@ -35,7 +35,7 @@ public class HttpClientCert extends HttpCredentialSourceAssertion {
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
-        if (ClientKeyManager.isClientCertAvailabile(request.getSsg())) {
+        if (SsgKeyStoreManager.isClientCertAvailabile(request.getSsg())) {
             request.setClientCertRequired(true);
             log.info("We appear to possess a Client Certificate for this SSG.");
             return AssertionStatus.NONE;

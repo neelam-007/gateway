@@ -31,8 +31,8 @@ import org.apache.log4j.Category;
  * Date: Jul 30, 2003
  * Time: 7:36:04 PM
  */
-public class ClientKeyManager {
-    private static final Category log = Category.getInstance(ClientKeyManager.class);
+public class SsgKeyStoreManager {
+    private static final Category log = Category.getInstance(SsgKeyStoreManager.class);
     private static final String ALIAS = "clientProxy";
     private static final String SSG_ALIAS = "ssgCa";
 

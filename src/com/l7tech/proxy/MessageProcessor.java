@@ -11,7 +11,7 @@ import com.l7tech.common.util.SslUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.proxy.datamodel.ClientKeyManager;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
@@ -98,7 +98,7 @@ public class MessageProcessor {
                                                                             ssg.getUsername(),
                                                                             ssg.getPassword(),
                                                                             csr);
-                    ClientKeyManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
+                    SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
                     pendingRequest.reset();
                     result = policy.decorateRequest(pendingRequest);
                 }
@@ -258,7 +258,7 @@ public class MessageProcessor {
             cd.setPassword(ssg.getPassword());
 
             if (cd.downloadCertificate()) {
-                ClientKeyManager.saveSsgCertificate(ssg, (X509Certificate) cd.getCertificate());
+                SsgKeyStoreManager.saveSsgCertificate(ssg, (X509Certificate) cd.getCertificate());
                 return; // Success.
             } else {
                 if (!ssg.isPromptForUsernameAndPassword() || req.getTimesCredentialsUpdated() > 2)

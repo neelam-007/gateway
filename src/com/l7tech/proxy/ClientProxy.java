@@ -60,6 +60,11 @@ public class ClientProxy {
         this.maxThreads = maxThreads;
     }
 
+    /** Used by ClientProxyStub, a fake CP for testing GUI widgets. */
+    protected ClientProxy(int bindPort) {
+        this.bindPort = bindPort;
+    }
+
     private void mustNotBeDestroyed() {
         if (isDestroyed)
             throw new IllegalStateException("ClientProxy has been destroyed");
@@ -120,6 +125,10 @@ public class ClientProxy {
             httpServer.addListener(socketListener);
         }
         return httpServer;
+    }
+
+    public int getBindPort() {
+        return bindPort;
     }
 
     /**

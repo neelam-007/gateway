@@ -385,24 +385,24 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.defaultSsg = defaultSsg;
     }
 
-    /** Key store file.  Package private; used by ClientKeyManager. */
+    /** Key store file.  Package private; used by SsgKeyStoreManager. */
     File getKeyStoreFile() {
         return new File(KEY_FILE + getId());
     }
 
-    /** Transient in-core cache of KeyStore.  Package private; used by ClientKeyManager. */
+    /** Transient in-core cache of KeyStore.  Package private; used by SsgKeyStoreManager. */
     KeyStore getKeyStore() {
         return keyStore;
     }
 
-    /** Transient in-core cache of KeyStore.  Package private; used by ClientKeyManager. */
+    /** Transient in-core cache of KeyStore.  Package private; used by SsgKeyStoreManager. */
     void setKeyStore(KeyStore keyStore) {
         this.keyStore = keyStore;
     }
 
     /**
      * Transient quick check of whether we have a client cert or not.
-     * Package-private; used by ClientKeyManager.
+     * Package-private; used by SsgKeyStoreManager.
      */
     Boolean getHaveClientCert() {
         return haveClientCert;
@@ -410,7 +410,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     /**
      * Transient quick check of whether we have a client cert or not.
-     * Package-private; used by ClientKeyManager.
+     * Package-private; used by SsgKeyStoreManager.
      */
     void setHaveClientCert(Boolean haveClientCert) {
         this.haveClientCert = haveClientCert;
