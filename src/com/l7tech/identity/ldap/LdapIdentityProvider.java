@@ -390,7 +390,12 @@ public class LdapIdentityProvider implements IdentityProvider {
         boolean atLeastOneUser = false;
         UserMappingConfig[] userTypes = cfg.getUserMappings();
         Collection offensiveUserMappings = new ArrayList();
+        Collection userMappingsWithoutLoginAttribute = new ArrayList();
         for (int i = 0; i < userTypes.length; i++) {
+            if (userTypes[i].getLoginAttrName() == null || userTypes[i].getLoginAttrName().length() < 1) {
+                userMappingsWithoutLoginAttribute.add(userTypes[i]);
+                continue;
+            }
             filter = "(|" +
                          "(&" +
                             "(objectClass=" + userTypes[i].getObjClass() + ")" +
@@ -454,30 +459,48 @@ public class LdapIdentityProvider implements IdentityProvider {
         } catch (NamingException e) {
             logger.log(Level.INFO, "error closing context", e);
         }
-        // report results:
+
+        // merge all errors in a special report
+        StringBuffer error = new StringBuffer();
+
+        if (userMappingsWithoutLoginAttribute.size() > 0) {
+            if (error.length() > 0) error.append('\n');
+            error.append("The following user mapping(s) do not define login attribute.");
+            for (Iterator iterator = userMappingsWithoutLoginAttribute.iterator(); iterator.hasNext();) {
+                UserMappingConfig userMappingConfig = (UserMappingConfig) iterator.next();
+                error.append(" " + userMappingConfig.getObjClass());
+            }
+        }
+
         if (offensiveUserMappings.size() > 0 || offensiveGroupMappings.size() > 0) {
-            String error = "The following mappings caused errors:";
+            if (error.length() > 0) error.append('\n');
+            error.append("The following mappings caused errors:");
             for (Iterator iterator = offensiveUserMappings.iterator(); iterator.hasNext();) {
                 UserMappingConfig userMappingConfig = (UserMappingConfig) iterator.next();
-                error += " User mapping " + userMappingConfig.getObjClass();
+                error.append(" User mapping " + userMappingConfig.getObjClass());
             }
             for (Iterator iterator = offensiveGroupMappings.iterator(); iterator.hasNext();) {
                 GroupMappingConfig groupMappingConfig = (GroupMappingConfig) iterator.next();
-                error += " Group mapping " + groupMappingConfig.getObjClass();
+                error.append(" Group mapping " + groupMappingConfig.getObjClass());
 
             }
-            logger.info("test failed with error: " + error);
-            throw new InvalidIdProviderCfgException(error);
         }
 
         if (!atLeastOneUser) {
-            throw new InvalidIdProviderCfgException("This configuration did not yeild any users");
+            if (error.length() > 0) error.append('\n');
+            error.append("This configuration did not yeild any users");
         }
 
         if (!atLeastOneGroup && groupTypes.length > 0) {
-            throw new InvalidIdProviderCfgException("This configuration did not yeild any group");
+            if (error.length() > 0) error.append('\n');
+            error.append("This configuration did not yeild any group");
         }
-        logger.finest("this ldap config was tested successfully");
+
+
+        if (error.length() > 0) {
+            logger.fine("Test produced following error(s): " + error.toString());
+            throw new InvalidIdProviderCfgException(error.toString());
+        } else logger.finest("this ldap config was tested successfully");
     }
 
     /**
