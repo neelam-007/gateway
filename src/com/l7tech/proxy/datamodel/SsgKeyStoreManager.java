@@ -99,6 +99,8 @@ public class SsgKeyStoreManager {
             getKeyStore(ssg).deleteEntry(ALIAS);
             saveKeyStore(ssg);
             ssg.haveClientCert(Boolean.FALSE);
+            ssg.passwordWorkedForPrivateKey(false);
+            ssg.privateKey(null);
         }
     }
 
@@ -141,19 +143,33 @@ public class SsgKeyStoreManager {
     public static PrivateKey getClientCertPrivateKey(Ssg ssg)
             throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException
     {
-        if (!isClientCertAvailabile(ssg))
-            return null;
-        if (!ssg.isCredentialsConfigured())
-            Managers.getCredentialManager().getCredentials(ssg);
-        try {
-            return (PrivateKey) getKeyStore(ssg).getKey(ALIAS, ssg.password());
-        } catch (KeyStoreException e) {
-            log.error("impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
-            throw new RuntimeException("impossible exception", e);
-        } catch (UnrecoverableKeyException e) {
-            log.error("Private key for client cert with ssg " + ssg + " is unrecoverable with the current password");
-            throw new BadCredentialsException(e);
+        synchronized (ssg) {
+            if (!isClientCertAvailabile(ssg))
+                return null;
+            if (ssg.privateKey() != null)
+                return ssg.privateKey();
+            if (!ssg.isCredentialsConfigured())
+                Managers.getCredentialManager().getCredentials(ssg);
+            try {
+                PrivateKey gotKey = (PrivateKey) getKeyStore(ssg).getKey(ALIAS, ssg.password());
+                ssg.privateKey(gotKey);
+                ssg.passwordWorkedForPrivateKey(true);
+                return gotKey;
+            } catch (KeyStoreException e) {
+                log.error("impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
+                throw new RuntimeException("impossible exception", e);
+            } catch (UnrecoverableKeyException e) {
+                log.error("Private key for client cert with ssg " + ssg + " is unrecoverable with the current password");
+                throw new BadCredentialsException(e);
+            }
         }
+    }
+
+    /**
+     * Check if the current SSG password matches the keystore private key password.
+     */
+    public static boolean isPasswordWorkedForPrivateKey(Ssg ssg) {
+        return ssg.passwordWorkedForPrivateKey();
     }
 
     /**
@@ -311,7 +327,7 @@ public class SsgKeyStoreManager {
             getKeyStore(ssg).setKeyEntry(ALIAS, privateKey, ssg.password(), new Certificate[] { cert });
             saveKeyStore(ssg);
             ssg.haveClientCert(Boolean.TRUE);
+            ssg.privateKey(privateKey);
         }
     }
-
 }
