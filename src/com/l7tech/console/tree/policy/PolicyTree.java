@@ -20,6 +20,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.security.auth.Subject;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.*;
@@ -58,6 +59,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     private TreePath pathSource;				// The path being dragged
     private BufferedImage imgGhost;					// The 'drag image'
     private Point ptOffset = new Point();	// Where, in the drag image, the mouse was clicked
+    private Border topBorder;
 
 
     /**
@@ -93,7 +95,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
      * initialize
      */
     private void initialize() {
-
+        topBorder = BorderFactory.createEmptyBorder(10, 0, 0, 0);
+        setBorder(topBorder);
         // Make this JTree a drag source
         DragSource dragSource = DragSource.getDefaultDragSource();
         dragSource.createDefaultDragGestureRecognizer(this, DnDConstants.ACTION_COPY_OR_MOVE, this);
@@ -612,15 +615,19 @@ public class PolicyTree extends JTree implements DragSourceListener,
         private void dropAssertion(DropTargetDropEvent e) {
             try {
                 final Object transferData = e.getTransferable().getTransferData(AssertionsTree.ASSERTION_DATAFLAVOR);
+                boolean dropAsFirstContainerChild = false;
                 log.fine("DROPPING: " + transferData);
                 AbstractTreeNode node = (AbstractTreeNode)transferData;
                 TreePath path = getSelectionPath();
-
                 if (path == null) {
                     path = new TreePath(getModel().getRoot());
                 } else {
                     Point location = e.getLocation();
                     int row = getRowForLocation(location.x, location.y);
+                    Insets insets = topBorder.getBorderInsets(PolicyTree.this);
+                    if (insets.top >= location.y) {
+                        dropAsFirstContainerChild = true;
+                    }
                     if (row == -1) {
                         path = new TreePath(getModel().getRoot());
                     }
@@ -628,7 +635,12 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 AssertionTreeNode target = (AssertionTreeNode)path.getLastPathComponent();
                 if (target.accept(node)) {
                     e.acceptDrop(e.getDropAction());
-                    target.receive(node);
+                    if (dropAsFirstContainerChild || target instanceof CompositeAssertionTreeNode) {
+                        CompositeAssertionTreeNode compositeAssertionTreeNode = (CompositeAssertionTreeNode)target;
+                        compositeAssertionTreeNode.receive(node, 0);
+                    } else {
+                        target.receive(node);
+                    }
                     e.dropComplete(true);
                 } else {
                     e.rejectDrop();

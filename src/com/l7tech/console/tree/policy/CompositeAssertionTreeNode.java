@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,6 +41,16 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
      * @param node the node to receive
      */
     public boolean receive(AbstractTreeNode node) {
+        return receive(node, getChildCount());
+    }
+
+    /**
+     * Receive the abstract tree node at the given position
+     *
+     * @param node the node to receive
+     * @param position the node position
+     */
+    public boolean receive(AbstractTreeNode node, int position) {
         if (true == super.receive(node)) {
             return true;
         }
@@ -52,7 +61,7 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
             for (int i = 0; i < nass.length; i++) {
                 Assertion nas = nass[i];
                 AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nas);
-                model.insertNodeInto(as, this, getChildCount());
+                model.insertNodeInto(as, this, position);
             }
         } else {
             log.log(Level.WARNING, "Unable to reach the palette tree.");
@@ -60,14 +69,12 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
         return true;
     }
 
+
     protected void loadChildren() {
         CompositeAssertion assertion = (CompositeAssertion)getUserObject();
         children = null;
         LoadChildrenStrategy loader = LoadChildrenStrategy.newStrategy(this);
         loader.loadChildren(this, assertion);
-//        for (Iterator i = assertion.children(); i.hasNext();) {
-//            insert((AssertionTreeNodeFactory.asTreeNode((Assertion)i.next())), index++);
-//        }
     }
 
     /**
