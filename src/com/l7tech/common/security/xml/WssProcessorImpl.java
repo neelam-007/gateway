@@ -122,9 +122,11 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // Process elements one by one
-        NodeList securityChildren = cntx.releventSecurityHeader.getElementsByTagName("*");
-        for (int i = 0; i < securityChildren.getLength(); i++) {
-            Element securityChildToProcess = (Element)securityChildren.item(i);
+        Element securityChildToProcess = XmlUtil.findFirstChildElement(cntx.releventSecurityHeader);
+        //NodeList securityChildren = cntx.releventSecurityHeader.getElementsByTagName("*");
+        //for (int i = 0; i < securityChildren.getLength(); i++) {
+        while (securityChildToProcess != null) {
+            //Element securityChildToProcess = (Element)securityChildren.item(i);
 
             if (securityChildToProcess.getLocalName().equals(SoapUtil.ENCRYPTEDKEY_EL_NAME)) {
                 processEncryptedKey(securityChildToProcess, recipientKey,
@@ -148,6 +150,13 @@ public class WssProcessorImpl implements WssProcessor {
                     logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
                 }
             }
+            Node nextSibling = securityChildToProcess.getNextSibling();
+            while (nextSibling != null && nextSibling.getNodeType() != Node.ELEMENT_NODE) {
+                nextSibling = nextSibling.getNextSibling();
+            }
+            if (nextSibling != null && nextSibling.getNodeType() == Node.ELEMENT_NODE) {
+                securityChildToProcess = (Element)nextSibling;
+            } else securityChildToProcess = null;
         }
 
         // Backward compatibility - if we didn't see a timestamp in the security header, look up in the soap header
