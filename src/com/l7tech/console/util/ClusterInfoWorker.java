@@ -1,7 +1,6 @@
 package com.l7tech.console.util;
 
 import com.l7tech.common.gui.util.SwingWorker;
-import com.l7tech.service.ServiceAdmin;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.ClusterNodeInfo;
@@ -25,7 +24,6 @@ public class ClusterInfoWorker extends SwingWorker {
     private Hashtable currentNodeList;
     private boolean remoteExceptionCaught;
 
-    private ServiceAdmin serviceManager = null;
     static Logger logger = Logger.getLogger(ClusterStatusWorker.class.getName());
 
     public ClusterInfoWorker(ClusterStatusAdmin clusterStatusService, Hashtable currentNodeList) {
@@ -45,16 +43,17 @@ public class ClusterInfoWorker extends SwingWorker {
 
     public Object construct() {
 
-        if (serviceManager == null || clusterStatusService == null) {
-            return null;
+        // create a new empty node list
+        newNodeList = new Hashtable();
+
+        if(clusterStatusService == null) {
+            logger.log(Level.SEVERE, "ClusterServiceAdmin reference is NULL");
+            return newNodeList;
         }
 
         if (currentNodeList == null) {
             throw new RuntimeException("The current node list is NULL");
         }
-
-        // create a new empty node list
-        newNodeList = new Hashtable();
 
         // retrieve node status
         ClusterNodeInfo[] cluster = new ClusterNodeInfo[0];

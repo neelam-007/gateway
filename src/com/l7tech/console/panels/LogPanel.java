@@ -149,6 +149,7 @@ public class LogPanel extends JPanel {
         selectPane.add(leftPane, BorderLayout.WEST);
         selectPane.add(getStatusPane(), BorderLayout.EAST);
 
+
         return selectPane;
     }
 
@@ -160,7 +161,7 @@ public class LogPanel extends JPanel {
         if(filterPane != null) return filterPane;
 
         filterPane = new JPanel();
-        filterPane.setLayout(new BorderLayout());
+        filterPane.setLayout(new FlowLayout());
         filterPane.add(getFilterSlider());
 
         return filterPane;
@@ -333,8 +334,7 @@ public class LogPanel extends JPanel {
         if(statusPane != null)  return statusPane;
 
         statusPane = new JPanel();
-        statusPane.setLayout(new FlowLayout());
-
+        statusPane.setLayout(new GridLayout());
         statusPane.add(getLastUpdateTimeLabel());
 
         return statusPane;
@@ -345,6 +345,7 @@ public class LogPanel extends JPanel {
         if(lastUpdateTimeLabel != null) return lastUpdateTimeLabel;
 
         lastUpdateTimeLabel = new JLabel();
+//        lastUpdateTimeLabel.setVerticalTextPosition(JLabel.CENTER);
         lastUpdateTimeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
         lastUpdateTimeLabel.setText("");
         return lastUpdateTimeLabel;

@@ -60,9 +60,15 @@ public class GatewayLogWindow extends JFrame {
                 });
 
         pack();
-        //todo: need to reorganize this
+        //todo: need to reorganize this -- remove it from LogPanel
         getLogPane().onConnect();
         getLogPane().refreshLogs();
+
+        initAdminConnection();
+        initCaches();
+
+        // refresh the status
+        refreshLogs();
     }
 
     /**
@@ -175,7 +181,7 @@ public class GatewayLogWindow extends JFrame {
 
     }
 
-        private javax.swing.Timer getLogRefreshTimer() {
+    private javax.swing.Timer getLogRefreshTimer() {
 
         if (logRefreshTimer != null) return logRefreshTimer;
 
@@ -210,7 +216,7 @@ public class GatewayLogWindow extends JFrame {
                     getClusterStatusTableModel().fireTableDataChanged();
 */
 
-                    SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy HH:mm:ss aaa");
+                    SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
                     getLogPane().setLastUpdateTime(("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      "));
                     getLogRefreshTimer().start();
                 }
