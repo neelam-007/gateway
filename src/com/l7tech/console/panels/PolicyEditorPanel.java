@@ -371,16 +371,23 @@ public class PolicyEditorPanel extends JPanel {
                       try {
                           TreePath path = e.getTreePath();
                           TreeNode parent = (TreeNode)path.getLastPathComponent();
+                          TreeNode lastNode = null;
                           int[] indices = e.getChildIndices();
                           for (int i = 0; i < indices.length; i++) {
                               int indice = indices[i];
                               TreeNode node = parent.getChildAt(indice);
+                              lastNode = node;
                               if (node instanceof RoutingAssertionTreeNode) {
                                   RoutingAssertionTreeNode rn = (RoutingAssertionTreeNode)node;
                                   ((RoutingAssertion)rn.asAssertion()).setProtectedServiceUrl(service.parsedWsdl().getServiceURI());
                                   ((DefaultTreeModel)policyTree.getModel()).nodeChanged(node);
                               }
                           }
+                          if (!policyTree.isExpanded(path)) {
+                              policyTree.expandPath(path);
+                          }
+                          if (lastNode != null)
+                              policyTree.setSelectionPath(path.pathByAddingChild(lastNode));
                       } catch (WSDLException e1) {
                           ErrorManager.getDefault().
                             notify(Level.WARNING, e1,
