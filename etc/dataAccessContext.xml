@@ -72,7 +72,7 @@
                <idref bean="identityProviderConfigManager"/>
                <idref bean="serviceManager"/>
                <idref bean="trustedCertManager"/>
-               <idref bean="clientCertmanager"/>
+               <idref bean="clientCertManager"/>
                <idref bean="statusUpdateManager"/>
                <idref bean="serviceAdmin"/>
                <idref bean="trustedCertAdmin"/>
