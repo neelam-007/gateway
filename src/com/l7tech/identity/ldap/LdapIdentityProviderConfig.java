@@ -141,6 +141,14 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         props.put(BIND_PASS, bindpasswd);
     }
 
+    public String getTemplateName() {
+        return (String)props.get(BASE_TEMPLATE);
+    }
+
+    public void setTemplateName(String name) {
+        props.put(BASE_TEMPLATE, name);
+    }
+
     private static final String URL = "ldapurl";
     private static final String SEARCH_BASE = "ldapsearchbase";
     private static final String CUSTOM_GROUP_SEARCH_FILTER = "customgrpsearchfilter";
@@ -149,4 +157,5 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String USER_MAPPINGS = "usrmappings";
     private static final String BIND_DN = "ldapBindDN";
     private static final String BIND_PASS = "ldapBindPass";
+    private static final String BASE_TEMPLATE = "originalTemplateName";
 }
