@@ -20,8 +20,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.server.PolicyFilter.FilterManager;
-import com.l7tech.policy.server.PolicyFilter.FilteringException;
+import com.l7tech.policy.server.filter.FilterManager;
+import com.l7tech.policy.server.filter.FilteringException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
