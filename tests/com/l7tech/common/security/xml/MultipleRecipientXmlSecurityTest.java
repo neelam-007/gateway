@@ -259,9 +259,9 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
     private DecorationRequirements defaultDecorationRequirements(Document doc) throws Exception {
         DecorationRequirements output = new DecorationRequirements();
         output.setRecipientCertificate(TestDocuments.getDotNetServerCertificate());
-        output.setSenderCertificate(TestDocuments.getFrancoCertificate());
-        output.setSenderPrivateKey(TestDocuments.getFrancoPrivateKey());
-        output.setSignTimestamp(true);
+        output.setSenderMessageSigningCertificate(TestDocuments.getFrancoCertificate());
+        output.setSenderMessageSigningPrivateKey(TestDocuments.getFrancoPrivateKey());
+        output.setSignTimestamp();
         Element body = SoapUtil.getBodyElement(doc);
         output.getElementsToSign().add(body);
         return output;
@@ -270,9 +270,9 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
     private DecorationRequirements otherDecorationRequirements(Document doc, String actor) throws Exception {
         DecorationRequirements output = new DecorationRequirements();
         output.setRecipientCertificate(TestDocuments.getDotNetServerCertificate());
-        output.setSenderCertificate(TestDocuments.getFrancoCertificate());
-        output.setSenderPrivateKey(TestDocuments.getFrancoPrivateKey());
-        output.setSignTimestamp(true);
+        output.setSenderMessageSigningCertificate(TestDocuments.getFrancoCertificate());
+        output.setSenderMessageSigningPrivateKey(TestDocuments.getFrancoPrivateKey());
+        output.setSignTimestamp();
         Element body = SoapUtil.getBodyElement(doc);
         output.getElementsToSign().add(body);
         output.setSecurityHeaderActor(actor);

@@ -193,10 +193,10 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
 
                     if (clientCert != null) {
                         SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
-                        wssReq.setSenderCertificate(si.getCertificateChain()[0]);
-                        wssReq.setSenderPrivateKey(si.getPrivate());
+                        wssReq.setSenderMessageSigningCertificate(si.getCertificateChain()[0]);
+                        wssReq.setSenderMessageSigningPrivateKey(si.getPrivate());
                         wssReq.setRecipientCertificate(clientCert);
-                        wssReq.setSignTimestamp(true);
+                        wssReq.setSignTimestamp();
                     }
 
                     logger.finest("Designated " + selectedElements.size() + " response elements for encryption");

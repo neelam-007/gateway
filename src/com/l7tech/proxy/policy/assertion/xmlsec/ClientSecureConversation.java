@@ -47,7 +47,7 @@ public class ClientSecureConversation extends ClientAssertion {
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) {
                 DecorationRequirements wssReqs = context.getDefaultWssRequirements();
-                wssReqs.setSignTimestamp(true);
+                wssReqs.setSignTimestamp();
                 wssReqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                     public String getId() {
                         return sessionId;

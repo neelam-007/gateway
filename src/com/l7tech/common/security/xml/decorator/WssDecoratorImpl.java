@@ -106,8 +106,8 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         Element bst = null;
-        if (decorationRequirements.getSenderCertificate() != null && !signList.isEmpty())
-            bst = addX509BinarySecurityToken(securityHeader, decorationRequirements.getSenderCertificate(), c);
+        if (decorationRequirements.getSenderMessageSigningCertificate() != null && !signList.isEmpty())
+            bst = addX509BinarySecurityToken(securityHeader, decorationRequirements.getSenderMessageSigningCertificate(), c);
 
         Element sct = null;
         DecorationRequirements.SecureConversationSession session =
@@ -147,19 +147,14 @@ public class WssDecoratorImpl implements WssDecorator {
                 } else {
                     keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509_2;
                 }
-                senderSigningKey = decorationRequirements.getSenderPrivateKey();
+                senderSigningKey = decorationRequirements.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
             } else if (saml != null) {
                 // sign with SAML token
                 keyInfoReferenceTarget = saml;
-                // TODO USE PROPER SAML ASSERTION VALUETYPE
-                if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
-                    keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509;
-                } else {
-                    keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509_2;
-                }
-                senderSigningKey = decorationRequirements.getSenderPrivateKey();
+                keyInfoValueTypeURI = SoapUtil.VALUETYPE_SAML;
+                senderSigningKey = decorationRequirements.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with saml:Assertion, but senderPrivateKey is null");
             } else

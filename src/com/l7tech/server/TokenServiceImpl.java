@@ -1,8 +1,9 @@
 package com.l7tech.server;
 
 import com.l7tech.common.message.XmlKnob;
-import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
+import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.SignerInfo;
@@ -20,7 +21,6 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -35,9 +35,6 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.common.security.saml.SamlAssertionGenerator;
-import com.l7tech.common.security.saml.SubjectStatement;
-import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
@@ -340,9 +337,9 @@ public class TokenServiceImpl implements TokenService {
 
         WssDecorator wssDecorator = new WssDecoratorImpl();
         DecorationRequirements req = new DecorationRequirements();
-        req.setSignTimestamp(true);
-        req.setSenderCertificate(serverSSLcert);
-        req.setSenderPrivateKey(sslPrivateKey);
+        req.setSignTimestamp();
+        req.setSenderMessageSigningCertificate(serverSSLcert);
+        req.setSenderMessageSigningPrivateKey(sslPrivateKey);
         req.getElementsToSign().add(body);
 
         try {

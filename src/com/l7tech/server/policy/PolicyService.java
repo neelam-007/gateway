@@ -318,9 +318,9 @@ public class PolicyService extends ApplicationObjectSupport {
     private void signresponse(Document responseDoc, Element policyVersion, Element relatesTo) throws GeneralSecurityException, DecoratorException {
         WssDecoratorImpl decorator = new WssDecoratorImpl();
         DecorationRequirements reqmts = new DecorationRequirements();
-        reqmts.setSenderCertificate(serverCert);
-        reqmts.setSenderPrivateKey(privateServerKey);
-        reqmts.setSignTimestamp(true);
+        reqmts.setSenderMessageSigningCertificate(serverCert);
+        reqmts.setSenderMessageSigningPrivateKey(privateServerKey);
+        reqmts.setSignTimestamp();
         try {
             reqmts.getElementsToSign().add(SoapUtil.getBodyElement(responseDoc));
             if (policyVersion != null)

@@ -9,8 +9,6 @@ import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.common.security.saml.SamlAssertionGenerator;
-import com.l7tech.common.security.saml.SubjectStatement;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -128,10 +126,10 @@ public class SignedSamlTest extends TestCase {
         assertNotNull(body);
         // in this case, the request is actually signed by the issuer
         DecorationRequirements req = new DecorationRequirements();
-        req.setSignTimestamp(true);
+        req.setSignTimestamp();
         req.getElementsToSign().add(body);
-        req.setSenderCertificate(caCertChain[0]);
-        req.setSenderPrivateKey(caPrivateKey);
+        req.setSenderMessageSigningCertificate(caCertChain[0]);
+        req.setSenderMessageSigningPrivateKey(caPrivateKey);
         new WssDecoratorImpl().decorateMessage(request, req);
 
         // hack message so original signature refers to the saml token instead of the BST
@@ -167,10 +165,10 @@ public class SignedSamlTest extends TestCase {
         assertNotNull(body);
 
         DecorationRequirements req = new DecorationRequirements();
-        req.setSignTimestamp(true);
+        req.setSignTimestamp();
         req.getElementsToSign().add(body);
-        req.setSenderCertificate(clientCertChain[0]);
-        req.setSenderPrivateKey(clientPrivateKey);
+        req.setSenderMessageSigningCertificate(clientCertChain[0]);
+        req.setSenderMessageSigningPrivateKey(clientPrivateKey);
         new WssDecoratorImpl().decorateMessage(request, req);
 
         // Hand-hack the decorated message, replacing the BST with the saml:assertion

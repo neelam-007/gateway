@@ -6,7 +6,7 @@
 
 package com.l7tech.common.security.token;
 
-import java.security.cert.X509Certificate;
+
 
 /**
  * @author alex
@@ -20,14 +20,7 @@ public interface SigningSecurityToken extends SecurityToken {
     boolean isPossessionProved();
 
     /**
-     * Mark this token as having proved the possession of its corresponding private key.
-     * <p>
-     * Normally, only {@link com.l7tech.common.security.xml.processor.WssProcessorImpl} should call this.
+     * @return An array of elements signed by this signing security token.  May be empty but never null.
      */
-    void onPossessionProved();
-
-    /**
-     * @return the certificate that was used to sign one or more elements of the message that contained this token
-     */
-    X509Certificate getMessageSigningCertificate();
+    SignedElement[] getSignedElements();
 }

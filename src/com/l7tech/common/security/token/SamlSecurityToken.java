@@ -63,7 +63,10 @@ public interface SamlSecurityToken extends SigningSecurityToken {
      */
     boolean isExpiringSoon(int preexpireSec);
 
-    X509Certificate getSigningCertificate();
+    /**
+     * @return the certificate that was used to sign one or more elements of the message that contained this token
+     */
+    X509Certificate getMessageSigningCertificate();
 
     public static final class ConfirmationMethod {
         private final String name;

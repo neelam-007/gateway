@@ -218,8 +218,8 @@ public class SamlAssertionGenerator {
                 }
                 elementsToSign.add(bodyElement);
                 dr.setSenderSamlToken(assertionDoc.getDocumentElement());
-                dr.setSenderPrivateKey(attestingEntity.getPrivate());
-                dr.setSenderCertificate(attestingEntity.getCertificateChain()[0]);
+                dr.setSenderMessageSigningPrivateKey(attestingEntity.getPrivate());
+                dr.setSenderMessageSigningCertificate(attestingEntity.getCertificateChain()[0]);
             }
             wssDecorator.decorateMessage(soapMessage, dr);
         } catch (Throwable e) {

@@ -69,8 +69,8 @@ public class ClientSamlAuthenticationStatement extends ClientAssertion {
                     }
                     if (privateKey != null) {
                         wssReqs.setSenderSamlToken(ass.asElement(), true); // sign the assertion into the msg   
-                        wssReqs.setSignTimestamp(true);
-                        wssReqs.setSenderPrivateKey(privateKey);
+                        wssReqs.setSignTimestamp();
+                        wssReqs.setSenderMessageSigningPrivateKey(privateKey);
                     } else {
                         wssReqs.setSenderSamlToken(ass.asElement(), false); // can't sign the assertion
                     }

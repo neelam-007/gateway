@@ -102,9 +102,9 @@ public class TokenServiceClient {
             WssDecorator wssDecorator = new WssDecoratorImpl();
             DecorationRequirements req = new DecorationRequirements();
             if (clientPrivateKey != null && clientCertificate != null) {
-                req.setSenderCertificate(clientCertificate);
-                req.setSenderPrivateKey(clientPrivateKey);
-                req.setSignTimestamp(true);
+                req.setSenderMessageSigningCertificate(clientCertificate);
+                req.setSenderMessageSigningPrivateKey(clientPrivateKey);
+                req.setSignTimestamp();
                 req.getElementsToSign().add(body);
             }
             req.setTimestampCreatedDate(timestampCreatedDate);

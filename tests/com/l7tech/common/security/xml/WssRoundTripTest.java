@@ -146,6 +146,11 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument()));
     }
 
+    public void testSignedSamlSenderVouchesRequest() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SignedSamlSenderVouchesRequest",
+                                               wssDecoratorTest.getSignedSamlSenderVouchesRequestTestDocument()));
+    }
+
     public void testSignedEmptyElement() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedEmptyElement",
                                                wssDecoratorTest.getSignedEmptyElementTestDocument()));
@@ -192,13 +197,11 @@ public class WssRoundTripTest extends TestCase {
 
         log.info("Message before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(message));
         DecorationRequirements reqs = new DecorationRequirements();
-        if (td.senderSamlAssertion != null)
-            reqs.setSenderSamlToken(td.senderSamlAssertion);
-        else
-            reqs.setSenderCertificate(td.senderCert);
+        reqs.setSenderSamlToken(td.senderSamlAssertion, td.signSamlToken);
+        reqs.setSenderMessageSigningCertificate(td.senderCert);
         reqs.setRecipientCertificate(td.recipientCert);
-        reqs.setSenderPrivateKey(td.senderKey);
-        reqs.setSignTimestamp(td.signTimestamp);
+        reqs.setSenderMessageSigningPrivateKey(td.senderKey);
+        reqs.setSignTimestamp();
         reqs.setUsernameTokenCredentials(null);
         if (td.secureConversationKey != null)
             reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
@@ -240,6 +243,22 @@ public class WssRoundTripTest extends TestCase {
         assertNotNull(encrypted);
         SignedElement[] signed = r.getElementsThatWereSigned();
         assertNotNull(signed);
+
+        // Output security tokens
+        SecurityToken[] tokens = r.getSecurityTokens();
+        for (int i = 0; i < tokens.length; i++) {
+            SecurityToken token = tokens[i];
+            log.info("Got security token: " + token.getClass() + " type=" + token.getType());
+            if (token instanceof SigningSecurityToken) {
+                SigningSecurityToken signingSecurityToken = (SigningSecurityToken)token;
+                log.info("It's a signing security token.  possessionProved=" + signingSecurityToken.isPossessionProved());
+                SignedElement[] signedElements = signingSecurityToken.getSignedElements();
+                for (int j = 0; j < signedElements.length; j++) {
+                    SignedElement signedElement = signedElements[j];
+                    log.info("It was used to sign: " + signedElement.asElement().getLocalName());
+                }
+            }
+        }
 
         // If timestamp was supposed to be signed, make sure it actually was
         if (td.signTimestamp) {

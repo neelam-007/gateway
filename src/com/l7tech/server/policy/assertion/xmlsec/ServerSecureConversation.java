@@ -96,7 +96,7 @@ public class ServerSecureConversation implements ServerAssertion {
                 } catch (SAXException e) {
                     throw new CausedIOException(e);
                 }
-                wssReq.setSignTimestamp(true);
+                wssReq.setSignTimestamp();
                 wssReq.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                     public String getId() {
                         return session.getIdentifier();

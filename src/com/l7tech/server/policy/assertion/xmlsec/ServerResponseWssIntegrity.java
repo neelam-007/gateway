@@ -16,9 +16,9 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.logging.Logger;
-import java.security.cert.CertificateException;
 
 /**
  * XML Digital signature on the soap response sent from the ssg server to the requestor (probably proxy). Also does
@@ -113,10 +113,10 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                     logger.severe(msg);
                     return AssertionStatus.SERVER_ERROR;
                 }
-                wssReq.setSenderCertificate(si.getCertificateChain()[0]);
-                wssReq.setSenderPrivateKey(si.getPrivate());
+                wssReq.setSenderMessageSigningCertificate(si.getCertificateChain()[0]);
+                wssReq.setSenderMessageSigningPrivateKey(si.getPrivate());
                 wssReq.getElementsToSign().addAll(selectedElements);
-                wssReq.setSignTimestamp(true);
+                wssReq.setSignTimestamp();
                 logger.fine("Designated " + selectedElements.size() + " response elements for signing");
 
                 return AssertionStatus.NONE;

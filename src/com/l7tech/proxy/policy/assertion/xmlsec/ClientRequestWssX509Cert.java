@@ -60,9 +60,9 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
                     } else {
                         wssReqs = context.getAlternateWssRequirements(subject.getRecipientContext());
                     }
-                    wssReqs.setSenderCertificate(userCert);
-                    wssReqs.setSenderPrivateKey(userPrivateKey);
-                    wssReqs.setSignTimestamp(true);
+                    wssReqs.setSenderMessageSigningCertificate(userCert);
+                    wssReqs.setSenderMessageSigningPrivateKey(userPrivateKey);
+                    wssReqs.setSignTimestamp();
                     return AssertionStatus.NONE;
 
                 } catch (IOException e) {

@@ -53,7 +53,7 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
                 // get the client cert and private key
                 // We must have credentials to get the private key
                 DecorationRequirements wssReqs = context.getDefaultWssRequirements();
-                wssReqs.setSignTimestamp(true);
+                wssReqs.setSignTimestamp();
 
                 // If we still haven't yet seen a signature method, assume a WSS signature.
                 if (!wssReqs.hasSignatureSource()) {
@@ -64,9 +64,9 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
                     final X509Certificate userCert = ssg.getClientCertificate();
                     final X509Certificate ssgCert = ssg.getServerCertificate();
                     wssReqs.setRecipientCertificate(ssgCert);
-                    wssReqs.setSenderCertificate(userCert);
-                    wssReqs.setSenderPrivateKey(userPrivateKey);
-                    wssReqs.setSignTimestamp(true);
+                    wssReqs.setSenderMessageSigningCertificate(userCert);
+                    wssReqs.setSenderMessageSigningPrivateKey(userPrivateKey);
+                    wssReqs.setSignTimestamp();
                 }
 
                 return AssertionStatus.NONE;

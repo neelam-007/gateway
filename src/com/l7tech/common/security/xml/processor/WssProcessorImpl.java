@@ -49,18 +49,6 @@ public class WssProcessorImpl implements WssProcessor {
         JceProvider.init();
     }
 
-    private static class ParsedElementImpl implements ParsedElement {
-        private final Element element;
-
-        public ParsedElementImpl(Element element) {
-            this.element = element;
-        }
-
-        public Element asElement() {
-            return element;
-        }
-    }
-
     /**
      * This processes a soap message in-place.
      * That is, the contents of the Header/Security are processed as per the WSS rules.
@@ -600,7 +588,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
         final X509Certificate finalcert = referencedCert;
         SecurityToken rememberedSecToken = new X509SecurityTokenImpl(finalcert,
-                                                                                  binarySecurityTokenElement);
+                                                                     binarySecurityTokenElement);
         cntx.securityTokens.add(rememberedSecToken);
         cntx.x509TokensById.put(wsuId, rememberedSecToken);
     }
@@ -621,7 +609,7 @@ public class WssProcessorImpl implements WssProcessor {
         context.x509TokensById.put(samlToken.getElementId(), samlToken);
     }
 
-    private SigningSecurityToken resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
+    private MutableX509SigningSecurityToken resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
         // TODO SAML Assertion reference by URI (Bug #1434)
         // Looking for reference to a wsse:BinarySecurityToken or to a derived key
         // 1. look for a wsse:SecurityTokenReference element
@@ -648,7 +636,7 @@ public class WssProcessorImpl implements WssProcessor {
                     uriAttr = uriAttr.substring(1);
                 }
                 // try to see if this reference matches a previously parsed SigningSecurityToken
-                final SigningSecurityToken token = (SigningSecurityToken)cntx.x509TokensById.get(uriAttr);
+                final MutableX509SigningSecurityToken token = (MutableX509SigningSecurityToken)cntx.x509TokensById.get(uriAttr);
                 if (token != null) {
                     logger.finest("The keyInfo referred to a previously parsed Security Token '" + uriAttr + "'");
                     return token;
@@ -743,7 +731,7 @@ public class WssProcessorImpl implements WssProcessor {
         // Try to find ref to derived key
         final DerivedKeyTokenImpl dkt = resolveDerivedKeyByRef(keyInfoElement, cntx);
         // Try to resolve cert by reference
-        final SigningSecurityToken signingCertToken = resolveCertByRef(keyInfoElement, cntx);
+        final MutableX509SigningSecurityToken signingCertToken = resolveCertByRef(keyInfoElement, cntx);
 
         if (signingCertToken != null) {
             signingCert = signingCertToken.getMessageSigningCertificate();
@@ -794,16 +782,9 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException(msg.toString());
         }
 
-        // This certificate successfully validated a signature.  Consider proof-of-possession of private key
-        // to have been successful.
-        if (signingCertToken != null) {
-            signingCertToken.onPossessionProved();
-        }
-        if (dkt != null)
-            dkt.getSecurityContextToken().onPossessionProved();            
-
         // Remember which elements were covered
-        for (int i = 0; i < validity.getNumberOfReferences(); i++) {
+        final int numberOfReferences = validity.getNumberOfReferences();
+        for (int i = 0; i < numberOfReferences; i++) {
             // Resolve each elements one by one.
             String elementCoveredURI = validity.getReferenceURI(i);
             Element elementCovered = SoapUtil.getElementByWsuId(sigElement.getOwnerDocument(), elementCoveredURI);
@@ -818,24 +799,31 @@ public class WssProcessorImpl implements WssProcessor {
             // make reference to this element
             final Element finalElementCovered = elementCovered;
             if (signingCertToken != null) {
-                cntx.elementsThatWereSigned.add(new SignedElement() {
+                final SignedElement signedElement = new SignedElement() {
                     public SecurityToken getSigningSecurityToken() {
                         return signingCertToken;
                     }
                     public Element asElement() {
                         return finalElementCovered;
                     }
-                });
+                };
+                cntx.elementsThatWereSigned.add(signedElement);
+                signingCertToken.addSignedElement(signedElement);
+                signingCertToken.onPossessionProved();
             } else if (dkt != null) {
-                cntx.elementsThatWereSigned.add(new SignedElement() {
-                    public SecurityToken getSigningSecurityToken() {
-                        return dkt.getSecurityContextToken();
-                    }
-                    public Element asElement() {
-                        return finalElementCovered;
-                    }
-                });
-            }
+                final SignedElement signedElement = new SignedElement() {
+                                    public SecurityToken getSigningSecurityToken() {
+                                        return dkt.getSecurityContextToken();
+                                    }
+                                    public Element asElement() {
+                                        return finalElementCovered;
+                                    }
+                                };
+                cntx.elementsThatWereSigned.add(signedElement);
+                dkt.getSecurityContextToken().addSignedElement(signedElement);
+                dkt.getSecurityContextToken().onPossessionProved();
+            } else
+                throw new RuntimeException("No signing security token found");
 
             // if this is a timestamp in the security header, note that it was signed
             if (SoapUtil.WSU_URIS.contains(elementCovered.getNamespaceURI()) &&
@@ -922,14 +910,12 @@ public class WssProcessorImpl implements WssProcessor {
         Map x509TokensById = new HashMap();
     }
 
-    private static class X509SecurityTokenImpl implements X509SecurityToken, SigningSecurityToken {
+    private static class X509SecurityTokenImpl extends MutableX509SigningSecurityToken implements X509SecurityToken {
         private final X509Certificate finalcert;
-        private final Element binarySecurityTokenElement;
-        private boolean possessionProved = false;
 
         public X509SecurityTokenImpl(X509Certificate finalcert, Element binarySecurityTokenElement) {
+            super(binarySecurityTokenElement);
             this.finalcert = finalcert;
-            this.binarySecurityTokenElement = binarySecurityTokenElement;
         }
 
         public SecurityTokenType getType() {
@@ -937,15 +923,11 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         public String getElementId() {
-            return SoapUtil.getElementWsuId(binarySecurityTokenElement);
+            return SoapUtil.getElementWsuId(asElement());
         }
 
         public X509Certificate getMessageSigningCertificate() {
             return finalcert;
-        }
-
-        public Element asElement() {
-            return binarySecurityTokenElement;
         }
 
         public X509Certificate asX509Certificate() {
@@ -954,14 +936,6 @@ public class WssProcessorImpl implements WssProcessor {
 
         public String toString() {
             return "X509SecurityToken: " + finalcert.toString();
-        }
-
-        public boolean isPossessionProved() {
-            return possessionProved;
-        }
-
-        public void onPossessionProved() {
-            possessionProved = true;
         }
     }
 
@@ -1034,12 +1008,10 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private static class SecurityContextTokenImpl extends ParsedElementImpl implements SecurityContextToken {
+    private static class SecurityContextTokenImpl extends MutableSigningSecurityToken implements SecurityContextToken {
         private final SecurityContext secContext;
         private final String identifier;
         private final String elementWsuId;
-
-        private boolean possessionProved = false;
 
         public SecurityContextTokenImpl(SecurityContext secContext, Element secConTokEl, String identifier) {
             super(secConTokEl);
@@ -1062,14 +1034,6 @@ public class WssProcessorImpl implements WssProcessor {
 
         public String getContextIdentifier() {
             return identifier;
-        }
-
-        public boolean isPossessionProved() {
-            return possessionProved;
-        }
-
-        void onPossessionProved() {
-            possessionProved = true;
         }
 
         public String toString() {

@@ -29,41 +29,69 @@ public class DecorationRequirements {
         this.recipientCertificate = recipientCertificate;
     }
 
-    public X509Certificate getSenderCertificate() {
-        return senderCertificate;
+    /**
+     * Get the sender's message signing certificate.
+     *
+     * @return The signing cert, if it should be encoded as a BST, or null.
+     * @see #setSenderMessageSigningCertificate
+     */
+    public X509Certificate getSenderMessageSigningCertificate() {
+        return senderMessageSigningCertificate;
     }
 
-    public void setSenderCertificate(X509Certificate senderCertificate) {
-        this.senderCertificate = senderCertificate;
+    /**
+     * Set the sender's message signing certificate.  This must match the value of senderMessageSigningPrivateKey,
+     * if it too is specified.
+     * <p>
+     * This does not need to be specified when using a SAML assertion unless the message signer certificate
+     * is not included in the SAML assertion.  For example:
+     * <p>
+     * If senderSamlTicket is set to a Holder-of-key assertion, no senderMessageSigningCertificate should be set
+     * since the SAML subject cert is the message signing cert.
+     * <p>
+     * If senderSamlTicket is set to a Sender-Vouches assertion, a senderMessageSigningCertificate should be set.
+     * Sometimes this will be the same as the SAML assertion's issuer certificate, but not necessarily.
+     * <p>
+     * TODO use SignerInfo instead; possibly make SamlAssertion and X509BinarySecurityToken both implement
+     * some kind of "message signature source" interface.
+     * @param senderMessageSigningCertificate the signing cert, if it should be encoded as a BST, or null.
+     */
+    public void setSenderMessageSigningCertificate(X509Certificate senderMessageSigningCertificate) {
+        this.senderMessageSigningCertificate = senderMessageSigningCertificate;
     }
 
-    public PrivateKey getSenderPrivateKey() {
-        return senderPrivateKey;
+    public PrivateKey getSenderMessageSigningPrivateKey() {
+        return senderMessageSigningPrivateKey;
     }
 
-    public void setSenderPrivateKey(PrivateKey senderPrivateKey) {
-        this.senderPrivateKey = senderPrivateKey;
+    public void setSenderMessageSigningPrivateKey(PrivateKey senderMessageSigningPrivateKey) {
+        this.senderMessageSigningPrivateKey = senderMessageSigningPrivateKey;
     }
 
+    /**
+     * Check if a signed timestamp is required to be present.
+     * @return true if a signed timestamp will always be added.
+     * @see #setSignTimestamp
+     */
     public boolean isSignTimestamp() {
         return signTimestamp;
     }
 
     /**
-     * Set whether a signed timestamp is required.<p>
+     * Require a signed timestamp to be present.<p>
      * <p/>
-     * If this is true, a timestamp will be added to the document regardless of the
+     * If this is set, a timestamp will be added to the document regardless of the
      * content of elementsToSign.<p>
      * <p/>
-     * If this is false, a timestamp will added to the document only if elementsToSign
+     * Otherwise, a timestamp will added to the document only if elementsToSign
      * is non-empty.<p>
      * <p/>
      * Regardless of this setting, if a timestamp is added to the document it will always be signed,
      * either directly or indirectly.  It will be signed directly unless it will be covered by an
      * Envelope signature.<p>
      */
-    public void setSignTimestamp(boolean signTimestamp) {
-        this.signTimestamp = signTimestamp;
+    public void setSignTimestamp() {
+        this.signTimestamp = true;
     }
 
     /**
@@ -192,7 +220,7 @@ public class DecorationRequirements {
      */
     public boolean hasSignatureSource() {
         return senderSamlToken != null || secureConversationSession != null ||
-          (senderCertificate != null && senderPrivateKey != null);
+          (senderMessageSigningCertificate != null && senderMessageSigningPrivateKey != null);
     }
 
     /**
@@ -215,11 +243,11 @@ public class DecorationRequirements {
     }
 
     private X509Certificate recipientCertificate = null;
-    private X509Certificate senderCertificate = null;
+    private X509Certificate senderMessageSigningCertificate = null;
+    private PrivateKey senderMessageSigningPrivateKey = null;
     private LoginCredentials usernameTokenCredentials = null;
     private Element senderSamlToken = null;
     private SecureConversationSession secureConversationSession = null;
-    private PrivateKey senderPrivateKey = null;
     private boolean signTimestamp;
     private Set elementsToEncrypt = new LinkedHashSet();
     private Set elementsToSign = new LinkedHashSet();

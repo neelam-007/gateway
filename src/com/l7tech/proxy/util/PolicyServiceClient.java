@@ -76,9 +76,9 @@ public class PolicyServiceClient {
             req.setSenderSamlToken(samlAss.asElement(), canSign);
         }
         if (canSign) {
-            req.setSenderCertificate(clientCert);
-            req.setSenderPrivateKey(clientKey);
-            req.setSignTimestamp(true);
+            req.setSenderMessageSigningCertificate(clientCert);
+            req.setSenderMessageSigningPrivateKey(clientKey);
+            req.setSignTimestamp();
         }
         try {
             Element header = SoapUtil.getHeaderElement(msg);

@@ -12,6 +12,7 @@ import com.ibm.xml.dsig.Validity;
 import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.xml.processor.MutableX509SigningSecurityToken;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -37,17 +38,17 @@ import java.util.logging.Logger;
 /**
  * Encapsulates an abstract saml:Assertion SecurityToken.
  */
-public class SamlAssertion implements SamlSecurityToken {
+public class SamlAssertion extends MutableX509SigningSecurityToken implements SamlSecurityToken {
     protected static final Logger logger = Logger.getLogger(SamlAssertion.class.getName());
     private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 
-    Element assertionElement = null;
-    final AssertionType assertion;
-    boolean isSigned = false;
-    ConfirmationMethod confirmationMethod = null;
-    X509Certificate subjectCertificate = null;
-    X509Certificate signingCertificate = null;
-    X509Certificate issuerCertificate = null;
+    private final AssertionType assertion;
+
+    private Element assertionElement = null;
+    private boolean isSigned = false;
+    private ConfirmationMethod confirmationMethod = null;
+    private X509Certificate subjectCertificate = null;
+    private X509Certificate issuerCertificate = null;
     private String assertionId = null;
     private Calendar expires = null;
     private String nameIdentifierFormat;
@@ -85,6 +86,7 @@ public class SamlAssertion implements SamlSecurityToken {
      * @param ass xmlassertion the xml element containing the assertion
      */
     public SamlAssertion(Element ass) throws SAXException, SamlException {
+        super(ass);
         assertionElement = ass;
         assertionId = assertionElement.getAttribute("AssertionID");
         if (assertionId == null || assertionId.length() < 1)
@@ -143,15 +145,12 @@ public class SamlAssertion implements SamlSecurityToken {
                 String confMethod = confMethods[0];
                 if (confMethod.indexOf("holder-of-key") >= 0) {
                     confirmationMethod = HOLDER_OF_KEY;
-                    signingCertificate = subjectCertificate;
                 } else if (confMethod.indexOf("sender-vouches") >= 0) {
                     confirmationMethod = SENDER_VOUCHES;
-                    signingCertificate = issuerCertificate;
                 } else {
                     String msg = "Could not determine the saml ConfirmationMethod (neither holder-of-key nor sender-vouches)";
                     logger.info(msg);
                     confirmationMethod = null;
-                    signingCertificate = null;
                 }
 
                 KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
@@ -320,15 +319,6 @@ public class SamlAssertion implements SamlSecurityToken {
         Calendar nowUtc = Calendar.getInstance(UTC_TIME_ZONE);
         nowUtc.add(Calendar.SECOND, preexpireSec);
         return !expires.after(nowUtc);
-    }
-
-    public X509Certificate getSigningCertificate() {
-        if (isHolderOfKey())
-            return subjectCertificate;
-        else if (isSenderVouches())
-            return issuerCertificate;
-        else
-            return null;
     }
 
     /** @return the Xml Beans assertion type.  Never null. */
