@@ -70,6 +70,7 @@ public class FilterManager {
             throw new FilteringException(e);
         }
 
+
         // start at the top
         Assertion rootassertion = null;
         // modify the assertion tree
@@ -79,6 +80,8 @@ public class FilterManager {
             throw new FilteringException(e);
         }
         applyAllFilters(policyRequestor, rootassertion);
+
+        localCopyOfService.setOid(policyToFilter.getOid());
         localCopyOfService.setPolicyXml(WspWriter.getPolicyXml(rootassertion));
         return localCopyOfService;
     }
