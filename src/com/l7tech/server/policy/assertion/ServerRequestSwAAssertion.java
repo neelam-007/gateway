@@ -65,7 +65,6 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
 
         List result = null;
-        boolean operationFound = false;
         XmlRequest xreq = (XmlRequest) request;
         boolean assertionStatusOK = true;
 
@@ -74,14 +73,16 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
             try {
                 Document doc = xreq.getDocument();
 
-                // look for operation whose xpath expression can find the operation in the request
                 Iterator bindingItr = _data.getBindings().keySet().iterator();
-                while(!operationFound && bindingItr.hasNext()) {
+
+                // while next binding found in assertion
+                while(bindingItr.hasNext()) {
                     String bindingName = (String) bindingItr.next();
                     BindingInfo binding = (BindingInfo) _data.getBindings().get(bindingName);
 
                     Iterator boItr = binding.getBindingOperations().keySet().iterator();
 
+                    // while next operation of the binding found in assertion
                     while(boItr.hasNext()) {
                         String boName= (String) boItr.next();
                         BindingOperationInfo bo = (BindingOperationInfo) binding.getBindingOperations().get(boName);
@@ -89,91 +90,96 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         DOMXPath operationXPath = getDOMXpath(bo.getXpath());
                         result = operationXPath.selectNodes(doc);
 
+                        // operation element found in the request
                         if(result != null) {
                             Object o = result.get(0);
-                            if ( o instanceof Node ) {
-                                Node n = (Node)o;
-                                int type = n.getNodeType();
+                            if (!(o instanceof Node )) throw new RuntimeException("The values of the map is not org.w3c.dom.Node");
 
-                                if(type == Node.ELEMENT_NODE) {
-                                    Element operationElement = XmlUtil.findFirstChildElement((Element) n);
-                                    logger.fine("The operation " + bo.getName() + " is found in the request");
+                            Node operationNodeRequest = (Node)o;
+                            int type = operationNodeRequest.getNodeType();
 
-                                } else {
-                                    logger.info( "XPath pattern " + bo.getXpath() + " found some other node '" + n.toString() + "'" );
-                                    return AssertionStatus.FALSIFIED;
-                                }
+                            if(type == Node.ELEMENT_NODE) {
+                                Element operationElementRequest = XmlUtil.findFirstChildElement((Element) operationNodeRequest);
+                                logger.fine("The operation " + bo.getName() + " is found in the request");
 
-                                Iterator parameterItr = bo.getMultipart().keySet().iterator();
-                                // get parameter
-                                while(assertionStatusOK && parameterItr.hasNext()) {
-                                    String parameterName= (String) parameterItr.next();
-                                    MimePartInfo part = (MimePartInfo) bo.getMultipart().get(parameterName);
+                            } else {
+                                logger.info( "XPath pattern " + bo.getXpath() + " found some other node '" + operationNodeRequest.toString() + "'" );
+                                return AssertionStatus.FALSIFIED;
+                            }
 
-                                    DOMXPath parameterXPath = getDOMXpath(bo.getXpath() + "/" + part.getName());
-                                    result = parameterXPath.selectNodes(doc);
+                            Iterator parameterItr = bo.getMultipart().keySet().iterator();
 
-                                    if(result != null) {
-                                        o = result.get(0);
-                                        if ( o instanceof Node ) {
-                                            n = (Node)o;
-                                            type = n.getNodeType();
-                                            if(type == Node.ELEMENT_NODE) {
+                            // for each input parameter of the operation of the binding in WSDL
+                            while(assertionStatusOK && parameterItr.hasNext()) {
+                                String parameterName= (String) parameterItr.next();
+                                MimePartInfo part = (MimePartInfo) bo.getMultipart().get(parameterName);
 
-                                                logger.fine("The parameter " + part.getName() + " is found in the request");
-                                                Element parameterElement = (Element) n;
-                                                Attr href = parameterElement.getAttributeNode("href");
-                                                String mimePartCID = href.getValue();
-                                                logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePartCID);
+                                DOMXPath parameterXPath = getDOMXpath(bo.getXpath() + "/" + part.getName());
+                                result = parameterXPath.selectNodes(doc);
 
-                                                MultipartUtil.Part mimepart = xreq.getMultipartReader().getMessagePart(mimePartCID);
+                                // parameter element found in the request
+                                if(result != null) {
+                                    Object obj = result.get(0);
+                                    if (!(obj instanceof Node )) throw new RuntimeException("The values of the map is not org.w3c.dom.Node");
 
-                                                if(mimepart != null) {
-                                                    // validate the content type
-                                                    String requiredContentType = part.getContentType();
-                                                    if(requiredContentType.equals("text/enriched")) {
-                                                        // text/enriched implies that text/plain is allowed
-                                                        if(!(!mimepart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(requiredContentType)) &&
-                                                           (mimepart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals("text/plain"))) {
-                                                            logger.info("The content type of the attachment must be: " + part.getContentType());
-                                                            return AssertionStatus.FALSIFIED;
-                                                        }
-                                                    } else {
-                                                        if(!mimepart.getHeader(XmlUtil.CONTENT_TYPE).equals(part.getContentType())) {
-                                                            logger.info("The content type of the attachment must be: " + part.getContentType());
-                                                            return AssertionStatus.FALSIFIED;
-                                                        }
-                                                    }
+                                    Node parameterNodeRequest = (Node)obj;
+                                    type = parameterNodeRequest.getNodeType();
+                                    if(type == Node.ELEMENT_NODE) {
 
-                                                    // check the max. length allowed
-                                                    if(mimepart.getContent().length() > part.getMaxLength() * 1000) {
-                                                        logger.info("The length of the attachment exceeds the limit: " + part.getMaxLength());
-                                                        return AssertionStatus.FALSIFIED;
-                                                    }
-                                                } else {
-                                                    logger.info("The required attachment is not found in the request. Content Id of the attachment required: " + mimePartCID);
+                                        logger.fine("The parameter " + part.getName() + " is found in the request");
+                                        Element parameterElementRequest = (Element) parameterNodeRequest;
+                                        Attr href = parameterElementRequest.getAttributeNode("href");
+                                        String mimePartCID = href.getValue();
+                                        logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePartCID);
+
+                                        MultipartUtil.Part mimepart = xreq.getMultipartReader().getMessagePart(mimePartCID);
+
+                                        if(mimepart != null) {
+                                            // validate the content type
+                                            String requiredContentType = part.getContentType();
+                                            if(requiredContentType.equals("text/enriched")) {
+                                                // text/enriched implies that text/plain is allowed
+                                                if(!(!mimepart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(requiredContentType)) &&
+                                                        (mimepart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals("text/plain"))) {
+                                                    logger.info("The content type of the attachment must be: " + part.getContentType());
                                                     return AssertionStatus.FALSIFIED;
                                                 }
                                             } else {
-                                                logger.info( "XPath pattern " + bo.getXpath() + "/" + part.getName() + " found some other node '" + n.toString() + "'" );
+                                                if(!mimepart.getHeader(XmlUtil.CONTENT_TYPE).equals(part.getContentType())) {
+                                                    logger.info("The content type of the attachment must be: " + part.getContentType());
+                                                    return AssertionStatus.FALSIFIED;
+                                                }
+                                            }
+
+                                            // check the max. length allowed
+                                            if(mimepart.getContent().length() > part.getMaxLength() * 1000) {
+                                                logger.info("The length of the attachment exceeds the limit: " + part.getMaxLength());
                                                 return AssertionStatus.FALSIFIED;
                                             }
+                                        } else {
+                                            logger.info("The required attachment is not found in the request. Content Id of the attachment required: " + mimePartCID);
+                                            return AssertionStatus.FALSIFIED;
                                         }
+                                    } else {
+                                        logger.info( "XPath pattern " + bo.getXpath() + "/" + part.getName() + " found some other node '" + parameterNodeRequest.toString() + "'" );
+                                        return AssertionStatus.FALSIFIED;
                                     }
+
                                 }
+                            } // for each input parameter
 
-                                // all attachments are satisfied
+                            // all attachments are satisfied
 
-                                // also check if there is any unexpected attachments in the request
-
+                            // also check if there is any unexpected attachments in the request
+                            if(xreq.getMultipartReader().hasNextMessagePart()) {
+                                logger.info( "Unexpected attachment(s) found in the request." );
+                                return AssertionStatus.FALSIFIED;
+                            } else {
                                 return AssertionStatus.NONE;
-
                             }
-                        }
-                        operationFound = true;
-                        break;
-                    }
-                }
+                        } // operation element found in the request
+                    }  // while next operation of the binding found in assertion
+                }   // while next binding found in assertion
             } catch (SAXException e) {
                 logger.log(Level.WARNING, "Caught SAXException when retrieving xml document from request", e);
                 return AssertionStatus.SERVER_ERROR;

@@ -40,6 +40,13 @@ public class MultipartMessageReader {
         return atLeastOneAttachmentParsed;
     }
 
+    public boolean hasNextMessagePart() throws IOException {
+        if(getMessagePart(multipartParts.size()) == null) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Gets the XML part of the message from the provided reader.
      * <p>
