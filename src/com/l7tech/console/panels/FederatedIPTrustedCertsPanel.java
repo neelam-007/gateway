@@ -3,7 +3,10 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.event.*;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
@@ -11,6 +14,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityHeader;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.Spacer;
@@ -46,6 +50,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     private TrustedCertsTable trustedCertTable = null;
     private X509Certificate ssgcert = null;
+    private Collection fedIdProvConfigs = new ArrayList();
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
@@ -342,6 +347,8 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
                     throw new RuntimeException(e1); //  not expected to happen
                 } catch (CertificateException e1) {
                     throw new RuntimeException(e1); //  not expected to happen
+                } catch (FindException e1) {
+                    throw new RuntimeException(e1); //  not expected to happen
                 }
             } else {
                 // cert alreay exsits
@@ -353,7 +360,28 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     };
 
-    private boolean isCertTrustedByAnotherProvider(TrustedCert trustedCert) {
+    private boolean isCertTrustedByAnotherProvider(TrustedCert trustedCert) throws RemoteException, FindException {
+        if (fedIdProvConfigs.isEmpty()) {
+            IdentityAdmin idadmin = Registry.getDefault().getIdentityAdmin();
+            EntityHeader[] providerHeaders = idadmin.findAllIdentityProviderConfig();
+            for (int i = 0; i < providerHeaders.length; i++) {
+                EntityHeader providerHeader = providerHeaders[i];
+                IdentityProviderConfig config = idadmin.findIdentityProviderConfigByPrimaryKey(providerHeader.getOid());
+                if (config instanceof FederatedIdentityProviderConfig) {
+                    fedIdProvConfigs.add(config);
+                }
+            }
+        }
+        for (Iterator iterator = fedIdProvConfigs.iterator(); iterator.hasNext();) {
+            FederatedIdentityProviderConfig cfg = (FederatedIdentityProviderConfig) iterator.next();
+            long[] trustedCertOIDs = cfg.getTrustedCertOids();
+            for (int i = 0; i < trustedCertOIDs.length; i++) {
+                if (trustedCertOIDs[i] == trustedCert.getOid()) {
+                    return true;
+                }
+
+            }
+        }
         return false;
     }
 
