@@ -279,10 +279,21 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
                 getUserListModel().add(newEntry);
 
                 getUserList().setSelectedValue(newEntry, true);
+                enableUserMappingTextFields(true);
             }
         });
 
         return addButton;
+    }
+
+    private void enableUserMappingTextFields(boolean enable) {
+        emailAttribute.setEnabled(enable);
+        firstNameAttribute.setEnabled(enable);
+        lastNameAttribute.setEnabled(enable);
+        loginNameAttribute.setEnabled(enable);
+        nameAttribute.setEnabled(enable);
+        objectClass.setEnabled(enable);
+        passwordAttribute.setEnabled(enable);
     }
 
     /**
@@ -314,6 +325,8 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
                         getUserList().setSelectedIndex(0);
                     } else {
                         clearDisplay();
+                        // gray out the fields
+                        enableUserMappingTextFields(false);
                     }
 
                  }
