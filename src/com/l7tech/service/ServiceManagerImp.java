@@ -85,6 +85,10 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return set;
     }
 
+    public Iterator allServices() {
+        return Collections.unmodifiableSet( serviceSet() ).iterator();
+    }
+
     private void validate( PublishedService candidateService ) throws WSDLException, DuplicateObjectException{
         // Make sure WSDL is valid
         candidateService.parsedWsdl();
