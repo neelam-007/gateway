@@ -100,7 +100,7 @@
 
     <servlet-mapping>
         <servlet-name>CSRServlet</servlet-name>
-        <url-pattern>/csr/*</url-pattern>
+        <url-pattern>/ssg/csr/*</url-pattern>
     </servlet-mapping>
 
 
