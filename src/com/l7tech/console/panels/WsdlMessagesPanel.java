@@ -411,8 +411,10 @@ public class WsdlMessagesPanel extends WizardStepPanel {
           private String getNewMessagePartArgumentName() {
               String newMessagePartName = null;
               boolean found = false;
+              int suffixAdd = 0;
               while (!found) {
-                  newMessagePartName = "arg" + partsTableModel.getRowCount();
+                  int partNameSuffix = partsTableModel.getRowCount() +suffixAdd;
+                  newMessagePartName = "arg" + partNameSuffix;
                   found = true;
                   int rows = partsTableModel.getRowCount();
                   for (int i = 0; i < rows; i++) {
@@ -425,6 +427,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                   if (found) {
                       break;
                   }
+                  suffixAdd++;
               }
               return newMessagePartName;
           }
