@@ -140,13 +140,16 @@ public abstract class RemoteService implements Remote {
         for (int i = 0; i < components.length; i++) {
             String entry = components[i];
             try {
+                logger.info("lookup "+entry);
+
                 exporter = (Exporter) config.getEntry(
-                  entry, "exporter", Exporter.class);
+                  entry, "serverExporter", Exporter.class);
                 return exporter;
             } catch (NoSuchEntryException e) {
                 continue;
             }
         }
+        logger.warning("No exporter configured, using default");
         exporter =
           new BasicJeriExporter(TcpServerEndpoint.getInstance(0),
             new BasicILFactory());
