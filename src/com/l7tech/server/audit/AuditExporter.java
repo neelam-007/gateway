@@ -6,8 +6,10 @@
 
 package com.l7tech.server.audit;
 
-import com.ibm.xml.dsig.*;
+import com.ibm.xml.dsig.SignatureStructureException;
+import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.XmlUtil;
@@ -17,19 +19,13 @@ import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.crypto.SecretKey;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.security.*;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.DSAPrivateKey;
-import java.security.interfaces.RSAPrivateKey;
 import java.sql.*;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -43,14 +39,31 @@ public class AuditExporter {
             "ter join audit_admin on audit_main.objectid=audit_admin.objectid left outer join audit_message on audit_main." +
             "objectid=audit_message.objectid left outer join audit_system on audit_main.objectid=audit_system.objecti" +
             "d";
+    private static final String COUNT_SQL = "select count(*) from audit_main";
     private static final String SIG_XML = "<audit:AuditMetadata xmlns:audit=\"http://l7tech.com/ns/2004/Oct/08/audit\" />";
     private static final char DELIM = ':';
     private static final Pattern badCharPattern = Pattern.compile("([^\\040-\\0176]|\\\\|\\" + DELIM + ")");
+
+    private long highestTime;
+    private long numExportedSoFar = 0;
+    private long approxNumToExport = 1;
 
     private AuditExporter() {}
 
     static String quoteMeta(String raw) {
         return badCharPattern.matcher(raw).replaceAll("\\\\$1");
+    }
+
+    public long getHighestTime() {
+        return highestTime;
+    }
+
+    public long getNumExportedSoFar() {
+        return numExportedSoFar;
+    }
+
+    public long getApproxNumToExport() {
+        return approxNumToExport;
     }
 
     interface ExportedInfo {
@@ -71,7 +84,7 @@ public class AuditExporter {
      * @param rawOut the OutputStream to which the colon-delimited dump will be written.
      * @return the time in milliseconds of the most-recent audit record exported.
      */
-    private static ExportedInfo exportAllAudits(OutputStream rawOut) throws SQLException, IOException, HibernateException {
+    private ExportedInfo exportAllAudits(OutputStream rawOut) throws SQLException, IOException, HibernateException, InterruptedException {
         Connection conn = null;
         Statement st = null;
         ResultSet rs = null;
@@ -85,6 +98,15 @@ public class AuditExporter {
             Session session = ((HibernatePersistenceContext)PersistenceContext.getCurrent()).getAuditSession();
             conn = session.connection();
             st = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+
+            rs = st.executeQuery(COUNT_SQL);
+
+            if (rs == null) throw new SQLException("Unable to obtain audit count with query: " + COUNT_SQL);
+            rs.next();
+            approxNumToExport = rs.getLong(1);
+            rs.close();
+            rs = null;
+
             rs = st.executeQuery(SQL);
             if (rs == null) throw new SQLException("Unable to obtain audits with query: " + SQL);
             ResultSetMetaData md = rs.getMetaData();
@@ -104,7 +126,10 @@ public class AuditExporter {
             long highestId = Long.MIN_VALUE;
             long lowestTime = Long.MAX_VALUE;
             long highestTime = Long.MIN_VALUE;
+            numExportedSoFar = 0;
             while (rs.next()) {
+                if (Thread.currentThread().isInterrupted())
+                    throw new InterruptedException();
                 for (int i = 1; i <= columns; ++i) {
                     String data = rs.getString(i);
                     if (data != null) {
@@ -126,6 +151,7 @@ public class AuditExporter {
                     if (i < columns) out.print(DELIM);
                 }
                 out.print("\n");
+                numExportedSoFar++;
             }
 
             out.flush();
@@ -178,72 +204,6 @@ public class AuditExporter {
         }
     }
 
-    public static Element createEnvelopedSignature(Element elementToSign,
-                                               X509Certificate senderSigningCert,
-                                               PrivateKey senderSigningKey)
-            throws SignatureException, SignatureStructureException, XSignatureException
-    {
-        String signaturemethod = null;
-        if (senderSigningKey instanceof RSAPrivateKey)
-            signaturemethod = SignatureMethod.RSA;
-        else if (senderSigningKey instanceof DSAPrivateKey)
-            signaturemethod = SignatureMethod.DSA;
-        else if (senderSigningKey instanceof SecretKey)
-            signaturemethod = SignatureMethod.HMAC;
-        else {
-            throw new SignatureException("PrivateKey type not supported " +
-                                               senderSigningKey.getClass().getName());
-        }
-
-        // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
-        TemplateGenerator template = new TemplateGenerator(elementToSign.getOwnerDocument(),
-                                                           XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
-        template.setPrefix("ds");
-
-        // Add enveloped signature of entire document
-        final Element root = elementToSign;
-        String rootId = root.getAttribute("Id");
-        if (rootId == null || rootId.length() < 1) {
-            rootId = "root";
-            root.setAttribute("Id", rootId);
-        }
-        Reference rootRef = template.createReference("#" + rootId);
-        rootRef.addTransform(Transform.ENVELOPED);
-        rootRef.addTransform(Transform.C14N_EXCLUSIVE);
-        template.addReference(rootRef);
-
-        // Get the signature element
-        Element sigElement = template.getSignatureElement();
-
-        // Include KeyInfo element in signature and embed cert into subordinate X509Data element
-        KeyInfo keyInfo = new KeyInfo();
-        keyInfo.setKeyValue(senderSigningCert.getPublicKey());
-        KeyInfo.X509Data x5data = new KeyInfo.X509Data();
-        x5data.setCertificate(senderSigningCert);
-        x5data.setParameters(senderSigningCert, true, true, true);
-        keyInfo.setX509Data(new KeyInfo.X509Data[] { x5data });
-        keyInfo.insertTo(sigElement);
-
-        SignatureContext sigContext = new SignatureContext();
-        sigContext.setIDResolver(new IDResolver() {
-            public Element resolveID(Document document, String s) {
-                return s.equals("root") ? root : null;
-            }
-        });
-        sigContext.setEntityResolver(new EntityResolver() {
-            public InputSource resolveEntity(String publicId, String systemId) throws IOException {
-                throw new FileNotFoundException("No external ref should have been present");
-            }
-        });
-        sigContext.setResourceShower(new ResourceShower() {
-            public void showSignedResource(Element element, int i, String s, String s1, byte[] bytes, String s2) {
-
-            }
-        });
-        Element signedSig = sigContext.sign(sigElement, senderSigningKey);
-        return signedSig;
-    }
-
     private static class CausedSignatureException extends SignatureException {
         public CausedSignatureException() {
         }
@@ -263,7 +223,7 @@ public class AuditExporter {
         }
     }
 
-    private static void addElement(Element parent, String indent, String ns, String p, String name, String value) {
+    private void addElement(Element parent, String indent, String ns, String p, String name, String value) {
         parent.appendChild(XmlUtil.createTextNode(parent, indent));
         Element e = XmlUtil.createAndAppendElementNS(parent, name, ns, p);
         e.appendChild(XmlUtil.createTextNode(e, value));
@@ -275,10 +235,19 @@ public class AuditExporter {
      * @param fileOut OutputStream to which the Zip file will be written.
      * @return the time in milliseconds of the most-recent audit record exported.
      */
-    public static long exportAuditsAsZipFile(OutputStream fileOut,
+    public static AuditExporter exportAuditsAsZipFile(OutputStream fileOut,
                                              X509Certificate signingCert,
                                              PrivateKey signingKey)
-            throws IOException, SQLException, HibernateException, SignatureException
+            throws IOException, SQLException, HibernateException, SignatureException, InterruptedException
+    {
+        AuditExporter ae = new AuditExporter();
+        return ae.instanceExportAuditsAsZipFile(fileOut, signingCert, signingKey);
+    }
+
+    private AuditExporter instanceExportAuditsAsZipFile(OutputStream fileOut,
+                                             X509Certificate signingCert,
+                                             PrivateKey signingKey)
+            throws IOException, SQLException, HibernateException, SignatureException, InterruptedException
     {
         final long startTime = System.currentTimeMillis();
         ZipOutputStream zipOut = null;
@@ -329,14 +298,17 @@ public class AuditExporter {
             addElement(ead, i2, ns, p, "md5Digest", HexUtils.hexDump(exportedInfo.getMd5Hash()));
             ead.appendChild(XmlUtil.createTextNode(ead, i1));
 
-            Element signature = createEnvelopedSignature(auditMetadata,
+            Element signature = DsigUtil.createEnvelopedSignature(auditMetadata,
                                                          signingCert,
                                                          signingKey);
             auditMetadata.appendChild(signature);
 
             zipOut.putNextEntry(new ZipEntry("sig.xml"));
             XmlUtil.nodeToOutputStream(d, zipOut);
-            return highestTime;
+            zipOut.close();
+            zipOut = null;
+            this.highestTime = highestTime;
+            return this;
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SignatureStructureException e) {

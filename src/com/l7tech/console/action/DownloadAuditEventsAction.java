@@ -7,6 +7,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.util.OpaqueId;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 
@@ -74,13 +75,17 @@ public class DownloadAuditEventsAction extends SecureAction {
         // Download the audit events
         FileOutputStream out = null;
         try {
-            // TODO create the file and save it
             out = new FileOutputStream(outFile, false);
 
-            AuditAdmin.RemoteBulkStream bs = Registry.getDefault().getAuditAdmin().downloadAllAudits();
-            byte[] chunk;
-            while ((chunk = bs.nextChunk()) != null) {
-                out.write(chunk);
+            final AuditAdmin aa = Registry.getDefault().getAuditAdmin();
+            OpaqueId contextId = aa.downloadAllAudits();
+            AuditAdmin.DownloadChunk chunk;
+            while ((chunk = aa.downloadNextChunk(contextId)) != null) {
+                if (chunk.chunk != null && chunk.chunk.length > 0) {
+                    out.write(chunk.chunk);
+
+                    // TODO update bar graph with info from chunk
+                }
             }
 
             out.close();
@@ -96,7 +101,7 @@ public class DownloadAuditEventsAction extends SecureAction {
             log.log(Level.SEVERE, msg, e);
             throw new RuntimeException(msg, e);
         } finally {
-            if (out != null) try { out.close(); } catch (IOException e) { log.log(Level.WARNING, "Unable to close output file", e); }
+            if (out != null) try { out.close(); } catch (IOException e) { /* ignore; exception already logged */ }
         }
     }
 }

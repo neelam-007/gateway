@@ -11,26 +11,55 @@ import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.ServerConfig;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
+import net.sf.hibernate.HibernateException;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.rmi.RemoteException;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class AuditAdminImpl extends RemoteService implements AuditAdmin {
+    private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
+    private static final long CONTEXT_TIMEOUT = 1000L * 60 * 5; // expire after 5 min of inactivity
+    private static Map downloadContexts = Collections.synchronizedMap(new HashMap());
+    private static TimerTask downloadReaperTask = new TimerTask() {
+        public void run() {
+            Collection c = new ArrayList(downloadContexts.values());
+            long now = System.currentTimeMillis();
+            for (Iterator i = c.iterator(); i.hasNext();) {
+                DownloadContext downloadContext = (DownloadContext)i.next();
+                if (now - downloadContext.getLastUsed() > CONTEXT_TIMEOUT) {
+                    logger.log(Level.WARNING, "Closing stale audit download context " + downloadContext);
+                    downloadContext.close(); // will remove itself from the master set
+                }
+            }
+        }
+    };
+    private static Timer downloadReaperTimer = new Timer(true);
+    static {
+        downloadReaperTimer.schedule(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
+    }
+
     public AuditAdminImpl( String[] options, LifeCycle lifeCycle ) throws ConfigurationException, IOException {
         super( options, lifeCycle );
     }
@@ -73,32 +102,131 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
         }
     }
 
-    public RemoteBulkStream downloadAllAudits() throws RemoteException {
-        enforceAdminRole();
-        PipedOutputStream pos = new PipedOutputStream();
-        try {
-            AuditExporter.exportAuditsAsZipFile(pos,
-                                                KeystoreUtils.getInstance().getSslCert(),
-                                                KeystoreUtils.getInstance().getSSLPrivateKey());
-            final PipedInputStream pis = new PipedInputStream(pos);
-            return new RemoteBulkStream() {
-                byte[] chunk = new byte[8192];
-
-                public byte[] nextChunk() throws RemoteException {
-                    try {
-                        int i = pis.read(chunk, 0, chunk.length);
-                        if (i < 1) return null;
-                        byte[] got = new byte[i];
-                        System.arraycopy(chunk, 0, got, 0, i);
-                        return got;
-                    } catch (IOException e) {
-                        throw new RemoteException("Unable to read exported audit stream", e);
-                    }
+    private static class DownloadContext {
+        private final OpaqueId opaqueId = new OpaqueId();
+        private final X509Certificate sslCert;
+        private final PrivateKey sslPrivateKey;
+        private final PipedOutputStream pos = new PipedOutputStream();
+        private final PipedInputStream pis = new PipedInputStream(pos);
+        private final Thread producerThread = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    auditExporter = AuditExporter.exportAuditsAsZipFile(pos,
+                                                                        sslCert,
+                                                                        sslPrivateKey);
+                } catch (SQLException e) {
+                    producerException = e;
+                } catch (IOException e) {
+                    producerException = e;
+                } catch (SignatureException e) {
+                    producerException = e;
+                } catch (HibernateException e) {
+                    producerException = e;
+                } catch (InterruptedException e) {
+                    // avoid overwriting a real exception
+                    if (producerException == null)
+                        producerException = e;
                 }
-            };
-        } catch (Exception e) {
-            throw new RemoteException("Unable to export audits", e);
+            }
+        });
+
+        private AuditExporter auditExporter = null;
+        private byte[] chunk = new byte[8192];
+        private Throwable producerException = null;
+        private long lastUsed = System.currentTimeMillis();
+
+        private DownloadContext () throws KeyStoreException, IOException, CertificateException {
+            sslCert = KeystoreUtils.getInstance().getSslCert();
+            sslPrivateKey = KeystoreUtils.getInstance().getSSLPrivateKey();
+            producerThread.start();
+            logger.info("Created audit download context " + this);
         }
+
+        private OpaqueId getOpaqueId() {
+            return opaqueId;
+        }
+
+        public long getLastUsed() {
+            return lastUsed;
+        }
+
+        public synchronized DownloadChunk nextChunk() throws RemoteException {
+            lastUsed = System.currentTimeMillis();
+            if (producerException != null) {
+                close();
+                throw new RemoteException("Producer thread exception: " + producerException.getMessage(), producerException);
+            }
+            try {
+                logger.log(Level.FINER, "Returning next audit download chunk for context " + this);
+                int i = pis.read(chunk, 0, chunk.length);
+                if (i < 1) return null;
+                byte[] got = new byte[i];
+                System.arraycopy(chunk, 0, got, 0, i);
+                long approxTotalAudits = 1;
+                long auditsDownloaded = 0;
+                if (auditExporter != null) {
+                    approxTotalAudits = auditExporter.getApproxNumToExport();
+                    auditsDownloaded = auditExporter.getNumExportedSoFar();
+                }
+                return new DownloadChunk(auditsDownloaded, approxTotalAudits, got);
+            } catch (IOException e) {
+                close();
+                throw new RemoteException("Unable to read exported audit stream", e);
+            }
+        }
+
+        public synchronized void close() {
+            logger.log(Level.INFO, "Closing audit download context " + this);
+            downloadContexts.remove(this.getOpaqueId());
+            try { producerThread.interrupt(); } catch (Exception e) { /* ignored */ }
+            try { pis.close(); } catch (IOException e) { /* ignored */ }
+            try { pos.close(); } catch (IOException e) { /* ignored */ }
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof DownloadContext)) return false;
+
+            final DownloadContext downloadContext = (DownloadContext)o;
+
+            if (!opaqueId.equals(downloadContext.opaqueId)) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            return opaqueId.hashCode();
+        }
+
+        public String toString() {
+            return opaqueId.toString();
+        }
+    }
+
+    public OpaqueId downloadAllAudits() throws RemoteException {
+        enforceAdminRole();
+        try {
+            final DownloadContext downloadContext;
+            downloadContext = new DownloadContext();
+            downloadContexts.put(downloadContext.getOpaqueId(), downloadContext);
+            return downloadContext.getOpaqueId();
+        } catch (KeyStoreException e) {
+            throw new RemoteException("Server configuration error: unable to prepare keys for signing exported audits", e);
+        } catch (IOException e) {
+            throw new RemoteException("IO error while preparing to export audits", e);
+        } catch (CertificateException e) {
+            throw new RemoteException("Server configuration error: unable to prepare certificate for signing exported audits", e);
+        }
+    }
+
+    public DownloadChunk downloadNextChunk(OpaqueId context) throws RemoteException {
+        DownloadContext downloadContext = (DownloadContext)downloadContexts.get(context);
+        if (downloadContext == null)
+            throw new RemoteException("No such download context is pending");
+        DownloadChunk chunk = downloadContext.nextChunk();
+        if (chunk == null || chunk.chunk == null || chunk.chunk.length < 1)
+            downloadContext.close();
+        return chunk;
     }
 
     public SSGLogRecord[] getSystemLog(final String nodeid, final long startMsgNumber, final long endMsgNumber, final int size) throws RemoteException {

@@ -6,6 +6,7 @@
 
 package com.l7tech.common.audit;
 
+import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
@@ -34,8 +35,12 @@ public class AuditAdminStub implements AuditAdmin {
 
     }
 
-    public RemoteBulkStream downloadAllAudits() throws RemoteException {
-        throw new RemoteException("No stub mode export available");
+    public OpaqueId downloadAllAudits() throws RemoteException {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
+    }
+
+    public DownloadChunk downloadNextChunk(OpaqueId context) throws RemoteException {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
