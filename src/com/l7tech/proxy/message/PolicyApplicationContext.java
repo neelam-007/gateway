@@ -10,10 +10,13 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
@@ -28,6 +31,8 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -208,13 +213,24 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     /**
-     * @return the decoration requirements for the recipient designated by the passed actor value
+     * Get the existing DecorationRequirements for this recipient, if this does not yet exist creates a new one
+     * and set the recipient cert as part of the creation.
+     *
+     * @return the decoration requirements for the recipient designated by the passed recipient
      */
-    public DecorationRequirements getAlternateWssRequirements(String actor) {
+    public DecorationRequirements getAlternateWssRequirements(XmlSecurityRecipientContext recipient)
+                                                                        throws IOException, CertificateException {
+        if (recipient.localRecipient()) {
+            return getDefaultWssRequirements();
+        }
+        String actor = recipient.getActor();
         DecorationRequirements output = (DecorationRequirements)policySettings.
                                                                 downstreamRecipientWSSRequirements.get(actor);
         if (output == null) {
             output = new DecorationRequirements();
+            X509Certificate cert = null;
+            cert = CertUtils.decodeCert(HexUtils.decodeBase64(recipient.getBase64edX509Certificate(), true));
+            output.setRecipientCertificate(cert);
             policySettings.downstreamRecipientWSSRequirements.put(actor, output);
         }
         return output;
