@@ -454,38 +454,32 @@ public class UserPanel extends EntityEditorPanel {
         if (buttonPanel == null) {
             buttonPanel = new JPanel();
             buttonPanel.setLayout(new GridBagLayout());
+            Component hStrut = Box.createHorizontalStrut(8);
+            // add components
+            buttonPanel.add(hStrut,
+              new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.BOTH,
+                new Insets(0, 0, 0, 0), 0, 0));
 
-            if (!idProvider.isReadOnly()) {
-                Component hStrut = Box.createHorizontalStrut(8);
+            buttonPanel.add(getOKButton(),
+              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.NONE,
+                new Insets(5, 5, 5, 5), 0, 0));
 
-                // add components
-                buttonPanel.add(hStrut,
-                  new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                    GridBagConstraints.CENTER,
-                    GridBagConstraints.BOTH,
-                    new Insets(0, 0, 0, 0), 0, 0));
+            buttonPanel.add(getCancelButton(),
+              new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.NONE,
+                new Insets(5, 5, 5, 5), 0, 0));
 
-                buttonPanel.add(getOKButton(),
-                  new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                    GridBagConstraints.CENTER,
-                    GridBagConstraints.NONE,
-                    new Insets(5, 5, 5, 5), 0, 0));
-
-                buttonPanel.add(getCancelButton(),
-                  new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                    GridBagConstraints.CENTER,
-                    GridBagConstraints.NONE,
-                    new Insets(5, 5, 5, 5), 0, 0));
-
-                JButton buttons[] = new JButton[]
-                {
-                    getOKButton(),
-                    getCancelButton()
-                };
-                Utilities.equalizeButtonSizes(buttons);
-            } else {
-                // todo, one close button
-            }
+            JButton buttons[] = new JButton[]
+            {
+                getOKButton(),
+                getCancelButton()
+            };
+            Utilities.equalizeButtonSizes(buttons);
         }
         return buttonPanel;
     }
@@ -514,6 +508,7 @@ public class UserPanel extends EntityEditorPanel {
                     }
                 }
             });
+            if (idProvider.isReadOnly()) okButton.setEnabled(false);
         }
 
 // Return button
