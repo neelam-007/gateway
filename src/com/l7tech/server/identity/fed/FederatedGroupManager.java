@@ -18,7 +18,6 @@ import net.sf.hibernate.Criteria;
 import net.sf.hibernate.expression.Expression;
 
 import java.sql.SQLException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,23 +66,9 @@ public class FederatedGroupManager extends PersistentGroupManager {
     }
 
     public boolean isMember( User user, Group genericGroup ) throws FindException {
-        String msg = null;
-        Level level = null;
-        if (user.getProviderId() == FederatedUser.DEFAULT_OID) {
-            msg = "User was authenticated by an unknown identity provider";
-            level = Level.WARNING;
-        } else if (user.getProviderId() != providerConfig.getOid()) {
-            msg = "User was authenticated by a different identity provider";
-            level = Level.FINE;
-        }
-
-        if (msg != null) {
-            logger.log(level, msg);
-            return false;
-        }
-
         PersistentGroup group = cast(genericGroup);
         if ( group instanceof VirtualGroup ) {
+            if (!checkProvider(user)) return false;
             SamlConfig samlConfig = providerConfig.getSamlConfig();
             if ( providerConfig.isX509Supported() || (providerConfig.isSamlSupported() && samlConfig.isNameIdX509SubjectName()) ) {
                 String dnPattern = ((VirtualGroup)group).getX509SubjectDnPattern();

@@ -315,6 +315,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     }
 
     public boolean isMember( User user, Group group ) throws FindException {
+        if (!checkProvider(user)) return false;
         HibernatePersistenceContext hpc = null;
         try {
             hpc = context();
@@ -328,6 +329,25 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         } catch (HibernateException e) {
             throw new FindException( e.getMessage(), e );
         }
+    }
+
+    protected boolean checkProvider(User user) {
+        String msg = null;
+        Level level = null;
+        if (user.getProviderId() == PersistentUser.DEFAULT_OID) {
+            msg = "User was authenticated by an unknown identity provider";
+            level = Level.WARNING;
+        } else if (user.getProviderId() != provider.getConfig().getOid()) {
+            msg = "User was authenticated by a different identity provider";
+            level = Level.FINE;
+        }
+
+        if (msg != null) {
+            logger.log(level, msg);
+            return false;
+        }
+
+        return true;
     }
 
     public void addUsers(Group group, Set users) throws FindException, UpdateException {
