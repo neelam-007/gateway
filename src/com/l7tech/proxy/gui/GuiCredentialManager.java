@@ -164,6 +164,7 @@ public class GuiCredentialManager implements CredentialManager {
                         String msg = "The key store for the Gateway " + ssg + "\n is irrepairably damaged.\n\n" +
                                 "Do you wish to delete it and build a new one?";
 
+                        Gui.getInstance().getFrame().toFront();
                         int result = JOptionPane.showOptionDialog(Gui.getInstance().getFrame(),
                                                                   msg,
                                                                   "Key Store Corrupt",
