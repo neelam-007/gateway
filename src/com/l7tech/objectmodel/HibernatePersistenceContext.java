@@ -6,9 +6,11 @@
 
 package com.l7tech.objectmodel;
 
+import com.l7tech.server.Debug;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import net.sf.hibernate.Transaction;
+import org.apache.commons.dbcp.DelegatingConnection;
 import org.apache.commons.dbcp.PoolableConnection;
 
 import javax.sql.DataSource;
@@ -20,8 +22,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.l7tech.server.Debug;
 
 /**
  * @author alex
@@ -128,18 +128,31 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
     /**
      * Retrieves the current {@see cirrus.hibernate.Session} associated with this context, getting a new one if necessary.
-     * Also tries to "ping" the connection up to {@see MAXRETRIES} times to be sure it's not dead.
+     * Also tries to "ping" the connection up to {@link MAXRETRIES} times to be sure it's not dead.
      *
      * @return a valid Hibernate Session (hopefully!)
      * @throws SQLException if MAXRETRIES have been made, the SQLException resulting from the last connection attempt.
      * @throws net.sf.hibernate.HibernateException if MAXRETRIES have been made, the HibernateException resulting from the last connection attempt.
      */
     public synchronized Session getSession() throws SQLException, HibernateException {
+        return getSession(MAXRETRIES);
+    }
+
+    /**
+     * Retrieves the current {@see cirrus.hibernate.Session} associated with this context, getting a new one if necessary.
+     * Also tries to "ping" the connection up to maxretries times to be sure it's not dead.
+     *
+     * @param maxretries the maximum number of times to retry the connection. Pass <code>-1</code> to retry forever, but beware that this can block the current thread for a very long time.
+     * @return a valid Hibernate Session (hopefully!)
+     * @throws SQLException if MAXRETRIES have been made, the SQLException resulting from the last connection attempt.
+     * @throws net.sf.hibernate.HibernateException if MAXRETRIES have been made, the HibernateException resulting from the last connection attempt.
+     */
+    public synchronized Session getSession(int maxretries) throws SQLException, HibernateException {
         Exception lastException = null;
 
         // Test underlying connection before returning the session
         // if the connection does not seem to be working, this will try to recover up to MAXRETRIES times.
-        for ( int i = 0; i < MAXRETRIES; i++ ) {
+        for ( int i = 0; (maxretries == -1 || i < maxretries); i++ ) {
             Connection conn = null;
             ResultSet rs = null;
             Statement pingStmt = null;
@@ -198,8 +211,17 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 Connection theConnection = _session.connection();
                 if ( !theConnection.isClosed() ) {
                     if (theConnection instanceof PoolableConnection) {
-                        logger.fine("calling REALLY close");
+                        logger.fine("Closing PoolableConnection");
                         ((PoolableConnection)theConnection).reallyClose();
+                    } else if (theConnection instanceof DelegatingConnection ) {
+                        logger.fine("Calling DelegatingConnection");
+                        final Connection delegate = ((DelegatingConnection)theConnection).getInnermostDelegate();
+                        try {
+                            if (delegate != null && !delegate.isClosed()) delegate.close();
+                            if (!theConnection.isClosed()) theConnection.close();
+                        } catch (Exception e) {
+                            logger.log(Level.FINE, "Caught exception closing DelegatingConnection", e);
+                        }
                     } else {
                         logger.fine("can't call REALLY close, type not handled: " + theConnection.getClass().getName());
                         theConnection.close();
@@ -213,7 +235,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
             _session = null;
         }
 
-        String err = "Tried " + MAXRETRIES + " times to obtain a valid Session and failed with exception " + lastException;
+        String err = "Tried " + maxretries + " times to obtain a valid Session and failed with exception " + lastException;
         logger.log( Level.SEVERE, err, lastException );
 
         if (lastException instanceof SQLException) {
