@@ -22,7 +22,7 @@ public class Gui {
     public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/proxy.hs";
 
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
-    private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffTheme";
+    private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
 
     private static Gui instance;
     private boolean started = false;
