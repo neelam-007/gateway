@@ -7,15 +7,18 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.console.util.Registry;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
 import java.util.Iterator;
 import java.io.IOException;
+import java.rmi.RemoteException;
 
 /**
  * A reference to an id provider.
@@ -34,12 +37,13 @@ public class IdProviderReference extends ExternalReference {
      */
     public IdProviderReference(long providerId) {
         // try to retrieve this id provider to remember its settings
-        IdentityProviderConfigManager manager = (IdentityProviderConfigManager)
-                                                  Locator.getDefault().lookup(IdentityProviderConfigManager.class);
+        IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
         IdentityProviderConfig config = null;
-        if (manager != null) {
+        if (idAdmin != null) {
             try {
-                config = manager.findByPrimaryKey(providerId);
+                config = idAdmin.findIdentityProviderConfigByPrimaryKey(providerId);
+            } catch (RemoteException e) {
+                logger.log(Level.WARNING, "error finding id provider config", e);
             } catch (FindException e) {
                 logger.log(Level.WARNING, "error finding id provider config", e);
             }
