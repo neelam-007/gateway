@@ -19,11 +19,12 @@ import javax.swing.*;
 public class IconManager {
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
-    private static IconManager instance  = new IconManager();
+    private static IconManager instance = new IconManager();
 
     public static IconManager getInstance() {
         return instance;
     }
+
     /**
      * default constructor
      */
@@ -74,30 +75,54 @@ public class IconManager {
             throw new NullPointerException("node");
         }
         ClassLoader cl = node.getClass().getClassLoader();
-        return getIcon(node.getType()) ;
+        return getIcon(node.getType());
 
     }
 
     /**
-       * Get the Icon for the Class passed.
-       *
-       * @param type   the entity type enum
-       * @return ImageIcon for the given node
-       */
-      public ImageIcon getIcon(EntityType type) {
-          if (type == null) {
-              throw new NullPointerException("type");
-          }
-          ClassLoader cl = type.getClass().getClassLoader();
-          if (type.equals(EntityType.GROUP)) {
-              return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/group16.png"));
-          } else if (type.equals(EntityType.USER)) {
-              return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/user16.png"));
-          }
-          return null;
-      }
+     * Get the Icon for the Class passed.
+     *
+     * @param type   the entity type enum
+     * @return ImageIcon for the given node
+     */
+    public ImageIcon getIcon(EntityType type) {
+        if (type == null) {
+            throw new NullPointerException("type");
+        }
+        ClassLoader cl = type.getClass().getClassLoader();
+        if (type.equals(EntityType.GROUP)) {
+            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/group16.png"));
+        } else if (type.equals(EntityType.USER)) {
+            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/user16.png"));
+        }
+        return null;
+    }
 
+    /**
+     * Get the Icon for the EntityHeader passed.
+     *
+     * @param node   the EntityHeader instance
+     * @return ImageIcon for the given node
+     */
+    public ImageIcon getIcon(WsdlTreeNode node) {
+        if (node == null) {
+            throw new IllegalArgumentException();
+        }
+        ClassLoader cl = node.getClass().getClassLoader();
+        if (node.isMessage()) {
+            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/SendMail16.gif"));
+        } else if(node.isService()) {
+            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Bean16.gif"));
+        } else if (node.isPortType()) {
+            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Refresh16.gif"));
+        } else if (node.isOperation()) {
+            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Forward16.gif"));
+        } else if (node.isBindingOperation()) {
+            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Forward16.gif"));
+        }
+        return null;
 
+    }
 
     /**
      * Returns an up button
@@ -150,7 +175,6 @@ public class IconManager {
 
         downButton
                 = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/down-button.gif"));
-
     }
 
 
