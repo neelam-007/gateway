@@ -407,7 +407,7 @@ public class MessageProcessor {
     }
 
     private Policy lookupPolicy(PolicyApplicationContext context) {
-        Policy policy = context.getSsg().getRuntime().getPolicyManager().getPolicy(context.getPolicyAttachmentKey());
+        Policy policy = context.getSsg().getRuntime().getPolicyManager().findMatchingPolicy(context.getPolicyAttachmentKey());
         if (policy != null) {
             if (LogFlags.logPolicies)
                 log.info("Found a policy for this request: " + policy.getAssertion());

@@ -12,14 +12,13 @@ import java.io.Serializable;
 
 /**
  * Represents a binding between a policy and the kinds of requests it applies to.
- * User: mike
- * Date: Jul 2, 2003
- * Time: 6:29:56 PM
  */
 public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable {
     private String uri;
     private String soapAction;
     private String proxyUri;
+    private boolean beginsWithMatch = false;
+    private boolean persistent = false;
 
     /**
      * No-arg constructor for bean deserializer.
@@ -40,6 +39,19 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
         this.uri = uri != null ? uri : "";
         this.soapAction = soapAction != null ? soapAction : "";
         this.proxyUri = proxyUri != null ? proxyUri : "";
+        this.persistent = false;
+        this.beginsWithMatch = false;
+    }
+
+    /**
+     * Create a copy of the source PolicyAttachmentKey, but without copying persistent and beginsWithMatch.
+     * @param source the source to copy.  Must not be null.
+     * @throws NullPointerException if it is.
+     */
+    public PolicyAttachmentKey(PolicyAttachmentKey source) {
+        this.uri = source.uri;
+        this.soapAction = source.soapAction;
+        this.proxyUri = source.proxyUri;
     }
 
     public int compareTo(Object o) {
@@ -63,9 +75,9 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
 
     public int hashCode() {
         int code = 0;
-        if (uri != null) code += uri.hashCode();
-        if (soapAction != null) code += soapAction.hashCode();
-        if (proxyUri != null) code += proxyUri.hashCode();
+        if (uri != null) code += 17 * uri.hashCode() + 1;
+        if (soapAction != null) code += 79 * soapAction.hashCode() + 7;
+        if (proxyUri != null) code += 197 * proxyUri.hashCode() + 13;
         return code;
     }
 
@@ -108,5 +120,35 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
     public void setProxyUri(String proxyUri) {
         if (proxyUri == null) proxyUri = "";
         this.proxyUri = proxyUri;
+    }
+
+    /**
+     * @return true if the non-null fields in this PolicyAttachmentKey should be matched as begins-with matches;
+     *         false if they should be matched as exact matches.  Default is false.
+     */
+    public boolean isBeginsWithMatch() {
+        return beginsWithMatch;
+    }
+
+    /**
+     * @param beginsWithMatch true if the non-null fields in this PolicyAttachmentKey should be matched as begins-with matches;
+     *                        false if they should be matched as exact matches.
+     */
+    public void setBeginsWithMatch(boolean beginsWithMatch) {
+        this.beginsWithMatch = beginsWithMatch;
+    }
+
+    /**
+     * @return  true iff. this key and its associated policy should be saved to disk.
+     */
+    public boolean isPersistent() {
+        return persistent;
+    }
+
+    /**
+     * @param persistent  true iff. this key and its associated policy should be saved to disk.
+     */
+    public void setPersistent(boolean persistent) {
+        this.persistent = persistent;
     }
 }

@@ -20,7 +20,6 @@ public class Policy implements Serializable, Cloneable {
     private String version;
     private ClientAssertion clientAssertion;
     private boolean valid = true;
-    private boolean persistent = false;
 
     public Policy() {
     }
@@ -65,26 +64,6 @@ public class Policy implements Serializable, Cloneable {
      */
     public void setValid(boolean valid) {
         this.valid = valid;
-    }
-
-    /**
-     * Check if this Policy should be routed to the persistent policy store next time it is saved in the root
-     * {@link PolicyManager}.
-     *
-     * @return true iff. this Policy should be saved to disk
-     */
-    public boolean isPersistent() {
-        return persistent;
-    }
-
-    /**
-     * If true, this Policy will be routed to the persistent policy store next time it is saved in the root
-     * {@link PolicyManager}.
-     *
-     * @param persistent  true to save this policy to disk.
-     */
-    public void setPersistent(boolean persistent) {
-        this.persistent = persistent;
     }
 
     /** assertion mutator for xml bean deserializer.  Do not call this method. */

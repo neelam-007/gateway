@@ -55,6 +55,10 @@ public class PolicyManagerStub implements PolicyManager {
         return policy;
     }
 
+    public Policy findMatchingPolicy(PolicyAttachmentKey policyAttachmentKey) {
+        return policy;
+    }
+
     public Set getPolicyAttachmentKeys() {
         return Collections.EMPTY_SET;
     }

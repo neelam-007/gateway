@@ -7,6 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -19,7 +20,7 @@ public class PersistentPolicyManager extends LocalPolicyManager {
     }
 
     public void setPolicy(PolicyAttachmentKey key, Policy policy ) {
-        policy.setPersistent(true);
+        key.setPersistent(true);
         policy.setVersion(null);
         policy.setValid(true); // statically-configured policies must never be ignored
         super.setPolicy(key, policy);
@@ -30,7 +31,7 @@ public class PersistentPolicyManager extends LocalPolicyManager {
 
         // Double-check flags just in case ssgs.xml was hand-edited to insert a policy
         if (policy != null) {
-            policy.setPersistent(true);
+            policyAttachmentKey.setPersistent(true);
             policy.setVersion(null);
             policy.setValid(true); // statically-configured policies must never be ignored
         }
@@ -38,6 +39,18 @@ public class PersistentPolicyManager extends LocalPolicyManager {
         return policy;
     }
 
+    public Policy findMatchingPolicy(PolicyAttachmentKey pak) {
+        final Policy policy = super.findMatchingPolicy(pak);
+
+        // Double-check flags just in case ssgs.xml was hand-edited to insert a policy
+        if (policy != null) {
+            pak.setPersistent(true);
+            policy.setVersion(null);
+            policy.setValid(true); // statically-configured policies must never be ignored
+        }
+
+        return policy;
+    }
 
     /** Policy map accessor, for xml bean serializer.  Do not call this method. */
     public HashMap getPolicyMap() {
@@ -47,5 +60,19 @@ public class PersistentPolicyManager extends LocalPolicyManager {
     /** Policy map mutator, for xml bean deserializer.  Do not call this method. */
     public void setPolicyMap(HashMap policyMap) {
         super.setPolicyMap(policyMap);
+    }
+
+    /**
+     * Wildcard map accessor, for xml bean serializer.  Do not call this method.
+     */
+    public Map getWildcardMatches() {
+        return super.getWildcardMatches();
+    }
+
+    /**
+     * Wildcard map mutator, for xml bean deserializer.  Do not call this method.
+     */
+    public void setWildcardMatches(Map wildcardMatches) {
+        super.setWildcardMatches(wildcardMatches);
     }
 }

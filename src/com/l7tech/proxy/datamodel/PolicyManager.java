@@ -26,12 +26,21 @@ public interface PolicyManager extends Serializable {
      * or may involve disk or network activity.
      * <p>
      * Even if this method fails to locate a policy, it may be possible to "try harder" and locate a policy
-     * in an underlying policy source.  {@see #updatePolicy}
+     * in an underlying policy source by calling {@link #findMatchingPolicy} instead.
      *
      * @param policyAttachmentKey the {@link PolicyAttachmentKey} describing the policy to locate.
      * @return the requested {@link Policy}, or null if it was not found.
      */
     Policy getPolicy(PolicyAttachmentKey policyAttachmentKey);
+
+    /**
+     * Search for a policy that matches this policyAttachmentKey.  Unlike getPolicy() which only finds exact matches,
+     * this might check for pattern matches as well.
+     *
+     * @param policyAttachmentKey  the {@link PolicyAttachmentKey} describing the policy to locate.
+     * @return the requested {@link Policy}, or null if it was not found.
+     */
+    Policy findMatchingPolicy(PolicyAttachmentKey policyAttachmentKey);
 
     /**
      * Set a policy, if this PolicyManager allows this.

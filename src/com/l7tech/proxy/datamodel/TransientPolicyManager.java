@@ -12,7 +12,7 @@ import java.util.Set;
  * A {@link PolicyManager} that manages the transient policies in the SSB.  Delegates to another PolicyManager,
  * typically the {@link PersistentPolicyManager}.
  * <p>
- * Incoming policies marked as "persistent" will be routed to the delegate.  Incoming policies not marked as
+ * Incoming policy keys marked as "persistent" will be routed to the delegate.  Incoming policy keys not marked as
  * persistent will not be permitted to override policies already existing in the delegate.
  *
  */
@@ -50,7 +50,7 @@ public class TransientPolicyManager extends LocalPolicyManager {
         if (key == null) throw new NullPointerException();
         if (policy == null) throw new NullPointerException();
 
-        if (policy.isPersistent()) {
+        if (key.isPersistent()) {
             delegate.setPolicy(key, policy);
             super.flushPolicy(key);
         } else {
@@ -68,6 +68,13 @@ public class TransientPolicyManager extends LocalPolicyManager {
         Policy policy = super.getPolicy(policyAttachmentKey);
         if (policy == null)
             policy = delegate.getPolicy(policyAttachmentKey);
+        return policy;
+    }
+
+    public synchronized Policy findMatchingPolicy(PolicyAttachmentKey pak) {
+        Policy policy = super.findMatchingPolicy(pak);
+        if (policy == null)
+            policy = delegate.findMatchingPolicy(pak);
         return policy;
     }
 

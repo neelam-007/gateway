@@ -152,13 +152,18 @@ public class SsgManagerTest extends TestCase {
         final String SSG2P2_SA = "http://foaaao.bar.baz/afdsasdf/fdsa";
         final String SSG2P1_URI = "http://asdf.fasd.awgq/";
         final String SSG2P1_SA = "http://agarg.geqw.qrgq";
-        SSG1.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey(SSG1P1_URI, SSG1P1_SA, null), new Policy(policy1, "test"));
-        SSG1.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey(SSG1P2_URI, SSG1P2_SA, null), new Policy(policy2, "test"));
+        final SsgRuntime s1rt = SSG1.getRuntime();
+        final PolicyManager s1pm = s1rt.getPolicyManager();
+        s1pm.setPolicy(new PolicyAttachmentKey(SSG1P1_URI, SSG1P1_SA, null), new Policy(policy1, "test"));
+        s1pm.setPolicy(new PolicyAttachmentKey(SSG1P2_URI, SSG1P2_SA, null), new Policy(policy2, "test"));
         final Policy ppolicy = new Policy(policy2, "test");
-        ppolicy.setPersistent(true);
-        SSG1.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey(SSG1P2_URI, SSG1P2_SA, null), ppolicy);
-        SSG2.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey(SSG2P2_URI, SSG2P2_SA, null), new Policy(policy2, "test"));
-        SSG2.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey(SSG2P1_URI, SSG2P1_SA, null), new Policy(policy1, "test"));
+        final PolicyAttachmentKey ppak = new PolicyAttachmentKey(SSG1P2_URI, SSG1P2_SA, null);
+        ppak.setPersistent(true);
+        s1pm.setPolicy(ppak, ppolicy);
+        final SsgRuntime s2rt = SSG2.getRuntime();
+        final PolicyManager s2pm = s2rt.getPolicyManager();
+        s2pm.setPolicy(new PolicyAttachmentKey(SSG2P2_URI, SSG2P2_SA, null), new Policy(policy2, "test"));
+        s2pm.setPolicy(new PolicyAttachmentKey(SSG2P1_URI, SSG2P1_SA, null), new Policy(policy1, "test"));
 
         sm.add(SSG1);
         sm.add(SSG2);
@@ -209,8 +214,9 @@ public class SsgManagerTest extends TestCase {
         assertTrue(loaded2 != null);
         assertTrue(loaded2.getSsgAddress() != null);
         assertTrue(loaded2.getSsgAddress().equals(SSG2.getSsgAddress()));
-        assertTrue(loaded2.getRuntime().getPolicyManager().getPolicy(new PolicyAttachmentKey(SSG2P1_URI, SSG2P1_SA, null)) == null); // policies not persisted
-        assertTrue(loaded2.getRuntime().getPolicyManager().getPolicy(new PolicyAttachmentKey(SSG2P2_URI, SSG2P2_SA, null)) == null);
+        final PolicyManager l2pm = loaded2.getRuntime().getPolicyManager();
+        assertTrue(l2pm.getPolicy(new PolicyAttachmentKey(SSG2P1_URI, SSG2P1_SA, null)) == null); // policies not persisted
+        assertTrue(l2pm.getPolicy(new PolicyAttachmentKey(SSG2P2_URI, SSG2P2_SA, null)) == null);
         assertTrue(loaded2.getTrustedGateway() != SSG1); // (this doesn't HAVE to fail, but it'd be amazing if it worked)
         assertTrue(loaded2.getTrustedGateway() == sm.getSsgById(SSG1.getId()));
 
