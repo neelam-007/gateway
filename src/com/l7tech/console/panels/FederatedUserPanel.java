@@ -59,7 +59,7 @@ public class FederatedUserPanel extends UserPanel {
 
     private JTabbedPane tabbedPane;
     private UserGroupsPanel groupPanel; // membership
-    private CertificatePanel certPanel; //certificate
+  //  private CertificatePanel certPanel; //certificate
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
@@ -94,7 +94,9 @@ public class FederatedUserPanel extends UserPanel {
         try {
             // Initialize form components
             groupPanel = new UserGroupsPanel(this);
-            certPanel = new CertificatePanel(this, passwordChangeListener);
+
+            //todo:  need to have a different cert panel
+            //certPanel = new CertificatePanel(this, passwordChangeListener);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
         } catch (Exception e) {
@@ -104,7 +106,9 @@ public class FederatedUserPanel extends UserPanel {
     }
 
     public boolean certExist() {
-        return certPanel.certExist();
+        return false;
+        //todo:
+        //return certPanel.certExist();
     }
 
     /**
@@ -222,7 +226,9 @@ public class FederatedUserPanel extends UserPanel {
         // Add all tabs
         tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
         tabbedPane.add(groupPanel, MEMBERSHIP_LABEL);
-        tabbedPane.add(certPanel, CERTIFICATE_LABEL);
+
+        //todo:
+       // tabbedPane.add(certPanel, CERTIFICATE_LABEL);
 
         // Return tabbed pane
         return tabbedPane;
