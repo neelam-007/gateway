@@ -45,7 +45,7 @@ public class AuthMethodFolderNode extends AbstractTreeNode {
         insert(new HttpDigestAuthNode(), index++);
         insert(new HttpClientCertificateAuthNode(), index++);
         insert(new WsTokenBasicAuthNode(), index++);
-        insert(new WsTokenDigestAuthNode(), index++);
+        // insert(new WsTokenDigestAuthNode(), index++);
         insert(new XmlRequestSecurityNode(), index++);
     }
 
