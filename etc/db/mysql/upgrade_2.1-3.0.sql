@@ -6,7 +6,7 @@ INSERT INTO internal_group VALUES (2,0,'Gateway Administrators','SecureSpan Mana
 INSERT INTO internal_group VALUES (4,0,'Gateway Operators','SecureSpan Manager users with partial read-only rights in the SecureSpan Gateway.');
 
 ALTER TABLE internal_user DROP COLUMN title;
-
+UPDATE internal_user SET name=login WHERE name IS NULL;
 ALTER TABLE published_service ADD COLUMN soap TINYINT(1) NOT NULL DEFAULT 1;
 ALTER TABLE published_service ADD COLUMN routing_uri varchar(128) default NULL;
 UPDATE published_service SET soap=1;
