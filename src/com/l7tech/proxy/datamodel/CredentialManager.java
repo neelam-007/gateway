@@ -132,11 +132,14 @@ public abstract class CredentialManager {
 
     /**
      * Notify the user that the discovered server certificate could not be trusted automatically.
-     * The user may elect to trust it anyway, or to cancel.
+     * The user may elect to trust it anyway, or to cancel.  If the certificate should be trusted, this method
+     * will return.  Otherwise, it will thorw OperationCanceledException.
      *
-     * @param sslPeer
-     @param serverDesc description of the SSL server we were talking to (ie, "the Gateway foo.bar.baz")
-     @param untrustedCertificate the certificate that was presented by this server and that did not pass muster
+     * @param sslPeer the SSL peer whose certificate was not trusted.  Used by non-interactive Bridge users to
+     *                decide whether to trust a given certificate.  Must not be null.
+     * @param serverDesc description of the SSL server we were talking to (ie, "the Gateway foo.bar.baz").  Must not be null.
+     * @param untrustedCertificate the certificate that was presented by this server and that did not pass muster.  Must not be null.
+     * @throws OperationCanceledException if trustworthiness of this certificate was not confirmed.
      */
     public abstract void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException;
 
