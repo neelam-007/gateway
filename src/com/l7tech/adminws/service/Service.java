@@ -1,6 +1,7 @@
 package com.l7tech.adminws.service;
 
 import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.EntityType;
 
 /**
  * Layer 7 Technologies, inc.
@@ -33,13 +34,19 @@ public class Service {
 
     public PublishedService findServiceByPrimaryKey(long oid) throws java.rmi.RemoteException {
         // todo, remove this test code and replace with call to server-side manager
-        PublishedService out = new PublishedService();
-        out.setName("service name");
-        out.setOid(oid);
-        out.setPolicyXml("<this is not really xml>");
-        out.setWsdlXml("<this is not really xml>");
-        return out;
+        return createTestPubService();
     }
+
+    public com.l7tech.objectmodel.EntityHeader[] findAllPublishedServices() throws java.rmi.RemoteException {
+        // todo, remove this test code and replace with call to server-side manager
+        return createTestHeaders();
+    }
+
+    public com.l7tech.objectmodel.EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws java.rmi.RemoteException {
+        // todo, remove this test code and replace with call to server-side manager
+        return createTestHeaders();
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -50,4 +57,20 @@ public class Service {
         System.out.println(me.resolveWsdlTarget("http://192.168.0.2:8080/simplewsdl.xml"));
     }
     */
+    private PublishedService createTestPubService() {
+        PublishedService out = new PublishedService();
+        out.setName("service name");
+        out.setOid(132);
+        out.setPolicyXml("<this is not really xml>");
+        out.setWsdlXml("<this is not really xml>");
+        return out;
+    }
+
+    private com.l7tech.objectmodel.EntityHeader[] createTestHeaders() {
+        com.l7tech.objectmodel.EntityHeader[] out = new com.l7tech.objectmodel.EntityHeader[3];
+        out[0] = new com.l7tech.objectmodel.EntityHeader(1, EntityType.SERVICE, "name", "description");
+        out[1] = new com.l7tech.objectmodel.EntityHeader(2, EntityType.SERVICE, "name", "description");
+        out[2] = new com.l7tech.objectmodel.EntityHeader(3, EntityType.SERVICE, "name", "description");
+        return out;
+    }
 }
