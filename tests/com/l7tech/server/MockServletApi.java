@@ -27,7 +27,7 @@ import java.net.InetAddress;
  */
 public class MockServletApi {
     Mock servletRequestMock = new Mock(HttpServletRequest.class);
-    Mock servetResponseMock = new Mock(HttpServletRequest.class);
+    Mock servletResponseMock = new Mock(HttpServletResponse.class);
     Mock servletContextMock = new Mock(ServletContext.class);
     Mock servletConfigMock = new Mock(ServletConfig.class);
 
@@ -35,7 +35,7 @@ public class MockServletApi {
      * instantiate the <code>MockServletApi</code> using the
      * default preparer
      */
-    public static MockServletApi defaultMessageProcessor() {
+    public static MockServletApi defaultMessageProcessingServletApi() {
         MockServletApi ma = new MockServletApi();
         ma.new DefaultMessageProcessorPreparer().prepare(ma);
         return ma;
@@ -76,6 +76,10 @@ public class MockServletApi {
                 servletRequestMock.matchAndReturn("getServerPort", 8080);
                 servletRequestMock.matchAndReturn("getContextPath", "/ssg");
 
+                servletResponseMock.matchAndReturn( "setContentType", "text/xml; charset=utf-8", null );
+                servletResponseMock.matchAndReturn( "setStatus", C.IS_ANYTHING, null );
+                servletResponseMock.matchAndReturn( "setHeader", C.ANY_ARGS, null );
+
                 servletConfigMock.matchAndReturn("getInitParameter", C.IS_NOT_NULL, null);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -91,13 +95,17 @@ public class MockServletApi {
      */
     public void setPublishedService(PublishedService service) {
         servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_SERVICE, service);
+        servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_POLICY_VERSION, "" );
+        servletRequestMock.matchAndReturn("getHeader", Request.PARAM_HTTP_POLICY_VERSION, "" );
+        /*
         String version = "" + service.getOid() + "|" + service.getVersion();
         servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_POLICY_VERSION, version);
+        */
     }
 
     /**
      * set the soiap requesty and the soap action to process
-     * 
+     *
      * @param soapMessage the soap message
      * @param soapAction  the soap action
      * @throws IOException   thrown on io error
@@ -116,8 +124,8 @@ public class MockServletApi {
      * 
      * @return the servlet response mock
      */
-    public Mock getServetResponseMock() {
-        return servetResponseMock;
+    public Mock getServletResponseMock() {
+        return servletResponseMock;
     }
 
     /**
@@ -162,7 +170,7 @@ public class MockServletApi {
      * @return the servlet response
      */
     public HttpServletResponse getServletResponse() {
-        return (HttpServletResponse)servletRequestMock.proxy();
+        return (HttpServletResponse)servletResponseMock.proxy();
     }
 
     /**
