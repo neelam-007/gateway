@@ -8,8 +8,8 @@ package com.l7tech.message;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.transport.jms.BytesMessageInputStream;
+import com.l7tech.server.transport.jms.JmsUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -19,7 +19,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
-import java.util.*;
+import java.util.StringTokenizer;
 
 /**
  * @author alex
@@ -66,7 +66,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
 
             if(!soapPartParsed) {
                 String multipartBoundary = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_BOUNDARY);
-                if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
+                if (multipartBoundary == null) throw new IOException("Multipart header '" + contentTypeHeader.getName() + "' did not contain a boundary");
 
                 String innerType = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_TYPE);
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
@@ -77,7 +77,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
 
                     soapPartParsed = true;
                     return part.content;
-                } else throw new IOException("Expected first part of multipart message to be XML");
+                } else throw new IOException("Expected first part of multipart message to be XML (was '" + innerType + "')");
             } else {
                 if(multipartReader != null) {
                     return multipartReader.getSoapPart().content;
