@@ -13,7 +13,9 @@ import java.io.*;
 
 /**
  * An unsynchronized version of Properties suitable only for JNDI uses. All mutators must be called
- * before all accessors.  To enforce this, you must call {@link #lock()} after you're done setting properties.
+ * before all accessors.
+ * 
+ * To enforce this, you must call {@link #lock()} after you're done setting properties.
  *
  * Based on org.jnp.interfaces.FastNamingProperties (LGPL)
  *
