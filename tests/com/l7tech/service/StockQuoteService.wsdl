@@ -1,0 +1,51 @@
+<!--
+  * Sample service for WSDL parsing tests.
+-->
+
+<?xml version="1.0" ?>
+<definitions name="StockQuoteService" 
+             targetNamespace="urn:xmltoday-delayed-quotes"
+             xmlns:tns="urn:xmltoday-delayed-quotes"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+    <message name="getQuoteInput">
+        <part name="symbol" type="xsd:string"/>
+    </message>
+
+    <message name="getQuoteOutput">
+        <part name="quote" type="xsd:float"/>
+    </message>
+
+    <portType name="GetQuote">
+        <operation name="getQuote">
+            <input message="tns:getQuoteInput"/>
+            <output message="tns:getQuoteOutput"/>
+        </operation>
+    </portType>
+
+    <binding name="GetQuoteSoapBinding" type="tns:GetQuote">
+        <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="getQuote">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="encoded" 
+                           encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                           namespace="urn:xmltoday-delayed-quotes"/>
+            </input>
+            <output>
+                <soap:body use="encoded"
+                           encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                           namespace="urn:xmltoday-delayed-quotes"/>
+            </output>
+        </operation>
+    </binding>
+
+    <service name="StockQuoteService">
+        <port name="StockQuotePort" binding="tns:GetQuoteSoapBinding">
+            <soap:address location="http://localhost:8080/soap/servlet/rpcrouter"/>
+        </port>
+    </service>
+
+</definitions>
