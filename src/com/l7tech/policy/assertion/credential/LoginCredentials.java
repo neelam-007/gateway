@@ -66,6 +66,12 @@ public class LoginCredentials {
         return _payload;
     }
 
+    public String toString() {
+        return getClass().getName() + "\n\t" +
+                "format: " + _format.toString() + "\n\t" +
+                "login: " + _login;
+    }
+
     private final String _login;
     private final byte[] _credentials;
     private final String _realm;
