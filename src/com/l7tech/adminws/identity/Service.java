@@ -144,25 +144,27 @@ public class Service {
         }
     }
     public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
-        UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
-        if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
         try {
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            GroupManager groupManager = provider.getGroupManager();
+            UserManager userManager = provider.getUserManager();
+
             User u = userManager.findByPrimaryKey(userId);
             Set groups = u.getGroups();
-
-            if ( !groups.isEmpty() ) {
-                Set groupHeaders = null;
+            // switch groups to group headers
+            if (!groups.isEmpty()) {
+                Set groupHeaders = new HashSet();
                 Group g;
                 EntityHeader gh;
                 for (Iterator i = groups.iterator(); i.hasNext();) {
                     g = (Group)i.next();
-                    gh = new EntityHeader( g.getOid(), EntityType.GROUP, g.getName(), g.getDescription() );
-                    if ( groupHeaders == null ) groupHeaders = new HashSet();
+                    gh = groupManager.groupToHeader(g);
                     groupHeaders.add( gh );
                 }
                 u.setGroupHeaders( groupHeaders );
+                u.setGroups(new HashSet());
             }
-
             return u;
         } catch (FindException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
@@ -189,7 +191,7 @@ public class Service {
         }
     }
 
-    private Map groupsToMap( Set groups ) {
+    /*private Map groupsToMap( Set groups ) {
         Map result = Collections.EMPTY_MAP;
         Group group;
         String oid;
@@ -211,65 +213,31 @@ public class Service {
             result.put( header.getStrId(), header );
         }
         return result;
-    }
+    }*/
 
     public long saveUser(long identityProviderConfigId, com.l7tech.identity.User user) throws java.rmi.RemoteException {
         try {
-            // Let's try not to create nested transactions, since we're updating two classes of object
-            IdentityProvider provider = null;
-            try {
-                provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
-            } catch ( FindException fe ) {
-                throw new java.rmi.RemoteException( "Couldn't get IdentityProvider!" );
-            }
-
-            UserManager userManager = provider.getUserManager();
-            if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
             GroupManager groupManager = provider.getGroupManager();
-            if ( groupManager == null ) throw new java.rmi.RemoteException( "Cannot retrieve the GroupManager" );
+            UserManager userManager = provider.getUserManager();
 
-            Map groupHeaderMap = headersToMap( user.getGroupHeaders() );
-            Map groupMap = groupsToMap( user.getGroups() );
-
-            EntityHeader header;
-            Group group;
-            String oid;
-
-            // Add newly added headers
-            for (Iterator i = groupHeaderMap.keySet().iterator(); i.hasNext();) {
-                oid = (String) i.next();
-                header = (EntityHeader)groupHeaderMap.get( oid );
-                if ( !groupMap.containsKey( oid ) ) {
-                    // This
-                    groupMap.put( oid, groupManager.headerToGroup( header ) );
-                }
-            }
-
+            // transfer group header into groups
+            Set groupHeaders = user.getGroupHeaders();
             Set groups = new HashSet();
-
-            // Remove missing headers
-            for (Iterator i = groupMap.keySet().iterator(); i.hasNext();) {
-                oid = (String)i.next();
-                group = (Group)groupMap.get( oid );
-                if ( !groupHeaderMap.containsKey( oid ) ) {
-                    // This group is no longer in the headers
-                    groupMap.remove( oid );
+            if (groupHeaders != null && groupHeaders.size() > 0) {
+                for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
+                    EntityHeader header = (EntityHeader)i.next();
+                    Group grp = groupManager.headerToGroup(header);
+                    groups.add(grp);
                 }
             }
-
-            for (Iterator i = groupMap.keySet().iterator(); i.hasNext();) {
-                oid = (String)i.next();
-                group = (Group)groupMap.get(oid);
-                groups.add( group );
-            }
-
-            user.setGroups( groups );
+            user.setGroups(groups);
 
             if (user.getOid() > 0) {
                 User originalUser = userManager.findByPrimaryKey(Long.toString(user.getOid()));
                 originalUser.copyFrom(user);
                 userManager.update(originalUser);
-
                 LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated User: " + user.getOid());
                 return user.getOid();
             }
@@ -308,7 +276,24 @@ public class Service {
     }
     public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
         try {
-            return retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findByPrimaryKey(groupId);
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            GroupManager groupManager = provider.getGroupManager();
+            UserManager userManager = provider.getUserManager();
+            Group output = groupManager.findByPrimaryKey(groupId);
+            // transfer members into member headers
+            Set members = output.getMembers();
+            if (members != null && members.size() > 0) {
+                Set memberHeaders = new HashSet();
+                for (Iterator i = members.iterator(); i.hasNext();) {
+                    User usr = (User)i.next();
+                    EntityHeader header = userManager.userToHeader(usr);
+                    memberHeaders.add(header);
+                }
+                output.setMemberHeaders(memberHeaders);
+                output.setMembers(new HashSet());
+            }
+            return output;
         } catch (FindException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in findGroupByPrimaryKey", e);
@@ -331,14 +316,27 @@ public class Service {
     }
     public long saveGroup(long identityProviderConfigId, com.l7tech.identity.Group group) throws java.rmi.RemoteException {
         try {
-            GroupManager groupManager = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId);
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            GroupManager groupManager = provider.getGroupManager();
+            UserManager userManager = provider.getUserManager();
+
+            // transfer member headers into members
+            Set memberHeaders = group.getMemberHeaders();
+            if (memberHeaders != null && memberHeaders.size() > 0) {
+                Set members = new HashSet();
+                for (Iterator i = members.iterator(); i.hasNext();) {
+                    EntityHeader header = (EntityHeader)i.next();
+                    User usr = userManager.headerToUser(header);
+                    members.add(usr);
+                }
+                group.setMembers(members);
+            }
+
             if (group.getOid() > 0) {
-                // patch to fix hibernate update issue
                 Group originalGroup = groupManager.findByPrimaryKey(Long.toString(group.getOid()));
                 originalGroup.copyFrom(group);
                 groupManager.update(originalGroup);
-                // end of patch
-                //groupManager.update(group);
                 LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated Group: " + group.getOid());
                 return group.getOid();
             }
