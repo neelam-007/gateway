@@ -21,9 +21,10 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public abstract class AbstractLdapGroupManagerServer extends LdapManager implements GroupManager {
+public abstract class AbstractLdapGroupManagerServer extends GroupManagerAdapter implements GroupManager {
     public AbstractLdapGroupManagerServer( IdentityProviderConfig config ) {
-        super( config );
+        _ldapManager = new LdapManager( config );
+        _config = config;
     }
 
     /*
@@ -35,7 +36,7 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
     protected abstract AbstractLdapConstants getConstants();
 
     protected UserManager getUserManager() {
-        IdentityProvider provider = IdentityProviderFactory.makeProvider(config);
+        IdentityProvider provider = IdentityProviderFactory.makeProvider( _config );
         return provider.getUserManager();
     }
 
@@ -58,8 +59,8 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
             String filter = "(objectclass=" + getConstants().oUObjClassName() + ")";
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            DirContext context = getBrowseContext();
-            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
+            DirContext context = _ldapManager.getBrowseContext();
+            answer = context.search( _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             while (answer.hasMore())
             {
                 EntityHeader header = headerFromOuSearchResult((SearchResult)answer.next());
@@ -82,8 +83,8 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
                 String filter = "(objectclass=" + getConstants().oUObjClassName() + ")";
                 SearchControls sc = new SearchControls();
                 sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-                DirContext context = getBrowseContext();
-                answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
+                DirContext context = _ldapManager.getBrowseContext();
+                answer = context.search(_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
                 while (answer.hasMore())
                 {
                     EntityHeader header = headerFromOuSearchResult((SearchResult)answer.next());
@@ -102,12 +103,12 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
 
     public EntityHeader headerFromOuSearchResult(SearchResult sr) throws NamingException {
         Attributes atts = sr.getAttributes();
-        Object tmp = extractOneAttributeValue(atts, getConstants().oUObjAttrName());
+        Object tmp = _ldapManager.extractOneAttributeValue(atts, getConstants().oUObjAttrName());
         String ou = null;
         if (tmp != null) ou = tmp.toString();
 
         if (ou != null && ou != null) {
-            String dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
+            String dn = sr.getName() + "," + _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
             EntityHeader header = new EntityHeader(dn, EntityType.GROUP, dn, null);
             return header;
         }
@@ -116,13 +117,13 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
 
     private Group buildOUGroup(String dn) throws FindException {
         try {
-            DirContext context = getBrowseContext();
+            DirContext context = _ldapManager.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
             AbstractLdapConstants constants = getConstants();
             Group out = new Group();
-            out.setProviderId(config.getOid());
+            out.setProviderId(_config.getOid());
             out.setName(dn);
-            Object tmp = extractOneAttributeValue(attributes, constants.descriptionAttribute() );
+            Object tmp = _ldapManager.extractOneAttributeValue(attributes, constants.descriptionAttribute() );
             if (tmp != null) out.setDescription(tmp.toString());
             // build group memberships
             NamingEnumeration answer = null;
@@ -140,7 +141,7 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
                 SearchResult sr = (SearchResult)answer.next();
                 userdn = sr.getName() + "," + dn;
                 Attributes atts = sr.getAttributes();
-                tmp = extractOneAttributeValue(atts, constants.userLoginAttribute());
+                tmp = _ldapManager.extractOneAttributeValue(atts, constants.userLoginAttribute());
                 if (tmp != null) login = tmp.toString();
                 if (login != null && userdn != null) {
                     User u = getUserManager().findByPrimaryKey(userdn);
@@ -171,13 +172,13 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
             throw new FindException("invalid manager");
         }
         try {
-            DirContext context = getBrowseContext();
+            DirContext context = _ldapManager.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
             AbstractLdapConstants constants = getConstants();
             Group out = new Group();
-            out.setProviderId(config.getOid());
+            out.setProviderId(_config.getOid());
             out.setName(dn);
-            Object tmp = extractOneAttributeValue(attributes, constants.descriptionAttribute() );
+            Object tmp = _ldapManager.extractOneAttributeValue(attributes, constants.descriptionAttribute() );
             if (tmp != null) out.setDescription(tmp.toString());
             // this would override the dn
             // tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
@@ -249,8 +250,8 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
-        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
-            config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
+        if (_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
+            _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
             throw new FindException("No search base provided");
         }
         try
@@ -259,16 +260,16 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
             String filter = "(objectclass=" + constants.groupObjectClass() + ")";
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            DirContext context = getBrowseContext();
-            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
+            DirContext context = _ldapManager.getBrowseContext();
+            answer = context.search(_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             while (answer.hasMore())
             {
                 String dn = null;
                 String cn = null;
                 SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
+                dn = sr.getName() + "," + _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 Attributes atts = sr.getAttributes();
-                Object tmp = extractOneAttributeValue(atts, constants.userNameAttribute() );
+                Object tmp = _ldapManager.extractOneAttributeValue(atts, constants.userNameAttribute() );
                 if (tmp != null) cn = tmp.toString();
 
                 if (cn != null && dn != null) {
@@ -294,8 +295,8 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
-        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
-            config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
+        if (_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
+            _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
             throw new FindException("No search base provided");
         }
         try
@@ -304,8 +305,8 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
             String filter = "(objectclass=" + constants.groupObjectClass() + ")";
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            DirContext context = getBrowseContext();
-            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
+            DirContext context = _ldapManager.getBrowseContext();
+            answer = context.search(_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             int count = 0;
             while (answer.hasMore()) {
                 if (count < offset) {
@@ -319,9 +320,9 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
                 String dn = null;
                 String cn = null;
                 SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
+                dn = sr.getName() + "," + _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 Attributes atts = sr.getAttributes();
-                Object tmp = extractOneAttributeValue(atts, constants.userNameAttribute() );
+                Object tmp = _ldapManager.extractOneAttributeValue(atts, constants.userNameAttribute() );
                 if (tmp != null) cn = tmp.toString();
 
                 if (cn != null && dn != null) {
@@ -372,5 +373,8 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
     }
 
     private volatile boolean valid = true;
+    private LdapManager _ldapManager;
     protected Logger logger = LogManager.getInstance().getSystemLogger();
+    private IdentityProviderConfig _config;
+
 }
