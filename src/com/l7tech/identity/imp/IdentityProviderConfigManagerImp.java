@@ -1,11 +1,10 @@
 package com.l7tech.identity.imp;
 
 import com.l7tech.identity.*;
-import com.l7tech.identity.internal.imp.InternalIdentityProviderImp;
 import com.l7tech.objectmodel.*;
-import com.l7tech.util.Locator;
 
 import java.util.*;
+import java.sql.SQLException;
 
 /**
  * @author alex
@@ -14,11 +13,15 @@ public class IdentityProviderConfigManagerImp extends HibernateEntityManager imp
     static final Class IMPCLASS = IdentityProviderConfigImp.class;
 
     public IdentityProviderConfigManagerImp( PersistenceContext context ) {
-        super(context);
+        super( context );
     }
 
     public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {
-        _manager.delete( _context, identityProviderConfig );
+        try {
+            _manager.delete( getContext(), identityProviderConfig );
+        } catch ( SQLException se ) {
+            throw new DeleteException( se.toString(), se );
+        }
     }
 
     public Collection findAllIdentityProviders() throws FindException {
@@ -26,19 +29,35 @@ public class IdentityProviderConfigManagerImp extends HibernateEntityManager imp
     }
 
     public IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException {
-        return (IdentityProviderConfig)_manager.findByPrimaryKey( _context, IMPCLASS, oid );
+        try {
+            return (IdentityProviderConfig)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );
+        } catch ( SQLException se ) {
+            throw new FindException( se.toString(), se );
+        }
     }
 
     public long save( IdentityProviderConfig identityProviderConfig ) throws SaveException {
-        return _manager.save( _context, identityProviderConfig );
+        try {
+            return _manager.save( getContext(), identityProviderConfig );
+        } catch ( SQLException se ) {
+            throw new SaveException( se.toString(), se );
+        }
     }
 
     public void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException {
-        _manager.update( _context, identityProviderConfig );
+        try {
+            _manager.update( getContext(), identityProviderConfig );
+        } catch ( SQLException se ) {
+            throw new UpdateException( se.toString(), se );
+        }
     }
 
     public Collection findAll() throws FindException {
-        return _manager.find( _context, "from identity_provider in class com.l7tech.identity.imp.IdentityProviderConfigImp" );
+        try {
+            return _manager.find( getContext(), "from identity_provider in class com.l7tech.identity.imp.IdentityProviderConfigImp" );
+        } catch ( SQLException se ) {
+            throw new FindException( se.toString(), se );
+        }
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {

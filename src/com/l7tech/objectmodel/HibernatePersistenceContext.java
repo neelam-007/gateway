@@ -14,7 +14,7 @@ import javax.naming.InitialContext;
 /**
  * @author alex
  */
-public class HibernatePersistenceContext implements PersistenceContext {
+public class HibernatePersistenceContext extends PersistenceContext {
     Session getSession() {
         return _session;
     }

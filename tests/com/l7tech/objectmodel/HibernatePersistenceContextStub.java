@@ -14,7 +14,7 @@ import javax.transaction.Status;
 /**
  * @author alex
  */
-public class HibernatePersistenceContextStub extends HibernatePersistenceContext implements PersistenceContext {
+public class HibernatePersistenceContextStub extends HibernatePersistenceContext {
     Session getSession() {
         return _session;
     }

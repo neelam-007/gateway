@@ -11,9 +11,11 @@ import com.l7tech.identity.internal.CountryManager;
 import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
+import java.sql.SQLException;
 
 /**
  * @author alex
+ * @version $Revision$
  */
 public class CountryManagerImp extends HibernateEntityManager implements CountryManager {
     public static final Class IMPCLASS = CountryImp.class;
@@ -23,36 +25,46 @@ public class CountryManagerImp extends HibernateEntityManager implements Country
     }
 
     public Country findByPrimaryKey(long oid) throws FindException {
-        return (Country)_manager.findByPrimaryKey( _context, IMPCLASS, oid );
+        try {
+            return (Country)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );
+        } catch (SQLException se) {
+            throw new FindException( se.toString(), se );
+        }
     }
 
     public void delete(Country country) throws DeleteException {
-        _manager.delete( _context, country );
+        try {
+            _manager.delete( getContext(), country );
+        } catch ( SQLException se ) {
+            throw new DeleteException( se.toString(), se );
+        }
     }
 
     public long save(Country country) throws SaveException {
-        return _manager.save( _context, country );
+        try {
+            return _manager.save( getContext(), country );
+        } catch ( SQLException se ) {
+            throw new SaveException( se.toString(), se );
+        }
     }
 
     public void update( Country country ) throws UpdateException {
-        _manager.update( _context, country );
-    }
-
-    public void setIdentityProviderOid(long oid) {
-        _identityProviderOid = oid;
+        try {
+            _manager.update( getContext(), country );
+        } catch ( SQLException se ) {
+            throw new UpdateException( se.toString(), se );
+        }
     }
 
     public Collection findAll() throws FindException {
-        String query ="from country in class com.l7tech.identity.imp.CountryImp";
-        if ( _identityProviderOid == -1 )
-            throw new FindException( "Can't call findAll() without first calling setIdentityProviderOid!" );
-        else
-            return _manager.find( _context, query + " where provider = ?", new Long( _identityProviderOid ), Long.TYPE );
+        try {
+            return _manager.find( getContext(), "from country in class com.l7tech.identity.imp.CountryImp" );
+        } catch ( SQLException se ) {
+            throw new FindException( se.toString(), se );
+        }
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
         throw new IllegalArgumentException( "Not yet implemented!" );
     }
-
-    public long _identityProviderOid = -1;
 }

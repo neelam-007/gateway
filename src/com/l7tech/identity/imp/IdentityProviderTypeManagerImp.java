@@ -4,6 +4,7 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 
 import java.util.*;
+import java.sql.SQLException;
 
 /**
  * @author alex
@@ -14,27 +15,47 @@ public class IdentityProviderTypeManagerImp extends HibernateEntityManager imple
     }
 
     public void delete(IdentityProviderType identityProviderType) throws DeleteException {
-        _manager.delete( _context, identityProviderType );
+        try {
+            _manager.delete( getContext(), identityProviderType );
+        } catch ( SQLException se ) {
+            throw new DeleteException( se.toString(), se );
+        }
     }
 
     public IdentityProviderType findByPrimaryKey( long oid ) throws FindException {
-        return (IdentityProviderType)_manager.findByPrimaryKey( _context, IdentityProviderType.class, oid );
+        try {
+            return (IdentityProviderType)_manager.findByPrimaryKey( getContext(), IdentityProviderType.class, oid );
+        } catch ( SQLException se ) {
+            throw new FindException( se.toString(), se );
+        }
     }
 
     public long save( IdentityProviderType identityProviderType ) throws SaveException {
-        return _manager.save( _context, identityProviderType );
+        try {
+            return _manager.save( getContext(), identityProviderType );
+        } catch ( SQLException se ) {
+            throw new SaveException( se.toString(), se );
+        }
     }
 
     public void update( IdentityProviderType identityProviderType ) throws UpdateException {
-        _manager.update( _context, identityProviderType );
+        try {
+            _manager.update( getContext(), identityProviderType );
+        } catch ( SQLException se ) {
+            throw new UpdateException( se.toString(), se );
+        }
     }
 
     public Collection findAll() throws FindException {
-        return _manager.find( _context, "from identity_provider_type in class com.l7tech.identity.imp.IdentityProviderTypeImp" );
+        try {
+            return _manager.find( getContext(), "from identity_provider_type in class com.l7tech.identity.imp.IdentityProviderTypeImp" );
+        } catch ( SQLException se ) {
+            throw new FindException( se.toString(), se );
+        }
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
-        return null;
+        throw new IllegalArgumentException( "Not yet implemented!" );
     }
 
 }

@@ -4,6 +4,7 @@
 <web-app>
     <display-name>Layer7 Secure Span Gateway</display-name>
 
+
     <!-- ssg boot servlet properties -->
 
     <!-- 
@@ -77,6 +78,17 @@
         <welcome-file>index.jsp</welcome-file>
         <welcome-file>index.jws</welcome-file>
     </welcome-file-list>
+
+   <!-- jdbc configuration -->
+    <resource-ref>
+      <res-ref-name>jdbc/ssg</res-ref-name>
+      <res-type>javax.sql.XADataSource</res-type>
+      <driver-name>com.mysql.jdbc.Driver</driver-name>
+      <url>jdbc:mysql://localhost/ssg</url>
+      <user>webuser</user>
+      <password>resubew</password>
+    </resource-ref>
+
 
     <!--
     <login-config>

@@ -18,16 +18,19 @@ import java.sql.SQLException;
  */
 public abstract class HibernateEntityManager implements EntityManager {
     /**
-     * Constructs a new <code>HibernateEntityManager</code> with a default PersistenceContext.  You get your own context and call the other constructor if you want to execute multiple operations in a transaction.
-     * @throws java.sql.SQLException
+     * Constructs a new <code>HibernateEntityManager</code>.
      */
-    public HibernateEntityManager() throws SQLException {
+    public HibernateEntityManager() {
         PersistenceManager manager = PersistenceManager.getInstance();
         if ( !(manager instanceof HibernatePersistenceManager ) ) throw new IllegalStateException( "Can't instantiate a " + getClass().getName() + "without first initializing a HibernatePersistenceManager!");
         _manager = manager;
-        _context = manager.getContext();
     }
 
+    protected PersistenceContext getContext() throws SQLException {
+        if ( _context == null )
+            _context = PersistenceContext.getCurrent();
+        return _context;
+    }
 
     /**
      * Constructs a new <code>HibernateEntityManager</code> with a specific context.
