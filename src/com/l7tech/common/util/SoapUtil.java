@@ -15,6 +15,7 @@ import javax.xml.rpc.NamespaceConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
+import java.util.TimeZone;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -56,11 +57,19 @@ public class SoapUtil {
     }
     public static final String[] SECURITY_URIS_ARRAY = (String[])SECURITY_URIS.toArray(new String[0]);
 
+    public static final List WSU_URIS = new ArrayList();
+    static {
+        WSU_URIS.add(WSU_NAMESPACE);
+        WSU_URIS.add(WSU_NAMESPACE2);
+    }
+    public static final String[] WSU_URIS_ARRAY = (String[])WSU_URIS.toArray(new String[0]);
+
     // Attribute names
     public static final String ID_ATTRIBUTE_NAME = "Id";
     public static final String ACTOR_ATTR_NAME = "actor";  // SOAP 1.1
     public static final String ROLE_ATTR_NAME = "role";    // SOAP 1.2
-    public static final String MUSTUNDERSTAND_EL_NAME = "mustUnderstand"; // SOAP 1.1+
+    public static final String MUSTUNDERSTAND_ATTR_NAME = "mustUnderstand"; // SOAP 1.1+
+    public static final String REFERENCE_URI_ATTR_NAME = "URI";
 
     // Element names
     public static final String ENVELOPE_EL_NAME = "Envelope";
@@ -71,9 +80,12 @@ public class SoapUtil {
     public static final String SIGNED_INFO_EL_NAME = "SignedInfo";
     public static final String REFERENCE_EL_NAME = "Reference";
     public static final String SECURITYTOKENREFERENCE_EL_NAME = "SecurityTokenReference";
+    public static final String BINARYSECURITYTOKEN_EL_NAME = "BinarySecurityToken";
     public static final String KEYIDENTIFIER_EL_NAME = "KeyIdentifier";
-
-    public static final String REFERENCE_URI_ATTR_NAME = "URI";
+    public static final String ENCRYPTEDKEY_EL_NAME = "EncryptedKey";
+    public static final String TIMESTAMP_EL_NAME = "Timestamp";
+    public static final String CREATED_EL_NAME = "Created";
+    public static final String EXPIRES_EL_NAME = "Expires";
 
     // Misc
     public static final String FC_CLIENT = "Client";
@@ -93,6 +105,10 @@ public class SoapUtil {
 
     /** soap body xpath '/soapenv:Envelope/soapenv:Body' */
     public static final String SOAP_BODY_XPATH = SOAP_ENVELOPE_XPATH+"/"+NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Body";
+
+    /** Timestamp date format */
+    public static final String DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+    public static final TimeZone DATE_FORMAT_TIMEZONE = TimeZone.getTimeZone("UTC");
 
     public static class MessageNotSoapException extends Exception {
         public MessageNotSoapException(String cause) {
