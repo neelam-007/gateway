@@ -7,9 +7,13 @@
 package com.l7tech.policy.assertion.identity;
 
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.objectmodel.FindException;
 
 import java.security.Principal;
+
+import org.apache.log4j.Category;
 
 /**
  * Asserts that the requester is a particular User.
@@ -27,8 +31,22 @@ public class SpecificUser extends IdentityAssertion {
         super();
     }
 
-    public void setUser( Principal user ) {
-        _user = user;
+    public void setUser( Principal principal ) {
+        User tempUser;
+        if ( principal instanceof User ) {
+            tempUser = (User)principal;
+        } else {
+            String err = "Principal " + principal + " is not a User!";
+            _log.error( err );
+            throw new RuntimeException( err );
+        }
+
+        try {
+            _user = _identityProvider.getUserManager().findByLogin( tempUser.getLogin() );
+        } catch ( FindException fe ) {
+            _log.error( "Couldn't find user " + tempUser.getName(), fe );
+
+        }
     }
 
     public Principal getUser() {
@@ -43,4 +61,6 @@ public class SpecificUser extends IdentityAssertion {
     }
 
     protected Principal _user;
+
+    protected transient Category _log = Category.getInstance( getClass() );
 }
