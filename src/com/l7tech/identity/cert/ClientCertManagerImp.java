@@ -144,7 +144,6 @@ public class ClientCertManagerImp implements ClientCertManager {
         logger.finest("revokeUserCert for " + user.getLogin());
         CertEntryRow currentdata = getFromTable(user);
         if (currentdata != null) {
-            // todo, something about the user's password
             currentdata.setCert(null);
             currentdata.setResetCounter(0);
             try {
