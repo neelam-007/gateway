@@ -10,6 +10,7 @@ import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -56,9 +57,13 @@ public class PublishServiceAction extends SecureAction {
      */
     protected void performAction() {
         JFrame f = TopComponents.getInstance().getMainWindow();
-        PublishServiceWizard dialog = new PublishServiceWizard(f, false);
+        //PublishServiceWizard dialog = new PublishServiceWizard(f, false);
+        PublishServiceWizard dialog = PublishServiceWizard.getInstance(f);
         dialog.addEntityListener(listener);
-        dialog.setResizable(false);
+        //dialog.setResizable(false);
+        dialog.pack();
+        dialog.setSize(750, 500);
+        Utilities.centerOnScreen(dialog);
         dialog.show();
     }
 

@@ -42,6 +42,10 @@ public class ServicePanel extends WizardStepPanel {
         initComponents();
     }
 
+    public String getDescription() {
+        return "Specify the WSDL URL of the Web service. The URL locates the WSDL that describes the Web service.";
+    }
+
     /** This method is called from within the constructor to
      * initialize the form.
      */
@@ -213,7 +217,7 @@ public class ServicePanel extends WizardStepPanel {
         return isWsdlDownloaded;
     }
 
-    public void readSettings(Object settings) throws IllegalStateException {
+    public void storeSettings(Object settings) throws IllegalStateException {
         if (!(settings instanceof ServiceAndAssertion)) {
             throw new IllegalArgumentException();
         }

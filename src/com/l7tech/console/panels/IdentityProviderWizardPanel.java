@@ -458,6 +458,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         }
     }
 
+    public void storeSettings(Object settings) throws IllegalArgumentException {
+        readSettings(settings);
+    }
+
     private void populateAssertions(ArrayList allAssertions) {
         java.util.List identityAssertions = new ArrayList();
         if (sslCheckBox.isSelected()) {

@@ -38,7 +38,8 @@ public class PublishServiceWizardTest {
             log.log(Level.WARNING, "L&F error", e);
         }
         log.info("Property: " + System.getProperty("com.l7tech.common.locator"));
-        PublishServiceWizard w = new PublishServiceWizard(new JFrame(), true);
+        //PublishServiceWizard w = new PublishServiceWizard(new JFrame(), true);
+        PublishServiceWizard w = PublishServiceWizard.getInstance(new JFrame());
         w.setWsdlUrl("http://data.l7tech.com/ACMEWarehouseWS/Service1.asmx?WSDL");
         w.show();
         Registry registry = Registry.getDefault();

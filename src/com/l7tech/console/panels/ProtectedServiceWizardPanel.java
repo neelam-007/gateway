@@ -35,6 +35,11 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         initComponents();
     }
 
+    public String getDescription() {
+        return "Specify how the SecureSpan Gateway gains access to the Web service. " +
+               "Include access credentials, if required.";
+    }
+
     /**
      * This method is called from within the constructor to
      * initialize the form.
@@ -154,7 +159,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
      * @exception IllegalArgumentException if the the data provided
      * by the wizard are not valid.
      */
-    public void readSettings(Object settings) throws IllegalArgumentException {
+    public void storeSettings(Object settings) throws IllegalArgumentException {
         PublishServiceWizard.ServiceAndAssertion
           collect = (PublishServiceWizard.ServiceAndAssertion)settings;
         if (isAnonymous()) {
@@ -217,7 +222,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
      * by the wizard are not valid.
      * @param settings the object representing wizard panel state
      */
-    public void storeSettings(Object settings) throws IllegalArgumentException {
+    public void readSettings(Object settings) throws IllegalArgumentException {
         if (!(settings instanceof PublishServiceWizard.ServiceAndAssertion)) {
             throw new IllegalArgumentException();
         }
@@ -285,7 +290,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         JPanel identityPanel = new JPanel();
         identityPanel.setLayout(new BoxLayout(identityPanel, BoxLayout.X_AXIS));
         JLabel identityLabel = new JLabel();
-        identityLabel.setText("Identity:");
+        identityLabel.setText("User Name:");
         identityLabel.setLabelFor(getIdentityTextField());
         identityPanel.add(identityLabel);
         identityPanel.add(Box.createRigidArea(new Dimension(20, 10)));
