@@ -14,6 +14,7 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
+import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
 import org.xml.sax.SAXException;
@@ -55,9 +56,23 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
         return result;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
-        // no action on response
-        return AssertionStatus.NONE;
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
+            throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException,
+                   ResponseValidationException, SAXException
+    {
+        try {
+            data.mustHaveChildren();
+        } catch (PolicyAssertionException e) {
+            throw new RuntimeException(e);
+        }
+        AssertionStatus result = AssertionStatus.FAILED;
+        for ( int i = 0; i < children.length; i++ ) {
+            ClientAssertion assertion = children[i];
+            result = assertion.unDecorateReply(request, response);
+            if (result == AssertionStatus.NONE)
+                return result;
+        }
+        return result;
     }
 
     protected OneOrMoreAssertion data;
