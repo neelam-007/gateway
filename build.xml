@@ -408,7 +408,7 @@
                 <include name="com.ibm.mqjms.jar" if="include.jms.mqseries"/>
                 <include name="connector.jar" if="include.jms.mqseries"/>
 
-                <include name="classes111.jar" if="db.oracle8"/>
+                <include name="ojdbc14.jar" if="db.oracle8"/>
                 <include name="ojdbc14.jar" if="db.oracle9"/>
                 <include name="ojdbc14.jar" if="db.oracle10"/>
 
