@@ -101,6 +101,9 @@ public class ClientKeyManager {
                     keyStore.load(fis, ssg.getPassword());
                 } catch (FileNotFoundException e) {
                     keyStore.load(null, ssg.getPassword());
+                } finally {
+                    if (fis != null)
+                        fis.close();
                 }
                 ssg.setKeyStore(keyStore);
             }
@@ -111,12 +114,14 @@ public class ClientKeyManager {
     public static void saveKeyStore(final Ssg ssg) throws IOException {
         synchronized (ssg) {
             if (ssg.getKeyStore() == null)
-                return;
+                throw new IllegalStateException("SSG " + ssg + " hasn't yet loaded its keystore");
+
             FileUtils.saveFileSafely(ssg.getKeyStoreFile().getAbsolutePath(),
                                      new FileUtils.Saver() {
                                          public void doSave(FileOutputStream fos) throws IOException {
                                              try {
                                                  ssg.getKeyStore().store(fos, ssg.getPassword());
+                                                 fos.close();
                                              } catch (KeyStoreException e) {
                                                  throw new IOException("Unable to write KeyStore for SSG " + ssg + ": " + e);
                                              } catch (NoSuchAlgorithmException e) {
