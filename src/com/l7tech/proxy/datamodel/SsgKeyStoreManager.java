@@ -10,13 +10,14 @@ import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.SslUtils;
+import com.l7tech.proxy.util.SslUtils;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.util.ClientLogger;
+import com.l7tech.proxy.util.SslUtils;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -519,23 +520,17 @@ public class SsgKeyStoreManager {
     {
         CertificateRequest csr = JceProvider.makeCsr(ssg.getUsername(), keyPair);
 
-        try {
-            X509Certificate caCert = getServerCert(ssg);
-            if (caCert == null)
-                throw new ServerCertificateUntrustedException(); // fault in the SSG cert
-            X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
-                                                                    credentials.getUserName(),
-                                                                    credentials.getPassword(),
-                                                                    csr,
-                                                                    caCert);
-            // make sure private key is stored on disk encrypted with the password that was used to obtain it
-            saveClientCertificate(ssg, keyPair.getPrivate(), cert, credentials.getPassword());
-            ssg.resetSslContext(); // reset cached SSL state
-            return;
-        } catch (SslUtils.BadCredentialsException e) {  // note: not the same class BadCredentialsException
-            throw new BadCredentialsException(e);
-        } catch (SslUtils.CertificateAlreadyIssuedException e) {
-            throw new CertificateAlreadyIssuedException(e);
-        }
+        X509Certificate caCert = getServerCert(ssg);
+        if (caCert == null)
+            throw new ServerCertificateUntrustedException(); // fault in the SSG cert
+        X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertificateSigningRequestUrl(),
+                                                                credentials.getUserName(),
+                                                                credentials.getPassword(),
+                                                                csr,
+                                                                caCert);
+        // make sure private key is stored on disk encrypted with the password that was used to obtain it
+        saveClientCertificate(ssg, keyPair.getPrivate(), cert, credentials.getPassword());
+        ssg.resetSslContext(); // reset cached SSL state
+        return;
     }
 }

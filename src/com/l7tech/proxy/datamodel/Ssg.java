@@ -388,17 +388,31 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return url;
     }
 
-    public URL getServerCertRequestUrl() {
+    public URL getServerPasswordChangeUrl() {
+        URL url = null;
+        try {
+            url = new URL("https", getSsgAddress(), getSslPort(), SecureSpanConstants.PASSWD_SERVICE_FILE);
+        } catch (MalformedURLException e) {
+            log.error("Unable to build valid URL for Gateway's password changing service", e);
+            try {
+                return new URL("");
+            } catch (MalformedURLException e1) {
+                throw new RuntimeException(e1); // can't happen
+            }
+        }
+        return url;
+    }
+
+    public URL getServerCertificateSigningRequestUrl() {
         URL url = null;
         try {
             url = new URL("https", getSsgAddress(), getSslPort(), SecureSpanConstants.CERT_REQUEST_FILE);
         } catch (MalformedURLException e) {
-            log.error(e);
+            log.error("Unable to build valid URL for Gateway's certificate signing service", e);
             try {
                 return new URL("");
             } catch (MalformedURLException e1) {
-                log.error("This can't have happened", e1);
-                return null;
+                throw new RuntimeException(e1); // can't happen
             }
         }
         return url;
