@@ -8,7 +8,11 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.policy.exporter.PolicyImporter;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -21,6 +25,7 @@ import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 /**
  * Class <code>AssertionTreeNode</code> is the base superclass for the
@@ -273,38 +278,21 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         ServiceNode sn = getServiceNodeCookie();
         if (sn == null)
             throw new IllegalArgumentException("No edited service specified");
-        ByteArrayOutputStream bo = null;
-        InputStream fin = null;
+        // Todo, plug in new policy import logic
+
         try {
-
-            String oldPolicyXml = sn.getPublishedService().getPolicyXml();
-            bo = new ByteArrayOutputStream();
-            fin = new FileInputStream(pn.getFile());
-
-            byte[] buff = new byte[1024];
-            int nread = -1;
-            while ((nread = fin.read(buff)) != -1) {
-                bo.write(buff, 0, nread);
+            Assertion newRoot = PolicyImporter.importPolicy(pn.getFile());
+            // for some reason, the PublishedService class does not allow to set a policy
+            // directly, it must be set through the XML
+            if (newRoot != null) {
+                sn.getPublishedService().setPolicyXml(WspWriter.getPolicyXml(newRoot));
             }
-            sn.getPublishedService().setPolicyXml(bo.toString());
-            sn.firePropertyChange(this, "policy", oldPolicyXml, sn.getPublishedService().getPolicyXml());
-        } catch (Exception e) {
-
-        } finally {
-            if (bo != null) {
-                try {
-                    bo.close();
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Error closing stream", e);
-                }
-            }
-            if (fin != null) {
-                try {
-                    fin.close();
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Error closing stream", e);
-                }
-            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Could not import the policy", e);
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "Could not import the policy", e);
+        } catch (InvalidPolicyStreamException e) {
+            logger.log(Level.WARNING, "Could not import the policy", e);
         }
     }
 
