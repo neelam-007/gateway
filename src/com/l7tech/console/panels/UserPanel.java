@@ -614,7 +614,7 @@ public class UserPanel extends EntityEditorPanel {
         // Try adding/updating the User
         try {
             String id;
-            if (userHeader.getOid() != 0) {
+            if (userHeader.getStrId() != null) {
                 id = user.getUniqueIdentifier();
                 getUserManager().update(user);
             } else {

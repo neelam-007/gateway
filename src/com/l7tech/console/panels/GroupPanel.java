@@ -459,7 +459,7 @@ public class GroupPanel extends EntityEditorPanel {
         try {
             GroupManager gman = getGroupManager();
             String id;
-            if (groupHeader.getOid() != 0) {
+            if (groupHeader.getStrId() != null) {
                 gman.update(group);
                 id = group.getUniqueIdentifier();
             } else {
