@@ -24,13 +24,19 @@ public class MsadGroupManagerServer extends AbstractLdapGroupManagerServer imple
 
     protected String doGetGroupMembershipFilter( LdapUser user) {
         StringBuffer filter = new StringBuffer();
-        filter.append( "(&(objectClass=" );
-        filter.append( _constants.groupObjectClass() );
-        filter.append( ")(" );
-        filter.append( _constants.groupMemberAttribute() );
-        filter.append( "=" );
-        filter.append( user.getDn() );
-        filter.append( "))" );
+        filter.append( "(&(|" );
+        String[] objclasses = _constants.groupObjectClass();
+        for (int i = 0; i < objclasses.length; i++) {
+            filter.append( "(objectClass=" + objclasses[i] + ")");
+        }
+        filter.append( ")" );
+        filter.append( "(|" );
+        String[] memberAttrs = _constants.groupMemberAttribute();
+        for (int i = 0; i < memberAttrs.length; i++) {
+            filter.append("(" + memberAttrs[i] + "=" + user.getDn() + ")");
+        }
+        filter.append( ")" );
+        filter.append( ")" );
         return filter.toString();
     }
 

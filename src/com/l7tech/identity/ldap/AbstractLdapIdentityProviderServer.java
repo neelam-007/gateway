@@ -165,9 +165,12 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
             if (wantUsers && wantGroups) {
                 filter = "(|" +
                              "(&" +
-                                 "(|" +
-                                     "(objectclass=" + constants.groupObjectClass() + ")" +
-                                     "(objectclass=" + constants.userObjectClass() + ")" +
+                                 "(|";
+                String[] grpClasses = constants.groupObjectClass();
+                for (int groupClassCnt = 0; groupClassCnt < grpClasses.length; groupClassCnt++) {
+                    filter +=        "(objectclass=" + grpClasses[groupClassCnt] + ")";
+                }
+                filter +=            "(objectclass=" + constants.userObjectClass() + ")" +
                                  ")" +
                                  "(" + constants.userNameAttribute() + "=" + searchString + ")" +
                              ")" +
@@ -184,7 +187,12 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
             } else if (wantGroups) {
                 filter = "(|" +
                             "(&" +
-                              "(objectclass=" + constants.groupObjectClass() + ")" +
+                              "(|";
+                String[] grpClasses = constants.groupObjectClass();
+                for (int groupClassCnt = 0; groupClassCnt < grpClasses.length; groupClassCnt++) {
+                    filter +=   "(objectclass=" + grpClasses[groupClassCnt] + ")";
+                }
+                filter +=     ")" +
                               "(" + constants.groupNameAttribute() + "=" + searchString + ")" +
                             ")" +
                             "(&" +
@@ -242,20 +250,22 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
         Attribute objectclasses = atts.get("objectclass");
         // check if it's a user
         String userclass = getConstants().userObjectClass();
-        if (objectclasses.contains(userclass)) return EntityType.USER;
-        userclass = userclass.toLowerCase();
-        if (objectclasses.contains(userclass)) return EntityType.USER;
+        if (attrContainsCaseIndependent(objectclasses, userclass)) return EntityType.USER;
         // check that it's a group
-        String groupclass = getConstants().groupObjectClass();
-        if (objectclasses.contains(groupclass)) return EntityType.GROUP;
-        groupclass = groupclass.toLowerCase();
-        if (objectclasses.contains(groupclass)) return EntityType.GROUP;
+        String[] groupclasses = getConstants().groupObjectClass();
+        for (int i = 0; i < groupclasses.length; i++) {
+            if (attrContainsCaseIndependent(objectclasses, groupclasses[i])) return EntityType.GROUP;
+        }
         // check for OU group
-        groupclass = getConstants().oUObjClassName();
-        if (objectclasses.contains(groupclass)) return EntityType.GROUP;
-        groupclass = groupclass.toLowerCase();
-        if (objectclasses.contains(groupclass)) return EntityType.GROUP;
+        String groupclass = getConstants().oUObjClassName();
+        if (attrContainsCaseIndependent(objectclasses, groupclass)) return EntityType.GROUP;
         return EntityType.UNDEFINED;
+    }
+
+    private boolean attrContainsCaseIndependent(Attribute attr, String valueToLookFor) {
+        if (attr.contains(valueToLookFor)) return true;
+        if (attr.contains(valueToLookFor.toLowerCase())) return true;
+        return false;
     }
 
     private DirContext browseContext() throws NamingException {

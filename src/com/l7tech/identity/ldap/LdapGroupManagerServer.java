@@ -25,7 +25,13 @@ public class LdapGroupManagerServer extends AbstractLdapGroupManagerServer imple
     }
 
     protected String doGetGroupMembershipFilter( LdapUser user ) {
-        return "(" + _constants.groupMemberAttribute() + "=" + user.getCn() + ")";
+        String output = "(|";
+        String[] memberAttrs = _constants.groupMemberAttribute();
+        for (int i = 0; i < memberAttrs.length; i++) {
+            output +=       "(" + memberAttrs[i] + "=" + user.getCn() + ")";
+        }
+        output +=       ")";
+        return output;
     }
 
     protected AbstractLdapConstants getConstants() {

@@ -11,7 +11,7 @@ package com.l7tech.identity.ldap;
  * @version $Revision$
  */
 public class LdapConstants extends AbstractLdapConstants {
-    public String groupMemberAttribute() {
+    public String[] groupMemberAttribute() {
         return GROUPOBJ_MEMBER_ATTR;
     }
 
@@ -19,7 +19,7 @@ public class LdapConstants extends AbstractLdapConstants {
         return LOGIN_ATTR_NAME;
     }
 
-    public String groupObjectClass() {
+    public String[] groupObjectClass() {
         return GROUP_OBJCLASS;
     }
 
@@ -31,10 +31,10 @@ public class LdapConstants extends AbstractLdapConstants {
 
     public String userNameAttribute() {return NAME_ATTR_NAME;}
 
-    static final String GROUPOBJ_MEMBER_ATTR = "memberUid";
+    static final String[] GROUPOBJ_MEMBER_ATTR = {"memberUid"};
     static final String USER_OBJCLASS = "inetOrgPerson";
     static final String LOGIN_ATTR_NAME = "uid";
-    static final String GROUP_OBJCLASS = "posixGroup";
+    static final String[] GROUP_OBJCLASS = {"posixGroup"};
     protected static final String NAME_ATTR_NAME = "cn";
 
 }

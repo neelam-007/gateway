@@ -245,35 +245,53 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
         if (answer != null) answer.close();
      }
 
-     private void collectSelfDescriptiveGroupMembers( DirContext context, Attributes groupAttributes, Set memberHeaders ) throws NamingException, FindException {
+     private void collectSelfDescriptiveGroupMembers(DirContext context, Attributes groupAttributes, Set memberHeaders)
+                                                        throws NamingException, FindException {
         AbstractLdapConstants constants = getConstants();
-        Attribute memberAttribute = groupAttributes.get( constants.groupMemberAttribute() );
-        if (memberAttribute != null) {
-            for (int i = 0; i < memberAttribute.size(); i++) {
-                Object val = memberAttribute.get(i);
-                if (val != null) {
-                    String member = val.toString();
-                    User u = getUserFromGroupMember( member );
-                    if (u != null) {
-                        memberHeaders.add( getUserManager().userToHeader(u) );
-                    } else {
-                        Attributes memberAttributes = context.getAttributes( member );
-                        Attribute objectClassAttr = memberAttributes.get( constants.OBJCLASS_ATTR );
+        String[] memberAttrNames = constants.groupMemberAttribute();
+        for (int attrNameCnt = 0; attrNameCnt < memberAttrNames.length; attrNameCnt++) {
+            Attribute memberAttribute = groupAttributes.get(memberAttrNames[attrNameCnt]);
+            if (memberAttribute != null) {
+                for (int i = 0; i < memberAttribute.size(); i++) {
+                    Object val = memberAttribute.get(i);
+                    if (val != null) {
+                        String member = val.toString();
+                        User u = getUserFromGroupMember(member);
+                        if (u != null) {
+                            memberHeaders.add(getUserManager().userToHeader(u));
+                        } else {
+                            Attributes memberAttributes = context.getAttributes( member );
+                            Attribute objectClassAttr = memberAttributes.get( constants.OBJCLASS_ATTR );
 
-                        for (int j = 0; j < objectClassAttr.size(); j++) {
-                            String oc = objectClassAttr.get(j).toString();
-                            if ( oc.equals( constants.groupObjectClass() ) ) {
-                                // It's a group!
-                                collectSelfDescriptiveGroupMembers( context, memberAttributes, memberHeaders );
-                            } else {
-                                // It's something else entirely!
-                                continue;
+                            if (getSearchResultType(objectClassAttr) == EntityType.GROUP) {
+                                collectSelfDescriptiveGroupMembers(context, memberAttributes, memberHeaders);
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    private EntityType getSearchResultType(Attribute objectclasses) {
+        // check if it's a user
+        String userclass = getConstants().userObjectClass();
+        if (attrContainsCaseIndependent(objectclasses, userclass)) return EntityType.USER;
+        // check that it's a group
+        String[] groupclasses = getConstants().groupObjectClass();
+        for (int i = 0; i < groupclasses.length; i++) {
+            if (attrContainsCaseIndependent(objectclasses, groupclasses[i])) return EntityType.GROUP;
+        }
+        // check for OU group
+        String groupclass = getConstants().oUObjClassName();
+        if (attrContainsCaseIndependent(objectclasses, groupclass)) return EntityType.GROUP;
+        return EntityType.UNDEFINED;
+    }
+
+    private boolean attrContainsCaseIndependent(Attribute attr, String valueToLookFor) {
+        if (attr.contains(valueToLookFor)) return true;
+        if (attr.contains(valueToLookFor.toLowerCase())) return true;
+        return false;
     }
 
     public Set getUserHeaders( Group group ) throws FindException {
@@ -419,7 +437,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
         try
         {
             NamingEnumeration answer = null;
-            String filter = "(objectclass=" + constants.groupObjectClass() + ")";
+            String filter = selfDescriptiveGroupFilter();
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = _ldapManager.getBrowseContext();
@@ -447,6 +465,15 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
         return output;
     }
 
+    protected String selfDescriptiveGroupFilter() {
+        String[] objclasses = getConstants().groupObjectClass();
+        String output = "(|";
+        for (int i = 0; i < objclasses.length; i++)
+            output += "(objectclass=" + objclasses[i] + ")";
+        output += ")";
+        return output;
+    }
+
     /**
      * builds a collection of group headers for all self descriptive groups
      */
@@ -464,7 +491,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
         try
         {
             NamingEnumeration answer = null;
-            String filter = "(objectclass=" + constants.groupObjectClass() + ")";
+            String filter = selfDescriptiveGroupFilter();
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = _ldapManager.getBrowseContext();

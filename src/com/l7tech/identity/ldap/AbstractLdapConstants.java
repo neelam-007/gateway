@@ -13,9 +13,18 @@ package com.l7tech.identity.ldap;
 public abstract class AbstractLdapConstants {
     public String descriptionAttribute() {return DESCRIPTION_ATTR;}
 
-    public abstract String groupObjectClass();
+    /**
+     * self contained group object class name(s)
+     * @return an array of object class names
+     */
+    public abstract String[] groupObjectClass();
     public abstract String groupNameAttribute();
-    public abstract String groupMemberAttribute();
+
+    /**
+     * attribute name in the self contained group that refers to the user member of a group
+     * @return
+     */
+    public abstract String[] groupMemberAttribute();
 
     public abstract String userObjectClass();
     public abstract String userLoginAttribute();
