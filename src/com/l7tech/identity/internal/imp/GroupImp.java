@@ -11,7 +11,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 /**
  * @author alex
  */
-public class GroupImp extends NamedEntityImp implements Group {
+public class GroupImp extends NamedEntityImp /*implements Group*/ {
     public long getProviderOid() {
         return _providerOid;
     }
