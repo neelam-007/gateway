@@ -29,7 +29,6 @@ import java.util.logging.Logger;
 public final class SoapMsgSigner {
     private static final String DS_PREFIX = "ds";
     private static final String DEF_ENV_TAG = "envId";
-    public static final String ID_ATTRIBUTE_NAME = "Id";
 
     private SoapMsgSigner() { }
 
@@ -53,7 +52,7 @@ public final class SoapMsgSigner {
     public static void signEnvelope(Document soapMsg, PrivateKey privateKey, X509Certificate[] certChain)
       throws SignatureStructureException, XSignatureException {
         // is the envelope already ided?
-        String id = soapMsg.getDocumentElement().getAttribute(ID_ATTRIBUTE_NAME);
+        String id = SoapUtil.getElementId(soapMsg.getDocumentElement());
 
         if (id == null || id.length() < 1) {
             id = DEF_ENV_TAG;
@@ -89,7 +88,7 @@ public final class SoapMsgSigner {
         String id = messagePart.getAttribute(referenceId);
         if (id == null || "".equals(id)) {
             id = referenceId;
-            messagePart.setAttribute(ID_ATTRIBUTE_NAME, referenceId);
+            messagePart.setAttribute(SoapUtil.ID_ATTRIBUTE_NAME, referenceId);
         }
 
         // set the appropriate signature method
@@ -225,7 +224,7 @@ public final class SoapMsgSigner {
         }
 
         // verify that the entire envelope is signed
-        String refid = bodyElement.getAttribute(ID_ATTRIBUTE_NAME);
+        String refid = SoapUtil.getElementId(bodyElement);
         if (refid == null || refid.length() < 1) {
             throw new InvalidSignatureException("No reference id on envelope");
         }
@@ -246,9 +245,9 @@ public final class SoapMsgSigner {
     }
 
     private static Element getSignatureHeaderElement(Document doc, Element bodyElement) {
-        String bodyId = bodyElement.getAttribute( ID_ATTRIBUTE_NAME );
-        if ( bodyId == null ) {
-            logger.info( "ID attribute not found in supposedly signed body element" );
+        String bodyId = SoapUtil.getElementId(bodyElement);
+        if (bodyId == null) {
+            logger.info("ID attribute not found in supposedly signed body element " + bodyElement.getNodeName());
             return null;
         }
 
@@ -272,17 +271,24 @@ public final class SoapMsgSigner {
                 Element signedInfo = XmlUtil.findOnlyOneChildElementByName( signature,
                                                                             SoapUtil.DIGSIG_URI,
                                                                             SoapUtil.SIGNED_INFO_EL_NAME );
-                Element reference = XmlUtil.findOnlyOneChildElementByName( signedInfo,
-                                                                           SoapUtil.DIGSIG_URI,
-                                                                           SoapUtil.REFERENCE_EL_NAME );
-                String uri = reference.getAttribute( SoapUtil.REFERENCE_URI_ATTR_NAME );
-                if ( uri == null || !uri.startsWith("#") || uri.length() < 2 ) {
-                    logger.warning( "SignedInfo/Reference/URI is missing or points to non-local body part" );
-                    return null;
-                }
+                List references = XmlUtil.findChildElementsByName(signedInfo, SoapUtil.DIGSIG_URI,
+                                                                  SoapUtil.REFERENCE_EL_NAME);
 
-                if ( uri.substring(1).equals(bodyId) )
-                    return signature;
+                /*Element reference = XmlUtil.findOnlyOneChildElementByName( signedInfo,
+                                                                           SoapUtil.DIGSIG_URI,
+                                                                           SoapUtil.REFERENCE_EL_NAME );*/
+
+                for (Iterator j = references.iterator(); j.hasNext();) {
+                    Element reference = (Element)j.next();
+                    String uri = reference.getAttribute( SoapUtil.REFERENCE_URI_ATTR_NAME );
+                    if ( uri == null || !uri.startsWith("#") || uri.length() < 2 ) {
+                        logger.warning( "SignedInfo/Reference/URI is missing or points to non-local body part" );
+                        return null;
+                    }
+
+                    if ( uri.substring(1).equals(bodyId) )
+                        return signature;
+                }
             }
 
             logger.finest( "Did not find any matching Signature element" );
