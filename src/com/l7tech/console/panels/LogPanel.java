@@ -197,7 +197,9 @@ public class LogPanel extends JPanel {
     /** Strip the "com.l7tech." from the start of a class name. */
     private String fixType(String entityClassname) {
         final String coml7tech = "com.l7tech.";
-        if (entityClassname.startsWith(coml7tech))
+        if (entityClassname == null) {
+            return "<unknown>";
+        } else if (entityClassname.startsWith(coml7tech))
             return entityClassname.substring(coml7tech.length());
         return entityClassname;
     }
