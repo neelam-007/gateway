@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/03/addressing" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+	<soap:Header>
+		<wsa:Action wsu:Id="Id-c5274e8f-bdde-4a40-b7fa-975b6bc62d29">http://warehouse.acme.com/ws/listProducts</wsa:Action>
+		<wsa:MessageID wsu:Id="Id-19c6683a-1df6-4018-b31a-2272c70666ed">uuid:2a1ae095-f881-4d4c-beea-0e723c3ae1fe</wsa:MessageID>
+		<wsa:ReplyTo wsu:Id="Id-3f170dce-d30c-4c87-8cfc-6207586d1807">
+			<wsa:Address>http://schemas.xmlsoap.org/ws/2004/03/addressing/role/anonymous</wsa:Address>
+		</wsa:ReplyTo>
+		<wsa:To wsu:Id="Id-8a1001a6-51a7-406e-8a6b-f8536717b422">http://riker:8888/ACMEWarehouseWS/Service1.asmx</wsa:To>
+		<wsse:Security>
+			<wsu:Timestamp wsu:Id="Timestamp-bf14dd82-b05e-4896-a82d-6f89cdc90505">
+				<wsu:Created>2004-06-25T18:56:02Z</wsu:Created>
+				<wsu:Expires>2004-06-25T19:01:02Z</wsu:Expires>
+			</wsu:Timestamp>
+			<wssc:SecurityContextToken wsu:Id="SecurityToken-a8ce551d-3b07-4a7b-a535-f78055b59d2e" xmlns:wssc="http://schemas.xmlsoap.org/ws/2004/04/sc">
+				<wssc:Identifier>uuid:b37d0a49-e658-4b9b-8846-87667773b13e</wssc:Identifier>
+			</wssc:SecurityContextToken>
+			<wssc:DerivedKeyToken wsu:Id="SecurityToken-5ee63ab9-490f-44f8-99e1-e7a39330df96" wssc:Algorithm="http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk/p_sha1" xmlns:wssc="http://schemas.xmlsoap.org/ws/2004/04/sc">
+				<wsse:SecurityTokenReference>
+					<wsse:Reference URI="uuid:b37d0a49-e658-4b9b-8846-87667773b13e" ValueType="http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct" />
+				</wsse:SecurityTokenReference>
+				<wssc:Generation>0</wssc:Generation>
+				<wssc:Length>16</wssc:Length>
+				<wssc:Label>WS-SecureConversation</wssc:Label>
+				<wsse:Nonce>4PDzDuEQtre7sQkgUbEKcg==</wsse:Nonce>
+			</wssc:DerivedKeyToken>
+			<wssc:DerivedKeyToken wsu:Id="SecurityToken-cd5bf26c-ba5a-4e12-a94b-7cc9b11618f5" wssc:Algorithm="http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk/p_sha1" xmlns:wssc="http://schemas.xmlsoap.org/ws/2004/04/sc">
+				<wsse:SecurityTokenReference>
+					<wsse:Reference URI="uuid:b37d0a49-e658-4b9b-8846-87667773b13e" ValueType="http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct" />
+				</wsse:SecurityTokenReference>
+				<wssc:Generation>0</wssc:Generation>
+				<wssc:Length>16</wssc:Length>
+				<wssc:Label>WS-SecureConversation</wssc:Label>
+				<wsse:Nonce>j8vPGu2r1RZp51/6DD/Apg==</wsse:Nonce>
+			</wssc:DerivedKeyToken>
+			<xenc:ReferenceList xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+				<xenc:DataReference URI="#EncryptedContent-e80368b2-dc14-4d96-91c6-a8852cf4049d" />
+			</xenc:ReferenceList>
+			<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+				<SignedInfo>
+					<CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+					<SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#hmac-sha1" />
+					<Reference URI="#Id-c5274e8f-bdde-4a40-b7fa-975b6bc62d29">
+						<Transforms>
+							<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+						</Transforms>
+						<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+						<DigestValue>eMFnqpNniWeFoHsDEBYMmZS98IQ=</DigestValue>
+					</Reference>
+					<Reference URI="#Id-19c6683a-1df6-4018-b31a-2272c70666ed">
+						<Transforms>
+							<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+						</Transforms>
+						<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+						<DigestValue>WkhYJ8u7j4wgaH2DgLdkIFFQYyU=</DigestValue>
+					</Reference>
+					<Reference URI="#Id-3f170dce-d30c-4c87-8cfc-6207586d1807">
+						<Transforms>
+							<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+						</Transforms>
+						<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+						<DigestValue>a8ZzB5F9E0Jsk3chw0f+ShIho1I=</DigestValue>
+					</Reference>
+					<Reference URI="#Id-8a1001a6-51a7-406e-8a6b-f8536717b422">
+						<Transforms>
+							<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+						</Transforms>
+						<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+						<DigestValue>F4Qgs3I2LhI9Qwb4ZmQdmL44Wxk=</DigestValue>
+					</Reference>
+					<Reference URI="#Timestamp-bf14dd82-b05e-4896-a82d-6f89cdc90505">
+						<Transforms>
+							<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+						</Transforms>
+						<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+						<DigestValue>2zfF8a6qCFD/4+aZ0anaTWomZTM=</DigestValue>
+					</Reference>
+					<Reference URI="#Id-53c9f8af-4641-4ec4-b0aa-003afd8a4f0a">
+						<Transforms>
+							<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+						</Transforms>
+						<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+						<DigestValue>WgfVs+8BFDsZz50QnRHfZCkK1qk=</DigestValue>
+					</Reference>
+				</SignedInfo>
+				<SignatureValue>nkWkhKiP23s40gTMDnoeNNqhKhQ=</SignatureValue>
+				<KeyInfo>
+					<wsse:SecurityTokenReference>
+						<wsse:Reference URI="#SecurityToken-5ee63ab9-490f-44f8-99e1-e7a39330df96" ValueType="http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk" />
+					</wsse:SecurityTokenReference>
+				</KeyInfo>
+			</Signature>
+		</wsse:Security>
+	</soap:Header>
+	<soap:Body wsu:Id="Id-53c9f8af-4641-4ec4-b0aa-003afd8a4f0a">
+		<xenc:EncryptedData Id="EncryptedContent-e80368b2-dc14-4d96-91c6-a8852cf4049d" Type="http://www.w3.org/2001/04/xmlenc#Content" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+			<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc" />
+			<KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+				<wsse:SecurityTokenReference>
+					<wsse:Reference URI="#SecurityToken-cd5bf26c-ba5a-4e12-a94b-7cc9b11618f5" ValueType="http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk" />
+				</wsse:SecurityTokenReference>
+			</KeyInfo>
+			<xenc:CipherData>
+				<xenc:CipherValue>svcLzsYhf7DeooPNhRJ/VwzdD9plsi7KlqgJw0vx4HKOtDsEOWnY7CHBBp+EzbjJvLUC9rBPvTZgLiwbLi3hzsuE2Ba0QK14EHjPYGyRqyc=</xenc:CipherValue>
+			</xenc:CipherData>
+		</xenc:EncryptedData>
+	</soap:Body>
+</soap:Envelope>
