@@ -2,6 +2,11 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.console.action.DeleteAssertionAction;
+
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Class SpecificUserAssertionTreeNode.

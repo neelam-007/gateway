@@ -1,6 +1,7 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.tree.policy.PolicyTree;
 
 import javax.swing.*;
 import java.util.Map;
@@ -9,7 +10,9 @@ import java.lang.ref.WeakReference;
 
 /**
  * Central manager of windows in the Policy editor.
- * Handles the work with workspaces, trees etc.
+ *
+ * Handles the work with workspaces, trees amd other reusable top
+ * level components.
  *
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -45,6 +48,19 @@ public class WindowManager {
      */
     public WorkSpacePanel getCurrentWorkspace() {
         return workSpacePanel;
+    }
+
+    /**
+     * Returns the default policy tree component from component registry.
+     */
+    public JTree getPolicyTree() {
+        synchronized (componentsRegistry) {
+            JTree tree = (JTree)getComponent(PolicyTree.NAME);
+            if (tree != null) return tree;
+            PolicyTree policyTree = new PolicyTree();
+            registerComponent(PolicyTree.NAME, policyTree);
+            return policyTree;
+        }
     }
 
     /**

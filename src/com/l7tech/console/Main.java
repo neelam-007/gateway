@@ -44,7 +44,7 @@ public class Main {
             System.setProperty("com.l7tech.util.locator.properties",
                     "/com/l7tech/console/resources/services.properties");
 
-            main = new MainWindow("SSG console");
+            main = new MainWindow();
             // Window listener
             main.addWindowListener(
                     new WindowAdapter() {

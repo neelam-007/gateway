@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
@@ -109,5 +110,19 @@ public class Actions {
 
     private static JFrame getMainWindow() {
         return Registry.getDefault().getWindowManager().getMainWindow();
+    }
+
+    static boolean deleteAssertion(AssertionTreeNode node) {
+            // Make sure
+        if ((JOptionPane.showConfirmDialog(
+          getMainWindow(),
+          "Are you sure you wish to delete service " +
+          node.getName() + "?",
+          "Delete assertion",
+          JOptionPane.YES_NO_OPTION)) == 1) {
+            return false;
+        }
+
+        return true;
     }
 }

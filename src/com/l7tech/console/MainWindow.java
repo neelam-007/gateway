@@ -103,13 +103,13 @@ public class MainWindow extends JFrame {
     private JMenu gotoMenu;
     public static final String ASSERTION_PALETTE = "assertion.palette";
     public static final String SERVICES_TREE = "services.treee";
-
+    public static final String TITLE = "SSG console";
+     public static final String NAME = "main.window"; // registered
     /**
      * MainWindow constructor comment.
-     * @param title java.lang.String
      */
-    public MainWindow(String title) throws IOException {
-        super(title);
+    public MainWindow() throws IOException {
+        super(TITLE);
         initialize();
     }
 

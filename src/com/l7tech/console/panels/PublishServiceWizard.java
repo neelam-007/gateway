@@ -23,9 +23,10 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.EventListener;
-import java.util.ArrayList;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.EventListener;
+import java.util.Iterator;
 
 /**
  * The <code>JDialog</code> wizard that drives the publish service
@@ -176,9 +177,17 @@ public class PublishServiceWizard extends JDialog {
                     for (int i = 0; i < panels.length; i++) {
                         panels[i].readSettings(saBundle);
                     }
-                    ByteArrayOutputStream bo = new ByteArrayOutputStream();
-                    WspWriter.writePolicy(saBundle.getAssertion(), bo);
-                    saBundle.getService().setPolicyXml(bo.toString());
+                    saBundle.setAssertion(
+                      pruneEmptyCompositeAssertions(saBundle.getAssertion()));
+                    if (saBundle.getAssertion() !=null) {
+                        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                        WspWriter.writePolicy(saBundle.getAssertion(), bo);
+                        saBundle.getService().setPolicyXml(bo.toString());
+                    } else {
+                        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                        WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
+                    }
+
                     long oid =
                       Registry.getDefault().getServiceManager().save(saBundle.getService());
                     EntityHeader header = new EntityHeader();
@@ -255,6 +264,31 @@ public class PublishServiceWizard extends JDialog {
         pack();
         setSize(new Dimension(800, 500));
         Utilities.centerOnScreen(this);
+    }
+
+    /**
+     * Prune empty composite assertions, and return the updated
+     * asseriton tree.
+     * If the root composite has no children return null.
+     *
+     * @param oom the input composite assertion
+     * @return trhe composite assertion with pruned children
+     * or null
+     */
+    private CompositeAssertion
+      pruneEmptyCompositeAssertions(CompositeAssertion oom) {
+        if (oom.getChildren().isEmpty()) return null;
+        Iterator i = oom.preorderIterator();
+        for (; i.hasNext();) {
+            Assertion a = (Assertion)i.next();
+            if (a instanceof CompositeAssertion) {
+                CompositeAssertion ca = (CompositeAssertion)a;
+                if (ca.getChildren().size() == 0) {
+                    i.remove();
+                }
+            }
+        }
+        return oom;
     }
 
     /**

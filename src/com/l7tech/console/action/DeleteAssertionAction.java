@@ -1,5 +1,11 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.util.WindowManager;
+
+import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
 
 
 /**
@@ -10,6 +16,14 @@ package com.l7tech.console.action;
  * @version 1.0
  */
 public class DeleteAssertionAction extends BaseAction {
+    AssertionTreeNode node;
+
+    public DeleteAssertionAction() {
+    }
+
+    public DeleteAssertionAction(AssertionTreeNode node) {
+        this.node = node;
+    }
     /**
      * @return the action name
      */
@@ -38,5 +52,15 @@ public class DeleteAssertionAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
+        if (node == null) {
+            throw new IllegalStateException("no node specified");
+        }
+            boolean deleted = Actions.deleteAssertion(node);
+        if (deleted) {
+            JTree tree =
+              (JTree)WindowManager.getInstance().getComponent(PolicyTree.NAME);
+            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            model.removeNodeFromParent(node);
+        }
     }
 }

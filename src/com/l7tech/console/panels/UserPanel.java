@@ -319,7 +319,7 @@ public class UserPanel extends EntityEditorPanel {
         if (firstNameLabel != null) return firstNameLabel;
 
            // Create label
-        firstNameLabel = new JLabel("Fisrt Name:");
+        firstNameLabel = new JLabel("First Name:");
 
         // Return label
         return firstNameLabel;

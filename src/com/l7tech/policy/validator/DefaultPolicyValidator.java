@@ -25,11 +25,16 @@ import java.util.*;
  * that is equal to a number of children. This is done by preorder
  * traversal of the policy tree.
  * <li>Processes each policy path and determine if the sequence of
- * assertions is correct.
+ * assertions is in expected order.
  * </ul>
- * The correct sequence of assertions is following:
+ * The expected order is:
  * <ul>
- * <li><i>Pre conditions</i> that is
+ * <li><i>Pre conditions</i> such as ssl, and ip address range (optional)
+ * <li><i>Credential location</i> such as ssl, and ip address range (optional)
+ * <li><i>Access control, identity, group membership</i> (optional), if present
+ * expects the credential finder precondition
+ * <li><i>Routing</i> (optional), if present expects the credential finder
+ * precondition
  * </ul>
  * <p>
  *
@@ -58,6 +63,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
     /**
      * generate possible assertion paths
+     *
      * @param assertion the root assertion
      */
     private void generatePaths(Assertion assertion) {
@@ -90,59 +96,22 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
     }
 
-    private boolean createsNewPaths(Assertion a) {
+    /**
+     * does this assertion creates new paths
+     * @param a the assertion to check
+     * @return true if new paths, false otherwise
+     */
+    static boolean createsNewPaths(Assertion a) {
         return
           a instanceof ExactlyOneAssertion ||
           a instanceof OneOrMoreAssertion;
     }
 
-    private boolean isValidRoot(Assertion a) {
+    static boolean isValidRoot(Assertion a) {
         return
           a instanceof AllAssertion ||
           a instanceof OneOrMoreAssertion;
     }
-
-    /**
-     * Inner class that collects the assertion path.
-     */
-    protected class AssertionPath {
-
-        public AssertionPath(Assertion a) {
-            if (!isValidRoot(a)) {
-                addError(new PolicyValidatorResult.Error(a, "Invalid root", null));
-            }
-            path.add(a);
-        }
-
-        /** copy constructor */
-        public AssertionPath(AssertionPath ap) {
-            if (ap.path.size() == 0) {
-                throw new IllegalArgumentException();
-            }
-            path.addAll(ap.path);
-            pathErrors.addAll(ap.pathErrors);
-        }
-
-        public void addAssertion(Assertion a) {
-            path.add(a);
-        }
-
-        public void addError(PolicyValidatorResult.Error err) {
-            pathErrors.add(err);
-        }
-
-        public Assertion lastAssertion() {
-            return (Assertion)path.get(path.size() - 1);
-        }
-
-        public List assertions() {
-            return Collections.unmodifiableList(path);
-        }
-
-        private List path = new ArrayList();
-        private List pathErrors = new ArrayList();
-    }
-
 
     protected Set assertionPaths = new HashSet();
     protected PolicyValidatorResult result = new PolicyValidatorResult();

@@ -1,24 +1,25 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.TrueAssertion;
 
 /**
- * Class HttpBasicAuthAssertionTreeNode is a tree node that correspinds
- * to the <code>HttpBAsic</code> asseriton.
+ * Class <code>AnonymousAssertionTreeNode</code> is a tree node that
+ * represents the anonymous access. It is modelled as <code>TrueAssertion</code>
+ * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
+class AnonymousAssertionTreeNode extends LeafAssertionTreeNode {
 
-    public HttpBasicAuthAssertionTreeNode(HttpBasic assertion) {
-        super(assertion);
+    public AnonymousAssertionTreeNode(TrueAssertion node) {
+        super(node);
     }
 
     /**
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Require HTTP BASIC authentication";
+        return "Anonymous access";
     }
 
     /**
@@ -36,6 +37,6 @@ class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/encryption.gif";
+        return "com/l7tech/console/resources/anonymous.gif";
     }
 }

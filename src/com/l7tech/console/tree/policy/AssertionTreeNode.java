@@ -1,21 +1,21 @@
 package com.l7tech.console.tree.policy;
 
 
+import com.l7tech.console.action.DeleteAssertionAction;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.console.util.IconManager2;
-import com.l7tech.console.tree.AbstractTreeNode;
 
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
-import java.awt.*;
 
 /**
  * Class AssertionTreeNode.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-abstract class AssertionTreeNode extends AbstractTreeNode {
+public abstract class AssertionTreeNode extends AbstractTreeNode {
 
     AssertionTreeNode(Assertion assertion) {
         super(assertion);
@@ -27,6 +27,21 @@ abstract class AssertionTreeNode extends AbstractTreeNode {
     public String getName() {
         return this.toString();
     }
+
+
+    /**
+    * Get the set of actions associated with this node.
+    * This may be used e.g. in constructing a context menu.
+    *
+    * @return actions appropriate to the node
+    */
+   public Action[] getActions() {
+       java.util.List list = new ArrayList();
+       list.addAll(Arrays.asList(super.getActions()));
+        if (canDelete())  list.add(new DeleteAssertionAction(this));
+       return (Action[]) list.toArray(new Action[]{});
+   }
+
 
 }
 

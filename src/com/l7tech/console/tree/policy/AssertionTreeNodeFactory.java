@@ -1,19 +1,20 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -36,7 +37,9 @@ class AssertionTreeNodeFactory {
         assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
         assertionMap.put(AllAssertion.class, AllAssertionTreeNode.class);
         assertionMap.put(HttpBasic.class, HttpBasicAuthAssertionTreeNode.class);
+        assertionMap.put(HttpDigest.class, HttpDigestAuthAssertionTreeNode.class);
         assertionMap.put(RoutingAssertion.class, RoutingAssertionTreeNode.class);
+        assertionMap.put(TrueAssertion.class, AnonymousAssertionTreeNode.class);
     }
 
     /**

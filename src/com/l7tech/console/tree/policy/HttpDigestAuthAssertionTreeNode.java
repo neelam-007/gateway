@@ -1,16 +1,17 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 /**
- * Class HttpBasicAuthAssertionTreeNode is a tree node that correspinds
- * to the <code>HttpBAsic</code> asseriton.
+ * Class HttpDigestAuthAssertionTreeNode is a tree node that corresponds
+ * to the <code>HttpDigest</code> asseriton.
+ * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
+class HttpDigestAuthAssertionTreeNode extends LeafAssertionTreeNode {
 
-    public HttpBasicAuthAssertionTreeNode(HttpBasic assertion) {
+    public HttpDigestAuthAssertionTreeNode(HttpDigest assertion) {
         super(assertion);
     }
 
@@ -18,7 +19,7 @@ class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Require HTTP BASIC authentication";
+        return "Require HTTP DIGEST authentication";
     }
 
     /**
