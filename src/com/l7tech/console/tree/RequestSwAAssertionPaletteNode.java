@@ -19,6 +19,10 @@ public class RequestSwAAssertionPaletteNode extends AbstractTreeNode {
         super(null);
     }
 
+    public boolean getAllowsChildren() {
+        return false;
+    }
+
     /**
      * subclasses override this method
      */
