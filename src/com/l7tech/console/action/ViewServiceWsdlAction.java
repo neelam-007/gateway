@@ -26,11 +26,12 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ViewServiceWsdlAction extends SecureAction {
+public class ViewServiceWsdlAction extends NodeAction {
     static final Logger log = Logger.getLogger(ViewServiceWsdlAction.class.getName());
     private ServiceNode serviceNode;
 
     public ViewServiceWsdlAction(ServiceNode sn) {
+        super(sn);
         if (sn == null) {
             throw new IllegalArgumentException();
         }
