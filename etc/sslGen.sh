@@ -23,7 +23,8 @@
 # -----------------------------------------------------------------------------
 #
 
-KEYSTORE_FILE=$TOMCAT_HOME/kstores/tomcatSsl
+KEYSTORE_DIR=$TOMCAT_HOME/kstores
+KEYSTORE_FILE=$KEYSTORE_DIR/tomcatSsl
 CERTIFICATE_FILE=$TOMCAT_HOME/kstores/ssg.cer
 SERVER_XML_FILE=$TOMCAT_HOME/conf/server.xml
 
@@ -47,6 +48,9 @@ if [ -e $KEYSTORE_FILE ]; then
                 /bin/rm $KEYSTORE_FILE
         fi
 fi
+
+# ENSURE THAT THE DIRECTORY EXISTS
+mkdir $KEYSTORE_DIR
 
 # GET A KEYSTORE PASSWORD FROM CALLER
 echo "Please provide an keystore password"
