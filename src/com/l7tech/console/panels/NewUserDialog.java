@@ -4,6 +4,7 @@ import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
@@ -16,6 +17,7 @@ import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.EventListener;
+import java.util.logging.Level;
 
 /**
  * New User dialog.
@@ -463,10 +465,10 @@ public class NewUserDialog extends JDialog {
                             header.setOid(Registry.getDefault().getInternalUserManager().save(user));
                             fireEventUserAdded(header);
                             insertSuccess = true;
-                        } catch (SaveException e) {
-                            e.printStackTrace();
-                        } catch (RuntimeException e) {
-                            e.printStackTrace();
+                        } catch (Exception e) {
+                            ErrorManager.getDefault().
+                              notify(Level.WARNING, e, "Error encountered while adding a user\n"+
+                                     "The user has not been created.");
                         }
                         NewUserDialog.this.dispose();
                     }
