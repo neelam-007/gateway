@@ -1,0 +1,11 @@
+ALTER TABLE identity_provider MODIFY description mediumtext default '';
+ALTER TABLE identity_provider MODIFY properties mediumtext;
+ALTER TABLE internal_group MODIFY description mediumtext;
+ALTER TABLE published_service MODIFY policy_xml mediumtext;
+ALTER TABLE published_service MODIFY wsdl_xml mediumtext;
+ALTER TABLE client_cert MODIFY cert mediumtext DEFAULT NULL;
+ALTER TABLE trusted_cert MODIFY cert_base64 mediumtext NOT NULL;
+ALTER TABLE fed_group MODIFY description mediumtext;
+ALTER TABLE fed_group_virtual MODIFY properties mediumtext;
+ALTER TABLE audit_message MODIFY request_xml mediumtext;
+ALTER TABLE audit_message MODIFY response_xml mediumtext;
