@@ -20,9 +20,6 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class SoapRequestGeneratorTest extends TestCase {
-    public static final String WSDL = "com/l7tech/service/resources/StockQuoteService.wsdl";
-    public static final String WSDL2PORTS = "com/l7tech/service/resources/xmltoday-delayed-quotes-2ports.wsdl";
-    public static final String WSDL2SERVICES = "com/l7tech/service/resources/xmltoday-delayed-quotes-2services.wsdl";
     boolean messageGeneratorInvoked = false;
 
 
@@ -58,7 +55,7 @@ public class SoapRequestGeneratorTest extends TestCase {
     public void testGenerateAndPrintSoapMessages() throws Exception {
         SoapRequestGenerator sg = new SoapRequestGenerator();
 
-        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(WSDL);
+        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(TestDocuments.WSDL);
 
         for (int i = 0; i < requests.length; i++) {
             SoapRequestGenerator.SOAPRequest request = requests[i];
@@ -82,7 +79,7 @@ public class SoapRequestGeneratorTest extends TestCase {
                 return "NA";
             }
         });
-        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(WSDL);
+        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(TestDocuments.WSDL);
         assertTrue("Expected message input invoke. ", messageGeneratorInvoked);
 
         for (int i = 0; i < requests.length; i++) {
@@ -98,9 +95,9 @@ public class SoapRequestGeneratorTest extends TestCase {
      * @throws Exception 
      */
     public void testGenerateSoapMessagesValidateWithWsdl() throws Exception {
-        Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(WSDL));
+        Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(TestDocuments.WSDL));
         SoapRequestGenerator sg = new SoapRequestGenerator();
-        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(WSDL);
+        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(TestDocuments.WSDL);
         for (int i = 0; i < requests.length; i++) {
             SoapRequestGenerator.SOAPRequest request = requests[i];
             //request.getSOAPMessage().writeTo(System.out);

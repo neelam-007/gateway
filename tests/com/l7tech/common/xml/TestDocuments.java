@@ -16,6 +16,9 @@ import com.l7tech.common.util.XmlUtil;
  */
 public class TestDocuments {
     public static final String TEST_SOAP_XML = "com/l7tech/service/resources/GetLastTradePriceSoapRequest.xml";
+    public static final String WSDL2PORTS = "com/l7tech/service/resources/xmltoday-delayed-quotes-2ports.wsdl";
+    public static final String WSDL = "com/l7tech/service/resources/StockQuoteService.wsdl";
+    public static final String WSDL2SERVICES = "com/l7tech/service/resources/xmltoday-delayed-quotes-2services.wsdl";
 
     public Document getTestDocument(String resourcetoread)
       throws IOException, SAXException {
