@@ -1,36 +1,32 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyPathBuilder;
-import com.l7tech.policy.PolicyPathResult;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.common.util.Locator;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.common.util.Locator;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.console.Main;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 
 import java.util.Iterator;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The policy validator that analyzes the policy assertion tree
  * and collects the errors.
- *
+ * <p/>
  * Errors are collected in the PolicyValidatorResult instance.
- * <p>
+ * <p/>
  * The expected order is:
  * <ul>
  * <li><i>Pre conditions</i> such as ssl, and ip address range (optional)
@@ -40,16 +36,19 @@ import java.util.logging.Level;
  * <li><i>Routing</i> (optional), if present expects the credential finder
  * precondition
  * </ul>
- * <p>
+ * <p/>
  * The class methods are not synchronized.
- * <p>
+ * <p/>
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
 public class DefaultPolicyValidator extends PolicyValidator {
+    static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
+
     /**
      * Validates the specified assertion tree.
-     *
+     * 
      * @param assertion the assertion tree to be validated.
      * @return the result of the validation
      */
@@ -67,7 +66,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         PolicyValidatorResult result = new PolicyValidatorResult();
 
         for (Iterator iterator = path.paths().iterator(); iterator.hasNext();) {
-            AssertionPath assertionPath = (AssertionPath) iterator.next();
+            AssertionPath assertionPath = (AssertionPath)iterator.next();
             validatePath(assertionPath, result);
         }
         return result;
@@ -81,25 +80,25 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
         if (!pv.seenRouting) { // no routing report that
             r.addWarning(
-                    new PolicyValidatorResult.
-                    Warning(ap.lastAssertion(), "No route assertion.", null)
+              new PolicyValidatorResult.
+              Warning(ap.lastAssertion(), "No route assertion.", null)
             );
         }
         if (!pv.seenCredentials) {
             r.addWarning(new PolicyValidatorResult.Warning(null,
-                            "No credential assertions are present in the policy. The\n" +
-                            " service may be exposed to public access", null));
+              "No credential assertions are present in the policy. The\n" +
+              " service may be exposed to public access", null));
         }
         if (pv.seenCredentials && !pv.seenAccessControl) {
-            r.addWarning(new PolicyValidatorResult.Warning(null,"Credentials are collected but are not authenticated." +
-                    "\nThis service may be exposed to public access.", null));
+            r.addWarning(new PolicyValidatorResult.Warning(null, "Credentials are collected but are not authenticated." +
+              "\nThis service may be exposed to public access.", null));
         }
     }
 
 
     /**
      * validate single path. This may grow to some kind of
-     *  configuraiton based approach.
+     * configuraiton based approach.
      */
     private static class PathValidator {
         private PolicyValidatorResult result;
@@ -114,7 +113,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
             } else if (isCrendentialSource(a)) {
                 processCredentialSource(a);
             } else if (isAccessControl(a)) {
-                processAccessControl(a);
+                processAccessControl((IdentityAssertion)a);
             } else if (isRouting(a)) {
                 processRouting(a);
             } else {
@@ -122,18 +121,25 @@ public class DefaultPolicyValidator extends PolicyValidator {
             }
         }
 
-        private void processAccessControl(Assertion a) {
+        private void processAccessControl(IdentityAssertion a) {
             if (!seenCredentials) {
                 result.addError(
-                        new PolicyValidatorResult.Error(
-                                a, "Access control specified without authentication scheme.", null));
+                  new PolicyValidatorResult.Error(
+                    a, "Access control specified without authentication scheme.", null));
             }
 
             if (seenRouting) {
                 result.addWarning(
-                        new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
+                  new PolicyValidatorResult.Warning(a, "The assertion is after route.", null)
                 );
             }
+
+            if (seenSpecificUserAssertion && isSpecificUser(a)) {
+                result.addError(
+                  new PolicyValidatorResult.Error(a, "Duplicate identity.", null)
+                );
+            }
+
 
             // if we encountered an assertion that requires a client cert, make sure the identity involved is
             // from the internal id provider
@@ -142,38 +148,40 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 IdentityAssertion idass = (IdentityAssertion)a;
                 try {
                     if (getProviderConfigManager().findByPrimaryKey(idass.getIdentityProviderOid()).type()
-                            != IdentityProviderType.INTERNAL) {
+                      != IdentityProviderType.INTERNAL) {
                         result.addError(
-                                new PolicyValidatorResult.Error(a,
-                                                                "A credential assertion requires client certs. " +
-                                                                "Only internal identities support client certs.",
-                                                                null));
+                          new PolicyValidatorResult.Error(a,
+                            "A credential assertion requires client certs. " +
+                          "Only internal identities support client certs.",
+                            null));
                     }
                 } catch (FindException e) {
                     result.addError(new PolicyValidatorResult.Error(a, "This identity might no longer be valid.", e));
                     log.log(Level.INFO, "could not retrieve IdentityProvider", e);
                 }
             }
-
             seenAccessControl = true;
+            if (isSpecificUser(a)) {
+                seenSpecificUserAssertion = true;
+            }
         }
 
         private void processCredentialSource(Assertion a) {
             if (seenAccessControl) {
                 result.addError(
-                        new PolicyValidatorResult.
-                        Error(a, "Access control already set, this assertion might get ignored.", null));
+                  new PolicyValidatorResult.
+                  Error(a, "Access control already set, this assertion might get ignored.", null));
             }
 
             if (seenRouting) {
                 result.addWarning(
-                        new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
+                  new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
                 );
             }
 
             if (seenCredentials) {
                 result.addWarning(
-                        new PolicyValidatorResult.Warning(a, "You already have a credential assertion.", null)
+                  new PolicyValidatorResult.Warning(a, "You already have a credential assertion.", null)
                 );
             }
 
@@ -200,33 +208,33 @@ public class DefaultPolicyValidator extends PolicyValidator {
             if (a instanceof SslAssertion) {
                 seenSsl = true;
                 // ssl assertion might be there but it could be forbidden...
-                if (((SslAssertion) a).getOption() == SslAssertion.FORBIDDEN) {
+                if (((SslAssertion)a).getOption() == SslAssertion.FORBIDDEN) {
                     sslForbidden = true;
                 }
                 if (seenRouting) {
                     result.addWarning(
-                            new PolicyValidatorResult.Warning(a,
-                                    "The assertion might not work as configured." +
-                            "\nThere is a routing assertion before this assertion.", null)
+                      new PolicyValidatorResult.Warning(a,
+                        "The assertion might not work as configured." +
+                      "\nThere is a routing assertion before this assertion.", null)
                     );
                 }
             } else if (a instanceof XmlResponseSecurity) {
                 if (!seenRouting) {
                     result.addError(
-                            new PolicyValidatorResult.Error(a,
-                            "Xml Response Security must occur after routing.", null)
+                      new PolicyValidatorResult.Error(a,
+                        "Xml Response Security must occur after routing.", null)
                     );
                 }
             } else if (a instanceof HttpClientCert) {
                 if (!seenSsl) {
                     result.addError(
-                            new PolicyValidatorResult.Error(a,
-                            "HttpClientCert requires to have SSL transport.", null)
+                      new PolicyValidatorResult.Error(a,
+                        "HttpClientCert requires to have SSL transport.", null)
                     );
                 } else if (sslForbidden) {
                     result.addError(
-                            new PolicyValidatorResult.Error(a,
-                            "HttpClientCert requires to have SSL transport (not forbidden).", null)
+                      new PolicyValidatorResult.Error(a,
+                        "HttpClientCert requires to have SSL transport (not forbidden).", null)
                     );
                 }
                 processCredentialSource(a);
@@ -249,6 +257,11 @@ public class DefaultPolicyValidator extends PolicyValidator {
         private boolean isAccessControl(Assertion a) {
             return a instanceof IdentityAssertion;
         }
+
+        private boolean isSpecificUser(Assertion a) {
+            return a instanceof SpecificUser;
+        }
+
 
         private boolean isCrendentialSource(Assertion a) {
             return a instanceof CredentialSourceAssertion;
@@ -277,8 +290,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         boolean seenSsl = false;
         boolean sslForbidden = false;
         boolean seenCredAssertionThatRequiresClientCert = false;
-
-        static Logger log = Logger.getLogger(Main.class.getName());
+        private boolean seenSpecificUserAssertion;
     }
 
 }
