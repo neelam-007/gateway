@@ -22,8 +22,8 @@ public class SoapActionResolver extends NameValueServiceResolver {
         return Request.PARAM_SOAPACTION;
     }
 
-    protected Object getTargetValue( PublishedService service ) {
-        return service.getSoapAction();
+    protected Object[] getTargetValues( PublishedService service ) {
+        return new Object[] { service.getSoapAction() };
     }
 
     protected Object getRequestValue( Request request ) {
