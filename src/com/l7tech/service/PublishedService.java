@@ -76,6 +76,22 @@ public class PublishedService extends NamedEntityImp {
         _rootAssertion = null;
     }
 
+    public String getSoapAction() {
+        return _soapAction;
+    }
+
+    public void setSoapAction(String soapAction) {
+        _soapAction = soapAction;
+    }
+
+    public String getUrn() {
+        return _urn;
+    }
+
+    public void setUrn(String urn) {
+        _urn = urn;
+    }
+
     public String toString() {
         return "com.l7tech.service.PublishedService _policyXml=" + _policyXml + " _wsdlUrl=" + _wsdlUrl + " _wsdlXml=" + _wsdlXml;
     }
@@ -86,6 +102,8 @@ public class PublishedService extends NamedEntityImp {
     protected String _policyXml;
     protected String _wsdlUrl;
     protected String _wsdlXml;
+    protected String _soapAction;
+    protected String _urn;
 
     private transient URL _url;
     protected transient Wsdl _parsedWsdl;
