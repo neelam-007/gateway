@@ -2,12 +2,11 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Layer 7 Technologies, inc.
@@ -15,43 +14,75 @@ import java.util.Collection;
  * Date: Jun 19, 2003
  *
  */
-public class LdapGroupManagerClient implements GroupManager {
+public class LdapGroupManagerClient extends LdapManagerClient implements GroupManager {
+
     public LdapGroupManagerClient(LdapIdentityProviderConfig config) {
-        this.config = config;
+        super(config);
     }
 
     public Group findByPrimaryKey(String oid) throws FindException {
-        return null;
+        try {
+            return getStub().findGroupByPrimaryKey(config.getOid(), oid);
+        } catch (java.rmi.RemoteException e) {
+            throw new FindException("RemoteException in findByPrimaryKey", e);
+        }
     }
 
     public void delete(Group group) throws DeleteException {
+        throw new DeleteException("Not supported in LdapUserManagerServer");
     }
 
     public long save(Group group) throws SaveException {
-        return 0;
+        throw new SaveException("Not supported in LdapUserManagerServer");
     }
 
     public void update(Group group) throws UpdateException {
+        throw new UpdateException("Not supported in LdapUserManagerServer");
     }
 
     public Collection findAllHeaders() throws FindException {
-        return null;
+        com.l7tech.objectmodel.EntityHeader[] array = null;
+        try {
+            array = getStub().findAllGroups(config.getOid());
+        } catch (java.rmi.RemoteException e) {
+            throw new FindException("RemoteException in findAllHeaders", e);
+        }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        return null;
+        com.l7tech.objectmodel.EntityHeader[] array = null;
+        try {
+            array = getStub().findAllGroupsByOffset(config.getOid(), offset, windowSize);
+        } catch (java.rmi.RemoteException e) {
+            throw new FindException("RemoteException in findAllHeaders", e);
+        }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     public Collection findAll() throws FindException {
-        return null;
+        Collection headers = findAllHeaders();
+        Collection output = new ArrayList();
+        Iterator i = headers.iterator();
+        while (i.hasNext()) {
+            EntityHeader header = (EntityHeader)i.next();
+            output.add(findByPrimaryKey(header.getStrId()));
+        }
+        return output;
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
-        return null;
+        Collection headers = findAllHeaders(offset, windowSize);
+        Collection output = new ArrayList();
+        Iterator i = headers.iterator();
+        while (i.hasNext()) {
+            EntityHeader header = (EntityHeader)i.next();
+            output.add(findByPrimaryKey(header.getStrId()));
+        }
+        return output;
     }
-
-    // ************************************************
-    // PRIVATES
-    // ************************************************
-    private LdapIdentityProviderConfig config;
 }
