@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -141,19 +142,25 @@ public class DefaultPolicyValidator extends PolicyValidator {
             }
 
 
-            // if we encountered an assertion that requires a client cert, make sure the identity involved is
-            // from the internal id provider
-            if (seenCredAssertionThatRequiresClientCert) {
+            // if we encountered an assertion that requires a client cert or digest, make sure the identity
+            // involved is from the internal id provider
+            if (seenCredAssertionThatRequiresClientCert || seenDigestAssertion) {
                 // check that this identity is member of internal id provider
                 IdentityAssertion idass = (IdentityAssertion)a;
                 try {
                     if (getProviderConfigManager().findByPrimaryKey(idass.getIdentityProviderOid()).type()
                       != IdentityProviderType.INTERNAL) {
-                        result.addError(
-                          new PolicyValidatorResult.Error(a,
-                            "A credential assertion requires client certs. " +
-                          "Only internal identities support client certs.",
-                            null));
+                        if (seenCredAssertionThatRequiresClientCert) {
+                            result.addError(
+                              new PolicyValidatorResult.Error(a,
+                                "A credential assertion requires client certs. " +
+                              "Only internal identities support client certs.", null));
+                        } else if (seenDigestAssertion) {
+                            result.addError(
+                              new PolicyValidatorResult.Error(a,
+                                "A credential assertion requires digest authentication. " +
+                              "Only internal identities support digest authentication.", null));
+                        }
                     }
                 } catch (FindException e) {
                     result.addError(new PolicyValidatorResult.Error(a, "This identity might no longer be valid.", e));
@@ -189,6 +196,10 @@ public class DefaultPolicyValidator extends PolicyValidator {
             // we only support client certs for internal users
             if (a instanceof HttpClientCert || a instanceof XmlRequestSecurity) {
                 seenCredAssertionThatRequiresClientCert = true;
+            }
+
+            if (a instanceof HttpDigest) {
+                seenDigestAssertion = true;
             }
 
             // new fla, those assertions cannot forbid ssl
@@ -290,6 +301,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         boolean seenSsl = false;
         boolean sslForbidden = false;
         boolean seenCredAssertionThatRequiresClientCert = false;
+        boolean seenDigestAssertion = false;
         private boolean seenSpecificUserAssertion;
     }
 
