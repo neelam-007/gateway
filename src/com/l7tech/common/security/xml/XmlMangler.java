@@ -49,6 +49,7 @@ public class XmlMangler {
 
     // Namespace constants
     private static final String xencNS = "http://www.w3.org/2001/04/xmlenc#";
+    static final String NS_ENC_URI = "http://www.w3.org/2000/xmlns/";
 
     private static class XmlManglerException extends GeneralSecurityException {
         public XmlManglerException() {
@@ -72,23 +73,37 @@ public class XmlMangler {
     /**
      * In-place encrypt of the specified SOAP document's body element.  The body element will be encrypted with AES128
      * using the specified AES128 key, which will be tagged with the specified KeyName.
-     *
+     * 
      * @param soapMsg  the SOAP document whose body to encrypt
-     * @param keyBytes   the 16 byte AES128 symmetric key to use to encrypt it
-     * @param keyName    an identifier for this Key that will be meaningful to a consumer of the encrypted message
-     * @throws IllegalArgumentException  if the key was not an array of exactly 16 bytes of key material
-     * @throws GeneralSecurityException  if there was a problem with a key or a crypto provider
-     * @throws IOException  if there was a problem reading or writing a key or a bit of xml
+     * @param keyBytes the 16 byte AES128 symmetric key to use to encrypt it
+     * @param keyName  an identifier for this Key that will be meaningful to a consumer of the encrypted message
+     * @throws IllegalArgumentException if the key was not an array of exactly 16 bytes of key material
+     * @throws GeneralSecurityException if there was a problem with a key or a crypto provider
+     * @throws IOException              if there was a problem reading or writing a key or a bit of xml
      */
     public static void encryptXml(Document soapMsg, byte[] keyBytes, String keyName)
-            throws GeneralSecurityException, IOException, IllegalArgumentException
-    {
+      throws GeneralSecurityException, IOException, IllegalArgumentException {
+        encryptXml(soapMsg.getDocumentElement(), keyBytes, keyName, id);
+    }
+
+
+    /**
+     * In-place encrypt of the specified SOAP document's body element.  The body element will be encrypted with AES128
+     * using the specified AES128 key, which will be tagged with the specified KeyName.
+     * 
+     * @param element  the element to encrypt
+     * @param keyBytes the 16 byte AES128 symmetric key to use to encrypt it
+     * @param keyName  an identifier for this Key that will be meaningful to a consumer of the encrypted message
+     * @param referenceId  an identifier for the encrypted element
+     * @throws IllegalArgumentException if the key was not an array of exactly 16 bytes of key material
+     * @throws GeneralSecurityException if there was a problem with a key or a crypto provider
+     * @throws IOException              if there was a problem reading or writing a key or a bit of xml
+     */
+    public static void encryptXml(Element element, byte[] keyBytes, String keyName, String referenceId)
+      throws GeneralSecurityException, IOException, IllegalArgumentException {
+        Document soapMsg = element.getOwnerDocument();
         if (keyBytes.length < 16)
             throw new IllegalArgumentException("keyBytes must be at least 16 bytes long for AES128");
-
-        Element body = SoapUtil.getBody(soapMsg);
-        if (body == null)
-            throw new IllegalArgumentException("Unable to find tag Body in document");
 
 
         CipherData cipherData = new CipherData();
@@ -103,7 +118,7 @@ public class XmlMangler {
         encData.setCipherData(cipherData);
         encData.setEncryptionMethod(encMethod);
         encData.setKeyInfo(keyInfo);
-        encData.setId(id);
+        encData.setId(referenceId);
         Element encDataElement = null;
         try {
             encDataElement = encData.createElement(soapMsg, true);
@@ -116,9 +131,9 @@ public class XmlMangler {
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
         af.setProvider(JceProvider.getProvider().getName());
         ec.setAlgorithmFactory(af);
-        ec.setEncryptedType(encDataElement, EncryptedData.CONTENT,  null, null);
+        ec.setEncryptedType(encDataElement, EncryptedData.CONTENT, null, null);
 
-        ec.setData(body);
+        ec.setData(element);
         ec.setKey(new AesKey(keyBytes, 128));
 
         try {
@@ -131,40 +146,46 @@ public class XmlMangler {
         }
 
         // Insert a WSS style header with a ReferenceList refering to the EncryptedData element
-        addWssHeader(soapMsg);
+        addWssHeader(soapMsg.getDocumentElement(), referenceId);
     }
 
     /**
-     * Insert a WSS style header into the specified document referring to the EncryptedData element.
-     * @param soapMsg
+     * Update the document WSS header with the encrypted element reference info.
+     * 
+     * @param element     the document element
+     * @param referenceId the element reference id
      */
-    private static void addWssHeader(Document soapMsg) {
+    private static void addWssHeader(Element element, String referenceId) {
+        Document document = element.getOwnerDocument();
         // Add new namespaces to Envelope element, as per spec.
-        Element rootEl = soapMsg.getDocumentElement();
-        rootEl.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xenc", xencNS);
+
+        Element rootElement = document.getDocumentElement();
+        if (rootElement.getAttributeNodeNS(NS_ENC_URI, "xenc") == null) {
+            rootElement.setAttributeNS(NS_ENC_URI, "xmlns:xenc", xencNS);
+        }
 
         // Add Security element to header, referencing the encrypted body
-        Element dataRefEl = soapMsg.createElementNS(xencNS, "xenc:DataReference");
-        dataRefEl.setAttribute("URI", id);
+        Element dataRefEl = document.createElementNS(xencNS, "xenc:DataReference");
+        dataRefEl.setAttribute("URI", referenceId);
 
-        Element refEl = soapMsg.createElementNS(xencNS, "xenc:ReferenceList");
+        Element refEl = document.createElementNS(xencNS, "xenc:ReferenceList");
         refEl.appendChild(dataRefEl);
 
-        Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
+        Element securityEl = SoapUtil.getOrMakeSecurityElement(document);
         securityEl.appendChild(refEl);
     }
 
     /**
      * Determine the KeyName used to encrypt the specified encrypted SOAP document.  Callers might
      * use the returned key name to decide which PrivateKey to use with a subsequent call to decryptXml().
-     *
-     * @param soapMsg  The encrypted SOAP document to examine.
+     * 
+     * @param soapMsg The encrypted SOAP document to examine.
      * @return the value of the KeyName node.
      */
     public static String getKeyName(Document soapMsg) {
         // Derive the key alias from KeyInfo
-        Element keyNameEl = (Element) soapMsg.getElementsByTagName("KeyName").item(0);
-        Text keyNameText = (Text) keyNameEl.getFirstChild();
+        Element keyNameEl = (Element)soapMsg.getElementsByTagName("KeyName").item(0);
+        Text keyNameText = (Text)keyNameEl.getFirstChild();
         String alias = keyNameText.getNodeValue();
         return alias;
     }
@@ -173,30 +194,29 @@ public class XmlMangler {
      * In-place decrypt of the specified encrypted SOAP document.  Caller is responsible for ensuring that the
      * correct key is used for the document, of the proper format for the encryption scheme it used.  Callers can use
      * getKeyName() to help decide which Key to use to decrypt the document.
-     *
+     * <p/>
      * If this method returns normally the document will have been successfully decrypted.
-     *
-     * @param soapMsg  The SOAP document to decrypt.
-     * @param key  The key to use to decrypt it. If the document was encrypted with
-     *             a call to encryptXml(), the Key will be a 16 byte AES128 symmetric key.
-     * @throws GeneralSecurityException  if there was a problem with a key or crypto provider
-     * @throws ParserConfigurationException  if there was a problem with the XML parser
-     * @throws IOException  if there was an IO error while reading the document or a key
-     * @throws SAXException  if there was a problem parsing the document
+     * 
+     * @param soapMsg The SOAP document to decrypt.
+     * @param key     The key to use to decrypt it. If the document was encrypted with
+     *                a call to encryptXml(), the Key will be a 16 byte AES128 symmetric key.
+     * @throws GeneralSecurityException     if there was a problem with a key or crypto provider
+     * @throws ParserConfigurationException if there was a problem with the XML parser
+     * @throws IOException                  if there was an IO error while reading the document or a key
+     * @throws SAXException                 if there was a problem parsing the document
      */
     public static void decryptXml(Document soapMsg, Key key)
-            throws GeneralSecurityException, ParserConfigurationException, IOException,
-                   SAXException, XMLSecurityElementNotFoundException
-    {
+      throws GeneralSecurityException, ParserConfigurationException, IOException,
+      SAXException, XMLSecurityElementNotFoundException {
         // Locate EncryptedData element by its reference in the Security header
-        Element dataRefEl = (Element) soapMsg.getElementsByTagNameNS(xencNS, "DataReference").item(0);
+        Element dataRefEl = (Element)soapMsg.getElementsByTagNameNS(xencNS, "DataReference").item(0);
         if (dataRefEl == null)
             throw new XMLSecurityElementNotFoundException("no DataReference tag in the message");
         AdHocIdResolver idResolver = new AdHocIdResolver();
         Element encryptedDataEl = idResolver.resolveID(soapMsg, dataRefEl.getAttribute("URI"));
 
         // Strip out processed DataReferece element
-        Element RefListEl = (Element) dataRefEl.getParentNode();
+        Element RefListEl = (Element)dataRefEl.getParentNode();
         RefListEl.removeChild(dataRefEl);
 
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the

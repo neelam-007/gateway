@@ -14,24 +14,20 @@ import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.mortbay.util.WriterOutputStream;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.crypto.SecretKey;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPBodyElement;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.*;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Date;
 import java.util.logging.Logger;
-
-import com.l7tech.common.security.xml.XMLSecurityElementNotFoundException;
-import com.l7tech.common.security.xml.XmlMangler;
 
 /**
  * Test XML encryption and decryption.
@@ -42,6 +38,7 @@ import com.l7tech.common.security.xml.XmlMangler;
 public class XmlManglerTest extends TestCase {
     private static Logger log = Logger.getLogger(XmlManglerTest.class.getName());
     private static final String xmlencNS = "http://www.w3.org/2001/04/xmlenc#";
+    static final String SOAP_METHOD_NS = "http://www.l7tech.com/tests/quoter3333";
 
     public XmlManglerTest(String name) {
         super(name);
@@ -112,10 +109,9 @@ public class XmlManglerTest extends TestCase {
         SOAPMessage soapMsg = mf.createMessage();
         SOAPEnvelope env = soapMsg.getSOAPPart().getEnvelope();
         String p = "gq";
-        String ns = "http://www.l7tech.com/tests/quoter3333";
         env.getBody().detachNode();
         SOAPBody body = env.addBody();
-        SOAPBodyElement belm = body.addBodyElement(env.createName("getQuote", p, ns));
+        SOAPBodyElement belm = body.addBodyElement(env.createName("getQuote", p, SOAP_METHOD_NS));
         belm.addChildElement("symbol").addTextNode("IBM");
 
         StringWriter sw = new StringWriter();
@@ -129,9 +125,33 @@ public class XmlManglerTest extends TestCase {
         return soapDocument;
     }
 
+    public static Document makeTestMessageMultipleNodes() throws Exception {
+        MessageFactory mf = MessageFactory.newInstance();
+        SOAPMessage soapMsg = mf.createMessage();
+        SOAPEnvelope env = soapMsg.getSOAPPart().getEnvelope();
+        String p = "gq";
+        String ns = "http://www.l7tech.com/tests/quoter3333";
+        env.getBody().detachNode();
+        SOAPBody body = env.addBody();
+        SOAPBodyElement belm = body.addBodyElement(env.createName("getQuote", p, ns));
+        belm.addChildElement("symbol").addTextNode("IBM");
+        belm.addChildElement("date").addTextNode(new Date().toString());
+
+        StringWriter sw = new StringWriter();
+        soapMsg.writeTo(new WriterOutputStream(sw));
+        StringInputStream sis = new StringInputStream(sw.toString());
+
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        Document soapDocument = dbf.newDocumentBuilder().parse(sis);
+
+        return soapDocument;
+    }
+
+
     public void testEncryption() throws Exception {
         Document soapDocument = makeTestMessage();
-        Key encryptionKey = new RawKey(32);
+        Key encryptionKey = new RawKey(16);
 
         //log.info("Document before encryption: \n" + documentToString(soapDocument));
         XmlMangler.encryptXml(soapDocument, encryptionKey.getEncoded(), "MyKeyName");
@@ -144,7 +164,7 @@ public class XmlManglerTest extends TestCase {
 
     public void testDecryption() throws Exception {
         Document orig = makeTestMessage();
-        Key encryptionKey = new RawKey(32);
+        Key encryptionKey = new RawKey(16);
         Document crypted = stringToDocument(documentToString(orig));  // preserve a copy of original
         XmlMangler.encryptXml(crypted, encryptionKey.getEncoded(), "MyKeyName");
 
@@ -158,9 +178,38 @@ public class XmlManglerTest extends TestCase {
         //log.info("Document after decryption: \n" + documentToString(decrypted));
     }
 
+    public void testMultiplElementEncryption() throws Exception {
+        Document soapDocument = makeTestMessageMultipleNodes();
+        Key encryptionKey = new RawKey(16);
+        // XmlUtil.documentToOutputStream(soapDocument, System.out);
+
+        NodeList list = soapDocument.getElementsByTagNameNS(SOAP_METHOD_NS, "symbol");
+        if (list.getLength() == 0) {
+            fail("Should have returned 'symbol' node");
+        }
+        Element element = (Element)list.item(0);
+        XmlMangler.encryptXml(element, encryptionKey.getEncoded(), "MyKeyName", "ref1");
+
+        // XmlUtil.documentToOutputStream(soapDocument, System.out);
+
+        list = soapDocument.getElementsByTagNameNS(SOAP_METHOD_NS, "date");
+        if (list.getLength() == 0) {
+            fail("Should have returned 'date' node");
+        }
+        element = (Element)list.item(0);
+        XmlMangler.encryptXml(element, encryptionKey.getEncoded(), "MyKeyName", "ref2");
+
+        // XmlUtil.documentToOutputStream(soapDocument, System.out);
+        
+        NodeList nl = soapDocument.getElementsByTagNameNS(xmlencNS, "CipherValue");
+        assertTrue(nl != null);
+        assertTrue(nl.getLength() == 2);
+    }
+
+
     public void testDecryptingAMessageThatsNotEncrypted() throws Exception {
         Document orig = makeTestMessage();
-        Key key = new RawKey(32);
+        Key key = new RawKey(16);
         try {
             XmlMangler.decryptXml(orig, key);
             fail("Should have thrown XMLSecurityElementNotFound");
