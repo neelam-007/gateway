@@ -49,6 +49,10 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
     public Group findByPrimaryKey(String oid) throws FindException {
         try {
+            if (oid == null) {
+                logger.fine("findByPrimaryKey called with null arg.");
+                return null;
+            }
             InternalGroup out = (InternalGroup)_manager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
             out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             return out;

@@ -30,6 +30,10 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
 
     public User findByPrimaryKey(String oid) throws FindException {
         try {
+            if (oid == null) {
+                logger.fine("findByPrimaryKey called with null arg.");
+                return null;
+            }
             InternalUser out = (InternalUser)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
             out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             return out;
