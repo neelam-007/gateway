@@ -4,7 +4,6 @@ import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
-import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import org.apache.log4j.Category;
@@ -114,7 +113,7 @@ public class UserPanel extends EntityEditorPanel {
 
             boolean isNew = userHeader.getOid() == 0;
             if (isNew) {
-                user = new UserImp();
+                user = new User();
                 user.setName(userHeader.getName());
             } else {
                 user =

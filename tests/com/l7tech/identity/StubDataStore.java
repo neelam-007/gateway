@@ -1,7 +1,5 @@
 package com.l7tech.identity;
 
-import com.l7tech.identity.internal.imp.GroupImp;
-import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.Wsdl;
@@ -95,9 +93,8 @@ public class StubDataStore {
     }
 
     private void initialUsers(XMLEncoder encoder, long providerId) {
-        User user = new UserImp();
+        User user = new User();
         user.setOid(nextObjectId());
-        user.setProviderOid(providerId);
         user.setLogin("fred");
         user.setFirstName("Fred");
         user.setLastName("Bunky");
@@ -105,8 +102,7 @@ public class StubDataStore {
         encoder.writeObject(user);
         populate(user);
 
-        user = new UserImp();
-        user.setProviderOid(providerId);
+        user = new User();
         user.setOid(nextObjectId());
         user.setLogin("don");
         user.setFirstName("Don");
@@ -115,8 +111,7 @@ public class StubDataStore {
         encoder.writeObject(user);
         populate(user);
 
-        user = new UserImp();
-        user.setProviderOid(providerId);
+        user = new User();
         user.setOid(nextObjectId());
         user.setLogin("schwartz");
         user.setFirstName("Hertz");
@@ -127,8 +122,7 @@ public class StubDataStore {
     }
 
     private void initialGroups(XMLEncoder encoder, long providerId) {
-        Group group = new GroupImp();
-        group.setProviderOid(providerId);
+        Group group = new Group();
         group.setOid(nextObjectId());
         group.setName("all-staff");
         group.setDescription("All staff group");
@@ -149,17 +143,14 @@ public class StubDataStore {
         encoder.writeObject(group);
         populate(group);
 
-        group = new GroupImp();
-        group.setProviderOid(providerId);
+        group = new Group();
         group.setOid(nextObjectId());
         group.setName("marketing");
         group.setDescription("Marketing group");
         encoder.writeObject(group);
         populate(group);
 
-
-        group = new GroupImp();
-        group.setProviderOid(providerId);
+        group = new Group();
         group.setOid(nextObjectId());
         group.setName("engineering");
         group.setDescription("Engineering group");

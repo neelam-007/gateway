@@ -1,10 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
-import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import org.apache.log4j.Category;
@@ -105,7 +103,7 @@ public class GroupPanel extends EntityEditorPanel {
 
             boolean isNew = groupHeader.getOid() == 0;
             if (isNew) {
-                group = new GroupImp();
+                group = new Group();
                 group.setName(groupHeader.getName());
             } else {
                 group =

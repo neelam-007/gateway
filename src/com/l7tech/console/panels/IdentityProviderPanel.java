@@ -6,8 +6,6 @@ import com.l7tech.console.util.IconManager2;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
-import com.l7tech.identity.internal.imp.UserImp;
-import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -361,11 +359,11 @@ public class IdentityProviderPanel extends WizardStepPanel {
             java.util.List row = (java.util.List)it.next();
             EntityHeader eh = (EntityHeader)row.get(0);
             if (EntityType.USER.equals(eh.getType())) {
-                User u = new UserImp();
+                User u = new User();
                 u.setName(eh.getName());
                 assertions.add(new SpecificUser(ip, u));
             } else if (EntityType.GROUP.equals(eh.getType())) {
-                Group g = new GroupImp();
+                Group g = new Group();
                 g.setName(eh.getName());
                 assertions.add(new MemberOfGroup(ip, g));
             }

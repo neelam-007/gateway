@@ -5,7 +5,6 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.tree.EntityListener;
 import com.l7tech.console.tree.EntityEvent;
 import com.l7tech.identity.Group;
-import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
@@ -42,7 +41,7 @@ public class NewGroupDialog extends JDialog {
     private boolean insertSuccess = false;
     private boolean createThenEdit = false;
 
-    Group group = new GroupImp();
+    Group group = new Group();
     private EventListenerList listenerList = new EventListenerList();
 
     /**

@@ -4,7 +4,6 @@ import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.tree.EntityListener;
 import com.l7tech.identity.User;
-import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
@@ -42,7 +41,7 @@ public class NewUserDialog extends JDialog {
     private boolean createThenEdit = false;
 
     /* the user instance */
-    private User user = new UserImp();
+    private User user = new User();
 
     /* new user Password */
     private char[] newPassword;
