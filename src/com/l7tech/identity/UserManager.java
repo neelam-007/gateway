@@ -18,5 +18,6 @@ public interface UserManager extends EntityManager {
     String save( User user, Set groupHeaders ) throws SaveException;
     void update( User user, Set groupHeaders ) throws UpdateException, ObjectNotFoundException;
     Collection search(String searchString) throws FindException;
+    EntityHeader userToHeader(User user);
     Class getImpClass();
 }

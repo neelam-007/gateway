@@ -14,7 +14,8 @@ import java.util.List;
 /**
  * The SAML-related configuration for a {@link com.l7tech.server.identity.fed.FederatedIdentityProvider}.
  *
- * This gets serialized to XML for storage along with the {@link FederatedIdentityProviderConfig}.
+ * This gets serialized by {@link java.beans.XMLEncoder} to XML for storage along with the
+ * {@link FederatedIdentityProviderConfig}.
  *
  * @author alex
  * @version $Revision$
@@ -32,6 +33,7 @@ public class SamlConfig implements Serializable {
 
     private List attributeStatementConfigs = Collections.EMPTY_LIST;
 
+    /** Non-normative! */
     public String toString() {
         StringBuffer sb = new StringBuffer("<SamlConfig ");
         sb.append("nameQualifier=\"").append(nameQualifier).append("\" ");

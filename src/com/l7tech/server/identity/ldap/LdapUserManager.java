@@ -202,6 +202,10 @@ public class LdapUserManager implements UserManager {
         return parent.search(new EntityType[] { EntityType.USER }, "*" );
     }
 
+    public EntityHeader userToHeader( User user ) {
+        return new EntityHeader(user.getUniqueIdentifier(), EntityType.USER, user.getLogin(), user.getName());
+    }
+
     /**
      * like findAllHeaders but returns LdapUser objects instead of EntityHeader objects
      */

@@ -454,7 +454,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         query.setString( 0, groupId );
         for (Iterator i = query.iterate(); i.hasNext();) {
             PersistentUser user = (PersistentUser)i.next();
-            headers.add( new EntityHeader( user.getOid(), EntityType.USER, user.getLogin(), null ) );
+            headers.add(provider.getUserManager().userToHeader(user));
         }
         return headers;
     }

@@ -11,6 +11,8 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.fed.FederatedUser;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceManager;
 import com.l7tech.server.identity.PersistentUserManager;
@@ -26,6 +28,11 @@ public class FederatedUserManager extends PersistentUserManager {
     public FederatedUserManager( IdentityProvider provider ) {
         super();
         this.provider = provider;
+    }
+
+    public EntityHeader userToHeader( User user ) {
+        FederatedUser imp = (FederatedUser)cast(user);
+        return new EntityHeader(imp.getUniqueIdentifier(), EntityType.USER, user.getName(), null);
     }
 
     public Class getImpClass() {

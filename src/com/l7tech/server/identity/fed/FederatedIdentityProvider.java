@@ -34,6 +34,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * The Federated Identity Provider allows authorization of {@link User}s and {@link Group}s
+ * whose identities are managed by trusted third-party authorities.  It supports federated credentials
+ * that have been provided using both X509 and SAML.
+ *
+ * @see FederatedIdentityProviderConfig
  * @author alex
  * @version $Revision$
  */
@@ -73,7 +78,9 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         if ( pc.getFormat() == CredentialFormat.CLIENTCERT ) {
-            if ( !config.isX509Supported() ) throw new AuthenticationException("This identity provider is not configured to support X.509 credentials");
+            if ( !config.isX509Supported() )
+                throw new BadCredentialsException("This identity provider is not configured to support X.509 credentials");
+            
             final X509Config x509Config = config.getX509Config();
 
             X509Certificate requestCert = (X509Certificate)pc.getPayload();
@@ -81,7 +88,8 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             String issuerDn = requestCert.getIssuerDN().getName();
 
             if ( !trustedCerts.isEmpty() ) {
-                // There could be no trusted certs--this means that specific users are trusted no matter what
+                // There could be no trusted certs--this means that specific client certs
+                // are trusted no matter what
                 TrustedCert trustedCert = (TrustedCert)trustedCerts.get(issuerDn);
                 if ( trustedCert == null ) throw new BadCredentialsException("Signer is not trusted");
                 if ( !trustedCert.isTrustedForSigningClientCerts() )
@@ -90,7 +98,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                                                       " is not trusted for signing client certificates");
 
                 try {
-                    // Check signatures
+                    // Check that cert was signed by CA key
                     requestCert.verify(trustedCert.getCertificate().getPublicKey());
                 } catch ( CertificateException e ) {
                     logger.log( Level.WARNING, e.getMessage(), e );
