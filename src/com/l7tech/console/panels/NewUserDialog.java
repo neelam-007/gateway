@@ -3,12 +3,20 @@ package com.l7tech.console.panels;
 import com.l7tech.console.EditorDialog;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.UserManager;
+import com.l7tech.identity.internal.imp.UserImp;
+import com.l7tech.util.Locator;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Collection;
 
 /**
  * New User dialog.
@@ -35,11 +43,11 @@ public class NewUserDialog extends JDialog {
     private boolean insertSuccess = false;
     private boolean createThenEdit = false;
 
+    /* the user instance */
+    private User user =  new UserImp();
+
     /* new user Password */
     private char[] newPassword;
-
-    /* the provider user is added to */
-    private EntityHeader cEntry;
 
     /* the panel listener */
     private PanelListener panelListener;
@@ -50,11 +58,9 @@ public class NewUserDialog extends JDialog {
      * Create a new NewUserDialog fdialog for a given Company
      *
      * @param parent  the parent Frame. May be <B>null</B>
-     * @param cEntry the company entry
      */
-    public NewUserDialog(JFrame parent, EntityHeader cEntry) {
+    public NewUserDialog(JFrame parent) {
         super(parent, true);
-        this.cEntry = cEntry;
         this.parent = parent;
         initResources();
         initComponents();
@@ -505,4 +511,30 @@ public class NewUserDialog extends JDialog {
         }
         return true;
     }
+    /**
+     *
+     * @return the internal user manager
+     * @throws RuntimeException if internal user manager could not be obtained
+     */
+    private UserManager getInternalUserManager()
+       throws RuntimeException {
+        try {
+            IdentityProviderConfigManager ipc =
+            (IdentityProviderConfigManager)Locator.
+                    getDefault().lookup(IdentityProviderConfigManager.class);
+            if (ipc == null) {
+                throw new RuntimeException("Could not find registered "+IdentityProviderConfigManager.class);
+            }
+            Collection ips = ipc.findAllIdentityProviders();
+
+            if (ips.isEmpty()) {
+                throw new RuntimeException("Could not retrieve identity providers.");
+            }
+            IdentityProvider iprovider = (IdentityProvider)ips.iterator().next();
+            return iprovider.getUserManager();
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

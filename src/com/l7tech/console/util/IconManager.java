@@ -45,6 +45,8 @@ public class IconManager {
         return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH+"/group16.png"));
     } else if (clazz.equals(UserFolderNode.class)) {
         return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH+"/user16.png"));
+    } else if (clazz.equals(RootNode.class)) {
+        return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH+"/root.gif"));
     }
 
     return null;

@@ -895,8 +895,7 @@ public class MainWindow extends JFrame {
                     dialog.setPanelListener(listenerBroker);
                     dialog.show();
                 } else if (TreeNodeMenu.NEW_USER.equals(e.getActionCommand())) {
-                    NewUserDialog dialog =
-                            new NewUserDialog(MainWindow.this, (EntityHeader) parent.getUserObject());
+                    NewUserDialog dialog = new NewUserDialog(MainWindow.this);
                     dialog.setResizable(false);
                     dialog.setPanelListener(listenerBroker);
                     dialog.show();

@@ -353,6 +353,7 @@ public class NewProviderDialog extends JDialog {
         if (ipc == null) {
             throw new RuntimeException("Could not find registered "+IdentityProviderConfigManager.class);
         }
+
         return ipc;
     }
 
