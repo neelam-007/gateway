@@ -340,6 +340,7 @@
                 <!-- Omit Phaos driver unless we need to ship it.  Including it causes testpackage to fail -->
                 <exclude name="com/l7tech/common/security/prov/phaos/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
 
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class"/>
