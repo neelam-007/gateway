@@ -44,6 +44,9 @@ public class EntityTreeCellRenderer
 
         AbstractTreeNode node = ((AbstractTreeNode)value);
         setText(node.getName());
+
+        setToolTipText(node.getTooltipText());
+
         icon = expanded ?
           new ImageIcon(node.getOpenedIcon()) :
           new ImageIcon(node.getIcon());

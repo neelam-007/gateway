@@ -82,6 +82,8 @@ public class AssertionsTree extends JTree implements DragGestureListener {
         getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         addTreeWillExpandListener(new AssertionsTreeWillExpandListener());
         addTreeExpansionListener(new AssertionsTreeExpansionListener());
+
+        ToolTipManager.sharedInstance().registerComponent(this);
     }
 
     public void dragGestureRecognized(DragGestureEvent dge) {

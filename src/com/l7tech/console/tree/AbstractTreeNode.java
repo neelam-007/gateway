@@ -284,6 +284,14 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     public abstract String getName();
 
     /**
+     * optional property. if not null, will be displayed as a tooltip
+     * @return
+     */
+    public String getTooltipText() {
+        return null;
+    }
+
+    /**
      * subclasses override this method specifying the resource name
      *
      * @param open for nodes that can be opened, can have children

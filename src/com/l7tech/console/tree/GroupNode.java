@@ -31,6 +31,14 @@ public class GroupNode extends EntityHeaderNode {
     public GroupNode(EntityHeader e)
       throws IllegalArgumentException {
         super(e);
+        // assume that the strid is a valuable piece of information if it;s something else than a number
+        String strid = e.getStrId();
+        try {
+            Long.parseLong(strid);
+            tooltip = null;
+        } catch (NumberFormatException nfe) {
+            tooltip = strid;
+        }
     }
 
 
@@ -104,4 +112,9 @@ public class GroupNode extends EntityHeaderNode {
         return "com/l7tech/console/resources/group16.png";
     }
 
+    public String getTooltipText() {
+        return tooltip;
+    }
+
+    private String tooltip = null;
 }
