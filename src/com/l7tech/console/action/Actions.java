@@ -31,7 +31,7 @@ public class Actions {
         }
 
         JOptionPane.showConfirmDialog(
-          Registry.getDefault().getWindowManager().getMainWindow(),
+          getMainWindow(),
           "Are you sure you wish to delete " + bn.getEntityHeader().getName() + "?",
           "Delete",
           JOptionPane.OK_OPTION);
@@ -42,10 +42,11 @@ public class Actions {
     // Deletes the given Realm
     private static boolean deleteUser(UserNode node) {
         // Make sure
-        if ((JOptionPane.showConfirmDialog(null,
+        if ((JOptionPane.showConfirmDialog(
+          getMainWindow(),
           "Are you sure you wish to delete " +
           node.getName() + "?",
-          "Delete",
+          "Delete User",
           JOptionPane.YES_NO_OPTION)) == 1) {
             return false;
         }
@@ -59,13 +60,18 @@ public class Actions {
             return true;
         } catch (Exception e) {
             // Error deleting realm - display error msg
-            JOptionPane.showMessageDialog(null,
+            JOptionPane.showMessageDialog(
+              getMainWindow(),
               "Error encountered while deleting " +
               node.getName() +
               ". Please try again later.",
-              "Delete realm",
+              "Delete User",
               JOptionPane.ERROR_MESSAGE);
         }
         return false;
+    }
+
+    private static JFrame getMainWindow() {
+        return Registry.getDefault().getWindowManager().getMainWindow();
     }
 }

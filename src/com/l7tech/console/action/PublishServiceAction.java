@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.PublishServiceWizard;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.MainWindow;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -58,7 +59,8 @@ public class PublishServiceAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                PublishServiceWizard dialog = new PublishServiceWizard(null, true);
+                JFrame f = Registry.getDefault().getWindowManager().getMainWindow();
+                PublishServiceWizard dialog = new PublishServiceWizard(f, true);
                 dialog.addEntityListener(listener);
                 dialog.setResizable(false);
                 dialog.show();

@@ -5,6 +5,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.GroupNode;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -54,7 +55,8 @@ public class GroupPropertiesAction extends NodeAction {
           new Runnable() {
             public void run() {
                 GroupPanel panel = new GroupPanel();
-                EditorDialog dialog = new EditorDialog(null, panel);
+                JFrame f = Registry.getDefault().getWindowManager().getMainWindow();
+                EditorDialog dialog = new EditorDialog(f, panel);
 
                 panel.edit(((EntityHeaderNode)node).getEntityHeader());
                 dialog.pack();

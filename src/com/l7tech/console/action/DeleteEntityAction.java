@@ -1,15 +1,11 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.util.WindowManager;
-import com.l7tech.console.MainWindow;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.DefaultMutableTreeNode;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -21,7 +17,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class DeleteEntityAction extends BaseAction {
-    static final Logger log = Logger.getLogger(NewUserAction.class.getName());
+    static final Logger log = Logger.getLogger(DeleteEntityAction.class.getName());
     EntityHeaderNode node;
 
     /**
@@ -61,8 +57,10 @@ public class DeleteEntityAction extends BaseAction {
     public void performAction() {
         boolean deleted = Actions.delete(node);
         if (deleted) {
-            node.removeFromParent();
-            // change to removeNodeFromParent(MutableTreeNode node)
+            JTree tree =
+              (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            model.removeNodeFromParent(node);
         }
     }
 }
