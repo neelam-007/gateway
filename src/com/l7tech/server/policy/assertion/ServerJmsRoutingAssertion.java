@@ -64,30 +64,38 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                               ? null
                               : "JMSCorrelationID = '" + escape( corrId ) + "'";
 
+            boolean inbound = request.isReplyExpected()
+                              && jmsInboundDest != null;
+
             if ( jmsSession instanceof QueueSession ) {
                 if ( !(jmsOutboundDest instanceof Queue ) ) throw new PolicyAssertionException( "Destination/Session type mismatch" );
                 jmsProducer = ((QueueSession)jmsSession).createSender( (Queue)jmsOutboundDest );
-                jmsConsumer = ((QueueSession)jmsSession).createReceiver( (Queue)jmsInboundDest, null );
+                if ( inbound ) jmsConsumer = ((QueueSession)jmsSession).createReceiver( (Queue)jmsInboundDest, null );
             } else if ( jmsSession instanceof TopicSession ) {
                 logger.log( Level.SEVERE, "Topics not supported!" );
                 return AssertionStatus.NOT_YET_IMPLEMENTED;
             } else {
                 jmsProducer = jmsSession.createProducer( jmsOutboundDest );
-                jmsConsumer = jmsSession.createConsumer( jmsInboundDest, null );
+                if ( inbound ) jmsConsumer = jmsSession.createConsumer( jmsInboundDest, null );
             }
 
+            logger.finer( "Routing request to protected service" );
             jmsProducer.send( jmsOutboundRequest );
 
-            if ( request.isReplyExpected() ) {
-                Message jmsResponse = jmsConsumer.receive( RESPONSE_TIMEOUT );
+            if ( inbound ) {
+                logger.finer( "Getting response from protected service" );
+                int timeout = data.getResponseTimeout();
+                Message jmsResponse = jmsConsumer.receive( timeout );
                 if ( jmsResponse == null ) {
                     logger.fine( "Did not receive a routing reply within timeout of " +
-                                 RESPONSE_TIMEOUT + "ms. Will return empty response");
+                                 timeout + "ms. Will return empty response");
                     return AssertionStatus.FAILED;
                 } else {
                     logger.finer( "Received routing reply" );
 
-                    if ( !(response instanceof XmlResponse ) ) throw new PolicyAssertionException( "Only XML responses are supported" );
+                    if ( !(response instanceof XmlResponse ) )
+                        throw new PolicyAssertionException( "Only XML responses are supported" );
+
                     XmlResponse xresp = (XmlResponse)response;
 
                     if ( jmsResponse instanceof TextMessage ) {
@@ -112,6 +120,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                     request.setRoutingStatus( RoutingStatus.ROUTED );
                 }
             } else {
+                logger.finest( "No response expected from protected service" );
                 request.setRoutingStatus( RoutingStatus.ROUTED );
             }
 
@@ -133,7 +142,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         } finally {
             try {
                 if ( jmsInboundDest instanceof TemporaryQueue ) {
-                    logger.fine( "Deleting temporary queue" );
+                    logger.finer( "Deleting temporary queue" );
                     ((TemporaryQueue)jmsInboundDest).delete();
                 }
             } catch ( JMSException e ) {
@@ -289,12 +298,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     private JmsConnection routedRequestConnection;
     private JmsEndpoint routedRequestEndpoint;
-    private JmsBag bag;
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private JmsBag bag;
     private Destination routedRequestDestination;
     private Destination endpointResponseDestination;
-    private Queue tempResponseQueue;
-    public static final long RESPONSE_TIMEOUT = 10000; // 10000
+
+    private Logger logger = LogManager.getInstance().getSystemLogger();
     public static final int BUFFER_SIZE = 79; // TODO set to something reasonable when testing is finished
 }
