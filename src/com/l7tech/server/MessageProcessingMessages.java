@@ -30,5 +30,5 @@ public class MessageProcessingMessages extends Messages {
     public static final M POLICY_EVALUATION_RESULT    = m(3017, Level.WARNING, "Policy evaluation resulted in status {0} ({1})");
     public static final M EXCEPTION                   = m(3018, Level.SEVERE, "{0}");
     public static final M EVENT_MANAGER_EXCEPTION     = m(3019, Level.WARNING, "EventManager threw exception logging message processing result");
-
+    public static final M WSS_PROCESSING_COMPLETE     = m(3020, Level.FINEST, "WSS processing of request complete.");
 }

@@ -8,8 +8,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
-import com.l7tech.common.audit.AuditDetail;
-import com.l7tech.common.audit.AuditDetailMessage;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.xml.TarariProber;
@@ -29,8 +28,6 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 /**
@@ -46,11 +43,10 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
           DEFAULT_LOGPROPERTIES_PATH : "ssglog.properties", true);
     }
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
     private List _components = new ArrayList();
     private ServerConfig serverConfig;
     private EventManager eventManager;
-    private AuditContext audit;
+    private Auditor auditor;
 
     /**
      * Constructor for bean usage via subclassing.
@@ -71,50 +67,30 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
         for (int i = 0; i < goners.length; i++) {
             File goner = goners[i];
             String filename = goner.toString();
-            logAndAudit(BootMessages.DELETING_ATTACHMENT, filename);
+            auditor.logAndAudit(BootMessages.DELETING_ATTACHMENT, new String[] {filename});
             goner.delete();
         }
     }
 
-    private void logAndAudit(AuditDetailMessage msg, String param, Throwable e) {
-        audit.addDetail(new AuditDetail(msg,
-                                        param == null ? null : new String[] { param },
-                                        e));
-
-        LogRecord rec = new LogRecord(msg.getLevel(), msg.getMessage());
-        rec.setLoggerName(logger.getName()); // Work around NPE in LoggerNameFilter
-        if (e != null) rec.setThrown(e);
-        if (param != null) rec.setParameters(new String[] {param});
-        logger.log(rec);
-    }
-
-    private void logAndAudit(AuditDetailMessage msg, String param) {
-        logAndAudit(msg, param, null);
-    }
-
-    private void logAndAudit(AuditDetailMessage msg) {
-        logAndAudit(msg, null, null);
-    }
-
     public void setServerConfig(ServerConfig config) throws LifecycleException {
         serverConfig = config;
-        audit = AuditContext.getCurrent(serverConfig.getSpringContext());
+        auditor = new Auditor(AuditContext.getCurrent(serverConfig.getSpringContext()), Logger.getLogger(getClass().getName()));
 
         if (TarariProber.isTarariPresent()) {
-            logAndAudit(BootMessages.XMLHARDWARE_INIT);
+            auditor.logAndAudit(BootMessages.XMLHARDWARE_INIT);
             try {
                 TarariUtil.setupIsSoap();
             } catch (XPathCompilerException e) {
-                logAndAudit(BootMessages.XMLHARDWARE_ERROR);
+                auditor.logAndAudit(BootMessages.XMLHARDWARE_ERROR);
             }
         } else {
-            logAndAudit(BootMessages.XMLHARDWARE_DISABLED);
+            auditor.logAndAudit(BootMessages.XMLHARDWARE_DISABLED);
         }
 
         try {
             ipAddress = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
-            logAndAudit(BootMessages.NO_IP, null, e);
+            auditor.logAndAudit(BootMessages.NO_IP, null, e);
             ipAddress = LOCALHOST_IP;
         }
 
@@ -137,10 +113,10 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
 
             setSystemProperties(config);
 
-            logAndAudit(BootMessages.CRYPTO_INIT);
+            auditor.logAndAudit(BootMessages.CRYPTO_INIT);
             JceProvider.init();
-            logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, JceProvider.getAsymmetricJceProvider().getName());
-            logAndAudit(BootMessages.CRYPTO_SYMMETRIC, JceProvider.getSymmetricJceProvider().getName());
+            auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, new String[] {JceProvider.getAsymmetricJceProvider().getName()});
+            auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, new String[] {JceProvider.getSymmetricJceProvider().getName()});
 
             String classnameString = config.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
             String[] componentClassnames = classnameString.split("\\s.*?");
@@ -153,11 +129,11 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
                     Class clazz = Class.forName(classname);
                     component = (ServerComponentLifecycle)clazz.newInstance();
                 } catch (ClassNotFoundException cnfe) {
-                    logger.log(Level.SEVERE, "Couldn't initialize server component '" + classname + "'", cnfe);
+                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[] {classname}, cnfe);
                 } catch (InstantiationException e) {
-                    logger.log(Level.SEVERE, "Couldn't initialize server component '" + classname + "'", e);
+                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[] {classname}, e);
                 } catch (IllegalAccessException e) {
-                    logger.log(Level.SEVERE, "Couldn't initialize server component '" + classname + "'", e);
+                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[] {classname}, e);
                 }
 
                 if (component != null) {
@@ -165,7 +141,7 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
                         component.setServerConfig(config);
                         _components.add(component);
                     } catch (LifecycleException e) {
-                        logger.log(Level.SEVERE, "Component " + component + " failed to initialize", e);
+                        auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[] {component.getClass().getName()}, e);
                     }
                 }
             }
