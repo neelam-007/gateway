@@ -10,9 +10,7 @@ import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SamlException;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.SignedElement;
-import com.l7tech.common.security.token.X509SecurityToken;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -53,8 +51,15 @@ import java.util.logging.Logger;
  */
 public class TokenServiceClient {
     public static final Logger log = Logger.getLogger(TokenServiceClient.class.getName());
-    public static final String TOKENTYPE_SECURITYCONTEXT = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
-    public static final String TOKENTYPE_SAML = "urn:oasis:names:tc:SAML:1.0:assertion";
+
+    public static final class RequestType {
+        public static final RequestType ISSUE = new RequestType("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue");
+        public static final RequestType VALIDATE = new RequestType("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Validate");
+
+        private final String uri;
+        private RequestType(String uri) { this.uri = uri; }
+        String getUri() { return uri; }
+    }
 
     /**
      * Create a signed SOAP message containing a WS-Trust RequestSecurityToken message asking for the
@@ -63,17 +68,22 @@ public class TokenServiceClient {
      * @param clientCertificate  the certificate to use to sign the request
      * @param clientPrivateKey   the private key of the certificate to use to sign the request
      * @param desiredTokenType   the token type being applied for
+     * @param base
+     * @param appliesToAddress   wsa:Address to use for wsp:AppliesTo, or null to leave out the AppliesTo
      * @return a signed SOAP message containing a wst:RequestSecurityToken
      * @throws CertificateException if ther eis a problem with the clientCertificate
      */
     public static Document createRequestSecurityTokenMessage(X509Certificate clientCertificate,
-                                                      PrivateKey clientPrivateKey,
-                                                      String desiredTokenType,
-                                                      Date timestampCreatedDate)
+                                                             PrivateKey clientPrivateKey,
+                                                             SecurityTokenType desiredTokenType,
+                                                             RequestType requestType,
+                                                             SecurityToken base,
+                                                             String appliesToAddress,
+                                                             Date timestampCreatedDate)
             throws CertificateException
     {
         try {
-            Document msg = requestSecurityTokenMessageTemplate(desiredTokenType);
+            Document msg = requestSecurityTokenMessageTemplate(desiredTokenType, requestType, appliesToAddress, base);
             Element env = msg.getDocumentElement();
             Element body = XmlUtil.findFirstChildElement(env);
 
@@ -103,25 +113,62 @@ public class TokenServiceClient {
         }
     }
 
-    private static Document requestSecurityTokenMessageTemplate(String desiredTokenType) throws IOException, SAXException {
-        Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+    private static Document requestSecurityTokenMessageTemplate(SecurityTokenType desiredTokenType,
+                                                                RequestType requestType,
+                                                                String appliesToAddress,
+                                                                SecurityToken base)
+            throws IOException, SAXException
+    {
+        // TODO fix or remove this hack: if a saml: qname will be used, declare saml NS in root element
+        String extraNs = "";
+        if (desiredTokenType != null && SamlSecurityToken.class.isAssignableFrom(desiredTokenType.getInterfaceClass()))
+            extraNs += " xmlns:saml=\"" + desiredTokenType.getWstPrototypeElementNs() + "\"";
+
+        Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\"" + extraNs + ">" +
                                                     "<soap:Body>" +
                                                     "<wst:RequestSecurityToken xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\">" +
-                                                    "<wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>" +
                                                     "</wst:RequestSecurityToken>" +
                                                     "</soap:Body></soap:Envelope>");
         Element env = msg.getDocumentElement();
         Element body = XmlUtil.findFirstChildElement(env);
         Element rst = XmlUtil.findFirstChildElement(body);
-        Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
-        tokenType.appendChild(XmlUtil.createTextNode(msg, desiredTokenType));
+
+        // Add AppliesTo, if provided
+        if (appliesToAddress != null && appliesToAddress.length() > 0) {
+            Element appliesTo = XmlUtil.createAndAppendElementNS(rst, "AppliesTo", SoapUtil.WSP_NAMESPACE, "wsp");
+            Element endpointRef = XmlUtil.createAndAppendElementNS(appliesTo, "EndpointReference", SoapUtil.WSA_NAMESPACE, "wsa");
+            Element address = XmlUtil.createAndAppendElementNS(endpointRef, "Address", SoapUtil.WSA_NAMESPACE, "wsa");
+            address.appendChild(XmlUtil.createTextNode(address, appliesToAddress));
+        }
+
+        // Add TokenType, if meaningful with this token type
+        if (desiredTokenType != null) {
+            final String tokenTypeUri = desiredTokenType.getWstTokenTypeUri();
+            if (tokenTypeUri != null) {
+                // Add TokenType element
+                Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
+                tokenType.appendChild(XmlUtil.createTextNode(msg, tokenTypeUri));
+            }
+        }
+
+        // Add Base, if provided.  Base is not required to be the same token type as the token type we are requesting.
+        if (base != null) {
+            Element baseEl = XmlUtil.createAndPrependElementNS(rst, "Base", SoapUtil.WST_NAMESPACE, "wst");
+            baseEl.appendChild(msg.importNode(base.asElement(), true));
+        }
+
+        // Add RequestType
+        {
+            Element rt = XmlUtil.createAndAppendElementNS(rst, "RequestType", rst.getNamespaceURI(), "wst");
+            rt.appendChild(XmlUtil.createTextNode(msg, requestType.getUri()));
+        }
 
         return msg;
     }
 
-    public static Document createRequestSecurityTokenMessage(String desiredTokenType) {
+    public static Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType, RequestType requestType, SecurityToken base, String appliesToAddress) {
         try {
-            return requestSecurityTokenMessageTemplate(desiredTokenType);
+            return requestSecurityTokenMessageTemplate(desiredTokenType, requestType, appliesToAddress, base);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
@@ -147,7 +194,7 @@ public class TokenServiceClient {
         URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
         Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                TOKENTYPE_SECURITYCONTEXT, timestampCreatedDate);
+                                                                SecurityTokenType.WSSC, RequestType.ISSUE, null, null, timestampCreatedDate);
         Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
 
         if (!(result instanceof SecureConversationSession))
@@ -162,7 +209,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException, OperationCanceledException {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
 
-        Document requestDoc = createRequestSecurityTokenMessage(TOKENTYPE_SECURITYCONTEXT);
+        Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC, RequestType.ISSUE, null, null);
         Object result = obtainResponse(url, ssg, requestDoc, serverCertificate);
 
         if (!(result instanceof SecureConversationSession))
@@ -171,15 +218,18 @@ public class TokenServiceClient {
     }
 
     public static SamlAssertion obtainSamlAssertion(Ssg ssg,
-                                                                          X509Certificate clientCertificate,
-                                                                          PrivateKey clientPrivateKey,
-                                                                          X509Certificate serverCertificate)
+                                                    X509Certificate clientCertificate,
+                                                    PrivateKey clientPrivateKey,
+                                                    X509Certificate serverCertificate,
+                                                    RequestType requestType)
             throws IOException, GeneralSecurityException
     {
         URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
         Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                "saml:Assertion", timestampCreatedDate);
+                                                                SecurityTokenType.SAML_AUTHENTICATION,
+                                                                requestType,
+                                                                null, null, timestampCreatedDate);
         requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
 
@@ -215,7 +265,7 @@ public class TokenServiceClient {
             Document response = null;
             response = XmlUtil.parse(conn.getInputStream());
             Object result = null;
-            result = parseRequestSecurityTokenResponse(response,
+            result = parseSignedRequestSecurityTokenResponse(response,
                                                        clientCertificate,
                                                        clientPrivateKey,
                                                        serverCertificate);
@@ -269,7 +319,7 @@ public class TokenServiceClient {
             Document response = null;
             response = XmlUtil.parse(conn.getInputStream());
             Object result = null;
-            result = parseRequestSecurityTokenResponse(response, null, null, serverCertificate);
+            result = parseSignedRequestSecurityTokenResponse(response, null, null, serverCertificate);
             return result;
         } catch (SAXException e) {
             throw new CausedIOException("Unable to parse RequestSecurityTokenResponse from security token service: " + e.getMessage(), e);
@@ -285,9 +335,30 @@ public class TokenServiceClient {
         }
     }
 
+    /**
+     * Parse an unsigned RequestSecurityTokenResponse returned from a WS-Trust token service.  The response
+     * message is required to be in SOAP format, but is not required to be signed.  It is the caller's responsibility
+     * to ensure, perhaps using SSL, that the message arrived from the expected token issuer with its integrity intact.
+     *
+     * @param response the response to process.  Must be a full SOAP Envelope.
+     *                 Body must contain a RequestSecurityTokenResponse.  May not be null.
+     * @return an Object representing the parsed security token.  At the moment this will be an instance of either
+     *         SamlAssertion or SecureConversationSession.  Never null; will either succeed or throw.
+     */
+    public static Object parseUnsignedRequestSecurityTokenResponse(Document response)
+            throws InvalidDocumentFormatException
+    {
+        try {
+            return parseRequestSecurityTokenResponse(response, null, null, null);
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (ProcessorException e) {
+            throw new RuntimeException(e); // can't happen, server cert was null
+        }
+    }
 
     /**
-     * Parse a RequestSecurityTokenResponse returned from a WS-Trust token service.  The response message
+     * Parse a signed RequestSecurityTokenResponse returned from a WS-Trust token service.  The response message
      * is requried to be in SOAP format, to be a Basic Security Profile SECURE_ENVELOPE signed by the
      * issuer certificate, and to have a signed SOAP Body.
      * <p>
@@ -300,20 +371,80 @@ public class TokenServiceClient {
      * @param clientPrivateKey     the private key corresponding to this client certificate, to decrypt any EncryptedKey.  May not be null.
      * @param serverCertificate    the certificate of the token issuer, to verify the identity of the signer of the returned token.  May not be null.
      * @return an Object representing the parsed security token.  At the moment this will be an instance of either
-     *         HolderOfKeyAssertion or SecureConversationSession.  Never returns null; will either succeed or throw.
+     *         SamlAssertion or SecureConversationSession.  Never returns null; will either succeed or throw.
      * @throws InvalidDocumentFormatException  if there is a problem with the format of the response document
      * @throws GeneralSecurityException  if there is a problem with a certificate, key, or signature
      * @throws com.l7tech.common.security.xml.processor.ProcessorException   if there is a problem undecorating the signed message
      */
-    public static Object parseRequestSecurityTokenResponse(Document response,
+    public static Object parseSignedRequestSecurityTokenResponse(Document response,
                                                            X509Certificate clientCertificate,
                                                            PrivateKey clientPrivateKey,
                                                            X509Certificate serverCertificate)
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException
     {
-        WssProcessor wssProcessor = new WssProcessorImpl();
+        if (clientCertificate == null || clientPrivateKey == null || serverCertificate == null) throw new NullPointerException();
+        return parseRequestSecurityTokenResponse(response, clientCertificate, clientPrivateKey, serverCertificate);
+    }
+
+    private static Object parseRequestSecurityTokenResponse(Document response,
+                                                            X509Certificate clientCertificate,
+                                                            PrivateKey clientPrivateKey,
+                                                            X509Certificate serverCertificate)
+            throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException
+    {
+        Element env = response.getDocumentElement();
+        if (env == null) throw new InvalidDocumentFormatException("Response had no document element"); // can't happen
+        Element body = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), "Body");
+        if (body == null) throw new MessageNotSoapException("Response has no SOAP Body");
+        Element rstr = XmlUtil.findOnlyOneChildElementByName(body, SoapUtil.WST_NAMESPACE, "RequestSecurityTokenResponse");
+        if (rstr == null) throw new InvalidDocumentFormatException("Response body does not contain wst:RequestSecurityTokenResponse");
+
+        if (serverCertificate != null)
+            verifySignature(rstr, serverCertificate, response, clientCertificate, clientPrivateKey);
+
+        Element rst = XmlUtil.findOnlyOneChildElementByName(rstr, SoapUtil.WST_NAMESPACE, "RequestedSecurityToken");
+        if (rst == null) throw new InvalidDocumentFormatException("Response contained no RequestedSecurityToken");
+
+        // See what kind of requested security token we got
+
+        // Check for SecurityContextToken
+        Element scTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.WSSC_NAMESPACE,
+                                                                  SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME);
+        if (scTokenEl != null) {
+            // It's a SecurityContextToken
+            if (clientPrivateKey == null || clientCertificate == null)
+                throw new ProcessorException("Was not expecting to receive a SecurityContextToken"); // TODO relax this if we need to do WS-SC without a client cert
+
+            return processSecurityContextToken(scTokenEl, rstr, clientCertificate, clientPrivateKey);
+        }
+
+        Element samlTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SamlConstants.NS_SAML, "Assertion");
+        if (samlTokenEl != null) {
+            // It's a signed SAML assertion
+            try {
+                return new SamlAssertion(samlTokenEl);
+            } catch (SAXException e) {
+                throw new InvalidDocumentFormatException(e);
+            } catch (SamlException e) {
+                throw new InvalidDocumentFormatException(e);
+            }
+        }
+
+        Element what = XmlUtil.findFirstChildElement(rst);
+        throw new InvalidDocumentFormatException("Token server returned unrecognized security token " + what.getLocalName() +
+                                                 " (namespace=" + what.getNamespaceURI() + ")");
+    }
+
+    private static void verifySignature(Element rstr,
+                                        X509Certificate serverCertificate,
+                                        Document response,
+                                        X509Certificate clientCertificate,
+                                        PrivateKey clientPrivateKey)
+            throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException
+    {
         ProcessorResult result = null;
         try {
+            WssProcessor wssProcessor = new WssProcessorImpl();
             result = wssProcessor.undecorateMessage(response,
                                                     clientCertificate,
                                                     clientPrivateKey,
@@ -321,12 +452,6 @@ public class TokenServiceClient {
         } catch (BadSecurityContextException e) {
             throw new InvalidDocumentFormatException("Response attempted to use a WS-SecureConversation SecurityContextToken, which we don't support when talking to the token server itself", e);
         }
-        Element env = response.getDocumentElement();
-        if (env == null) throw new InvalidDocumentFormatException("Response had no document element"); // can't happen
-        Element body = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), "Body");
-        if (body == null) throw new MessageNotSoapException("Response has no SOAP Body");
-        Element rstr = XmlUtil.findOnlyOneChildElementByName(body, SoapUtil.WST_NAMESPACE, "RequestSecurityTokenResponse");
-        if (rstr == null) throw new InvalidDocumentFormatException("Response body does not contain wst:RequestSecurityTokenResponse");
 
         SignedElement[] signedElements = result.getElementsThatWereSigned();
         SecurityToken signingSecurityToken = null;
@@ -350,42 +475,17 @@ public class TokenServiceClient {
 
         if (signingSecurityToken == null)
             throw new InvalidDocumentFormatException("Response body was not signed.");
-
-        Element rst = XmlUtil.findOnlyOneChildElementByName(rstr, SoapUtil.WST_NAMESPACE, "RequestedSecurityToken");
-        if (rst == null) throw new InvalidDocumentFormatException("Response contained no RequestedSecurityToken");
-
-        // See what kind of requested security token we got
-
-        // Check for SecurityContextToken
-        Element scTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.WSSC_NAMESPACE,
-                                                                  SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME);
-        if (scTokenEl != null) {
-            // It's a SecurityContextToken
-            return processSecurityContextToken(scTokenEl, rstr, clientCertificate, clientPrivateKey);
-        }
-
-        Element samlTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SamlConstants.NS_SAML, "Assertion");
-        if (samlTokenEl != null) {
-            // It's a signed SAML assertion
-            try {
-                return new SamlAssertion(samlTokenEl);
-            } catch (SAXException e) {
-                throw new InvalidDocumentFormatException(e);
-            } catch (SamlException e) {
-                throw new InvalidDocumentFormatException(e);
-            }
-        }
-
-        Element what = XmlUtil.findFirstChildElement(rst);
-        throw new InvalidDocumentFormatException("Token server returned unrecognized security token " + what.getLocalName() +
-                                                 " (namespace=" + what.getNamespaceURI() + ")");
     }
 
     private static Object processSecurityContextToken(Element scTokenEl,
                                                       Element rstr,
                                                       X509Certificate clientCertificate,
                                                       PrivateKey clientPrivateKey)
-                                            throws InvalidDocumentFormatException, GeneralSecurityException {
+                                            throws InvalidDocumentFormatException, GeneralSecurityException
+    {
+        if (clientPrivateKey == null) throw new NullPointerException();
+        if (clientCertificate == null) throw new NullPointerException();
+
         // Extract session ID
         Element identifierEl = XmlUtil.findOnlyOneChildElementByName(scTokenEl, SoapUtil.WSSC_NAMESPACE, "Identifier");
         if (identifierEl == null) throw new InvalidDocumentFormatException("Response contained no wsc:Identifier");
