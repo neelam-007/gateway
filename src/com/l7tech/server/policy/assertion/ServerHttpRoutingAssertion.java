@@ -17,6 +17,7 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.*;
@@ -146,13 +147,29 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         try {
                             defaultSecHeader = SoapUtil.getSecurityElement(doc);
                         } catch (InvalidDocumentFormatException e) {
-                            String msg = "this option is not supported for non-soap messages. " +
-                                             "something is wrong with this policy";
+                            String msg = "this option is not supported for non-soap messages. this message is " +
+                                         "supposed to be soap but does not appear to be";
                             logger.warning(msg);
                             throw new PolicyAssertionException(msg);
                         }
                         if (defaultSecHeader != null) {
                             defaultSecHeader.getParentNode().removeChild(defaultSecHeader);
+
+                            // we should not leave an empty header element
+                            Element header = null;
+                            try {
+                                header = SoapUtil.getHeaderElement(doc);
+                            } catch (InvalidDocumentFormatException e) {
+                                String msg = "this option is not supported for non-soap messages. this message is " +
+                                             "supposed to be soap but does not appear to be";
+                                logger.warning(msg);
+                                throw new PolicyAssertionException(msg);
+                            }
+                            if (header != null) {
+                                if (XmlUtil.elementIsEmpty(header)) {
+                                    header.getParentNode().removeChild(header);
+                                }
+                            }
                         }
                     }
 
