@@ -107,7 +107,7 @@ public class ServerSamlSecurity implements ServerAssertion {
                     return AssertionStatus.BAD_REQUEST;
                 }
             } else if (assertion.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_SENDER_VOUCHES) {
-                if (samlAssertion.isHolderOfKey()) {
+                if (!samlAssertion.isSenderVouches()) {
                     logger.warning("We got a request that presented a valid signature from a SAML assertion, but " +
                                    "it was not a Sender-vouches assertion. " +
                                    "This policy assertion requires sv type of confirmation.");

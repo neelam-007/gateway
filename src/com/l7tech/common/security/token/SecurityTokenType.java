@@ -15,9 +15,9 @@ import java.io.Serializable;
  * A typesafe enum that lists the different types of WS-Security Security Tokens we support
  */
 public class SecurityTokenType implements Serializable {
-    private static final String SAML_NS = "urn:oasis:names:tc:SAML:1.0:assertion";
-    private static final String SAML_ELEMENT = "Assertion";
-    private static final String SECURECONVESATIONTOKEN_URI = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
+    public static final String SAML_NS = "urn:oasis:names:tc:SAML:1.0:assertion";
+    public static final String SAML_ELEMENT = "Assertion";
+    public static final String SECURECONVESATIONTOKEN_URI = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
 
     public int getNum() {
         return num;

@@ -10,6 +10,8 @@ import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.token.UsernameToken;
+import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -29,6 +31,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.w3c.dom.Document;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.InputStream;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
@@ -95,7 +98,7 @@ public class TokenServiceTest extends TestCase {
 
         log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
 
-        Object responseObj = TokenServiceClient.parseRequestSecurityTokenResponse(responseMsg,
+        Object responseObj = TokenServiceClient.parseSignedRequestSecurityTokenResponse(responseMsg,
                                                                    TestDocuments.getDotNetServerCertificate(),
                                                                    TestDocuments.getDotNetServerPrivateKey(),
                                                                    TestDocuments.getDotNetServerCertificate());
@@ -147,7 +150,7 @@ public class TokenServiceTest extends TestCase {
 
         log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
 
-        Object responseObj = TokenServiceClient.parseRequestSecurityTokenResponse(responseMsg,
+        Object responseObj = TokenServiceClient.parseSignedRequestSecurityTokenResponse(responseMsg,
                                                                                   subjectCertificate,
                                                                                   subjectPrivateKey,
                                                                                   issuerCertificate);
@@ -173,22 +176,37 @@ public class TokenServiceTest extends TestCase {
     }
 
     public void testCreateFimRst() throws Exception {
-/*
         InputStream fimIs = getClass().getClassLoader().getResourceAsStream("com/l7tech/example/resources/tivoli/FIM_RST.xml");
         final String origRst = XmlUtil.nodeToFormattedString(XmlUtil.parse(fimIs));
 
         UsernameToken usernameToken = new UsernameTokenImpl("testuser", "passw0rd".toCharArray());
 
-       // TODO after FIM interop use AppliesTo like http://l7tech.com/services/TokenServiceTest instead
+        // TODO after FIM interop use AppliesTo like http://l7tech.com/services/TokenServiceTest instead
         Document rstDoc = TokenServiceClient.createRequestSecurityTokenIssueMessage(null,
                                                                                     TokenServiceClient.RequestType.VALIDATE,
                                                                                     usernameToken,
                                                                                     "http://samlpart.com/sso");
         String rst = XmlUtil.nodeToFormattedString(rstDoc);
 
-        // TODO send this to the server
-        // assertEquals(rst, origRst);
-*/
+        // TODO check this somehow, other than uncommenting below line and eyeballing the diff
+        //assertEquals(rst, origRst);
+    }
 
+    public void testParseFimRstr() throws Exception {
+        InputStream respIs = getClass().getClassLoader().getResourceAsStream("com/l7tech/example/resources/tivoli/tivoliFIM_RSTR.xml");
+        final Document rstr = XmlUtil.parse(respIs);
+
+        Object got = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstr);
+
+        SamlAssertion saml = (SamlAssertion)got;
+
+        assertFalse(saml.isHolderOfKey());
+        assertFalse(saml.isSenderVouches());
+        assertNull(saml.getConfirmationMethod());
+        saml.verifyIssuerSignature();
+
+        log.info("Issuer cert = " + saml.getIssuerCertificate());
+        log.info("Subject cert = " + saml.getSubjectCertificate());
+        log.info("Got SAML assertion (reformatted): " + XmlUtil.nodeToFormattedString(saml.asElement()));
     }
 }
