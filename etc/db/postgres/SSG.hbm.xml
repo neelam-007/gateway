@@ -204,7 +204,7 @@
         <property name="username"/>
         <property name="password"/>
         <property name="maxConcurrentRequests" column="max_concurrent_requests"/>
-        <property name="isMessageSource" column="is_message_source"/>
+        <property name="messageSource" column="is_message_source"/>
     </class>
 
 </hibernate-mapping>
