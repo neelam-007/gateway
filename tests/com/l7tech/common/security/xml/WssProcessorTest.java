@@ -152,11 +152,11 @@ public class WssProcessorTest extends TestCase {
 
     /*public void testRequestWrappedL7Actor() throws Exception {
         doTest(makeDotNetTestDocument("request wrapped l7 actor", TestDocuments.WRAPED_L7ACTOR));
-    }*/
+    }
 
     public void testRequestMultipleWrappedL7Actor() throws Exception {
         doTest(makeDotNetTestDocument("request multiple wrapped l7 actor", TestDocuments.MULTIPLE_WRAPED_L7ACTOR));
-    }
+    }*/
 
     public void testDotnetSignedSecureConversationRequest() throws Exception {
         doTest(makeDotNetTestDocument("dotnet signed SecureConversation request", TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN));
