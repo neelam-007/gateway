@@ -6,6 +6,7 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.panels.EditGatewayNameDialog;
 import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.console.security.LogonEvent;
@@ -22,6 +23,7 @@ import java.awt.event.*;
 import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 
@@ -259,12 +261,24 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                         }
                     }
                 }
-                menu.add(new DeleteNodeEntryAction(canDelete));
-                menu.add(new RenameNodeAction());
-                if (menu != null) {
-                    Utilities.removeToolTipsFromMenuItems(menu);
-                    menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
+                List actions = new ArrayList();
+                SecureAction sa = new DeleteNodeEntryAction(canDelete);
+                if (sa.isAuthorized()) {
+                    actions.add(sa);
                 }
+                sa = new RenameNodeAction();
+                if (sa.isAuthorized()) {
+                    actions.add(sa);
+                }
+                if (actions.isEmpty()) {
+                    return;
+                }
+                for (Iterator iterator = actions.iterator(); iterator.hasNext();) {
+                    SecureAction secureAction = (SecureAction)iterator.next();
+                    menu.add(secureAction);
+                }
+                Utilities.removeToolTipsFromMenuItems(menu);
+                menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
             }
         });
 
@@ -370,19 +384,19 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
 
         ColumnHeaderTooltips htt = new ColumnHeaderTooltips();
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_NAME_COLUMN_INDEX),
-                       "Name of the SecureSpan Gateway. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+          "Name of the SecureSpan Gateway. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX),
-                       "% of load calculated with data collected in the past 60 seconds. " +
-                       "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+          "% of load calculated with data collected in the past 60 seconds. " +
+          "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX),
-                       "% of routed requests calculated with data collected in the past 60 seconds. " +
-                       "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+          "% of routed requests calculated with data collected in the past 60 seconds. " +
+          "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX),
-                       "IP address of the SecureSpan Gateway. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+          "IP address of the SecureSpan Gateway. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX),
-                       "1 minute load average. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+          "1 minute load average. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX),
-                       "Duration of the SecureSpan Gateway uptime. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+          "Duration of the SecureSpan Gateway uptime. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         clusterStatusTable.getTableHeader().addMouseMotionListener(htt);
 
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_NAME_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
@@ -863,18 +877,36 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         }
     };
 
-    private class DeleteNodeEntryAction extends AbstractAction {
+    private class DeleteNodeEntryAction extends SecureAction {
         public DeleteNodeEntryAction(boolean buttonEnabled) {
-            putValue(Action.NAME, "Delete Node");
-            putValue(Action.SHORT_DESCRIPTION, "Delete the node entry in the database");
-            putValue(Action.SMALL_ICON, new ImageIcon(cl.getResource(RESOURCE_PATH + "/delete.gif")));
             setEnabled(buttonEnabled);
+        }
+
+        /**
+         * @return the aciton description
+         */
+        public String getDescription() {
+            return "Delete the node entry in the database";
+        }
+
+        /**
+         * @return the action name
+         */
+        public String getName() {
+            return "Delete Node";
+        }
+
+        /**
+         * subclasses override this method specifying the resource name
+         */
+        protected String iconResource() {
+            return RESOURCE_PATH + "/delete.gif";
         }
 
         /**
          * Invoked when an action occurs.
          */
-        public void actionPerformed(ActionEvent e) {
+        public void performAction() {
 
             // get the selected row index
             final int selectedRowIndexOld = getClusterStatusTable().getSelectedRow();
@@ -934,17 +966,36 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         }
     }
 
-    private class RenameNodeAction extends AbstractAction {
+    private class RenameNodeAction extends SecureAction {
         public RenameNodeAction() {
-            putValue(Action.NAME, "Rename Node");
-            putValue(Action.SHORT_DESCRIPTION, "Change the node name");
-            putValue(Action.SMALL_ICON, new ImageIcon(cl.getResource(RESOURCE_PATH + "/Edit16.gif")));
         }
+
+        /**
+         * @return the aciton description
+         */
+        public String getDescription() {
+            return "Change the node name";  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        /**
+         * @return the action name
+         */
+        public String getName() {
+            return "Rename Node";
+        }
+
+        /**
+         * subclasses override this method specifying the resource name
+         */
+        protected String iconResource() {
+            return RESOURCE_PATH + "/Edit16.gif";
+        }
+
 
         /**
          * Invoked when an action occurs.
          */
-        public void actionPerformed(ActionEvent e) {
+        public void performAction() {
             // get the selected row index
             final int selectedRowIndexOld = getClusterStatusTable().getSelectedRow();
             final String nodeName;
