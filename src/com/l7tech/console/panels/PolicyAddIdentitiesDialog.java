@@ -179,7 +179,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
         });
         usersLabelPanel.add(buttonAdd);
 
-        buttonAddAll.setText("Add All");
+        buttonAddAll.setText("Add all");
         buttonAddAll.setHorizontalTextPosition(SwingConstants.RIGHT);
         buttonAddAll.setHorizontalAlignment(SwingConstants.RIGHT);
         buttonAddAll.setIcon(IconManager.getInstance().getIconAddAll());
@@ -323,8 +323,8 @@ public class PolicyAddIdentitiesDialog extends JDialog {
         panel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
         // login button (global variable)
         addSelectedIdentitiesButton = new JButton();
-        addSelectedIdentitiesButton.setText("Save");
-        addSelectedIdentitiesButton.setToolTipText("Save assertions");
+        addSelectedIdentitiesButton.setText("Ok");
+        addSelectedIdentitiesButton.setToolTipText("Add assertions");
 
         addSelectedIdentitiesButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
