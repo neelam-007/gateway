@@ -2,6 +2,11 @@ package com.l7tech.server;
 
 import com.l7tech.identity.*;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceManager;
+import com.l7tech.common.util.Locator;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.objectmodel.FindException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -10,6 +15,8 @@ import javax.servlet.ServletConfig;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.sql.SQLException;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -60,11 +67,65 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private void doAnonymous(HttpServletRequest req, HttpServletResponse res, String svcId) {
+    private void doAnonymous(HttpServletRequest req, HttpServletResponse res, String svcId) throws IOException {
+        doAuthenticated(req, res, svcId, null);
+    }
+
+    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, String svcId, User requestor) throws IOException {
+        // HANDLE REQUEST FOR ONE SERVICE DESCRIPTION
+        if (svcId != null && svcId.length() > 0) {
+            // get this service
+            ServiceManager manager = getServiceManager();
+            try {
+                beginTransaction();
+            } catch (TransactionException e) {
+                logger.log(Level.SEVERE, "cannot begin transaction", e);
+                res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+                return;
+            }
+            PublishedService svc = null;
+            try {
+                svc = manager.findByPrimaryKey(Long.parseLong(svcId));
+            } catch (FindException e) {
+                logger.log(Level.SEVERE, "cannot find service", e);
+                svc = null;
+            } catch (NumberFormatException e) {
+                logger.log(Level.SEVERE, "cannot parse service id", e);
+                res.sendError(HttpServletResponse.SC_BAD_REQUEST, "wrong service id: " + svcId);
+                return;
+            }
+            if (svc == null) {
+                res.sendError(HttpServletResponse.SC_NOT_FOUND, "service does not exist or not authorized");
+                return;
+            }
+            // make sure this service is indeed anonymously accessible
+            if (requestor == null) {
+                if (!policyAllowAnonymous(svc)) {
+                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "you need to provide valid credentials to see this service's description");
+                    return;
+                }
+            } else { // otherwise make sure the requestor is authorized for this policy
+
+            }
+            outputServiceDescription(res, svc);
+        } else { // HANDLE REQUEST FOR LIST OF SERVICES
+            Collection services = null;
+            if (requestor == null) services = listAnonymouslyViewableServices();
+            else services = listAnonymouslyViewableAndProtectedServices(requestor);
+            // Is there anything to show?
+            if (services.size() < 1) {
+                res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
+                return;
+            }
+            outputServiceDescriptions(res, services);
+        }
+    }
+
+    private void outputServiceDescription(HttpServletResponse res, PublishedService svc) {
         // todo
     }
 
-    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, String svcId, User requestor) {
+    private void outputServiceDescriptions(HttpServletResponse res, Collection services) {
         // todo
     }
 
@@ -78,6 +139,29 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         Collection output = new ArrayList(listAnonymouslyViewableServices());
         // todo, add "protected" services
         return output;
+    }
+
+    private ServiceManager getServiceManager() {
+        ServiceManager output = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+        if (output == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
+        return output;
+    }
+
+    private void beginTransaction() throws TransactionException {
+        try {
+            PersistenceContext.getCurrent().beginTransaction();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "cannot begin transaction", e);
+            throw new TransactionException("cannot begin transaction", e);
+        }
+    }
+
+    private void endTransaction() {
+        try {
+            PersistenceContext.getCurrent().close();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "error closing transaction", e);
+        }
     }
 
     private static final String PARAM_SERVICEOID = "serviceoid";
