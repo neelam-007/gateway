@@ -1,6 +1,8 @@
 package com.l7tech.identity.cert;
 
-import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
+
+import java.security.cert.Certificate;
 
 /**
  * User: flascell
@@ -16,16 +18,36 @@ public interface ClientCertManager {
      * if the user already has a cert and it has been consumed, this will return false;
      * if the user has a non-consumed cert and that cert has been regenerated 10 times,
      * it will also return false.
-     */
-    boolean userCanGenCert(String userid);
-
-    /**
-     * records new cert
-     */
-    void recordNewCert(String userid, byte[] cert);
-
-    /**
      *
+     * if the user has no current cert or a cert that has not been used, this will
+     * return true
+     *
+     * @param providerId the provider to which this user belongs to
+     * @param userid the user id (valid in the provider passed)
      */
-    byte[] getCert(String userid);
+    boolean userCanGenCert(long providerId, String userid);
+
+    /**
+     * Records new cert for the user (if user is allowed)
+     *
+     * @param providerId the provider to which this user belongs to
+     * @param userid the user id (valid in the provider passed)
+     * @param cert the cert to record
+     * @throws IllegalStateException if user was not in a state that allowes the creation
+     * of a cert
+     */
+    void recordNewUserCert(long providerId, String userid, Certificate cert) throws IllegalStateException;
+
+    /**
+     * retrieves existing cert for this user
+     */
+    Certificate getUserCert(long providerId, String userid) throws FindException;
+
+    /**
+     * revokes the cert (if applicable) for this user
+     *
+     * @param providerId the provider to which this user belongs to
+     * @param userid the user id (valid in the provider passed)
+     */
+    void revokeUserCert(long providerId, String userid);
 }
