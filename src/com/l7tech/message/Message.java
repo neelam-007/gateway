@@ -24,5 +24,14 @@ public interface Message {
     Iterator getParameterNames();
     void setParameter( String name, Object value );
     void setParameterIfEmpty( String name, Object value );
+
+    /**
+     * Returns the value of a parameter, or the first value in a multivalued parameter if it has multiple values.
+     */
     Object getParameter( String name );
+
+    /**
+     * Returns the array of values for a parameter, or an array with one element if it has one value.
+     */
+    Object[] getParameterValues( String name );
 }
