@@ -406,6 +406,7 @@ public class PolicyEditorPanel extends JPanel {
                   "policy".equals(evt.getPropertyName())) {
                   try {
                       renderService(serviceNode);
+                      policyEditorToolbar.buttonSave.setEnabled(true);
                   } catch (FindException e) {
                       e.printStackTrace();
                   }
