@@ -1,7 +1,8 @@
 package com.l7tech.service;
 
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.service.Client;
+import com.l7tech.message.Request;
 
 import java.util.Collection;
 import java.io.IOException;
@@ -31,6 +32,24 @@ public class ServiceManagerClientImp implements ServiceManager {
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
+        return null;
+    }
+
+    public ProtectedService createProtectedService(String wsdlUrl) {
+        return null;
+    }
+
+    public long save(PublishedService service) throws SaveException {
+        return 0;
+    }
+
+    public void update(PublishedService service) throws UpdateException {
+    }
+
+    public void delete(PublishedService service) throws DeleteException {
+    }
+
+    public PublishedService resolveService(Request request) {
         return null;
     }
 
