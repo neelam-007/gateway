@@ -98,8 +98,11 @@ public class WspReaderTest extends TestCase {
         Assertion kid = (Assertion)all.getChildren().get(0);
         assertTrue(kid instanceof RequestSwAAssertion);
         RequestSwAAssertion swa = (RequestSwAAssertion)kid;
-        assertNotNull(swa.getBindingInfo());
-        BindingInfo bindingInfo = swa.getBindingInfo();
+
+        assertTrue(swa.getBindings().size() == 1);
+        BindingInfo bindingInfo = (BindingInfo) swa.getBindings().keySet().iterator().next();
+        assertNotNull(bindingInfo);
+
         assertNotNull(bindingInfo.getBindingName());
         assertTrue(bindingInfo.getBindingName().length() > 0);
         assertEquals(bindingInfo.getBindingName(), "serviceBinding1");

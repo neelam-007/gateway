@@ -127,10 +127,7 @@
                 </ResponseXpathAssertion>
                 <RequestWssReplayProtection/>
                 <RequestSwAAssertion>
-                    <BindingInfo wsdlBindingInfo="included">
-                        <BindingName stringValue=""/>
-                        <BindingOperations mapValue="included"/>
-                    </BindingInfo>
+                    <Bindings mapValue="included"/>
                 </RequestSwAAssertion>
                 <SamlSecurity/>
                 <CustomAssertion>
@@ -173,12 +170,15 @@
             </RequestXpathAssertion>
             <All>
                 <RequestSwAAssertion>
-                    <BindingInfo wsdlBindingInfo="included">
-                        <BindingName stringValue="serviceBinding1"/>
-                        <BindingOperations mapValue="included">
-                            <entry>
-                                <key stringValue="getQuote"/>
-                                <value wsdlBindingOperationInfo="included">
+                    <Bindings mapValue="included">
+                        <entry>
+                            <key stringValue="serviceBinding1"/>
+                            <value wsdlBindingInfo="included">
+                                <BindingName stringValue="serviceBinding1"/>
+                                <BindingOperations mapValue="included">
+                                    <entry>
+                                    <key stringValue="getQuote"/>
+                                    <value wsdlBindingOperationInfo="included">
                                     <Multipart mapValue="included">
                                     <entry>
                                     <key stringValue="portfolioData"/>
@@ -190,10 +190,12 @@
                                     </entry>
                                     </Multipart>
                                     <Name stringValue="getQuote"/>
-                                </value>
-                            </entry>
-                        </BindingOperations>
-                    </BindingInfo>
+                                    </value>
+                                    </entry>
+                                </BindingOperations>
+                            </value>
+                        </entry>
+                    </Bindings>
                 </RequestSwAAssertion>
             </All>
         </ExactlyOne>

@@ -126,8 +126,11 @@ public class WspWriterTest extends TestCase {
         //bindingOperations.put("buyStock", new BindingOperationInfo("buyStock", buyStockAttachments));
 
         BindingInfo bindingInfo = new BindingInfo("serviceBinding1", bindingOperations);
+
+        Map bindings = new HashMap();
+        bindings.put(bindingInfo.getBindingName(), bindingInfo);
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[] {
-            new RequestSwAAssertion(bindingInfo),
+            new RequestSwAAssertion(bindings),
         }));
         return policy;
     }
