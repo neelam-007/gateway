@@ -37,7 +37,8 @@ public class LogMessage {
             stripex += msgClass.replace('$', '.') + "\\s+";
         if (msgMethod != null)
             stripex += msgMethod.replace('$', '.') + "\\s+" + severity;
-        msgDetails = log.getMessage().replaceFirst(stripex, "");
+        if (log.getMessage() == null) msgDetails = "";
+        else msgDetails = log.getMessage().replaceFirst(stripex, "");
     }
 
     public long getMsgNumber() {
