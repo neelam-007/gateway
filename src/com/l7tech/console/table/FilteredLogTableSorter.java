@@ -459,7 +459,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
                         // populate the change to the display
                         realModel.fireTableDataChanged();
-                        logPane.updateTimeStamp();
+                        logPane.updateTimeStamp(getCurrentClusterSystemTime());
                         logPane.updateMsgTotal();
 
                         logPane.setSelectedRow(msgNumSelected);

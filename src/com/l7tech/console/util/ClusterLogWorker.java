@@ -34,7 +34,8 @@ public class ClusterLogWorker extends SwingWorker {
     private Vector requests;
     private Hashtable retrievedLogs;
     private boolean remoteExceptionCaught;
-    static Logger logger = Logger.getLogger(ClusterStatusWorker.class.getName());
+    private java.util.Date currentClusterSystemTime = null;
+    static Logger logger = Logger.getLogger(ClusterLogWorker.class.getName());
 
     /**
      * A constructor
@@ -87,6 +88,15 @@ public class ClusterLogWorker extends SwingWorker {
      */
     public Vector getUnfilledRequest() {
         return requests;
+    }
+
+    /**
+     * Get Cluster's current system time.
+     *
+     * @return java.util.Date  The current system time of the cluster.
+     */
+    public java.util.Date getCurrentClusterSystemTime() {
+        return currentClusterSystemTime;
     }
 
     /**
@@ -195,8 +205,19 @@ public class ClusterLogWorker extends SwingWorker {
             requests.removeElement(logRequest);
         }
 
-        //System.out.println("Number of outstanding requests: " + requests.size());
-        return newNodeList;
+        try {
+            currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
+        } catch (RemoteException e) {
+            remoteExceptionCaught = true;
+            logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
+        }
+
+        if (currentClusterSystemTime == null) {
+            return null;
+        } else {
+            //System.out.println("Number of outstanding requests: " + requests.size());
+            return newNodeList;
+        }
 
     }
 }

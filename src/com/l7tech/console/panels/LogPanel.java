@@ -598,9 +598,11 @@ public class LogPanel extends JPanel {
     /**
      * Update the timestamp of the "last updated" label.
      */
-    public void updateTimeStamp() {
+    public void updateTimeStamp(java.util.Date time) {
         SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
-        getLastUpdateTimeLabel().setText("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      ");
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(time);
+        getLastUpdateTimeLabel().setText("Last updated: " + sdf.format(cal.getTime()) + "      ");
     }
 
     // This customized renderer can render objects of the type TextandIcon
