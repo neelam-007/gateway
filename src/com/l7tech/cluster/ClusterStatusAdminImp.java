@@ -74,7 +74,7 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
      * @param newName the new name of the node (must not be null)
      */
     public void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException {
-        // todo
+        // todo, ciman.renameNode(nodeid, newName); and all transaction trimmings
         throw new UnsupportedOperationException();
     }
 
