@@ -39,11 +39,11 @@ public class MultipartMessageReader {
      * @return the XML as a String
      * @throws java.io.IOException if a multipart message has an invalid format, or the content cannot be read
      */
-    protected Message.Part getSoapPart() throws IOException {
+    public Message.Part getSoapPart() throws IOException {
         return parseMultipart(0);
     }
 
-    protected Map getMessageAttachments() throws IOException {
+    public Map getMessageAttachments() throws IOException {
 
         // parse all multiple parts
         parseAllMultiparts(breader);
