@@ -6,26 +6,31 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.PrivateKey;
-import java.security.GeneralSecurityException;
-import java.io.IOException;
-
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-
 import javax.xml.soap.SOAPConstants;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Builds request messages for TokenService and helps parse the responses.
  */
 public class TokenServiceClient {
+    public static final Logger log = Logger.getLogger(TokenServiceClient.class.getName());
     public static final String TOKENTYPE_SECURITYCONTEXT = "http://schemas.xmlsoap.org/ws/2004/04/sct";
     public static final String TOKENTYPE_SAML = "urn:oasis:names:tc:SAML:1.0:assertion";
 
@@ -80,5 +85,44 @@ public class TokenServiceClient {
         } catch (WssDecorator.DecoratorException e) {
             throw new RuntimeException(e); // shouldn't happen
         }
+    }
+
+    public interface SecureConversationSession {
+        String getSessionId();
+        byte[] getSharedSecret();
+        Date getExpiryDate();
+    }
+
+    public SecureConversationSession obtainSecureConversationSession(String ssgHostname,
+                                                                     X509Certificate clientCertificate,
+                                                                     PrivateKey clientPrivateKey)
+            throws IOException, CertificateException, SAXException
+    {
+        URL url = new URL("http", ssgHostname, SecureSpanConstants.TOKEN_SERVICE_FILE);
+        Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
+                                                                TOKENTYPE_SECURITYCONTEXT);
+        log.log(Level.INFO, "Applying for new WS-SecureConversation SecurityContextToken for " + clientCertificate.getSubjectDN());
+
+        URLConnection conn = url.openConnection();
+        conn.setAllowUserInteraction(false);
+        conn.setDoInput(true);
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Content-Type", "text/xml");
+        XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
+        if (!"text/xml".equalsIgnoreCase(conn.getContentType()))
+            throw new IOException("Token server returned unsupported content type " + conn.getContentType());
+        Document response = XmlUtil.parse(conn.getInputStream());
+        Object result = parseRequestSecurityTokenResponse(response,
+                                                          clientCertificate,
+                                                          clientPrivateKey);
+        return null;
+    }
+
+
+    public Object parseRequestSecurityTokenResponse(Document response,
+                                                    X509Certificate clientCertificate,
+                                                    PrivateKey clientPrivateKey)
+    {
+        return null;
     }
 }
