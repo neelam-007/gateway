@@ -31,6 +31,6 @@ class SpecificUserAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Identity is "+ ((SpecificUser)getUserObject()).getUser().getName();
+        return "Identity is "+ ((SpecificUser)getUserObject()).getUserOid();
     }
 }
