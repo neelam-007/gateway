@@ -70,8 +70,13 @@ public class PublishedService extends NamedEntityImp {
 
     public synchronized void setWsdlUrl( String wsdlUrl ) throws MalformedURLException {
         if ( _wsdlUrl != null && !_wsdlUrl.equals(wsdlUrl) ) _wsdlXml = null;
-        _wsdlUrl = wsdlUrl;
-        new URL( wsdlUrl );
+        if (wsdlUrl != null && wsdlUrl.length() > 0) {
+            new URL( wsdlUrl );
+            _wsdlUrl = wsdlUrl;
+        } else {
+            _wsdlUrl = null;
+        }
+
     }
 
     /**
@@ -195,6 +200,38 @@ public class PublishedService extends NamedEntityImp {
         return result;
     }
 
+    /**
+     * Whether or not this service is not a soap service.
+     * It is resolved through its routing URI property.
+     */
+    public boolean isNonSoap() {
+        return nonSoap;
+    }
+
+    /**
+     * Whether or not this service is not a soap service.
+     * It is resolved through its routing URI property.
+     */
+    public void setNonSoap(boolean nonSoap) {
+        this.nonSoap = nonSoap;
+    }
+
+    /**
+     * URI portion of the requests that determine whether or not requests are meant for this service.
+     */
+    public String getRoutingUri() {
+        return routingUri;
+    }
+
+    /**
+     * URI portion of the requests that determine whether or not requests are meant for this service.
+     */
+    public void setRoutingUri(String routingUri) {
+        this.routingUri = routingUri;
+    }
+
+
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -202,6 +239,8 @@ public class PublishedService extends NamedEntityImp {
     protected String _wsdlUrl;
     protected String _wsdlXml;
     protected boolean _disabled;
+    protected boolean nonSoap;
+    protected String routingUri;
 
     protected transient Wsdl _parsedWsdl;
     protected transient Port _wsdlPort;

@@ -122,7 +122,9 @@ CREATE TABLE published_service (
   policy_xml text NOT NULL default '',
   wsdl_url varchar(255) NOT NULL default '',
   wsdl_xml text NOT NULL default '',
-  disabled boolean NOT NULL default 'f'
+  disabled boolean NOT NULL default 'f',
+  non_soap boolean NOT NULL default 'f',
+  routing_uri varchar(128)
 );
 
 --

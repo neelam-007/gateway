@@ -130,6 +130,8 @@ CREATE TABLE published_service (
   wsdl_url varchar(255) NOT NULL default '',
   wsdl_xml text,
   disabled TINYINT(1) NOT NULL default '0',
+  non_soap TINYINT(1) NOT NULL default '0',
+  routing_uri varchar(128),
   PRIMARY KEY  (objectid)
 ) TYPE=InnoDB;
 

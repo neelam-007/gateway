@@ -7,10 +7,7 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.service.resolution.NameValueServiceResolver;
-import com.l7tech.server.service.resolution.ServiceResolutionException;
-import com.l7tech.server.service.resolution.SoapActionResolver;
-import com.l7tech.server.service.resolution.UrnResolver;
+import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 
@@ -146,7 +143,7 @@ public class ServiceCache {
                 logger.finest("resolution failed because no services in the cache");
                 return null;
             }
-
+            // todo, plug in the non soap resolver
             for (int i = 0; i < resolvers.length; i++) {
                 Set resolvedServices = resolvers[i].resolve(req, serviceSet);
                 if (resolvedServices == null || resolvedServices.isEmpty()) return null;
@@ -199,14 +196,22 @@ public class ServiceCache {
         if (services.get(key) != null) update = true;
         if (update) {
             for (int i = 0; i < resolvers.length; i++) {
-                resolvers[i].serviceUpdated(service);
+                if (service.isNonSoap()) {
+                    nonSoapResolver.serviceUpdated(service);
+                } else {
+                    resolvers[i].serviceUpdated(service);
+                }
             }
             logger.finest("updated service in cache. oid=" + service.getOid() + " version=" + service.getVersion());
         } else {
             // make sure no duplicate exist
             //validate(service);
             for (int i = 0; i < resolvers.length; i++) {
-                resolvers[i].serviceCreated(service);
+                if (service.isNonSoap()) {
+                    nonSoapResolver.serviceCreated(service);
+                } else {
+                    resolvers[i].serviceCreated(service);
+                }
             }
             logger.finest("added service in cache. oid=" + service.getOid());
         }
@@ -250,8 +255,12 @@ public class ServiceCache {
         services.remove(key);
         serverPolicies.remove(key);
         serviceStatistics.remove(key);
-        for (int i = 0; i < resolvers.length; i++) {
-            resolvers[i].serviceDeleted(service);
+        if (service.isNonSoap()) {
+            nonSoapResolver.serviceDeleted(service);
+        } else {
+            for (int i = 0; i < resolvers.length; i++) {
+                resolvers[i].serviceDeleted(service);
+            }
         }
         logger.finest("removed service from cache. oid=" + service.getOid());
     }
@@ -478,6 +487,7 @@ public class ServiceCache {
 
     // the resolvers
     private final NameValueServiceResolver[] resolvers = {new SoapActionResolver(), new UrnResolver()};
+    private final HttpUriResolver nonSoapResolver = new HttpUriResolver();
 
     // read-write lock for thread safety
     private final ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();

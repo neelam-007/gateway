@@ -31,22 +31,7 @@ public class HttpUriResolver extends NameValueServiceResolver {
     }
 
     protected Object[] doGetTargetValues( PublishedService service ) {
-        try {
-            Wsdl wsdl = service.parsedWsdl();
-            Port soapPort = wsdl.getSoapPort();
-            URL url = null;
-            if ( soapPort != null ) url = wsdl.getUrlFromPort( soapPort );
-            if ( url == null )
-                return new String[0];
-            else
-                return new String[] { url.getFile() };
-        } catch ( WSDLException we ) {
-            logger.throwing( getClass().getName(), "getTargetValues", we );
-            return new String[0];
-        } catch ( MalformedURLException mue ) {
-            logger.throwing( getClass().getName(), "getTargetValues", mue );
-            return new String[0];
-        }
+        return new String[] {service.getRoutingUri()};
     }
 
     protected Object getRequestValue(Request request) throws ServiceResolutionException {
