@@ -221,15 +221,12 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     }
 
     public boolean authenticateBasic(String dn, String passwd) {
-        // DirContext anonymousCtx = getAnonymousContext();
-
         Hashtable env = new Hashtable();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL, dn);
         env.put(Context.SECURITY_CREDENTIALS, passwd);
-
         DirContext userCtx = null;
         try
         {
