@@ -12,6 +12,9 @@ public class MimePartInfo implements Serializable {
     protected String contentType;
     private int maxLength;
 
+    public MimePartInfo() {
+    }
+
     public MimePartInfo(String name, String contentType) {
         this.name = name;
         this.contentType = contentType;

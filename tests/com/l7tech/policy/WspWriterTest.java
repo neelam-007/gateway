@@ -1,11 +1,14 @@
 package com.l7tech.policy;
 
+import com.l7tech.common.wsdl.BindingInfo;
+import com.l7tech.common.wsdl.BindingOperationInfo;
+import com.l7tech.common.wsdl.MimePartInfo;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.common.xml.XpathExpression;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -100,6 +103,32 @@ public class WspWriterTest extends TestCase {
 
         //Assertion tree = WspReader.parse(gotXml);
         //log.info("After parsing: " + tree);
+    }
+
+    public static void testNestedMaps() throws Exception {
+        Assertion policy = createSoapWithAttachmentsPolicy();
+        log.info("Serialized complex policy: " + WspWriter.getPolicyXml(policy));
+    }
+
+    public static Assertion createSoapWithAttachmentsPolicy() {
+        Map getQuoteAttachments = new HashMap();
+        getQuoteAttachments.put("portfolioData", new MimePartInfo("portfolioData", "application/x-zip-compressed"));
+        getQuoteAttachments.put("expectedQuoteFormat", new MimePartInfo("expectedQuoteFormat", "text/xml"));
+        getQuoteAttachments.put("quoteData", new MimePartInfo("quoteData", "application/x-zip-compressed"));
+
+        Map buyStockAttachments = new HashMap();
+        buyStockAttachments.put("portfolioData", new MimePartInfo("portfolioData", "application/x-zip-compressed"));
+        buyStockAttachments.put("paymentInformation", new MimePartInfo("paymentInformation", "application/x-payment-info"));
+
+        Map bindingOperations = new HashMap();
+        bindingOperations.put("getQuote", new BindingOperationInfo("getQuote", getQuoteAttachments));
+        bindingOperations.put("buyStock", new BindingOperationInfo("buyStock", buyStockAttachments));
+
+        BindingInfo bindingInfo = new BindingInfo("serviceBinding1", bindingOperations);
+        Assertion policy = new AllAssertion(Arrays.asList(new Assertion[] {
+            new RequestSwAAssertion(bindingInfo),
+        }));
+        return policy;
     }
 
     public static void main(String[] args) {

@@ -1,8 +1,11 @@
 package com.l7tech.policy;
 
+import com.l7tech.common.wsdl.BindingInfo;
+import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import junit.framework.Test;
@@ -11,6 +14,7 @@ import junit.framework.TestSuite;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -83,6 +87,31 @@ public class WspReaderTest extends TestCase {
                 Assertion policy = WspReader.parse("<foo><bar blee=\"1\"/></foo>");
             }
         });
+    }
+
+    public void testParseSwAPolicy() throws Exception {
+        Assertion policy = WspWriterTest.createSoapWithAttachmentsPolicy();
+        String serialized = WspWriter.getPolicyXml(policy);
+        Assertion parsedPolicy = WspReader.parse(serialized);
+        assertTrue(parsedPolicy instanceof AllAssertion);
+        AllAssertion all = (AllAssertion)parsedPolicy;
+        Assertion kid = (Assertion)all.getChildren().get(0);
+        assertTrue(kid instanceof RequestSwAAssertion);
+        RequestSwAAssertion swa = (RequestSwAAssertion)kid;
+        assertNotNull(swa.getBindingInfo());
+        BindingInfo bindingInfo = swa.getBindingInfo();
+        assertNotNull(bindingInfo.getBindingName());
+        assertTrue(bindingInfo.getBindingName().length() > 0);
+        assertEquals(bindingInfo.getBindingName(), "serviceBinding1");
+
+        Map bops = bindingInfo.getBindingOperations();
+        assertFalse(bops.isEmpty());
+        BindingOperationInfo[] bois = (BindingOperationInfo[])bops.values().toArray(new BindingOperationInfo[0]);
+        assertTrue(bois.length == 2);
+
+        String reserialized = WspWriter.getPolicyXml(parsedPolicy);
+        assertEquals(reserialized.length(), serialized.length());
+
     }
 
     public static void main(String[] args) {

@@ -11,7 +11,10 @@ public class RequestSwAAssertion extends SwAAssertion {
     private BindingInfo bindingInfo = new BindingInfo();
 
     public RequestSwAAssertion() {
+    }
 
+    public RequestSwAAssertion(BindingInfo bindingInfo) {
+        this.bindingInfo = bindingInfo;
     }
 
     /** @return the BindingInfo.  Never null. */

@@ -1,8 +1,8 @@
 package com.l7tech.common.wsdl;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -12,6 +12,9 @@ import java.io.Serializable;
 public class BindingOperationInfo implements Serializable {
     protected String name;
     protected Map multipart = new HashMap();    // list of MimePartInfo
+
+    public BindingOperationInfo() {
+    }
 
     public BindingOperationInfo(String name, Map multipart) {
         this.name = name;

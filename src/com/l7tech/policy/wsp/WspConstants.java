@@ -7,6 +7,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.wsdl.BindingInfo;
+import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
@@ -29,7 +30,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.wsdl.BindingOperation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -606,12 +606,13 @@ public class WspConstants {
                 if (!(key instanceof String))
                     throw new InvalidPolicyTreeException("Maps with non-string keys are not currently permitted within a policy");
                 Object value = entry.getValue();
-                if (value != null && !(value instanceof String))
-                    throw new InvalidPolicyTreeException("Maps with non-string values are not currently permitted within a policy");
+                //if (value != null && !(value instanceof String))
+                //    throw new InvalidPolicyTreeException("Maps with non-string values are not currently permitted within a policy");
                 Element entryElement = newElement.getOwnerDocument().createElement("entry");
                 newElement.appendChild(entryElement);
                 typeMappingString.freeze(new TypedReference(String.class, key, "key"), entryElement);
-                typeMappingString.freeze(new TypedReference(String.class, value, "value"), entryElement);
+                typeMappingObject.freeze(new TypedReference(value.getClass(), value, "value"), entryElement);
+                //typeMappingString.freeze(new TypedReference(String.class, value, "value"), entryElement);
             }
         }
 
@@ -638,10 +639,7 @@ public class WspConstants {
                 String key = (String)ktr.target;
 
                 TypedReference vtr = typeMappingObject.thaw(valueElement, visitor);
-                if (!String.class.equals(vtr.type))
-                    throw new InvalidPolicyStreamException("Maps with non-string values are not currently permitted within a policy");
-                String value = (String)vtr.target;
-                map.put(key, value);
+                map.put(key, vtr.target);
             }
         }
     };
@@ -732,7 +730,7 @@ public class WspConstants {
         // Special types
         new BeanTypeMapping(XpathExpression.class, "xpathExpressionValue"),
         new BeanTypeMapping(BindingInfo.class, "wsdlBindingInfo"),
-        new BeanTypeMapping(BindingOperation.class, "wsdlBindingOperationInfo"),
+        new BeanTypeMapping(BindingOperationInfo.class, "wsdlBindingOperationInfo"),
         new BeanTypeMapping(MimePartInfo.class, "wsdlMimePartInfo"),
 
     };
