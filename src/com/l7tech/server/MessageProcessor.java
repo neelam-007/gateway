@@ -8,14 +8,13 @@ package com.l7tech.server;
 
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
+import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.WssDecoratorImpl;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -170,6 +169,20 @@ public class MessageProcessor {
                 if (status == AssertionStatus.NONE)
                     status = doDeferredAssertions(response, request, response);
 
+                // Run response through WssDecorator if indicated
+                if (status == AssertionStatus.NONE &&
+                        response instanceof SoapResponse &&
+                        ((SoapResponse)response).getDecorationRequirements() != null)
+                {
+                    SoapResponse soapResponse = (SoapResponse)response;
+                    try {
+                        getWssDecorator().decorateMessage(soapResponse.getDocument(),
+                                                          soapResponse.getDecorationRequirements());
+                    } catch (Exception e) {
+                        throw new PolicyAssertionException("Failed to apply WSS decoration to response", e);
+                    }
+                }
+
                 RoutingStatus rstat = request.getRoutingStatus();
 
                 boolean authorized = false;
@@ -297,6 +310,11 @@ public class MessageProcessor {
         private static MessageProcessor singleton = new MessageProcessor();
     }
 
+    private static synchronized WssDecorator getWssDecorator() {
+        if (_wssDecorator != null) return _wssDecorator;
+        return _wssDecorator = new WssDecoratorImpl();
+    }
+
     //private static MessageProcessor _instance = null;
     private static ThreadLocal _currentRequest = new ThreadLocal();
     private static ThreadLocal _currentResponse = new ThreadLocal();
@@ -305,6 +323,7 @@ public class MessageProcessor {
 
     private DocumentBuilderFactory _dbf;
     private XmlPullParserFactory _xppf;
+    private static WssDecorator _wssDecorator = null;
 
     private PrivateKey privateServerKey = null;
     private X509Certificate serverCert = null;
