@@ -1,6 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.UserNode;
 
 /**
@@ -8,7 +7,7 @@ import com.l7tech.console.tree.UserNode;
  * <p> @author fpang </p>
  * $Id$
  */
-public class FederatedUserPropertiesAction  extends UserPropertiesAction {
+public class FederatedUserPropertiesAction extends UserPropertiesAction {
 
     public FederatedUserPropertiesAction(UserNode node) {
         super(node);
