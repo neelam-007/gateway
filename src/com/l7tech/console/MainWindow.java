@@ -84,6 +84,7 @@ public class MainWindow extends JFrame {
     private JMenuItem logMenuItem = null;
     private JMenuItem statMenuItem = null;
     private JMenuItem manageJmsEndpointsMenuItem = null;
+    private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
@@ -130,6 +131,7 @@ public class MainWindow extends JFrame {
     private ClusterStatusWindow clusterStatusWindow = null;
     private GatewayLogWindow gatewayLogWindow = null;
     private Action manageJmsEndpointsAction = null;
+    private Action manageCertificatesAction = null;
     private String connectionContext = "";
     private FocusAdapter actionsFocusListener;
     private ServicesTree servicesTree;
@@ -325,6 +327,7 @@ public class MainWindow extends JFrame {
             editMenu.addSeparator();
 
             editMenu.add(getManageJmsEndpointsMenuItem());
+            editMenu.add(getManageCertificatesMenuItem());
             int mnemonic = editMenu.getText().toCharArray()[0];
             editMenu.setMnemonic(mnemonic);
 
@@ -1099,6 +1102,40 @@ public class MainWindow extends JFrame {
         return manageJmsEndpointsAction;
     }
 
+    private Action getManageCertificatesAction() {
+        if (manageCertificatesAction != null)
+            return manageCertificatesAction;
+
+        final String atext = resapplication.getString("manage.cert.action.name");
+        final String aDesc = resapplication.getString("manage.cert.action.desc");
+
+        manageCertificatesAction = new BaseAction() {
+            public String getName() {
+                return atext;
+            }
+
+            public String getDescription() {
+                return atext;
+            }
+
+            protected String iconResource() {
+                return "com/l7tech/console/resources/cert16.gif";
+            }
+
+            public void performAction() {
+                CertManagerWindow cmw = CertManagerWindow.getInstance(MainWindow.this);
+                Utilities.centerOnScreen(cmw);
+                cmw.show();
+                cmw.dispose();
+            }
+        };
+        manageCertificatesAction.putValue(Action.NAME, atext);
+        manageCertificatesAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
+        manageCertificatesAction.setEnabled(false);
+        enableActionWhileConnected(manageCertificatesAction);
+        return manageCertificatesAction;
+    }
+
     private Action getGatewayLogWindowAction() {
         if (toggleGatewayLogWindowAction != null) return toggleGatewayLogWindowAction;
 
@@ -1848,6 +1885,14 @@ public class MainWindow extends JFrame {
         manageJmsEndpointsMenuItem = new JMenuItem(getManageJmsEndpointsAction());
 
         return manageJmsEndpointsMenuItem;
+    }
+
+    public JMenuItem getManageCertificatesMenuItem() {
+        if (manageCertificatesMenuItem != null)
+            return manageCertificatesMenuItem;
+        manageCertificatesMenuItem = new JMenuItem(getManageCertificatesAction());
+
+        return manageCertificatesMenuItem;
     }
 
     public JMenuItem getStatMenuItem() {
