@@ -6,6 +6,9 @@
 
 package com.l7tech.common.util;
 
+import com.ibm.xml.dsig.Canonicalizer;
+import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
+import com.l7tech.common.xml.TooManyChildElementsException;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.*;
@@ -20,10 +23,6 @@ import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
 
-import com.l7tech.common.xml.TooManyChildElementsException;
-import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
-import com.ibm.xml.dsig.Canonicalizer;
-
 /**
  * Thread-local XML parsing and pretty-printing utilities.
  * User: mike
@@ -31,6 +30,13 @@ import com.ibm.xml.dsig.Canonicalizer;
  * Time: 4:20:59 PM
  */
 public class XmlUtil {
+    public static final String MULTIPART_CONTENT_TYPE = "multipart/related";
+    public static final String MULTIPART_TYPE = "type";
+    public static final String MULTIPART_BOUNDARY = "boundary";
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String CONTENT_ID = "Content-Id";
+    public static final String TEXT_XML = "text/xml";
+
     private static final EntityResolver SAFE_ENTITY_RESOLVER = new EntityResolver() {
         public InputSource resolveEntity( String publicId, String systemId ) throws SAXException {
             String msg = "Document referred to an external entity with system id '" + systemId + "'";
@@ -534,4 +540,5 @@ public class XmlUtil {
     }
 
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
+    public static final String CONTENT_LENGTH = "Content-Length";
 }

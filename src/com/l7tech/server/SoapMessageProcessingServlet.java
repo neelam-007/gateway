@@ -8,6 +8,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -34,7 +35,7 @@ import java.util.logging.Logger;
  */
 public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String POLICYURL_TAG = "policy-url";
-    public static final String DEFAULT_CONTENT_TYPE = "text/xml; charset=utf-8";
+    public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
     public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco.modulator?serviceoid=";
     public static final String ENCODING = "UTF-8";

@@ -6,18 +6,18 @@
 
 package com.l7tech.common.util;
 
-import sun.misc.BASE64Encoder;
 import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
 
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.ByteArrayInputStream;
-import java.net.URLConnection;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -201,7 +201,7 @@ public class HexUtils {
 
         if (dataToPost != null) {
             if (postDataContentType != null)
-                urlConnection.setRequestProperty("Content-Type", postDataContentType);
+                urlConnection.setRequestProperty(XmlUtil.CONTENT_TYPE, postDataContentType);
             urlConnection.setDoOutput(true);
             OutputStream os = urlConnection.getOutputStream();
             byte[] block = new byte[8192];

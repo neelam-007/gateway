@@ -10,6 +10,7 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlRequest;
@@ -154,7 +155,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         return AssertionStatus.FAILED;
                     }
 
-                    xresp.setParameter( Request.PARAM_HTTP_CONTENT_TYPE, ServerRoutingAssertion.TEXT_XML );
+                    xresp.setParameter( Request.PARAM_HTTP_CONTENT_TYPE, XmlUtil.TEXT_XML );
                     logger.info( "Received response from protected service" );
                     request.setRoutingStatus( RoutingStatus.ROUTED );
                 }

@@ -129,7 +129,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 postMethod = new PostMethod(url.toString());
 
                 // TODO: Attachments
-                postMethod.setRequestHeader(CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
+                postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
 
                 String userAgent = httpRoutingAssertion.getUserAgent();
                 if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
@@ -222,7 +222,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             // BEYOND THIS POINT, WE DONT RETURN FAILURE
             try {
                 InputStream responseStream = postMethod.getResponseBodyAsStream();
-                String ctype = postMethod.getResponseHeader(CONTENT_TYPE).getValue();
+                String ctype = postMethod.getResponseHeader(XmlUtil.CONTENT_TYPE).getValue();
                 response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
                 // Note that this will consume the first part of the stream...
                 BufferedReader br = new BufferedReader(new InputStreamReader(responseStream, ENCODING));

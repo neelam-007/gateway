@@ -107,9 +107,9 @@ public class TokenServiceClient {
         conn.setAllowUserInteraction(false);
         conn.setDoInput(true);
         conn.setDoOutput(true);
-        conn.setRequestProperty("Content-Type", "text/xml");
+        conn.setRequestProperty(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
         XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
-        if (!"text/xml".equalsIgnoreCase(conn.getContentType()))
+        if (!XmlUtil.TEXT_XML.equalsIgnoreCase(conn.getContentType()))
             throw new IOException("Token server returned unsupported content type " + conn.getContentType());
         Document response = XmlUtil.parse(conn.getInputStream());
         Object result = parseRequestSecurityTokenResponse(response,

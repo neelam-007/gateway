@@ -6,22 +6,39 @@
 
 package com.l7tech.message;
 
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
-import java.util.Iterator;
-import java.util.List;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author alex
  */
 public interface Message {
+    public static class HeaderValue {
+        protected String name;
+        protected String value;
+        protected Map params = new HashMap();
+    }
+
+    public static class Part {
+        public HeaderValue getHeader(String name) {
+            return (HeaderValue)headers.get(name);
+        }
+
+        protected String content;
+        protected Map headers = new HashMap();
+    }
+
     static final String PREFIX             = "com.l7tech.message";
     static final String PREFIX_HTTP        = PREFIX + ".http";
     static final String PREFIX_HTTP_HEADER = "header";
 
-    public static final String PARAM_HTTP_CONTENT_TYPE      = PREFIX_HTTP_HEADER + ".Content-Type";
-    public static final String PARAM_HTTP_CONTENT_LENGTH    = PREFIX_HTTP_HEADER + ".Content-Length";
+    public static final String PARAM_HTTP_CONTENT_TYPE      = PREFIX_HTTP_HEADER + "." + XmlUtil.CONTENT_TYPE;
+    public static final String PARAM_HTTP_CONTENT_LENGTH    = PREFIX_HTTP_HEADER + "." + XmlUtil.CONTENT_LENGTH;
     public static final String PARAM_HTTP_DATE              = PREFIX_HTTP_HEADER + ".Date";
 
     TransportMetadata getTransportMetadata();

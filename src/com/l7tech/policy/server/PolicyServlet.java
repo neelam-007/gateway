@@ -4,6 +4,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -253,7 +254,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private void outputEmptyPolicy(HttpServletResponse res, long serviceid, int serviceversion) throws IOException {
         res.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION,
           Long.toString(serviceid) + '|' + Long.toString(serviceversion));
-        res.setContentType("text/xml; charset=utf-8");
+        res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
         res.getOutputStream().println(WspWriter.getPolicyXml(null));
         logger.fine("sent back empty policy");
     }
@@ -270,7 +271,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         service.getVersion());
             response.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION,
               Long.toString(service.getOid()) + '|' + Long.toString(service.getVersion()));
-            response.setContentType("text/xml; charset=utf-8");
+            response.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
             response.getOutputStream().println(service.getPolicyXml());
         }
     }

@@ -17,7 +17,6 @@ import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
@@ -117,15 +116,8 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
             // serialize the document
             _requestXml = XmlUtil.nodeToString(_document);
         } else if ( _requestXml == null ) {
-            BufferedReader reader = new BufferedReader( getRequestReader() );
-            StringBuffer xml = new StringBuffer();
-            char[] buf = new char[1024];
-            int read = reader.read(buf);
-            while (read > 0) {
-                xml.append(buf, 0, read);
-                read = reader.read(buf);
-            }
-            _requestXml = xml.toString();
+            // multipart/related; type="text/xml"; boundary="----=Multipart-SOAP-boundary=----"
+            _requestXml = getMessageXml(getRequestReader());
         }
         return _requestXml;
     }
@@ -167,6 +159,10 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         return _routingStatus;
     }
 
+    public boolean isMultipart() {
+        return multipart;
+    }
+
     /**
      * Closes any resources associated with the request.  If you override this
      * method, you MUST call super.close() in your overridden version!
@@ -206,4 +202,5 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     protected LoginCredentials _principalCredentials;
     
     protected WssProcessor.ProcessorResult wssRes = null;
+
 }

@@ -5,6 +5,7 @@ import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -297,7 +298,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
                 logger.severe("non https connection(?): " + connection.getClass().getName());
             }
 
-            connection.setRequestProperty(CONTENT_TYPE, req.getContentType());
+            connection.setRequestProperty(XmlUtil.CONTENT_TYPE, req.getContentType());
             connection.setRequestProperty(ROUTED_FROM_PEER, "Yes");
             connection.setRequestProperty(AUTH_HEADER_NAME, req.getHeader(AUTH_HEADER_NAME));
             OutputStream outputstream = connection.getOutputStream();
@@ -338,7 +339,6 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     private String rootkstorepasswd = null;
     private String rootkstoretype = KeyStore.getDefaultType();
 
-    public static final String CONTENT_TYPE = "Content-Type";
     public static final String AUTH_HEADER_NAME = "Authorization";
     public static final String ROUTED_FROM_PEER = "Routed-From-Peer";
 }

@@ -4,6 +4,7 @@
 
 package com.l7tech.server.saml;
 
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
@@ -49,7 +50,7 @@ public class SamlProtocolServlet extends AuthenticatableHttpServlet {
         ServletOutputStream os = res.getOutputStream();
         try {
             User user = authenticate(req);
-            res.setContentType("text/xml");
+            res.setContentType(XmlUtil.TEXT_XML);
             ResponseDocument response = authority.process(soapRequestGenerator.fromSoapInputStream(req.getInputStream()));
             soapResponseGenerator.asSoapMessage(response);
             // SAML SOAP processing error reporting as per SAML binding 3.1.3.6 Error Reporting

@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 
@@ -63,7 +64,7 @@ public class StatusPingServlet extends HttpServlet {
     }
 
     private void outputStatuses(HttpServletResponse res, Collection statuses) throws IOException {
-        res.setContentType("text/xml");
+        res.setContentType(XmlUtil.TEXT_XML);
         res.setStatus(HttpServletResponse.SC_OK);
 
         PrintWriter out = res.getWriter();
@@ -87,7 +88,7 @@ public class StatusPingServlet extends HttpServlet {
     }
 
     private void outputError(HttpServletResponse res, String error) throws IOException {
-        res.setContentType("text/xml");
+        res.setContentType(XmlUtil.TEXT_XML);
         res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         PrintWriter out = res.getWriter();
         out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");

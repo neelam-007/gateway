@@ -7,66 +7,46 @@
 package com.l7tech.proxy.processor;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.CertificateDownloader;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.security.AesKey;
+import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.WssDecoratorImpl;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
-import com.l7tech.common.security.xml.WssDecoratorImpl;
-import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.security.AesKey;
+import com.l7tech.common.util.CertificateDownloader;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
-import com.l7tech.proxy.datamodel.HttpHeaders;
-import com.l7tech.proxy.datamodel.Managers;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.Policy;
-import com.l7tech.proxy.datamodel.PolicyManager;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
-import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
+import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.util.CannedSoapFaults;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
 import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.xml.sax.SAXException;
+import org.apache.commons.httpclient.protocol.Protocol;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
-import javax.net.ssl.SSLException;
 import javax.crypto.SecretKey;
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.PasswordAuthentication;
-import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.UnrecoverableKeyException;
+import java.net.URL;
+import java.security.*;
 import java.security.cert.CertificateException;
-import java.util.Map;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The core of the Client Proxy.
@@ -555,9 +535,9 @@ public class MessageProcessor {
                     log.info("Got response from Gateway: " + responseString);
             }
 
-            Header contentType = postMethod.getResponseHeader("Content-Type");
+            Header contentType = postMethod.getResponseHeader(XmlUtil.CONTENT_TYPE);
             log.info("Response Content-Type: " + contentType);
-            if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf("text/xml") < 0)
+            if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf(XmlUtil.TEXT_XML) < 0)
                 return new SsgResponse(XmlUtil.stringToDocument(CannedSoapFaults.RESPONSE_NOT_XML), null, 500, null);
 
             Document responseDocument = XmlUtil.stringToDocument(responseString);

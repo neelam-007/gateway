@@ -3,15 +3,12 @@ package com.l7tech.proxy;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.processor.MessageProcessor;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
@@ -30,6 +27,8 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -211,7 +210,7 @@ public class RequestHandler extends AbstractHttpHandler {
     private void sendChallenge(HttpResponse response) throws IOException {
         response.addField("WWW-Authenticate", "Basic realm=\"SecureSpan Agent\"");
         response.setReason("Unauthorized");
-        response.addField("Content-Type", "text/html");
+        response.addField(XmlUtil.CONTENT_TYPE, "text/html");
         response.setStatus(401);
         response.getOutputStream().write("<title>A username and password are required</title>A username and password are required.".getBytes());
         response.commit();
@@ -226,7 +225,7 @@ public class RequestHandler extends AbstractHttpHandler {
     private void transmitResponse(int status, final HttpResponse response, SsgResponse ssgResponse) throws IOException {
         try {
             response.setStatus(status);
-            response.addField("Content-Type", "text/xml");
+            response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             response.getOutputStream().write(ssgResponse.getResponseAsString().getBytes());
             response.commit();
         } catch (IOException e) {
@@ -255,7 +254,7 @@ public class RequestHandler extends AbstractHttpHandler {
      * @param request
      */
     private void handleGetRequest(HttpRequest request, HttpResponse response) throws IOException {
-        response.addField("Content-Type", "text/html");
+        response.addField(XmlUtil.CONTENT_TYPE, "text/html");
         PrintStream o = new PrintStream(response.getOutputStream());
         o.println("<html><head><title>SecureSpan Agent</title></head>" +
                   "<body><h2>SecureSpan Agent</h2>");
@@ -383,7 +382,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 location.setNodeValue(newval);
             }
 
-            response.addField("Content-Type", "text/xml");
+            response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             XmlUtil.nodeToOutputStream(wsil, response.getOutputStream());
             response.commit();
             return;
@@ -410,7 +409,7 @@ public class RequestHandler extends AbstractHttpHandler {
             if (soapPort != null)
                 wsdl.setPortUrl(soapPort, newUrl);
 
-            response.addField("Content-Type", "text/xml");
+            response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             wsdl.toOutputStream(response.getOutputStream());
             response.commit();
             return;

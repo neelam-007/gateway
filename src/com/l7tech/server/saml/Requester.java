@@ -1,6 +1,7 @@
 package com.l7tech.server.saml;
 
 import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -23,8 +24,6 @@ import java.net.URL;
  * @version 5-Aug-2004
  */
 public class Requester {
-    public static final String CONTENT_TYPE = "Content-Type";
-    public static final String TEXT_XML = "text/xml";
     public static final String ENCODING = "UTF-8";
     private SoapResponseGenerator responseGenerator = new SoapResponseGenerator();
 
@@ -75,7 +74,7 @@ public class Requester {
      */
     public ResponseDocument sendRequest(RequestDocument doc) throws SamlException {
         PostMethod postMethod = new PostMethod(serviceUrl);
-        postMethod.setRequestHeader(CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
+        postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
         postMethod.setRequestBody(doc.newInputStream(Utilities.xmlOptions()));
         try {
             int status = client.executeMethod(postMethod);

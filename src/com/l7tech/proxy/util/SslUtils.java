@@ -6,11 +6,12 @@
 
 package com.l7tech.proxy.util;
 
-import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -70,8 +71,8 @@ public class SslUtils {
         PostMethod post = new PostMethod(url.toExternalForm());
         try {
             post.setRequestBody(PASSWORD_CHANGE_BODY); // dummy body, just as placeholder for POST
-            post.setRequestHeader("Content-Type", "text/xml");
-            post.setRequestHeader("Content-Length", String.valueOf(PASSWORD_CHANGE_BODY.length()));
+            post.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+            post.setRequestHeader(XmlUtil.CONTENT_LENGTH, String.valueOf(PASSWORD_CHANGE_BODY.length()));
             post.setRequestHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD,
                                   HexUtils.encodeBase64(new String(newpassword).getBytes(), true));
             int result = hc.executeMethod(post);
@@ -124,8 +125,8 @@ public class SslUtils {
             byte[] csrBytes = csr.getEncoded();
             ByteArrayInputStream bais = new ByteArrayInputStream(csrBytes);
             post.setRequestBody(bais);
-            post.setRequestHeader("Content-Type", "application/pkcs10");
-            post.setRequestHeader("Content-Length", String.valueOf(csrBytes.length));
+            post.setRequestHeader(XmlUtil.CONTENT_TYPE, "application/pkcs10");
+            post.setRequestHeader(XmlUtil.CONTENT_LENGTH, String.valueOf(csrBytes.length));
 
             int result = hc.executeMethod(post);
             if ( result == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + result );
@@ -152,4 +153,5 @@ public class SslUtils {
                 post.releaseConnection();
         }
     }
+
 }

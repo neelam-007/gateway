@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
@@ -174,7 +175,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 // return empty wsil
                 String emptywsil = "<?xml version=\"1.0\"?>\n" +
                   "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\" />\n";
-                res.setContentType("text/xml; charset=utf-8");
+                res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
                 res.getOutputStream().println(emptywsil);
                 return;
             }
@@ -203,7 +204,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         output.setPortUrl(output.getSoapPort(), ssgurl);
 
         // output the wsdl
-        res.setContentType("text/xml; charset=utf-8");
+        res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
         try {
             output.toOutputStream(res.getOutputStream());
         } catch (WSDLException e) {
@@ -219,7 +220,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String uri = req.getRequestURI();
         uri = uri.replaceAll("wsil", "wsdl");
         String output = createWSILDoc(services, req.getServerName(), Integer.toString(req.getServerPort()), uri);
-        res.setContentType("text/xml; charset=utf-8");
+        res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
         res.getOutputStream().println(output);
     }
 
