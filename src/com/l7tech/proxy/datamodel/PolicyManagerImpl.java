@@ -133,6 +133,7 @@ public class PolicyManagerImpl implements PolicyManager {
             Header versionHeader = getMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
             if (versionHeader == null)
                 throw new ConfigurationException("The policy server failed to provide a " + SecureSpanConstants.HttpHeaders.POLICY_VERSION + " header");
+            log.info("Policy id and version: " + versionHeader.getValue());
 
             log.info("Policy download completed with HTTP status " + status);
             Assertion assertion = WspReader.parse(getMethod.getResponseBodyAsStream());
