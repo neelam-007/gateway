@@ -91,12 +91,12 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
             for (Iterator ei = elementMatches.iterator(); ei.hasNext();) {
                 Element targetElement = (Element) ei.next();
 
-                WssProcessor.SignedElement signedElement = elementWasDirectlyOrIndirectlySigned(targetElement);
-                if (signedElement == null)
+                List signedElements = getSigningTokens(targetElement);
+                if (signedElements == null || signedElements.size() < 1)
                     return Result.policyViolation(new SecurityProcessorException("Element " +
                                                                                  targetElement.getLocalName() +
                                                                                  " was not signed"));
-                signingTokens.add(signedElement);
+                signingTokens.addAll(signedElements);
             }
 
             if (elementSecurity.isEncryption() && cryptMatches != null) {
@@ -134,15 +134,27 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
         return Result.ok(document, new X509Certificate[] {signingCert});
     }
 
-    private WssProcessor.SignedElement elementWasDirectlyOrIndirectlySigned(Element element) {
+    /**
+     * Returns a list of SignedElement intances whose accompanying X509 security tokens directly or indirectly
+     * signed the specified element in the undecorated message.
+     * @param element the element to examine
+     * @return a list of WssProcessor.SignedElement instances.  Empty list if element was not signed.
+     */
+    private List getSigningTokens(Element element) {
+        List signingTokens = new ArrayList();
         for (int si = 0; si < elementsThatWereSigned.length; si++) {
             WssProcessor.SignedElement signedElement = elementsThatWereSigned[si];
             if (XmlUtil.isElementAncestor(element, signedElement.asElement()))
-                return signedElement;
+                signingTokens.add(signedElement);
         }
-        return null;
+        return signingTokens;
     }
 
+    /**
+     * Check if the specified element was encrypted in the original message.
+     * @param element the element to examine
+     * @return true iff. this element or a direct ancestor had all of its non-whitespace content encrypted
+     */
     private boolean elementWasDirectlyOrIndirectlyEncrypted(Element element) {
         for (int ci = 0; ci < elementsThatWereEncrypted.length; ci++) {
             Element encryptedElement = elementsThatWereEncrypted[ci];
