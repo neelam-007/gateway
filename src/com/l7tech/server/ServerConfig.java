@@ -7,232 +7,148 @@
 package com.l7tech.server;
 
 import com.l7tech.logging.LogManager;
-import com.l7tech.service.resolution.HttpUriResolver;
-import com.l7tech.service.resolution.SoapActionResolver;
-import com.l7tech.service.resolution.UrnResolver;
 import com.l7tech.message.TransportProtocol;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.logging.Logger;
+import java.net.UnknownHostException;
+import java.util.*;
 import java.util.logging.Level;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Collections;
+import java.util.logging.Logger;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ServerConfig {
-    private static final String PARAM_SERVICE_RESOLVERS = "ServiceResolvers";
-    private static final String PARAM_SERVER_ID         = "ServerId";
-    private static final String PARAM_KEYSTORE          = "KeystorePropertiesPath";
-    private static final String PARAM_LDAP_TEMPLATES    = "LdapTemplatesPath";
-    private static final String PARAM_HIBERNATE         = "KeystorePropertiesPath";
-    private static final String PARAM_IPS               = "IpAddresses";
-    private static final String PARAM_HTTP_PORTS        = "HttpPorts";
-    private static final String PARAM_HTTPS_PORTS       = "HttpsPorts";
-    private static final String PARAM_HOSTNAME          = "Hostname";
-    private static final String PARAM_SYSTEMPROPS       = "SystemPropertiesPath";
-    private static final String JNDI_PREFIX             = "java:comp/env/";
+    public static final String PARAM_SERVICE_RESOLVERS = "serviceResolvers";
+    public static final String PARAM_SERVER_ID         = "serverId";
+    public static final String PARAM_KEYSTORE          = "keystorePropertiesPath";
+    public static final String PARAM_LDAP_TEMPLATES    = "ldapTemplatesPath";
+    public static final String PARAM_HIBERNATE         = "hibernatePropertiesPath";
+    public static final String PARAM_IPS               = "ipAddresses";
+    public static final String PARAM_HTTP_PORTS        = "httpPorts";
+    public static final String PARAM_HTTPS_PORTS       = "httpsPorts";
+    public static final String PARAM_HOSTNAME          = "hostname";
+    public static final String PARAM_SYSTEMPROPS       = "systemPropertiesPath";
 
-    private static final String JNDI_SERVICE_RESOLVERS  = JNDI_PREFIX + PARAM_SERVICE_RESOLVERS;
-    private static final String JNDI_SERVER_ID          = JNDI_PREFIX + PARAM_SERVER_ID;
-    private static final String JNDI_KEYSTORE           = JNDI_PREFIX + PARAM_KEYSTORE;
-    private static final String JNDI_LDAP_TEMPLATES     = JNDI_PREFIX + PARAM_LDAP_TEMPLATES;
-    private static final String JNDI_HIBERNATE          = JNDI_PREFIX + PARAM_HIBERNATE;
-    private static final String JNDI_IPS                = JNDI_PREFIX + PARAM_IPS;
-    private static final String JNDI_HTTP_PORTS         = JNDI_PREFIX + PARAM_HTTP_PORTS;
-    private static final String JNDI_HTTPS_PORTS        = JNDI_PREFIX + PARAM_HTTPS_PORTS;
-    private static final String JNDI_HOSTNAME           = JNDI_PREFIX + PARAM_HOSTNAME;
-    private static final String JNDI_SYSTEMPROPS        = JNDI_PREFIX + PARAM_SYSTEMPROPS;
+    public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
+    public static final String PROPS_PATH_DEFAULT = "/ssg/etc/conf/serverconfig.properties";
+    public static final String PROPS_RESOURCE_PATH = "serverconfig.properties";
 
-    public static final String PROP_SERVER_ID = "com.l7tech.server.serverId";
-    public static final String PROP_RESOLVERS = "com.l7tech.server.serviceResolvers";
-    public static final String PROP_KEYSTORE_PROPS_PATH = "com.l7tech.server.keystorePropertiesPath";
-    public static final String PROP_LDAP_TEMPLATES_PATH = "com.l7tech.server.ldapTemplatesPath";
-    public static final String PROP_HIBERNATE_PROPS_PATH = "com.l7tech.server.hibernatePropertiesPath";
-    public static final String PROP_IPS = "com.l7tech.server.ipAddresses";
-    public static final String PROP_HTTP_PORTS = "com.l7tech.server.httpPorts";
-    public static final String PROP_HTTPS_PORTS = "com.l7tech.server.httpsPorts";
-    public static final String PROP_HOSTNAME = "com.l7tech.server.hostname";
-    public static final String PROP_SYSTEMPROPS = "com.l7tech.server.systemPropertiesPath";
-
-    public static final String DEFAULT_LDAP_TEMPLATES_PATH = "/ssg/etc/ldapTemplates";
-    public static final String DEFAULT_KEYSTORE_PROPS_PATH = "/ssg/etc/conf/keystore.properties";
-    public static final String DEFAULT_HIBERNATE_PROPS_PATH = "/ssg/etc/conf/hibernate.properties";
-    public static final String DEFAULT_SYSTEMPROPS_PATH = "/ssg/etc/conf/system.properties";
-    public static final String DEFAULT_SERVICE_RESOLVERS =
-        UrnResolver.class.getName() + " " +
-        SoapActionResolver.class.getName() + " " +
-        HttpUriResolver.class.getName();
-
-    public static final String DEFAULT_HTTP_PORTS = "80,8080";
-    public static final String DEFAULT_HTTPS_PORTS = "443,8443";
+    private static final String SUFFIX_JNDI = ".jndi";
+    private static final String SUFFIX_SYSPROP = ".systemProperty";
+    private static final String SUFFIX_DESC = ".description";
+    private static final String SUFFIX_DEFAULT = ".default";
 
     public static ServerConfig getInstance() {
         if ( _instance == null ) _instance = new ServerConfig();
         return _instance;
     }
 
-    private String getProperty( String systemPropName, String jndiName, String dflt ) {
-        logger.fine( "Checking System property " + systemPropName );
-        String value = System.getProperty( systemPropName );
-        if ( value == null && jndiName != null ) {
+    public String getProperty( String propName ) {
+        String sysPropProp = propName + SUFFIX_SYSPROP;
+        String jndiProp = propName + SUFFIX_JNDI;
+        String dfltProp = propName + SUFFIX_DEFAULT;
+
+        String systemValue = getPropertyValue( sysPropProp );
+        String jndiValue = getPropertyValue( jndiProp );
+        String defaultValue = getPropertyValue( dfltProp );
+
+        logger.fine( "Checking System property " + systemValue );
+        String value = System.getProperty( systemValue );
+        if ( value == null && jndiValue != null ) {
             try {
-                logger.fine( "Checking JNDI property " + jndiName );
+                logger.fine( "Checking JNDI property " + jndiValue );
                 if ( _icontext == null ) _icontext = new InitialContext();
-                value = (String)_icontext.lookup( jndiName );
+                value = (String)_icontext.lookup( jndiValue );
             } catch ( NamingException ne ) {
                 logger.fine( ne.getMessage() );
             }
         }
 
         if ( value == null ) {
-            logger.fine( "Using default value " + dflt );
-            value = dflt;
+            logger.fine( "Using default value " + defaultValue );
+            value = defaultValue;
         }
 
         return value;
     }
 
-    private ServerConfig() {
-        _serverBootTime = System.currentTimeMillis();
+    private String getPropertyValue( String prop ) {
+        String val = (String)_properties.get(prop);
+        if ( val == null ) return null;
+        if ( val.length() == 0 ) return val;
 
-        _serviceResolvers = getProperty( PROP_RESOLVERS, JNDI_SERVICE_RESOLVERS, DEFAULT_SERVICE_RESOLVERS );
-        _keystorePropertiesPath = getProperty( PROP_KEYSTORE_PROPS_PATH, JNDI_LDAP_TEMPLATES, DEFAULT_KEYSTORE_PROPS_PATH );
-        _ldapTemplatesPath = getProperty( PROP_LDAP_TEMPLATES_PATH, JNDI_KEYSTORE, DEFAULT_LDAP_TEMPLATES_PATH );
-        _hibernatePropertiesPath = getProperty( PROP_HIBERNATE_PROPS_PATH, JNDI_HIBERNATE, DEFAULT_HIBERNATE_PROPS_PATH );
-        _systemPropertiesPath = getProperty( PROP_SYSTEMPROPS, JNDI_SYSTEMPROPS, DEFAULT_SYSTEMPROPS_PATH );
+        StringBuffer val2 = new StringBuffer();
+        int pos = val.indexOf('$');
+        if ( pos >= 0 ) {
+            while ( pos >= 0 ) {
+                if ( val.charAt(pos+1) == '{' ) {
+                    int pos2 = val.indexOf( '}', pos+1 );
+                    if ( pos2 >= 0 ) {
+                        // there's a reference
+                        String prop2 = val.substring( pos+2, pos2 );
+                        String ref = getPropertyValue( prop2 );
+                        if ( ref == null ) {
+                            val2.append("${");
+                            val2.append(prop2);
+                            val2.append("}");
+                        } else {
+                            val2.append(ref);
+                        }
 
-        _hostname = getProperty( PROP_HOSTNAME, JNDI_HOSTNAME, null );
-
-        if ( _hostname == null ) {
-            try {
-                _hostname = InetAddress.getLocalHost().getHostName();
-            } catch (UnknownHostException e) {
-                logger.fine( "HostName parameter not set, assigning hostname " + _hostname );
-                e.printStackTrace();  //To change body of catch statement use Options | File Templates.
-            }
-        }
-
-        try {
-            String sid = getProperty( PROP_SERVER_ID, JNDI_SERVER_ID, null );
-            if ( sid != null && sid.length() > 0 )
-                _serverId = new Byte( sid ).byteValue();
-        } catch ( NumberFormatException nfe ) {
-        }
-
-        if ( _serverId == 0 ) {
-            try {
-                InetAddress localhost = InetAddress.getLocalHost();
-                byte[] ip = localhost.getAddress();
-                _serverId = ip[3] & 0xff;
-                logger.info( "ServerId parameter not set, assigning server ID " + _serverId +
-                              " from server's IP address");
-            } catch ( UnknownHostException e ) {
-                _serverId = 1;
-                logger.severe( "Couldn't get server's local host!  Using server ID " + _serverId );
-            }
-        }
-
-        logger.info( "KeystorePath = " + _keystorePropertiesPath );
-        logger.info( "HibernatePath = " + _hibernatePropertiesPath );
-        logger.info( "ServerId = " + _serverId );
-        logger.info( "Hostname = " + _hostname );
-
-        String[] sHttpPorts = getProperty( PROP_HTTP_PORTS, JNDI_HTTP_PORTS, DEFAULT_HTTP_PORTS ).trim().split(",\\s*");
-        ArrayList httpPortsList = new ArrayList();
-        for (int i = 0; i < sHttpPorts.length; i++) {
-            String s = sHttpPorts[i];
-            try {
-                httpPortsList.add( new Integer(s) );
-            } catch ( NumberFormatException nfe ) {
-                logger.log( Level.SEVERE, "Couldn't parse HTTP port '" + s + "'" );
-            }
-        }
-
-        int[] httpPorts = new int[httpPortsList.size()];
-        int j = 0;
-        for (Iterator i = httpPortsList.iterator(); i.hasNext();) {
-            Integer integer = (Integer) i.next();
-            httpPorts[j++] = integer.intValue();
-        }
-
-        String[] sHttpsPorts = getProperty( PROP_HTTPS_PORTS, JNDI_HTTPS_PORTS, DEFAULT_HTTPS_PORTS ).trim().split(",\\s*");
-        ArrayList httpsPortsList = new ArrayList();
-        for (int i = 0; i < sHttpsPorts.length; i++) {
-            String s = sHttpsPorts[i];
-            try {
-                httpsPortsList.add( new Integer(s) );
-            } catch ( NumberFormatException nfe ) {
-                logger.log( Level.SEVERE, "Couldn't parse HTTPS port '" + s + "'" );
-            }
-        }
-
-        int[] httpsPorts = new int[httpsPortsList.size()];
-        j = 0;
-        for (Iterator i = httpsPortsList.iterator(); i.hasNext();) {
-            Integer integer = (Integer) i.next();
-            httpsPorts[j++] = integer.intValue();
-        }
-
-        // Collect local IP addresses (default to all addresses on all interfaces)
-        ArrayList localIps = new ArrayList();
-        String ipAddressesProperty = getProperty( PROP_IPS, JNDI_IPS, null );
-        if ( ipAddressesProperty != null ) {
-            String[] sips = ipAddressesProperty.split( ",\\s*" );
-            for (int i = 0; i < sips.length; i++) {
-                String sip = sips[i];
-                try {
-                    InetAddress addr = InetAddress.getByName( sip );
-                    logger.info( "Found IP address " + print(addr) + " from configuration. " );
-                    localIps.add( addr );
-                } catch ( UnknownHostException uhe ) {
-                    logger.log( Level.WARNING, "Got UnknownHostException trying to resolve IP address" + sip, uhe );
+                        pos = val.indexOf('$',pos+1);
+                        if ( pos >= 0 ) {
+                            val2.append( val.substring( pos2+1, pos ) );
+                        } else {
+                            val2.append( val.substring( pos2+1 ) );
+                        }
+                    } else {
+                        // there's no terminating }, pass it through literally
+                        val2.append(val);
+                        break;
+                    }
                 }
             }
         } else {
-            try {
-                Enumeration ints = NetworkInterface.getNetworkInterfaces();
-                NetworkInterface net;
-                InetAddress ip;
-
-                while ( ints.hasMoreElements() ) {
-                    net = (NetworkInterface)ints.nextElement();
-                    Enumeration ips = net.getInetAddresses();
-                    while ( ips.hasMoreElements() ) {
-                        ip = (InetAddress)ips.nextElement();
-                        if ( ( ip.getAddress()[0] & 0xff ) != 127 ) {
-                            // Ignore localhost for autoconfigured IPs
-                            logger.info( "Automatically found IP address " + print(ip) + " on network interface " + net.getName() );
-                            localIps.add( ip );
-                        }
-                    }
-                }
-            } catch ( SocketException se ) {
-                logger.log( Level.SEVERE, "Got SocketException while enumerating IP addresses!", se );
-            }
+            val2.append(val);
         }
+        return val2.toString();
 
-        for (Iterator i = localIps.iterator(); i.hasNext();) {
-            InetAddress ip = (InetAddress) i.next();
+    }
 
-            for (j = 0; j < httpPorts.length; j++) {
-                _ipProtocolPorts.add( new HttpTransport.IpProtocolPort( ip, TransportProtocol.HTTP, httpPorts[j] ) );
-                logger.info( "Configured HTTP on " + print(ip) + ":" + httpPorts[j] );
+    private ServerConfig() {
+        _properties = new Properties();
+
+        String configPropertiesPath = System.getProperty( PROPS_PATH_PROPERTY );
+        if ( configPropertiesPath == null ) configPropertiesPath = PROPS_PATH_DEFAULT;
+
+        try {
+            InputStream propStream = null;
+
+            File file = new File( configPropertiesPath );
+            if ( file.exists() )
+                propStream = new FileInputStream( file );
+            else
+                propStream = getClass().getClassLoader().getResourceAsStream( PROPS_RESOURCE_PATH );
+
+            if ( propStream != null ) {
+                _properties.load( propStream );
+            } else {
+                logger.severe( "Couldn't load serverconfig.properties!" );
+                throw new RuntimeException( "Couldn't load serverconfig.properties!" );
             }
-
-            for (j = 0; j < httpsPorts.length; j++) {
-                _ipProtocolPorts.add( new HttpTransport.IpProtocolPort( ip, TransportProtocol.HTTPS, httpsPorts[j] ) );
-                logger.info( "Configured HTTPS on " + print(ip) + ":" + httpsPorts[j] );
-            }
+        } catch ( IOException ioe ) {
+            logger.severe( "Couldn't load serverconfig.properties!" );
+            throw new RuntimeException( "Couldn't load serverconfig.properties!" );
         }
     }
 
@@ -248,53 +164,174 @@ public class ServerConfig {
 
     public static void main(String[] args) {
         ServerConfig config = ServerConfig.getInstance();
+        String foo = config.getSystemPropertiesPath();
     }
 
     public int getServerId() {
+        if ( _serverId == 0 ) {
+            try {
+                String sid = getProperty( PARAM_SERVER_ID );
+                if ( sid != null && sid.length() > 0 )
+                    _serverId = new Byte( sid ).byteValue();
+            } catch ( NumberFormatException nfe ) {
+            }
+
+            if ( _serverId == 0 ) {
+                try {
+                    InetAddress localhost = InetAddress.getLocalHost();
+                    byte[] ip = localhost.getAddress();
+                    _serverId = ip[3] & 0xff;
+                    logger.info( "ServerId parameter not set, assigning server ID " + _serverId +
+                                  " from server's IP address");
+                } catch ( UnknownHostException e ) {
+                    _serverId = 1;
+                    logger.severe( "Couldn't get server's local host!  Using server ID " + _serverId );
+                }
+            }
+        }
         return _serverId;
     }
 
     public String getServiceResolvers() {
-        return _serviceResolvers;
+        return getProperty( PARAM_SERVICE_RESOLVERS );
     }
 
     public long getServerBootTime() {
+        if ( _serverBootTime == -1 ) _serverBootTime = System.currentTimeMillis();
         return _serverBootTime;
     }
 
     public String getLdapTemplatesPath() {
-        return _ldapTemplatesPath;
+        return getProperty( PARAM_LDAP_TEMPLATES );
     }
 
     public String getKeystorePropertiesPath() {
-        return _keystorePropertiesPath;
+        return getProperty( PARAM_KEYSTORE );
     }
 
     public String getHibernatePropertiesPath() {
-        return _hibernatePropertiesPath;
+        return getProperty( PARAM_HIBERNATE );
     }
 
     public String getSystemPropertiesPath() {
-        return _systemPropertiesPath;
+        return getProperty( PARAM_SYSTEMPROPS );
     }
 
     public Iterator getIpProtocolPorts() {
+        if ( _ipProtocolPorts == null ) {
+            String[] sHttpPorts = getProperty( PARAM_HTTP_PORTS ).trim().split(",\\s*");
+            ArrayList httpPortsList = new ArrayList();
+            for (int i = 0; i < sHttpPorts.length; i++) {
+                String s = sHttpPorts[i];
+                try {
+                    httpPortsList.add( new Integer(s) );
+                } catch ( NumberFormatException nfe ) {
+                    logger.log( Level.SEVERE, "Couldn't parse HTTP port '" + s + "'" );
+                }
+            }
+
+            int[] httpPorts = new int[httpPortsList.size()];
+            int j = 0;
+            for (Iterator i = httpPortsList.iterator(); i.hasNext();) {
+                Integer integer = (Integer) i.next();
+                httpPorts[j++] = integer.intValue();
+            }
+
+            String[] sHttpsPorts = getProperty( PARAM_HTTPS_PORTS ).trim().split(",\\s*");
+            ArrayList httpsPortsList = new ArrayList();
+            for (int i = 0; i < sHttpsPorts.length; i++) {
+                String s = sHttpsPorts[i];
+                try {
+                    httpsPortsList.add( new Integer(s) );
+                } catch ( NumberFormatException nfe ) {
+                    logger.log( Level.SEVERE, "Couldn't parse HTTPS port '" + s + "'" );
+                }
+            }
+
+            int[] httpsPorts = new int[httpsPortsList.size()];
+            j = 0;
+            for (Iterator i = httpsPortsList.iterator(); i.hasNext();) {
+                Integer integer = (Integer) i.next();
+                httpsPorts[j++] = integer.intValue();
+            }
+
+            // Collect local IP addresses (default to all addresses on all interfaces)
+            ArrayList localIps = new ArrayList();
+            String ipAddressesProperty = getProperty( PARAM_IPS );
+            if ( ipAddressesProperty != null ) {
+                String[] sips = ipAddressesProperty.split( ",\\s*" );
+                for (int i = 0; i < sips.length; i++) {
+                    String sip = sips[i];
+                    try {
+                        InetAddress addr = InetAddress.getByName( sip );
+                        logger.info( "Found IP address " + print(addr) + " from configuration. " );
+                        localIps.add( addr );
+                    } catch ( UnknownHostException uhe ) {
+                        logger.log( Level.WARNING, "Got UnknownHostException trying to resolve IP address" + sip, uhe );
+                    }
+                }
+            } else {
+                try {
+                    Enumeration ints = NetworkInterface.getNetworkInterfaces();
+                    NetworkInterface net;
+                    InetAddress ip;
+
+                    while ( ints.hasMoreElements() ) {
+                        net = (NetworkInterface)ints.nextElement();
+                        Enumeration ips = net.getInetAddresses();
+                        while ( ips.hasMoreElements() ) {
+                            ip = (InetAddress)ips.nextElement();
+                            if ( ( ip.getAddress()[0] & 0xff ) != 127 ) {
+                                // Ignore localhost for autoconfigured IPs
+                                logger.info( "Automatically found IP address " + print(ip) + " on network interface " + net.getName() );
+                                localIps.add( ip );
+                            }
+                        }
+                    }
+                } catch ( SocketException se ) {
+                    logger.log( Level.SEVERE, "Got SocketException while enumerating IP addresses!", se );
+                }
+            }
+
+            for (Iterator i = localIps.iterator(); i.hasNext();) {
+                InetAddress ip = (InetAddress) i.next();
+
+                for (j = 0; j < httpPorts.length; j++) {
+                    _ipProtocolPorts.add( new HttpTransport.IpProtocolPort( ip, TransportProtocol.HTTP, httpPorts[j] ) );
+                    logger.info( "Configured HTTP on " + print(ip) + ":" + httpPorts[j] );
+                }
+
+                for (j = 0; j < httpsPorts.length; j++) {
+                    _ipProtocolPorts.add( new HttpTransport.IpProtocolPort( ip, TransportProtocol.HTTPS, httpsPorts[j] ) );
+                    logger.info( "Configured HTTPS on " + print(ip) + ":" + httpsPorts[j] );
+                }
+            }
+        }
+
         return Collections.unmodifiableList(_ipProtocolPorts).iterator();
     }
 
     public String getHostname() {
+        if ( _hostname == null ) {
+            _hostname = getProperty( PARAM_HOSTNAME );
+
+            if ( _hostname == null ) {
+                try {
+                    _hostname = InetAddress.getLocalHost().getHostName();
+                } catch (UnknownHostException e) {
+                    logger.fine( "HostName parameter not set, assigning hostname " + _hostname );
+                }
+            }
+        }
+
         return _hostname;
     }
 
     private int _serverId;
     private long _serverBootTime;
-    private String _serviceResolvers;
-    private String _keystorePropertiesPath;
-    private String _ldapTemplatesPath;
-    private String _hibernatePropertiesPath;
-    private String _systemPropertiesPath;
     private ArrayList _ipProtocolPorts = new ArrayList();
     private String _hostname;
+    private Properties _properties;
 
     private static ServerConfig _instance;
     private Logger logger = LogManager.getInstance().getSystemLogger();
