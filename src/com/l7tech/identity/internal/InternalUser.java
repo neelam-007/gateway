@@ -38,7 +38,11 @@ public class InternalUser extends NamedEntityImp implements User {
     }
 
     public long getOid() {
-        return new Long( _userBean.getUniqueIdentifier() ).longValue();
+        String uniqueId = _userBean.getUniqueIdentifier();
+        if ( uniqueId == null || uniqueId.length() == 0 )
+            return -1L;
+        else
+            return new Long( _userBean.getUniqueIdentifier() ).longValue();
     }
 
     /**

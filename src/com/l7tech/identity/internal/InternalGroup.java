@@ -25,7 +25,12 @@ public class InternalGroup extends NamedEntityImp implements Group {
     }
 
     public long getOid() {
-        return new Long( _groupBean.getUniqueIdentifier() ).longValue();
+        String uniqueId = _groupBean.getUniqueIdentifier();
+        if ( uniqueId == null || uniqueId.length() == 0 ) {
+            return -1L;
+        } else {
+            return new Long( _groupBean.getUniqueIdentifier() ).longValue();
+        }
     }
 
     public String getDescription() {
