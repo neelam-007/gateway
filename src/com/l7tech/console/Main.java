@@ -38,7 +38,7 @@ public class Main {
         try {
             // AWT event dispatching thread error handler
             System.setProperty("sun.awt.exception.handler",
-                    "com.l7tech.console.logging.AwtErroHandler");
+                    "com.l7tech.console.logging.AwtErrorHandler");
             //System.setProperty("java.security.policy", "etc/jini/policy.all");
             installEventQueue();
             
