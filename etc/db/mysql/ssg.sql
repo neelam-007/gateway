@@ -247,7 +247,6 @@ CREATE TABLE ssg_logs (
   strrequestid varchar(40),
   PRIMARY KEY(objectid)
 ) TYPE=InnoDB;
-CREATE INDEX idx_nodeid ON ssg_logs (nodeid);
 CREATE INDEX idx_millis ON ssg_logs (millis);
 
 --
