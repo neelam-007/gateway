@@ -614,6 +614,8 @@ public class MainWindow extends JFrame {
                             } catch (NullPointerException e1) {
                             }
 
+                            getLogPane().stopRefreshTimer();
+
                             getMainJSplitPane().setDividerSize(0);
                         }
                     }
@@ -622,11 +624,12 @@ public class MainWindow extends JFrame {
                         public void onConnect(ConnectionEvent e) {
                             if(logMenuItem.isSelected()){
                                 restoreLogPane();
-                            }
+                             }
                         }
 
                         public void onDisconnect(ConnectionEvent e) {
                             getLogPane().clearMsgTable();
+                            getLogPane().stopRefreshTimer();
                         }
                     };
 
@@ -1658,8 +1661,8 @@ public class MainWindow extends JFrame {
     private void restoreLogPane(){
         setMainJSplitPaneDividerLocation();
         mainJSplitPane.setDividerSize(MAIN_SPLIT_PANE_DIVIDER_SIZE);
-
-        getLogPane().showData();
+        getLogPane().refreshLogs();
+        getLogPane().setVisible(true);
     }
 
     private void setMainJSplitPaneDividerLocation(){

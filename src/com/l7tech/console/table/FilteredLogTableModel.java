@@ -37,6 +37,9 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          }
 
          realModel.fireTableDataChanged();
+
+         // clear the logsCache too
+         logsCache.removeAllElements();
      }
 
      public void refreshLogs(int msgFilterLevel){

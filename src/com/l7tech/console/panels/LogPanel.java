@@ -117,6 +117,9 @@ public class LogPanel extends JPanel {
         return msgFilterLevel;
     }
 
+    public void stopRefreshTimer(){
+        getLogsRefreshTimer().stop();
+    }
     public void setLogPaneDividerLocation(){
 
        try {
@@ -146,16 +149,6 @@ public class LogPanel extends JPanel {
         }
     }
 
-    /**
-     * Retrieve logs from server and display the logs.
-     */
-    public void showData(){
-        getLogsRefreshTimer().stop();
-        ((FilteredLogTableModel)getMsgTable().getModel()).getLogs(msgFilterLevel);
-        updateMsgTotal();
-        setVisible(true);
-        getLogsRefreshTimer().start();
-    }
 
     /**
      * Return SelectPane property value
@@ -466,7 +459,7 @@ public class LogPanel extends JPanel {
     }
 
 
-    private void refreshLogs() {
+    public void refreshLogs() {
         getLogsRefreshTimer().stop();
 
         // get the selected row index
@@ -553,7 +546,7 @@ public class LogPanel extends JPanel {
     }
 
     public void clearMsgTable(){
-       ((FilteredLogTableModel)getMsgTable().getModel()).clearTable();
+        ((FilteredLogTableModel)getMsgTable().getModel()).clearTable();
         getMsgDetails().setText("");
     }
 
