@@ -9,12 +9,14 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.ResourceBundle;
 import java.util.Locale;
+import java.util.Calendar;
 import java.util.logging.Logger;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.NoSuchAlgorithmException;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -33,6 +35,10 @@ public class CertPropertiesWindow extends JDialog {
     private JTextField certIssuedToTextField;
     private JTextField certIssuedByTextField;
     private JTextField certNameTextField;
+    private JCheckBox signingServerCertCheckBox;
+    private JCheckBox signingSAMLTokenCheckBox;
+    private JCheckBox signingClientCertCheckBox;
+    private JCheckBox outboundSSLConnCheckBox;
 
     private JButton saveButton;
     private JButton cancelButton;
@@ -53,7 +59,7 @@ public class CertPropertiesWindow extends JDialog {
     private void initialize() {
 
         JRootPane rp = this.getRootPane();
-        rp.setPreferredSize(new Dimension(450, 400));
+        rp.setPreferredSize(new Dimension(550, 400));
 
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
@@ -89,13 +95,17 @@ public class CertPropertiesWindow extends JDialog {
             //todo:
         }
 
-        // populate the data to the general panel
-       //todo: certExpiredOnTextField.setText(cert.getNotAfter());
+        // populate the general data
+        SimpleDateFormat sdf = new SimpleDateFormat("mm/dd/yyyy");
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(cert.getNotAfter());
+        certExpiredOnTextField.setText(sdf.format(cal.getTime()));
+
         certIssuedToTextField.setText(cert.getSubjectDN().getName());
         certIssuedByTextField.setText(cert.getIssuerDN().getName());
         certNameTextField.setText(trustedCert.getName());
 
-        // populate the details to the details pane
+        // populate the details
         JComponent certView = getCertView(cert);
         if (certView == null) {
             certView = new JLabel();
@@ -103,6 +113,22 @@ public class CertPropertiesWindow extends JDialog {
             certDetailsScrollPane.setViewportView(certView);
         }
 
+        // populate the usage
+        if (trustedCert.isTrustedForSigningClientCerts()) {
+            signingClientCertCheckBox.setSelected(true);
+        }
+
+        if (trustedCert.isTrustedForSigningSamlTokens()) {
+            signingSAMLTokenCheckBox.setSelected(true);
+        }
+
+        if (trustedCert.isTrustedForSigningServerCerts()) {
+            signingServerCertCheckBox.setSelected(true);
+        }
+
+        if (trustedCert.isTrustedForSsl()) {
+            outboundSSLConnCheckBox.setSelected(true);
+        }
     }
 
     /**
@@ -209,7 +235,43 @@ public class CertPropertiesWindow extends JDialog {
         final JPanel _18;
         _18 = new JPanel();
         certUsagePane = _18;
+        _18.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         _6.addTab("Usage", _18);
+        final JPanel _19;
+        _19 = new JPanel();
+        _19.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(5, 1, new Insets(10, 10, 10, 10), -1, -1));
+        _18.add(_19, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JCheckBox _20;
+        _20 = new JCheckBox();
+        outboundSSLConnCheckBox = _20;
+        _20.setText("Outbound SSL Connections ");
+        _19.add(_20, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JCheckBox _21;
+        _21 = new JCheckBox();
+        signingClientCertCheckBox = _21;
+        _21.setText("Signing Client Certificates");
+        _19.add(_21, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JCheckBox _22;
+        _22 = new JCheckBox();
+        signingSAMLTokenCheckBox = _22;
+        _22.setText("Signing SAML Tokens");
+        _19.add(_22, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JCheckBox _23;
+        _23 = new JCheckBox();
+        signingServerCertCheckBox = _23;
+        _23.setText("Signing Certificates for Outbound SSL Connections");
+        _19.add(_23, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JPanel _24;
+        _24 = new JPanel();
+        _24.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(10, 0, 10, 0), -1, -1));
+        _19.add(_24, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 0, null, null, null));
+        final JLabel _25;
+        _25 = new JLabel();
+        _25.setText("The certificate is intented for:");
+        _24.add(_25, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _26;
+        _26 = new com.intellij.uiDesigner.core.Spacer();
+        _18.add(_26, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 2, 1, 6, null, null, null));
     }
 
 
