@@ -1,10 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.BaseAction;
-import com.l7tech.console.action.DeleteEntityAction;
-import com.l7tech.console.action.GroupPropertiesAction;
-import com.l7tech.console.action.UserPropertiesAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
@@ -231,7 +228,7 @@ public class FindIdentitiesDialog extends JDialog {
                 windowAction(CMD_CANCEL);
             }
         });
-
+        Actions.setEscKeyStrokeDisposes(this);
         addComponentListener(new ComponentAdapter() {
             /**
              * Invoked when the component has been made visible.

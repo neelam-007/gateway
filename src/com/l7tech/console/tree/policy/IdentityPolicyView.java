@@ -5,6 +5,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Cookie;
+import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -100,6 +101,7 @@ public class IdentityPolicyView extends JDialog {
     private void initialize() throws FindException, IOException {
         setTitle("Identity Policy - " + extractName((IdentityAssertion)idAssertion.asAssertion()));
         setContentPane(getWindowContentPane());
+        Actions.setEscKeyStrokeDisposes(this);
         initializeListeners();
     }
 
