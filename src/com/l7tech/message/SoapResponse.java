@@ -116,8 +116,9 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
         MessageProcessor.setCurrentResponse(null);
     }
 
-    public void finalize() {
+    protected void finalize() throws Throwable {
         close();
+        super.finalize();
     }
 
     public boolean isPolicyViolated() {

@@ -109,8 +109,9 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         }
     }
 
-    public void finalize() {
+    protected void finalize() throws Throwable {
         close();
+        super.finalize();
     }
 
     protected Reader getRequestReader() throws IOException {

@@ -56,8 +56,9 @@ public class HibernatePersistenceContext extends PersistenceContext {
         }
     }
 
-    public void finalize() {
+    protected void finalize() throws Throwable {
         close();
+        super.finalize();
     }
 
     public void flush() throws ObjectModelException {
