@@ -154,7 +154,7 @@ public class UserCertPanel extends JPanel {
                                 public boolean canFinish() {
                                     return true;
                                 }
-                            });
+                            }, false);
 
                     JFrame f = TopComponents.getInstance().getMainWindow();
                     Wizard w = new AddCertificateWizard(f, sp);
