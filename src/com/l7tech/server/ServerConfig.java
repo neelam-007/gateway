@@ -199,7 +199,6 @@ public class ServerConfig implements ComponentConfig {
 
 
     public long getServerBootTime() {
-        if (_serverBootTime == -1) _serverBootTime = System.currentTimeMillis();
         return _serverBootTime;
     }
 
@@ -314,7 +313,7 @@ public class ServerConfig implements ComponentConfig {
     }
 
     private int _serverId;
-    private long _serverBootTime;
+    private final long _serverBootTime = System.currentTimeMillis();
     private ArrayList _ipProtocolPorts = new ArrayList();
     private String _hostname;
     private Properties _properties;
