@@ -9,6 +9,9 @@ package com.l7tech.proxy.policy.assertion.credential.wss;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.axis.message.SOAPHeaderElement;
+import org.w3c.dom.Element;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 import javax.xml.soap.SOAPException;
 
@@ -17,29 +20,41 @@ import javax.xml.soap.SOAPException;
  * @version $Revision$
  */
 public abstract class ClientWssCredentialSource implements ClientAssertion {
-    /**
-     * gets the security element out of header. creates one if necessary
-     * @param request
-     * @return
-     */
-    protected SOAPHeaderElement getSecurityElement(PendingRequest request) throws SOAPException {
-        return null;
-        // TODO: no longer using Axis API if we can help it -- sorry about this Francois :(
-        /*
-        SOAPHeaderElement secHeader = null;
-        try {
-            secHeader = request.getSoapEnvelope().getHeaderByName(SECURITY_NAMESPACE, SECURITY_NAME);
-        } catch (AxisFault e) {
-            throw new SOAPException(e);
+
+    // todo, move this to util class
+    protected Element getOrMakeHeader(Document soapMsg) {
+        // use the soap flavor of this document
+        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
+        NodeList list = soapMsg.getElementsByTagNameNS(soapEnvNS, HEADER_EL_NAME);
+        if (list.getLength() < 1) {
+            String soapEnvNamespacePrefix = soapMsg.getDocumentElement().getPrefix();
+            Element header = soapMsg.createElementNS(soapEnvNS, HEADER_EL_NAME);
+            Element body = getOrMakeBody(soapMsg);
+            header.setPrefix(soapEnvNamespacePrefix);
+            soapMsg.getDocumentElement().insertBefore(header, body);
+            return header;
         }
-        if (secHeader == null) {
-            secHeader = new SOAPHeaderElement(SECURITY_NAMESPACE, SECURITY_NAME);
-            request.getSoapEnvelope().addHeader(secHeader);
+        else return (Element)list.item(0);
+    }
+
+    // todo, move this to util class
+    protected Element getOrMakeBody(Document soapMsg) {
+        // use the soap flavor of this document
+        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
+        NodeList list = soapMsg.getElementsByTagNameNS(soapEnvNS, BODY_EL_NAME);
+        if (list.getLength() < 1) {
+            String soapEnvNamespacePrefix = soapMsg.getDocumentElement().getPrefix();
+            Element body = soapMsg.createElementNS(soapEnvNS, BODY_EL_NAME);
+            body.setPrefix(soapEnvNamespacePrefix);
+            soapMsg.getDocumentElement().appendChild(body);
+            return body;
         }
-        return secHeader;
-        */
+        else return (Element)list.item(0);
     }
 
     protected static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/04/secext";
     protected static final String SECURITY_NAME = "Security";
+
+    private static final String HEADER_EL_NAME = "Header";
+    private static final String BODY_EL_NAME = "Body";
 }

@@ -11,14 +11,26 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import org.apache.axis.message.SOAPHeaderElement;
-import org.apache.axis.message.MessageElement;
-
-import javax.xml.soap.SOAPException;
-import java.util.Iterator;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.StringReader;
+import java.io.IOException;
 
 /**
- * @author alex
+ * decorates a request with a header that looks like that:
+ * <wsse:Security xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/04/secext">
+ *           <wsse:UsernameToken Id="MyID">
+ *                   <wsse:Username>Zoe</wsse:Username>
+ *                   <Password>ILoveLlamas</Password>
+ *           </wsse:UsernameToken>
+ * </wsse:Security>
+ * @author flascell
  * @version $Revision$
  */
 public class ClientWssBasic extends ClientWssCredentialSource implements ClientAssertion {
@@ -34,34 +46,8 @@ public class ClientWssBasic extends ClientWssCredentialSource implements ClientA
      * @throws PolicyAssertionException
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
-        SOAPHeaderElement secHeader = null;
-        try {
-            secHeader = getSecurityElement(request);
-        } catch (SOAPException e) {
-            throw new PolicyAssertionException(e.getMessage(), e);
-        }
-        // check whether the UsernameToken is not already there
-        MessageElement usernametokenelement = null;
-        for (Iterator i = secHeader.getChildElements();i.hasNext();) {
-            MessageElement el = (MessageElement)i.next();
-            if (el.getName().equals(USERNAME_TOKEN_ELEMENT_NAME)) {
-                usernametokenelement = el;
-            }
-        }
-        // if not present, add it to security header
-        if (usernametokenelement == null) {
-            usernametokenelement = new MessageElement(SECURITY_NAMESPACE, USERNAME_TOKEN_ELEMENT_NAME);
-            try {
-                secHeader.addChild(usernametokenelement);
-            } catch (SOAPException e) {
-                throw new PolicyAssertionException(e.getMessage(), e);
-            }
-        }
-        else {
-            // the usernametoken element is already there. what should i do?
-            // todo, what should the correct course of action be here?
-            return AssertionStatus.NOT_APPLICABLE;
-        }
+        Document soapmsg = request.getSoapEnvelope();
+        Element headerel = getOrMakeHeader(soapmsg);
 
         // get the username and passwords
         String username = request.getSsg().getUsername();
@@ -71,21 +57,27 @@ public class ClientWssBasic extends ClientWssCredentialSource implements ClientA
             return AssertionStatus.AUTH_REQUIRED;
         }
 
-        // add username and password to the usernametoken element
+        Element secElement = null;
+        // todo, handle case where the security element is already present in the header
         try {
-            MessageElement usernameElement = new MessageElement(SECURITY_NAMESPACE, "Username");
-            usernameElement.addTextNode(username);
-            MessageElement passwordElement = new MessageElement(SECURITY_NAMESPACE, "Password");
-            passwordElement.addTextNode(new String(password));
-            usernametokenelement.addChild(usernameElement);
-            usernametokenelement.addChild(passwordElement);
-        } catch (SOAPException e) {
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            String secElStr = "<wsse:Security xmlns:wsse=\"" + SECURITY_NAMESPACE + "\">\n<wsse:UsernameToken Id=\"MyID\">\n<wsse:Username>" + username + "</wsse:Username>\n<Password>" + new String(password) + "</Password>\n</wsse:UsernameToken>\n</wsse:Security>";
+            Document doc2 = builder.parse(new InputSource(new StringReader(secElStr)));
+            secElement = doc2.getDocumentElement();
+        } catch (ParserConfigurationException e) {
+            throw new PolicyAssertionException(e.getMessage(), e);
+        } catch (IOException e) {
+            throw new PolicyAssertionException(e.getMessage(), e);
+        } catch (SAXException e) {
             throw new PolicyAssertionException(e.getMessage(), e);
         }
+
+        secElement = (Element)soapmsg.importNode(secElement, true);
+        headerel.appendChild(secElement);
+
         return AssertionStatus.NONE;
     }
 
     protected static final String USERNAME_TOKEN_ELEMENT_NAME = "UsernameToken";
-
     protected WssBasic data;
 }
