@@ -10,7 +10,8 @@ Steps that need to be done once (more or less) to set yourself up to make Policy
 - Download the J2SE v 1.4.1_03 Windows JRE from http://java.sun.com/j2se/1.4.1/download.html
 - Install the JRE to some directory, ie C:\
 - Delete from the copied JRE all files listed as Optional in the j2re1.4.1_03/README.txt
-- Edit PolicyEditor.nsi and change the J2RE_PARENT define to the directory holding the j2re1.4.1_03 subdir.
+- Edit PolicyEditor.nsi and change the J2RE to j2re1.4.2, and J2RE_PATH to that path to your local copy.
+- Edit *.bat and *.ini and verify that the J2RE name is correct.
 
 Steps that need to be done to package a Policy Editor release
 -------------------------------------------------------------

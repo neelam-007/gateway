@@ -2,7 +2,8 @@
 ;NSIS Modern User Interface version 1.63
 ;based on Basic Example Script, which was Written by Joost Verburg
 
-!define J2RE_PARENT "C:\"  ; Directory which contains j2re1.4.1_03 subdirectory
+!define J2RE "j2re1.4.2"  ;Name of directory containing JRE
+!define J2RE_PATH "C:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !define COMPANY "Layer 7 Technologies"
 !define MUI_PRODUCT "Policy Editor" ;Define your own software name here
 !define MUI_VERSION "0.9b" ;Define your own software version here
@@ -72,10 +73,11 @@ Section "Policy Editor" SecCopyUI
 
   SetOutPath "$INSTDIR"
   File "Policy Editor.exe"
+  File "Policy Editor.ini"
   File "Policy Editor Debug.bat"
   File "${BUILD_DIR}\PolicyEditor.jar"
   File /r "${BUILD_DIR}\lib"
-  File /r "${J2RE_PARENT}\j2re1.4.1_03"
+  File /r "${J2RE_PATH}"
   
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
@@ -84,8 +86,8 @@ Section "Policy Editor" SecCopyUI
     
     ;Create shortcuts
     CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Policy Editor.lnk" "$INSTDIR\Policy Editor.exe"
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Policy Editor in Troubleshooting Mode.lnk" "$INSTDIR\Policy Editor Debug.bat"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Policy Editor.lnk" "$INSTDIR\Policy Editor.exe" parameters "$INSTDIR\Policy Editor.exe" 0
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Policy Editor in Troubleshooting Mode.lnk" "$INSTDIR\Policy Editor Debug.bat" parameters "$INSTDIR\Policy Editor.exe" 1
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall Policy Editor.lnk" "$INSTDIR\Uninstall.exe"
   
   !insertmacro MUI_STARTMENU_WRITE_END
@@ -115,9 +117,10 @@ Section "Uninstall"
 
   Delete "$INSTDIR\Policy Editor Debug.bat"
   Delete "$INSTDIR\Policy Editor.exe"
+  Delete "$INSTDIR\Policy Editor.ini"
   Delete "$INSTDIR\PolicyEditor.jar"
   RMDir /r "$INSTDIR\lib"
-  RMDir /r "$INSTDIR\j2re1.4.1_03"
+  RMDir /r "$INSTDIR\${J2RE}"
   Delete "$INSTDIR\Uninstall.exe"
 
   ;Remove shortcut
