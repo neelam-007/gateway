@@ -9,6 +9,8 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.common.io.failover.StickyFailoverStrategy;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.TcpKnob;
@@ -61,6 +63,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
     private SignerInfo senderVouchesSignerInfo;
     private final Auditor auditor;
+    private final FailoverStrategy failoverStrategy;
+    private final int maxFailoverAttempts;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
         super(ctx);
@@ -86,6 +90,28 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             auditor.logAndAudit(AssertionMessages.SSL_CONTEXT_INIT_FAILED, null, e);
             throw new RuntimeException(e);
         }
+
+        final String[] addrs = httpRoutingAssertion.getCustomIpAddresses();
+        if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs, auditor)) {
+            failoverStrategy = new StickyFailoverStrategy(addrs);
+            maxFailoverAttempts = addrs.length;
+        } else {
+            failoverStrategy = null;
+            maxFailoverAttempts = 1;
+        }
+    }
+
+    private boolean areValidUrlHostnames(String[] addrs, Auditor auditor) {
+        for (int i = 0; i < addrs.length; i++) {
+            String addr = addrs[i];
+            try {
+                new URL("http", addr, 777, "/foo/bar");
+            } catch (MalformedURLException e) {
+                auditor.logAndAudit(AssertionMessages.REMOTE_ADDRESS_INVALID, new String[] { addr });
+                return false;
+            }
+        }
+        return true;
     }
 
     public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
@@ -100,7 +126,41 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
      * @throws com.l7tech.policy.assertion.PolicyAssertionException
      *          if some error preventing the execution of the PolicyAssertion has occurred.
      */
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
+    {
+        final URL u;
+
+        PublishedService service = context.getService();
+        try {
+            u = getProtectedServiceUrl(service);
+        } catch (WSDLException we) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
+            return AssertionStatus.FAILED;
+        }
+
+        if (failoverStrategy == null)
+            return tryUrl(context, u);
+
+        for (int tries = 0; tries < maxFailoverAttempts; tries++) {
+            String host = (String)failoverStrategy.selectService();
+            if (host == null) // strategy says it's time to give up
+                break;
+            URL url = new URL(u.getProtocol(), host, u.getPort(), u.getFile());
+            AssertionStatus result = tryUrl(context, url);
+            if (result == AssertionStatus.NONE) {
+                failoverStrategy.reportSuccess(host);
+                return result;
+            }
+            failoverStrategy.reportFailure(host);
+        }
+
+        auditor.logAndAudit(AssertionMessages.TOO_MANY_ROUTING_ATTEMPTS);
+        return AssertionStatus.FAILED;
+    }
+
+
+    private AssertionStatus tryUrl(PolicyEnforcementContext context, URL url) throws IOException, PolicyAssertionException
+    {
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
         PostMethod postMethod = null;
@@ -108,9 +168,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         try {
             try {
-                PublishedService service = context.getService();
-                URL url = getProtectedServiceUrl(service);
-
                 HttpClient client = new HttpClient(connectionManager);
                 HostConfiguration hconf = null;
 
@@ -262,9 +319,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 context.setRoutingStatus(RoutingStatus.ROUTED);
 
-            } catch (WSDLException we) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
-                return AssertionStatus.FAILED;
             } catch (MalformedURLException mfe) {
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, mfe);
                 return AssertionStatus.FAILED;
