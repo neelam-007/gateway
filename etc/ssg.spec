@@ -1,3 +1,4 @@
+# $Id$
 Summary: Secure Span Gateway
 Name: ssg
 Version: 3.0
@@ -10,8 +11,6 @@ Source0: /tmp/ssg.tar.gz
 buildroot: %{_tmppath}/%{name}-builddir
 provides: ssg
 
-# Requires: anything
-# Prereq: mysql
 
 # Prevents rpm build from erroring and halting
 %undefine       __check_files
