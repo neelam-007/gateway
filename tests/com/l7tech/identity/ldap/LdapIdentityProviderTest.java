@@ -93,9 +93,9 @@ public class LdapIdentityProviderTest extends TestCase {
         }
     }
 
-    public void testAuthenticate() throws Exception {
+    public void testAuthenticate(String username, String passwd) throws Exception {
         try {
-            User notauthenticated = localProvider.getUserManager().findByLogin("flascelles");
+            User notauthenticated = localProvider.getUserManager().findByLogin(username);
             if (notauthenticated == null) {
                 System.out.println("user not found");
                 return;
@@ -105,7 +105,7 @@ public class LdapIdentityProviderTest extends TestCase {
             User authenticated = null;
             try {
                 authenticated = localProvider.authenticate(new LoginCredentials(notauthenticated.getLogin(),
-                        "rockclimbing".getBytes(), CredentialFormat.CLEARTEXT, null, null));
+                        passwd.getBytes(), CredentialFormat.CLEARTEXT, null, null));
             } catch (Exception e) {
                 System.out.println("creds do not authenticate.");
             }
@@ -125,7 +125,7 @@ public class LdapIdentityProviderTest extends TestCase {
         //me.localProvider = me.getMSADProvider();
         me.localProvider = me.getOracleProvider();
 
-        me.testAuthenticate();
+        me.testAuthenticate("clara", "password");
         me.testGetUsers();
         me.testGetGroupsAndMembers();
     }
