@@ -7,12 +7,17 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.event.*;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.EventListenerList;
 import java.util.ResourceBundle;
 import java.util.Locale;
+import java.util.EventListener;
 import java.util.logging.Logger;
 import java.awt.*;
 import java.awt.event.*;
@@ -33,10 +38,11 @@ public class PKIIdentityProviderWindow extends JDialog {
     private JButton cancelButton;
     private JTextField providerNameTextField;
     private TrustedCertsTable trustedCertTable = null;
+    private IdentityProviderConfig providerConfig;
+    private EventListenerList listenerList = new EventListenerList();
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.PKIIdentityProviderDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(PKIIdentityProviderWindow.class.getName());
-    private Object providerConfig;
 
 
     /**
@@ -46,6 +52,7 @@ public class PKIIdentityProviderWindow extends JDialog {
      */
     public PKIIdentityProviderWindow(JFrame owner) {
         super(owner, resources.getString("new.provider.dialog.title"), true);
+        this.providerConfig = new IdentityProviderConfig();
         initialize();
         pack();
         Utilities.centerOnScreen(this);
@@ -57,7 +64,7 @@ public class PKIIdentityProviderWindow extends JDialog {
      * @param owner The parent component.
      * @param providerConfig   The given identity config object.
      */
-    public PKIIdentityProviderWindow(Dialog owner, Object providerConfig) {
+    public PKIIdentityProviderWindow(JFrame owner, IdentityProviderConfig providerConfig) {
         super(owner, resources.getString("edit.provider.dialog.title"), true);
         this.providerConfig = providerConfig;
         initialize();
@@ -135,10 +142,26 @@ public class PKIIdentityProviderWindow extends JDialog {
         });
 
          saveButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
+             public void actionPerformed(ActionEvent event) {
+
+                 if (providerConfig != null) {
+                     saveSettings();
+                     EntityHeader header = new EntityHeader();
+                     header.setName(providerConfig.getName());
+                     header.setType(EntityType.ID_PROVIDER_CONFIG);
+/*                try {
+                    header.setOid(getProviderConfigManager().save(iProvider));
+                } catch (SaveException e) {
+                    ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
+                    header = null;
+                }*/
+                     fireEventEntityAdded(header);
+
+                 }
+
                 dispose();
-            }
-        });
+             }
+         });
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
@@ -149,6 +172,12 @@ public class PKIIdentityProviderWindow extends JDialog {
 
     }
 
+    //todo: temp
+    private void saveSettings() {
+        if(providerConfig != null) {
+            providerConfig.setName(providerNameTextField.getText().trim());
+        }
+    }
     /**
      * Retrieve the object reference of the Trusted Cert Admin service
      *
@@ -198,6 +227,47 @@ public class PKIIdentityProviderWindow extends JDialog {
         }
 
     };
+
+    public Object getCollectedInformation() {
+        return providerConfig;
+    }
+
+    /**
+     * add the EntityListener
+     *
+     * @param listener the EntityListener
+     */
+    public void addEntityListener(EntityListener listener) {
+        listenerList.add(EntityListener.class, listener);
+    }
+
+    /**
+     * remove the the EntityListener
+     *
+     * @param listener the EntityListener
+     */
+    public void removeEntityListener(EntityListener listener) {
+        listenerList.remove(EntityListener.class, listener);
+    }
+
+    /**
+     * notfy the listeners
+     *
+     * @param eh the entity header
+     */
+    private void fireEventEntityAdded(final EntityHeader eh) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+
+                EntityEvent event = new EntityEvent(this, eh);
+                EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+                for (int i = 0; i < listeners.length; i++) {
+                    ((EntityListener) listeners[i]).entityAdded(event);
+                }
+            }
+
+        });
+    }
 
     {
 // GUI initializer generated by IntelliJ IDEA GUI Designer
