@@ -6,34 +6,116 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
-import java.security.cert.X509Certificate;
-import java.security.PrivateKey;
 import java.security.GeneralSecurityException;
-import java.util.Iterator;
-
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.util.Date;
+import java.util.Calendar;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 /**
  * @author mike
  */
 public class WssDecoratorImpl implements WssDecorator {
-    public Document decorateMessage(Document message,
-                                    X509Certificate recipientCertificate,
-                                    X509Certificate senderCertificate,
-                                    PrivateKey senderPrivateKey,
-                                    Element[] elementsToEncrypt,
-                                    Element[] elementsToSign)
-        throws InvalidDocumentFormatException, GeneralSecurityException
-    {
-        Element securityHeader = createSecurityHeader(message);
+    public static final int TIMESTAMP_TIMOUT_SEC = 300;
 
-        // todo finish this
-        return null;
+    private static class Context {
+        SecureRandom rand = new SecureRandom();
+    }
+
+    public void decorateMessage(Document message,
+                                X509Certificate recipientCertificate,
+                                X509Certificate senderCertificate,
+                                PrivateKey senderPrivateKey,
+                                Element[] elementsToEncrypt,
+                                Element[] elementsToSign)
+            throws InvalidDocumentFormatException, GeneralSecurityException
+    {
+        Context c = new Context();
+
+        Element securityHeader = createSecurityHeader(message);
+        String securityHeaderId = createWsuId(c, securityHeader); // todo create Ids lazily as we find they are needed
+
+        Element timestamp = addTimestamp(securityHeader);
+        String timestampId = createWsuId(c, timestamp);
+
+        if (senderCertificate != null) {
+            Element securityToken = addX509BinarySecurityToken(securityHeader, senderCertificate);
+            String securityTokenId = createWsuId(c, securityToken);
+        }
+
+        // todo encrypt
+        //Element encryptedKey = addEncryptedKey();
+
+        // todo sign
+        //Element signature = addSignature(senderCertificate, senderPrivateKey);
+    }
+
+    /**
+     * Generate a wsu:Id for the specified element, adds it to the element, and returns it.
+     * @param c
+     * @param element
+     * @return
+     */
+    private String createWsuId(Context c, Element element) {
+        String id = element.getLocalName() + "-L7" + c.rand.nextLong();
+        element.setAttributeNS(SoapUtil.WSU_NAMESPACE, "wsu:Id", id);
+
+        // todo use better logic to decide if wsu needs to be declared here
+        if (element.getAttribute("xmlns:wsu").length() < 1)
+            element.setAttribute("xmlns:wsu", SoapUtil.WSU_NAMESPACE);
+
+        return id;
+    }
+
+    private Element addTimestamp(Element securityHeader) {
+        Document message = securityHeader.getOwnerDocument();
+        Element timestamp = message.createElementNS(SoapUtil.WSU_NAMESPACE,
+                                                    SoapUtil.TIMESTAMP_EL_NAME);
+        timestamp.setPrefix("wsu");
+        timestamp.setAttribute("xmlns:" + timestamp.getPrefix(), timestamp.getNamespaceURI());
+        securityHeader.appendChild(timestamp);
+
+        Calendar now = Calendar.getInstance();
+        timestamp.appendChild(makeTimestampChildElement(timestamp, SoapUtil.CREATED_EL_NAME, now.getTime()));
+        now.add(Calendar.SECOND, TIMESTAMP_TIMOUT_SEC);
+        timestamp.appendChild(makeTimestampChildElement(timestamp, SoapUtil.EXPIRES_EL_NAME, now.getTime()));
+        return timestamp;
+    }
+
+    private Element makeTimestampChildElement(Element timestamp, String createdElName, Date time) {
+        Document factory = timestamp.getOwnerDocument();
+        Element element = factory.createElementNS(timestamp.getNamespaceURI(), createdElName);
+        element.setPrefix(timestamp.getPrefix());
+        DateFormat dateFormat = new SimpleDateFormat(SoapUtil.DATE_FORMAT_PATTERN);
+        dateFormat.setTimeZone(SoapUtil.DATE_FORMAT_TIMEZONE);
+        element.appendChild(factory.createTextNode(dateFormat.format(time)));
+        return element;
+    }
+
+    private Element addX509BinarySecurityToken(Element securityHeader, X509Certificate certificate)
+            throws CertificateEncodingException
+    {
+        Document factory = securityHeader.getOwnerDocument();
+        Element element = factory.createElementNS(securityHeader.getNamespaceURI(),
+                                                  SoapUtil.BINARYSECURITYTOKEN_EL_NAME);
+        element.setPrefix(securityHeader.getPrefix());
+        element.setAttribute("ValueType", element.getPrefix() + ":X509v3");
+        element.setAttribute("EncodingType", element.getPrefix() + ":Base64Binary");
+        element.appendChild(factory.createTextNode("\n" + HexUtils.encodeBase64(certificate.getEncoded()) + "\n"));
+        securityHeader.appendChild(element);
+        return element;
     }
 
     private Element createSecurityHeader(Document message) throws InvalidDocumentFormatException {
@@ -41,31 +123,12 @@ public class WssDecoratorImpl implements WssDecorator {
         Element oldSecurity = SoapUtil.getSecurityElement(message);
         if (oldSecurity != null) {
             // todo -- support more than one layer of actor-wrapped security header
-            oldSecurity.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
-            oldSecurity.removeAttribute(SoapUtil.ROLE_ATTR_NAME);
-            for (Iterator i = SoapUtil.ENVELOPE_URIS.iterator(); i.hasNext();) {
-                String ns = (String)i.next();
-                oldSecurity.removeAttributeNS(ns, SoapUtil.ACTOR_ATTR_NAME);
-                oldSecurity.removeAttributeNS(ns, SoapUtil.ROLE_ATTR_NAME);
-            }
-            oldSecurity.setAttributeNS(message.getDocumentElement().getNamespaceURI(),
-                                       message.getDocumentElement().getPrefix() + ":" + SoapUtil.ACTOR_ATTR_NAME,
-                                       ACTOR_LAYER7_WRAPPED);
+            SoapUtil.removeSoapAttr(oldSecurity, SoapUtil.ACTOR_ATTR_NAME);
+            SoapUtil.removeSoapAttr(oldSecurity, SoapUtil.ROLE_ATTR_NAME);
+            SoapUtil.setSoapAttr(message, oldSecurity, SoapUtil.ACTOR_ATTR_NAME, ACTOR_LAYER7_WRAPPED);
         }
 
-
-        Element security = message.createElementNS(SoapUtil.SECURITY_NAMESPACE, SoapUtil.SECURITY_EL_NAME);
-        security.setPrefix("wsse"); // todo - figure out how to find an existing namespace decl
-        // todo - figure out how to ensure that this prefix is unique
-
-        Element header = SoapUtil.getHeaderElement(message);
-        Element firstHeader = XmlUtil.findFirstChildElement(header);
-        if (firstHeader == null)
-            header.appendChild(security);
-        else
-            header.insertBefore(security, firstHeader);
-
-        return header;
+        return SoapUtil.makeSecurityElement(message);
     }
 
     private static final String ACTOR_LAYER7_WRAPPED = "http://www.layer7tech.com/ws/actor-wrapped";

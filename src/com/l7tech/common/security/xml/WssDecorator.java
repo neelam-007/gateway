@@ -21,11 +21,11 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
  * @author mike
  */
 public interface WssDecorator {
-    Document decorateMessage(Document message,
-                             X509Certificate recipientCertificate,
-                             X509Certificate senderCertificate,
-                             PrivateKey senderPrivateKey,
-                             Element[] elementsToEncrypt,
-                             Element[] elementsToSign)
+    void decorateMessage(Document message,
+                         X509Certificate recipientCertificate,
+                         X509Certificate senderCertificate,
+                         PrivateKey senderPrivateKey,
+                         Element[] elementsToEncrypt,
+                         Element[] elementsToSign)
             throws InvalidDocumentFormatException, GeneralSecurityException;
 }

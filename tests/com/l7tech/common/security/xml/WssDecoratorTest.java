@@ -6,19 +6,18 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
-import java.security.PrivateKey;
-
-import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -38,45 +37,82 @@ public class WssDecoratorTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
+    private static class Context {
+        Document message;
+        String soapNs;
+        Element body;
+        String payloadNs;
+        Element payload;
+        Element price;
+        Element amount;
+        Element productid;
+        Element accountid;
+
+        Context() throws IOException, SAXException {
+            message = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+            soapNs = message.getDocumentElement().getNamespaceURI();
+            body = (Element)message.getElementsByTagNameNS(soapNs, SoapUtil.BODY_EL_NAME).item(0);
+            payload = XmlUtil.findFirstChildElement(body);
+            payloadNs = payload.getNamespaceURI();
+            price = (Element)message.getElementsByTagNameNS(payloadNs, "price").item(0);
+            amount = (Element)message.getElementsByTagNameNS(payloadNs, "amount").item(0);
+            productid = (Element)message.getElementsByTagNameNS(payloadNs, "productid").item(0);
+            accountid = (Element)message.getElementsByTagNameNS(payloadNs, "accountid").item(0);
+        }
+    }
+
     public void testSimpleDecoration() throws Exception {
-        WssDecorator wssDecorator = new WssDecoratorImpl();
+        Context c = new Context();
+        WssDecorator decorator = new WssDecoratorImpl();
 
-        Document soapMsg = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
 
-        log.info("Before decoration:" + XmlUtil.documentToFormattedString(soapMsg));
+        decorator.decorateMessage(c.message,
+                                  TestDocuments.getEttkServerCertificate(),
+                                  TestDocuments.getEttkClientCertificate(),
+                                  TestDocuments.getEttkClientPrivateKey(),
+                                  new Element[0],
+                                  new Element[0]);
 
-        X509Certificate serverCert = TestDocuments.getEttkServerCertificate();
-        //PrivateKey serverKey = TestDocuments.getEttkServerPrivateKey();
-        X509Certificate clientCert = TestDocuments.getEttkClientCertificate();
-        PrivateKey clientKey = TestDocuments.getEttkClientPrivateKey();
+        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+    }
 
-        String soapNs = soapMsg.getDocumentElement().getNamespaceURI();
-        Element body = (Element)soapMsg.getElementsByTagNameNS(soapNs, SoapUtil.BODY_EL_NAME).item(0);
-        Element payload = XmlUtil.findFirstChildElement(body);
-        String payloadNs = payload.getNamespaceURI();
-        Element price = (Element)soapMsg.getElementsByTagNameNS(payloadNs, "price").item(0);
-        Element amount = (Element)soapMsg.getElementsByTagNameNS(payloadNs, "amount").item(0);
-        Element productid = (Element)soapMsg.getElementsByTagNameNS(payloadNs, "productid").item(0);
-        Element accountid = (Element)soapMsg.getElementsByTagNameNS(payloadNs, "accountid").item(0);
+    public void testWrappedSecurityHeader() throws Exception {
+        Context c = new Context();
+        WssDecorator decorator = new WssDecoratorImpl();
 
-        Element[] tocrypt = {
-            productid,
-            accountid
-        };
+        Element sec = SoapUtil.getOrMakeSecurityElement(c.message);
+        final String privUri = "http://example.com/ws/security/stuff";
+        Element privateStuff = c.message.createElementNS(privUri, "privateStuff");
+        privateStuff.setPrefix("priv");
+        privateStuff.setAttribute("xmlns:priv", privUri);
+        sec.appendChild(privateStuff);
 
-        Element[] tosign = {
-            body
-        };
+        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
 
-        Document decoratedMsg = wssDecorator.decorateMessage(soapMsg,
-                                                             serverCert,
-                                                             clientCert,
-                                                             clientKey,
-                                                             tocrypt,
-                                                             tosign);
+        decorator.decorateMessage(c.message,
+                                  TestDocuments.getEttkServerCertificate(),
+                                  TestDocuments.getEttkClientCertificate(),
+                                  TestDocuments.getEttkClientPrivateKey(),
+                                  new Element[0],
+                                  new Element[0]);
 
-        log.info("Decorated message:" + XmlUtil.documentToFormattedString(decoratedMsg));
+        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+    }
 
+    public void testSingleEncryptionMultipleSignature() throws Exception {
+        Context c = new Context();
+        WssDecorator decorator = new WssDecoratorImpl();
 
+        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
+
+        decorator.decorateMessage(c.message,
+                                  TestDocuments.getEttkServerCertificate(),
+                                  TestDocuments.getEttkClientCertificate(),
+                                  TestDocuments.getEttkClientPrivateKey(),
+                                  new Element[] { c.productid,  c.accountid },
+                                  new Element[] { c.body });
+
+        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
     }
 }
