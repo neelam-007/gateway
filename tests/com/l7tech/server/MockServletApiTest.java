@@ -1,9 +1,8 @@
 package com.l7tech.server;
 
-import com.l7tech.common.util.Locator;
+import com.l7tech.common.security.Keys;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.common.security.Keys;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
@@ -12,6 +11,7 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.springframework.context.ApplicationContext;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -23,6 +23,7 @@ public class MockServletApiTest extends TestCase {
     private ServiceAdmin serviceAdmin;
     private SoapMessageGenerator.Message[] soapRequests;
     private PublishedService publishedService;
+    private static MockServletApi servletApi;
 
     /**
      * test <code>MockServletApiTest</code> constructor
@@ -45,7 +46,7 @@ public class MockServletApiTest extends TestCase {
              */
             protected void setUp() throws Exception {
                 Keys.createTestSsgKeystoreProperties();
-                System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
+                servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
             }
 
             protected void tearDown() throws Exception {
@@ -56,10 +57,8 @@ public class MockServletApiTest extends TestCase {
     }
 
     public void setUp() throws Exception {
-        serviceAdmin = (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
-        if (serviceAdmin == null) {
-            throw new AssertionError("could not carry out admins is null");
-        }
+        ApplicationContext context = servletApi.getApplicationContext();
+        serviceAdmin = (ServiceAdmin)context.getBean("serviceAdmin");
         EntityHeader[] headers = serviceAdmin.findAllPublishedServices();
         assertTrue("no services have been returned could not execute test", headers.length > 0);
         publishedService = serviceAdmin.findServiceByID(headers[0].getStrId());
@@ -79,17 +78,17 @@ public class MockServletApiTest extends TestCase {
      * @throws Exception
      */
     public void testInvokeMessageProcessingServlet() throws Exception {
-//        for (int i = 0; i < soapRequests.length; i++) {
-//            MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
-//            SoapMessageGenerator.Message soapRequest = soapRequests[i];
-//            servletApi.setPublishedService(publishedService);
-//            servletApi.setSoapRequest(soapRequest.getSOAPMessage(), soapRequest.getSOAPAction());
-//            HttpServletRequest mhreq = servletApi.getServletRequest();
-//            MockHttpServletResponse mhres = new MockHttpServletResponse();
-//            messageProcessingServlet = new SoapMessageProcessingServlet();
-//            messageProcessingServlet.init(servletApi.getServletConfig());
-//            messageProcessingServlet.doPost(mhreq, mhres);
-//        }
+        for (int i = 0; i < soapRequests.length; i++) {
+            SoapMessageGenerator.Message soapRequest = soapRequests[i];
+            servletApi.reset();
+            servletApi.setPublishedService(publishedService);
+            servletApi.setSoapRequest(soapRequest.getSOAPMessage(), soapRequest.getSOAPAction());
+            HttpServletRequest mhreq = servletApi.getServletRequest();
+            MockHttpServletResponse mhres = new MockHttpServletResponse();
+            messageProcessingServlet = new SoapMessageProcessingServlet();
+            messageProcessingServlet.init(servletApi.getServletConfig());
+            messageProcessingServlet.doPost(mhreq, mhres);
+        }
     }
 
     /**

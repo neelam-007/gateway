@@ -1,43 +1,136 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <!-- test bean definitions -->
+
 <beans>
     <!-- server side identity provider factory (same as the prod)-->
-     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
-     </bean>
+    <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
+    </bean>
 
     <!-- test identity configuration manager -->
-    <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.TestIdentityProviderConfigManager">
-        <property name="identityProviderFactory"><ref bean='identityProviderFactory'/></property>
-    </bean>
+   <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.TestIdentityProviderConfigManager">
+       <property name="identityProviderFactory">
+           <ref bean='identityProviderFactory'/>
+       </property>
+   </bean>
 
     <!--
         Test Identity Provider
     -->
-  <bean id="testIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-      class="com.l7tech.identity.TestIdentityProvider" singleton="false">
-  </bean>
+ <bean id="testIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
+     class="com.l7tech.identity.TestIdentityProvider" singleton="false">
+ </bean>
 
     <!--  test service admin -->
-    <bean id="serviceAdmin" class="com.l7tech.service.ServiceAdminStub">
-        <property name="policyValidator"><ref bean="policyValidator"/></property>
-    </bean>
+   <bean id="serviceAdmin" class="com.l7tech.service.ServiceAdminStub">
+       <property name="policyValidator">
+           <ref bean="policyValidator"/>
+       </property>
+   </bean>
+
+    <!-- server side service manager -->
+   <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
+     <constructor-arg>
+         <ref bean="policyFactory"/>
+     </constructor-arg>
+   </bean>
+
+    <!-- server side service manager -->
+   <bean id="serviceManager" class="com.l7tech.service.ServiceManagerStub">
+     <property name="serviceCache">
+          <ref bean='serviceCache'/>
+      </property>
+   </bean>
 
     <!-- test config uses the policy validator without persistence -->
-    <bean id="policyValidator" class="com.l7tech.policy.validator.DefaultPolicyValidator">
-    </bean>
+   <bean id="policyValidator" class="com.l7tech.policy.validator.DefaultPolicyValidator">
+   </bean>
 
     <!-- server side policy factory -->
-     <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
-     </bean>
+    <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
+    </bean>
 
     <!-- server side trusted cert manager -->
-     <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TestTrustedCertManager">
-     </bean>
+    <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TestTrustedCertManager">
+    </bean>
 
     <!-- server side HTTP routing client trust manager -->
-      <bean id="httpRoutingAssertionTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
-          <property name="trustedCertManager"><ref bean="trustedCertManager"/></property>
-      </bean>
+     <bean id="httpRoutingAssertionTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+         <property name="trustedCertManager">
+             <ref bean="trustedCertManager"/>
+         </property>
+     </bean>
+    <!-- ssl config  -->
+  <bean id="sslKeystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance"/>
 
+    <bean id="sslKeystoreType" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject">
+            <ref local='sslKeystore'/>
+        </property>
+        <property name="targetMethod">
+            <value>getKeyStoreType</value>
+        </property>
+    </bean>
+
+    <bean id="sslKeystorePassword" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject">
+            <ref local='sslKeystore'/>
+        </property>
+        <property name="targetMethod">
+            <value>getSslKeystorePasswd</value>
+        </property>
+    </bean>
+
+    <bean id="sslKeystoreFile" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject">
+            <ref local='sslKeystore'/>
+        </property>
+        <property name="targetMethod">
+            <value>getSslKeystorePath</value>
+        </property>
+    </bean>
+
+    <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject">
+            <ref local='sslKeystore'/>
+        </property>
+        <property name="targetMethod">
+            <value>getSslCert</value>
+        </property>
+    </bean>
+
+    <bean id="sslKeystorePrivateKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject">
+            <ref local='sslKeystore'/>
+        </property>
+        <property name="targetMethod">
+            <value>getSSLPrivateKey</value>
+        </property>
+    </bean>
+
+    <!-- server Wss Decorator -->
+     <bean id="wssDecorator" class="com.l7tech.common.security.xml.decorator.WssDecoratorImpl">
+    </bean>
+    <!-- server side Event Manager target -->
+     <bean id="eventManager" class="com.l7tech.server.event.EventManager">
+    </bean>
+
+    <!-- server Message Processor -->
+    <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
+        <constructor-arg>
+            <ref bean="serviceManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="wssDecorator"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="sslKeystorePrivateKey"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="sslKeystoreCertificate"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="eventManager"/>
+        </constructor-arg>
+    </bean>
 </beans>

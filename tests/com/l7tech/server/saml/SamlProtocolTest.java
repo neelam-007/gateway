@@ -107,7 +107,7 @@ public class SamlProtocolTest extends TestCase {
     }
 
     public void testBadRequestExpectedSoapFault() throws Exception {
-        MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
+        MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
 
         Mock requestMock = servletApi.getServletRequestMock();
         Mock responseMock = servletApi.getServletResponseMock();

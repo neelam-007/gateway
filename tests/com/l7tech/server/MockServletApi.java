@@ -6,7 +6,12 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.service.PublishedService;
 import com.mockobjects.dynamic.C;
 import com.mockobjects.dynamic.Mock;
+import com.mockobjects.dynamic.ConstraintMatcher;
 import com.mockobjects.servlet.MockServletInputStream;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.ContextLoader;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -32,17 +37,20 @@ public class MockServletApi {
     Mock servletResponseMock = new Mock(HttpServletResponse.class);
     Mock servletContextMock = new Mock(ServletContext.class);
     Mock servletConfigMock = new Mock(ServletConfig.class);
+    protected ApplicationContext applicationContext;
+    protected Preparer preparer;
 
     /**
      * instantiate the <code>MockServletApi</code> using the
      * default preparer
+     * @param contextLocation
      */
-    public static MockServletApi defaultMessageProcessingServletApi() {
-        MockServletApi ma = new MockServletApi();
-        ma.new DefaultMessageProcessorPreparer().prepare(ma);
+    public static MockServletApi defaultMessageProcessingServletApi(String contextLocation) {
+        MockServletApi ma = new MockServletApi(contextLocation);
+        ma.preparer = ma.new DefaultMessageProcessorPreparer();
+        ma.preparer.prepare(ma);
         return ma;
     }
-
     /**
      * instantiate the <code>MockServletApi</code> using the
      * user provided preparer
@@ -51,17 +59,51 @@ public class MockServletApi {
         preparer.prepare(this);
     }
 
-    private MockServletApi() {
+    public void reset() {
+        servletRequestMock = new Mock(HttpServletRequest.class);
+        servletResponseMock = new Mock(HttpServletResponse.class);
+        preparer.prepare(this);
+    }
+
+    private MockServletApi(String contextLocation) {
+        servletConfigMock.matchAndReturn("getServletContext", servletContextMock.proxy());
+        servletConfigMock.matchAndReturn("getInitParameter", C.IS_NOT_NULL, null);
+
+        servletContextMock.matchAndReturn("getInitParameter", ContextLoader.CONFIG_LOCATION_PARAM, contextLocation);
+        servletContextMock.matchAndReturn("getInitParameter", ContextLoader.CONTEXT_CLASS_PARAM, null);
+        servletContextMock.matchAndReturn("getResourceAsStream", C.IS_ANYTHING, getClass().getClassLoader().getResourceAsStream(contextLocation));
+        servletContextMock.matchAndReturn("log", C.ANY_ARGS, null);
+
+        servletContextMock.expect("setAttribute", new ConstraintMatcher() {
+            public boolean matches(Object[] args) {
+                if (args.length !=2) {
+                    return false;
+                }
+                if (WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE.equals(args[0])) {
+                    applicationContext = (ApplicationContext)args[1];
+                }
+                servletContextMock.matchAndReturn("getAttribute", WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, applicationContext);
+                return true;
+            }
+
+            public Object[] getConstraints() {
+                return new Object[0];
+            }
+        });
+        ContextLoader loader = new ContextLoader();
+        loader.initWebApplicationContext((ServletContext)servletContextMock.proxy());
+    }
+
+    public ApplicationContext getApplicationContext() {
+        return WebApplicationContextUtils.getWebApplicationContext((ServletContext)servletContextMock.proxy());
     }
 
     public class DefaultMessageProcessorPreparer implements Preparer {
         public void prepare(MockServletApi servletApi) {
             try {
-                servletConfigMock.matchAndReturn("getServletContext", servletContextMock.proxy());
-                servletConfigMock.matchAndReturn("getInitParameter", C.IS_NOT_NULL, null);
-                servletContextMock.expect("log", C.IS_ANYTHING);
                 servletRequestMock.matchAndReturn("getContentType", "text/xml");
                 servletRequestMock.matchAndReturn("getStatus", new Integer(200));
+                servletRequestMock.matchAndReturn("isSecure", true);
 
                 // Authorization
                 servletRequestMock.matchAndReturn("getHeader", "Authorization", null);
@@ -79,9 +121,8 @@ public class MockServletApi {
 
                 servletResponseMock.matchAndReturn("setContentType", "text/xml; charset=utf-8", null);
                 servletResponseMock.matchAndReturn("setStatus", C.IS_ANYTHING, null);
+                servletResponseMock.matchAndReturn("sendError", C.ANY_ARGS, null);
                 servletResponseMock.matchAndReturn("setHeader", C.ANY_ARGS, null);
-
-                servletConfigMock.matchAndReturn("getInitParameter", C.IS_NOT_NULL, null);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -115,10 +156,10 @@ public class MockServletApi {
         soapMessage.writeTo(bo);
         StringReader sr = new StringReader(bo.toString());
         servletRequestMock.matchAndReturn("getReader", new BufferedReader(sr));
-        servletRequestMock.expectAndReturn("getHeaders",
+        servletRequestMock.matchAndReturn("getHeaders",
                                            SecureSpanConstants.HttpHeaders.ORIGINAL_URL,
                                            new HardcodedEnumeration(new String[] { "http://localhost/whatever"} ));
-        servletRequestMock.expectAndReturn("getHeaders",
+        servletRequestMock.matchAndReturn("getHeaders",
                                            SoapUtil.SOAPACTION,
                                            new HardcodedEnumeration(new String[] { "urn:soapaction.com:whoopee"} ));
 
