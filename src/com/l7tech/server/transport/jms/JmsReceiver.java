@@ -199,7 +199,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
         } catch ( JMSException e ) {
             _logger.log(Level.WARNING, "Caught JMSException initializing JMS context for '" + _inboundRequestEndpoint.toString() + "'", e);
             throw new LifecycleException(e.toString(), e);
-        } catch ( JmsUtil.JmsConfigException e ) {
+        } catch ( JmsConfigException e ) {
             _logger.log(Level.WARNING, "Caught JMSException initializing JMS context for '" + _inboundRequestEndpoint.toString() + "'", e);
             throw new LifecycleException(e.toString(), e);
         } finally {
@@ -216,8 +216,8 @@ public class JmsReceiver implements ServerComponentLifecycle {
         if (!_initialized) throw new LifecycleException("Can't start '" + _inboundRequestEndpoint.toString() + "', it has not been successfully initialized!");
 
         try {
-            MessageLoop loop = new MessageLoop(_bag);
-            loop.start();
+            _loop = new MessageLoop(_bag);
+            _loop.start();
         } catch (JMSException e) {
             throw new LifecycleException(e.getMessage(), e);
         } catch (NamingException e) {
@@ -247,30 +247,45 @@ public class JmsReceiver implements ServerComponentLifecycle {
         public void stop() {
             _stop = true;
             _thread.interrupt();
+            try {
+                _thread.join();
+            } catch ( InterruptedException e ) {
+                Thread.currentThread().interrupt();
+            }
         }
 
         public void run() {
             int oopses = 0;
 
-            while ( !_stop ) {
-                try {
-                    Message jmsMessage = _consumer.receive( RECEIVE_TIMEOUT );
-                    if ( jmsMessage != null ) {
-                        oopses = 0;
-                        // todo support concurrent JMS messages some day
-                        JmsRequestHandler handler = new JmsRequestHandler();
-                        handler.onMessage( JmsReceiver.this, _bag, jmsMessage );
-                    }
-                } catch ( JMSException e ) {
-                    _logger.log( Level.WARNING,
-                                 "Unable to receive message from JMS endpoint " + _inboundRequestEndpoint,
-                                 e );
-                    if ( oopses++ > MAXIMUM_OOPSES ) {
-                        _logger.severe( "Too many errors - shutting down listener for JMS endpoint " + _inboundRequestEndpoint );
-                        return;
+            _logger.info( "Starting JMS poller on " + _inboundRequestEndpoint.getDestinationName() );
+            try {
+                while ( !_stop ) {
+                    try {
+                        Message jmsMessage = _consumer.receive( RECEIVE_TIMEOUT );
+                        if ( jmsMessage != null ) {
+                            oopses = 0;
+                            // todo support concurrent JMS messages some day
+                            JmsRequestHandler handler = new JmsRequestHandler();
+                            handler.onMessage( JmsReceiver.this, _bag, jmsMessage );
+                        }
+                    } catch ( Throwable e ) {
+                        _logger.log( Level.WARNING,
+                                     "Unable to receive message from JMS endpoint " + _inboundRequestEndpoint,
+                                     e );
+                        if ( oopses++ > MAXIMUM_OOPSES ) {
+                            _logger.severe( "Too many errors - shutting down listener for JMS endpoint " + _inboundRequestEndpoint );
+                            return;
+                        }
                     }
                 }
+            } finally {
+                _logger.info( "Stopping JMS poller on " + _inboundRequestEndpoint.getDestinationName() );
             }
+        }
+
+        public void close() {
+            stop();
+            if ( _bag != null ) _bag.close();
         }
 
         // JMS stuff
@@ -286,6 +301,9 @@ public class JmsReceiver implements ServerComponentLifecycle {
      * Stops the receiver, e.g. temporarily.
      */
     public synchronized void stop() throws LifecycleException {
+        if ( _loop != null ) {
+            _loop.stop();
+        }
     }
 
     /**
@@ -296,7 +314,13 @@ public class JmsReceiver implements ServerComponentLifecycle {
      */
     public synchronized void close() throws LifecycleException {
         _initialized = false;
-        _bag.close();
+        if ( _loop == null )
+            _bag.close();
+        else
+            _loop.close(); // This will close the bag too
+
     }
+
+    private MessageLoop _loop;
 
 }

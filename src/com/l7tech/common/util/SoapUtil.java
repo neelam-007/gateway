@@ -14,6 +14,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.rpc.NamespaceConstants;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /**
  * @author alex
@@ -348,6 +350,22 @@ public class SoapUtil {
         return importingDocument;
     }
 
+    public static SOAPFault makeFault( String faultCode, String faultString ) throws SOAPException {
+        SOAPMessage msg = makeMessage();
+        SOAPPart spart = msg.getSOAPPart();
+        SOAPEnvelope senv = spart.getEnvelope();
+        return SoapUtil.addFaultTo(msg, faultCode, faultString);
+    }
+
+    public static String soapMessageToString( SOAPMessage msg, String encoding ) throws IOException, SOAPException {
+        return new String( soapMessageToByteArray( msg ), encoding );
+    }
+
+    public static byte[] soapMessageToByteArray( SOAPMessage msg ) throws IOException, SOAPException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
+        msg.writeTo(baos);
+        return baos.toByteArray();
+    }
 
     public static final String FC_CLIENT = "Client";
     public static final String FC_SERVER = "Server";

@@ -170,7 +170,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         } catch ( NamingException e ) {
             _logger.log( Level.INFO, "Caught NamingException while testing connection", e );
             throw new JmsTestException( e.toString() );
-        } catch ( JmsUtil.JmsConfigException e ) {
+        } catch ( JmsConfigException e ) {
             _logger.log( Level.INFO, "Caught JmsConfigException while testing connection", e );
             throw new JmsTestException( e.toString() );
         }
@@ -229,7 +229,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         } catch ( NamingException e ) {
             _logger.log( Level.INFO, "Caught NamingException while testing endpoint", e );
             throw new JmsTestException( e.toString() );
-        } catch ( JmsUtil.JmsConfigException e ) {
+        } catch ( JmsConfigException e ) {
             _logger.log( Level.INFO, "Caught JmsConfigException while testing endpoint", e );
             throw new JmsTestException( e.toString() );
         } catch ( Throwable t ) {

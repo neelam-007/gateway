@@ -47,6 +47,7 @@ public class JmsBag {
     }
 
     public void close() {
+        _closed = true;
         _logger.info( "Closing JmsBag" );
         try {
             if ( _session != null ) _session.close();
@@ -76,8 +77,10 @@ public class JmsBag {
     }
 
     protected void finalize() {
-        _logger.warning( "JmsBag finalized" );
-        close();
+        if ( !_closed ) {
+            _logger.warning( "JmsBag finalized" );
+            close();
+        }
     }
 
     private static final Logger _logger = LogManager.getInstance().getSystemLogger();
@@ -85,4 +88,5 @@ public class JmsBag {
     private Connection _connection;
     private Session _session;
     private Context _jndiContext;
+    private volatile boolean _closed = false;
 }

@@ -24,12 +24,6 @@ import java.net.PasswordAuthentication;
  */
 public class JmsUtil {
 
-    public static class JmsConfigException extends Exception {
-        JmsConfigException( String message ) {
-            super( message );
-        }
-    }
-
     /**
      * Establishes a connection to a JMS provider, returning the necessary {@link ConnectionFactory},
      * {@link Connection} and {@link Session} inside a {@link JmsBag}.

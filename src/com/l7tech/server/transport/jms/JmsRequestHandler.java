@@ -11,27 +11,47 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.logging.LogManager;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.service.PublishedService;
+import com.l7tech.message.Request;
 
 import javax.jms.*;
+import javax.xml.soap.*;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.w3c.dom.Element;
 
 /**
  * @author alex
  * @version $Revision$
  */
 class JmsRequestHandler {
+
     /**
      * Handle an incoming JMS SOAP request.  Also takes care of sending the reply if appropriate.
      * @param receiver
      * @param bag
      * @param jmsRequest
      */
-    public void onMessage( JmsReceiver receiver, JmsBag bag, Message jmsRequest ) {
-        TextMessage jmsResponse = null;
+    public void onMessage( JmsReceiver receiver, JmsBag bag, Message jmsRequest ) throws JmsRuntimeException {
+        Message jmsResponse = null;
         try {
-            jmsResponse = bag.getSession().createTextMessage();
+            if ( jmsRequest instanceof TextMessage ) {
+                jmsResponse = bag.getSession().createTextMessage();
+            } else if ( jmsRequest instanceof BytesMessage ) {
+                jmsResponse = bag.getSession().createBytesMessage();
+            } else {
+                String msg = "Received message of unsupported type " + jmsRequest.getClass().getName() +
+                             " on " + receiver.getInboundRequestEndpoint().getDestinationName() +
+                             ".  Only TextMessage and BytesMessage are supported";
+                _logger.warning( msg );
+                throw new JmsRuntimeException( msg );
+            }
             JmsTransportMetadata jtm = new JmsTransportMetadata(jmsRequest, jmsResponse);
             processMessage( jtm, receiver, bag );
         } catch (JMSException e) {
@@ -39,7 +59,7 @@ class JmsRequestHandler {
         }
     }
 
-    private void processMessage( JmsTransportMetadata jmsMetadata, JmsReceiver receiver, JmsBag bag ) {
+    private void processMessage( JmsTransportMetadata jmsMetadata, JmsReceiver receiver, JmsBag bag ) throws JmsRuntimeException {
         AssertionStatus status = AssertionStatus.UNDEFINED;
 
         Message jmsRequest = jmsMetadata.getRequest();
@@ -52,25 +72,51 @@ class JmsRequestHandler {
             status = MessageProcessor.getInstance().processMessage( soapRequest, soapResponse );
 
             // TODO build response
-
             Message jmsResponse = jmsMetadata.getResponse();
-            if ( jmsResponse instanceof TextMessage ) {
-                TextMessage tresp = (TextMessage)jmsResponse;
-                String responseXml = soapResponse.getResponseXml();
-                tresp.setText( responseXml );
+
+            String responseXml = soapResponse.getResponseXml();
+            if ( responseXml == null || responseXml.length() == 0 ) {
+                SOAPMessage msg = SoapUtil.makeMessage();
+                SOAPPart spart = msg.getSOAPPart();
+                SOAPEnvelope senv = spart.getEnvelope();
+                SOAPFault fault = SoapUtil.addFaultTo( msg, SoapUtil.FC_SERVER,
+                                                       status.getMessage() );
+                responseXml = SoapUtil.soapMessageToString( msg, "UTF-8" ); // TODO ENCODING @)$(*)!!
             }
 
-            sendResponse( soapRequest, soapResponse, receiver, bag, status );
+            if ( jmsResponse instanceof TextMessage ) {
+                TextMessage tresp = (TextMessage)jmsResponse;
+                tresp.setText( responseXml );
+            } else if ( jmsResponse instanceof BytesMessage ) {
+                BytesMessage bresp = (BytesMessage)jmsResponse;
+                bresp.writeBytes( responseXml.getBytes( "UTF-8" ) ); // TODO ENCODING
+            } else {
+                throw new JmsRuntimeException( "Can't send a " + jmsResponse.getClass().getName() +
+                                               ". Only BytesMessage and TextMessage are supported" );
+            }
+
+            sendResponse( soapRequest, receiver, bag, status );
         } catch (IOException e) {
             _logger.log( Level.WARNING, e.toString(), e );
         } catch (PolicyAssertionException e) {
             _logger.log( Level.WARNING, e.toString(), e );
         } catch (JMSException e) {
             _logger.log( Level.WARNING, "Couldn't acknowledge message!", e );
+        } catch ( SOAPException e ) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
     }
 
-    private void sendResponse( JmsSoapRequest soapRequest, JmsSoapResponse soapResponse,
+    private SOAPEnvelope makeFault( String faultCode, String faultString ) throws SOAPException {
+        SOAPMessage msg = SoapUtil.makeMessage();
+        SOAPPart spart = msg.getSOAPPart();
+        SOAPEnvelope senv = spart.getEnvelope();
+        SOAPFault fault = SoapUtil.addFaultTo(msg, faultCode, faultString);
+        msg.saveChanges();
+        return senv;
+    }
+
+    private void sendResponse( JmsSoapRequest soapRequest,
                               JmsReceiver receiver, JmsBag bag,
                               AssertionStatus status ) {
 
@@ -79,7 +125,7 @@ class JmsRequestHandler {
         Message jmsResponseMsg = jtm.getResponse();
 
         try {
-            Queue jmsReplyDest = (Queue) receiver.getOutboundResponseDestination( jmsRequestMsg, jmsResponseMsg );
+            Destination jmsReplyDest = receiver.getOutboundResponseDestination( jmsRequestMsg, jmsResponseMsg );
             if ( status != AssertionStatus.NONE ) {
                 // Send response to failure endpoint if defined
                 JmsEndpoint fail = receiver.getFailureEndpoint();
@@ -96,14 +142,21 @@ class JmsRequestHandler {
                 _logger.fine( "No response will be sent!" );
             } else {
                 _logger.fine( "Sending response to " + jmsReplyDest );
-                MessageProducer replySender = null;
+                MessageProducer producer = null;
                 try {
-                    replySender = bag.getSession().createProducer( jmsReplyDest );
+                    Session session = bag.getSession();
+                    if ( session instanceof QueueSession ) {
+                        producer = ((QueueSession)session).createSender( (Queue)jmsReplyDest );
+                    } else if ( session instanceof TopicSession ) {
+                        producer = ((TopicSession)session).createPublisher( (Topic)jmsReplyDest );
+                    } else {
+                        producer = session.createProducer( jmsReplyDest );
+                    }
                     jmsResponseMsg.setJMSCorrelationID( jmsRequestMsg.getJMSCorrelationID() );
-                    replySender.send( jmsResponseMsg );
+                    producer.send( jmsResponseMsg );
                     _logger.fine( "Sent response to " + jmsReplyDest );
                 } finally {
-                    if ( replySender != null ) replySender.close();
+                    if ( producer != null ) producer.close();
                 }
             }
         } catch ( JMSException e ) {
