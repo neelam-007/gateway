@@ -142,7 +142,7 @@ class CertificatePanel extends JPanel {
                       String longest = cols[i];
                       for (int j = 0; j < rows; j++) {
                           String val = (String)certificateTableModel.getValueAt(j, i);
-                          if (val.length() > longest.length()) {
+                          if (val != null && val.length() > longest.length()) {
                               longest = val;
                           }
                       }
