@@ -32,6 +32,7 @@ public class ClusterStatusWorker extends SwingWorker {
     private Hashtable newNodeList;
     private Hashtable currentNodeList;
     private long clusterRequestCount;
+    private boolean remoteExceptionCaught;
 
     private ServiceAdmin serviceManager = null;
     static Logger logger = Logger.getLogger(ClusterStatusWorker.class.getName());
@@ -42,6 +43,7 @@ public class ClusterStatusWorker extends SwingWorker {
         this.currentNodeList = currentNodeList;
 
         statsList = new Hashtable();
+        remoteExceptionCaught = false;
     }
 
     public Hashtable getNewNodeList(){
@@ -49,6 +51,10 @@ public class ClusterStatusWorker extends SwingWorker {
     }
     public long getClusterRequestCount(){
         return clusterRequestCount;
+    }
+
+    public boolean isRemoteExceptionCaught(){
+        return remoteExceptionCaught;
     }
 
     public Vector getStatisticsList(){
@@ -65,9 +71,13 @@ public class ClusterStatusWorker extends SwingWorker {
 
     public Object construct() {
 
-        if(serviceManager == null || clusterStatusService == null || currentNodeList == null)
+        if(serviceManager == null || clusterStatusService == null)
         {
-            return statsList;
+            return null;
+        }
+
+        if(currentNodeList == null){
+            throw new RuntimeException("The current node list is NULL");
         }
 
         // create a new empty node list
@@ -79,9 +89,14 @@ public class ClusterStatusWorker extends SwingWorker {
         try {
             cluster = clusterStatusService.getClusterStatus();
         } catch (FindException e) {
-            System.err.println("ERROR " + e.getMessage());
+            logger.log(Level.WARNING, "Unable to find cluster status from server", e);
         } catch (RemoteException e) {
-            System.err.println("ERROR " + e.getMessage());
+            remoteExceptionCaught = true;
+            logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
+        }
+
+        if(cluster == null){
+            return null;
         }
 
 //        System.out.println("Number of nodes in the new list is: " + cluster.length);
@@ -119,13 +134,14 @@ public class ClusterStatusWorker extends SwingWorker {
         try {
             serviceStats = clusterStatusService.getServiceUsage();
         } catch (FindException e) {
-            System.err.println("ERROR " + e.getMessage());
+            logger.log(Level.WARNING, "Unable to find service statistics from server", e);
         } catch (RemoteException e) {
-            System.err.println("ERROR " + e.getMessage());
+            remoteExceptionCaught = true;
+            logger.log(Level.SEVERE, "Remote exception when retrieving service statistics from server", e);
         }
 
-        if (serviceStats != null) {
-//            System.out.println("Number of service statistics is: " + serviceStats.length);
+        if (serviceStats == null) {
+            return null;
         }
 
         com.l7tech.objectmodel.EntityHeader[] entityHeaders = null;
@@ -150,6 +166,7 @@ public class ClusterStatusWorker extends SwingWorker {
 
             }
         } catch (RemoteException e) {
+            remoteExceptionCaught = true;
             logger.log(Level.SEVERE, "Remote exception when retrieving published services from server", e);
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to find all published services from server", e);

@@ -485,21 +485,32 @@ public class ClusterStatusWindow extends JFrame {
         // create a worker thread to retrieve the Service statistics
         final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList) {
             public void finished() {
-                //updateServerMetricsFields(getMetrics());
-                statisticsPane.updateStatisticsTable(this.getStatisticsList());
 
-                currentNodeList = getNewNodeList();
-                updateClusterRequestCounterCache(this.getClusterRequestCount());
+                // Note: the get() operation is a blocking operation.
+                if (this.get() != null) {
+                    //updateServerMetricsFields(getMetrics());
+                    statisticsPane.updateStatisticsTable(this.getStatisticsList());
 
-                Vector cs = prepareClusterStatusData();
+                    currentNodeList = getNewNodeList();
+                    updateClusterRequestCounterCache(this.getClusterRequestCount());
 
-                getClusterStatusTableModel().setData(cs);
-                getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
-                getClusterStatusTableModel().fireTableDataChanged();
+                    Vector cs = prepareClusterStatusData();
 
-                SimpleDateFormat sdf = new SimpleDateFormat( "MMM d yyyy HH:mm:ss aaa" );;
-                getLastUpdateLabel().setText("Last updated: " + sdf.format( Calendar.getInstance().getTime() ) + "      ");
-                getStatusRefreshTimer().start();
+                    getClusterStatusTableModel().setData(cs);
+                    getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
+                    getClusterStatusTableModel().fireTableDataChanged();
+
+                    SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy HH:mm:ss aaa");
+                    ;
+                    getLastUpdateLabel().setText("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      ");
+                    getStatusRefreshTimer().start();
+                }
+                else{
+                    if(isRemoteExceptionCaught()){
+                        // the connection to the cluster is down
+                        onDisconnect();
+                    }
+                }
             }
         };
 
