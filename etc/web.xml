@@ -115,6 +115,17 @@
        <url-pattern>/ssg/servlet/AdminServlet</url-pattern>
      </servlet-mapping>
 
+    <!--
+    Map all requests that would otherwise be 404s to the SOAP servlet, for
+    transparency purposes
+    -->
+    <!--
+    <servlet-mapping>
+        <servlet-name>SoapMessageProcessingServlet</servlet-name>
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+    -->
+
     <welcome-file-list id="WelcomeFileList_1">
         <welcome-file>index.html</welcome-file>
         <welcome-file>index.jsp</welcome-file>
