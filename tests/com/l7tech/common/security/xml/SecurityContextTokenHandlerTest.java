@@ -2,6 +2,7 @@ package com.l7tech.common.security.xml;
 
 import junit.framework.TestCase;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
@@ -27,20 +28,29 @@ import java.io.StringWriter;
  */
 public class SecurityContextTokenHandlerTest extends TestCase {
 
+    private SecurityContextTokenHandler securityContextTokenHandler = SecurityContextTokenHandler.getInstance();
+    private static final int MESSAGE_NUM = 69;
+
     public void testAppendAndReadSession() throws Exception {
         Document doc = stringToDocument(simpleDoc);
         System.out.println("Original doc");
         System.out.println(documentToString(doc));
-        byte[] sessionid = SecurityContextTokenHandler.generateNewSessionId();
-        SecurityContextTokenHandler.appendSessionInfoToSoapMessage(doc, sessionid, 69, System.currentTimeMillis());
+        byte[] sessionid = securityContextTokenHandler.generateNewSessionId();
+        securityContextTokenHandler.appendSessionInfoToSoapMessage(doc, sessionid, MESSAGE_NUM, System.currentTimeMillis());
         System.out.println("Modified doc");
         System.out.println(documentToString(doc));
         // test that we can get sesionid out of this.
-        byte[] session2 = SecurityContextTokenHandler.getSessionIdFromWSCToken(doc);
+        byte[] session2 = securityContextTokenHandler.getSessionIdFromWSCToken(doc);
         for (int i = 0; i < sessionid.length; i++) {
             assertTrue(sessionid[i] == session2[i]);
         }
         System.out.println("sessionid match");
+
+        Element token = securityContextTokenHandler.getSecurityContextTokenElement(doc);
+        Long messageNum = securityContextTokenHandler.getMessageNumber(token);
+        assertTrue(messageNum != null);
+        assertTrue(messageNum.longValue() == MESSAGE_NUM);
+
     }
 
     private Document stringToDocument(String docStr)  throws Exception {

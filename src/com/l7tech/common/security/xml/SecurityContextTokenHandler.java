@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.TimeZone;
-import java.util.Date;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Appends and parses out xml security session information in/out of soap messages.
@@ -28,15 +28,21 @@ import java.util.Date;
  * $Id$
  */
 public class SecurityContextTokenHandler {
+    private static final Logger log = Logger.getLogger(SecurityContextTokenHandler.class.getName());
     private static final int SESSION_BYTES = 16;
+    private static final SecurityContextTokenHandler INSTANCE = new SecurityContextTokenHandler();
 
     private SecurityContextTokenHandler() {}
+
+    public static SecurityContextTokenHandler getInstance() {
+        return INSTANCE;
+    }
 
     /**
      * Generates a new random session id of 16 bytes.
      * @return
      */
-    public static byte[] generateNewSessionId() {
+    public byte[] generateNewSessionId() {
         byte[] sessionid = new byte[SESSION_BYTES];
         rand.nextBytes(sessionid);
         return sessionid;
@@ -47,7 +53,7 @@ public class SecurityContextTokenHandler {
      * @param rawSessionId a session id 16 bytes long
      * @return URI representation (looks like uuid:base64edrawsessionid)
      */
-    public static String sessionIdToURI(byte[] rawSessionId) {
+    public String sessionIdToURI(byte[] rawSessionId) {
         // the sanity check
         if (rawSessionId == null || rawSessionId.length != SESSION_BYTES) {
             throw new IllegalArgumentException("Session ID is the wrong length");
@@ -65,7 +71,7 @@ public class SecurityContextTokenHandler {
      *
      * @return a document containing the soap message with a RequestSecurityToken body
      */
-    public static Document createNewRequestSecurityToken() throws IOException, SAXException {
+    public Document createNewRequestSecurityToken() throws IOException, SAXException {
         return XmlUtil.stringToDocument(REQUESTSECURITYTOKEN_SOAPMSG);
     }
 
@@ -74,7 +80,7 @@ public class SecurityContextTokenHandler {
      * @param uri URI representation (looks like uuid:base64edrawsessionid)
      * @return a 16 bytes session id
      */
-    public static byte[] URIToSessionId(String uri) throws IOException {
+    public byte[] URIToSessionId(String uri) throws IOException {
         if (uri == null || !uri.startsWith(URI_PREFIX)) {
             throw new IllegalArgumentException("This is not a proper sessionid URI (" + uri + ")");
         }
@@ -88,54 +94,96 @@ public class SecurityContextTokenHandler {
      * extra parameter should be used when a sessionid is 'suggested' to a SSG for the first time.
      * TODO: should we strip any existing SecurityContextToken from the SecurityHeader?
      */
-    public static void appendSessionInfoToSoapMessage(Document soapmsg, byte[] sessionid, long seqnumber,
+    public void appendSessionInfoToSoapMessage(Document soapmsg, byte[] sessionid, long seqnumber,
                                                       long creationtimestamp) {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
         appendIDElement(securityCtxTokEl, sessionid);
-        appendSeqElement(securityCtxTokEl, seqnumber);
+        setMessageNumber(securityCtxTokEl, new Long(seqnumber));
         appendCreationElement(securityCtxTokEl, creationtimestamp);
     }
 
     /**
      * Attempts to extract the session id from a wsse:Security/wsc:SecurityContextToken/wsc:Identifier element
      * @return null if not present
+     * @throws IOException if the URI is formatted incorrectly
+     * @throws XmlUtil.MultipleChildElementsException if there is more than one SOAP header, security header,
+     *                                                security context token, or token ID.
      */
-    public static byte[] getSessionIdFromWSCToken(Document soapMsg) throws IOException {
+    public byte[] getSessionIdFromWSCToken(Document soapMsg) throws IOException, XmlUtil.MultipleChildElementsException {
         // get the element
-        NodeList listIdElements = soapMsg.getElementsByTagNameNS(WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
-        if (listIdElements.getLength() < 1) {
+        Element token = getSecurityContextTokenElement(soapMsg);
+        Element idel = XmlUtil.findOnlyOneChildElementByName(token, WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
+        String childText = XmlUtil.findFirstChildTextNode(idel);
+        return URIToSessionId(childText);
+    }
+
+    /**
+     * Get the SecurityContextToken element from the specified SOAP message, or null if there isn't one.
+     * @param doc the SOAP envelope to examine
+     * @return the SecurityContextToken element from the SOAP security header, or null
+     * @throws XmlUtil.MultipleChildElementsException if there was more than one SOAP header, security header,
+     *                                                or SecurityContextToken
+     */
+    public Element getSecurityContextTokenElement(Document doc) throws XmlUtil.MultipleChildElementsException {
+        String soapns = doc.getDocumentElement().getNamespaceURI();
+        Element header = XmlUtil.findOnlyOneChildElementByName(doc.getDocumentElement(), soapns, SoapUtil.HEADER_EL_NAME);
+        if (header == null)
+           return null;
+        Element security = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.SECURITY_NAMESPACE, SoapUtil.SECURITY_EL_NAME);
+        if (security == null)
+            security = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.SECURITY_NAMESPACE2, SoapUtil.SECURITY_EL_NAME);
+        if (security == null)
+            return null;
+        Element token = XmlUtil.findOnlyOneChildElementByName(security, WSC_NAMESPACE, SCTOKEN_ELNAME);
+        return token;
+    }
+
+    /**
+     * Get the MessageNumber from the specified SecurityContextToken.
+     *
+     * @param securityContextToken the token to examine
+     * @return the MessageNumber, or null if there wasn't one.
+     * @throws XmlUtil.MultipleChildElementsException if there is more than one MessageNumber element in this
+     *                                                SecurityContextToken.
+     */
+    public Long getMessageNumber(Element securityContextToken) throws XmlUtil.MultipleChildElementsException {
+        if (securityContextToken == null)
+            return null;
+        Element mn = XmlUtil.findOnlyOneChildElementByName(securityContextToken, L7_NAMESPACE, MESSAGE_NUMBER_ELNAME);
+        if (mn == null)
+            return null;
+        try {
+            return Long.valueOf(XmlUtil.findFirstChildTextNode(mn));
+        } catch (NumberFormatException e) {
             return null;
         }
-        Element idel = (Element)listIdElements.item(0);
-        // get its text child
-        StringBuffer childText = new StringBuffer();
-        NodeList children = idel.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node kid = children.item(i);
-            if (kid.getNodeType() == Node.TEXT_NODE) {
-                childText.append(kid.getNodeValue());
-            }
-        }
-        // convert back to session id
-        return URIToSessionId(childText.toString());
     }
 
-    public static long getSequenceNumberFromWSCToken(Document soapMsg) {
-        // todo
-        return -1;
-    }
+    /**
+     * Set the MessageNumber element within the specified SecurityContextToken.
+     *
+     * @param securityContextToken  the token to update.
+     * @param messageNumber  the new message number to set.  Set it to null to delete any existing MessageNumber.
+     */
+    private void setMessageNumber(Element securityContextToken, Long messageNumber) {
+        Document doc = securityContextToken.getOwnerDocument();
 
-    private static void appendSeqElement(Element securityCtxTokenEl, long seqnumber) {
-        Document doc = securityCtxTokenEl.getOwnerDocument();
+        // Remove any existing message number(s)
+        XmlUtil.removeChildElementsByName(securityContextToken, L7_NAMESPACE, MESSAGE_NUMBER_ELNAME);
+
+        if (messageNumber == null)
+            return;
+
+        // Create a new one
         Element messageNumberEl = doc.createElementNS(L7_NAMESPACE, MESSAGE_NUMBER_ELNAME);
         messageNumberEl.setAttribute("xmlns:" + L7_NAMESPACE_PREFIX, L7_NAMESPACE);
         messageNumberEl.setPrefix(L7_NAMESPACE_PREFIX);
-        Text messageNumberText = doc.createTextNode(String.valueOf(seqnumber));
+        Text messageNumberText = doc.createTextNode(String.valueOf(messageNumber));
         messageNumberEl.appendChild(messageNumberText);
-        securityCtxTokenEl.insertBefore(messageNumberEl, null);
+        securityContextToken.insertBefore(messageNumberEl, null);
     }
 
-    private static void appendCreationElement(Element securityCtxTokenEl, long creationTimeStamp) {
+    private void appendCreationElement(Element securityCtxTokenEl, long creationTimeStamp) {
         Element createdEl = securityCtxTokenEl.getOwnerDocument().createElementNS(WSU_NAMESPACE, CREATED_ELNAME);
         createdEl.setAttribute("xmlns:" + DEF_WSU_PREFIX, WSU_NAMESPACE);
         createdEl.setPrefix(DEF_WSU_PREFIX);
@@ -145,7 +193,7 @@ public class SecurityContextTokenHandler {
         securityCtxTokenEl.insertBefore(createdEl, null);
     }
 
-    private static void appendIDElement(Element securityCtxTokenEl, byte[] sessionid) {
+    private void appendIDElement(Element securityCtxTokenEl, byte[] sessionid) {
         String currentwscPrefix = securityCtxTokenEl.getPrefix();
         Element idElement = securityCtxTokenEl.getOwnerDocument().createElementNS(WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
         idElement.setPrefix(currentwscPrefix);
@@ -157,7 +205,7 @@ public class SecurityContextTokenHandler {
     /**
      * Gets the WSC:SecurityContextToken element out of the message. If not present, creates it.
      */
-    private static Element getOrMakeSecurityContextTokenElement(Document soapMsg) {
+    private Element getOrMakeSecurityContextTokenElement(Document soapMsg) {
         NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(WSC_NAMESPACE, SCTOKEN_ELNAME);
         if (listSecurityElements.getLength() < 1) {
             // element does not exist
