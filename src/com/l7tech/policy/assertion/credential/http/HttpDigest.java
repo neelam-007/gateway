@@ -23,6 +23,7 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
     public static final String PARAM_ALGORITHM = "algorithm";
     public static final String PARAM_NC = "nc";
     public static final String PARAM_URI = "uri";
+    public static final String PARAM_OPAQUE = "opaque";
 
     public static final String SCHEME = "Digest";
 
@@ -30,6 +31,17 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
     public static final String QOP_AUTH = "auth";
     public static final String QOP_AUTH_INT = "auth-int";
     public static final String ALGORITHM_MD5 = "md5";
+
+    /**
+     * Default maximum age of a nonce, 30 minutes.
+     */
+    public static final int DEFAULT_NONCE_TIMEOUT = 30 * 60 * 1000;
+
+    /**
+     * Default maximum number of uses of a nonce, 30.
+     */
+    public static final int DEFAULT_NONCE_MAXUSES = 30;
+
 
     public String scheme() {
         return SCHEME;
@@ -69,6 +81,6 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
         _nonceTimeout = nonceTimeout;
     }
 
-    protected int _nonceTimeout = 60 * 30 * 1000;
-    protected int _maxNonceCount = 30;
+    protected int _nonceTimeout = DEFAULT_NONCE_TIMEOUT;
+    protected int _maxNonceCount = DEFAULT_NONCE_MAXUSES;
 }
