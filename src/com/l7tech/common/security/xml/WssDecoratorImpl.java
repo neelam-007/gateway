@@ -48,23 +48,6 @@ public class WssDecoratorImpl implements WssDecorator {
         Map idToElementCache = new HashMap();
     }
 
-    private static class CausedDecoratorException extends DecoratorException {
-        CausedDecoratorException(String message) {
-            super();
-            initCause(new RuntimeException(message));
-        }
-
-        CausedDecoratorException(String message, Throwable cause) {
-            super();
-            initCause(new RuntimeException(message, cause));
-        }
-
-        CausedDecoratorException(Throwable cause) {
-            super();
-            initCause(cause);
-        }
-    }
-
     /**
      * Decorate a soap message with WSS style security.
      * @param message the soap message to decorate
@@ -304,7 +287,7 @@ public class WssDecoratorImpl implements WssDecorator {
         else if (senderSigningKey instanceof SecretKey)
             signaturemethod = SignatureMethod.HMAC;
         else {
-            throw new CausedDecoratorException("Private Key type not supported " +
+            throw new DecoratorException("Private Key type not supported " +
                                                senderSigningKey.getClass().getName());
         }
 
@@ -313,10 +296,20 @@ public class WssDecoratorImpl implements WssDecorator {
                                                            XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
         template.setPrefix("ds");
         for (int i = 0; i < elementsToSign.length; i++) {
-            Reference ref = template.createReference("#" + signedIds[i]);
-            if (XmlUtil.isElementAncestor(securityHeader, elementsToSign[i])) {
+            final Element element = elementsToSign[i];
+            final String id = signedIds[i];
+
+            // Work-around for Bug #996 - if element is not in any namespace, ensure that an explicit xmlns="" is present
+            if (element.getPrefix() == null || element.getPrefix().length() < 1) {
+                if (element.getNamespaceURI() == null || element.getNamespaceURI().length() < 1) {
+                    throw new DecoratorException("Unable to directly sign an element that has no namespace");
+                }
+            }
+
+            Reference ref = template.createReference("#" + id);
+            if (XmlUtil.isElementAncestor(securityHeader, element)) {
                 logger.info("Per policy, breaking Basic Security Profile rules with enveloped signature" +
-                            " of element " + elementsToSign[i].getLocalName() + " with Id=\"" + signedIds[i] + "\"");
+                            " of element " + element.getLocalName() + " with Id=\"" + id + "\"");
                 ref.addTransform(Transform.ENVELOPED);
             }
             ref.addTransform(Transform.C14N_EXCLUSIVE);
@@ -377,7 +370,7 @@ public class WssDecoratorImpl implements WssDecorator {
         try {
             sigContext.sign(emptySignatureElement, senderSigningKey);
         } catch (XSignatureException e) {
-            throw new CausedDecoratorException(e);
+            throw new DecoratorException(e);
         }
 
         Element signatureElement = (Element)securityHeader.appendChild(emptySignatureElement);
@@ -520,7 +513,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                     X509Certificate recipientCertificate,
                                     Element[] elementsToEncrypt,
                                     Element desiredNextSibling)
-            throws GeneralSecurityException, CausedDecoratorException
+            throws GeneralSecurityException, DecoratorException
     {
         Document soapMsg = securityHeader.getOwnerDocument();
 
@@ -591,7 +584,7 @@ public class WssDecoratorImpl implements WssDecorator {
      * @return the EncryptedData element that replaces the specified element.
      */
     private Element encryptElement(Element element, byte[] keyBytes)
-            throws CausedDecoratorException, GeneralSecurityException
+            throws DecoratorException, GeneralSecurityException
     {
         Document soapMsg = element.getOwnerDocument();
 
@@ -607,7 +600,7 @@ public class WssDecoratorImpl implements WssDecorator {
         try {
             encDataElement = encData.createElement(soapMsg, true);
         } catch (StructureException e) {
-            throw new CausedDecoratorException(e);
+            throw new DecoratorException(e);
         }
 
         // Create encryption context and encrypt the header subtree
@@ -624,11 +617,11 @@ public class WssDecoratorImpl implements WssDecorator {
             ec.encrypt();
             ec.replace();
         } catch (KeyInfoResolvingException e) {
-            throw new CausedDecoratorException(e); // can't happen
+            throw new DecoratorException(e); // can't happen
         } catch (StructureException e) {
-            throw new CausedDecoratorException(e); // shouldn't happen
+            throw new DecoratorException(e); // shouldn't happen
         } catch (IOException e) {
-            throw new CausedDecoratorException(e); // shouldn't happen
+            throw new DecoratorException(e); // shouldn't happen
         }
 
         Element encryptedData = ec.getEncryptedTypeAsElement();

@@ -453,7 +453,13 @@ public class WssDecoratorTest extends TestCase {
 
 
     public void testSignedGooglesearchResponse() throws Exception {
-        runTest(getSignedGooglesearchResponseTestDocument());
+        try {
+            runTest(getSignedGooglesearchResponseTestDocument());
+            fail("Attempt to directly sign element with no namespace was expected to fail");
+        } catch (WssDecorator.DecoratorException e) {
+            // ok
+            log.info("The correct exception was thrown: " + e);
+        }
     }
 
     public TestDocument getSignedGooglesearchResponseTestDocument() throws Exception {

@@ -24,7 +24,12 @@ import java.util.Set;
  * @author mike
  */
 public interface WssDecorator {
-    public static class DecoratorException extends Exception {}
+    public static class DecoratorException extends Exception {
+        public DecoratorException() {}
+        public DecoratorException(String message) {super(message);}
+        public DecoratorException(Throwable cause) {super(cause);}
+        public DecoratorException(String message, Throwable cause) {super(message, cause);}
+    }
 
     class DecorationRequirements {
         public X509Certificate getRecipientCertificate() {
