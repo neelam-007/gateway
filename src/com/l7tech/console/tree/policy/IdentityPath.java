@@ -257,9 +257,9 @@ public class IdentityPath {
             if (o1.getClass() != o2.getClass()) {
                 return -1;
             }
-            if (User.class.equals(o1.getClass())) {
+            if (o1 instanceof User) {
                 return compareUsers((User)o1, (User)o2);
-            } else if (Group.class.equals(o1.getClass())) {
+            } else if (o1 instanceof Group) {
                 return compareGroup((Group)o1, (Group)o2);
             }
             throw new ClassCastException("Don't know how to handle " + o1.getClass());
