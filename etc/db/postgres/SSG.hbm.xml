@@ -71,12 +71,14 @@
 
     <class name="com.l7tech.identity.internal.GroupMembership" table="internal_user_group">
         <composite-id>
-            <key-property name="userOid"/>
-            <key-property name="groupOid"/>
+            <key-property name="userOid" column="internal_user" type="long"/>
+            <key-property name="groupOid" column="internal_group" type="long"/>
         </composite-id>
 
+        <!--
         <property name="userOid" type="long" column="internal_user"/>
         <property name="groupOid" type="long" column="internal_group"/>
+        -->
     </class>
 
 
