@@ -5,7 +5,7 @@ import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.panels.XmlEncAssertionDialog;
-import com.l7tech.console.tree.policy.XmlEncAssertionTreeNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.policy.assertion.xmlsec.XmlEncAssertion;
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class XmlEncPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(XmlEncPropertiesAction.class.getName());
 
-    public XmlEncPropertiesAction(XmlEncAssertionTreeNode node) {
+    public XmlEncPropertiesAction(AssertionTreeNode node) {
         super(node);
     }
 
