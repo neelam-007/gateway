@@ -88,7 +88,7 @@ public class XmlMangler {
 
 
     /**
-     * In-place encrypt of the specified SOAP document's body element.  The body element will be encrypted with AES128
+     * In-place encrypt of the specified SOAP document's element.  The element will be encrypted with AES128
      * using the specified AES128 key, which will be tagged with the specified KeyName.
      * 
      * @param element  the element to encrypt
