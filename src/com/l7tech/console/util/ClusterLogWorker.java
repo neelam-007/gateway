@@ -186,6 +186,7 @@ public class ClusterLogWorker extends SwingWorker {
                     }
                 } catch (RemoteException e) {
                     logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
+                    remoteExceptionCaught = true;
                     throw new RuntimeException(e);
                 }
 
