@@ -360,6 +360,7 @@ public class IdentityPath {
             GroupBean g = new GroupBean();
             g.setName(mog.getGroupName());
             g.setProviderId(mog.getIdentityProviderOid());
+            g.setUniqueIdentifier(g.getName());
             return g;
         }
         throw new IllegalArgumentException("Unknown assertion type " + assertion);
