@@ -20,7 +20,6 @@ import java.awt.event.MouseEvent;
  * User: mike
  * Date: May 29, 2003
  * Time: 3:22:24 PM
- * To change this template use Options | File Templates.
  */
 public class SsgListPanel extends JPanel {
     private final ClientLogger log = ClientLogger.getInstance(SsgListPanel.class);
@@ -69,7 +68,7 @@ public class SsgListPanel extends JPanel {
                                                                    boolean isSelected, boolean hasFocus,
                                                                    int row, int column) {
                         Component c = ce.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        Ssg ssg = (Ssg) ssgTableModel.getSsgAtRow(row);
+                        Ssg ssg = ssgTableModel.getSsgAtRow(row);
                         if (ssg.isDefaultSsg()) {
                             FontUtil.emboldenFont(c);
                         }
@@ -212,5 +211,23 @@ public class SsgListPanel extends JPanel {
      */
     public int getNumSsgs() {
         return ssgTableModel.getRowCount();
+    }
+
+    /**
+     * Select the row containing the default Ssg.  If there is no default Ssg, selects the first Ssg
+     * on the list, if any.
+     */
+    public void selectDefaultSsg() {
+        int rowCount = ssgTableModel.getRowCount();
+        if (rowCount < 1)
+            return;
+        for (int i = 0; i < rowCount; ++i) {
+            Ssg ssg = ssgTableModel.getSsgAtRow(i);
+            if (ssg != null && ssg.isDefaultSsg()) {
+                ssgTable.getSelectionModel().setSelectionInterval(i, i);
+                return;
+            }
+        }
+        ssgTable.getSelectionModel().setSelectionInterval(0, 0);
     }
 }
