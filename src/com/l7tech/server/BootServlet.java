@@ -14,6 +14,7 @@ import com.l7tech.remote.jini.Services;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceManagerImp;
+import com.l7tech.cluster.ClusterInfoManager;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -44,6 +45,11 @@ public class BootServlet extends HttpServlet {
             if (Locator.getDefault().lookup(ServiceManager.class) == null) {
                 logger.severe("Could not instantiate the ServiceManager");
             }
+
+            ClusterInfoManager man = new ClusterInfoManager();
+            if (man.isCluster()) {
+                logger.finest("cluster");
+            } else logger.finest("not cluster");
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "SQL ERROR IN BOOT SERVLET", e);
             throw new ServletException(e);
