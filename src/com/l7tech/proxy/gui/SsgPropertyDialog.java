@@ -26,6 +26,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeModel;
+import javax.security.auth.x500.X500Principal;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -669,6 +670,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             radioNonstandardPorts.setSelected(customPorts);
             cbSavePassword.setSelected(ssg.isSavePasswordToDisk());
             updateCustomPortsEnableState();
+
+            if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
+                X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
+                String certNameString = certName.getName(X500Principal.CANONICAL);
+                fieldUsername.setText(certNameString.substring(3));
+                fieldUsername.setEditable(false);
+            }
 
             updatePolicyPanel();
         }
