@@ -199,7 +199,10 @@ public class ServerLogHandler extends Handler {
         } catch (HibernateException e) {
             reportException("cannot get session", e);
             return;
+        } finally {
+            if ( context != null ) context.close();
         }
+
         try {
             context.beginTransaction();
 
@@ -226,7 +229,7 @@ public class ServerLogHandler extends Handler {
         } catch(TransactionException e) {
             reportException("Exception with hibernate transaction", e);
         } finally {
-            context.close();
+            if ( context != null ) context.close();
         }
     }
 
@@ -243,6 +246,10 @@ public class ServerLogHandler extends Handler {
     }
 
     private static class LogDumper extends Thread {
+        public LogDumper() {
+            super( "LogDumper" );
+        }
+
         public void run() {
             if (parent == null) throw new IllegalStateException("parent not set");
             try {
