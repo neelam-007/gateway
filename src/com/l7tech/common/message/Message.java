@@ -42,6 +42,9 @@ public final class Message {
      * @param sm  the StashManager to use for stashing MIME parts temporarily.  Must not be null.
      * @param outerContentType  the content type of the body InputStream.  Must not be null.
      * @param body an InputStream positioned at the first byte of body content for this Message.
+     *             This <b>must not include</b> any outer headers (HTTP or otherwise) that may have
+     *             accompanied the body of this Message.  To attach the outer headers to the message,
+     *             see {@link #attachKnob} and {@link com.l7tech.common.message.HttpHeadersKnob}.
      * @throws NoSuchPartException if the message is multipart/related but contains no initial boundary
      * @throws IOException if there is a problem reading the initial boundary from a multipart/related body
      */
