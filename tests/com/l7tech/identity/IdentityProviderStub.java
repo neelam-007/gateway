@@ -1,6 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.identity.imp.IdentityProviderConfigImp;
+import com.l7tech.console.util.Registry;
 
 import java.security.Principal;
 
@@ -24,11 +25,11 @@ public class IdentityProviderStub implements IdentityProvider {
     }
 
     public UserManager getUserManager() {
-        return um;
+        return Registry.getDefault().getInternalUserManager();
     }
 
     public GroupManager getGroupManager() {
-        return gm;
+        return Registry.getDefault().getInternalGroupManager();
     }
 
     public boolean authenticate(Principal user, byte[] credentials) {
