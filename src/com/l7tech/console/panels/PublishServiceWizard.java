@@ -3,6 +3,8 @@ package com.l7tech.console.panels;
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.MatteBorder;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -19,10 +21,11 @@ public class PublishServiceWizard extends JDialog {
             new WizardStepPanel[]{
                 new ServicePanel(),
                 new EndpointCredentialsPanel(),
-               new IdentityProviderPanel()
+                new IdentityProviderPanel()
             };
 
     private int currentPanel = 0;
+
 
     /** Creates new form PublishServiceWizard */
     public PublishServiceWizard(Frame parent, boolean modal) {
@@ -46,6 +49,7 @@ public class PublishServiceWizard extends JDialog {
         cancelButton = new JButton();
         buttonHelp = new JButton();
         stepsjPanel = new JPanel();
+        stepsTitlejPanel = new javax.swing.JPanel();
         stepsjLabel = new JLabel();
         jSeparator1 = new JSeparator();
         stepjPanel = new JPanel();
@@ -119,21 +123,33 @@ public class PublishServiceWizard extends JDialog {
 
         stepsjPanel.setBackground(new Color(213, 222, 222));
         stepsjPanel.setBorder(new EtchedBorder());
-        stepsjPanel.setMinimumSize(new Dimension(180, 10));
-        stepsjPanel.setPreferredSize(new Dimension(180, 10));
+
+        stepsTitlejPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+        stepsTitlejPanel.setPreferredSize(new Dimension(150, 40));
+        stepsTitlejPanel.setMaximumSize(new Dimension(150, 40));
+
+        stepsTitlejPanel.setBackground(new java.awt.Color(213, 222, 222));
+        stepsTitlejPanel.
+                setBorder(new CompoundBorder(new EmptyBorder(new java.awt.Insets(5, 5, 5, 5)),
+                          new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0))));
+
+        stepsjLabel.setFont(new java.awt.Font("Dialog", 1, 14));
         stepsjLabel.setText("Steps");
-        stepsjPanel.add(stepsjLabel);
-        stepsjPanel.add(jSeparator1);
-        mainjPanel.add(stepsjPanel, BorderLayout.WEST);
+        stepsTitlejPanel.add(stepsjLabel);
+
+        stepsjPanel.add(stepsTitlejPanel);
+
+        mainjPanel.add(stepsjPanel, java.awt.BorderLayout.WEST);
+
 
         stepjPanel.setLayout(new BorderLayout());
-
         stepjPanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
         stepDescriptionjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         stepDescriptionjTextArea.setEditable(false);
         stepDescriptionjTextArea.setLineWrap(true);
         stepDescriptionjTextArea.setWrapStyleWord(true);
         stepDescriptionjTextArea.setRows(5);
+        stepDescriptionjTextArea.setBackground(stepDescriptionjScrollPane.getBackground());
         stepDescriptionjScrollPane.setViewportView(stepDescriptionjTextArea);
 
         stepjPanel.add(stepDescriptionjScrollPane, BorderLayout.SOUTH);
@@ -158,9 +174,11 @@ public class PublishServiceWizard extends JDialog {
 
                 for (int i = 0; i < panels.length; i++) {
                     stepLabels[i] = new JLabel(panels[i].getStepLabel());
+                    stepLabels[i].setFont(new java.awt.Font("Dialog", 1, 12));
+                    stepLabels[i].setForeground(Color.WHITE);
                     stepsjPanel.add(stepLabels[i]);
                 }
-                stepsjPanel.add(new JPanel());
+                stepsjPanel.add(Box.createGlue());
                 updateWizardUiState();
             }
         }
@@ -212,9 +230,9 @@ public class PublishServiceWizard extends JDialog {
     private void updateWizardStepLabels() {
         for (int i = 0; i < stepLabels.length; i++) {
             if (i == currentPanel) {
-                stepLabels[i].setForeground(Color.WHITE);
+                stepLabels[i].setForeground(Color.BLACK);
             } else {
-                stepLabels[i].setForeground(labelFgColor);
+                stepLabels[i].setForeground(Color.WHITE);
             }
         }
     }
@@ -227,6 +245,7 @@ public class PublishServiceWizard extends JDialog {
     private JLabel titlejLabel;
     private JButton buttonFinish;
     private JPanel stepsjPanel;
+    private JPanel stepsTitlejPanel;
     private JPanel stepjPanel;
     private JButton cancelButton;
     private JSeparator jSeparator1;
@@ -236,7 +255,4 @@ public class PublishServiceWizard extends JDialog {
     private JButton buttonHelp;
 
     private JLabel[] stepLabels = new JLabel[0];
-    // grab default foreground color for label
-    private Color labelFgColor = new JLabel().getForeground();
-
 }

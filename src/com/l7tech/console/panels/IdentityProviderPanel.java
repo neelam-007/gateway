@@ -3,6 +3,8 @@ package com.l7tech.console.panels;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import java.awt.*;
 
 
 /**
@@ -26,7 +28,6 @@ public class IdentityProviderPanel extends WizardStepPanel {
      * initialize the form.
      */
     private void initComponents() {
-        java.awt.GridBagConstraints gridBagConstraints;
 
         providerSelectorjPanel = new JPanel();
         selecProviderjLabel = new JLabel();
@@ -43,12 +44,11 @@ public class IdentityProviderPanel extends WizardStepPanel {
         identitiesInjScrollPane = new JScrollPane();
         usersInjTable = new JTable();
         buttonjPanel = new JPanel();
-        jPanel1 = new JPanel();
-        jPanel2 = new JPanel();
-        credentialsjLabel = new JLabel();
+        credentialsAndTransportjPanel = new JPanel();
+        credentialsLocationjPanel = new JPanel();
         credentialsLocationjComboBox = new JComboBox();
-        jCheckBox1 = new JCheckBox();
-        jPanel3 = new JPanel();
+        ssljCheckBox = new JCheckBox();
+        ssljPanel = new JPanel();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -99,6 +99,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
         usersOutjTable.setPreferredSize(new java.awt.Dimension(50, 50));
         usersOutjTable.setShowHorizontalLines(false);
         usersOutjTable.setShowVerticalLines(false);
+        identitiesOutjScrollPane.getViewport().setBackground(usersOutjTable.getBackground());
         identitiesOutjScrollPane.setViewportView(usersOutjTable);
 
         identitiesjPanel.add(identitiesOutjScrollPane);
@@ -141,6 +142,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
         ));
         usersInjTable.setShowHorizontalLines(false);
         usersInjTable.setShowVerticalLines(false);
+        identitiesInjScrollPane.getViewport().setBackground(usersInjTable.getBackground());
         identitiesInjScrollPane.setViewportView(usersInjTable);
 
         identitiesjPanel.add(identitiesInjScrollPane);
@@ -152,50 +154,37 @@ public class IdentityProviderPanel extends WizardStepPanel {
         identitiesPanel.add(identitiesjPanel, java.awt.BorderLayout.EAST);
 
         add(identitiesPanel, java.awt.BorderLayout.WEST);
+        credentialsAndTransportjPanel.setLayout(new BoxLayout(credentialsAndTransportjPanel, BoxLayout.Y_AXIS));
 
-        jPanel1.setLayout(new java.awt.GridBagLayout());
-
-        jPanel1.setBorder(new EmptyBorder(new java.awt.Insets(20, 5, 10, 5)));
-        jPanel2.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-
-        credentialsjLabel.setText("Credentials");
-        credentialsjLabel.setBorder(new EmptyBorder(new java.awt.Insets(1, 1, 1, 10)));
-        jPanel2.add(credentialsjLabel);
-
+        credentialsAndTransportjPanel.setBorder(new TitledBorder("Credentials/transport"));
+        credentialsLocationjPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+        ssljPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
         credentialsLocationjComboBox.setModel(new DefaultComboBoxModel(new String[] { "HTTP Basic", "HTTP Digest", "Message Basic" }));
-        jPanel2.add(credentialsLocationjComboBox);
+        credentialsLocationjPanel.add(credentialsLocationjComboBox);
+        credentialsAndTransportjPanel.add(credentialsLocationjPanel);
 
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        jPanel1.add(jPanel2, gridBagConstraints);
+        ssljCheckBox.setText("SSL/TLS");
+        ssljCheckBox.setHorizontalTextPosition(SwingConstants.LEADING);
+        ssljPanel.add(ssljCheckBox);
+        credentialsAndTransportjPanel.add(ssljPanel);
+        JPanel ra = new JPanel();
+        ra.setLayout(new BorderLayout());
+        ra.add(Box.createGlue());
+        credentialsAndTransportjPanel.add(ra);
 
-        jCheckBox1.setText("SSL/TLS");
-        jCheckBox1.setHorizontalTextPosition(SwingConstants.LEADING);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        jPanel1.add(jCheckBox1, gridBagConstraints);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.weighty = 1.0;
-        jPanel1.add(jPanel3, gridBagConstraints);
-
-        add(jPanel1, java.awt.BorderLayout.CENTER);
-
-    }//GEN-END:initComponents
-    
-    public String getDescription() {
-        return "Identity provider selection";
+        add(credentialsAndTransportjPanel, java.awt.BorderLayout.CENTER);
     }
-    
+
+    public String getDescription() {
+        return "Select the identities (users, groups) that are allowed to access the published service"+
+                " Specify where the credentials are located and transport layewr security";
+    }
+
+    /** @return the wizard step label    */
+    public String getStepLabel() {
+        return "Acces control";
+    }
+
     private void equalizeButtons() {
         JButton buttons[] = new JButton[] {
             jButtonAdd,
@@ -211,12 +200,12 @@ public class IdentityProviderPanel extends WizardStepPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private JTable usersInjTable;
     private JScrollPane identitiesOutjScrollPane;
-    private JPanel jPanel3;
-    private JLabel credentialsjLabel;
+    private JPanel ssljPanel;
+
     private JLabel selecProviderjLabel;
     private JButton jButtonAddAll;
     private JPanel identitiesjPanel;
-    private JPanel jPanel2;
+    private JPanel credentialsLocationjPanel;
     private JButton jButtonRemove;
     private JPanel providerSelectorjPanel;
     private JPanel identitiesPanel;
@@ -225,10 +214,10 @@ public class IdentityProviderPanel extends WizardStepPanel {
     private JScrollPane identitiesInjScrollPane;
     private JButton jButtonAdd;
     private JComboBox credentialsLocationjComboBox;
-    private JPanel jPanel1;
+    private JPanel credentialsAndTransportjPanel;
     private JPanel buttonjPanel;
     private JPanel usersLablejPanel;
     private JTable usersOutjTable;
-    private JCheckBox jCheckBox1;
+    private JCheckBox ssljCheckBox;
     
 }

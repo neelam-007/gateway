@@ -74,7 +74,13 @@ public class ServicePanel extends WizardStepPanel {
     }
         
     public String getDescription() {
-        return "Enter and resolve the protected service URL";
+        return "Retrieve the protected service description."
+        +" Specify the service WSDL URL. Note that the request is performed on SSG (server side)";
+    }
+
+    /** @return the wizard step label    */
+    public String getStepLabel() {
+        return "Protected service";
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -167,10 +167,16 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
             System.out.println("The file is: " +  chooser.getSelectedFile().getName());
         }
     }
-    
+
+    /** @return the wizard step description as string  */
     public String getDescription() {
         return "Enter the protected service credentials, credentials policy"
         +" transport requirements, certificate";
+    }
+
+    /** @return the wizard step label    */
+    public String getStepLabel() {
+        return "Service credentials";
     }
 
     private JComboBox authenticationMethodjComboBox;
