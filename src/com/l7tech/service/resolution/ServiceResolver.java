@@ -26,11 +26,7 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
      */
     public abstract void setServices( Set services );
 
-    public synchronized Set resolve( Request request, Set set ) throws ServiceResolutionException {
-        if ( set == null ) return Collections.EMPTY_SET;
-        if ( set.isEmpty() ) return set;
-        return doResolve( request, set );
-    }
+    public abstract Set resolve( Request request, Set serviceSubset ) throws ServiceResolutionException;
 
     /**
      * Returns a Map<Long,PublishedService> of any services this ServiceResolver knows about that match the specified PublishedService.
@@ -64,7 +60,6 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
         return result;
     }
 
-    protected abstract Set doResolve( Request request, Set set ) throws ServiceResolutionException;
     public abstract int getSpeed();
     abstract boolean matches( PublishedService service );
 

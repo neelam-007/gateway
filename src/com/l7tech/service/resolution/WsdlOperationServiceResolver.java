@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public abstract class WsdlOperationServiceResolver extends NameValueServiceResolver {
-    protected Object[] getTargetValues( PublishedService service ) {
+    protected Object[] doGetTargetValues( PublishedService service ) {
         List values = new ArrayList(2);
 
         try {

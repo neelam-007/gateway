@@ -30,7 +30,7 @@ public class HttpUriResolver extends NameValueServiceResolver {
         return Request.PARAM_HTTP_REQUEST_URI;
     }
 
-    protected Object[] getTargetValues( PublishedService service ) {
+    protected Object[] doGetTargetValues( PublishedService service ) {
         try {
             Wsdl wsdl = service.parsedWsdl();
             Port soapPort = wsdl.getSoapPort();

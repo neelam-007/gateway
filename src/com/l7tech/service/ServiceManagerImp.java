@@ -40,11 +40,12 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
      * @return null if multiple or no PublishedServices could be found to satisfy the request.
      * @throws ServiceResolutionException
      */
-    public PublishedService resolveService(Request request) throws ServiceResolutionException {
-        Set services = new HashSet();
+    public PublishedService resolveService( Request request ) throws ServiceResolutionException {
+        Set services = clonedServiceSet();
+        if ( services == null || services.isEmpty() ) return null;
+
         Set resolvedServices = null;
         int size;
-        services.addAll( serviceSet() );
         Iterator i = _resolvers.iterator();
 
         while ( i.hasNext() ) {
@@ -55,7 +56,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                 size = resolvedServices.size();
                 switch ( size ) {
                 case 0:
-                    // Didn't find anything... Go around to the next Resolver
+                    // Didn't find anything... Go around to the next Resolver with the same subset
                     break;
                 case 1:
                     // Found one service--done!
@@ -79,7 +80,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         _oidToServiceMap.remove( new Long( service.getOid() ) );
     }
 
-    synchronized Set serviceSet() {
+    synchronized Set clonedServiceSet() {
         HashSet set = new HashSet();
         set.addAll( _oidToServiceMap.values() );
         return set;
@@ -90,7 +91,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     }
 
     public Iterator allServices() {
-        return Collections.unmodifiableSet( serviceSet() ).iterator();
+        return Collections.unmodifiableSet( clonedServiceSet() ).iterator();
     }
 
     private void validate( PublishedService candidateService ) throws WSDLException, DuplicateObjectException{
@@ -143,7 +144,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                 try {
                     resolverClass = Class.forName( className );
                     resolver = (ServiceResolver)resolverClass.newInstance();
-                    resolver.setServices( serviceSet() );
+                    resolver.setServices( clonedServiceSet() );
                     addServiceListener( resolver );
 
                     _resolvers.add( resolver );
