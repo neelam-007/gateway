@@ -1,11 +1,16 @@
 package com.l7tech.adminws.logging;
 
 import com.l7tech.logging.LogManager;
+import com.l7tech.common.util.UptimeMetrics;
+import com.l7tech.common.util.UptimeMonitor;
 
 import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.io.FileNotFoundException;
 
 /**
  * Layer 7 technologies, inc.
@@ -21,6 +26,20 @@ public class Service implements Log {
     public String[] getSystemLog(int offset, int size) throws RemoteException {
         LogRecord[] records = LogManager.getInstance().getRecorded(offset, size);
         return logRecordsToStrings(records);
+    }
+
+    public UptimeMetrics getUptime() throws RemoteException {
+        try {
+            return UptimeMonitor.getLastUptime();
+        } catch (FileNotFoundException e) {
+            String msg = "cannot retrieve uptime";
+            logger.log(Level.WARNING, msg, e);
+            throw new RemoteException(msg, e);
+        } catch (IllegalStateException e) {
+            String msg = "cannot retrieve uptime";
+            logger.log(Level.WARNING, msg, e);
+            throw new RemoteException(msg, e);
+        }
     }
 
     // ************************************************
@@ -43,4 +62,6 @@ public class Service implements Log {
         }
         return output;
     }
+
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }

@@ -1,5 +1,7 @@
 package com.l7tech.adminws.logging;
 
+import com.l7tech.common.util.UptimeMetrics;
+
 import java.rmi.RemoteException;
 import java.rmi.Remote;
 
@@ -11,4 +13,5 @@ import java.rmi.Remote;
  */
 public interface Log extends Remote {
     String[] getSystemLog(int offset, int size) throws RemoteException;
+    UptimeMetrics getUptime() throws RemoteException;
 }

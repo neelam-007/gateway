@@ -1,6 +1,7 @@
 package com.l7tech.adminws.logging;
 
 import com.l7tech.jini.export.RemoteService;
+import com.l7tech.common.util.UptimeMetrics;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -29,6 +30,10 @@ public class LogServiceImpl extends RemoteService implements Log {
 
     public String[] getSystemLog(int offset, int size) throws RemoteException {
         return delegate.getSystemLog(offset, size);
+    }
+
+    public UptimeMetrics getUptime() throws RemoteException {
+        return delegate.getUptime();
     }
 
     // ************************************************
