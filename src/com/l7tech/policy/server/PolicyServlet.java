@@ -140,6 +140,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
                     httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
                     httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Must provide valid credentials.");
+                    logger.fine("sent back message to the effect that valid credentials are required for this download");
                     return;
                 }
             }
@@ -246,6 +247,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
           Long.toString(serviceid) + '|' + Long.toString(serviceversion));
         res.setContentType("text/xml; charset=utf-8");
         res.getOutputStream().println(WspWriter.getPolicyXml(null));
+        logger.fine("sent back empty policy");
     }
 
     private void outputPublishedServicePolicy(PublishedService service, HttpServletResponse response) throws IOException {
