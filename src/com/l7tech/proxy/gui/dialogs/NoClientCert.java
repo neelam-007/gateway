@@ -6,10 +6,12 @@
  */
 package com.l7tech.proxy.gui.dialogs;
 
+import com.l7tech.common.gui.util.Utilities;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
 /**
@@ -92,6 +94,8 @@ public class NoClientCert extends JDialog {
         layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(enterKeyStroke, "close-it");
         layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(enterKeyStroke, "close-it");
         layeredPane.getActionMap().put("close-it", closeaction);
+
+        Utilities.equalizeButtonSizes(new AbstractButton[] {csrButton, importButton});
     }
 
     public static void main(String[] args) {

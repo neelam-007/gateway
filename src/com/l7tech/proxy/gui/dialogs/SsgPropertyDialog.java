@@ -5,16 +5,17 @@ import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgEvent;
 import com.l7tech.proxy.datamodel.SsgListener;
 import com.l7tech.proxy.datamodel.WsTrustSamlTokenStrategy;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
@@ -30,13 +31,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.PasswordAuthentication;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.PasswordAuthentication;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -220,26 +221,20 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         dlg.pack();
                         Utilities.centerOnScreen(dlg);
                         dlg.show();
+                        dlg.dispose();
                         int r = dlg.getExitCondition();
-                        /*
-                        final String close = "   Close   ";
-                        int r = JOptionPane.showOptionDialog(Gui.getInstance().getFrame(),
-                                                             "A client certificate for the SecureSpan Gateway " + ssgName() + "\n" +
-                                                             "was not found.  Import a client certificate below.",
-                                                             "Client Certificate Not Found",
-                                                             JOptionPane.YES_NO_OPTION,
-                                                             JOptionPane.INFORMATION_MESSAGE,
-                                                             null,
-                                                             new String[] {"Import Client Certificate",
-                                                                           "Request Certificate From"  + ssgName(),
-                                                                           close},
-                                                             close);
-                                                             */
                         if (r == NoClientCert.REQUESTED_IMPORT) {
                             importClientCertificate();
                         } else if (r == NoClientCert.REQUESTED_CSR) {
                             try {
-                                manualCSR();
+                                for (;;) {
+                                    try {
+                                        manualCSR();
+                                        break;
+                                    } catch (KeyStoreCorruptException e1) {
+                                        ssg.getRuntime().handleKeyStoreCorrupt();
+                                    }
+                                }
                             } catch (CertificateAlreadyIssuedException csrex) {
                                 Gui.errorMessage("Unable to apply for certificate",
                                                  "Unable to obtain certificate from the SecureSpan Gateway " +
@@ -257,15 +252,19 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         return;
                     }
                     new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).show();
+                } catch (OperationCanceledException e1) {
+                    return;
                 } catch (Exception e1) {
                     log.log(Level.SEVERE, "Unable to access client certificate", e1);
-                    e1.printStackTrace();
+                    String mess = ExceptionUtils.unnestToRoot(e1).getMessage();
+                    if (mess == null) mess = "An exception occurred.";
                     Gui.errorMessage("Unable to Access Client Certificate",
                                          "Unable to access client certificate for the SecureSpan Gateway " + ssgName() + ".",
+                                         mess,
                                          e1);
-                    }
                 }
-            });
+            }
+        });
 
         final ActionListener ssgCertButtonAction = new ActionListener() {
                     public void actionPerformed(ActionEvent e) {

@@ -47,7 +47,17 @@ public class ExceptionDialog extends JDialog implements ActionListener {
 
     private JButton shutdown = new JButton("Shutdown");
     private JButton ignore = new JButton("Ignore");
+    private String internalErrorLabelText = "An severe error has occurred.  You may need to restart the application";
+    private boolean allowShutdown = true;
 
+    public ExceptionDialog(Frame parent, String title, String labelMessage, String message, Throwable throwable, Level level) {
+        super(parent, true);
+        if (labelMessage != null) {
+            internalErrorLabelText = labelMessage;
+            allowShutdown = false;
+        }
+        initialize(title, message, throwable, level);
+    }
 
     /**
      * Constructor ExceptionDialog
@@ -112,7 +122,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
             close.addActionListener(this);
             buttons.add(close);
         }
-        
+
 
         //
         textArea.setText(stackTrace(throwable));
@@ -143,8 +153,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
             internalErroLabelPanel = new JPanel();
             internalErroLabelPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
             internalErroLabelPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5 ,0));
-            internalErrorLabel = new JLabel("An severe error has occurred. " +
-                                            "You may need to restart the application");
+            internalErrorLabel = new JLabel(internalErrorLabelText);
             internalErroLabelPanel.add(internalErrorLabel);
             main.add(internalErroLabelPanel, BorderLayout.NORTH);
         }
@@ -158,6 +167,11 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         pane.setLayout(new BorderLayout());
         pane.add(tabPane, BorderLayout.CENTER);
         pane.add(buttons, BorderLayout.SOUTH);
+
+        if (!allowShutdown) {
+            shutdown.setEnabled(false);
+            shutdown.setVisible(false);
+        }
     }
 
     private JLabel getExceptionMessageLabel(Throwable t)
