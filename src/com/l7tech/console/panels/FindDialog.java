@@ -673,7 +673,7 @@ public class FindDialog extends JDialog {
             EntityHeader eh = (EntityHeader)o;
             AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
             final BaseAction a = (BaseAction)an.getPreferredAction();
-            if (a == null || searchInfo.getProvider().isReadOnly()) {
+            if (a == null) {
                 return;
             }
             SwingUtilities.invokeLater(new Runnable() {
