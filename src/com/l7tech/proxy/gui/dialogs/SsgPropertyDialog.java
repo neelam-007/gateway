@@ -509,7 +509,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            new Insets(0, 5, 0, 0), 0, 0));
 
             ButtonGroup bg = new ButtonGroup();
-            radioStandardPorts = new JRadioButton("Gateway is using standard ports", true);
+            radioStandardPorts = new JRadioButton("Gateway is using standard ports:", true);
             radioStandardPorts.addChangeListener(new ChangeListener() {
                 public void stateChanged(ChangeEvent e) {
                     updateCustomPortsEnableState();
@@ -521,6 +521,34 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.SOUTHWEST,
                                            GridBagConstraints.NONE,
                                            new Insets(5, 5, 0, 5), 0, 0));
+            gpp.add(new JLabel("HTTP port:"),
+                    new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(0, 40, 5, 0), 0, 0));
+            final JLabel defaultSsgPortLabel = new JLabel(String.valueOf(referenceSsg.getSsgPort()));
+            Utilities.enableGrayOnDisabled(defaultSsgPortLabel);
+            gpp.add(defaultSsgPortLabel,
+                    new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(0, 5, 5, 5), 0, 0));
+            gpp.add(new JLabel("HTTPS port:"),
+                    new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(0, 15, 5, 0), 0, 0));
+            final JLabel defaultSslPortLabel = new JLabel(String.valueOf(referenceSsg.getSslPort()));
+            gpp.add(defaultSslPortLabel,
+                    new GridBagConstraints(3, 2, 1, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(0, 5, 5, 5), 0, 0));
+            gpp.add(new JPanel(),
+                    new GridBagConstraints(4, 2, 1, 1, 1000.0, 0.0,
+                                           GridBagConstraints.CENTER,
+                                           GridBagConstraints.HORIZONTAL,
+                                           new Insets(0, 0, 0, 0), 0, 0));
 
             radioNonstandardPorts = new JRadioButton("Gateway requires custom ports:", false);
             radioNonstandardPorts.addChangeListener(new ChangeListener() {
@@ -530,13 +558,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             });
             bg.add(radioNonstandardPorts);
             gpp.add(radioNonstandardPorts,
-                    new GridBagConstraints(0, 2, 5, 1, 0.0, 0.0,
+                    new GridBagConstraints(0, 3, 5, 1, 0.0, 0.0,
                                            GridBagConstraints.NORTHWEST,
                                            GridBagConstraints.NONE,
-                                           new Insets(0, 5, 5, 0), 0, 0));
+                                           new Insets(5, 5, 5, 0), 0, 0));
 
             gpp.add(new JLabel("HTTP port:"),
-                    new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+                    new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
                                            new Insets(0, 40, 5, 0), 0, 0));
@@ -546,12 +574,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldSsgPort.setDocument(new NumberField(6));
             fieldSsgPort.setPreferredSize(new Dimension(50, 20));
             gpp.add(fieldSsgPort,
-                    new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
+                    new GridBagConstraints(1, 4, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
                                            new Insets(0, 5, 5, 5), 0, 0));
             gpp.add(new JLabel("HTTPS port:"),
-                    new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0,
+                    new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
                                            new Insets(0, 15, 5, 0), 0, 0));
@@ -561,12 +589,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldSslPort.setDocument(new NumberField(6));
             fieldSslPort.setPreferredSize(new Dimension(50, 20));
             gpp.add(fieldSslPort,
-                    new GridBagConstraints(3, 3, 1, 1, 0.0, 0.0,
+                    new GridBagConstraints(3, 4, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
                                            new Insets(0, 5, 5, 5), 0, 0));
             gpp.add(new JPanel(),
-                    new GridBagConstraints(4, 3, 1, 1, 1000.0, 0.0,
+                    new GridBagConstraints(4, 4, 1, 1, 1000.0, 0.0,
                                            GridBagConstraints.CENTER,
                                            GridBagConstraints.HORIZONTAL,
                                            new Insets(0, 0, 0, 0), 0, 0));
@@ -632,10 +660,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         boolean en = radioNonstandardPorts.isSelected();
         fieldSsgPort.setEnabled(en);
         fieldSslPort.setEnabled(en);
-        if (!en) {
-            fieldSsgPort.setText(String.valueOf(referenceSsg.getSsgPort()));
-            fieldSslPort.setText(String.valueOf(referenceSsg.getSslPort()));
-        }
     }
 
     private class CertDialog extends JDialog {
