@@ -372,7 +372,7 @@ public class PreferencesDialog extends JDialog {
             URL url = new URL(sUrl);
 
             /** Make sure if they really want to change the service URL */
-            if (sUrl.equals(serviceUrl) && !connected) {
+            if (!sUrl.equals(serviceUrl) && !connected) {
                 if ((JOptionPane.showConfirmDialog(null,
                   "You have changed the Server URL. Changing the URL can cause the console to not connect\n" +
                   " to the SSG. Do you want to continue and save this URL?",
