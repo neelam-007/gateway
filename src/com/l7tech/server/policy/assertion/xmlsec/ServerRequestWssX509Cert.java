@@ -18,7 +18,8 @@ import sun.security.x509.X500Name;
 
 /**
  * This assertion verifies that the message contained an
- * xml digital signature. The cert used for the signature is
+ * xml digital signature but does not care about which elements
+ * were signed. The cert used for the signature is
  * recorded in request.setPrincipalCredentials.
  * <p/>
  * <br/><br/>
