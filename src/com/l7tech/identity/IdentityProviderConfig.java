@@ -1,4 +1,4 @@
-package com.l7tech.identity.provider;
+package com.l7tech.identity;
 
 import com.l7tech.objectmodel.NamedEntity;
 

@@ -1,9 +1,9 @@
 /*
  * Created on 7-May-2003
  */
-package com.l7tech.identity.provider.internal.imp;
+package com.l7tech.identity.internal.imp;
 
-import com.l7tech.identity.provider.internal.Country;
+import com.l7tech.identity.internal.Country;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**

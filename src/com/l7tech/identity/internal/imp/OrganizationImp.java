@@ -1,12 +1,12 @@
 /*
  * Created on 7-May-2003
  */
-package com.l7tech.identity.provider.internal.imp;
+package com.l7tech.identity.internal.imp;
 
 import java.util.Collection;
 
-import com.l7tech.identity.provider.internal.Address;
-import com.l7tech.identity.provider.internal.Organization;
+import com.l7tech.identity.internal.Address;
+import com.l7tech.identity.internal.Organization;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**

@@ -1,7 +1,7 @@
-package com.l7tech.identity.provider.internal.imp;
+package com.l7tech.identity.internal.imp;
 
-import com.l7tech.identity.provider.internal.AddressManager;
-import com.l7tech.identity.provider.internal.Address;
+import com.l7tech.identity.internal.AddressManager;
+import com.l7tech.identity.internal.Address;
 import com.l7tech.objectmodel.Entity;
 
 import java.util.Collection;

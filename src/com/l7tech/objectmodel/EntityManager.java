@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.identity.provider.internal.Country;
+import com.l7tech.identity.internal.Country;
 
 import java.util.Collection;
 

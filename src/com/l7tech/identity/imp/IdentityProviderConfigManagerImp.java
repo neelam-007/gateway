@@ -1,7 +1,7 @@
-package com.l7tech.identity.provider.imp;
+package com.l7tech.identity.imp;
 
-import com.l7tech.identity.provider.IdentityProviderConfigManager;
-import com.l7tech.identity.provider.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.PersistenceManager;
 import com.l7tech.objectmodel.Entity;
 
