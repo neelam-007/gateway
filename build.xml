@@ -167,6 +167,7 @@
             <test name="com.l7tech.service.WsdlTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.WspWriterTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.WspReaderTest" haltonfailure="no"/>
+            <test name="com.l7tech.policy.CompositeAssertionTest" haltonfailure="no"/>
 
             <!--
               ** add tests here **
