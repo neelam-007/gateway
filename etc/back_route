@@ -7,20 +7,24 @@
 
 # Source function library.
 . /etc/rc.d/init.d/functions
+# source config
+. /etc/SSG_INSTALL
 
-BACK_NET=10.3.1.0
-BACK_ROUTER=10.3.1.252
-NET_MASK=255.255.255.0
+if [ -n $back_ip ]; then
+	exit
+else 
+	
+
 route=/sbin/route
 
 start() {
 	# Add back end routes
 	# 
-	$route add -net $BACK_NET netmask $NET_MASK gw $BACK_ROUTER
+	$route add -net $back_net netmask $back_mask gw $back_rt
 	$route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 }
 stop() {
-	$route del -net $BACK_NET netmask $NET_MASK gw $BACK_ROUTER
+	$route del -net $back_net netmask $back_mask gw $back_rt
 	$route del -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 }
 
