@@ -123,7 +123,9 @@ public class ServerPolicyValidator extends PolicyValidator {
                     }
                 } else if (identityAssertion instanceof MemberOfGroup) {
                     MemberOfGroup mog = (MemberOfGroup)identityAssertion;
-                    prov.getGroupManager().findByPrimaryKey(mog.getGroupId());
+                    if (prov.getGroupManager().findByPrimaryKey(mog.getGroupId()) != null) {
+                        idexists = true;
+                    }
                 } else {
                     throw new RuntimeException("Type not supported " + identityAssertion.getClass().getName());
                 }
