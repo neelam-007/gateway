@@ -89,7 +89,7 @@ public class IdProvConfManagerClientTest {
         Group thepolice = groupMan.findByPrimaryKey("4718592");
 
         System.out.println(thepolice);
-        thepolice.setDescription("very good band from the 80s");
+        thepolice.setDescription("completly different description");
 
         System.out.println("update group");
         groupMan.update(thepolice);
@@ -99,15 +99,12 @@ public class IdProvConfManagerClientTest {
     public static void updateUser(IdProvConfManagerClient testee) throws Exception {
         IdentityProvider provider = testee.getInternalIdentityProvider();
         UserManager userMan = provider.getUserManager();
-        User newUser = new User();
-        newUser.setName("dskjldksjfldskjlfsdlj");
-        newUser.setLogin("kjsdhksfdjkgh");
-        newUser.setPassword("bassist");
-        System.out.println("saving new user");
-        long usrid = userMan.save(newUser);
-        newUser.setEmail("sting@thepolice.com");
-        System.out.println("update new user");
-        userMan.update(newUser);
+        System.out.println("retrieving existing user");
+        User stewart = userMan.findByPrimaryKey("5046272");
+        System.out.println("change it");
+        stewart.setEmail("completly different email address");
+        System.out.println("update it");
+        userMan.update(stewart);
         System.out.println("done");
     }
 
@@ -118,11 +115,11 @@ public class IdProvConfManagerClientTest {
 
         IdProvConfManagerClient manager = new IdProvConfManagerClient();
         testListContentOfInternalIDProvider(manager);
-        //testAddAndDeleteIDProviderConfig(manager);
-        //testCreateGroup(manager);
-        // testAssignUserToGroup(manager);
-        //updateGroup(manager);
-        // updateUser(manager);
+        testAddAndDeleteIDProviderConfig(manager);
+        testCreateGroup(manager);
+        testAssignUserToGroup(manager);
+        updateGroup(manager);
+        updateUser(manager);
 
         System.exit(0);
     }
