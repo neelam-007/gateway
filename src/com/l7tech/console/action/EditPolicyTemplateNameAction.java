@@ -91,10 +91,12 @@ public class EditPolicyTemplateNameAction extends BaseAction {
                         public void run() {
 
                             File templateDir = null;
+
                             try {
-                                final File newName = new File(
-                                        Preferences.getPreferences().getHomePath() +
-                                        File.separator + PoliciesFolderNode.TEMPLATES_DIR + File.separator + ev.getActionCommand());
+                                templateDir = new File(Preferences.getPreferences().getHomePath() +
+                                        File.separator + PoliciesFolderNode.TEMPLATES_DIR);
+
+                                final File newName = new File(templateDir.getPath() + File.separator + ev.getActionCommand());
                                 boolean success = node.getFile().renameTo(newName);
                                 if (!success) {
                                     String error = "The system reported problem in accessing " +
