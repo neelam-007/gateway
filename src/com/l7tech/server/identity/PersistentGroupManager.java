@@ -7,8 +7,8 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
-import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.identity.fed.FederatedGroupMembership;
+import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -565,6 +565,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     }
 
     public void setUserHeaders(String groupId, Set userHeaders) throws FindException, UpdateException {
+        if (userHeaders == null) return;
         HibernatePersistenceContext hpc = null;
         try {
             hpc = context();
