@@ -185,21 +185,30 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      *  @param  columnIndex  column of cell
      */
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-        if (aValue == null) {
-            throw new IllegalArgumentException(" value == null ");
-        }
         Operation op = getOperationAt(rowIndex);
         if (columnIndex == 0) {
+            if (aValue == null) {
+                throw new IllegalArgumentException(" value == null ");
+            }
+
             if (!(aValue instanceof String)) {
                 throw new IllegalArgumentException("Unsupported type "+aValue.getClass());
             }
             op.setName((String)aValue);
         } else if (columnIndex == 1) {
+            if (aValue == null) {
+                op.getInput().setMessage(null);
+                return;
+            }
             if (!(aValue instanceof Message)) {
                 throw new IllegalArgumentException("Unsupported type "+aValue.getClass()+ " expected "+Message.class);
             }
             op.getInput().setMessage((Message)aValue);
         } else if (columnIndex == 2) {
+            if (aValue == null) {
+                op.getOutput().setMessage(null);
+                return;
+            }
             if (!(aValue instanceof Message)) {
                 throw new IllegalArgumentException("Unsupported type "+aValue.getClass() +" expected "+Message.class);
             }

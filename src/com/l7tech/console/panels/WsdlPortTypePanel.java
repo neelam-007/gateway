@@ -13,6 +13,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Map;
 import java.util.Iterator;
+import java.util.Collection;
+import java.util.ArrayList;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -119,7 +121,9 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         operationsTable.setModel(operationsModel);
         operationsTable.getTableHeader().setReorderingAllowed(false);
 
-        final Object[] messages = definition.getMessages().values().toArray();
+        Collection cm = new ArrayList(definition.getMessages().values());
+        cm.add(null);
+        final Object[] messages = cm.toArray();
         messagesComboBox.setModel(new DefaultComboBoxModel(messages));
         messagesComboBox.setRenderer(new DefaultListCellRenderer() {
             public Component
@@ -139,7 +143,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
                     QName qName = ((Message)value).getQName();
                     setText(WsdlCreateWizard.prefixedName(qName, definition));
                 } else {
-                    setText("");
+                    setText("             ");
                 }
                 return this;
             }
@@ -438,8 +442,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         final JButton _10;
         _10 = new JButton();
         addOperationButton = _10;
-        _10.setText("Add");
         _10.setLabel("Add");
+        _10.setText("Add");
         _8.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 4, 0, 0, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _11;
         _11 = new com.intellij.uiDesigner.core.Spacer();
