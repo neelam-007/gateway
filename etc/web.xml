@@ -183,14 +183,12 @@
     </welcome-file-list>
 
     <!-- enforce SSL in the admin Web service -->
-    <!-- uncomment security-constraint and login-config to enable
+    <!-- uncomment security-constraint and login-config to enable   -->
+
     <security-constraint>
         <web-resource-collection>
-            <web-resource-name>AdminService</web-resource-name>
-            <description>SSG Administration Web Service</description>
-            <url-pattern>/services/*</url-pattern>
-            <http-method>POST</http-method>
-            <http-method>GET</http-method>
+            <web-resource-name>Admin Service Registrar</web-resource-name>
+            <url-pattern>/ssg/registrar</url-pattern>
         </web-resource-collection>
 
         <user-data-constraint>
@@ -198,6 +196,8 @@
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
         </user-data-constraint>
     </security-constraint>
+
+    <!-- uncomment login-config to enable (currently not used)
     <login-config>
         <auth-method>BASIC</auth-method>
         <realm-name></realm-name>
