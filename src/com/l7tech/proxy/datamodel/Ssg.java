@@ -40,7 +40,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private int sslPort = SSG_SSL_PORT;
     private String username = null;
     private boolean defaultSsg = false;
-    private Session session = null;
 
     // These fields are transient.  To prevent the bean serializer from saving them anyway,
     // they do not use the getFoo() / setFoo() naming convention in their accessors and mutators.
@@ -52,6 +51,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient Boolean haveClientCert = null;
     private transient int numTimesLogonDialogCanceled = 0;
     private transient long credentialsUpdatedTimeMillis = 0;
+    private transient Session session = null;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -385,12 +385,12 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     /** Cached session.  Package private; used by SsgSessionManager. */
-    Session getSession() {
+    Session session() {
         return session;
     }
 
     /** Set cached session.  Package private; used by SsgSessionManager. */
-    void setSession(Session session) {
+    void session(Session session) {
         this.session = session;
     }
 
