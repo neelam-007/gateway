@@ -114,13 +114,24 @@ public class RequestHandler extends AbstractHttpHandler {
      * @param pathParams
      * @param request
      * @param response
-     * @throws HttpException
-     * @throws IOException
      */
     public void handle(final String pathInContext,
-                       final String pathParams,
-                       final HttpRequest request,
-                       final HttpResponse response)
+                          final String pathParams,
+                          final HttpRequest request,
+                          final HttpResponse response)
+            throws IOException
+    {
+        try {
+            doHandle(request, response);
+        } catch (HttpException e) {
+            SsgResponse fault = SsgResponse.makeFaultResponse(e.getCode() == 404 ? "Client" : "Server",
+                                                              e.getMessage(),
+                                                              getOriginalUrl(request).toExternalForm());
+            transmitResponse(e.getCode(), response, fault);
+        }
+    }
+
+    private void doHandle(final HttpRequest request, final HttpResponse response)
             throws HttpException, IOException
     {
         log.info("Incoming request: " + request.getURI().getPath());
@@ -192,7 +203,7 @@ public class RequestHandler extends AbstractHttpHandler {
             log.info("Send HTTP Basic auth challenge back to the client");
         }
 
-        transmitResponse(response, responseString);
+        transmitResponse(200, response, responseString);
     }
 
     private void sendChallenge(HttpResponse response) throws IOException {
@@ -210,8 +221,9 @@ public class RequestHandler extends AbstractHttpHandler {
      * @param ssgResponse  the response we are to send them
      * @throws IOException      if something went wrong
      */
-    private void transmitResponse(final HttpResponse response, SsgResponse ssgResponse) throws IOException {
+    private void transmitResponse(int status, final HttpResponse response, SsgResponse ssgResponse) throws IOException {
         try {
+            response.setStatus(status);
             response.addField("Content-Type", "text/xml");
             response.getOutputStream().write(ssgResponse.getResponseAsString().getBytes());
             response.commit();
@@ -268,7 +280,6 @@ public class RequestHandler extends AbstractHttpHandler {
      *
      * @param endpoint   the endpoint string sent by the client (ie, "/ssg3"), with any WSDL suffix stripped
      * @return          the Ssg to route it to
-     * @throws HttpException    if there was Trouble
      */
     private Ssg getDesiredSsg(String endpoint) throws HttpException {
         // Figure out which SSG is being invoked.
@@ -292,10 +303,9 @@ public class RequestHandler extends AbstractHttpHandler {
      * Send a request to an SSG and return its response.
      * @param request           the request to send it
      * @return                  the response it sends back
-     * @throws HttpException    if there was Trouble
      */
     private SsgResponse getServerResponse(PendingRequest request)
-            throws HttpException, HttpChallengeRequiredException
+            throws HttpChallengeRequiredException
     {
         log.info("Processing message to Gateway " + request.getSsg());
 
@@ -305,12 +315,17 @@ public class RequestHandler extends AbstractHttpHandler {
             log.info("Returning result");
             return reply;
         } catch (HttpChallengeRequiredException e) {
+            log.info("Returning challenge");
             throw e;
         } catch (Exception e) {
             log.error(e);
-            e.printStackTrace(System.err);
             interceptor.onReplyError(e);
-            throw new HttpException(500, e.toString());
+            e.printStackTrace(System.err);
+            SsgResponse reply = SsgResponse.makeFaultResponse("Server",
+                                                              e.getMessage(), 
+                                                              request.getOriginalUrl().toExternalForm());
+            log.info("Returning fault");
+            return reply;
         } finally {
             CurrentRequest.clearCurrentRequest();
         }

@@ -152,7 +152,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             SOAPMessage msg = SoapUtil.makeMessage();
             SOAPPart spart = msg.getSOAPPart();
             SOAPEnvelope senv = spart.getEnvelope();
-            SOAPFault fault = SoapUtil.addFaultTo(msg, faultCode, faultString);
+            SOAPFault fault = SoapUtil.addFaultTo(msg, faultCode, faultString, null); // TODO use SSG url as faultactor
 
             PublishedService pserv = (PublishedService)sreq.getParameter(Request.PARAM_SERVICE);
             if (pserv != null && sresp.isPolicyViolated()) {

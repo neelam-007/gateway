@@ -7,10 +7,14 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.proxy.util.ClientLogger;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.apache.commons.httpclient.Header;
 
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPMessage;
 import java.io.IOException;
 
 /**
@@ -36,6 +40,19 @@ public class SsgResponse {
         this.responseDoc = response;
         this.httpStatus = httpStatus;
         this.headers = headers;
+    }
+
+    public static SsgResponse makeFaultResponse(String faultCode, String faultString, String faultActor) {
+        SOAPMessage faultMessage = SoapUtil.makeFaultMessage(faultCode, faultString, faultActor);
+        try {
+            String responseString = new String(SoapUtil.soapMessageToByteArray(faultMessage));
+            HttpHeaders headers = new HttpHeaders(new Header[0]);
+            return new SsgResponse(responseString, 500, headers);
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (SOAPException e) {
+            throw new RuntimeException(e); // can't happen
+        }
     }
 
     public int getHttpStatus() {

@@ -84,7 +84,7 @@ class JmsRequestHandler {
             if ( responseXml == null || responseXml.length() == 0 ) {
                 if ( faultMessage == null ) faultMessage = status.getMessage();
                 SOAPMessage msg = SoapUtil.makeFaultMessage( faultCode == null ? SoapUtil.FC_SERVER : faultCode,
-                                                             faultMessage );
+                                                             faultMessage, null ); // TODO use SSG URL as faultActor
                 responseXml = SoapUtil.soapMessageToString( msg, JmsUtil.DEFAULT_ENCODING ); // TODO ENCODING @)$(*)!!
             }
 

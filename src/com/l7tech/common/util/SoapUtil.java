@@ -158,19 +158,26 @@ public class SoapUtil {
         return XmlUtil.findOnlyOneChildElementByName(env, soapNs, BODY_EL_NAME);
     }
 
-    public static SOAPMessage makeMessage() throws SOAPException {
-        MessageFactory mf = MessageFactory.newInstance();
-        SOAPMessage smsg = mf.createMessage();
-        return smsg;
+    public static SOAPMessage makeMessage() {
+        MessageFactory mf = null;
+        try {
+            mf = MessageFactory.newInstance();
+            SOAPMessage smsg = mf.createMessage();
+            return smsg;
+        } catch (SOAPException e) {
+            throw new RuntimeException(e); // can't happen
+        }
     }
 
-    public static SOAPFault addFaultTo(SOAPMessage message, String faultCode, String faultString) throws SOAPException {
+    public static SOAPFault addFaultTo(SOAPMessage message, String faultCode, String faultString, String faultActor) throws SOAPException {
         SOAPPart spart = message.getSOAPPart();
         SOAPEnvelope senv = spart.getEnvelope();
         SOAPBody body = senv.getBody();
         SOAPFault fault = body.addFault();
         fault.setFaultCode(faultCode);
         fault.setFaultString(faultString);
+        if (faultActor != null)
+            fault.setFaultActor(faultActor);
         return fault;
     }
 
@@ -545,10 +552,14 @@ public class SoapUtil {
         return importingDocument;
     }
 
-    public static SOAPMessage makeFaultMessage( String faultCode, String faultString ) throws SOAPException {
+    public static SOAPMessage makeFaultMessage( String faultCode, String faultString, String faultActor ) {
         SOAPMessage msg = makeMessage();
-        SoapUtil.addFaultTo(msg, faultCode, faultString);
-        return msg;
+        try {
+            SoapUtil.addFaultTo(msg, faultCode, faultString, faultActor);
+            return msg;
+        } catch (SOAPException e) {
+            throw new RuntimeException(e); // can't happen
+        }
     }
 
     public static String soapMessageToString( SOAPMessage msg, String encoding ) throws IOException, SOAPException {
