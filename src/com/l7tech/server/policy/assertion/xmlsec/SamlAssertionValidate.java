@@ -317,7 +317,7 @@ public class SamlAssertionValidate {
         }
 
         if (!confirmationMatch) {
-            List acceptedConfirmations = Arrays.asList(confirmations);
+            List acceptedConfirmations = new ArrayList(Arrays.asList(confirmations));
             if (requestWssSaml.isNoSubjectConfirmation()) {
                 acceptedConfirmations.add("None");
             }
