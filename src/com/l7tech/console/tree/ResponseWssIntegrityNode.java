@@ -63,7 +63,7 @@ public class ResponseWssIntegrityNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Sign Response";
+        return "Sign Response Element";
 
     }
 

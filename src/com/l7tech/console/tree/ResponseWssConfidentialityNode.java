@@ -63,7 +63,7 @@ public class ResponseWssConfidentialityNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Encrypt Response";
+        return "Encrypt Response Element";
 
     }
 

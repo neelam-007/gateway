@@ -14,7 +14,7 @@ import javax.swing.*;
  * @version 1.0
  */
 public class RequestWssIntegrityNode extends AbstractTreeNode {
-    private static final String DEFAULT_NAME = "Sign Request";
+    private static final String DEFAULT_NAME = "Sign Request Element";
     private final String name;
 
     public RequestWssIntegrityNode(String name) {

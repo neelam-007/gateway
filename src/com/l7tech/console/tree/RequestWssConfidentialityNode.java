@@ -14,7 +14,7 @@ import javax.swing.*;
  * @version 1.0
  */
 public class RequestWssConfidentialityNode extends AbstractTreeNode {
-    private static final String DEFAULT_NAME = "Encrypt Request";
+    private static final String DEFAULT_NAME = "Encrypt Request Element";
     private final String name;
 
     public RequestWssConfidentialityNode(String name) {
