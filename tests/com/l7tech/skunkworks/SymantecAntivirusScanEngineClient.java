@@ -60,6 +60,12 @@ public class SymantecAntivirusScanEngineClient {
         StringBuffer output = new StringBuffer();
         while (read > 0) {
             output.append(new String(returnedfromsav, 0, read));
+            // todo, handle this better
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
             if (socket.getInputStream().available() <= 0) break;
             read = socket.getInputStream().read(returnedfromsav);
         }
@@ -103,7 +109,7 @@ public class SymantecAntivirusScanEngineClient {
         return false;
     }
 
-    class SAVScanEngineResponse {
+    public class SAVScanEngineResponse {
         String statusString;
         long statusCode;
         Map headers;
@@ -116,6 +122,7 @@ public class SymantecAntivirusScanEngineClient {
         int rtnlpos = response.indexOf('\r');
         if (rtnlpos < 1) rtnlpos = response.indexOf('\n');
         if (rtnlpos < statusstart) {
+            logger.warning("Unexpected response\n" + response);
             // todo, throw?
             return null;
         } else {
@@ -141,6 +148,7 @@ public class SymantecAntivirusScanEngineClient {
         if (startofheaders < rtnlpos) {
             // there are no headers
             // todo, throw?
+            logger.warning("Unexpected response\n" + response);
             return null;
         }
         int endofheaders = response.indexOf("\r\n\r\n", startofheaders);
