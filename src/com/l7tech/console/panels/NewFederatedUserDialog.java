@@ -2,8 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.action.UserPropertiesAction;
+import com.l7tech.console.action.FederatedUserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
@@ -12,6 +12,7 @@ import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -51,6 +52,7 @@ public class NewFederatedUserDialog extends JDialog {
     private String CMD_OK = "cmd.ok";
     private boolean UserIdFieldFilled = false;
     private EventListenerList listenerList = new EventListenerList();
+    private IdentityProviderConfig ipc;
 
     /* the user instance */
     private UserBean user = new UserBean();
@@ -61,9 +63,10 @@ public class NewFederatedUserDialog extends JDialog {
 
     private JFrame parent;
 
-    public NewFederatedUserDialog(JFrame parent) {
+    public NewFederatedUserDialog(JFrame parent, IdentityProviderConfig ipc) {
         super(parent, true);
         this.parent = parent;
+        this.ipc = ipc;
         initialize();
         pack();
         Utilities.centerOnScreen(this);
@@ -154,20 +157,22 @@ public class NewFederatedUserDialog extends JDialog {
 
 
     private void updateUserNameLinkedTextField() {
-        if (subjectDNRadioButton.isSelected()) {
-            x509SubjectDNTextField.setText("CN=" + userNameTextField.getText().trim());
-            emailTextField.setText("");
-            loginTextField.setText("");
-        }
-        if (emailRadioButton.isSelected()) {
-            emailTextField.setText(userNameTextField.getText() + "@");
-            x509SubjectDNTextField.setText("");
-            loginTextField.setText("");
-        }
-        if (loginRadioButton.isSelected()) {
-            loginTextField.setText(userNameTextField.getText());
-            emailTextField.setText("");
-            x509SubjectDNTextField.setText("");
+        if (userNameTextField.getText().trim().length() > 0) {
+            if (subjectDNRadioButton.isSelected()) {
+                x509SubjectDNTextField.setText("CN=" + userNameTextField.getText().trim());
+                emailTextField.setText("");
+                loginTextField.setText("");
+            }
+            if (emailRadioButton.isSelected()) {
+                emailTextField.setText(userNameTextField.getText() + "@");
+                x509SubjectDNTextField.setText("");
+                loginTextField.setText("");
+            }
+            if (loginRadioButton.isSelected()) {
+                loginTextField.setText(userNameTextField.getText());
+                emailTextField.setText("");
+                x509SubjectDNTextField.setText("");
+            }
         }
     }
 
@@ -191,9 +196,7 @@ public class NewFederatedUserDialog extends JDialog {
                         header.setName(user.getName());
                         header.setStrId(user.getUniqueIdentifier());
                         UserPropertiesAction ua =
-                                new GenericUserPropertiesAction((UserNode) TreeNodeFactory.asTreeNode(header));
-                        // only internal provider currently
-                        //todo:
+                                new FederatedUserPropertiesAction((UserNode) TreeNodeFactory.asTreeNode(header));
                         try {
                             ua.setIdProviderConfig(Registry.getDefault().getInternalProviderConfig());
                         } catch (Exception e) {
@@ -241,10 +244,14 @@ public class NewFederatedUserDialog extends JDialog {
                     EntityHeader header = new EntityHeader();
                     header.setType(EntityType.USER);
                     header.setName(user.getName());
-                    //todo: save
-                    //header.setStrId(Registry.getDefault().getInternalUserManager().save(user, null));
-                    //user.setUniqueIdentifier(header.getStrId());
-                    header.setStrId("12334");
+
+                    final String userId =
+                                    Registry.getDefault().getIdentityAdmin().saveUser(
+                                            ipc.getOid(),
+                                            user, null);
+                            header.setStrId( userId);
+                            user.setUniqueIdentifier(header.getStrId());
+
                     fireEventUserAdded(header);
                     insertSuccess = true;
                 } catch (Exception e) {
