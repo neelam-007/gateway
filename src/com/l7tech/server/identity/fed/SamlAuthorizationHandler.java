@@ -21,6 +21,7 @@ import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Set;
@@ -47,14 +48,15 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             SamlHolderOfKeyAssertion assertion = (SamlHolderOfKeyAssertion)maybeAssertion;
 
             final X509Certificate subjectCertificate = assertion.getSubjectCertificate();
-            String subjectDn = subjectCertificate.getSubjectDN().getName();
+            String certSubjectDn = subjectCertificate.getSubjectDN().getName();
+            String certIssuerDn = subjectCertificate.getIssuerDN().getName();
             final X509Certificate signerCertificate = assertion.getIssuerCertificate();
             String samlSignerDn = signerCertificate.getSubjectDN().getName();
 
             TrustedCert samlSignerTrust = null;
             try {
                 samlSignerTrust = trustedCertManager.getCachedCertBySubjectDn(samlSignerDn, MAX_CACHE_AGE);
-                final String untrusted = "Subject certificate '" + subjectDn + "' was signed by '" +
+                final String untrusted = "SAML assertion for '" + certSubjectDn + "' was signed by '" +
                                          samlSignerDn + "', which is not trusted";
                 if (samlSignerTrust == null) {
                     throw new BadCredentialsException(untrusted);
@@ -64,23 +66,55 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                     throw new BadCredentialsException(untrusted + " for this Federated Identity Provider");
                 }
             } catch ( FindException e ) {
-                logger.log( Level.INFO, e.getMessage(), e );
-            } catch ( IOException e ) {
-                logger.log( Level.INFO, e.getMessage(), e );
-            } catch ( CertificateException e ) {
-                logger.log( Level.INFO, e.getMessage(), e );
+                final String msg = "Couldn't find TrustedCert entry for assertion signer";
+                logger.log( Level.SEVERE, msg, e );
+                throw new AuthenticationException(msg, e);
+            } catch ( Exception e ) {
+                final String msg = "Couldn't decode signing certificate";
+                logger.log( Level.WARNING, msg, e );
+                throw new AuthenticationException(msg, e);
             }
 
-            X509Certificate samlSignerCert = null;
+            TrustedCert certIssuerTrust = null;
             try {
-                samlSignerCert = samlSignerTrust.getCertificate();
-                subjectCertificate.verify(samlSignerCert.getPublicKey());
+                certIssuerTrust = trustedCertManager.getCachedCertBySubjectDn(certIssuerDn, MAX_CACHE_AGE);
+                final String untrusted = "Subject certificate '" + certSubjectDn + "' was signed by '" +
+                                         certIssuerDn + "', which is not trusted";
+                if (certIssuerTrust == null) {
+                    throw new BadCredentialsException(untrusted);
+                } else if (!certIssuerTrust.isTrustedForSigningClientCerts()) {
+                    throw new BadCredentialsException(untrusted + " for signing client certificates");
+                } else if (!certOidSet.contains(new Long(certIssuerTrust.getOid()))) {
+                    throw new BadCredentialsException(untrusted + " for this Federated Identity Provider");
+                }
+            } catch ( FindException e ) {
+                final String msg = "Couldn't find TrustedCert entry for assertion signer";
+                logger.log( Level.SEVERE, msg, e );
+                throw new AuthenticationException(msg, e);
+            } catch ( Exception e ) {
+                final String msg = "Couldn't decode signing certificate";
+                logger.log( Level.WARNING, msg, e );
+                throw new AuthenticationException(msg, e);
+            }
+
+            X509Certificate certIssuerCert = null;
+            try {
+                certIssuerCert = certIssuerTrust.getCertificate();
+                subjectCertificate.verify(certIssuerCert.getPublicKey());
             } catch ( CertificateException e ) {
                 throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
             } catch ( IOException e ) {
                 throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
             } catch ( GeneralSecurityException e ) {
-                throw new AuthenticationException("Couldn't verify subject certificate '" + subjectDn + "': " + e.getMessage(), e);
+                throw new AuthenticationException("Couldn't verify subject certificate '" + certSubjectDn + "': " + e.getMessage(), e);
+            }
+
+            try {
+                assertion.verifyIssuerSignature();
+            } catch ( SignatureException e ) {
+                String msg = "SAML Assertion Signature verification failed";
+                logger.log( Level.WARNING, msg, e );
+                throw new BadCredentialsException(msg,e);
             }
 
             final String niFormat = assertion.getNameIdentifierFormat();
@@ -88,7 +122,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             final String niQualifier = assertion.getNameQualifier();
             final String configNameQualifier = samlConfig.getNameQualifier();
 
-            if (configNameQualifier != null) {
+            if (configNameQualifier != null && configNameQualifier.length() > 0) {
                 // Make sure NameQualifier matches, if specified
                 if (niQualifier == null) {
                     throw new BadCredentialsException("NameQualifier '" + configNameQualifier +
@@ -100,29 +134,29 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             }
 
             final String configDomain = samlConfig.getNameIdWindowsDomainName();
-            if (configDomain != null) {
+            if (configDomain != null && configDomain.length() > 0) {
                 // TODO
                 throw new BadCredentialsException("Domain '" + configDomain + "' required but not present");
             }
 
             try {
-                FederatedUser u = userManager.findBySubjectDN(subjectDn);
+                FederatedUser u = userManager.findBySubjectDN(certSubjectDn);
                 if (u == null) {
                     if (certOidSet.isEmpty()) return null; // Virtual groups not supported with no trusted certs
 
                     // Make a fake user for virtual groups
                     u = new FederatedUser();
                     u.setProviderId(provider.getConfig().getOid());
-                    u.setSubjectDn(subjectDn);
+                    u.setSubjectDn(certSubjectDn);
                     if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
                         u.setEmail(niValue);
                     } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat)) {
                         u.setLogin(niValue);
                     } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
-                        if (!subjectDn.equals(niValue)) {
+                        if (!certSubjectDn.equals(niValue)) {
                             throw new BadCredentialsException("NameIdentifier '" + niValue +
                                                               "' was an X.509 SubjectName but did not match certificate's DN '" +
-                                                              subjectDn + "'");
+                                                              certSubjectDn + "'");
                         }
                     }
                 } else {

@@ -722,10 +722,10 @@ public class WssProcessorImpl implements WssProcessor {
                 if (uriAttr.charAt(0) == '#') {
                     uriAttr = uriAttr.substring(1);
                 }
-                // try to see if this reference matches a previously parsed X509SecurityToken
+                // try to see if this reference matches a previously parsed SigningSecurityToken
                 final SigningSecurityTokenImpl token = (SigningSecurityTokenImpl)cntx.x509TokensById.get(uriAttr);
                 if (token != null) {
-                    logger.finest("The keyInfo referred to a previously parsed BinarySecurityToken  " + uriAttr);
+                    logger.finest("The keyInfo referred to a previously parsed Security Token '" + uriAttr + "'");
                     return token;
                 } else {
                     logger.fine("The reference " + uriAttr + " did not point to a X509Cert.");

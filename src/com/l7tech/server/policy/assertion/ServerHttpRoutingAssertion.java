@@ -154,7 +154,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 String login = httpRoutingAssertion.getLogin();
                 String password = httpRoutingAssertion.getPassword();
 
-                if (login != null && password != null) {
+                if (login != null && login.length() > 0
+                    && password != null && password.length() > 0) {
                     logger.fine("Using login '" + login + "'");
                     HttpState state = client.getState();
                     postMethod.setDoAuthentication(true);

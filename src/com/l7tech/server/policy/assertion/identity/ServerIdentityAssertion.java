@@ -77,18 +77,25 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     throw new IllegalStateException( err );
                 }
 
+                String name = null;
                 try {
                     IdentityProvider provider = getIdentityProvider();
                     User user = provider.authenticate( pc );
-                    if (user == null) authFailed(response, pc, null);
+                    if (user == null) return authFailed(response, pc, null);
+
+                    name = user.getLogin();
+                    if (name == null) name = user.getName();
+                    if (name == null) name = user.getSubjectDn();
+                    if (name == null) name = user.getUniqueIdentifier();
+
                     // Authentication succeeded
                     request.setAuthenticated(true);
                     request.setUser( user );
-                    logger.log(Level.FINEST, "Authenticated " + user.getLogin() );
+                    logger.log(Level.FINEST, "Authenticated " + name );
                     // Make sure this guy matches our criteria
                     return checkUser( user );
                 } catch ( InvalidClientCertificateException icce ) {
-                    logger.info("Invalid client cert for " + pc.getLogin() );
+                    logger.info("Invalid client cert for " + name );
                     // set some response header so that the CP is made aware of this situation
                     response.setParameter(Response.PARAM_HTTP_CERT_STATUS, SecureSpanConstants.INVALID);
                     return authFailed(response, pc, icce);
