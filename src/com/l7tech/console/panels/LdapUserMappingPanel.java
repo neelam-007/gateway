@@ -82,9 +82,10 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
             userMapping.setLoginAttrName(loginNameAttribute.getText());
             userMapping.setPasswdAttrName(passwordAttribute.getText());
 
+/*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
             PasswdStrategy ps = new PasswdStrategy();
             ps.setVal(passwordStrategyAttribute.getSelectedIndex());
-            userMapping.setPasswdType(ps);
+            userMapping.setPasswdType(ps);  */
         }
     }
 
@@ -217,7 +218,9 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
             nameAttribute.setText(userMapping.getNameAttrName());
             objectClass.setText(userMapping.getObjClass());
             passwordAttribute.setText(userMapping.getPasswdAttrName());
-            passwordStrategyAttribute.setSelectedIndex(userMapping.getPasswdType().getVal());
+
+ /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
+            passwordStrategyAttribute.setSelectedIndex(userMapping.getPasswdType().getVal());  */
 
             originalObjectClass = userMapping.getObjClass();
         }
@@ -235,7 +238,9 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         nameAttribute.setText("");
         objectClass.setText("");
         passwordAttribute.setText("");
-        passwordStrategyAttribute.setSelectedIndex(0);
+
+        /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
+        passwordStrategyAttribute.setSelectedIndex(0);  */
     }
 
     /**
@@ -314,7 +319,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
                  }
             }
         });
-
+        
         return removeButton;
     }
 
@@ -468,8 +473,12 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         lastNameAttribute = new javax.swing.JTextField();
         emailAttributeLabel = new javax.swing.JLabel();
         emailAttribute = new javax.swing.JTextField();
+
+
+        /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
         passwordStrategyAttributeLabel = new javax.swing.JLabel();
-        passwordStrategyAttribute = new javax.swing.JComboBox();
+        passwordStrategyAttribute = new javax.swing.JComboBox();  */
+
         valueTitleLabel = new javax.swing.JLabel();
         mappingTitleLabel = new javax.swing.JLabel();
         objectClassLabel = new javax.swing.JLabel();
@@ -629,6 +638,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
         userAttributePanel.add(emailAttribute, gridBagConstraints);
 
+        /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
         passwordStrategyAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
         passwordStrategyAttributeLabel.setText(resources.getString("passwordStrategyAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -647,7 +657,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.gridy = 11;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
-        userAttributePanel.add(passwordStrategyAttribute, gridBagConstraints);
+        userAttributePanel.add(passwordStrategyAttribute, gridBagConstraints);  */
 
         valueTitleLabel.setText("Value");
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -725,7 +735,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private javax.swing.JLabel nameAttributeLabel;
     private javax.swing.JLabel objectClassLabel;
     private javax.swing.JLabel passwordAttributeLabel;
-    private javax.swing.JLabel passwordStrategyAttributeLabel;
     private javax.swing.JLabel valueTitleLabel;
 
     private javax.swing.JTextField emailAttribute;
@@ -736,7 +745,10 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private javax.swing.JTextField objectClass;
     private javax.swing.JTextField passwordAttribute;
 
-    private javax.swing.JComboBox passwordStrategyAttribute;
+    /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
+    private javax.swing.JLabel passwordStrategyAttributeLabel;
+    private javax.swing.JComboBox passwordStrategyAttribute;   */
+
     private javax.swing.JButton addButton;
     private javax.swing.JButton removeButton;
     private javax.swing.JPanel userActionPanel;
