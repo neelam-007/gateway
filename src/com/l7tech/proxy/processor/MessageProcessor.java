@@ -37,10 +37,7 @@ import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ClientLogger;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.xml.sax.SAXException;
@@ -372,6 +369,15 @@ public class MessageProcessor {
 
         HttpClient client = new HttpClient();
         HttpState state = client.getState();
+
+        Cookie[] cookies = req.getSsg().getSessionCookies();
+        if (cookies != null) {
+            for (int i = 0; i < cookies.length; i++) {
+                Cookie cookie = cookies[i];
+                state.addCookie(cookie);
+            }
+        }
+
         PostMethod postMethod = null;
         try {
             postMethod = new PostMethod(url.toString());
@@ -480,8 +486,14 @@ public class MessageProcessor {
             return response;
 
         } finally {
-            if (postMethod != null)
+            if (postMethod != null) {
+                if (state.getCookies() == null) {
+                    req.getSsg().clearSessionCookies();
+                } else {
+                    req.getSsg().setSessionCookies(state.getCookies());
+                }
                 postMethod.releaseConnection();
+            }
         }
     }
 

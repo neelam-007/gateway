@@ -8,6 +8,7 @@ import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.util.ClientLogger;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
+import org.apache.commons.httpclient.Cookie;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
@@ -80,6 +81,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient boolean passwordWorkedWithSsg = false;
     private transient SSLContext sslContext = null;
     private transient ClientProxyTrustManager trustManager = null;
+    private transient Cookie[] sessionCookies = null;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -731,5 +733,42 @@ public class Ssg implements Serializable, Cloneable, Comparable {
             throws NoSuchProviderException, NoSuchAlgorithmException, KeyManagementException
     {
         sslContext = createSslContext();
+    }
+
+    /**
+     * Return the HTTP cookies of the user session established with SiteMinder Policy Server.
+     *
+     * @return  Cookie[]  The list of session cookies.
+     */
+    public synchronized Cookie[] getSessionCookies() {
+
+        String cookieString = "HTTP cookies: ";
+        if (sessionCookies != null && sessionCookies.length > 0) {
+
+            for (int i = 0; i < sessionCookies.length; i++) {
+                cookieString += "[ " + sessionCookies[i].toExternalForm() + " ], ";
+            }
+        } else {
+            cookieString += " empty";
+        }
+
+        log.info(cookieString);
+        return sessionCookies;
+    }
+
+    /**
+     * Store the HTTP cookies of the user session established with SiteMinder Policy Server.
+     *
+     * @param cookies  The HTTP cookies to be saved.
+     */
+    public synchronized void setSessionCookies(Cookie[] cookies) {
+        sessionCookies = cookies;
+    }
+
+    /**
+     * Delete the cookies.
+     */
+    public synchronized void clearSessionCookies() {
+        sessionCookies = new Cookie[0];
     }
 }

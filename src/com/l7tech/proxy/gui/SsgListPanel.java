@@ -35,6 +35,7 @@ public class SsgListPanel extends JPanel {
     private Action actionSetDefaultSsg;
     private Action actionDeleteSsg;
     private ClientProxy clientProxy;
+    private Action actionEmptyCookieCache;
 
     SsgListPanel(ClientProxy clientProxy, SsgManager ssgManager) {
         this.clientProxy = clientProxy;
@@ -256,6 +257,28 @@ public class SsgListPanel extends JPanel {
             actionSetDefaultSsg.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_D));
         }
         return actionSetDefaultSsg;
+    }
+
+    /**
+     * The action of deleting all HTTP cookies from cache.
+     *
+     * @return  Action  an reference to the the action object.
+     */
+    public Action getActionEmptyCookieCache() {
+        if (actionEmptyCookieCache == null) {
+            actionEmptyCookieCache = new AbstractAction("Empty Cookie Cache", IconManager.getRemove()) {
+                public void actionPerformed(final ActionEvent e) {
+
+                    for (int i = 0; i < ssgTableModel.getRowCount(); i++) {
+                        Ssg ssg = ssgTableModel.getSsgAtRow(i);
+                        ssg.clearSessionCookies();
+                    }
+                }
+            };
+            actionEmptyCookieCache.putValue(Action.SHORT_DESCRIPTION, "Delete session cookies of all SSGs from the cache.");
+            actionEmptyCookieCache.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_D));
+        }
+        return actionEmptyCookieCache;
     }
 
     /**

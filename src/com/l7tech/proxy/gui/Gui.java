@@ -303,6 +303,8 @@ public class Gui {
         fileMenu.add(new JMenuItem(getSsgListPanel().getActionSetDefaultSsg()));
         fileMenu.add(new JMenuItem(getSsgListPanel().getActionDeleteSsg()));
         fileMenu.add(new JSeparator());
+        fileMenu.add(new JMenuItem(getSsgListPanel().getActionEmptyCookieCache()));
+        fileMenu.add(new JSeparator());
 
         final JMenuItem fileQuit = new JMenuItem(MENU_FILE_QUIT);
         fileQuit.setMnemonic(KeyEvent.VK_X);
