@@ -105,14 +105,12 @@ public class BootServlet extends HttpServlet {
     }
 
     protected void initializeClusterStatusUpdate() {
-        ClusterInfoManager man = new ClusterInfoManager();
-        if (man.isCluster()) {
-            try {
-                man.updateSelfUptime();
-            } catch (UpdateException e) {
-                logger.log(Level.SEVERE, "could not record boot time", e);
-            }
-            StatusUpdater.initialize();
+        ClusterInfoManager man = ClusterInfoManager.getInstance();
+        try {
+            man.updateSelfUptime();
+        } catch (UpdateException e) {
+            logger.log(Level.WARNING, "error updating boot time of node.", e);
         }
+        StatusUpdater.initialize();
     }
 }

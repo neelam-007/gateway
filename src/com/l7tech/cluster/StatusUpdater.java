@@ -157,7 +157,7 @@ public class StatusUpdater extends Thread {
     }
 
     private boolean die = false;
-    private final ClusterInfoManager clusterInfoManager = new ClusterInfoManager();
+    private final ClusterInfoManager clusterInfoManager = ClusterInfoManager.getInstance();
     private final ServiceUsageManager serviceUsageManager = new ServiceUsageManager();
 
     private static final StatusUpdater updater = new StatusUpdater();

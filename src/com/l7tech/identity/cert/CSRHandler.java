@@ -239,7 +239,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         }
 
         // look for ip address of master server
-        ClusterInfoManager manager = new ClusterInfoManager();
+        ClusterInfoManager manager = ClusterInfoManager.getInstance();
         Collection clusterNodes = null;
         try {
             clusterNodes = manager.retrieveClusterStatus();
