@@ -6,6 +6,7 @@
  */
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
@@ -18,9 +19,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 
 class ReceiverXmlSecurityProcessor extends SecurityProcessor {
@@ -147,12 +148,13 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
 
                 Element messagePartElement = null;
-                preconditionXpath = elementSecurity.getElementXpath();
-                if (preconditionXpath != null) {
-                    List nodes = XpathEvaluator.newEvaluator(document, preconditionXpath.getNamespaces()).select(preconditionXpath.getExpression());
+                XpathExpression elementXpath = elementSecurity.getElementXpath();
+                if (elementXpath != null) {
+                    List nodes = XpathEvaluator.newEvaluator(document,
+                                                             elementXpath.getNamespaces()).select(elementXpath.getExpression());
                     if (nodes.isEmpty()) {
                         if (!preconditionMatched) continue; // Request wasn't encrypted; it's just a non-matching request
-                        final String message = "The XPath result is empty '" + preconditionXpath.getExpression() + "'";
+                        final String message = "The XPath result is empty '" + elementXpath.getExpression() + "'";
                         String logmessage = message + "\nMessage is\n" + XmlUtil.documentToString(document);
                         logger.warning(logmessage);
                         throw new SecurityProcessorException(message);
@@ -171,7 +173,21 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 if (elementSecurity.isEncryption()) { //element security is required
                     if (messagePartElement.hasChildNodes()) {
                         check(elementSecurity);
-                        XmlMangler.decryptElement(messagePartElement, decryptionKey);
+                        if (envelopeProcessed) {
+                            // Find the Body
+                            try {
+                                Element bodyElement = XmlUtil.findOnlyOneChildElementByName( messagePartElement,
+                                                                                             messagePartElement.getNamespaceURI(),
+                                                                                             SoapUtil.BODY_EL_NAME );
+                                XmlMangler.decryptElement(bodyElement, decryptionKey);
+                            } catch ( XmlUtil.MultipleChildElementsException e ) {
+                                String msg = "Message contained multiple SOAP:Body elements";
+                                logger.warning(msg);
+                                throw new SecurityProcessorException( msg );
+                            }
+                        } else {
+                            XmlMangler.decryptElement(messagePartElement, decryptionKey);
+                        }
                     } else {
                         logger.warning("Encrypt requested XPath '" + preconditionXpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
                     }
