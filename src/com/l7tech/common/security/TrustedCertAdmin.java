@@ -16,6 +16,7 @@ import java.security.cert.CertificateException;
 import java.util.List;
 
 /**
+ * Remote interface to get/save/delete certs trusted by the gateway.
  * @author alex
  * @version $Revision$
  */
@@ -24,24 +25,22 @@ public interface TrustedCertAdmin extends Remote {
     /**
      * Retrieves all {@link TrustedCert}s from the database.
      * @return a {@link List} of {@link TrustedCert}s
-     * @throws FindException
-     * @throws RemoteException
+     * @throws FindException if there was a server-side problem accessing the requested information
      */
     public List findAllCerts() throws FindException, RemoteException;
 
     /**
      * Retrieves the {@link TrustedCert} with the specified oid.
      * @param oid the oid of the {@link TrustedCert} to retrieve
-     * @return
-     * @throws FindException
-     * @throws RemoteException
+     * @return the TrustedCert or null if no cert for that oid
+     * @throws FindException if there was a server-side problem accessing the requested information
      */
     public TrustedCert findCertByPrimaryKey(long oid) throws FindException, RemoteException;
 
     /**
      * Retrieves the {@link TrustedCert} with the specified subject DN.
      * @param dn the Subject DN of the {@link TrustedCert} to retrieve
-     * @return
+     * @return the TrustedCert or null if no cert for that oid
      * @throws FindException
      * @throws RemoteException
      */
@@ -50,11 +49,10 @@ public interface TrustedCertAdmin extends Remote {
     /**
      * Saves a new or existing {@link TrustedCert} to the database.
      * @param cert the {@link TrustedCert} to be saved
-     * @return
-     * @throws SaveException
-     * @throws UpdateException
-     * @throws VersionException
-     * @throws RemoteException
+     * @return the object id (oid) of the newly saved cert
+     * @throws SaveException if there was a server-side problem saving the cert
+     * @throws UpdateException if there was a server-side problem updating the cert
+     * @throws VersionException if the updated cert was not up-to-date (updating an old version)
      */
     public long saveCert(TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException;
 
@@ -63,7 +61,6 @@ public interface TrustedCertAdmin extends Remote {
      * @param oid the oid of the {@link TrustedCert} to be deleted
      * @throws FindException if the {@link TrustedCert} cannot be found
      * @throws DeleteException if the {@link TrustedCert} cannot be deleted
-     * @throws RemoteException
      */
     public void deleteCert(long oid) throws FindException, DeleteException, RemoteException;
 
@@ -79,13 +76,25 @@ public interface TrustedCertAdmin extends Remote {
      * @return an {@link X509Certificate} chain.
      * @throws IOException if the certificate cannot be retrieved for whatever reason.
      * @throws IllegalArgumentException if the URL does not start with "https://"
-     * @throws RemoteException
+     * @throws HostnameMismatchException if the hostname did not match the cert's subject
      */
     public X509Certificate[] retrieveCertFromUrl(String url) throws RemoteException, IOException, HostnameMismatchException;
+
+    /**
+     * Retrieves the {@link X509Certificate} chain from the specified URL.
+     * @param url the url from which to retrieve the cert.
+     * @param ignoreHostname whether or not the hostname match should be ignored when doing ssl handshake
+     * @return an {@link X509Certificate} chain.
+     * @throws IOException if the certificate cannot be retrieved for whatever reason.
+     * @throws HostnameMismatchException if the hostname did not match the cert's subject
+     */
     public X509Certificate[] retrieveCertFromUrl(String url, boolean ignoreHostname) throws RemoteException, IOException, HostnameMismatchException;
 
     /**
-     * Get the ssg's root cert
+     * Get the gateway's root cert.
+     * @return the gateway's root cert
+     * @throws IOException if the certificate cannot be retrieved
+     * @throws CertificateException if the certificate cannot be retrieved
      */
     public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException;
 }
