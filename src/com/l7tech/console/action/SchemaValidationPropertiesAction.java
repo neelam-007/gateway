@@ -1,8 +1,17 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.panels.SchemaValidationPropertiesDialog;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.service.PublishedService;
 
+import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * Action for viewing or editing the properties of a Schema Validation Assertion node.
@@ -16,8 +25,9 @@ import java.util.logging.Logger;
  */
 public class SchemaValidationPropertiesAction extends BaseAction {
 
-    public SchemaValidationPropertiesAction(SchemaValidationTreeNode node) {
+    public SchemaValidationPropertiesAction(SchemaValidationTreeNode node, PublishedService service) {
         this.node = node;
+        this.service = service;
     }
 
     public String getName() {
@@ -33,28 +43,26 @@ public class SchemaValidationPropertiesAction extends BaseAction {
     }
 
     public void performAction() {
-        /*
-        todo, plug in dialog here baby
         Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-        SamlPropertiesDialog pw = new SamlPropertiesDialog(f, assertion);
-        pw.pack();
-        Utilities.centerOnScreen(pw);
-        pw.show();
-        assertionChanged();
+        SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
 
-        public void assertionChanged() {
-            JTree tree =
-              (JTree)ComponentRegistry.getInstance().getPolicyTree();
-            if (tree != null) {
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                model.nodeChanged(assertion);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
-            }
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        dlg.show();
+        assertionChanged();
+    }
+
+    public void assertionChanged() {
+        JTree tree = ComponentRegistry.getInstance().getPolicyTree();
+        if (tree != null) {
+            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            model.nodeChanged(node);
+        } else {
+            log.log(Level.WARNING, "Unable to reach the palette tree.");
         }
-        */
     }
 
     private final Logger log = Logger.getLogger(getClass().getName());
     private SchemaValidationTreeNode node;
+    private PublishedService service;
 }
