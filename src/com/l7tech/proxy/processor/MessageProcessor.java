@@ -176,6 +176,8 @@ public class MessageProcessor {
                    ServerCertificateUntrustedException, BadCredentialsException
     {
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
+        if (appliedPolicy == null)
+            return;
         AssertionStatus result = appliedPolicy.getClientAssertion().unDecorateReply(req, res);
         if (result != AssertionStatus.NONE)
             log.warn("Response policy processing failed with status " + result + "; continuing anyway");
