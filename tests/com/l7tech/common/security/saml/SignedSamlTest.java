@@ -110,12 +110,11 @@ public class SignedSamlTest extends TestCase {
     public Document getRequestWithSenderVouchesToken() throws Exception {
         Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
 
-        SamlAssertionGenerator ag = new SamlAssertionGenerator();
+        SamlAssertionGenerator ag = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setExpiryMinutes(5);
         samlOptions.setSignEnvelope(false);
         ag.attachSenderVouches(request,
-                               new SignerInfo(caPrivateKey, caCertChain),
                                LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()),
                                //LoginCredentials.makePasswordCredentials("john", "ilovesheep".toCharArray(), getClass()),
                                samlOptions);

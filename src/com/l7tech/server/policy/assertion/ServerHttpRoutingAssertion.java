@@ -217,8 +217,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
                     Document document = context.getRequest().getXmlKnob().getDocumentWritable();
-                    SamlAssertionGenerator ag = new SamlAssertionGenerator();
                     SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
+                    SamlAssertionGenerator ag = new SamlAssertionGenerator(si);
                     SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
                     TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
                     if (requestTcp != null) {
@@ -230,7 +230,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         }
                     }
                     samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
-                    ag.attachSenderVouches(document, si, context.getCredentials(), samlOptions);
+                    ag.attachSenderVouches(document, context.getCredentials(), samlOptions);
                 }
                 attachCookies(client, context, url);
 
