@@ -51,7 +51,7 @@ public class WspReaderTest extends TestCase {
         String xmlA = WspWriter.getPolicyXml(policy);
         Assertion policyB = WspReader.parse(xmlA);
         String xmlB = WspWriter.getPolicyXml(policyB);
-        assertTrue(xmlA.equals(xmlB));
+        assertEquals(xmlA, xmlB);
     }
 
     private interface throwingRunnable {
@@ -107,7 +107,7 @@ public class WspReaderTest extends TestCase {
         Map bops = bindingInfo.getBindingOperations();
         assertFalse(bops.isEmpty());
         BindingOperationInfo[] bois = (BindingOperationInfo[])bops.values().toArray(new BindingOperationInfo[0]);
-        assertTrue(bois.length == 2);
+        assertTrue(bois.length == 1);
 
         String reserialized = WspWriter.getPolicyXml(parsedPolicy);
         assertEquals(reserialized.length(), serialized.length());

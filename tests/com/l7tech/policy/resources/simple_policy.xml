@@ -171,6 +171,31 @@
                     </Namespaces>
                 </XpathExpression>
             </RequestXpathAssertion>
+            <All>
+                <RequestSwAAssertion>
+                    <BindingInfo wsdlBindingInfo="included">
+                        <BindingName stringValue="serviceBinding1"/>
+                        <BindingOperations mapValue="included">
+                            <entry>
+                                <key stringValue="getQuote"/>
+                                <value wsdlBindingOperationInfo="included">
+                                    <Multipart mapValue="included">
+                                    <entry>
+                                    <key stringValue="portfolioData"/>
+                                    <value wsdlMimePartInfo="included">
+                                    <ContentType stringValue="application/x-zip-compressed"/>
+                                    <MaxLength intValue="0"/>
+                                    <Name stringValue="portfolioData"/>
+                                    </value>
+                                    </entry>
+                                    </Multipart>
+                                    <Name stringValue="getQuote"/>
+                                </value>
+                            </entry>
+                        </BindingOperations>
+                    </BindingInfo>
+                </RequestSwAAssertion>
+            </All>
         </ExactlyOne>
         <TrueAssertion/>
         <FalseAssertion/>

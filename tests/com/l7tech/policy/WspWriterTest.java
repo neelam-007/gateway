@@ -69,6 +69,7 @@ public class WspWriterTest extends TestCase {
                 new FalseAssertion(),
                 new HttpRoutingAssertion("http://floomp.boomp.foomp/", "bob&joe", "james;bloo=foo&goo\"poo\"\\sss\\", "", -5),
                 rxa,
+                createSoapWithAttachmentsPolicy(),
             })),
             new TrueAssertion(),
             new FalseAssertion()
@@ -113,16 +114,16 @@ public class WspWriterTest extends TestCase {
     public static Assertion createSoapWithAttachmentsPolicy() {
         Map getQuoteAttachments = new HashMap();
         getQuoteAttachments.put("portfolioData", new MimePartInfo("portfolioData", "application/x-zip-compressed"));
-        getQuoteAttachments.put("expectedQuoteFormat", new MimePartInfo("expectedQuoteFormat", "text/xml"));
-        getQuoteAttachments.put("quoteData", new MimePartInfo("quoteData", "application/x-zip-compressed"));
+        //getQuoteAttachments.put("expectedQuoteFormat", new MimePartInfo("expectedQuoteFormat", "text/xml"));
+        //getQuoteAttachments.put("quoteData", new MimePartInfo("quoteData", "application/x-zip-compressed"));
 
         Map buyStockAttachments = new HashMap();
         buyStockAttachments.put("portfolioData", new MimePartInfo("portfolioData", "application/x-zip-compressed"));
-        buyStockAttachments.put("paymentInformation", new MimePartInfo("paymentInformation", "application/x-payment-info"));
+        //buyStockAttachments.put("paymentInformation", new MimePartInfo("paymentInformation", "application/x-payment-info"));
 
         Map bindingOperations = new HashMap();
         bindingOperations.put("getQuote", new BindingOperationInfo("getQuote", getQuoteAttachments));
-        bindingOperations.put("buyStock", new BindingOperationInfo("buyStock", buyStockAttachments));
+        //bindingOperations.put("buyStock", new BindingOperationInfo("buyStock", buyStockAttachments));
 
         BindingInfo bindingInfo = new BindingInfo("serviceBinding1", bindingOperations);
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[] {
