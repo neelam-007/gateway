@@ -6,6 +6,8 @@
 
 package com.l7tech.message;
 
+import com.l7tech.policy.assertion.AssertionStatus;
+
 import javax.servlet.http.HttpServletResponse;
 import java.util.Iterator;
 
@@ -20,12 +22,16 @@ public class HttpSoapResponse extends SoapResponse {
         super( htm );
     }
 
-    public void setHeadersIn( HttpServletResponse hresponse ) {
+    public void setHeadersIn( HttpServletResponse hresponse, AssertionStatus status ) {
         Integer irouteStat = (Integer)getParameter( Response.PARAM_HTTP_STATUS );
         int routeStat;
         if ( irouteStat == null ) {
-            // Request wasn't routed
-            routeStat = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+            if ( status == AssertionStatus.NONE ) {
+                routeStat = HttpServletResponse.SC_OK;
+            } else {
+                // Request wasn't routed
+                routeStat = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+            }
         } else
             routeStat = irouteStat.intValue();
 
