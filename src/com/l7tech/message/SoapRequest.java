@@ -3,6 +3,7 @@ package com.l7tech.message;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.MessageProcessor;
@@ -107,7 +108,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         // TODO: Attachments
         if (_requestXml == null && _document != null) {
             // serialize the document
-            _requestXml = serializeDoc(_document);
+            _requestXml = XmlUtil.nodeToString(_document);
         } else if ( _requestXml == null ) {
             BufferedReader reader = new BufferedReader( getRequestReader() );
             StringBuffer xml = new StringBuffer();
