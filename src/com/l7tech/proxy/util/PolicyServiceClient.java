@@ -160,17 +160,30 @@ public class PolicyServiceClient {
     private static Policy parseGetPolicyResponse(Document originalRequest, Document response, WssProcessor.ParsedElement[] elementsThatWereSigned)
             throws InvalidDocumentFormatException, BadCredentialsException
     {
-        // TODO check for fault message from server
         {
+            // check for fault message from server
             Element payload = SoapUtil.getPayloadElement(response);
             if (payload == null) throw new MissingRequiredElementException("Policy server response is missing SOAP Body or payload element");
             if (response.getDocumentElement().getNamespaceURI().equals(payload.getNamespaceURI()) && "Fault".equals(payload.getLocalName()))
                 translateSoapFault(payload);
         }
 
-        // TODO check correlation ID in the response
+        // check correlation ID in the response
+        String requestMessageId = SoapUtil.getL7aMessageId(originalRequest);
+        if (requestMessageId == null || requestMessageId.length() < 1) {
+            log.warning("Original policy request contained no MessageId -- skipping RelatesTo check"); // can't happen
+        } else {
+            Element relatesTo = SoapUtil.getL7aRelatesToElement(response);
+            if (elementsThatWereSigned != null)
+                if (!ProcessorResultUtil.nodeIsPresent(relatesTo, elementsThatWereSigned))
+                    throw new InvalidDocumentFormatException("Policy server response did not sign the L7a:RelatesTo");
+            String idstr = XmlUtil.getTextValue(relatesTo);
+            if (!requestMessageId.equals(idstr))
+                throw new InvalidDocumentFormatException("Policy server response did not include an L7a:RelatesTo matching our requests L7a:MessageID.");
+        }
 
 
+        // PGet metadata from header
         Element header = SoapUtil.getHeaderElement(response);
         if (header == null) throw new MissingRequiredElementException("Policy server response is missing SOAP Header element");
         Element policyVersion = XmlUtil.findOnlyOneChildElementByName(header,

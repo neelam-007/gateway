@@ -142,8 +142,10 @@ public class PolicyService {
 
         // Which policy is requested?
         String policyId = null;
+        String relatesTo = null;
         try {
             policyId = getRequestedPolicyId(wssOutput.getUndecoratedMessage());
+            relatesTo = SoapUtil.getL7aMessageId(wssOutput.getUndecoratedMessage());
         } catch (InvalidDocumentFormatException e) {
             exceptionToFault(e, response);
             return;
@@ -229,7 +231,7 @@ public class PolicyService {
         }
         try {
             String policyVersion = policyId + "|" + si.getVersion();
-            wrapFilteredPolicyInResponse(policyDoc, policyVersion, response);
+            wrapFilteredPolicyInResponse(policyDoc, policyVersion, relatesTo, response);
         } catch (GeneralSecurityException e) {
             exceptionToFault(e, response);
             return;
@@ -240,7 +242,7 @@ public class PolicyService {
         return;
     }
 
-    private void wrapFilteredPolicyInResponse(Document policyDoc, String policyVersion, SoapResponse response)
+    private void wrapFilteredPolicyInResponse(Document policyDoc, String policyVersion, String relatesTo, SoapResponse response)
                             throws GeneralSecurityException, WssDecorator.DecoratorException {
         Document responseDoc;
         try {
@@ -258,7 +260,10 @@ public class PolicyService {
             Element body = SoapUtil.getBodyElement(responseDoc);
             Element gpr = XmlUtil.findFirstChildElement(body);
             gpr.appendChild(responseDoc.importNode(policyDoc.getDocumentElement(), true));
-            signresponse(responseDoc, pver);
+            Element rte = null;
+            if (relatesTo != null)
+                rte = SoapUtil.setL7aRelatesTo(responseDoc, relatesTo);
+            signresponse(responseDoc, pver, rte);
             response.setResponseXml(XmlUtil.nodeToString(responseDoc));
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
@@ -269,7 +274,7 @@ public class PolicyService {
         }
     }
 
-    private void signresponse(Document responseDoc, Element policyVersion) throws GeneralSecurityException, WssDecorator.DecoratorException {
+    private void signresponse(Document responseDoc, Element policyVersion, Element relatesTo) throws GeneralSecurityException, WssDecorator.DecoratorException {
         WssDecoratorImpl decorator = new WssDecoratorImpl();
         WssDecorator.DecorationRequirements reqmts = new WssDecorator.DecorationRequirements();
         reqmts.setSenderCertificate(serverCert);
@@ -279,6 +284,8 @@ public class PolicyService {
             reqmts.getElementsToSign().add(SoapUtil.getBodyElement(responseDoc));
             if (policyVersion != null)
                 reqmts.getElementsToSign().add(policyVersion);
+            if (relatesTo != null)
+                reqmts.getElementsToSign().add(relatesTo);
             decorator.decorateMessage(responseDoc, reqmts);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
@@ -286,7 +293,6 @@ public class PolicyService {
     }
 
     private String getRequestedPolicyId(Document requestDoc) throws InvalidDocumentFormatException {
-        // TODO add correlation ID in the response (L7a:AppliesTo)
         Element header = SoapUtil.getHeaderElement(requestDoc);
         if (header == null) throw new MissingRequiredElementException("No SOAP Header was found in the request.");
         Element sidEl = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE, SoapUtil.L7_SERVICEID_ELEMENT);

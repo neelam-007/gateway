@@ -552,10 +552,11 @@ public class SoapUtil {
      *
      * @param soapMsg   the soap message to modify
      * @param relatesTo the new L7a:RelatesTo value
+     * @return the L7a:RelatesTo element that was set.  Never null.
      * @throws InvalidDocumentFormatException if the message isn't soap, has more than one header, or already has
      *                                        a RelatesTo
      */
-    public static void setL7aRelatesTo(Document soapMsg, String relatesTo) throws InvalidDocumentFormatException {
+    public static Element setL7aRelatesTo(Document soapMsg, String relatesTo) throws InvalidDocumentFormatException {
         Element idEl = getL7aRelatesToElement(soapMsg);
         if (idEl != null)
             throw new ElementAlreadyExistsException("This message already has a L7a:RelatesTo");
@@ -563,6 +564,7 @@ public class SoapUtil {
         Element header = getOrMakeHeader(soapMsg);
         idEl = XmlUtil.createAndPrependElementNS(header, RELATESTO_EL_NAME, L7_MESSAGEID_NAMESPACE, L7_MESSAGEID_PREFIX);
         idEl.appendChild(idEl.getOwnerDocument().createTextNode(relatesTo));
+        return idEl;
     }
 
     /**
