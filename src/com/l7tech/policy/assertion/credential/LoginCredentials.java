@@ -16,34 +16,36 @@ import java.security.cert.X509Certificate;
  * @author alex
  */
 public class LoginCredentials {
-    public LoginCredentials( String login, byte[] credentials, CredentialFormat format, String realm, Object payload ) {
-        _login = login;
-        _credentials = credentials;
-        _realm = realm;
-        _format = format;
-        _payload = payload;
+    public LoginCredentials( String login, byte[] credentials, CredentialFormat format,
+                             Class credentialSource, String realm, Object payload ) {
+        this.login = login;
+        this.credentials = credentials;
+        this.realm = realm;
+        this.format = format;
+        this.credentialSourceAssertion = credentialSource;
+        this.payload = payload;
         if (format.isClientCert() && !(payload instanceof X509Certificate))
             throw new IllegalArgumentException("Must provide a certificate when creating client cert credentials");
     }
 
-    public LoginCredentials( String login, byte[] credentials, CredentialFormat format, String realm ) {
-        this( login, credentials, format, realm, null );
+    public LoginCredentials( String login, byte[] credentials, CredentialFormat format, Class credentialSource, String realm ) {
+        this( login, credentials, format, credentialSource, realm, null );
     }
 
-    public LoginCredentials( String login, byte[] credentials, CredentialFormat format ) {
-        this( login, credentials, format, null, null );
+    public LoginCredentials( String login, byte[] credentials, CredentialFormat format, Class credentialSource ) {
+        this( login, credentials, format, credentialSource, null );
     }
 
-    public LoginCredentials( String login, byte[] credentials ) {
-        this( login, credentials, CredentialFormat.CLEARTEXT, null, null );
+    public LoginCredentials( String login, byte[] credentials, Class credentialSource ) {
+        this( login, credentials, CredentialFormat.CLEARTEXT, credentialSource, null );
     }
 
     public String getLogin() {
-        return _login;
+        return login;
     }
 
     public byte[] getCredentials() {
-        return _credentials;
+        return credentials;
     }
 
     /**
@@ -51,11 +53,11 @@ public class LoginCredentials {
      * @return
      */
     public String getRealm() {
-        return _realm;
+        return realm;
     }
 
     public CredentialFormat getFormat() {
-        return _format;
+        return format;
     }
 
     /**
@@ -63,18 +65,39 @@ public class LoginCredentials {
      * @return
      */
     public Object getPayload() {
-        return _payload;
+        return payload;
+    }
+
+    /**
+     * @return the Class of the {@link CredentialSourceAssertion} that found this set of credentials.
+     */
+    public Class getCredentialSourceAssertion() {
+        return credentialSourceAssertion;
+    }
+
+    /**
+     * @param credentialSourceAssertion the Class of the {@link CredentialSourceAssertion} that found this set of credentials. Must be derived from {@link CredentialSourceAssertion}.
+     * @throws ClassCastException if the specified class is not derived from {@link CredentialSourceAssertion}.
+     */
+    public void setCredentialSourceAssertion( Class credentialSourceAssertion ) throws ClassCastException {
+        if (credentialSourceAssertion == null ||
+            CredentialSourceAssertion.class.isAssignableFrom(credentialSourceAssertion))
+            this.credentialSourceAssertion = credentialSourceAssertion;
+        else throw new ClassCastException(credentialSourceAssertion.getName() +
+                                         " is not derived from " +
+                                         CredentialSourceAssertion.class.getName() );
     }
 
     public String toString() {
         return getClass().getName() + "\n\t" +
-                "format: " + _format.toString() + "\n\t" +
-                "login: " + _login;
+                "format: " + format.toString() + "\n\t" +
+                "login: " + login;
     }
 
-    private final String _login;
-    private final byte[] _credentials;
-    private final String _realm;
-    private CredentialFormat _format;
-    private Object _payload;
+    private final String login;
+    private final byte[] credentials;
+    private final String realm;
+    private Class credentialSourceAssertion;
+    private CredentialFormat format;
+    private Object payload;
 }

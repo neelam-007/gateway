@@ -13,8 +13,8 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import sun.security.x509.X500Name;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 
 /**
  * This assertion verifies that the message contained an
@@ -74,6 +74,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
             request.setPrincipalCredentials(new LoginCredentials(certCN,
                                                                  null,
                                                                  CredentialFormat.CLIENTCERT,
+                                                                 getClass(),
                                                                  null,
                                                                  gotACertAlready));
             logger.fine("Cert loaded as principal credential for CN:" + certCN);

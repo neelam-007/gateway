@@ -13,6 +13,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
+import net.sf.hibernate.Hibernate;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 
@@ -141,9 +142,19 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
     }
 
     public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
-        PersistentUser imp = new PersistentUser();
-        imp.setOid( Long.valueOf( identifier ).longValue() );
-        delete(imp);
+        StringBuffer hql = new StringBuffer("FROM ");
+        hql.append(getTableName()).append(" IN CLASS ").append(getImpClass());
+        hql.append(" WHERE oid = ?");
+
+        try {
+            getContext().getSession().delete(hql.toString(), identifier, Hibernate.STRING);
+        } catch ( SQLException e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            throw new DeleteException(e.getMessage(), e);
+        } catch ( HibernateException e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            throw new DeleteException(e.getMessage(), e);
+        }
     }
 
     public String save( User user ) throws SaveException {

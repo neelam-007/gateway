@@ -162,7 +162,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 } else {
                     userAuthenticatedButDidNotPresentHisCert = true;
                 }
-            } catch (AuthenticationException e) {
+            } catch (Exception e) {
                 logger.fine("Authentication failed for user " + creds.getLogin() +
                   " on identity provider: " + provider.getConfig().getName());
                 continue;

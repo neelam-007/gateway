@@ -89,7 +89,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
 
         logger.info("cert found for user " + certCN);
 
-        return new LoginCredentials( certCN, null, CredentialFormat.CLIENTCERT, null, clientCert );
+        return new LoginCredentials( certCN, null, CredentialFormat.CLIENTCERT, getClass(), null, clientCert );
     }
 
     protected AssertionStatus checkCredentials(Request request, Response response) {

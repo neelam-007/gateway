@@ -59,7 +59,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
         return groupManager;
     }
 
-    public User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException {
+    public User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException, IOException {
         String login = pc.getLogin();
         byte[] credentials = pc.getCredentials();
 
@@ -99,10 +99,6 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         certStream.close();
                         ByteArrayInputStream bais = new ByteArrayInputStream(rootcacertbytes);
                         rootcacert = CertificateFactory.getInstance("X.509").generateCertificate(bais);
-                    } catch (IOException e) {
-                        String err = "Exception retrieving root cert " + e.getMessage();
-                        logger.log(Level.SEVERE, err, e);
-                        throw new AuthenticationException( err, e );
                     } catch (CertificateException e) {
                         String err = "Exception retrieving root cert " + e.getMessage();
                         logger.log(Level.SEVERE, err, e);

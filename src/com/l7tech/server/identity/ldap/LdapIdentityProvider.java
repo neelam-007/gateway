@@ -76,7 +76,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         return groupManager;
     }
 
-    public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException {
+    public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         LdapUser realUser = null;
         realUser = (LdapUser)userManager.findByLogin( pc.getLogin());
         if (realUser == null) {

@@ -7,6 +7,7 @@
 package com.l7tech.identity.fed;
 
 import com.l7tech.identity.PersistentUser;
+import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 
 /**
@@ -29,4 +30,19 @@ public class FederatedUser extends PersistentUser {
     public void setSubjectDn(String dn) {
         bean.setSubjectDn(dn);
     }
+
+    public void copyFrom( User objToCopy ) {
+        FederatedUser imp = (FederatedUser)objToCopy;
+        setOid(imp.getOid());
+        setName(imp.getName());
+        setSubjectDn(imp.getSubjectDn());
+        setProviderId(imp.getProviderId());
+        setLogin(imp.getLogin());
+        setDepartment(imp.getDepartment());
+        setEmail(imp.getEmail());
+        setFirstName(imp.getFirstName());
+        setLastName(imp.getLastName());
+        setTitle(imp.getTitle());
+    }
+
 }

@@ -53,7 +53,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         request.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PendingRequest request) {
                 WssDecorator.DecorationRequirements wssReq = request.getWssRequirements();
-                wssReq.setUsernameTokenCredentials(new LoginCredentials(username, password));
+                wssReq.setUsernameTokenCredentials(new LoginCredentials(username, password, WssBasic.class));
                 if (!request.getClientSidePolicy().isPlaintextAuthAllowed())
                     request.setSslRequired(true); // force SSL when using WSS basic
                 return AssertionStatus.NONE;

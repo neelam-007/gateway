@@ -44,6 +44,7 @@ public class ServerWssBasic implements ServerAssertion {
             if (tokens[i].asObject() instanceof LoginCredentials) {
                 LoginCredentials creds = (LoginCredentials)tokens[i].asObject();
                 if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
+                    creds.setCredentialSourceAssertion(WssBasic.class);
                     request.setPrincipalCredentials(creds);
                     return AssertionStatus.NONE;
                 }

@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -14,7 +15,10 @@ public interface IdentityProvider {
     UserManager getUserManager();
     GroupManager getGroupManager();
 
-    User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException;
+    /**
+     * @return a {@link User}. Will never be null.
+     */
+    User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException, IOException;
 
     /**
      * If true, the save, update and delete methods wont be supported on the usermanager and groupmanager objects

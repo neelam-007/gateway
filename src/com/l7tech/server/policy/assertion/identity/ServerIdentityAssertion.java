@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -112,6 +113,9 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     // fla fix, allow the policy to continue in case the credentials be valid for
                     // another id assertion down the road (fix for bug 374)
                     // throw new IdentityAssertionException( err, fe );
+                    return AssertionStatus.AUTH_FAILED;
+                } catch (IOException e) {
+                    logger.info("Authentication failed for " + pc.getLogin() );
                     return AssertionStatus.AUTH_FAILED;
                 }
             }

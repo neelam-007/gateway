@@ -1,7 +1,10 @@
 package com.l7tech.remote.ws.security;
 
 import com.l7tech.common.util.Locator;
-import com.l7tech.identity.*;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistenceContext;
@@ -146,7 +149,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
             clearTextPasswd = value.substring(i + 1);
         }
 
-        LoginCredentials creds = new LoginCredentials(login, clearTextPasswd.getBytes());
+        LoginCredentials creds = new LoginCredentials(login, clearTextPasswd.getBytes(), null);
 
         if (identityProviderConfigManager == null) {
             identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
@@ -155,10 +158,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
         try {
             try {
                 return identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds);
-            } catch (AuthenticationException e) {
-                logger.log(Level.SEVERE, "authentication failed for " + login, e);
-                return null;
-            } catch (FindException e) {
+            } catch (Exception e) {
                 logger.log(Level.SEVERE, "authentication failed for " + login, e);
                 return null;
             }

@@ -13,7 +13,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * @author alex
  * @version $Revision$
  */
-public class PersistentUser extends NamedEntityImp implements User {
+public abstract class PersistentUser extends NamedEntityImp implements User {
     public PersistentUser(UserBean bean) {
         this.bean = bean;
     }
@@ -48,6 +48,14 @@ public class PersistentUser extends NamedEntityImp implements User {
 
     public UserBean getUserBean() {
         return bean;
+    }
+
+    public String getName() {
+        return bean.getName();
+    }
+
+    public void setName( String name ) {
+        bean.setName( name );
     }
 
     /**
@@ -156,22 +164,7 @@ public class PersistentUser extends NamedEntityImp implements User {
         bean.setVersion(version);
     }
 
-    /**
-     * allows to set all properties from another object
-     */
-    public void copyFrom( User objToCopy ) {
-        InternalUser imp = (InternalUser)objToCopy;
-        setOid(imp.getOid());
-        setName(imp.getName());
-        setProviderId(imp.getProviderId());
-        setLogin(imp.getLogin());
-        setDepartment(imp.getDepartment());
-        setEmail(imp.getEmail());
-        setFirstName(imp.getFirstName());
-        setLastName(imp.getLastName());
-        setTitle(imp.getTitle());
-        setPassword( imp.getPassword() );
-    }
+    public abstract void copyFrom(User user);
 
     protected UserBean bean;
 }

@@ -11,18 +11,26 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
-import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -62,21 +70,51 @@ public class FederatedIdentityProvider implements IdentityProvider {
         return groupManager;
     }
 
-    public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException {
+    public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         if ( pc.getFormat() == CredentialFormat.CLIENTCERT_X509_ASN1_DER ) {
             if ( !config.isX509Supported() ) throw new AuthenticationException("This identity provider is not configured to support X.509 credentials");
-            
-            X509Certificate cert = (X509Certificate)pc.getPayload();
-            String sub = cert.getSubjectDN().getName();
-            FederatedUser user = userManager.findBySubjectDN(sub);
-            String iss = cert.getIssuerDN().getName();
-            // TODO
 
+            X509Certificate requestCert = (X509Certificate)pc.getPayload();
+            String subjectDn = requestCert.getSubjectDN().getName();
+            String issuerDn = requestCert.getIssuerDN().getName();
+
+            TrustedCert trustedCert = (TrustedCert)trustedCerts.get(issuerDn);
+            if ( trustedCert == null ) throw new BadCredentialsException("Signer is not trusted");
+
+            try {
+                // Check signatures
+                requestCert.verify(trustedCert.getCertificate().getPublicKey());
+            } catch ( CertificateException e ) {
+                logger.log( Level.WARNING, e.getMessage(), e );
+                throw new BadCredentialsException(e.getMessage(), e);
+            } catch ( NoSuchAlgorithmException e ) {
+                logger.log( Level.SEVERE, e.getMessage(), e );
+                throw new BadCredentialsException(e.getMessage(), e);
+            } catch ( InvalidKeyException e ) {
+                logger.log( Level.SEVERE, e.getMessage(), e );
+                throw new BadCredentialsException(e.getMessage(), e);
+            } catch ( NoSuchProviderException e ) {
+                logger.log( Level.SEVERE, e.getMessage(), e );
+                throw new BadCredentialsException(e.getMessage(), e);
+            } catch ( SignatureException e ) {
+                logger.log( Level.SEVERE, e.getMessage(), e );
+                throw new BadCredentialsException(e.getMessage(), e);
+            }
+
+            Class credentialSourceClass = pc.getCredentialSourceAssertion();
+            if ( credentialSourceClass == null )
+                throw new BadCredentialsException("Certificate was found by an unknown credential source");
+            else if ( credentialSourceClass == RequestWssX509Cert.class &&
+                      config.getX509Config().isWssBinarySecurityToken() )
+                return userManager.findBySubjectDN(subjectDn);
+            else if ( credentialSourceClass == HttpClientCert.class &&
+                      config.getX509Config().isSslClientCert() )
+                return userManager.findBySubjectDN(subjectDn);
+
+            throw new BadCredentialsException("");
         } else if ( pc.getFormat() == CredentialFormat.SAML ) {
-
-            if ( !config.isSamlSupported() ) throw new AuthenticationException("This identity provider is not configured to support SAML credentials");
             // TODO
-
+            if ( !config.isSamlSupported() ) throw new AuthenticationException("This identity provider is not configured to support SAML credentials");
         } else {
             throw new BadCredentialsException("Can't authenticate without SAML or X.509 certificate credentials");
         }

@@ -4,6 +4,7 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import junit.framework.TestCase;
@@ -162,8 +163,9 @@ public class LdapIdentityProviderTest extends TestCase {
             }
             User authenticated = null;
             try {
-                authenticated = localProvider.authenticate(new LoginCredentials(notauthenticated.getLogin(),
-                        passwd.getBytes(), CredentialFormat.CLEARTEXT, null, null));
+                authenticated = localProvider.authenticate(
+                        new LoginCredentials(notauthenticated.getLogin(),
+                        passwd.getBytes(), CredentialFormat.CLEARTEXT, HttpBasic.class, null, null));
             } catch (Exception e) {
                 System.out.println("creds do not authenticate.");
             }

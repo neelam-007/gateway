@@ -6,11 +6,12 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.security.JceProvider;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -19,9 +20,9 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
 import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -134,7 +135,7 @@ public class WssDecoratorTest extends TestCase {
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         log.info("Before decoration:" + XmlUtil.nodeToFormattedString(doc));
         WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
-        reqs.setUsernameTokenCredentials(new LoginCredentials("franco", "blahblah".getBytes()));
+        reqs.setUsernameTokenCredentials(new LoginCredentials("franco", "blahblah".getBytes(), WssBasic.class));
 
         decorator.decorateMessage(doc, reqs);
         log.info("Decorated message:" + XmlUtil.nodeToFormattedString(doc));
