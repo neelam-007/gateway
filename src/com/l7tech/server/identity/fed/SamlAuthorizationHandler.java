@@ -80,25 +80,21 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                 certIssuerTrust = trustedCertManager.getCachedCertBySubjectDn(certIssuerDn, MAX_CACHE_AGE);
                 if (certIssuerTrust != null) {
                     // TODO do we care whether the client cert was signed by a trusted CA in this case?
-                    final String untrusted = "Subject certificate '" + certSubjectDn + "' was signed by '" +
-                                             certIssuerDn + "', which is not trusted";
-
-                    if (!certIssuerTrust.isTrustedForSigningClientCerts()) {
-                        throw new BadCredentialsException(untrusted + " for signing client certificates");
-                    } else if (!certOidSet.contains(new Long(certIssuerTrust.getOid()))) {
-                        throw new BadCredentialsException(untrusted + " for this Federated Identity Provider");
-                    }
-
-                    X509Certificate certIssuerCert = null;
-                    try {
-                        certIssuerCert = certIssuerTrust.getCertificate();
-                        subjectCertificate.verify(certIssuerCert.getPublicKey());
-                    } catch ( CertificateException e ) {
-                        throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
-                    } catch ( IOException e ) {
-                        throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
-                    } catch ( GeneralSecurityException e ) {
-                        throw new AuthenticationException("Couldn't verify subject certificate '" + certSubjectDn + "': " + e.getMessage(), e);
+                    if (certOidSet.contains(new Long(certIssuerTrust.getOid()))) {
+                        if (!certIssuerTrust.isTrustedForSigningClientCerts())
+                            throw new BadCredentialsException("Subject certificate '" + certSubjectDn + "' was signed by '" +
+                                             certIssuerDn + "', which is not trusted for signing client certificates");
+                        X509Certificate certIssuerCert = null;
+                        try {
+                            certIssuerCert = certIssuerTrust.getCertificate();
+                            subjectCertificate.verify(certIssuerCert.getPublicKey());
+                        } catch ( CertificateException e ) {
+                            throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
+                        } catch ( IOException e ) {
+                            throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
+                        } catch ( GeneralSecurityException e ) {
+                            throw new AuthenticationException("Couldn't verify subject certificate '" + certSubjectDn + "': " + e.getMessage(), e);
+                        }
                     }
                 }
             } catch ( FindException e ) {
