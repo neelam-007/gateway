@@ -91,6 +91,10 @@ public class FederatedUserPanel extends UserPanel {
             log.log(Level.SEVERE, "GroupPanel()", e);
             e.printStackTrace();
         }
+
+        // Bugzilla #1090 - disable the fields that cannot be tested in rel 3.0
+        getLoginLabel().setEnabled(false);
+        getEmailLabel().setEnabled(false);
     }
 
     public boolean certExist() {
@@ -450,7 +454,9 @@ public class FederatedUserPanel extends UserPanel {
             loginTextField.getDocument().addDocumentListener(documentListener);
         }
 
-        loginTextField.setEnabled(config.isWritable());
+        // Bugzilla #1090 - disable the fields that cannot be tested in rel 3.0
+        loginTextField.setEnabled(false);
+        //loginTextField.setEnabled(config.isWritable());
 
         // Return text field
         return loginTextField;
@@ -523,8 +529,9 @@ public class FederatedUserPanel extends UserPanel {
             // Register listeners
             emailTextField.getDocument().addDocumentListener(documentListener);
         }
-
-        emailTextField.setEnabled(config.isWritable());
+        // Bugzilla #1090 - disable the fields that cannot be tested in rel 3.0
+        emailTextField.setEnabled(false);
+        //emailTextField.setEnabled(config.isWritable());
 
         // Return text field
         return emailTextField;

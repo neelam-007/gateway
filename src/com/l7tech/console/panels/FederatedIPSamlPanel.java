@@ -24,6 +24,7 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
     private JCheckBox holderOfKeyCheckbox;
     private JTextField nameQualifierTextField;
     private JTextField domainNameTextField;
+    private JLabel nameQualifierLabel;
 
     /**
      * Constructor
@@ -46,6 +47,13 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
                  domainNameTextField.setEnabled(domainNameCheckbox.isSelected());
             }
         });
+
+        // Bugzilla #1090 - disable the fields that cannot be tested in rel 3.0
+        domainNameCheckbox.setEnabled(false);
+        nameQualifierTextField.setEnabled(false);
+        nameQualifierLabel.setEnabled(false);
+        senderVouchesCheckbox.setEnabled(false);
+        emailCheckbox.setEnabled(false);
     }
 
     public String getDescription() {
@@ -147,9 +155,9 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
         panel3.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        final JLabel label1 = new JLabel();
-        label1.setText("Name Qualifier:");
-        panel4.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        nameQualifierLabel = new JLabel();
+        nameQualifierLabel.setText("Name Qualifier:");
+        panel4.add(nameQualifierLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel4.add(panel5, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
@@ -182,9 +190,9 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
         panel4.add(panel9, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
         final Spacer spacer3 = new Spacer();
         panel9.add(spacer3, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null));
-        final JLabel label2 = new JLabel();
-        label2.setText("Format:");
-        panel9.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        final JLabel label1 = new JLabel();
+        label1.setText("Format:");
+        panel9.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         nameQualifierTextField = new JTextField();
         nameQualifierTextField.setToolTipText("The security or administrative domain that qualifies the name of the subject");
         panel4.add(nameQualifierTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null));
@@ -206,9 +214,9 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
         final JPanel panel12 = new JPanel();
         panel12.setLayout(new GridLayoutManager(1, 1, new Insets(5, 0, 10, 0), -1, -1));
         panel1.add(panel12, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        final JLabel label3 = new JLabel();
-        label3.setText("SAML Credential Source Configuration");
-        panel12.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        final JLabel label2 = new JLabel();
+        label2.setText("SAML Credential Source Configuration");
+        panel12.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         final Spacer spacer5 = new Spacer();
         panel1.add(spacer5, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null));
     }
