@@ -1,32 +1,33 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
-import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Registry;
 import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 /**
- * The <code>DeleteServiceAction</code> action deletes the service
+ * The <code>EnableServiceAction</code> action disables the service
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class DeleteServiceAction extends BaseAction {
-    static final Logger log = Logger.getLogger(DeleteServiceAction.class.getName());
+public class EnableServiceAction extends BaseAction {
+    static final Logger log = Logger.getLogger(EnableServiceAction.class.getName());
     ServiceNode node;
 
     /**
-     * create the acciton that deletes
+     * create the aciton that disables the service
      * @param en the node to deleteEntity
      */
-    public DeleteServiceAction(ServiceNode en) {
+    public EnableServiceAction(ServiceNode en) {
         node = en;
     }
 
@@ -34,21 +35,21 @@ public class DeleteServiceAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Delete";
+        return "Enable";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Delete";
+        return "Enable the service";
     }
 
     /**
      * subclasses override this method specifying the resource name
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/delete.gif";
+        return "com/l7tech/console/resources/enableService.gif";
     }
 
     /** Actually perform the action.
@@ -57,26 +58,20 @@ public class DeleteServiceAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        boolean deleted = Actions.deleteService(node);
-        if (deleted) {
+        try {
+            final PublishedService publishedService = node.getPublishedService();
+            publishedService.setDisabled(false);
+            Registry.getDefault().getServiceManager().update(publishedService);
+
             JTree tree =
               (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            model.removeNodeFromParent(node);
-            tree = (JTree)ComponentRegistry.
-              getInstance().getComponent(PolicyTree.NAME);
-            ServiceNode sn =  (ServiceNode)tree.getClientProperty("service.node");
-            if (sn == null) return;
-
-            try {
-                PublishedService svc = sn.getPublishedService();
-                // if currently edited service was deleted
-                if (node.getPublishedService().getOid() == svc.getOid()) {
-                    ComponentRegistry.getInstance().getCurrentWorkspace().clearWorskpace();
-                }
-            } catch (FindException e) {
-                e.printStackTrace();
-            }
+            model.nodeChanged(node);
+        } catch (Exception e) {
+            ErrorManager.
+              getDefault().
+              notify(Level.WARNING, e, "The system reported an error while saving the service.");
         }
+
     }
 }

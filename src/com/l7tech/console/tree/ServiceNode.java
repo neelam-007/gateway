@@ -1,8 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.DeleteServiceAction;
-import com.l7tech.console.action.ServicePolicyPropertiesAction;
-import com.l7tech.console.action.EditServiceNameAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.logging.ErrorManager;
@@ -16,6 +14,7 @@ import javax.swing.tree.MutableTreeNode;
 import java.io.StringReader;
 import java.util.Enumeration;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -26,6 +25,7 @@ import java.util.logging.Level;
  * @version 1.0
  */
 public class ServiceNode extends EntityHeaderNode {
+    static final Logger log = Logger.getLogger(ServiceNode.class.getName());
     private PublishedService svc;
 
     /**
@@ -64,9 +64,25 @@ public class ServiceNode extends EntityHeaderNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
+        DisableServiceAction da = new DisableServiceAction(this);
+        da.setEnabled(false);
+        EnableServiceAction ea = new EnableServiceAction(this);
+        ea.setEnabled(false);
+
+        try {
+            boolean disabled = getPublishedService().isDisabled();
+            da.setEnabled(!disabled);
+            ea.setEnabled(disabled);
+        } catch (FindException e) {
+            log.log(Level.WARNING, "Error retrieving service", e);
+
+        }
+
         return new Action[]{
             new ServicePolicyPropertiesAction(this),
             new EditServiceNameAction(this),
+            ea,
+            da,
             new DeleteServiceAction(this)};
     }
 
