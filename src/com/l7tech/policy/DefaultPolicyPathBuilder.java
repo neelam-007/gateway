@@ -51,9 +51,11 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      */
     public PolicyPathResult generate(Assertion assertion) {
         Set paths = generatePaths(assertion);
-        for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
-                printPath((AssertionPath)iterator.next());
-            }
+
+//        for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
+//                printPath((AssertionPath)iterator.next());
+//        }
+
         return new DefaultPolicyPathResult(paths);
     }
 
