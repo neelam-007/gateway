@@ -80,20 +80,21 @@ public class PolicyExporter {
      * if applicable
      */
     private void appendRelatedReferences(Assertion assertion, Collection refs) {
+        ExternalReference ref = null;
+        // create the appropriate reference if applicable
         if (assertion instanceof SpecificUser || assertion instanceof MemberOfGroup) {
             IdentityAssertion idassertion = (IdentityAssertion)assertion;
-            IdProviderReference ref = new IdProviderReference(idassertion.getIdentityProviderOid());
-            if (!refs.contains(ref)) {
-                refs.add(ref);
-            }
+            ref = new IdProviderReference(idassertion.getIdentityProviderOid());
         } else if (assertion instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsidass = (JmsRoutingAssertion)assertion;
-            JMSEndpointReference ref = new JMSEndpointReference(jmsidass.getEndpointOid().longValue());
-            if (!refs.contains(ref)) {
-                refs.add(ref);
-            }
+            ref = new JMSEndpointReference(jmsidass.getEndpointOid().longValue());
         } else if (assertion instanceof CustomAssertionHolder) {
-            // todo, something
+            CustomAssertionHolder cahAss = (CustomAssertionHolder)assertion;
+            ref = new CustomAssertionReference(cahAss.getCustomAssertion().getName());
+        }
+        // if an assertion was created and it's not already recorded, add it
+        if (ref != null && !refs.contains(ref)) {
+            refs.add(ref);
         }
     }
 
