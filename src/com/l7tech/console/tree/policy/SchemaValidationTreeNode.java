@@ -33,7 +33,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
     }
 
     public String getName() {
-        return "[Validate message's schema]";
+        return "[Validate Message's Schema]";
     }
 
     protected String iconResource(boolean open) {
