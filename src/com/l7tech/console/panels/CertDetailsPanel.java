@@ -15,6 +15,9 @@ import java.util.ResourceBundle;
 import java.util.Locale;
 
 /**
+ * This class displays the details of the trusted certificates. Users can change
+ * the certificate name via this dialog.
+ *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p/>
  * $Id$
@@ -22,7 +25,6 @@ import java.util.Locale;
 public class CertDetailsPanel extends WizardStepPanel {
 
     private JPanel mainPanel;
-    private JScrollPane certScrollPane;
     private X509Certificate cert;
     private JPanel certPanel;
     private JPanel certMainPanel;
@@ -53,6 +55,16 @@ public class CertDetailsPanel extends WizardStepPanel {
         return false;
     }
 
+
+    /**
+     * Provides the wizard with the current data--either
+     * the default data or already-modified settings. This is a
+     * noop version that subclasses implement.
+     *
+     * @param settings the object representing wizard panel state
+     * @exception IllegalArgumentException if the the data provided
+     * by the wizard are not valid.
+     */
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (settings != null) {
 
@@ -63,40 +75,49 @@ public class CertDetailsPanel extends WizardStepPanel {
                     try {
                         cert = tc.getCertificate();
 
-                        if (cert != null) {
-
-                            // strip out the first 3 characters (ie. "cn=" )
-                            certNameTextField.setText(cert.getSubjectDN().getName().substring(3, cert.getSubjectDN().getName().length()));
-                        }
                     } catch (CertificateException e) {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        logger.warning(resources.getString("cert.decode.error"));
+                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
                     } catch (IOException e) {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                       logger.warning(e.getMessage());
+                        JOptionPane.showMessageDialog(mainPanel, e.getMessage(),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
                     }
 
+                    if (cert != null) {
 
-                    // remove the old view
-                    if(certView != null) {
-                        certPanel.remove(certView);
-                    }
-                    try {
-                        certView = getCertView();
-                        if (certView == null) {
-                            certView = new JLabel();
+                        // strip out the first 3 characters (ie. "cn=" )
+                        certNameTextField.setText(cert.getSubjectDN().getName().substring(3, cert.getSubjectDN().getName().length()));
+
+                        // remove the old view
+                        if (certView != null) {
+                            certPanel.remove(certView);
                         }
 
-                        certPanel.add(certView);
+                        try {
+                            certView = getCertView();
+                            if (certView == null) {
+                                certView = new JLabel();
+                            }
 
-                        revalidate();
-                        repaint();
+                            certPanel.add(certView);
 
-                    } catch (CertificateEncodingException ee) {
-                        logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName());
-                    } catch (NoSuchAlgorithmException ae) {
-                        logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName() + ", Algorithm is not supported:" + cert.getSigAlgName());
+                            revalidate();
+                            repaint();
+
+                        } catch (CertificateEncodingException ee) {
+                            logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName());
+                            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.encode.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
+                        } catch (NoSuchAlgorithmException ae) {
+                            logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName() +
+                                    ", Algorithm is not supported:" + cert.getSigAlgName());
+                        }
                     }
-                } else {
-                    //todo:
                 }
             }
         }
@@ -194,7 +215,6 @@ public class CertDetailsPanel extends WizardStepPanel {
         _1.add(_7, new GridConstraints(2, 1, 1, 1, 0, 3, 3, 3, null, null, null));
         final JScrollPane _8;
         _8 = new JScrollPane();
-        certScrollPane = _8;
         _7.add(_8, new GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null));
         final JPanel _9;
         _9 = new JPanel();
