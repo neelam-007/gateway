@@ -34,13 +34,18 @@ import java.util.logging.Logger;
 public class JmsReceiver implements ServerComponentLifecycle {
     private final Logger _logger = LogManager.getInstance().getSystemLogger();
 
+    // Persistent stuff
     private final JmsReplyType _replyType;
-    private JmsEndpoint _inboundRequestEndpoint;
-    private JmsEndpoint _outboundResponseEndpoint;
-    private JmsEndpoint _failureEndpoint;
+    private final JmsConnection _connection;
+    private final JmsEndpoint _inboundRequestEndpoint;
+    private final JmsEndpoint _outboundResponseEndpoint;
+    private final JmsEndpoint _failureEndpoint;
+
+    // Runtime stuff
     private FIFOSemaphore _fifo;
     private boolean _initialized = false;
 
+    // JMS stuff
     private InitialContext _jmsContext;
     private ConnectionFactory _jmsConnectionFactory;
     private Connection _jmsInboundConnection;
@@ -59,8 +64,9 @@ public class JmsReceiver implements ServerComponentLifecycle {
      * @param outbound  The {@link com.l7tech.common.transport.jms.JmsEndpoint} into which replies should be sent
      * @param failures  The {@link com.l7tech.common.transport.jms.JmsEndpoint} into which failures should be sent
      */
-    public JmsReceiver(JmsEndpoint inbound, JmsReplyType replyType,
+    public JmsReceiver( JmsConnection connection, JmsEndpoint inbound, JmsReplyType replyType,
                        JmsEndpoint outbound, JmsEndpoint failures) {
+        _connection = connection;
         _inboundRequestEndpoint = inbound;
         if (replyType == null) replyType = JmsReplyType.AUTOMATIC;
         _replyType = replyType;
@@ -80,8 +86,8 @@ public class JmsReceiver implements ServerComponentLifecycle {
      *                  reply semantics
      * @param inbound   The {@link com.l7tech.common.transport.jms.JmsEndpoint} from which to receive requests
      */
-    public JmsReceiver(JmsEndpoint inbound, JmsReplyType replyType) {
-        this(inbound, replyType, null, null);
+    public JmsReceiver( JmsConnection connection, JmsEndpoint inbound, JmsReplyType replyType) {
+        this( connection, inbound, replyType, null, null);
     }
 
     /**
@@ -94,8 +100,8 @@ public class JmsReceiver implements ServerComponentLifecycle {
      *
      * @param inbound The {@link com.l7tech.common.transport.jms.JmsEndpoint} from which to receive requests
      */
-    public JmsReceiver(JmsEndpoint inbound) {
-        this(inbound, inbound.getReplyType());
+    public JmsReceiver(JmsConnection connection, JmsEndpoint inbound) {
+        this( connection, inbound, inbound.getReplyType());
     }
 
     public String toString() {
@@ -107,7 +113,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
     }
 
     JmsConnection getConnection() {
-        return _inboundRequestEndpoint.getConnection();
+        return _connection;
     }
 
     JmsEndpoint getInboundRequestEndpoint() {
@@ -288,9 +294,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
     public synchronized void close() throws LifecycleException {
         _initialized = false;
 
-        _inboundRequestEndpoint = null;
-        _failureEndpoint = null;
-
         _jmsConnectionFactory = null;
     }
+
 }

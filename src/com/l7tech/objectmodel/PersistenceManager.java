@@ -62,6 +62,11 @@ public abstract class PersistenceManager {
         _instance.doDelete( context, obj );
     }
 
+    public static void delete( PersistenceContext context, Class entityClass, long oid ) throws DeleteException {
+        checkInstance();
+        _instance.doDelete( context, entityClass, oid );
+    }
+
     /*
     public static void beginTransaction( PersistenceContext context ) throws TransactionException {
         checkInstance();
@@ -107,6 +112,7 @@ public abstract class PersistenceManager {
     abstract long doSave( PersistenceContext context, Entity obj ) throws SaveException;
     abstract void doUpdate( PersistenceContext context, Entity obj ) throws UpdateException;
     abstract void doDelete( PersistenceContext context, Entity obj ) throws DeleteException;
+    abstract void doDelete( PersistenceContext context, Class entityClass, long oid ) throws DeleteException;
     abstract PersistenceContext doMakeContext() throws SQLException;
 
     static PersistenceManager _instance;

@@ -10,6 +10,7 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
@@ -20,6 +21,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -41,10 +43,10 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
             Collection endpoints = _manager.findMessageSourceEndpoints();
             for (Iterator i = endpoints.iterator(); i.hasNext();) {
                 JmsEndpoint requestEnd = (JmsEndpoint)i.next();
-                JmsConnection conn = requestEnd.getConnection();
+                JmsConnection conn = _manager.findConnectionByPrimaryKey( requestEnd.getConnectionOid() );
 
                 _logger.info("Initializing JMS receiver for '" + conn.getName() + "/" + requestEnd.getName() + "'");
-                JmsReceiver receiver = makeReceiver(requestEnd);
+                JmsReceiver receiver = makeReceiver(conn, requestEnd);
 
                 init(receiver);
                 _receivers.add(receiver);
@@ -161,16 +163,23 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
             _receivers.remove(receiver);
         }
 
-        for (Iterator i = updatedConnection.getEndpoints().iterator(); i.hasNext();) {
-            JmsEndpoint endpoint = (JmsEndpoint)i.next();
-            JmsReceiver receiver = makeReceiver(endpoint);
-            try {
-                receiver.init(ServerConfig.getInstance());
-                receiver.start();
-                _receivers.add(receiver);
-            } catch (LifecycleException e) {
-                _logger.warning("Exception while initializing " + receiver);
+        try {
+            EntityHeader[] endpoints = _manager.findEndpointHeadersForConnection( updatedConnection.getOid() );
+            for ( int i = 0; i < endpoints.length; i++ ) {
+                EntityHeader header = endpoints[i];
+                JmsEndpoint endpoint = _manager.findEndpointByPrimaryKey( header.getOid() );
+                JmsReceiver receiver = makeReceiver( updatedConnection, endpoint);
+
+                try {
+                    receiver.init(ServerConfig.getInstance());
+                    receiver.start();
+                    _receivers.add(receiver);
+                } catch (LifecycleException e) {
+                    _logger.warning("Exception while initializing " + receiver);
+                }
             }
+        } catch ( FindException e ) {
+            _logger.log( Level.SEVERE, "Caught exception finding endpoints for a connection!", e );
         }
     }
 
@@ -203,22 +212,28 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
         }
 
         if (updatedEndpoint.isMessageSource()) {
-            JmsReceiver receiver = makeReceiver(updatedEndpoint);
+            JmsReceiver receiver = null;
             try {
+                JmsConnection connection = _manager.findConnectionByPrimaryKey( updatedEndpoint.getConnectionOid() );
+                receiver = makeReceiver( connection, updatedEndpoint);
                 receiver.init(ServerConfig.getInstance());
                 receiver.start();
                 _receivers.add(receiver);
             } catch (LifecycleException e) {
-                _logger.warning("Exception while initializing " + receiver);
+                _logger.warning("Exception while initializing receiver " + receiver);
+            } catch ( FindException e ) {
+                _logger.log( Level.SEVERE, "Couldn't find connection for endpoint " + updatedEndpoint, e );
             }
         }
     }
 
-    private JmsReceiver makeReceiver(JmsEndpoint endpoint) {
-        JmsReceiver receiver = new JmsReceiver(endpoint,
-          endpoint.getReplyType(),
-          endpoint.getReplyEndpoint(),
-          endpoint.getFailureEndpoint());
+    private JmsReceiver makeReceiver( JmsConnection connection, JmsEndpoint endpoint) {
+        JmsReceiver receiver = new JmsReceiver(
+                connection,
+                endpoint,
+                endpoint.getReplyType(),
+                endpoint.getReplyEndpoint(),
+                endpoint.getFailureEndpoint());
         return receiver;
     }
 

@@ -21,12 +21,14 @@ import java.io.Serializable;
  * @version $Revision$
  */
 public class JmsEndpoint extends NamedEntityImp implements Serializable, Comparable {
-    private JmsConnection _connection;
+    public static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 1;
+
+    private long _connectionOid;
     private String _destinationName;
     private JmsReplyType _replyType;
     private String _username;
     private String _password;
-    private int _maxConcurrentRequests;
+    private int _maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
     private boolean _messageSource;
 
     /** Optional, set only if {@link #_replyType} is {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_OTHER} */
@@ -36,7 +38,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     private JmsEndpoint _failureEndpoint;
 
     public EntityHeader toEntityHeader() {
-        return new EntityHeader(getOid(), EntityType.UNDEFINED,  getDestinationName(), getName());
+        return new EntityHeader(getOid(), EntityType.JMS_ENDPOINT, getName(), getDestinationName());
     }
 
     public String getUsername() {
@@ -76,15 +78,15 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public String toString() {
-        return _connection.getName() + "/" + _name;
+        return "Connection " + _connectionOid + "/" + _name;
     }
 
-    public JmsConnection getConnection() {
-        return _connection;
+    public long getConnectionOid() {
+        return _connectionOid;
     }
 
-    public void setConnection(JmsConnection conn) {
-        _connection = conn;
+    public void setConnectionOid(long conn) {
+        _connectionOid = conn;
     }
 
     public String getDestinationName() {

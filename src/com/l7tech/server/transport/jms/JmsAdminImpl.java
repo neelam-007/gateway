@@ -8,22 +8,21 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;
+import net.jini.config.ConfigurationException;
 
+import java.io.IOException;
 import java.rmi.RemoteException;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.ArrayList;
 import java.util.List;
-import java.sql.SQLException;
-import java.io.IOException;
-
-import net.jini.config.ConfigurationException;
 
 /**
  * @author alex
@@ -81,7 +80,8 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
             for ( int i = 0; i < oids.length; i++ ) {
                 long oid = oids[i];
                 JmsEndpoint end = manager.findEndpointByPrimaryKey( oid );
-                end.setMessageSource(true);
+                if ( end != null )
+                    end.setMessageSource(true);
             }
 
             context.commitTransaction();
@@ -90,20 +90,98 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         } catch ( TransactionException e ) {
             throw new FindException( e.toString(), e );
         } finally {
-            try {
-                if ( context != null ) context.commitTransaction();
-            } catch ( TransactionException e ) {
-                throw new UpdateException( e.toString(), e );
-            }
+            if ( context != null ) context.close();
         }
     }
 
     public long saveConnection( JmsConnection connection ) throws RemoteException, UpdateException, SaveException, VersionException {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        HibernatePersistenceContext context = null;
+        try {
+            JmsManager manager = getJmsManager();
+            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            context.beginTransaction();
+
+            long oid = connection.getOid();
+            if ( oid == JmsConnection.DEFAULT_OID )
+                oid = manager.save( connection );
+            else
+                manager.update(connection);
+
+            context.commitTransaction();
+            return oid;
+        } catch ( SQLException e ) {
+            throw new SaveException( e.toString(), e );
+        } catch ( TransactionException e ) {
+            throw new SaveException( e.toString(), e );
+        } finally {
+            if ( context != null ) context.close();
+        }
     }
 
-    public void deleteConnection( long connectionOid ) throws RemoteException, DeleteException {
-        //To change body of implemented methods use File | Settings | File Templates.
+    public long saveEndpoint( JmsEndpoint endpoint ) throws RemoteException, UpdateException, SaveException, VersionException {
+                HibernatePersistenceContext context = null;
+        try {
+            JmsManager manager = getJmsManager();
+            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            context.beginTransaction();
+
+            long oid = endpoint.getOid();
+            if ( oid == JmsConnection.DEFAULT_OID )
+                oid = manager.save( endpoint );
+            else
+                manager.update( endpoint );
+
+            context.commitTransaction();
+            return oid;
+        } catch ( SQLException e ) {
+            throw new SaveException( e.toString(), e );
+        } catch ( TransactionException e ) {
+            throw new SaveException( e.toString(), e );
+        } finally {
+            if ( context != null ) context.close();
+        }
+    }
+
+    public void deleteEndpoint( long endpointOid ) throws RemoteException, FindException, DeleteException {
+        HibernatePersistenceContext context = null;
+        try {
+            JmsManager manager = getJmsManager();
+            context = (HibernatePersistenceContext) PersistenceContext.getCurrent();
+            context.beginTransaction();
+
+            JmsEndpoint conn = manager.findEndpointByPrimaryKey( endpointOid );
+            manager.delete( conn );
+            context.commitTransaction();
+        } catch ( SQLException e ) {
+            throw new DeleteException( e.toString(), e );
+        } catch ( TransactionException e ) {
+            throw new DeleteException( e.toString(), e );
+        } finally {
+            if ( context != null ) context.close();
+        }
+    }
+
+    public void deleteConnection( long connectionOid ) throws RemoteException, FindException, DeleteException {
+        HibernatePersistenceContext context = null;
+        try {
+            JmsManager manager = getJmsManager();
+            context = (HibernatePersistenceContext) PersistenceContext.getCurrent();
+            context.beginTransaction();
+
+            JmsConnection conn = manager.findConnectionByPrimaryKey( connectionOid );
+            manager.delete( conn );
+            context.commitTransaction();
+        } catch ( SQLException e ) {
+            throw new DeleteException( e.toString(), e );
+        } catch ( TransactionException e ) {
+            throw new DeleteException( e.toString(), e );
+        } finally {
+            if ( context != null ) context.close();
+        }
+    }
+
+    public EntityHeader[] getEndpointHeaders( long connectionOid ) throws RemoteException, FindException {
+        return getJmsManager().findEndpointHeadersForConnection( connectionOid );
     }
 
     private JmsManager getJmsManager() {

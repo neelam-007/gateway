@@ -8,7 +8,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -173,8 +172,8 @@ public class MonitoredEndpointsWindow extends JDialog {
 
             okButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    JmsEndpoint endpoint = jpl.getSelectedJmsEndpoint();
-                    addModitoredEndpoint(endpoint);
+                    EntityHeader endpoint = jpl.getSelectedJmsEndpoint();
+                    addMonitoredEndpoint(endpoint);
                     AddMonitoredEndpointWindow.this.hide();
                     AddMonitoredEndpointWindow.this.dispose();
                 }
@@ -351,8 +350,7 @@ public class MonitoredEndpointsWindow extends JDialog {
         return monitoredEndpointListModel;
     }
 
-    private void addModitoredEndpoint(JmsEndpoint endpoint) {
-        EntityHeader h = endpoint.toEntityHeader();
+    private void addMonitoredEndpoint(EntityHeader h) {
         getMonitoredEntityHeaders().add(h);
         getMonitoredEndpointList().setModel(createMonitoredEndpointListModel());
         getMonitoredEndpointList().setSelectedValue(h, true);

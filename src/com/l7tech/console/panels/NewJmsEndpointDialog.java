@@ -6,24 +6,18 @@
 
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.widgets.OptionalCredentialsPanel;
+import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.gui.widgets.WrappingLabel;
-import com.l7tech.common.gui.widgets.OptionalCredentialsPanel;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.VersionException;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.rmi.RemoteException;
-import java.util.Set;
-import java.util.Iterator;
+import java.awt.event.ActionListener;
 
 /**
  * Dialog for registering a new JMS Endpoint with a given connection.
@@ -148,6 +142,7 @@ public class NewJmsEndpointDialog extends JDialog {
         String name = getNameTextField().getText();
         ep.setName(name);
         ep.setDestinationName(name);
+        ep.setConnectionOid(this.connection.getOid());
         if (getOptionalCredentialsPanel().isUsernameAndPasswordRequired()) {
             ep.setUsername(getOptionalCredentialsPanel().getUsername());
             ep.setPassword(new String(getOptionalCredentialsPanel().getPassword()));
@@ -170,17 +165,8 @@ public class NewJmsEndpointDialog extends JDialog {
 
                     JmsEndpoint ep = makeJmsEndpointFromView();
 
-                    Set eps = connection.getEndpoints();
-                    for (Iterator i = eps.iterator(); i.hasNext();) {
-                        Object o = (Object) i.next();
-                        System.out.println("In connection's endpoint set: " + o.getClass() + ": " + o);
-                    }
-
-                    // Hook it up
-                    connection.getEndpoints().add(ep);
-                    ep.setConnection(connection);
                     try {
-                        long oid = Registry.getDefault().getJmsManager().saveConnection(connection);
+                        long oid = Registry.getDefault().getJmsManager().saveEndpoint(ep);
                         ep.setOid(oid);
                     } catch (Exception e1) {
                         throw new RuntimeException("Unable to save changes to this JMS connection", e1);

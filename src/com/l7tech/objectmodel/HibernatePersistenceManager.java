@@ -237,5 +237,21 @@ public class HibernatePersistenceManager extends PersistenceManager {
         }
     }
 
+    void doDelete( PersistenceContext context, Class entityClass, long oid ) throws DeleteException {
+        try {
+            ContextHolder h = getContextHolder(context);
+            String deleteQuery = "from temp in class " +
+                                 entityClass.getName() +
+                                 " where oid = ?";
+            h._session.delete( deleteQuery, new Long( oid ), Hibernate.LONG );
+        } catch (HibernateException he) {
+            throw new DeleteException(he.toString(), he);
+        } catch (SQLException se) {
+            logger.throwing(getClass().getName(), "doDelete", se);
+            close(context);
+            throw new DeleteException(se.toString(), se);
+        }
+    }
+
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }

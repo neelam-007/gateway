@@ -6,13 +6,11 @@
 
 package com.l7tech.common.transport.jms;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.io.Serializable;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * A reference to a preconfigured connection to a JMS provider.
@@ -30,7 +28,6 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private String _destinationFactoryUrl;
     private String _username;
     private String _password;
-    private Set _endpoints = new TreeSet();
 
     public EntityHeader toEntityHeader() {
         return new EntityHeader(getOid(), EntityType.JMS_CONNECTION, getName(), null);        
@@ -90,21 +87,5 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
 
     public void setDestinationFactoryUrl( String destinationFactoryUrl ) {
         _destinationFactoryUrl = destinationFactoryUrl;
-    }
-
-    /**
-     * @return a Set of JmsEndpoint objects representing JMS Destinations we know about on this connection.
-     */
-    public Set getEndpoints() {
-        return _endpoints;
-    }
-
-    /**
-     * @param endpoints a Set of JmsEndpoint objects representing JMS Destinations we know about on this connection.  Must not be null.
-     */
-    public void setEndpoints( Set endpoints ) {
-        if (endpoints == null)
-            throw new IllegalArgumentException("endpoints may not be null");
-        _endpoints = endpoints;
     }
 }

@@ -39,5 +39,17 @@ public interface JmsAdmin extends Remote {
      */
     long saveConnection( JmsConnection connection ) throws RemoteException, UpdateException, SaveException, VersionException;
 
-    void deleteConnection( long connectionOid ) throws RemoteException, DeleteException;
+    /**
+     * Save the specified JmsEndpoint, which may or may not have been newly created by the caller, to the database.
+     *
+     * @param endpoint the JmsEndpoint to save
+     * @return the OID assigned to the saved JmsEndpoint.
+     */
+    long saveEndpoint( JmsEndpoint endpoint ) throws RemoteException, UpdateException, SaveException, VersionException;
+
+
+    void deleteEndpoint( long endpointOid ) throws RemoteException, FindException, DeleteException;
+    void deleteConnection( long connectionOid ) throws RemoteException, FindException, DeleteException;
+
+    EntityHeader[] getEndpointHeaders( long connectionOid ) throws RemoteException, FindException;
 }

@@ -14,6 +14,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.WsdlTest;
 import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 
 import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
@@ -91,6 +92,10 @@ public class StubDataStore {
 
     public Map getJmsConnections() {
         return jmsProviders;
+    }
+
+    public Map getJmsEndpoints() {
+        return jmsEndpoints;
     }
 
     /**
@@ -217,25 +222,30 @@ public class StubDataStore {
 
     private void initialJmsProviders(XMLEncoder encoder) {
         JmsConnection p = new JmsConnection();
-        p.setOid(nextObjectId());
+        long connectionOid = nextObjectId();
+        p.setOid(connectionOid);
         p.setJndiUrl("JNDI:foo:bar:baz");
         p.setName("JMS on NowhereInteresting");
-        p.setEndpoints(new TreeSet());
 
         encoder.writeObject(p);
         populate(p);
 
+        JmsEndpoint e = new JmsEndpoint();
+        e.setConnectionOid( connectionOid );
+        e.setName( "q1 on foo:bar:baz" );
+        e.setDestinationName( "q1" );
+        e.setOid( nextObjectId() );
+        encoder.writeObject(e);
+        populate(e);
 
         p = new JmsConnection();
         p.setOid(nextObjectId());
         p.setJndiUrl("JNDI:blee:bloo:boof");
         p.setName("JMS on SomewhereElse");
-        p.setEndpoints(new TreeSet());
 
         encoder.writeObject(p);
         populate(p);
     }
-
 
     private Assertion sampleAssertion(IdentityProviderConfig pc) {
         Group g =
@@ -295,6 +305,8 @@ public class StubDataStore {
             pubServices.put(new Long(((PublishedService)o).getOid()), o);
         } else if (o instanceof JmsConnection) {
             jmsProviders.put(new Long(((JmsConnection)o).getOid()), o);
+        } else if (o instanceof JmsEndpoint) {
+            jmsEndpoints.put(new Long(((JmsEndpoint)o).getOid()), o);
         } else {
             System.err.println("Don't know how to handle " + o.getClass());
         }
@@ -328,6 +340,8 @@ public class StubDataStore {
 
     private Map pubServices = new HashMap();
     private Map jmsProviders = new HashMap();
+    private Map jmsEndpoints = new HashMap();
+
     private long objectIdSequence = 100;
 
     /**
@@ -347,4 +361,5 @@ public class StubDataStore {
             e.printStackTrace();
         }
     }
+
 }

@@ -6,16 +6,17 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.console.util.Registry;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * A panel that lists the known JMS endpoints in a given connection, and allows selection of one of them
@@ -77,7 +78,7 @@ public class JmsEndpointListPanel extends JPanel {
                         ListModel clm = createNewEndpointListModel();
                         getEndpointList().setModel(clm);
                         for (int i = 0; i < clm.getSize(); ++i) {
-                            JmsEndpoint endpoint = (JmsEndpoint) clm.getElementAt(i);
+                            EntityHeader endpoint = (EntityHeader)clm.getElementAt(i);
                             if (endpoint.getOid() == e.getOid()) {
                                 getEndpointList().setSelectedIndex(i);
                             }
@@ -104,15 +105,20 @@ public class JmsEndpointListPanel extends JPanel {
     }
 
     private ListModel createNewEndpointListModel() {
-        final JmsEndpoint[] endpoints = (JmsEndpoint[]) jmsConnection.getEndpoints().toArray(new JmsEndpoint[0]);
-        endpointListModel = new AbstractListModel() {
-            public int getSize() { return endpoints.length; }
-            public Object getElementAt(final int index) throws IndexOutOfBoundsException { return endpoints[index]; }
-        };
-        return endpointListModel;
+        JmsAdmin jmsAdmin = Registry.getDefault().getJmsManager();
+        try {
+            final EntityHeader[] endpointHeaders = jmsAdmin.getEndpointHeaders( jmsConnection.getOid() );
+            endpointListModel = new AbstractListModel() {
+                public int getSize() { return endpointHeaders.length; }
+                public Object getElementAt(final int index) throws IndexOutOfBoundsException { return endpointHeaders[index]; }
+            };
+            return endpointListModel;
+        } catch ( Exception e ) {
+            throw new RuntimeException( "Unable to locate endpoints for connection " + jmsConnection, e );
+        }
     }
 
-    public JmsEndpoint getSelectedJmsEndpoint() {
-        return (JmsEndpoint) getEndpointList().getSelectedValue();
+    public EntityHeader getSelectedJmsEndpoint() {
+        return (EntityHeader)getEndpointList().getSelectedValue();
     }
 }

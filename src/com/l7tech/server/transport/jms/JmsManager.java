@@ -53,9 +53,9 @@ public class JmsManager extends HibernateEntityManager {
 
 
     public Collection findMessageSourceEndpoints() throws FindException {
-        StringBuffer query = new StringBuffer( "from endpoints in class " );
+        StringBuffer query = new StringBuffer( "from endpoint in class " );
         query.append( JmsEndpoint.class.getName() );
-        query.append( " where is_message_source = ?" );
+        query.append( " where endpoint.messageSource = ?" );
         try {
             Collection endpoints = PersistenceManager.find( getContext(), query.toString(), Boolean.TRUE, Boolean.TYPE );
             return endpoints;
@@ -63,6 +63,30 @@ public class JmsManager extends HibernateEntityManager {
             throw new FindException( e.toString(), e );
         }
     }
+
+    public EntityHeader[] findEndpointHeadersForConnection( long connectionOid ) throws FindException {
+        StringBuffer sql = new StringBuffer( "select endpoint.oid, endpoint.name, endpoint.destinationName " );
+        sql.append( "from endpoint in class " );
+        sql.append( JmsEndpoint.class.getName() );
+        sql.append( " where endpoint.connectionOid = ?" );
+        ArrayList result = new ArrayList();
+        try {
+            List results = PersistenceManager.find( PersistenceContext.getCurrent(), sql.toString(), new Long( connectionOid ), Long.TYPE );
+            for ( Iterator i = results.iterator(); i.hasNext(); ) {
+                Object[] row = (Object[]) i.next();
+                if ( row[0] instanceof Long ) {
+                    long oid = ((Long)row[0]).longValue();
+                    EntityHeader header = new EntityHeader( oid, EntityType.JMS_ENDPOINT, (String)row[1], (String)row[2] );
+                    result.add( header );
+                }
+            }
+
+        } catch ( SQLException e ) {
+            throw new FindException( e.toString(), e );
+        }
+        return (EntityHeader[])result.toArray( new EntityHeader[0] );
+    }
+
 
     private void addTransactionListener( final Object source, final boolean deleted ) throws SQLException, TransactionException {
         HibernatePersistenceContext.getCurrent().registerTransactionListener( new TransactionListener() {
@@ -131,10 +155,15 @@ public class JmsManager extends HibernateEntityManager {
     }
 
 
-    public void delete( final JmsConnection connection ) throws DeleteException {
+    public void delete( final JmsConnection connection ) throws DeleteException, FindException {
         try {
             addTransactionListener( connection, true );
-            PersistenceManager.delete( getContext(), connection );
+            EntityHeader[] endpoints = findEndpointHeadersForConnection( connection.getOid() );
+
+            for ( int i = 0; i < endpoints.length; i++ )
+                PersistenceManager.delete( getContext(), JmsEndpoint.class, endpoints[i].getOid() );
+
+            PersistenceManager.delete( getContext(),  connection );
         } catch ( SQLException e ) {
             throw new DeleteException( e.toString(), e );
         } catch ( TransactionException e ) {
