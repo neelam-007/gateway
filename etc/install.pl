@@ -50,6 +50,7 @@ my $cnf = "/etc/my.cnf";
 my $dbfaildetect_file = "/ssg/bin/dbfaildetect.sh";
 my $cluster_hostname_file = "/ssg/etc/conf/cluster_hostname";
 my $hosts_file = "/etc/hosts";
+my $network_file = "/etc/sysconfig/network";
 my $dbconfig = "/ssg/etc/conf/hibernate.properties";
 
 # then change the local files as appropriate
@@ -186,8 +187,8 @@ EOF
                	print "WARNING: No back end network defined, back end network remains $back_conf\n";
        	}
 
-	# 3. hostname - file affected:$hosts_file 
-	# 3a. hostname for cluster - file affected: $cluster_hostname_file 
+	# 3. hostname - file affected:$hosts_file, $network_file
+	# 3a. hostname for cluster - file affected: $cluster_hostname_file, $network_file
 	print "INFO: Configuring cluster hostname for $cluster_hostname_file & $hosts_file\n";
 	if ($Conf{gc_clusternm} && lc($Conf{gc_cluster}) eq "y") {
                 if ( -e $cluster_hostname_file ) {
@@ -220,7 +221,27 @@ $Conf{net_front_ip}	$Conf{gc_clusternm} $Conf{hostname}
 EOF
 		close HOST;
 		chmod 0644, "$hosts_file";
-		print "INFO: Cluster Gateway - $cluster_hostname_file and $hosts_file files replaced\n";
+
+                if ( -e $network_file ) {
+                        print "INFO: $network_file existed, now renaming $network_file to $network_file.bckup_$pid\n";
+                        rename( $network_file, "$network_file.bckup_$pid");
+                }
+
+                open (NETWORK_FILE, ">$network_file") or die "Can't open $network_file!\n";
+                print NETWORK_FILE <<EOF;
+# Modified by /ssg/bin/install.pl
+# Will be replaced if you rerun!
+NETWORKING=yes
+HOSTNAME=$Conf{gc_clusternm}
+
+EOF
+                close NETWORK_FILE;
+                chmod 0644, "$network_file";
+
+                print "INFO: Setting hostname to $Conf{gc_clusternm}\n"; 
+		system ("hostname $Conf{gc_clusternm}");
+
+		print "INFO: Cluster Gateway - $cluster_hostname_file, $hosts_file and $network_file files replaced\n";
 	} else {
 		print "WARNING: $cluster_hostname_file not set (OK if SSG is not part of a cluster)\n";
 	}
@@ -245,7 +266,22 @@ $Conf{host_ip}      $Conf{hostname} $host
 EOF
                 close HOST;
                 chmod 0644, "/etc/hosts";
-                print "INFO: Non Cluster Gateway - $cluster_hostname_file removed (backup as $cluster_hostname_file.bckup_$pid) and $hosts_file files replaced\n";
+
+                open (NETWORK_FILE, ">$network_file") or die "Can't open $network_file!\n";
+                print NETWORK_FILE <<EOF;
+# Modified by /ssg/bin/install.pl
+# Will be replaced if you rerun!
+NETWORKING=yes
+HOSTNAME=$Conf{hostname}
+
+EOF
+                close NETWORK_FILE;
+                chmod 0644, "$network_file";
+
+                print "INFO: Setting hostname to $Conf{hostname}\n";
+                system ("hostname $Conf{hostname}");
+
+                print "INFO: Non Cluster Gateway - $cluster_hostname_file removed (backup as $cluster_hostname_file.bckup_$pid), $hosts_file and $network_file files replaced\n";
 	}
 
 	# 4. local config of db connection
@@ -530,6 +566,7 @@ DESCRIPTION
     * $dbfaildetect_file
     * $cluster_hostname_file
     * $hosts_file
+    * $network_file
     * $dbconfig
 
     Base on input parameters, this script may grant database access for MySQL database:
