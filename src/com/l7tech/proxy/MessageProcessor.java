@@ -172,8 +172,12 @@ public class MessageProcessor {
             try {
                 status = client.executeMethod(postMethod);
             } catch (SSLHandshakeException e) {
+                log.info("SSL handshake problem talking to SSG: ", e);
+                log.info("Will attempt to acquire cert.  Attempt #" + pendingRequest.getTimesAttempted());
                 installSsgServerCertificate(pendingRequest);
                 postMethod.releaseConnection(); // free up our thread's HTTP client
+                if (pendingRequest.incrementTimesAttempted() > 10)
+                    throw new ConfigurationException("Unable to fulfil request after 10 attempts to contact the SSG; giving up");
                 return callSsg(pendingRequest); // try again
             }
             log.info("POST to SSG completed with HTTP status code " + status);
