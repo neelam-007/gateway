@@ -53,11 +53,25 @@ public class HexUtils {
      * @throws IOException if there was a problem reading the stream
      */
     public static byte[] slurpStream(InputStream stream, int maxLength) throws IOException {
-        byte[] buffer = new byte[maxLength];
+        /*byte[] buffer = new byte[maxLength];
         int got = slurpStream(stream, buffer);
         byte[] ret = new byte[got];
         System.arraycopy(buffer, 0, ret, 0, got);
         return ret;
+        before broken*/
+        byte[] bb = new byte[maxLength];
+        int remaining = maxLength;
+        int offset = 0;
+        for (;;) {
+            int n = stream.read(bb, offset, remaining);
+            offset += n;
+            remaining -= n;
+            if (n < 1 || remaining < 1) {
+                byte[] ret = new byte[maxLength - remaining + 1];
+                System.arraycopy(bb, 0, ret, 0, offset + 1);
+                return ret;
+            }
+        }
     }
 
     /**
