@@ -85,6 +85,14 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
         throw new UpdateException("Not supported in LdapGroupManagerServer");
     }
 
+    public EntityHeader groupToHeader(Group group) {
+        return null;
+    }
+
+    public Group headerToGroup(EntityHeader header) throws FindException {
+        return null;
+    }
+
     public Collection findAllHeaders() throws FindException {
         if (!valid) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
