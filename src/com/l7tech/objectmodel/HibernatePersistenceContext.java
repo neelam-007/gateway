@@ -10,8 +10,7 @@ import cirrus.hibernate.Session;
 import cirrus.hibernate.HibernateException;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.logging.Level;
 
 import com.l7tech.logging.LogManager;
@@ -20,6 +19,10 @@ import com.l7tech.logging.LogManager;
  * @author alex
  */
 public class HibernatePersistenceContext extends PersistenceContext {
+    public static final int MAXRETRIES = 5;
+    public static final int RETRYTIME = 250;
+    public static final String PINGSQL = "select 1";
+
     public HibernatePersistenceContext( Session session ) {
         _session = session;
         _manager = (HibernatePersistenceManager)PersistenceManager.getInstance();
@@ -33,8 +36,13 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 _session.flush();
 
             if ( _htxn != null ) _htxn.commit();
-        } catch ( Exception e ) {
-            throw new TransactionException( e.toString(), e );
+        } catch ( SQLException se ) {
+            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "commitTransaction", se );
+            close();
+            throw new TransactionException( se.toString(), se );
+        } catch ( HibernateException he ) {
+            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "commitTransaction", he );
+            throw new TransactionException( he.toString(), he );
         } finally {
             try {
                 //if ( _session != null ) _session.close();
@@ -47,11 +55,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
     }
 
     public void finalize() {
-        try {
-            close();
-        } catch ( ObjectModelException ome ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "in finalize()", ome);
-        }
+        close();
     }
 
     public void flush() throws ObjectModelException {
@@ -63,6 +67,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
             if ( _session != null ) _session.flush();
         } catch ( SQLException se ) {
             LogManager.getInstance().getSystemLogger().log( Level.SEVERE, "in flush()", se );
+            close();
             throw new ObjectModelException( se.getMessage(), se );
         } catch ( HibernateException he ) {
             LogManager.getInstance().getSystemLogger().log( Level.SEVERE, "in flush()", he );
@@ -70,49 +75,110 @@ public class HibernatePersistenceContext extends PersistenceContext {
         }
     }
 
-    public void close() throws ObjectModelException {
+    public void close() {
         try {
             if ( _htxn != null ) {
                 _htxn.rollback();
                 _htxn = null;
             }
             if ( _session != null ) _session.close();
+            _session = null;
         } catch ( HibernateException he ) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, he);
-            throw new ObjectModelException( he.getMessage(), he );
         } catch ( SQLException se ) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
-            throw new ObjectModelException( se.getMessage(), se );
         }
     }
 
-    public Session getSession() throws HibernateException, SQLException {
-        if ( _session == null || !_session.isOpen() || !_session.isConnected() )
-            _session = _manager.makeSession();
-        return _session;
+    /**
+     * Retrieves the current {@see cirrus.hibernate.Session} associated with this context, getting a new one if necessary.
+     * Also tries to "ping" the connection up to {@see MAXRETRIES} times to be sure it's not dead.
+     *
+     * @return a valid Hibernate Session (hopefully!)
+     * @throws SQLException if MAXRETRIES have been made, the SQLException resulting from the last connection attempt.
+     * @throws HibernateException if MAXRETRIES have been made, the HibernateException resulting from the last connection attempt.
+     */
+    synchronized Session getSession() throws SQLException, HibernateException {
+        Connection conn = null;
+        ResultSet rs = null;
+        PreparedStatement pingStmt = null;
+        SQLException sqlException = null;
+        HibernateException hibernateException = null;
+
+        try {
+            for ( int i = 0; i < MAXRETRIES; i++ ) {
+                try {
+                    if ( _session == null || !_session.isOpen() || !_session.isConnected() )
+                        _session = _manager.makeSession();
+                    conn = _session.connection();
+                    pingStmt = conn.prepareStatement( PINGSQL );
+                    rs = pingStmt.executeQuery();
+                    return _session;
+                } catch ( SQLException se ) {
+                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Retry #" + i+1 + " caught SQLException", se );
+                    _session = null;
+                    sqlException = se;
+                } catch ( HibernateException he ) {
+                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Retry #" + i+1 + " caught HibernateException", he );
+                    _session = null;
+                    hibernateException = he;
+                }
+            }
+        } finally {
+            try {
+                if ( pingStmt != null ) pingStmt.close();
+            } catch ( SQLException se ) {
+                LogManager.getInstance().getSystemLogger().log( Level.WARNING, "SQLException closing pingStmt", se );
+            }
+
+            try {
+                if ( rs != null ) rs.close();
+            } catch ( SQLException se ) {
+                LogManager.getInstance().getSystemLogger().log( Level.WARNING, "SQLException closing rs", se );
+            }
+        }
+
+        Exception e;
+        if ( sqlException == null )
+            e = hibernateException;
+        else
+            e = sqlException;
+
+        String err = "Tried " + MAXRETRIES + " times to obtain a valid Session and failed with exception " + e;
+        LogManager.getInstance().getSystemLogger().log( Level.SEVERE, err, e );
+
+        if ( sqlException != null )
+            throw sqlException;
+        else if ( hibernateException != null )
+            throw hibernateException;
+        else {
+            err = "Some other failure has occurred!";
+            LogManager.getInstance().getSystemLogger().log( Level.SEVERE, err, e );
+            throw new RuntimeException( err );
+        }
     }
 
     public void beginTransaction() throws TransactionException {
         try {
             _htxn = getSession().beginTransaction();
-        } catch ( Exception e ) {
-            throw new TransactionException( e.toString(), e );
+        } catch ( SQLException se ) {
+            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "beginTransaction", se );
+            close();
+            throw new TransactionException( se.toString(), se );
+        } catch ( HibernateException he ) {
+            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "beginTransaction", he );
+            throw new TransactionException( he.toString(), he );
         }
     }
 
     public void rollbackTransaction() throws TransactionException {
         try {
             if ( _htxn != null ) _htxn.rollback();
-        } catch ( Exception e ) {
-            throw new TransactionException( e.toString(), e );
+        } catch ( HibernateException he ) {
+            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "rollbackTransaction", he );
+            throw new TransactionException( he.toString(), he );
         } finally {
-            try {
-                //if ( _session != null ) _session.close();
-                //_session = null;
-                _htxn = null;
-            } catch ( Exception e ) {
-                throw new TransactionException( e.toString(), e );
-            }
+            _htxn = null;
         }
     }
 
