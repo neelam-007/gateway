@@ -37,6 +37,7 @@ import sun.misc.BASE64Decoder;
  * User: flascell<br/>
  * Date: Aug 19, 2003<br/>
  * $Id$
+ * @deprecated Use WssProcessor and WssDecorator instead now
  */
 public final class SoapMsgSigner {
     private static final String DS_PREFIX = "ds";
@@ -52,7 +53,8 @@ public final class SoapMsgSigner {
      * <p/>
      * If the envelope already has as Id attribute, it's value will be used to refer to the envelope within the
      * SignedInfo element. Otherwise, an Id of value DEF_ENV_TAG will be used.
-     * 
+     * @deprecated Use WssProcessor and WssDecorator instead now
+     *
      * @param soapMsg    the xml document containing the soap message expected to contain at least a soapenvelope element.
      *                   this document contains the signature when at return time.
      * @param privateKey the private key of the signer if imlpements RSAPrivateKey signature method will be
@@ -78,7 +80,8 @@ public final class SoapMsgSigner {
     /**
      * Sign the document element using the private key and Embed the <code>X509Certificate</code> into
      * the XML document.
-     * 
+     * @deprecated Use WssProcessor and WssDecorator instead now
+     *
      * @param document    the xml document containing the element to sign.
      * @param messagePart        the document element
      * @param referenceId the signature reference ID attreibute value

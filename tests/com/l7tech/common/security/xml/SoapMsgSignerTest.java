@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
+ * @deprecated this test needs to be replaced with more comprehensive testing of WssProcessor and WssDecorator
  * @author alex
  * @version $Revision$
  */
