@@ -13,9 +13,14 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.DSAParams;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.math.BigInteger;
 
 /**
  * Panel that displays the fields of an X509Certificate.
@@ -117,6 +122,24 @@ public class CertificatePanel extends JPanel {
 
         l.add(new String[]{"SHA-1 fingerprint", getCertificateFingerprint(cert, "SHA1")});
         l.add(new String[]{"MD5 fingerprint", getCertificateFingerprint(cert, "MD5")});
+
+        PublicKey publicKey = cert.getPublicKey();
+        l.add(new String[]{"Key type", nullNa(publicKey.getAlgorithm())});
+
+        if (publicKey != null && publicKey instanceof RSAPublicKey) {
+            RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
+            System.out.println(rsaKey.toString());
+            String modulus = rsaKey.getModulus().toString(16);
+            l.add(new String[]{"RSA strength", (modulus.length() * 4) + " bits"});
+            l.add(new String[]{"RSA modulus", modulus});
+            l.add(new String[]{"RSA public exponent", rsaKey.getPublicExponent().toString(16)});
+        } else if (publicKey != null && publicKey instanceof DSAPublicKey) {
+            DSAPublicKey dsaKey = (DSAPublicKey) publicKey;
+            DSAParams params = dsaKey.getParams();
+            l.add(new String[]{"DSA prime (P)", params.getP().toString(16)});
+            l.add(new String[]{"DSA subprime (P)", params.getQ().toString(16)});
+            l.add(new String[]{"DSA base (P)", params.getG().toString(16)});
+        }
 
         return l;
     }
