@@ -373,7 +373,7 @@ public class Wsdl {
                 if (ee instanceof SOAPBody) {
                     SOAPBody body = (SOAPBody)ee;
                     String uri = body.getNamespaceURI();
-                    if ( uri != null ) {
+                    if ( uri != null && !result.containsValue(uri) ) {
                         result.put( NS + ns++, uri );
                     }
                 }
