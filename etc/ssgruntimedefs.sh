@@ -15,7 +15,7 @@ PATH=$PATH:$JAVA_HOME/bin
 export PATH
 
 # define tomcat home
-TOMCAT_HOME=/usr/java/jakarta-tomcat-4.1.24
+TOMCAT_HOME=/usr/java/tomcat-4.1.27-l7p2
 export TOMCAT_HOME
 
 # aliases to start and stop ssg
