@@ -160,6 +160,7 @@ public class PublishedService extends NamedEntityImp {
         setWsdlUrl(objToCopy.getWsdlUrl());
         setWsdlXml(objToCopy.getWsdlXml());
         setVersion(objToCopy.getVersion());
+        setDisabled(objToCopy.isDisabled());
     }
 
     public boolean isDisabled() {
