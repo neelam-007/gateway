@@ -109,7 +109,7 @@ public class ClientProxy {
      */
     public synchronized RequestHandler getRequestHandler() {
         if (requestHandler == null) {
-            requestHandler = new RequestHandler(ssgFinder, messageProcessor);
+            requestHandler = new RequestHandler(ssgFinder, messageProcessor, bindPort);
         }
 
         return requestHandler;
