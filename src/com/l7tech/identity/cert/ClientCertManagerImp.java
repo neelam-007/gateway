@@ -140,26 +140,29 @@ public class ClientCertManagerImp implements ClientCertManager {
 
     public void revokeUserCert(User user) throws UpdateException {
         logger.finest("revokeUserCert for " + user.getLogin());
-        PersistenceContext pc = null;
-        try {
-            pc = PersistenceContext.getCurrent();
-        } catch (SQLException e) {
-            String msg = "SQL exception getting context";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
-        }
-        try {
-            pc.beginTransaction();
-            CertEntryRow currentdata = getFromTable(user);
-            if (currentdata != null) {
-                currentdata.setCert(null);
-                currentdata.setResetCounter(0);
+        CertEntryRow currentdata = getFromTable(user);
+        if (currentdata != null) {
+            currentdata.setCert(null);
+            currentdata.setResetCounter(0);
+            try {
+                HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+                Session session = pc.getSession();
+                Transaction trans = session.beginTransaction();
+                // update existing data
+                session.update(currentdata);
+                trans.commit();
+                pc.close();
+            } catch (HibernateException e) {
+                String msg = "Hibernate exception revoking cert";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
+            } catch (SQLException e) {
+                String msg = "SQL exception revoking cert";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
             }
-            pc.commitTransaction();
-        } catch (TransactionException e) {
-            String msg = "Transaction exception revoking cert";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
+        } else {
+            logger.fine("there was no existing cert for " + user.getLogin());
         }
     }
 
