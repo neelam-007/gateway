@@ -55,6 +55,16 @@ public class ClusterInfoManager {
     }
 
     /**
+     * returns the node id to which this server applies to
+     * @return
+     */
+    public String thisNodeId() {
+        ClusterInfo selfCI = getSelfNodeId();
+        if (selfCI != null) return selfCI.getMac();
+        return null;
+    }
+
+    /**
      * allows a node to update its status in the cluster_info table
      *
      * @param avgLoad the average load for the last minute
