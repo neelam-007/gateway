@@ -147,6 +147,15 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         }
     }
 
+    // fla note, this should be moved to some sort of cert manager
+    public void revokeCert(String oid) throws UpdateException {
+        try {
+            getStub().revokeCert(config.getOid(), oid);
+        } catch (RemoteException e) {
+            throw new UpdateException("RemoteException in revokeCert", e);
+        }
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************

@@ -209,6 +209,31 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         }
     }
 
+    /**
+     * removed cert from db and resets counter
+     */
+    public void revokeCert(String oid) throws UpdateException{
+        try {
+            // fla note, this will move to a seperate manager once we redesign persistence layer
+            Connection connection = ((HibernatePersistenceContext)PersistenceContext.getCurrent()).getSession().connection();
+            Statement statement = connection.createStatement();
+            statement.executeUpdate("UPDATE " + getTableName() + " SET cert=NULL, cert_reset_counter=0 WHERE oid=" + oid);
+        } catch (SQLException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            throw new UpdateException(e.toString(), e);
+        } catch (HibernateException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            throw new UpdateException(e.toString(), e);
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+                throw new UpdateException(e.toString(), e);
+            }
+        }
+    }
+
     public void delete(User user) throws DeleteException {
         try {
             _manager.delete( getContext(), user );
