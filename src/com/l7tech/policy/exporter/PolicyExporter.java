@@ -2,7 +2,11 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import org.w3c.dom.Document;
@@ -76,14 +80,21 @@ public class PolicyExporter {
      * if applicable
      */
     private void appendRelatedReferences(Assertion assertion, Collection refs) {
-        if (assertion instanceof SpecificUser) {
-            SpecificUser suassertion = (SpecificUser)assertion;
-            IdProviderReference ref = new IdProviderReference(suassertion.getIdentityProviderOid());
+        if (assertion instanceof SpecificUser || assertion instanceof MemberOfGroup) {
+            IdentityAssertion idassertion = (IdentityAssertion)assertion;
+            IdProviderReference ref = new IdProviderReference(idassertion.getIdentityProviderOid());
             if (!refs.contains(ref)) {
                 refs.add(ref);
             }
+        } else if (assertion instanceof JmsRoutingAssertion) {
+            JmsRoutingAssertion jmsidass = (JmsRoutingAssertion)assertion;
+            JMSEndpointReference ref = new JMSEndpointReference(jmsidass.getEndpointOid().longValue());
+            if (!refs.contains(ref)) {
+                refs.add(ref);
+            }
+        } else if (assertion instanceof CustomAssertionHolder) {
+            // todo, something
         }
-        // todo, same for all assertion types
     }
 
     private Element wrapExportReferencesToPolicyDocument(Document originalPolicy) {
