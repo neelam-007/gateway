@@ -23,7 +23,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(TrustedCertTableSorter.class.getName());
     private boolean ascending = true;
     private int columnToSort = 1;
-    private Vector data = new Vector();
+    private Vector rawdata = new Vector();
     private Object[] sortedData = null;
 
     /**
@@ -41,8 +41,32 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      * @param data  The list of the node status of every gateways in the cluster (unsorted).
      */
     public void setData(Vector data) {
-        this.data = data;
+        this.rawdata = data;
         sortData(columnToSort, false);
+    }
+
+    /**
+     * Update the data of a row.
+     * @param row  The row index.
+     * @param data The new data to be stored.
+     */
+    public void updateData(int row, Object data) {
+
+        TrustedCert tc = null;
+
+        if (data instanceof TrustedCert) {
+            TrustedCert newtc = (TrustedCert) data;
+
+            for (int i = 0; i < rawdata.size(); i++) {
+                tc = (TrustedCert) rawdata.elementAt(i);
+                if (tc != null && tc.getOid() == newtc.getOid()) {
+                    // replace the old one
+                    rawdata.set(i, newtc);
+                }
+            }
+            // sort the data
+            sortData(columnToSort, false);
+        }
     }
 
     /**
@@ -89,7 +113,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
         // save the column index
         columnToSort = column;
 
-        Object[] sorted = data.toArray();
+        Object[] sorted = rawdata.toArray();
         Arrays.sort(sorted, new TrustedCertTableSorter.ColumnSorter(columnToSort, ascending));
         sortedData = sorted;
     }
