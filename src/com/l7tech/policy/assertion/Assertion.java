@@ -6,8 +6,20 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
+
+import java.util.Map;
+import java.util.Collections;
+
 /**
  * @author alex
  */
 public abstract class Assertion {
+    public abstract int checkRequest( Request request, Response response ) throws PolicyAssertionExcepion;
+    public void init( Map params ) {
+        _params = params;
+    }
+
+    protected Map _params = Collections.EMPTY_MAP;
 }

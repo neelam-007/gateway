@@ -4,10 +4,10 @@
  * $Id$
  */
 
-package com.l7tech.policy.assertion;
+package com.l7tech.message;
 
 /**
  * @author alex
  */
-public class Routing extends Assertion {
+public abstract class Header {
 }
