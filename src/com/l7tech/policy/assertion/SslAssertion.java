@@ -77,7 +77,7 @@ public class SslAssertion extends ConfidentialityAssertion {
      * @return true if credential source, false otherwise
      */
     public boolean isCredentialSource() {
-        return requireClientAuthentication && _option == REQUIRED;
+        return requireClientAuthentication && _option.equals(REQUIRED);
     }
 
     /**
