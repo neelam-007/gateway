@@ -52,9 +52,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             // make sure the integrity check is running
             ServiceCache.getInstance().initiateIntegrityCheckProcess();
         } catch (InterruptedException e) {
-            throw new ObjectModelException("exception building cache", e);
-        } catch (IOException e) {
-            throw new ObjectModelException("exception building cache", e);
+            throw new ObjectModelException("Exception building cache", e);
         }
     }
 
@@ -110,8 +108,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                         try {
                             ServiceCache.getInstance().cache(svcnow);
                         } catch (InterruptedException e) {
-                            logger.log(Level.WARNING, "could not update cache", e);
-                        } catch (IOException e) {
                             logger.log(Level.WARNING, "could not update cache", e);
                         }
                     }
@@ -213,8 +209,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                         try {
                             ServiceCache.getInstance().cache(svcnow);
                         } catch (InterruptedException e) {
-                            logger.log(Level.WARNING, "could not update cache", e);
-                        } catch (IOException e) {
                             logger.log(Level.WARNING, "could not update cache", e);
                         }
                     }

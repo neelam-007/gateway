@@ -1,20 +1,19 @@
 package com.l7tech.service;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.message.Request;
-import com.l7tech.service.resolution.ServiceResolutionException;
-import com.l7tech.identity.StubDataStore;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.identity.StubDataStore;
+import com.l7tech.message.Request;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.service.resolution.ServiceResolutionException;
 
 import javax.wsdl.WSDLException;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.io.IOException;
-import java.net.URL;
 
 /**
  * Class ServiceManagerStub.
@@ -41,8 +40,6 @@ public class ServiceManagerStub implements ServiceManager {
                 }
             }
         } catch (InterruptedException e) {
-            throw new ObjectModelException("exception building cache", e);
-        } catch (IOException e) {
             throw new ObjectModelException("exception building cache", e);
         } catch (FindException e) {
             throw new ObjectModelException("exception building cache", e);

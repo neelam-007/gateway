@@ -177,7 +177,7 @@ public class ServiceCache {
      * adds or update a service to the cache. this should be called when the cache is initially populated and
      * when a service is saved or updated locally
      */
-    public void cache(PublishedService service) throws InterruptedException, IOException {
+    public void cache(PublishedService service) throws InterruptedException {
         Sync write = rwlock.writeLock();
         try {
             write.acquire();
@@ -191,7 +191,7 @@ public class ServiceCache {
         }
     }
 
-    private void cacheNoLock(PublishedService service) throws IOException {
+    private void cacheNoLock(PublishedService service) {
         boolean update = false;
         Long key = new Long(service.getOid());
         if (services.get(key) != null) update = true;
@@ -208,11 +208,20 @@ public class ServiceCache {
             }
             logger.finest("added service in cache. oid=" + service.getOid());
         }
-        // cache the service
-        services.put(key, service);
-        // cache the server policy for this service
-        ServerAssertion serverPolicy = ServerPolicyFactory.getInstance().makeServerPolicy(service.rootAssertion());
-        serverPolicies.put(key, serverPolicy);
+        ServerAssertion serverPolicy = null;
+        try {
+            serverPolicy = ServerPolicyFactory.getInstance().makeServerPolicy(service.rootAssertion());
+
+            // cache the service
+            services.put(key, service);
+            // cache the server policy for this service
+            serverPolicies.put(key, serverPolicy);
+        } catch (IOException e) {
+            // Note, this exception does not passthrough on purpose. Please see bugzilla 958 if you have any issue
+            // with this.
+            logger.log(Level.SEVERE, "The service whose OID is " + service.getOid() + " cannot be read properly " +
+                                     "and will be discarded from the service cache.", e);
+        }
     }
 
     /**
@@ -428,11 +437,7 @@ public class ServiceCache {
                                                           "cannot be retrieved", e);
                             }
                             if (toUpdateOrAdd != null) {
-                                try {
-                                    cacheNoLock(toUpdateOrAdd);
-                                } catch (IOException e) {
-                                    logger.log(Level.WARNING, "exception updating cache", e);
-                                }
+                                cacheNoLock(toUpdateOrAdd);
                             } // otherwise, next integrity check shall delete this service from cache
                         }
                         for (Iterator i = deletions.iterator(); i.hasNext();) {
