@@ -86,11 +86,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
             );
         }
         if (!pv.seenCredentials) {
-            r.addWarning(
-                    new PolicyValidatorResult.
-                    Warning(null,
-                            "No authentication assertions are present in the policy. The\n" +
-                            " service may be exposed to public access ", null));
+            r.addWarning(new PolicyValidatorResult.Warning(null,
+                            "No credential assertions are present in the policy. The\n" +
+                            " service may be exposed to public access", null));
+        }
+        if (pv.seenCredentials && !pv.seenAccessControl) {
+            r.addWarning(new PolicyValidatorResult.Warning(null,"Credentials are collected but are not authenticated." +
+                    "\nThis service may be exposed to public access.", null));
         }
     }
 
