@@ -15,6 +15,7 @@ import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
+import javax.xml.rpc.NamespaceConstants;
 import java.io.*;
 import java.util.*;
 import java.rmi.RemoteException;
@@ -30,7 +31,7 @@ import com.l7tech.common.util.SoapUtil;
  * values.
  * <p/>
  * Currently does only rpc requests.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class SoapMessageGenerator {
@@ -47,8 +48,8 @@ public class SoapMessageGenerator {
     /**
      * constructor specifying the message input generator The generator
      * is used ot obtain the message input values
-     * 
-     * @param messageInputGenerator 
+     *
+     * @param messageInputGenerator
      * @see MessageInputGenerator
      */
     public SoapMessageGenerator(MessageInputGenerator messageInputGenerator) {
@@ -69,7 +70,7 @@ public class SoapMessageGenerator {
      * @throws SAXException
      */
     public Message[] generateRequests(String wsdlResource)
-      throws WSDLException, FileNotFoundException, SOAPException, RemoteException, MalformedURLException, IOException, SAXException  {
+      throws WSDLException, FileNotFoundException, SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
         if (wsdlResource == null) {
             throw new IllegalArgumentException();
         }
@@ -91,7 +92,7 @@ public class SoapMessageGenerator {
      * @throws FileNotFoundException if wsdl cannot be found
      */
     public Message[] generateResponses(String wsdlResource)
-      throws WSDLException, FileNotFoundException, SOAPException, RemoteException, MalformedURLException, IOException, SAXException  {
+      throws WSDLException, FileNotFoundException, SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
         if (wsdlResource == null) {
             throw new IllegalArgumentException();
         }
@@ -144,15 +145,14 @@ public class SoapMessageGenerator {
     /**
      * Generate SOAP messages based on binding
      *
-     * @param binding  the binding of the message
-     * @param request  the request message
+     * @param binding the binding of the message
+     * @param request the request message
      * @return the list of SOAP messages specific to the binding specified.
-     *
-     * @throws SOAPException  when error occurred in parsing SOAP message
-     * @throws RemoteException  if failed to call the remote object
-     * @throws MalformedURLException  if URL format is invalide
-     * @throws IOException   when error occured in reading the wsdl document
-     * @throws SAXException  when error occured in parsing XML
+     * @throws SOAPException         when error occurred in parsing SOAP message
+     * @throws RemoteException       if failed to call the remote object
+     * @throws MalformedURLException if URL format is invalide
+     * @throws IOException           when error occured in reading the wsdl document
+     * @throws SAXException          when error occured in parsing XML
      */
     private List generateMessages(Binding binding, boolean request)
       throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
@@ -202,6 +202,7 @@ public class SoapMessageGenerator {
         SOAPMessage soapMessage = messageFactory.createMessage();
         SOAPPart soapPart = soapMessage.getSOAPPart();
         SOAPEnvelope envelope = soapPart.getEnvelope();
+        verifyNamespaces(envelope);
         String targetNameSpace = wsdl.getDefinition().getTargetNamespace();
 
         BindingInput bi = bindingOperation.getBindingInput();
@@ -225,14 +226,42 @@ public class SoapMessageGenerator {
     }
 
     /**
+      * Verify that the required namespaces are declared on the <code>SOAPEnvelope</code>
+      * Systinet saaj implementation does not add by default the "http://www.w3.org/2001/XMLSchema";
+      * "http://www.w3.org/2001/XMLSchema-instance"
+      *
+      * @param envelope the envelope to verify
+      */
+    private void verifyNamespaces(SOAPEnvelope envelope) throws SOAPException {
+        Iterator it = envelope.getNamespacePrefixes();
+        List prefixes = new ArrayList();
+        while (it.hasNext()) {
+            prefixes.add(envelope.getNamespaceURI(it.next().toString()));
+        }
+
+        String requirePrefixes[][] = {
+            {NamespaceConstants.NSPREFIX_SCHEMA_XSD, NamespaceConstants.NSURI_SCHEMA_XSD},
+            {NamespaceConstants.NSPREFIX_SCHEMA_XSI, NamespaceConstants.NSURI_SCHEMA_XSI}
+        };
+
+        for (int i = 0; i < requirePrefixes.length; i++) {
+            String[] requirePrefix = requirePrefixes[i];
+            if (!prefixes.contains(requirePrefix[1])) {
+                envelope.addNamespaceDeclaration(requirePrefix[0], requirePrefix[1]);
+            }
+        }
+    }
+
+    /**
      * Generate a SOAP request message
+     *
      * @param bindingOperation
      * @return SOAPMessage  a SOAP message
-     * @throws SOAPException  when error occured in parsing SOAP message
-     * @throws RemoteException  if failed to call the remote object
-     * @throws MalformedURLException  if URL format is invalide
-     * @throws IOException   when error occured in reading the wsdl document
-     * @throws SAXException  when error occured in parsing XML
+     * @throws SOAPException         when error occured in parsing SOAP message
+     * @throws RemoteException       if failed to call the remote object
+     * @throws MalformedURLException if URL format is invalide
+     * @throws IOException           when error occured in reading the wsdl document
+     * @throws SAXException          when error occured in parsing XML
      */
     private SOAPMessage generateRequestMessage(BindingOperation bindingOperation)
       throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
@@ -312,8 +341,8 @@ public class SoapMessageGenerator {
             }
             if (messageInputGenerator != null) {
                 value = messageInputGenerator.generate(elementName,
-                  bindingOperation.getName(),
-                  wsdl.getDefinition());
+                                                       bindingOperation.getName(),
+                                                       wsdl.getDefinition());
             }
             if (value != null) {
                 parameterElement.addTextNode(value);
@@ -328,11 +357,11 @@ public class SoapMessageGenerator {
      *
      * @param bindingOperation
      * @return SOAPMessage a SOAP message
-     * @throws SOAPException  when error occured in parsing SOAP message
-     * @throws RemoteException  if failed to call the remote object
-     * @throws MalformedURLException  if URL format is invalide
-     * @throws IOException   when error occured in reading the wsdl document
-     * @throws SAXException  when error occured in parsing XML
+     * @throws SOAPException         when error occured in parsing SOAP message
+     * @throws RemoteException       if failed to call the remote object
+     * @throws MalformedURLException if URL format is invalide
+     * @throws IOException           when error occured in reading the wsdl document
+     * @throws SAXException          when error occured in parsing XML
      */
     private SOAPMessage generateResponseMessage(BindingOperation bindingOperation)
       throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
@@ -402,8 +431,8 @@ public class SoapMessageGenerator {
             }
             if (messageInputGenerator != null) {
                 value = messageInputGenerator.generate(elementName,
-                  bindingOperation.getName(),
-                  wsdl.getDefinition());
+                                                       bindingOperation.getName(),
+                                                       wsdl.getDefinition());
             }
             if (value != null) {
                 parameterElement.addTextNode(value);
@@ -419,13 +448,13 @@ public class SoapMessageGenerator {
      * @param bo       the binding operation
      * @param envelope the soap envelope
      * @param message  the operation message (input or output)
-     * @throws RemoteException  if failed to call the remote object
-     * @throws MalformedURLException  if URL format is invalide
-     * @throws IOException   when error occured in reading the wsdl document
-     * @throws SAXException  when error occured in parsing XML
+     * @throws RemoteException       if failed to call the remote object
+     * @throws MalformedURLException if URL format is invalide
+     * @throws IOException           when error occured in reading the wsdl document
+     * @throws SAXException          when error occured in parsing XML
      */
     private void processDocumentStyle(BindingOperation bo, SOAPEnvelope envelope, javax.wsdl.Message message)
-      throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException  {
+      throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
         Operation operation = bo.getOperation();
         List parts = message.getOrderedParts(null);
         if (parts == null || parts.isEmpty()) return;
@@ -479,21 +508,21 @@ public class SoapMessageGenerator {
      * extract the parameter names from schema (wsdl Types section)
      *
      * @param elementName the element name to search for
-     * @throws RemoteException  if failed to call the remote object
-     * @throws MalformedURLException  if URL format is invalide
-     * @throws IOException   when error occured in reading the wsdl document
-     * @throws SAXException  when error occured in parsing XML
      * @return the array of name, type pairs or empty array if not found
+     * @throws RemoteException       if failed to call the remote object
+     * @throws MalformedURLException if URL format is invalide
+     * @throws IOException           when error occured in reading the wsdl document
+     * @throws SAXException          when error occured in parsing XML
      */
     private NameTypePair[] getSchemaParameterElements(String elementName)
-            throws RemoteException, MalformedURLException, IOException, SAXException {
+      throws RemoteException, MalformedURLException, IOException, SAXException {
         List eeList;
         String targetNamespace = wsdl.getDefinition().getTargetNamespace();
         Types types = wsdl.getTypes();
         if (types == null) {
             // look for schema from other place
             Element elem = Wsdl.getSchemaElement(wsdl.getDefinition());
-            if(elem != null) {
+            if (elem != null) {
                 return getSchemaParameterElements(elem, elementName, targetNamespace);
             }
 
@@ -519,8 +548,8 @@ public class SoapMessageGenerator {
     /**
      * extract the parameter names from an Element
      *
-     * @param elem the element from which the parameters are retrieved
-     * @param elementName the element name to search for
+     * @param elem            the element from which the parameters are retrieved
+     * @param elementName     the element name to search for
      * @param targetNamespace the target name space
      * @return the array of name, type pairs or empty array if not found
      */
@@ -542,8 +571,8 @@ public class SoapMessageGenerator {
                 Document doc = elem.getOwnerDocument();
                 DocumentTraversal traversable = (DocumentTraversal)doc; // tragic! em20040204
                 NodeIterator nodeIterator =
-                        traversable.createNodeIterator(child,
-                                NodeFilter.SHOW_ELEMENT, new LocalNameFilter("element"), true);
+                  traversable.createNodeIterator(child,
+                                                 NodeFilter.SHOW_ELEMENT, new LocalNameFilter("element"), true);
                 List elements = new ArrayList();
                 Node n = nodeIterator.nextNode();
                 if (n == null) return new NameTypePair[]{};
