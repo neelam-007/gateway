@@ -254,7 +254,7 @@ public class XencUtil {
      * The encrypted key is then padded according to http://www.w3.org/2001/04/xmlenc#rsa-1_5 and then base64ed.
      * @param keyBytes the bytes of the symmetric key to encrypt
      * @param publicKey the public key of the recipient of the key
-     * @return
+     * @return the base64 encoded padded and encrypted keyBytes for the passed publicKey recipient
      * @throws GeneralSecurityException
      */
     public static String encryptKeyWithRsaAndPad(byte[] keyBytes, PublicKey publicKey, SecureRandom rand) throws GeneralSecurityException {
