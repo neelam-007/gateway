@@ -3,13 +3,18 @@ package com.l7tech.common.security.xml;
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.*;
 
+import java.lang.reflect.Method;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Signs soap messages.
@@ -23,6 +28,9 @@ import java.security.interfaces.RSAPrivateKey;
  * $Id$
  */
 public class SoapMsgSigner {
+    private static final String DS_PREFIX = "ds";
+    private static final String DEF_ENV_TAG = "envId";
+    public static final String ID_ATTRIBUTE_NAME = "Id";
 
     /**
      * Appends a soap message with a digital signature of it's entire envelope.
@@ -44,7 +52,7 @@ public class SoapMsgSigner {
     public void signEnvelope(Document soapMsg, PrivateKey privateKey, X509Certificate cert)
       throws SignatureStructureException, XSignatureException {
         // is the envelope already ided?
-        String id = soapMsg.getDocumentElement().getAttribute("Id");
+        String id = soapMsg.getDocumentElement().getAttribute(ID_ATTRIBUTE_NAME);
 
         if (id == null || id.length() < 1) {
             id = DEF_ENV_TAG;
@@ -80,7 +88,7 @@ public class SoapMsgSigner {
         String id = elem.getAttribute(referenceId);
         if (id == null || "".equals(id)) {
             id = referenceId;
-            elem.setAttribute("Id", referenceId);
+            elem.setAttribute(ID_ATTRIBUTE_NAME, referenceId);
         }
 
         // set the appropriate signature method
@@ -135,35 +143,35 @@ public class SoapMsgSigner {
     }
 
     /**
-     * Verify that a valid signature is included and that the element is signed.
+     * Verify that a valid signature is included and that the bodyElement is signed.
      * The validity of the signer's cert is NOT verified against the local root authority.
      * 
      * @param soapMsg the soap message that potentially contains a digital signature
-     * @param element the signed element
+     * @param bodyElement the signed bodyElement
      * @return the cert used as part of the message's signature (not checked against any authority) never null
      * @throws com.l7tech.common.security.xml.SignatureNotFoundException
      *          if no signature is found in document
      * @throws com.l7tech.common.security.xml.InvalidSignatureException
      *          if the signature is invalid, not in an expected format or is missing information
      */
-    public X509Certificate validateSignature(Document soapMsg, Element element)
+    public X509Certificate validateSignature(Document soapMsg, Element bodyElement)
       throws SignatureNotFoundException, InvalidSignatureException {
         normalizeDoc(soapMsg);
 
-        // find signature element
-        Element sigElement = getSignatureHeaderElement(soapMsg);
+        // find signature bodyElement
+        Element sigElement = getSignatureHeaderElement(soapMsg, bodyElement);
         if (sigElement == null) {
-            throw new SignatureNotFoundException("No signature element in this document");
+            throw new SignatureNotFoundException("No signature bodyElement in this document");
         }
 
         SignatureContext sigContext = new SignatureContext();
         AdHocIDResolver idResolver = new AdHocIDResolver(soapMsg);
         sigContext.setIDResolver(idResolver);
 
-        // Find KeyInfo element, and extract certificate from this
+        // Find KeyInfo bodyElement, and extract certificate from this
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
         if (keyInfoElement == null) {
-            throw new SignatureNotFoundException("KeyInfo element not found in " + sigElement.toString());
+            throw new SignatureNotFoundException("KeyInfo bodyElement not found in " + sigElement.toString());
         }
         KeyInfo keyInfo = null;
         try {
@@ -176,7 +184,7 @@ public class SoapMsgSigner {
         KeyInfo.X509Data[] x509DataArray = keyInfo.getX509Data();
         // according to javadoc, this can be null
         if (x509DataArray == null || x509DataArray.length < 1) {
-            throw new InvalidSignatureException("No x509 data found in KeyInfo element");
+            throw new InvalidSignatureException("No x509 data found in KeyInfo bodyElement");
         }
         KeyInfo.X509Data x509Data = x509DataArray[0];
         X509Certificate[] certs = x509Data.getCertificates();
@@ -193,20 +201,21 @@ public class SoapMsgSigner {
         if (!validity.getCoreValidity()) {
             throw new InvalidSignatureException("Validity not achieved: " + validity.getSignedInfoMessage());
         }
+        // TODO Bug#723 - Check that cert still matches in the database
 
         // verify that the entire envelope is signed
-        String refid = element.getAttribute("Id");
+        String refid = bodyElement.getAttribute(ID_ATTRIBUTE_NAME);
         if (refid == null || refid.length() < 1) {
             throw new InvalidSignatureException("No reference id on envelope");
         }
         String envelopeURI = "#" + refid;
         for (int i = 0; i < validity.getNumberOfReferences(); i++) {
             if (!validity.getReferenceValidity(i)) {
-                throw new InvalidSignatureException("Validity not achieved for element " + validity.getReferenceURI(i));
+                throw new InvalidSignatureException("Validity not achieved for bodyElement " + validity.getReferenceURI(i));
             }
             if (envelopeURI.equals(validity.getReferenceURI(i))) {
                 // SUCCESS, RETURN THE CERT
-                // first, consume the signature element by removing it
+                // first, consume the signature bodyElement by removing it
                 sigElement.getParentNode().removeChild(sigElement);
                 return cert;
             }
@@ -215,14 +224,58 @@ public class SoapMsgSigner {
         throw new InvalidSignatureException("No reference to envelope was verified.");
     }
 
-
-    public Element getSignatureHeaderElement(Document doc) {
-        // find signature element
-        NodeList tmpNodeList = doc.getElementsByTagNameNS(XSignature.XMLDSIG_NAMESPACE, "Signature");
-        if (tmpNodeList.getLength() < 1) {
+    private Element getSignatureHeaderElement(Document doc, Element bodyElement) {
+        Element header = XmlUtil.findFirstChildElement( doc.getDocumentElement() );
+        if ( header == null ) {
+            logger.info( "SOAP header not found" );
             return null;
         }
-        return (Element)tmpNodeList.item(0);
+
+        String bodyId = bodyElement.getAttribute( ID_ATTRIBUTE_NAME );
+        if ( bodyId == null ) {
+            logger.info( "ID attribute not found in supposedly signed body element" );
+            return null;
+        }
+
+        try {
+            Element security = XmlUtil.findOnlyOneChildElementByName( header, SoapUtil.SECURITY_NAMESPACE, SoapUtil.SECURITY_EL_NAME );
+            if ( security == null ) {
+                logger.info( SoapUtil.SECURITY_EL_NAME + " header not found" );
+                return null;
+            }
+
+            // find signature element(s)
+            List signatureElements = XmlUtil.findChildElementsByName( security, SoapUtil.DIGSIG_URI, SoapUtil.SIGNATURE_EL_NAME );
+            if (signatureElements.size() < 1) {
+                logger.info( "No " + SoapUtil.SIGNATURE_EL_NAME + " elements were found in " + SoapUtil.SECURITY_EL_NAME + " header" );
+                return null;
+            }
+
+            // Find signature element matching the specified bodyElement
+            for ( Iterator i = signatureElements.iterator(); i.hasNext(); ) {
+                Element signature = (Element) i.next();
+                Element signedInfo = XmlUtil.findOnlyOneChildElementByName( signature,
+                                                                            SoapUtil.DIGSIG_URI,
+                                                                            SoapUtil.SIGNED_INFO_EL_NAME );
+                Element reference = XmlUtil.findOnlyOneChildElementByName( signedInfo,
+                                                                           SoapUtil.DIGSIG_URI,
+                                                                           SoapUtil.REFERENCE_EL_NAME );
+                String uri = reference.getAttribute( "URI" );
+                if ( uri == null || !uri.startsWith("#") || uri.length() < 2 ) {
+                    logger.warning( "SignedInfo/Reference/URI is missing or points to non-local body part" );
+                    return null;
+                }
+
+                if ( uri.substring(1).equals(bodyId) )
+                    return signature;
+            }
+
+            logger.finest( "Did not find any matching Signature element" );
+            return null;
+        } catch ( XmlUtil.MultipleChildElementsException e ) {
+            logger.warning( "Found multiple " + e.getName() + " elements where only one was expected" );
+            return null;
+        }
     }
 
     private String getSignatureMethod(PrivateKey privateKey) {
@@ -325,6 +378,28 @@ public class SoapMsgSigner {
         return false;
     }
 
-    private static final String DS_PREFIX = "ds";
-    private static final String DEF_ENV_TAG = "envId";
+    // todo this really really smells, but it is only way to get log manager on server and agent
+    private static final Logger logger = LogHolder.getInstance().getSystemLogger();
+
+    private static class LogHolder {
+        public static LogHolder getInstance() {
+            return _instance;
+        }
+
+        public Logger getSystemLogger() {
+            try {
+                Class logManagerClass = Class.forName("com.l7tech.logging.LogManager");
+                Method logManager_getInstance = logManagerClass.getMethod( "getInstance", new Class[0] );
+                Object logManager = logManager_getInstance.invoke( null, new Object[0] );
+                Method logManager_getSystemLogger = logManagerClass.getMethod( "getSystemLogger" , new Class[0] );
+                Logger logger = (Logger) logManager_getSystemLogger.invoke( logManager, new Object[0] );
+                return logger;
+            } catch ( Exception e ) {
+                // look for Client logger
+                return Logger.getLogger( SoapMsgSigner.class.getName() );
+            }
+        }
+
+        private static final LogHolder _instance = new LogHolder();
+    }
 }

@@ -4,7 +4,7 @@
  * Date: 4-Feb-2004
  * Time: 11:52:37 AM
  */
-package com.l7tech.policy.assertion.xmlsec;
+package com.l7tech.common.security.xml;
 
 import org.w3c.dom.Document;
 
@@ -16,6 +16,7 @@ import java.io.IOException;
 
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.Session;
+import com.l7tech.common.security.xml.ElementSecurity;
 
 /**
  * The class security processor handles element processsing for

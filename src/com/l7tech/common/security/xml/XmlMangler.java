@@ -43,12 +43,13 @@ public class XmlMangler {
     static {
         JceProvider.init();
     }
+    
+    /** nice try asshole */
+    private XmlMangler() { }
 
     // ID for EncryptedData element
     private static final String id = "bodyId";
 
-    // Namespace constants
-    private static final String xencNS = "http://www.w3.org/2001/04/xmlenc#";
     static final String NS_ENC_URI = "http://www.w3.org/2000/xmlns/";
 
     private static class XmlManglerException extends GeneralSecurityException {
@@ -161,14 +162,14 @@ public class XmlMangler {
 
         Element rootElement = document.getDocumentElement();
         if (rootElement.getAttributeNodeNS(NS_ENC_URI, "xenc") == null) {
-            rootElement.setAttributeNS(NS_ENC_URI, "xmlns:xenc", xencNS);
+            rootElement.setAttributeNS(NS_ENC_URI, "xmlns:xenc", SoapUtil.XMLENC_NS);
         }
 
         // Add Security element to header, referencing the encrypted body
-        Element dataRefEl = document.createElementNS(xencNS, "xenc:DataReference");
+        Element dataRefEl = document.createElementNS(SoapUtil.XMLENC_NS, "xenc:DataReference");
         dataRefEl.setAttribute("URI", referenceId);
 
-        Element refEl = document.createElementNS(xencNS, "xenc:ReferenceList");
+        Element refEl = document.createElementNS(SoapUtil.XMLENC_NS, "xenc:ReferenceList");
         refEl.appendChild(dataRefEl);
 
         Element securityEl = SoapUtil.getOrMakeSecurityElement(document);
@@ -209,7 +210,7 @@ public class XmlMangler {
       throws GeneralSecurityException, ParserConfigurationException, IOException,
       SAXException, XMLSecurityElementNotFoundException {
         // Locate EncryptedData element by its reference in the Security header
-        Element dataRefEl = (Element)soapMsg.getElementsByTagNameNS(xencNS, "DataReference").item(0);
+        Element dataRefEl = (Element)soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "DataReference").item(0);
         if (dataRefEl == null)
             throw new XMLSecurityElementNotFoundException("no DataReference tag in the message");
         AdHocIdResolver idResolver = new AdHocIdResolver();
@@ -244,7 +245,7 @@ public class XmlMangler {
     }
 
     public static void cleanEmptyRefList(Document soapMsg) {
-        NodeList listRefElements = soapMsg.getElementsByTagNameNS(xencNS, "ReferenceList");
+        NodeList listRefElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "ReferenceList");
         if (listRefElements.getLength() < 1) return;
         Element refEl = (Element)listRefElements.item(0);
         if (!SoapUtil.elHasChildrenElements(refEl)) {

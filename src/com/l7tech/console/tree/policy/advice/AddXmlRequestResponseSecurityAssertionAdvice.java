@@ -1,10 +1,11 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
+import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 
 import javax.xml.soap.SOAPConstants;

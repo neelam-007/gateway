@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.common.security.xml.ElementSecurity;
 
 /**
  * Enforces XML security on the message elements or the entire message.

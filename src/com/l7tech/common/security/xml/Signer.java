@@ -1,11 +1,8 @@
-package com.l7tech.policy.assertion.xmlsec;
+package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
-import com.l7tech.common.security.xml.Session;
-import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.SoapMsgSigner;
-import com.l7tech.common.security.xml.XmlMangler;
+import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
@@ -31,7 +28,7 @@ import java.util.logging.Logger;
  * @see {@link SecurityProcessor#getSigner(com.l7tech.common.security.xml.Session,
   *      com.l7tech.common.security.xml.SignerInfo,
   *      java.security.Key,
-  *      com.l7tech.policy.assertion.xmlsec.ElementSecurity[])}
+  *      com.l7tech.common.security.xml.ElementSecurity[])}
  */
 class Signer extends SecurityProcessor {
     static Logger logger = Logger.getLogger(Signer.class.getName());

@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.common.security.xml.ElementSecurity;
+
 /**
  * The <code>XmlSecurityAssertion</code> interface is implemented by assertions
  * that offer document or document portion security. Document or document portion

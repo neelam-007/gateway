@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.common.security.xml.ElementSecurity;
 
 /**
  * Enforces the XML security on the message elements or entire message

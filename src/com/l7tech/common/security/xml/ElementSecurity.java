@@ -1,4 +1,4 @@
-package com.l7tech.policy.assertion.xmlsec;
+package com.l7tech.common.security.xml;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.XpathExpression;

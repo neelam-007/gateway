@@ -203,4 +203,20 @@ public class XmlUtil {
 
         return found;
     }
+
+    /**
+     * Returns the content of the first text node child of the specified element, if any.
+     * @param parent the element to examine
+     * @return The first text node as a String, or null if there were no text nodes.
+     */
+    public static String findFirstChildTextNode( Element parent ) {
+        NodeList children = parent.getChildNodes();
+        for ( int i = 0, length = children.getLength(); i < length; i++ ) {
+            Node n = children.item(i);
+            if ( n.getNodeType() == Node.TEXT_NODE )
+                return n.getNodeValue();
+        }
+
+        return null;
+    }
 }

@@ -4,7 +4,7 @@
  * Date: 4-Feb-2004
  * Time: 12:30:20 PM
  */
-package com.l7tech.policy.assertion.xmlsec;
+package com.l7tech.common.security.xml;
 
 /**
  * This is the general security processor exception

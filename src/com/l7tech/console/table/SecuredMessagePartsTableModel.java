@@ -1,6 +1,7 @@
 package com.l7tech.console.table;
 
-import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
+import com.l7tech.common.security.xml.ElementSecurity;
+import com.l7tech.common.security.xml.ElementSecurity;
 
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.BindingOperation;
