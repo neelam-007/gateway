@@ -731,7 +731,7 @@
         <copy todir="${build.classes}">
             <fileset dir="${src.root}/etc/db/${database.type}">
                 <!-- <include name="hibernate.cfg.xml"/> -->
-                <include name="hibernate.properties"/>
+                <include name="hibernate.properties" if="dev.build"/>
             </fileset>
 
             <fileset dir="${src.root}/etc/db">
@@ -801,7 +801,7 @@
     <!--
       ** main compile target
       -->
-    <target name="compile" depends="prepare, configure_properties, compile.forms" unless="compile.pattern">
+    <target name="compile" depends="prepare, configure_properties.dev, compile.forms" unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
             deprecation="on" depend="on" verbose="no">
             <classpath refid="project.classpath"/>
@@ -874,7 +874,7 @@
      ** token replacement target.
      ** This should be done ONLY for non distribution builds.
      -->
-    <target name="configure_properties" depends="db.properties">
+    <target name="configure_properties.dev" depends="db.properties" if="dev.build">
 
         <echo message="database.driver   = '${database.driver}'"/>
         <echo message="database.url      = '${database.url}'"/>
@@ -893,6 +893,13 @@
             token="DB_PINGSTMT" value="${database.pingstmt}"/>
         <replace file="${build.etc}/web.xml"
             token="TOMCAT_HOME" value="${tomcat.home}"/>
+    </target>
+
+    <!--
+     ** token replacement target.
+     ** This should be done ONLY for non distribution builds.
+     -->
+    <target name="configure_properties.install" unless="dev.build">
     </target>
 
 
@@ -988,49 +995,31 @@
         <antcall target="INTERNAL-ssg-install"/>
     </target>
 
-    <target name="INTERNAL-ssg-install-optional-1" depends="INTERNAL-ssg-install-genpass, INTERNAL-ssg-install-properties-full"/>
+    <target name="INTERNAL-ssg-install-optional-1" depends="INTERNAL-ssg-install-properties-full"/>
     <target name="INTERNAL-ssg-install-optional-2" depends="INTERNAL-ssg-install-war, INTERNAL-ssg-install-keystores, INTERNAL-ssg-install-properties-upgrade"/>
 
     <target name="INTERNAL-ssg-install-war">
         <!-- Expand ROOT-bxxxx.war into tomcat/webapps -->
         <echo>Expanding ${install.src.war}...</echo>
         <unwar src="${install.src.war}" dest="${install.src.tomcat}/webapps/ROOT"/>
-
-        <move todir="${install.src.conf}">
-            <fileset dir="${install.src.tomcat}/webapps/ROOT/WEB-INF/classes">
-                <include name="hibernate.properties"/>
-            </fileset>
-        </move>
-
-    </target>
-
-    <target name="INTERNAL-ssg-install-genpass" if="install.full">
-        <echo>Generating passwords...</echo>
-        <exec executable="${src.root}/etc/rpass.pl" outputproperty="install.pass.root"/>
-        <exec executable="${src.root}/etc/rpass.pl" outputproperty="install.pass.gateway"/>
-        <exec executable="${src.root}/etc/rpass.pl" outputproperty="install.pass.dbadmin"/>
-        <exec executable="${src.root}/etc/rpass.pl" outputproperty="install.pass.dbuser"/>
-        <exec executable="${src.root}/etc/rpass.pl" outputproperty="install.pass.ca.keystore"/>
-        <exec executable="${src.root}/etc/rpass.pl" outputproperty="install.pass.ssl.keystore"/>
-        <exec executable="${src.root}/etc/rpass.pl" outputproperty="install.pass.ssgadmin"/>
-        <exec executable="${src.root}/etc/md5passwd.pl" outputproperty="install.pass.ssgadmin.md5">
-            <arg value="admin:L7SSGDigestRealm:${install.pass.ssgadmin}"/>
-        </exec>
-
-        <echo>Writing passwords to ${install.src.passwords.txt}...</echo>
-        <echo file="${install.src.passwords.txt}">root = '${install.pass.root}'
-gateway = '${install.pass.gateway}'
-dbadmin = '${install.pass.dbadmin}'
-dbuser = '${install.pass.dbuser}'
-cakeys = '${install.pass.ca.keystore}'
-sslkeys = '${install.pass.ssl.keystore}'
-ssgadmin = '${install.pass.ssgadmin}'
-ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
-        </echo>
     </target>
 
     <target name="INTERNAL-ssg-install-properties-full" if="install.full">
-        <copy file="${src.root}/etc/system.properties" tofile="${install.src.conf}"/>
+        <!-- Copy hibernate.properties -->
+        <property name="install.src.hibernate.properties" value="${install.src.conf}/hibernate.properties"/>
+        <property name="database.driver" value="${my.database.driver}"/>
+        <property name="database.url" value="${my.database.url}"/>
+
+        <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" tofile="${install.src.hibernate.properties}"/>
+
+        <replace file="${install.src.hibernate.properties}"
+            token="DB_URL" value="${database.url}"/>
+        <replace file="${install.src.hibernate.properties}"
+            token="DB_DRIVER" value="${database.driver}"/>
+        <replace file="${install.src.hibernate.properties}"
+            token="DB_PINGSTMT" value="${database.pingstmt}"/>
+
+        <copy file="${src.root}/etc/system.properties" todir="${install.src.conf}"/>
 
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>
         <echo>Patching ${install.src.keystore.properties}...</echo>
@@ -1038,14 +1027,6 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <replaceregexp file="${install.src.keystore.properties}">
             <regexp pattern="keystoredir=.*"/>
             <substitution expression="keystoredir=${install.target.keys}"/>
-        </replaceregexp>
-        <replaceregexp file="${install.src.keystore.properties}">
-            <regexp pattern="rootcakspasswd=.*"/>
-            <substitution expression="rootcakspasswd=${install.pass.ca.keystore}"/>
-        </replaceregexp>
-        <replaceregexp file="${install.src.keystore.properties}">
-            <regexp pattern="sslkspasswd=.*"/>
-            <substitution expression="sslkspasswd=${install.pass.ssl.keystore}"/>
         </replaceregexp>
 
         <copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}"/>
@@ -1089,136 +1070,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <copy file="${src.root}/etc/cluster_hostname" tofile="${install.src.cluster_hostname}-dist"/>
     </target>
 
-    <target name="INTERNAL-ssg-install-keystores" if="install.full" depends="INTERNAL-ssg-install-genpass">
-        <path id="keytool.classpath">
-            <fileset dir="${src.root}/lib/crypto/bc">
-                <include name="*.jar"/>
-            </fileset>
-        </path>
-
-        <pathconvert refid="keytool.classpath" property="keytool.cp" pathSep=":"/>
-
-        <echo>${keytool.cp}</echo>
-
-        <!-- Create CA keystore -->
-
-        <echo>Generating CA key &amp; cert...</echo>
-        <delete file="${install.src.ca.keystore}"/>
-        <fail unless="install.ca.hostname" message="install.ca.hostname property not set! Check install.properties!"/>
-
-        <exec executable="java">
-            <arg line="-classpath ${keytool.cp}"/>
-            <arg line="sun.security.tools.KeyTool"/>
-            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
-            <arg line="-storetype BCPKCS12"/>
-            <arg line="-keystore ${install.src.ca.keystore}"/>
-            <arg line="-keypass ${install.pass.ca.keystore}"/>
-            <arg line="-storepass ${install.pass.ca.keystore}"/>
-            <arg line="-alias ${install.alias.ca.keystore}"/>
-            <arg line="-genkey"/>
-            <arg line="-dname cn=${install.ca.hostname}"/>
-            <arg line="-keyalg RSA"/>
-            <arg line="-sigalg SHA1withRSA"/>
-        </exec>
-
-        <!-- $KEYTOOL -export -alias ssgroot -storepass "$KEYSTORE_PASSWORD" -file "$ROOT_CERT_FILE" -keystore "$ROOT_KEYSTORE_FILE" -->
-        <echo>Exporting CA cert...</echo>
-        <delete file="${install.src.ca.cer}"/>
-        <java classname="sun.security.tools.KeyTool" fork="true">
-            <classpath refid="keytool.classpath"/>
-            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
-            <arg line="-storetype BCPKCS12"/>
-            <arg line="-keystore ${install.src.ca.keystore}"/>
-            <arg line="-export"/>
-            <arg line="-alias ${install.alias.ca.keystore}"/>
-            <arg line="-keypass ${install.pass.ca.keystore}"/>
-            <arg line="-storepass ${install.pass.ca.keystore}"/>
-            <arg line="-file ${install.src.ca.cer}"/>
-        </java>
-
-        <!-- Create SSL keystore -->
-        <echo>Generating SSL key &amp; cert...</echo>
-        <delete file="${install.src.ssl.keystore}"/>
-        <fail unless="install.ssg.hostname" message="install.ssg.hostname property not set! Check install.properties!"/>
-        <java classname="sun.security.tools.KeyTool" fork="true">
-            <classpath refid="keytool.classpath"/>
-            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
-            <arg line="-storetype BCPKCS12"/>
-            <arg line="-keystore ${install.src.ssl.keystore}"/>
-            <arg line="-genkey"/>
-            <arg line="-alias ${install.alias.ssl.keystore}"/>
-            <arg line="-dname cn=${install.ssg.hostname}"/>
-            <!--            <arg line="-keyalg RSA"/>-->
-            <!--            <arg line="-sigalg SHA1withRSA"/>-->
-            <arg line="-keypass ${install.pass.ssl.keystore}"/>
-            <arg line="-storepass ${install.pass.ssl.keystore}"/>
-        </java>
-
-        <!-- Create SSL CSR -->
-        <echo>Exporting SSL CSR...</echo>
-        <delete file="${install.src.ssl.csr}"/>
-        <java classname="sun.security.tools.KeyTool" fork="true">
-            <classpath refid="keytool.classpath"/>
-            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
-            <arg line="-storetype BCPKCS12"/>
-            <arg line="-certreq"/>
-            <arg line="-keyalg RSA"/>
-            <arg line="-alias ${install.alias.ssl.keystore}"/>
-            <arg line="-file '${install.src.ssl.csr}'"/>
-            <arg line="-keystore ${install.src.ssl.keystore}"/>
-            <arg line="-storepass ${install.pass.ssl.keystore}"/>
-        </java>
-
-        <path id="classpath">
-            <pathelement path="${src.root}/build/classes"/>
-            <fileset dir="${src.root}/lib">
-                <include name="**/*.jar"/>
-                <include name="**/*.zip"/>
-            </fileset>
-        </path>
-
-        <!-- Sign it! -->
-        <echo>Signing SSL certificate...</echo>
-        <delete file="${install.src.ssl.cer}"/>
-        <java classname="com.l7tech.identity.cert.RsaCertificateSigner" classpathref="classpath">
-            <arg line="${install.src.ca.keystore}"/>
-            <arg line="${install.pass.ca.keystore}"/>
-            <arg line="${install.alias.ca.keystore}"/>
-            <arg line="${install.pass.ca.keystore}"/>
-            <arg line="${install.src.ssl.csr}"/>
-            <arg line="${install.src.ssl.cer}"/>
-        </java>
-
-        <!--
-        $KEYTOOL -import -noprompt -file $ROOT_CERT_FILE -alias ssgroot -keystore $SSL_KEYSTORE_FILE -storepass $KEYSTORE_PASSWORD
-        $KEYTOOL -import -noprompt -file $SSL_CERT_FILE -alias tomcat -keystore $SSL_KEYSTORE_FILE -storepass $KEYSTORE_PASSWORD
-        -->
-        <echo>Importing CA certificate into SSL keystore...</echo>
-        <java classname="sun.security.tools.KeyTool" fork="true">
-            <classpath refid="keytool.classpath"/>
-            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
-            <arg line="-storetype BCPKCS12"/>
-            <arg line="-import"/>
-            <arg line="-noprompt"/>
-            <arg line="-file ${install.src.ca.cer}"/>
-            <arg line="-alias ${install.alias.ca.keystore}"/>
-            <arg line="-keystore ${install.src.ssl.keystore}"/>
-            <arg line="-storepass ${install.pass.ssl.keystore}"/>
-        </java>
-
-        <echo>Importing signed SSL certificate into SSL keystore...</echo>
-        <java classname="sun.security.tools.KeyTool" fork="true">
-            <classpath refid="keytool.classpath"/>
-            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
-            <arg line="-storetype BCPKCS12"/>
-            <arg line="-import"/>
-            <arg line="-noprompt"/>
-            <arg line="-file ${install.src.ssl.cer}"/>
-            <arg line="-alias ${install.alias.ssl.keystore}"/>
-            <arg line="-keystore ${install.src.ssl.keystore}"/>
-            <arg line="-storepass ${install.pass.ssl.keystore}"/>
-        </java>
-
+    <target name="INTERNAL-ssg-install-keystores" if="install.full">
         <!-- Copy server.xml & catalina.policy -->
         <copy todir="${install.src.tomcat}/conf">
             <fileset dir="${src.root}/etc/tomcat">
@@ -1226,19 +1078,6 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
                 <include name="catalina.policy"/>
             </fileset>
         </copy>
-
-        <!-- Hack server.xml -->
-        <echo>Patching ${install.src.server.xml}...</echo>
-        <replaceregexp file="${install.src.server.xml}">
-            <regexp pattern='keystoreFile\s*=\s*"[a-zA-Z0-9 \/\-\.\\]*"'/>
-            <substitution expression='keystoreFile="${install.target.ssl.keystore}"'/>
-        </replaceregexp>
-
-        <replaceregexp file="${install.src.server.xml}">
-            <regexp pattern='keystorePass\s*=\s*"[a-zA-Z0-9 \/\-\.\\]*"'/>
-            <substitution expression='keystorePass="${install.pass.ssl.keystore}"'/>
-        </replaceregexp>
-
     </target>
 
     <target name="INTERNAL-ssg-install" depends="init-dev">
@@ -1269,10 +1108,6 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <property name="install.rel.conf" value="${install.rel.etc}/conf"/>
         <property name="install.rel.keys" value="${install.rel.etc}/keys"/>
         <property name="install.rel.sql" value="${install.rel.etc}/sql"/>
-        <property name="install.rel.ca.keystore" value="${install.rel.keys}/ca.ks"/>
-        <property name="install.rel.ssl.keystore" value="${install.rel.keys}/ssl.ks"/>
-        <property name="install.rel.ssl.csr" value="${install.rel.keys}/ssl.csr"/>
-        <property name="install.rel.ssl.cer" value="${install.rel.keys}/ssl.cer"/>
 
         <!-- Absolute source paths -->
         <property name="install.src.base" value="${build.dir}/install/ssg"/>
@@ -1286,10 +1121,6 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <property name="install.src.etc" value="${install.src.base}/${install.rel.etc}"/>
         <property name="install.src.keys" value="${install.src.base}/${install.rel.keys}"/>
         <property name="install.src.sql" value="${install.src.base}/${install.rel.sql}"/>
-        <property name="install.src.ca.keystore" value="${install.src.base}/${install.rel.ca.keystore}"/>
-        <property name="install.src.ssl.keystore" value="${install.src.base}/${install.rel.ssl.keystore}"/>
-        <property name="install.src.ssl.csr" value="${install.src.base}/${install.rel.ssl.csr}"/>
-        <property name="install.src.ssl.cer" value="${install.src.base}/${install.rel.ssl.cer}"/>
 
         <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
         <property name="install.src.passwords.txt" value="${install.src.base}/passwords.txt"/>
@@ -1308,11 +1139,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <property name="install.target.ldap" value="${install.target.base}/${install.rel.ldap}"/>
         <property name="install.target.tomcat" value="${install.target.base}/${install.rel.tomcat}"/>
         <property name="install.target.jdk" value="${install.target.base}/${install.rel.jdk}"/>
-        <property name="install.target.ssl.keystore" value="${install.target.keys}/${install.rel.ssl.keystore}"/>
         <property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
 
-        <property name="install.alias.ca.keystore" value="ssgroot"/>
-        <property name="install.alias.ssl.keystore" value="tomcat"/>
         <property name="install.src.war" value="${install.src.dist}/ROOT-b${install.build.number}.war"/>
 
         <echo>Making directories...</echo>
@@ -1393,6 +1221,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <fileset dir="${install.src.bin}">
                 <include name="*.sh"/>
                 <include name="*.pl"/>
+                <include name="back_route"/>
+                <include name="ssg-initd"/>
                 <include name="nc"/>
                 <include name="garp"/>
             </fileset>
@@ -1406,7 +1236,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         </chmod>
 
         <!-- Create tarball -->
-        <property name="tarball" value="${build.dir}/ssg-${install.ssg.hostname}-b${install.build.number}.tar.gz"/>
+        <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>
         <echo>Creating ${tarball}...</echo>
         <exec executable="tar" dir="${build.dir}/install">
             <arg line="-czf ${tarball}"/>
