@@ -1,22 +1,22 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.tree.FilteredTreeModel;
-import com.l7tech.console.tree.NodeFilter;
-import com.l7tech.console.tree.EntityTreeCellRenderer;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.console.panels.IdentityPolicyPanel;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.util.Cookie;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeNode;
 import java.awt.*;
-import java.awt.geom.Rectangle2D;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.Rectangle2D;
+import java.rmi.RemoteException;
 import java.util.Iterator;
-import java.util.Set;
+import java.io.IOException;
 
 /**
  * The identities policy view
@@ -26,45 +26,19 @@ import java.util.Set;
  */
 public class IdentityPolicyView extends JDialog {
     private JPanel windowContentPane = null;
-    private JScrollPane scrollPane = null;
-    private JTree policyTree = null;
-    private IdentityAssertion idAssertion;
+    private IdentityAssertionTreeNode idAssertion;
+    private JPanel idPanel;
+    private ServiceNode serviceNode;
 
-    /** * SplashScreen constructor comment. * @param owner java.awt.Frame */
-    public IdentityPolicyView(Frame owner, IdentityAssertion ida) {
+    public IdentityPolicyView(Frame owner, IdentityAssertionTreeNode ida)
+      throws FindException, IOException {
         super(owner, true);
         idAssertion = ida;
-        initialize();
-    }
-
-    /**
-     * Return the JScrollPane property value.
-     * @return javax.swing.JScrollPane
-     */
-    private JScrollPane getScrollPane() {
-        if (scrollPane != null) return scrollPane;
-        scrollPane = new JScrollPane(getPolicyTree());
-        return scrollPane;
-    }
-
-    private JTree getPolicyTree() {
-        if (policyTree != null) return policyTree;
-        policyTree = new JTree();
-        policyTree.setCellRenderer(new EntityTreeCellRenderer());
-        Assertion root = idAssertion.getPath()[0];
-        Set paths = IdentityPath.getPaths(root);
-        for (Iterator i = paths.iterator(); i.hasNext();) {
-            IdentityPath ip = (IdentityPath)i.next();
-            if (ip.getPrincipal().getName().equals(extractName(idAssertion))) {
-                IdentityPolicyTreeNode n = new IdentityPolicyTreeNode(ip, root);
-                PolicyTreeModel model = new PolicyTreeModel(n);
-                FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
-                fm.setFilter(new IdentityNodeFilter());
-                policyTree.setModel(fm);
-                break;
-            }
+        serviceNode = getServiceNodeCookie();
+        if (serviceNode == null) {
+            throw new IllegalStateException("No service node found in the policy tree");
         }
-        return policyTree;
+        initialize();
     }
 
     private String extractName(IdentityAssertion ida) {
@@ -78,15 +52,30 @@ public class IdentityPolicyView extends JDialog {
         throw new IllegalArgumentException("Don't know how to handle class " + ida.getClass());
     }
 
-    /** * Return the JWindowContentPane property value. * @return javax.swing.JPanel */
-    private JPanel getWindowContentPane() {
+    /**
+     * Return the JWindowContentPane property value.
+     * @return javax.swing.JPanel
+     */
+    private JPanel getWindowContentPane() throws FindException, IOException {
         if (windowContentPane == null) {
             windowContentPane = new JPanel();
             //windowContentPane.setBorder(new javax.swing.border.EtchedBorder());
             windowContentPane.setLayout(new BorderLayout());
-            getWindowContentPane().add(getScrollPane(), "Center");
+            getWindowContentPane().add(getIdentityPolicyPanel(), "Center");
         }
         return windowContentPane;
+    }
+
+    private JPanel getIdentityPolicyPanel()
+      throws FindException, IOException {
+        if (idPanel !=null) {
+            return idPanel;
+        }
+        IdentityAssertion ia = (IdentityAssertion)idAssertion.asAssertion();
+        idPanel = new IdentityPolicyPanel(serviceNode.getPublishedService(),
+                                          ((AssertionTreeNode)(idAssertion.getRoot())).asAssertion(),
+                                          IdentityPath.extractIdentity(ia));
+        return idPanel;
     }
 
     /** * @param e java.awt.event.WindowEvent */
@@ -104,39 +93,22 @@ public class IdentityPolicyView extends JDialog {
     }
 
     /** * Initialize the class. */
-    private void initialize() {
-        setTitle("Identity Policy - " + extractName(idAssertion));
-        FontMetrics metrics = getFontMetrics(getFont());
-        Graphics g = getGraphics();
-        Rectangle2D textBounds = metrics.getStringBounds(getTitle(), g);
-        setSize((int)textBounds.getWidth() + 50, 200);
+    private void initialize() throws FindException, IOException {
+        setTitle("Identity Policy - " + extractName((IdentityAssertion)idAssertion.asAssertion()));
         setContentPane(getWindowContentPane());
         initializeListeners();
     }
 
-    private static class IdentityNodeFilter implements NodeFilter {
-        /**
-         * @param node the TreeNode to examine
-         * @return true if filter accepts the node, false otherwise
-         */
-        public boolean accept(TreeNode node) {
-            if (node instanceof SpecificUserAssertionTreeNode || node instanceof MemberOfGroupAssertionTreeNode) return false;
-            if (node instanceof CompositeAssertionTreeNode) {
-                if (((CompositeAssertionTreeNode)node).getChildCount(this) == 0) return false;
-            }
-            TreeNode[] path = ((DefaultMutableTreeNode)node).getPath();
-            IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[0];
-            AssertionTreeNode an = (AssertionTreeNode)node;
-            IdentityPath ip = in.getIdentityPath();
-            Set paths = ip.getPaths();
-            for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
-                Assertion[] apath = (Assertion[])iterator.next();
-                for (int i = apath.length - 1; i >= 0; i--) {
-                    Assertion assertion = apath[i];
-                    if (assertion.equals(an.asAssertion())) return true;
-                }
-            }
-            return false;
+
+    /**
+     * @return the published service cookie or null if not founds
+     */
+    private ServiceNode getServiceNodeCookie() {
+        for (Iterator i = ((AbstractTreeNode)idAssertion.getRoot()).cookies(); i.hasNext(); ) {
+            Object value = ((Cookie)i.next()).getValue();
+            if (value instanceof ServiceNode) return (ServiceNode)value;
         }
+        return null;
     }
+
 }

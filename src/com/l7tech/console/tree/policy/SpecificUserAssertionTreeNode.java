@@ -36,7 +36,7 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        Action a = new IdentityPolicyAction((IdentityAssertion)getUserObject());
+        Action a = new IdentityPolicyAction(this);
         list.add(a);
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[]) list.toArray(new Action[]{});

@@ -105,6 +105,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         policyTree.setPolicyEditor(this);
         policyTree.setRootVisible(false);
         policyTree.setShowsRootHandles(true);
+        policyTree.setRowHeight((int)(policyTree.getRowHeight()*1.3));
         policyTreePane = new JScrollPane(policyTree);
         return policyTreePane;
     }
@@ -207,7 +208,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         JButton buttonSave;
         JButton buttonSaveTemplate;
         JButton buttonValidate;
-        JToggleButton identityViewButton;
 
         public PolicyEditToolBar() {
             super();
@@ -258,31 +258,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             });
             this.add(buttonValidate);
 
-            identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
-            identityViewButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    boolean selected = identityViewButton.isSelected();
-                    policyTree.getModel().removeTreeModelListener(policyTreeModellistener);
-                    if (selected) {
-                        PolicyTreeModel model =
-                          PolicyTreeModel.identitityModel(rootAssertion.asAssertion());
-                        FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
-                        fm.setFilter(new IdentityNodeFilter());
-                        policyTree.setModel(fm);
-                    } else {
-                        PolicyTreeModel model =
-                          new PolicyTreeModel(rootAssertion.asAssertion());
-                        FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
-                        policyTree.setModel(fm);
-                    }
-                    policyTree.getModel().addTreeModelListener(policyTreeModellistener);
-                }
-            });
-            this.add(identityViewButton);
             Utilities.
               equalizeComponentSizes(
                 new JComponent[]{
-                    buttonSave, buttonValidate, identityViewButton
+                    buttonSave, buttonValidate, buttonSaveTemplate
                 });
         }
     }

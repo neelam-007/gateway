@@ -1,9 +1,24 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.service.PublishedService;
+import com.l7tech.console.action.Actions;
+import com.l7tech.console.tree.policy.IdentityPath;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 
 import javax.swing.*;
 import java.security.Principal;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.util.Set;
+import java.util.Iterator;
+import java.util.Collection;
+import java.util.ArrayList;
 
 /**
  * The <code>IdentityPolicyPanel</code> is the policy panel that allows
@@ -16,8 +31,24 @@ import java.security.Principal;
  * @version 1.0
  */
 public class IdentityPolicyPanel extends JPanel {
-    private PublishedService service;
+    private JPanel mainPanel;
+    private JButton cancelButton;
+    private JButton okButton;
+    private JButton helpButton;
+    private JButton defaultUrlButton;
+    private JComboBox authMethodComboBox;
+    private JComboBox xmlSecOptions;
+    private JCheckBox sslCheckBox;
+    private JTextField routeToUrlField;
+    private JTextField userRouteField;
+    private JTextField passwordRouteField;
+    private JTextField realmRouteField;
+    
     private Principal principal;
+    private IdentityPath principalAssertionPaths;
+    private Set allPaths;
+    private Assertion rootAssertion;
+    private PublishedService service;
 
     /**
      * Create the identity policy panel for a given principal and serviec
@@ -26,13 +57,105 @@ public class IdentityPolicyPanel extends JPanel {
      * @param principal the principal that the identity policy panel is
      *        created for
      */
-    public IdentityPolicyPanel(PublishedService service, Principal principal) {
+    public IdentityPolicyPanel(PublishedService service, Assertion rootAssertion, Principal principal) {
         super();
         if (service == null || principal == null) {
             throw new IllegalArgumentException();
         }
         this.service = service;
         this.principal = principal;
+        this.rootAssertion = rootAssertion;
+        initialize();
+        setLayout(new BorderLayout());
+        /** Set content pane */
+        add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private void initialize() {
+        cancelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Window w =
+                  SwingUtilities.windowForComponent(IdentityPolicyPanel.this);
+                w.dispose();
+            }
+        });
+        helpButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Actions.invokeHelp(IdentityPolicyPanel.this);
+            }
+        });
+        Utilities.equalizeButtonSizes(new JButton[]{cancelButton, okButton, helpButton});
+        authMethodComboBox.setModel(Components.getCredentialsLocationComboBoxModel());
+
+        principalAssertionPaths = IdentityPath.forIdentity(principal, rootAssertion);
+        allPaths = IdentityPath.getPaths(rootAssertion);
+        Collection remove = new ArrayList();
+        for (Iterator iterator = allPaths.iterator(); iterator.hasNext();) {
+            IdentityPath ip = (IdentityPath)iterator.next();
+            if (ip.getPrincipal().equals(principalAssertionPaths.getPrincipal())) {
+                remove.add(ip);
+            }
+        }
+        allPaths.removeAll(remove);
+        sslCheckBox.setEnabled(isSslAssertionModifiable());
+        final boolean authMethodModifiable = isAuthMethodModifiable();
+        authMethodComboBox.setEnabled(authMethodModifiable);
+        xmlSecOptions.setEnabled(authMethodModifiable);
+
+        boolean routeModifiable = isRouteModifiable();
+        routeToUrlField.setEnabled(routeModifiable);
+        userRouteField.setEditable(routeModifiable);
+        passwordRouteField.setEnabled(routeModifiable);
+        realmRouteField.setEnabled(routeModifiable);
+        defaultUrlButton.setEnabled(routeModifiable);
+    }
+
+    private boolean isSslAssertionModifiable() {
+        for (Iterator iterator = allPaths.iterator(); iterator.hasNext();) {
+            IdentityPath ip = (IdentityPath)iterator.next();
+            for (Iterator iterator1 = ip.getPaths().iterator(); iterator1.hasNext();) {
+                Assertion[] assertions = (Assertion[])iterator1.next();
+                for (int i = 0; i < assertions.length; i++) {
+                    Assertion assertion = assertions[i];
+                    if (assertion instanceof SslAssertion) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean isAuthMethodModifiable() {
+        for (Iterator iterator = allPaths.iterator(); iterator.hasNext();) {
+            IdentityPath ip = (IdentityPath)iterator.next();
+            for (Iterator iterator1 = ip.getPaths().iterator(); iterator1.hasNext();) {
+                Assertion[] assertions = (Assertion[])iterator1.next();
+                for (int i = 0; i < assertions.length; i++) {
+                    Assertion assertion = assertions[i];
+                    if (assertion instanceof CredentialSourceAssertion) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean isRouteModifiable() {
+           for (Iterator iterator = allPaths.iterator(); iterator.hasNext();) {
+               IdentityPath ip = (IdentityPath)iterator.next();
+               for (Iterator iterator1 = ip.getPaths().iterator(); iterator1.hasNext();) {
+                   Assertion[] assertions = (Assertion[])iterator1.next();
+                   for (int i = 0; i < assertions.length; i++) {
+                       Assertion assertion = assertions[i];
+                       if (assertion instanceof RoutingAssertion) {
+                           return false;
+                       }
+                   }
+               }
+           }
+           return true;
     }
 
     {
@@ -44,127 +167,146 @@ public class IdentityPolicyPanel extends JPanel {
     private void $$$setupUI$$$() {
         JPanel _1;
         _1 = new JPanel();
-        _1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 1, new java.awt.Insets(0, 0, 0, 0), -1, -1));
+        mainPanel = _1;
+        _1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 1, new Insets(5, 5, 5, 5), -1, -1));
         JPanel _2;
         _2 = new JPanel();
-        _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new java.awt.Insets(10, 0, 0, 0), -1, -1));
-        _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 1, 1, 3, 3, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
+        _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 1, 1, 3, 3, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         _2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
         JLabel _3;
         _3 = new JLabel();
         _3.setText("Identity Policy");
-        _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JTabbedPane _4;
         _4 = new JTabbedPane();
-        _1.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, new java.awt.Dimension(-1, -1), new java.awt.Dimension(200, 200), new java.awt.Dimension(-1, -1)));
+        _1.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, new Dimension(-1, -1), new Dimension(200, 200), new Dimension(-1, -1)));
         JPanel _5;
         _5 = new JPanel();
-        _5.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new java.awt.Insets(0, 0, 0, 0), -1, -1));
+        _5.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(10, 0, 0, 0), -1, -1));
         _4.addTab("Authentication", _5);
         JPanel _6;
         _6 = new JPanel();
-        _6.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 2, new java.awt.Insets(0, 10, 0, 0), -1, -1));
-        _5.add(_6, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 2, 1, 0, 3, 3, 3, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JCheckBox _7;
-        _7 = new JCheckBox();
-        _7.setHorizontalTextPosition(10);
-        _7.setText("Require SSL/TLS encryption");
-        _6.add(_7, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, 8, 0, 3, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JLabel _8;
-        _8 = new JLabel();
-        _8.setText("Authentication method:");
-        _6.add(_8, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 0, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JComboBox _9;
-        _9 = new JComboBox();
-        _6.add(_9, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 2, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        com.intellij.uiDesigner.core.Spacer _10;
-        _10 = new com.intellij.uiDesigner.core.Spacer();
-        _6.add(_10, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JPanel _11;
-        _11 = new JPanel();
-        _11.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 2, new java.awt.Insets(0, 10, 0, 0), -1, -1));
-        _5.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 3, 3, 3, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JLabel _12;
-        _12 = new JLabel();
-        _12.setText("Please Select the XML Security options:");
-        _11.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JComboBox _13;
-        _13 = new JComboBox();
-        _11.add(_13, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 1, 2, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        _6.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 5, new Insets(5, 10, 0, 0), -1, -1));
+        _5.add(_6, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 3, 3, 3, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JLabel _7;
+        _7 = new JLabel();
+        _7.setText("XML Security options:");
+        _6.add(_7, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        com.intellij.uiDesigner.core.Spacer _8;
+        _8 = new com.intellij.uiDesigner.core.Spacer();
+        _6.add(_8, new com.intellij.uiDesigner.core.GridConstraints(2, 3, 1, 1, 0, 2, 1, 6, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JCheckBox _9;
+        _9 = new JCheckBox();
+        sslCheckBox = _9;
+        _9.setHorizontalTextPosition(10);
+        _9.setMargin(new Insets(2, 2, 2, 0));
+        _9.setText("Require SSL/TLS encryption");
+        _9.setContentAreaFilled(true);
+        _6.add(_9, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, 4, 0, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JLabel _10;
+        _10 = new JLabel();
+        _10.setText("Authentication method");
+        _6.add(_10, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JComboBox _11;
+        _11 = new JComboBox();
+        xmlSecOptions = _11;
+        _6.add(_11, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, 8, 1, 2, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JComboBox _12;
+        _12 = new JComboBox();
+        authMethodComboBox = _12;
+        _6.add(_12, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 2, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        com.intellij.uiDesigner.core.Spacer _13;
+        _13 = new com.intellij.uiDesigner.core.Spacer();
+        _6.add(_13, new com.intellij.uiDesigner.core.GridConstraints(2, 4, 1, 1, 0, 1, 6, 1, new Dimension(10, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         com.intellij.uiDesigner.core.Spacer _14;
         _14 = new com.intellij.uiDesigner.core.Spacer();
-        _11.add(_14, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        _6.add(_14, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 0, 1, 6, 1, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         com.intellij.uiDesigner.core.Spacer _15;
         _15 = new com.intellij.uiDesigner.core.Spacer();
-        _11.add(_15, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 0, 1, 6, 1, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        _6.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 0, 1, 6, 1, new Dimension(50, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JPanel _16;
         _16 = new JPanel();
-        _16.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 4, new java.awt.Insets(10, 10, 0, 0), -1, -1));
+        _16.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 5, new Insets(10, 10, 0, 0), -1, -1));
         _4.addTab("Routing", _16);
         JLabel _17;
         _17 = new JLabel();
-        _17.setText("Protected service authentication");
-        _16.add(_17, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 2, 8, 0, 0, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JLabel _18;
-        _18 = new JLabel();
-        _18.setText("Service URL:");
-        _16.add(_18, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JTextField _19;
-        _19 = new JTextField();
-        _16.add(_19, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 2, 8, 1, 6, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(150, -1), new java.awt.Dimension(-1, -1)));
-        JPanel _20;
-        _20 = new JPanel();
-        _20.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 2, new java.awt.Insets(0, 0, 0, 0), -1, -1));
-        _16.add(_20, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 2, 0, 3, 3, 3, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        _17.setText("Service URL");
+        _16.add(_17, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JTextField _18;
+        _18 = new JTextField();
+        routeToUrlField = _18;
+        _16.add(_18, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 2, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
+        JPanel _19;
+        _19 = new JPanel();
+        _19.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 2, new Insets(5, 0, 5, 0), -1, -1));
+        _16.add(_19, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 2, 0, 3, 3, 3, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        _19.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Protected service authentication"));
+        JLabel _20;
+        _20 = new JLabel();
+        _20.setText("Identity");
+        _19.add(_20, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JLabel _21;
         _21 = new JLabel();
-        _21.setText("Identity");
-        _20.add(_21, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 4, 0, 0, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        _21.setText("Password");
+        _19.add(_21, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JLabel _22;
         _22 = new JLabel();
-        _22.setText("Password");
-        _20.add(_22, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JLabel _23;
-        _23 = new JLabel();
-        _23.setText("Realm");
-        _20.add(_23, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 4, 0, 0, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        _22.setText("Realm (optional)");
+        _19.add(_22, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JTextField _23;
+        _23 = new JTextField();
+        userRouteField = _23;
+        _19.add(_23, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
         JTextField _24;
         _24 = new JTextField();
-        _20.add(_24, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(150, -1), new java.awt.Dimension(-1, -1)));
+        passwordRouteField = _24;
+        _19.add(_24, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
         JTextField _25;
         _25 = new JTextField();
-        _20.add(_25, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(150, -1), new java.awt.Dimension(-1, -1)));
-        JTextField _26;
-        _26 = new JTextField();
-        _20.add(_26, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 8, 1, 6, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(150, -1), new java.awt.Dimension(-1, -1)));
-        com.intellij.uiDesigner.core.Spacer _27;
-        _27 = new com.intellij.uiDesigner.core.Spacer();
-        _16.add(_27, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 1, 6, 1, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        realmRouteField = _25;
+        _19.add(_25, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
+        com.intellij.uiDesigner.core.Spacer _26;
+        _26 = new com.intellij.uiDesigner.core.Spacer();
+        _16.add(_26, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 1, 0, 1, 6, 1, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JButton _27;
+        _27 = new JButton();
+        defaultUrlButton = _27;
+        _27.setLabel("Default");
+        _27.setText("Default");
+        _16.add(_27, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 1, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         com.intellij.uiDesigner.core.Spacer _28;
         _28 = new com.intellij.uiDesigner.core.Spacer();
-        _16.add(_28, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 1, 0, 1, 6, 1, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        _16.add(_28, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 1, 1, 0, 1, 6, 1, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         com.intellij.uiDesigner.core.Spacer _29;
         _29 = new com.intellij.uiDesigner.core.Spacer();
-        _1.add(_29, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JPanel _30;
-        _30 = new JPanel();
-        _30.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 4, new java.awt.Insets(0, 0, 0, 0), -1, -1));
-        _1.add(_30, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 3, 3, 3, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        JButton _31;
-        _31 = new JButton();
-        _31.setText("Help");
-        _30.add(_31, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 1, 3, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        _16.add(_29, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 0, 2, 1, 6, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        com.intellij.uiDesigner.core.Spacer _30;
+        _30 = new com.intellij.uiDesigner.core.Spacer();
+        _1.add(_30, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JPanel _31;
+        _31 = new JPanel();
+        _31.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 4, new Insets(5, 0, 0, 0), -1, -1));
+        _1.add(_31, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 3, 3, 3, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JButton _32;
         _32 = new JButton();
-        _32.setText("Cancel");
-        _30.add(_32, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 0, 1, 3, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        helpButton = _32;
+        _32.setText("Help");
+        _31.add(_32, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 1, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JButton _33;
         _33 = new JButton();
-        _33.setText("Ok");
-        _30.add(_33, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 1, 3, 0, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
-        com.intellij.uiDesigner.core.Spacer _34;
-        _34 = new com.intellij.uiDesigner.core.Spacer();
-        _30.add(_34, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 6, 1, new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1), new java.awt.Dimension(-1, -1)));
+        cancelButton = _33;
+        _33.setText("Cancel");
+        _31.add(_33, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 0, 1, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        JButton _34;
+        _34 = new JButton();
+        okButton = _34;
+        _34.setText("Ok");
+        _31.add(_34, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 1, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
+        com.intellij.uiDesigner.core.Spacer _35;
+        _35 = new com.intellij.uiDesigner.core.Spacer();
+        _31.add(_35, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 6, 1, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
     }
+
 
 }

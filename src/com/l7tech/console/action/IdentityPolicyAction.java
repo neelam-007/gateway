@@ -2,11 +2,15 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.tree.policy.IdentityPolicyView;
+import com.l7tech.console.tree.policy.IdentityAssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.objectmodel.FindException;
 
 import java.awt.*;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
+import java.io.IOException;
 
 
 /**
@@ -18,14 +22,14 @@ import java.util.logging.Logger;
  */
 public class IdentityPolicyAction extends BaseAction {
     static final Logger log = Logger.getLogger(IdentityPolicyAction.class.getName());
-    IdentityAssertion assertion;
+    IdentityAssertionTreeNode assertion;
 
     /**
      * create the action that shows the identity assertion policy
-     * @param a the identity assertion
+     * @param ia the identity assertion
      */
-    public IdentityPolicyAction(IdentityAssertion a) {
-        assertion = a;
+    public IdentityPolicyAction(IdentityAssertionTreeNode ia) {
+        assertion = ia;
     }
 
     /**
@@ -46,7 +50,7 @@ public class IdentityPolicyAction extends BaseAction {
      * subclasses override this method specifying the resource name
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/policy16.gif";
+        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     /** Actually perform the action.
@@ -55,10 +59,17 @@ public class IdentityPolicyAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-       Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-        IdentityPolicyView pw = new IdentityPolicyView(f, assertion);
-        pw.pack();
-        Utilities.centerOnScreen(pw);
-        pw.show();
+        try {
+            Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+            IdentityPolicyView pw = new IdentityPolicyView(f, assertion);
+            pw.pack();
+            Utilities.centerOnScreen(pw);
+            pw.show();
+        } catch (FindException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
 }

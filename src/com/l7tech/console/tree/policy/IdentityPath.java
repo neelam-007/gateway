@@ -166,7 +166,7 @@ public class IdentityPath {
      * @param assertion
      * @return whether the assertion is an identity
      */
-    private static Principal extractIdentity(Object assertion) {
+    static Principal extractIdentity(Object assertion) {
         if (assertion instanceof SpecificUser) {
             SpecificUser su = ((SpecificUser)assertion);
             User u = new User();
