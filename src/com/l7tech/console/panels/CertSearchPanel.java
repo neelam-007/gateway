@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.event.CertListener;
@@ -21,6 +22,9 @@ import java.util.Vector;
 import java.util.EventListener;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.io.IOException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -35,11 +39,21 @@ public class CertSearchPanel extends JDialog {
     private JButton viewButton;
     private JButton cancelButton;
     private JLabel resultCounter;
+    private JComboBox subjectSearchComboBox;
+    private JComboBox issuerSearchComboBox;
+    private JTextField subjectNameTextField;
+    private JTextField issuerNameTextField;
+    private boolean cancelled;
 
     private JPanel mainPanel;
     private JScrollPane certScrollPane;
     private TrustedCertsTable trustedCertTable = null;
     private EventListenerList listenerList = new EventListenerList();
+
+    private final static String STARTS_WITH = "Starts with";
+    private final static String EQUALS = "Equals";
+    private final static int SEARCH_SELECTION_STARTS_WITH = 0;
+    private final static int SEARCH_SELECTION_EQUALS = 1;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertSearchPanel.class.getName());
@@ -63,6 +77,10 @@ public class CertSearchPanel extends JDialog {
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
+        stopButton.setEnabled(false);
+
+        subjectSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS }));
+        issuerSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS }));
 
         if (trustedCertTable == null) {
             trustedCertTable = new TrustedCertsTable();
@@ -95,21 +113,20 @@ public class CertSearchPanel extends JDialog {
               public void tableChanged(TableModelEvent e) {
                   if (e.getType() == TableModelEvent.INSERT) {
                       resultCounter.setText("[ " + trustedCertTable.getTableSorter().getRealModel().getRowCount() + " objects found]");
-                      searchButton.setEnabled(true);
-                      stopButton.setEnabled(false);
                   }
               }
           });
 
         searchButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                cancelled = false;
                 loadTrustedCerts();
             }
         });
 
         stopButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-
+                 cancelled = true;
             }
         });
 
@@ -214,28 +231,95 @@ public class CertSearchPanel extends JDialog {
      */
     private void loadTrustedCerts() {
 
-        java.util.List certList = null;
-        try {
-            certList = getTrustedCertAdmin().findAllCerts();
+        final JDialog thisDialog = this;
 
-            Vector certs = new Vector();
-            for (int i = 0; i < certList.size(); i++) {
-                Object o = (Object) certList.get(i);
-                certs.add(o);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+
+                searchButton.setEnabled(false);
+                stopButton.setEnabled(true);
+
+                java.util.List certList = null;
+                try {
+                    certList = getTrustedCertAdmin().findAllCerts();
+
+                    // clear the table
+                    trustedCertTable.getTableSorter().setData(new Vector());
+                    resultCounter.setText("[ " + trustedCertTable.getTableSorter().getRealModel().getRowCount() + " objects found]");
+                    
+                    //Vector certs = new Vector();
+                    for (int i = 0; i < certList.size() && !cancelled ; i++) {
+                        TrustedCert tc = (TrustedCert) certList.get(i);
+                        if (isShown(tc)) {
+                            trustedCertTable.getTableSorter().addRow(tc);
+                        }
+                    }
+
+                } catch (RemoteException re) {
+                    JOptionPane.showMessageDialog(thisDialog, resources.getString("cert.remote.exception"),
+                            resources.getString("load.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
+                } catch (FindException e) {
+                    JOptionPane.showMessageDialog(thisDialog, resources.getString("cert.find.error"),
+                            resources.getString("load.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+                stopButton.setEnabled(false);
+                searchButton.setEnabled(true);
             }
-            trustedCertTable.getTableSorter().setData(certs);
-            trustedCertTable.getTableSorter().getRealModel().setRowCount(certs.size());
-            trustedCertTable.getTableSorter().fireTableDataChanged();
+        });
+    }
 
-        } catch (RemoteException re) {
-            JOptionPane.showMessageDialog(this, resources.getString("cert.remote.exception"),
-                    resources.getString("load.error.title"),
-                    JOptionPane.ERROR_MESSAGE);
-        } catch (FindException e) {
-            JOptionPane.showMessageDialog(this, resources.getString("cert.find.error"),
-                    resources.getString("load.error.title"),
-                    JOptionPane.ERROR_MESSAGE);
+    /**
+     * Check if the cert should be shown or not
+     * @param tc  The trusted cert
+     * @return boolean TRUE if the cert should be shown, FALSE otherwise.
+     */
+    private boolean isShown(TrustedCert tc) {
+
+        X509Certificate cert = null;
+        try {
+            cert = tc.getCertificate();
+        } catch (CertificateException e) {
+            logger.warning(resources.getString("cert.decode.error"));
+            return false;
+
+        } catch (IOException e) {
+            logger.warning(resources.getString("cert.decode.error"));
+            return false;
         }
+
+        String subjectName = CertUtils.extractUsernameFromClientCertificate(cert);
+        String issuerName = CertUtils.extractIssuerNameFromClientCertificate(cert);
+
+        boolean show1 = true;
+        boolean show2 = true;
+        if (subjectNameTextField.getText().trim().length() > 0) {
+            if (subjectSearchComboBox.getSelectedIndex() == SEARCH_SELECTION_STARTS_WITH) {
+                if(!subjectName.startsWith(subjectNameTextField.getText().trim())) {
+                     show1 = false;
+                }
+            } else if (subjectSearchComboBox.getSelectedIndex() == SEARCH_SELECTION_EQUALS) {
+                if(!subjectName.equals(subjectNameTextField.getText().trim())) {
+                     show1 = false;
+                }
+            }
+        }
+
+        if (issuerNameTextField.getText().trim().length() > 0) {
+            if (issuerSearchComboBox.getSelectedIndex() == SEARCH_SELECTION_STARTS_WITH) {
+                if(!issuerName.startsWith(issuerNameTextField.getText().trim())) {
+                     show2 = false;
+                }
+            } else if (issuerSearchComboBox.getSelectedIndex() == SEARCH_SELECTION_EQUALS) {
+                 if(!issuerName.equals(issuerNameTextField.getText().trim())) {
+                     show2 = false;
+                }
+            }
+        }
+
+        return (show1 && show2);
     }
 
     /**
@@ -302,76 +386,86 @@ public class CertSearchPanel extends JDialog {
         _3.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, new Dimension(200, 100), null));
         final JPanel _9;
         _9 = new JPanel();
-        _9.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(10, 8, 8, 8), -1, -1));
+        _9.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 3, new Insets(10, 8, 8, 8), -1, -1));
         _8.addTab("Criteria", _9);
         final JLabel _10;
         _10 = new JLabel();
-        _10.setText("Subject DN starts with:");
+        _10.setText("Subject DN");
         _9.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final JLabel _11;
         _11 = new JLabel();
-        _11.setText("Issuer name starts with:");
+        _11.setText("Issuer Name");
         _9.add(_11, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final JTextField _12;
         _12 = new JTextField();
-        _9.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
+        subjectNameTextField = _12;
+        _9.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JTextField _13;
         _13 = new JTextField();
-        _9.add(_13, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
-        final JPanel _14;
-        _14 = new JPanel();
-        _14.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _2.add(_14, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JLabel _15;
-        _15 = new JLabel();
-        _15.setText("Search the trusted certificates in the store:");
-        _14.add(_15, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        issuerNameTextField = _13;
+        _9.add(_13, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
+        final JComboBox _14;
+        _14 = new JComboBox();
+        subjectSearchComboBox = _14;
+        _9.add(_14, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 2, 0, null, null, null));
+        final JComboBox _15;
+        _15 = new JComboBox();
+        issuerSearchComboBox = _15;
+        _9.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 2, 0, null, null, null));
         final JPanel _16;
         _16 = new JPanel();
-        _16.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(8, 0, 0, 0), -1, -1));
-        _1.add(_16, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JScrollPane _17;
-        _17 = new JScrollPane();
-        certScrollPane = _17;
-        _16.add(_17, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 7, 7, null, null, null));
+        _16.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _2.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JLabel _17;
+        _17 = new JLabel();
+        _17.setText("Search the trusted certificates in the store:");
+        _16.add(_17, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final JPanel _18;
         _18 = new JPanel();
-        _18.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        _16.add(_18, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JLabel _19;
-        _19 = new JLabel();
-        _19.setText("Search Results:");
-        _18.add(_19, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        _18.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(8, 0, 0, 0), -1, -1));
+        _1.add(_18, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JScrollPane _19;
+        _19 = new JScrollPane();
+        certScrollPane = _19;
+        _18.add(_19, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 7, 7, null, null, null));
         final JPanel _20;
         _20 = new JPanel();
-        _20.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 6, new Insets(0, 0, 0, 0), -1, -1));
-        _16.add(_20, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JButton _21;
-        _21 = new JButton();
-        selectButton = _21;
-        _21.setText("Select");
-        _20.add(_21, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 0, 1, 3, 0, null, null, null));
-        final JButton _22;
-        _22 = new JButton();
-        viewButton = _22;
-        _22.setText("View");
-        _20.add(_22, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 1, 3, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _23;
-        _23 = new com.intellij.uiDesigner.core.Spacer();
-        _20.add(_23, new com.intellij.uiDesigner.core.GridConstraints(0, 5, 1, 1, 0, 1, 6, 1, null, null, null));
+        _20.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        _18.add(_20, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JLabel _21;
+        _21 = new JLabel();
+        _21.setText("Search Results:");
+        _20.add(_21, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        final JPanel _22;
+        _22 = new JPanel();
+        _22.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 6, new Insets(0, 0, 0, 0), -1, -1));
+        _18.add(_22, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JButton _23;
+        _23 = new JButton();
+        selectButton = _23;
+        _23.setText("Select");
+        _22.add(_23, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 0, 1, 3, 0, null, null, null));
         final JButton _24;
         _24 = new JButton();
-        cancelButton = _24;
-        _24.setText("Cancel");
-        _20.add(_24, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 1, 1, 0, 1, 3, 0, null, null, null));
+        viewButton = _24;
+        _24.setText("View");
+        _22.add(_24, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 1, 3, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _25;
         _25 = new com.intellij.uiDesigner.core.Spacer();
-        _20.add(_25, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 1, 6, 1, null, null, null));
-        final JLabel _26;
-        _26 = new JLabel();
-        resultCounter = _26;
-        _26.setText("");
-        _20.add(_26, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        _22.add(_25, new com.intellij.uiDesigner.core.GridConstraints(0, 5, 1, 1, 0, 1, 6, 1, null, null, null));
+        final JButton _26;
+        _26 = new JButton();
+        cancelButton = _26;
+        _26.setText("Cancel");
+        _22.add(_26, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 1, 1, 0, 1, 3, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _27;
+        _27 = new com.intellij.uiDesigner.core.Spacer();
+        _22.add(_27, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 1, 6, 1, null, null, null));
+        final JLabel _28;
+        _28 = new JLabel();
+        resultCounter = _28;
+        _28.setText("");
+        _22.add(_28, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
     }
 
 }
