@@ -31,12 +31,16 @@ esac
 
 if $cygwin; then
     TOMCAT_HOME=`cygpath --path --unix $TOMCAT_HOME`
+
 fi
-if  `$JAVA_HOME/bin/java -version 2>&1|grep 1.5`; then
-	KEYSTORE_TYPOE=PKCS12
+
+java_version_15=`$JAVA_HOME/bin/java -version 2>&1 | grep 1.5`; 
+if  [ "$java_version_15" ]; then
+	KEYSTORE_TYPE=PKCS12
 else
 	KEYSTORE_TYPE=BCPKCS12
 fi
+echo "INFO: keystore type set to $KEYSTORE_TYPE"
 
 WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
 SERVER_XML_FILE="$TOMCAT_HOME/conf/server.xml"
