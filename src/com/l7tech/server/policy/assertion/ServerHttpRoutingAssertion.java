@@ -244,7 +244,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                     if(request.getMultipartReader().isAtLeastOneAttachmentParsed()){
 
-                        byte[] dataBuf = new byte[request.getMultipartReader().getgetRawAttachmentsSize()];
+                        byte[] dataBuf = new byte[request.getMultipartReader().getRawAttachmentsSize()];
                         byte[] data = request.getMultipartReader().getRawAttachments();
                         for(int i=0; i < dataBuf.length; i++) {
                             dataBuf[i] = data[i];

@@ -96,7 +96,7 @@ public class MultipartMessageReader {
         return attachmentsRawData;
     }
 
-    public int getgetRawAttachmentsSize() {
+    public int getRawAttachmentsSize() {
         return writeIndex;
     }
 
