@@ -8,12 +8,9 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.SessionManager;
 
-import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateFactory;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -132,123 +129,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         }
     }
 
-    /**
-     * records new cert and updates the reset counter accordingly
-     */
-    public void recordNewCert(String oid, Certificate cert) throws UpdateException {
-        HibernatePersistenceContext hpc = null;
-        try {
-            // todo, we should not have to get entire user here, just update the necessary column
-            sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
-            String encodedcert = encoder.encode(cert.getEncoded());
-            hpc = hibernateContext();
-            hpc.beginTransaction();
-            User u = findByPrimaryKey( oid );
-            u.setCert( encodedcert );
-            u.setCertResetCounter( u.getCertResetCounter() + 1 );
-            hpc.commitTransaction();
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new UpdateException(e.toString(), e);
-        } catch (CertificateEncodingException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new UpdateException(e.toString(), e);
-        } catch ( TransactionException e ) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-            throw new UpdateException( e.toString(), e );
-        } catch ( FindException e ) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-            throw new UpdateException( e.toString(), e );
-        } finally {
-            if ( hpc != null ) hpc.close();
-        }
-    }
-
-    /**
-     * returns null if no certificate is registered for this user
-     */
-    public Certificate retrieveUserCert(String oid) throws FindException {
-        HibernatePersistenceContext hpc = null;
-        try {
-            hpc = hibernateContext();
-            String hql = getFieldQuery( oid, F_CERT );
-            Session s = hpc.getSession();
-            List results = s.find( hql );
-            String dbcert = (String)results.get(0);
-            if (dbcert == null) return null;
-            sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
-            byte[] certbytes = base64decoder.decodeBuffer(dbcert);
-            Certificate dledcert = CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(certbytes));
-            return dledcert;
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new FindException(e.toString(), e);
-        } finally {
-            if ( hpc != null ) hpc.close();
-        }
-    }
-
-    /**
-     * records the fact that a user's cert was used successfully. once this is set, a user can no longer
-     * regenerate a cert automatically unless the administrator revokes the existing user's cert
-     */
-    public void setCertWasUsed(String oid) throws UpdateException {
-        PersistenceContext pc = null;
-        try {
-            // todo, we should not have to get entire user here, just update the necessary columns
-            pc = getContext();
-            pc.beginTransaction();
-            User u = findByPrimaryKey( oid );
-            u.setCertResetCounter(CERTRESETCOUNTER_MAX);
-            pc.commitTransaction();
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new UpdateException(e.toString(), e);
-        } catch ( FindException e ) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-            throw new UpdateException(e.toString(), e);
-        } catch ( TransactionException e ) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-            throw new UpdateException(e.toString(), e);
-        } finally {
-            if ( pc != null ) pc.close();
-        }
-    }
-
-    /**
-     * removed cert from db and resets counter
-     */
-    public void revokeCert(String oid) throws UpdateException {
-        PersistenceContext pc = null;
-        try {
-            // todo, we should not have to get entire user here, just update the necessary columns
-            pc = getContext();
-            pc.beginTransaction();
-            User u = findByPrimaryKey( oid );
-            // if the user has a cert already, revoke it and revoke the password
-            if (u.getCert() != null && u.getCert().length() > 0) {
-                logger.info("revoking cert and password for user " + u.getLogin());
-                byte[] randomPasswd = new byte[32];
-                SessionManager.getInstance().getRand().nextBytes(randomPasswd);
-                u.setPassword(new String(randomPasswd));
-                u.setCert( null );
-                u.setCertResetCounter( 0 );
-            }
-            pc.commitTransaction();
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new UpdateException(e.toString(), e);
-        } catch ( FindException e ) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-            throw new UpdateException(e.toString(), e);
-        } catch ( TransactionException e ) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-            throw new UpdateException(e.toString(), e);
-        } finally {
-            if ( pc != null ) pc.close();
-        }
-    }
-
     public void delete(User user) throws DeleteException {
         try {
             User originalUser = findByPrimaryKey(Long.toString(user.getOid()));
@@ -320,10 +200,11 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             if (!originalPasswd.equals(newPasswd)) {
                 logger.info("Revoking cert for user " + originalUser.getLogin() + " because he is changing his passwd.");
                 // must revoke the cert
-                originalUser.setCert( null );
+                // todo, refactor this using new ClientCertManager
+                /*originalUser.setCert( null );
                 originalUser.setCertResetCounter( 0 );
                 user.setCert( null );
-                user.setCertResetCounter( 0 );
+                user.setCertResetCounter( 0 );*/
             }
             // update user
             originalUser.copyFrom(user);

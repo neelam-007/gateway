@@ -332,34 +332,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    /**
-     * @deprecated
-     */
-    public String getUserCert(long identityProviderConfigId, String userId)
-                                throws RemoteException, FindException, CertificateEncodingException {
-        // currently, this is only supported in the internal user manager
-        // therefore, let this cast throw if it does
-        InternalUserManagerServer userManager =
-                (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
-
-        Certificate cert = userManager.retrieveUserCert(userId);
-        if (cert == null) return null;
-        sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
-        String encodedcert = encoder.encode(cert.getEncoded());
-        return encodedcert;
-    }
-
-    /**
-     * @deprecated
-     */
-    public void revokeCert(long identityProviderConfigId, String userId) throws RemoteException, UpdateException {
-        // currently, this is only supported in the internal user manager
-        // therefore, let this cast throw if it does
-        InternalUserManagerServer userManager =
-               (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
-        userManager.revokeCert(userId);
-    }
-
     public String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException {
         // get cert from internal CA
         ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);

@@ -134,34 +134,6 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         return output;
     }
 
-    // fla note, this should be moved to some sort of cert manager
-    public Certificate retrieveUserCert(String oid) throws FindException {
-        try {
-            String encodedCert = getStub().getUserCert(config.getOid(), oid);
-            // this means no cert was created
-            if (encodedCert == null) return null;
-            sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
-            byte[] certbytes = base64decoder.decodeBuffer(encodedCert);
-            return CertificateFactory.getInstance("X.509").
-                    generateCertificate(new ByteArrayInputStream(certbytes));
-        } catch (RemoteException e) {
-            throw new FindException("RemoteException in retrieveUserCert", e);
-        } catch (IOException e) {
-            throw new FindException("RemoteException in retrieveUserCert", e);
-        } catch (CertificateException e) {
-            throw new FindException("RemoteException in retrieveUserCert", e);
-        }
-    }
-
-    // fla note, this should be moved to some sort of cert manager
-    public void revokeCert(String oid) throws UpdateException {
-        try {
-            getStub().revokeCert(config.getOid(), oid);
-        } catch (RemoteException e) {
-            throw new UpdateException("RemoteException in revokeCert", e);
-        }
-    }
-
     // ************************************************
     // PRIVATES
     // ************************************************

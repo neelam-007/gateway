@@ -116,15 +116,6 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         return delegate.saveGroup(idProvCfgId, group);
     }
 
-    public String getUserCert(long idProvCfgId, String userId) throws RemoteException,
-                                            FindException, CertificateEncodingException {
-        return delegate.getUserCert(idProvCfgId, userId);
-    }
-
-    public void revokeCert(long idProvCfgId, String userId) throws RemoteException, UpdateException {
-        delegate.revokeCert(idProvCfgId, userId);
-    }
-
     public String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException {
         return delegate.getUserCert(user);
     }

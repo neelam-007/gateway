@@ -56,16 +56,6 @@ public interface IdentityAdmin  extends Remote {
     long saveGroup(long idProvCfgId, Group group)
                                 throws RemoteException, SaveException, UpdateException;
 
-    /**
-     * @deprecated use String getUserCert(User user) instead
-     */
-    String getUserCert(long idProvCfgId, String userId)
-                                throws RemoteException, FindException, CertificateEncodingException;
-    /**
-     * @deprecated use void revokeCert(User user) instead
-     */
-    void revokeCert(long idProvCfgId, String userId) throws RemoteException, UpdateException;
-
     String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException;
 
     void revokeCert(User user) throws RemoteException, UpdateException;
