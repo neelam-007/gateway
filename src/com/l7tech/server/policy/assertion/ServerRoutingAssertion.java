@@ -148,7 +148,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
             response.setProtectedResponseStream(responseStream);
 
             request.setRoutingStatus( RoutingStatus.ROUTED );
-            _data.incrementRequestCount();
+
 
             return AssertionStatus.NONE;
         } catch (WSDLException we) {
