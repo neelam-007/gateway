@@ -8,6 +8,8 @@ package com.l7tech.message;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.transport.jms.JmsUtil;
+import com.l7tech.server.transport.jms.BytesMessageInputStream;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -89,7 +91,13 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
             // Not multipart, read the whole thing
             StringBuffer xml = new StringBuffer();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            BufferedReader reader;
+            if(is instanceof BytesMessageInputStream) {
+                reader = new BufferedReader(new InputStreamReader(is, JmsUtil.DEFAULT_ENCODING));
+            } else {
+                reader = new BufferedReader(new InputStreamReader(is));
+            }
+
             char[] buf = new char[1024];
             int read = reader.read(buf);
             while (read > 0) {
