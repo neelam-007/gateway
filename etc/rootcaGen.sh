@@ -106,7 +106,7 @@ fi
 if [ -e "$KEYSTORE_PROPERTIES_FILE" ]; then
         echo
 else
-        echo "expanding the war file so that web.xml can be updated with kstore password"
+        echo "expanding the war file so that properties can be updated with kstore password"
         unzip $WAR_FILE -d $WEBAPPS_PATH/ROOT
 fi
 
