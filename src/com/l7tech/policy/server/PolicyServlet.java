@@ -116,7 +116,7 @@ public class PolicyServlet extends HttpServlet {
             newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
             httpServletResponse.setHeader(SoapMessageProcessingServlet.POLICYURL_HEADER, newUrl);
             httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Request must come through SSL. " + newUrl);
-            logger.log(Level.INFO, "Non-anonymous policy requested on in-secure channel (http). Sending 401 back with secure URL to requestor: " + newUrl);
+            logger.info("Non-anonymous policy requested on in-secure channel (http). Sending 401 back with secure URL to requestor: " + newUrl);
             return;
         }
         // get credentials and check that they are valid for this policy
@@ -137,10 +137,12 @@ public class PolicyServlet extends HttpServlet {
         // THE POLICY SHOULD BE STRIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
         // (this may be everything, if the user has no business seeing this policy)
         try {
-            logger.log(Level.INFO, "Policy before filtering: " + targetService.getPolicyXml());
+            // finer, not logged by default. change log level in web.xml to see these
+            logger.finer("Policy before filtering: " + targetService.getPolicyXml());
             targetService = FilterManager.getInstance().applyAllFilters(user, targetService);
-            logger.log(Level.INFO, "Policy after filtering: " + ((targetService == null) ? "null" : targetService.getPolicyXml()));
-            if (targetService == null) logger.log(Level.WARNING, "requestor tried to download policy that he should not be allowed to see - will return error");
+            // finer, not logged by default. change log level in web.xml to see these
+            logger.finer("Policy after filtering: " + ((targetService == null) ? "null" : targetService.getPolicyXml()));
+            if (targetService == null) logger.warning("requestor tried to download policy that he should not be allowed to see - will return error");
         } catch (FilteringException e) {
             logger.log(Level.SEVERE, "Could not filter policy", e);
             httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not process policy. Consult server logs.");
@@ -195,7 +197,7 @@ public class PolicyServlet extends HttpServlet {
         response.setContentLength(cert.length);
         response.getOutputStream().write(cert);
         response.flushBuffer();
-        logger.log(Level.INFO, "Sent ssl cert: " + gotpath);
+        logger.info("Sent ssl cert: " + gotpath);
     }
 
     private PublishedService resolveService(long oid) {
@@ -298,10 +300,10 @@ public class PolicyServlet extends HttpServlet {
         // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
         Assertion rootassertion = WspReader.parse(policy.getPolicyXml());
         if (findCredentialAssertion(rootassertion) != null) {
-            logger.log(Level.INFO, "Policy does not allow anonymous requests.");
+            logger.info("Policy does not allow anonymous requests.");
             return false;
         }
-        logger.log(Level.INFO, "Policy does allow anonymous requests.");
+        logger.info("Policy does allow anonymous requests.");
         return true;
     }
 
@@ -334,7 +336,7 @@ public class PolicyServlet extends HttpServlet {
         // get the credentials
         String authorizationHeader = req.getHeader("Authorization");
         if (authorizationHeader == null || authorizationHeader.length() < 1) {
-            logger.log(Level.WARNING, "No authorization header found.");
+            logger.warning("No authorization header found.");
             return null;
         }
         HttpBasicCredentialFinder credsFinder = new HttpBasicCredentialFinder();
@@ -346,7 +348,7 @@ public class PolicyServlet extends HttpServlet {
             return null;
         }
         if (creds == null) {
-            logger.log(Level.WARNING, "No credentials found.");
+            logger.warning("No credentials found.");
             return null;
         }
         // we have credentials, attempt to authenticate them
@@ -357,7 +359,7 @@ public class PolicyServlet extends HttpServlet {
             for (Iterator i = providers.iterator(); i.hasNext();) {
                 IdentityProvider provider = (IdentityProvider) i.next();
                 if (provider.authenticate(creds)) {
-                    logger.log(Level.INFO, "Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
+                    logger.info("Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
                     return creds.getUser();
                 }
             }
@@ -373,8 +375,7 @@ public class PolicyServlet extends HttpServlet {
                 logger.log(Level.WARNING, null, te);
             }
         }
-
-        logger.log(Level.WARNING, "Creds do not authenticate against any registered id provider.");
+        logger.warning("Creds do not authenticate against any registered id provider.");
         return null;
     }
 
