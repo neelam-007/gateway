@@ -35,12 +35,14 @@ public class AuthorizationAxisHandler extends InternalIDSecurityAxisHandler {
      */
     public void invoke(MessageContext messageContext) throws AxisFault {
         Long authedUserId = (Long)messageContext.getProperty(AUTHENTICATED_USER);
-
         // get the internal provider
         if (authedUserId != null && userIsMemberOfGroup(authedUserId.longValue(), "SSGAdmin")) {
             // user is authorized
             return;
         }
-        else throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthorizationAxisHandler failed", null, null );
+        else
+        {
+            throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthorizationAxisHandler failed", null, null );
+        }
     }
 }
