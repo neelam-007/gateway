@@ -19,6 +19,8 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+import java.security.PrivateKey;
 
 /**
  * @author mike
@@ -42,7 +44,7 @@ public class WssDecoratorTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    private static class Context {
+    public static class Context {
         Document message;
         String soapNs;
         Element body;
@@ -66,26 +68,67 @@ public class WssDecoratorTest extends TestCase {
         }
     }
 
-    public void testSimpleDecoration() throws Exception {
-        Context c = new Context();
+    public static class TestDocument {
+        Context c;
+        X509Certificate senderCert;
+        PrivateKey senderKey;
+        X509Certificate recipientCert;
+        PrivateKey recipientKey;
+        boolean signTimestamp;
+        Element[] elementsToSign;
+        Element[] elementsToEncrypt;
+
+        public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
+                            X509Certificate recipientCert, PrivateKey recipientKey,
+                            boolean signTimestamp,
+                            Element[] elementsToSign,
+                            Element[] elementsToEncrypt)
+        {
+            this.c = c;
+            this.senderCert = senderCert;
+            this.senderKey = senderKey;
+            this.recipientCert = recipientCert;
+            this.recipientKey = recipientKey;
+            this.signTimestamp = signTimestamp;
+            this.elementsToSign = elementsToSign;
+            this.elementsToEncrypt = elementsToEncrypt;
+        }
+    }
+
+    private void runTest(TestDocument d) throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
+        log.info("Before decoration:" + XmlUtil.documentToFormattedString(d.c.message));
+        decorator.decorateMessage(d.c.message,
+                                  d.recipientCert,
+                                  d.senderCert,
+                                  d.senderKey,
+                                  d.signTimestamp,
+                                  d.elementsToSign,
+                                  d.elementsToEncrypt);
+        log.info("Decorated message:" + XmlUtil.documentToFormattedString(d.c.message));
+    }
 
-        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
+    public void testSimpleDecoration() throws Exception {
+        runTest(getSimpleTestDocument());
+    }
 
-        decorator.decorateMessage(c.message,
-                                  TestDocuments.getDotNetServerCertificate(),
-                                  TestDocuments.getEttkClientCertificate(),
-                                  TestDocuments.getEttkClientPrivateKey(),
-                                  false,
-                                  new Element[0],
-                                  new Element[0]);
-
-        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+    public TestDocument getSimpleTestDocument() throws Exception {
+        return new TestDocument(new Context(),
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                false,
+                                new Element[0],
+                                new Element[0]);
     }
 
     public void testWrappedSecurityHeader() throws Exception {
+        runTest(getWrappedSecurityHeaderTestDocument());
+    }
+
+    public TestDocument getWrappedSecurityHeaderTestDocument() throws Exception {
         Context c = new Context();
-        WssDecorator decorator = new WssDecoratorImpl();
 
         Element sec = SoapUtil.getOrMakeSecurityElement(c.message);
         final String privUri = "http://example.com/ws/security/stuff";
@@ -94,84 +137,77 @@ public class WssDecoratorTest extends TestCase {
         privateStuff.setAttribute("xmlns:priv", privUri);
         sec.appendChild(privateStuff);
 
-        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
-
-        decorator.decorateMessage(c.message,
-                                  TestDocuments.getDotNetServerCertificate(),
-                                  TestDocuments.getEttkClientCertificate(),
-                                  TestDocuments.getEttkClientPrivateKey(),
-                                  false,
-                                  new Element[0],
-                                  new Element[0]);
-
-        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                false,
+                                new Element[0],
+                                new Element[0]);
     }
 
     public void testSigningOnly() throws Exception {
-        Context c = new Context();
-        WssDecorator decorator = new WssDecoratorImpl();
+        runTest(getSigningOnlyTestDocument());
+    }
 
-        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
-
-        decorator.decorateMessage(c.message,
-                                  TestDocuments.getDotNetServerCertificate(),
-                                  TestDocuments.getEttkClientCertificate(),
-                                  TestDocuments.getEttkClientPrivateKey(),
-                                  true,
-                                  new Element[0],
-                                  new Element[] { c.message.getDocumentElement() });
-
-        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+    public TestDocument getSigningOnlyTestDocument() throws Exception {
+        final Context c = new Context();
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[0],
+                                new Element[] { c.message.getDocumentElement() });
     }
 
     public void testEncryptionOnly() throws Exception {
+        runTest(getEncryptionOnlyTestDocument());
+    }
+
+    public TestDocument getEncryptionOnlyTestDocument() throws Exception {
         Context c = new Context();
-        WssDecorator decorator = new WssDecoratorImpl();
-
-        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
-
-        decorator.decorateMessage(c.message,
-                                  TestDocuments.getDotNetServerCertificate(),
-                                  TestDocuments.getEttkClientCertificate(),
-                                  TestDocuments.getEttkClientPrivateKey(),
-                                  false,
-                                  new Element[] { c.body },
-                                  new Element[0]);
-
-        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                false,
+                                new Element[] { c.body },
+                                new Element[0]);
     }
 
     public void testSingleSignatureMultipleEncryption() throws Exception {
+        runTest(getSingleSignatureMultipleEncryptionTestDocument());
+    }
+
+    public TestDocument getSingleSignatureMultipleEncryptionTestDocument() throws Exception {
         Context c = new Context();
-        WssDecorator decorator = new WssDecoratorImpl();
-
-        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
-
-        decorator.decorateMessage(c.message,
-                                  TestDocuments.getDotNetServerCertificate(),
-                                  TestDocuments.getEttkClientCertificate(),
-                                  TestDocuments.getEttkClientPrivateKey(),
-                                  true,
-                                  new Element[] { c.productid,  c.accountid },
-                                  new Element[] { c.body });
-
-        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[] { c.productid,  c.accountid },
+                                new Element[] { c.body });
     }
 
     public void testEncryptedBodySignedEnvelope() throws Exception {
+        runTest(getEncryptedBodySignedEnvelopeTestDocument());
+    }
+
+    public TestDocument getEncryptedBodySignedEnvelopeTestDocument() throws Exception {
         Context c = new Context();
-        WssDecorator decorator = new WssDecoratorImpl();
-
-        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
-
-        decorator.decorateMessage(c.message,
-                                  TestDocuments.getDotNetServerCertificate(),
-                                  TestDocuments.getEttkClientCertificate(),
-                                  TestDocuments.getEttkClientPrivateKey(),
-                                  false,
-                                  new Element[] { c.body },
-                                  new Element[] { c.message.getDocumentElement() });
-
-        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                false,
+                                new Element[] { c.body },
+                                new Element[] { c.message.getDocumentElement() });
     }
 }
