@@ -115,7 +115,7 @@ public class SymantecAntivirusScanEngineClient {
     public boolean savseResponseIndicateInfection(SAVScanEngineResponse parsedResponse) {
         if (parsedResponse.headers == null) {
             logger.warning("this parsed response does not contain headers, infection cannot be determined");
-            // todo, some sort of 'maybe infected' return code
+            throw new RuntimeException("unexpected response format. " + parsedResponse); // todo, special exception type
         }
         String str = (String)parsedResponse.headers.get("X-Infection-Found");
         if (str != null && str.length() > 0) {
@@ -170,8 +170,7 @@ public class SymantecAntivirusScanEngineClient {
         if (rtnlpos < 1) rtnlpos = response.indexOf('\n');
         if (rtnlpos < statusstart) {
             logger.warning("Unexpected response\n" + response);
-            // todo, throw?
-            return null;
+            throw new RuntimeException("unexpected response format. " + response); // todo, a special exception type
         } else {
             String statusstr = response.substring(statusstart+1, rtnlpos);
             output.statusString = statusstr;
@@ -194,9 +193,8 @@ public class SymantecAntivirusScanEngineClient {
         }
         if (startofheaders < rtnlpos) {
             // there are no headers
-            // todo, throw?
             logger.warning("Unexpected response\n" + response);
-            return null;
+            throw new RuntimeException("unexpected response format. " + response); // todo, a special exception type
         }
         int endofheaders = response.indexOf("\r\n\r\n", startofheaders);
         if (endofheaders < startofheaders) {
