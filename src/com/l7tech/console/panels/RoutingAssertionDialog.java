@@ -1,22 +1,14 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.credential.CredentialFormat;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.wss.WssClientCert;
-import com.l7tech.policy.assertion.credential.wss.WssDigest;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyEvent;
+import com.l7tech.console.event.PolicyListener;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
-import javax.swing.event.EventListenerList;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
