@@ -74,7 +74,10 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         }
 
         // check validity of the session
-        if (!checkSeqNrValidity(soapmsg, xmlsecSession)) {
+        long gotSeq;
+        try {
+            gotSeq = checkSeqNrValidity(soapmsg, xmlsecSession);
+        } catch (InvalidSequenceNumberException e) {
             // when the session is no longer valid we must inform the client proxy so that he generates another session
             HttpTransportMetadata metadata = (HttpTransportMetadata)response.getTransportMetadata();
             metadata.getResponse().addHeader(SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER, "invalid");
@@ -83,9 +86,6 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             // response.setPolicyViolated(true);
             return AssertionStatus.FALSIFIED;
         }
-
-        // increment the seq number so that it is not used again
-        xmlsecSession.incrementRequestsUsed();
 
         // validate signature
         X509Certificate cert;
@@ -102,6 +102,9 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new PolicyAssertionException(e.getMessage(), e);
         }
+
+        // Signature validated, so mark this sequence number as used up
+        xmlsecSession.hitSequenceNumber(gotSeq);
 
         // clean the session id from the security header
         SecureConversationTokenHandler.consumeSessionInfoFromDocument(soapmsg);
@@ -163,19 +166,25 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         return clientCert;
     }
 
-    private boolean checkSeqNrValidity(Document soapmsg, Session session) {
+    private static class InvalidSequenceNumberException extends Exception {
+        public InvalidSequenceNumberException(String message) {
+            super(message);
+        }
+    }
+
+    private long checkSeqNrValidity(Document soapmsg, Session session) throws InvalidSequenceNumberException {
         long seqNr;
         try {
             seqNr = SecureConversationTokenHandler.readSeqNrFromDocument(soapmsg);
         } catch (XMLSecurityElementNotFoundException e) {
             logger.severe("request contains no sequence number");
-            return false;
+            throw new InvalidSequenceNumberException("request contains no sequence number");
         }
         if (seqNr < session.getHighestSeq()) {
             logger.severe("sequence number too low (" + seqNr + "). someone is trying replay attack?");
-            return false;
+            throw new InvalidSequenceNumberException("request contains a sequence number which is too low");
         }
-        return true;
+        return seqNr;
     }
 
     private Session getXmlSecSession(Document soapmsg) throws PolicyAssertionException, SessionInvalidException {
