@@ -91,14 +91,18 @@ public class PolicyService {
                                                    PolicyGetter policyGetter) throws FilteringException,
                                                                                      IOException,
                                                                                      SAXException {
-        Assertion targetPolicy = policyGetter.getPolicy(policyId).getPolicy();
+                Assertion targetPolicy = policyGetter.getPolicy(policyId).getPolicy();
         if (targetPolicy == null) {
             logger.info("cannot find target policy from id: " + policyId);
             return null;
         }
+        
+        boolean isanonymous = atLeastOnePathIsAnonymous(targetPolicy);
+        if (preAuthenticatedUser == null && !isanonymous) return null;
+
         Assertion filteredAssertion = FilterManager.getInstance().applyAllFilters(preAuthenticatedUser, targetPolicy);
         if (filteredAssertion == null) {
-            if (atLeastOnePathIsAnonymous(targetPolicy)) {
+            if (isanonymous) {
                 return XmlUtil.stringToDocument(WspWriter.getPolicyXml(null));
             } else {
                 return null;
