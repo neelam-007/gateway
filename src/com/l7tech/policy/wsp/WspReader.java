@@ -52,7 +52,7 @@ public class WspReader {
                 throw new InvalidPolicyStreamException("Policy does not have exactly one immediate child");
             Node node = (Node) childElements.get(0);
             return nodeToAssertion(node);
-        } catch (SAXException e) {
+        } catch (Exception e) {
             throw new InvalidPolicyStreamException("Unable to parse policy", e);
         }
     }
