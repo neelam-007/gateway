@@ -3,6 +3,7 @@ package com.l7tech.xmlsig;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+import org.w3c.dom.NodeList;
 import com.l7tech.util.SoapUtil;
 
 /**
@@ -63,8 +64,19 @@ import com.l7tech.util.SoapUtil;
  *
  */
 public class SecureConversationTokenHandler {
-    public static final String NAMESPACE = "http://l7tech.com/ns/msgid";
-    public static final String PREFIX = "l7";
+    public static final String L7_NAMESPACE = "http://l7tech.com/ns/msgid";
+    public static final String L7_NAMESPACE_PREFIX = "l7";
+
+    public static final String HEADER_EL_NAME = "Header";
+    public static final String SECURITY_EL_NAME = "Security";
+
+    public static final String WSU_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/07/utility";
+    public static final String WSU_NAMESPACE_PREFIX = "wsu";
+
+    public static final String SECURITY_NAMESPACE_PREFIX = "wsse";
+    public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/12/secext";
+
+    public static final String IDENTIFIER_EL_NAME = "Identifier";
 
     public static final String SESS_ID_EL_NAME = "SessId";
     public static final String SEQ_EL_NAME = "SeqNr";
@@ -73,15 +85,14 @@ public class SecureConversationTokenHandler {
 
 
     public void appendNonceToDocument(Document soapmsg, long nonce) {
-        // todo, refactor to use WSSC tokens
-        Element header = SoapUtil.getOrMakeHeader(soapmsg);
-        Element nonceEl = soapmsg.createElementNS(NAMESPACE, NONCE_EL_NAME);
-        nonceEl.setPrefix(PREFIX);
-        nonceEl.setAttribute("xmlns:" + PREFIX, NAMESPACE);
-        Text val = soapmsg.createTextNode(Long.toString(nonce));
-        nonceEl.appendChild(val);
-        header.insertBefore(nonceEl, null);
+        Element securityEl = getOrMakeSecurityElement(soapmsg);
+        Element idElement = soapmsg.createElementNS(WSU_NAMESPACE, IDENTIFIER_EL_NAME);
 
+        idElement.setPrefix(WSU_NAMESPACE_PREFIX);
+        idElement.setAttribute("xmlns:" + WSU_NAMESPACE_PREFIX, WSU_NAMESPACE);
+        Text val = soapmsg.createTextNode(Long.toString(nonce));
+        idElement.appendChild(val);
+        securityEl.insertBefore(idElement, null);
     }
 
     public long readNonceFromDocument(Document soapmsg) {
@@ -101,6 +112,27 @@ public class SecureConversationTokenHandler {
     public long readSeqNrFromDocument(Document soapmsg) {
         // todo
         return -1;
+    }
+
+    /**
+     * Returns the Header element from a soap message. If the message does not have a header yet, it creates one and
+     * adds it to the envelope, and returns it back to you. If a body element exists, the header element will be inserted right before the body element.
+     * @param soapMsg DOM document containing the soap message
+     * @return the header element (never null)
+     */
+    public static Element getOrMakeSecurityElement(Document soapMsg) {
+        NodeList listSecurityElements = soapMsg.getElementsByTagName(SECURITY_EL_NAME);
+        if (listSecurityElements.getLength() < 1) {
+            // element does not exist
+            Element header = SoapUtil.getOrMakeHeader(soapMsg);
+            Element securityEl = soapMsg.createElementNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
+            securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
+            securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, SECURITY_NAMESPACE);
+            header.insertBefore(securityEl, null);
+            return securityEl;
+        } else {
+            return (Element)listSecurityElements.item(0);
+        }
     }
 
 }
