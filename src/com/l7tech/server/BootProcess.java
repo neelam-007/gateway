@@ -145,8 +145,14 @@ public class BootProcess implements ServerComponentLifecycle {
             logger.info("Starting server");
 
             // make sure the ServiceManager is available. this will also build the service cache
-            if (Locator.getDefault().lookup(ServiceManager.class) == null) {
-                logger.severe("Could not instantiate the ServiceManager");
+            try {
+                context.beginTransaction();
+                if (Locator.getDefault().lookup(ServiceManager.class) == null) {
+                    logger.severe("Could not instantiate the ServiceManager");
+                }
+                context.rollbackTransaction();
+            } catch (TransactionException e) {
+                logger.log( Level.WARNING, "Couldn't set up Service Cache", e );
             }
 
             DefaultGatewayPolicies.getInstance();
