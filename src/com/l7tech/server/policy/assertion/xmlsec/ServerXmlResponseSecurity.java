@@ -9,8 +9,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.ServerSoapUtil;
 import com.l7tech.util.KeystoreUtils;
-import com.l7tech.util.SoapUtil;
 import com.l7tech.xmlenc.Session;
 import com.l7tech.xmlenc.SessionManager;
 import com.l7tech.xmlenc.SessionNotFoundException;
@@ -56,7 +56,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         // GET THE DOCUMENT
         Document soapmsg = null;
         try {
-            soapmsg = SoapUtil.getDocument(response);
+            soapmsg = ServerSoapUtil.getDocument(response);
         } catch (SAXException e) {
             String msg = "cannot get an xml document from the response to sign";
             logger.severe(msg);

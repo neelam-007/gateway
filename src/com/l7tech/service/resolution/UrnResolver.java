@@ -7,14 +7,17 @@
 package com.l7tech.service.resolution;
 
 import com.l7tech.message.Request;
-import com.l7tech.util.SoapUtil;
-import org.w3c.dom.*;
+import com.l7tech.server.util.ServerSoapUtil;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
-import javax.wsdl.*;
-import javax.wsdl.extensions.soap.SOAPBody;
+
+import javax.wsdl.BindingInput;
+import javax.wsdl.BindingOperation;
 import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap.SOAPBody;
 import java.io.IOException;
-import java.util.*;
+import java.util.Iterator;
 
 /**
  * @author alex
@@ -42,7 +45,7 @@ public class UrnResolver extends WsdlOperationServiceResolver {
 
     protected Object getRequestValue( Request request ) throws ServiceResolutionException {
         try {
-            Element body = SoapUtil.getBodyElement( request );
+            Element body = ServerSoapUtil.getBodyElement( request );
             Node n = body.getFirstChild();
             while ( n != null ) {
                 if ( n.getNodeType() == Node.ELEMENT_NODE )
