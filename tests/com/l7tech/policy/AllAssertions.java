@@ -103,6 +103,7 @@ public class AllAssertions {
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
         new SamlSecurity(),
+        new AuditAssertion(),
         CUSTOM_ASSERTION_HOLDER,
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
@@ -142,6 +143,7 @@ public class AllAssertions {
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
         new SamlSecurity(),
+        new AuditAssertion(),        
         new CustomAssertionHolder(),
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),

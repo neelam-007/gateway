@@ -737,6 +737,7 @@ public class WspConstants {
         new AssertionMapping(new XslTransformation(), "XslTransformation"),
         new AssertionMapping(new TimeRange(), "TimeRange"),
         new AssertionMapping(new RemoteIpRange(), "RemoteIpAddressRange"),
+        new AssertionMapping(new AuditAssertion(), "AuditAssertion"),
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
         new AssertionMapping(new UnknownAssertion(), "UnknownAssertion"),
 
