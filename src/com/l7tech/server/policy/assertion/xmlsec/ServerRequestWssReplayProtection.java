@@ -10,6 +10,7 @@ import com.l7tech.common.security.xml.processor.WssTimestamp;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
@@ -17,6 +18,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
+import com.l7tech.server.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -54,14 +56,16 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             throws IOException, PolicyAssertionException
     {
         ProcessorResult wssResults;
+
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             if (!context.getRequest().isSoap()) {
-                logger.info("Request not SOAP; cannot check for replayed signed WS-Security message");
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NON_SOAP);
                 return AssertionStatus.BAD_REQUEST;
             }
             wssResults = context.getRequest().getXmlKnob().getProcessorResult();
             if (wssResults == null) {
-                logger.info("This request did not contain any WSS level security.");
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY);
                 context.setRequestPolicyViolated();
                 context.setAuthenticationMissing();
                 return AssertionStatus.FALSIFIED;
@@ -75,16 +79,16 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
         WssTimestamp timestamp = wssResults.getTimestamp();
         if (timestamp == null) {
             context.setRequestPolicyViolated();
-            logger.info("No timestamp present in request; assertion therefore fails.");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_TIMESTAMP);
             return AssertionStatus.BAD_REQUEST;
         }
         if (!timestamp.isSigned()) {
-            logger.info("Timestamp present in request was not signed; assertion therefore fails.");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NOT_SIGNED);
             return AssertionStatus.BAD_REQUEST;
         }
 
         if (timestamp.getCreated() == null) {
-            logger.info("Timestamp in request has no Created element.");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_CREATED_ELEMENT);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -94,7 +98,7 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
         if (timestamp.getExpires() != null) {
             expires = timestamp.getExpires().asDate().getTime();
         } else {
-            logger.info("Timestamp in request has no Expires element; assuming expiry " + DEFAULT_EXPIRY_TIME + "ms after creation");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_EXPIRES_ELEMENT, new String[] {String.valueOf(DEFAULT_EXPIRY_TIME)});
             expires = created + DEFAULT_EXPIRY_TIME;
         }
 
@@ -103,7 +107,7 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             throw new IOException("Request timestamp contained stale Expires date; rejecting entire request");
 
         if (created > now)
-            logger.info("Clock skew: message creation time is in the future: " + created + "; continuing anyway");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CLOCK_SKEW, new String[] {String.valueOf(created)});
 
         if (MAXIMUM_MESSAGE_AGE_MILLIS > 0 &&
                 created <= (now - MAXIMUM_MESSAGE_AGE_MILLIS)) {
@@ -118,11 +122,11 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             X509Certificate signingCert;
             if (signingToken instanceof X509SecurityToken) {
                 // It was signed by a client certificate
-                logger.log(Level.FINER, "Timestamp was signed with an X509 BinarySecurityToken");
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT);
                 signingCert = ((X509SecurityToken)signingToken).asX509Certificate();
             } else {
                 // It was signed by a SAML holder-of-key assertion
-                logger.log(Level.FINER, "Timestamp was signed with a SAML holder-of-key assertion");
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SAML_HOK);
                 signingCert = ((SamlSecurityToken)signingToken).getSubjectCertificate();
             }
 
@@ -136,7 +140,7 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             messageIdStr = HexUtils.hexDump(digest);
         } else if (signingToken instanceof SecurityContextToken) {
             // It was signed by a WS-SecureConversation session's derived key
-            logger.log(Level.FINER, "Timestamp was signed with a WS-SecureConversation derived key");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SC_KEY);
             String sessionID = ((SecurityContextToken)signingToken).getContextIdentifier();
 
             // Use session ID as sender ID
@@ -154,7 +158,7 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
         try {
             DistributedMessageIdManager dmm = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
             dmm.assertMessageIdIsUnique(messageId);
-            logger.finest("Message ID " + messageIdStr + " has not been seen before unique; assertion succeeds");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, new String[]{ messageIdStr});
         } catch (MessageIdManager.DuplicateMessageIdException e) {
             // TODO we need a better exception for this than IOException
             throw new IOException("Duplicated message ID detected; ID=" + messageIdStr);
