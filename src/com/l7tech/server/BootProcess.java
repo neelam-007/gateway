@@ -8,12 +8,15 @@ package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
+import com.l7tech.common.audit.AuditDetail;
+import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.xml.TarariProber;
 import com.l7tech.common.xml.tarari.TarariUtil;
 import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.logging.ServerLogManager;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.system.*;
@@ -27,6 +30,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 /**
@@ -46,6 +50,7 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
     private List _components = new ArrayList();
     private ServerConfig serverConfig;
     private EventManager eventManager;
+    private AuditContext audit;
 
     /**
      * Constructor for bean usage via subclassing.
@@ -65,28 +70,51 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
 
         for (int i = 0; i < goners.length; i++) {
             File goner = goners[i];
-            logger.info("Deleting leftover attachment cache file: " + goner.toString());
+            String filename = goner.toString();
+            logAndAudit(BootMessages.DELETING_ATTACHMENT, filename);
             goner.delete();
         }
     }
 
+    private void logAndAudit(AuditDetailMessage msg, String param, Throwable e) {
+        audit.addDetail(new AuditDetail(msg,
+                                        param == null ? null : new String[] { param },
+                                        e));
+
+        LogRecord rec = new LogRecord(msg.getLevel(), msg.getMessage());
+        rec.setLoggerName(logger.getName()); // Work around NPE in LoggerNameFilter
+        if (e != null) rec.setThrown(e);
+        if (param != null) rec.setParameters(new String[] {param});
+        logger.log(rec);
+    }
+
+    private void logAndAudit(AuditDetailMessage msg, String param) {
+        logAndAudit(msg, param, null);
+    }
+
+    private void logAndAudit(AuditDetailMessage msg) {
+        logAndAudit(msg, null, null);
+    }
+
     public void setServerConfig(ServerConfig config) throws LifecycleException {
+        serverConfig = config;
+        audit = AuditContext.getCurrent(serverConfig.getSpringContext());
+
         if (TarariProber.isTarariPresent()) {
-            logger.info("Initializing Hardware XML Acceleration");
+            logAndAudit(BootMessages.XMLHARDWARE_INIT);
             try {
                 TarariUtil.setupIsSoap();
             } catch (XPathCompilerException e) {
-                logger.log(Level.WARNING, "Error initializing Tarari board", e);
+                logAndAudit(BootMessages.XMLHARDWARE_ERROR);
             }
         } else {
-            logger.info("Hardware XML Acceleration Disabled");
+            logAndAudit(BootMessages.XMLHARDWARE_DISABLED);
         }
 
-        serverConfig = config;
         try {
             ipAddress = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
-            logger.log(Level.SEVERE, "Couldn't get local IP address. Will use 127.0.0.1 in audit records.", e);
+            logAndAudit(BootMessages.NO_IP, null, e);
             ipAddress = LOCALHOST_IP;
         }
 
@@ -109,10 +137,10 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
 
             setSystemProperties(config);
 
-            logger.info("Initializing cryptography subsystem");
+            logAndAudit(BootMessages.CRYPTO_INIT);
             JceProvider.init();
-            logger.info("Using asymmetric cryptography provider: " + JceProvider.getAsymmetricJceProvider().getName());
-            logger.info("Using symmetric cryptography provider: " + JceProvider.getSymmetricJceProvider().getName());
+            logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, JceProvider.getAsymmetricJceProvider().getName());
+            logAndAudit(BootMessages.CRYPTO_SYMMETRIC, JceProvider.getSymmetricJceProvider().getName());
 
             String classnameString = config.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
             String[] componentClassnames = classnameString.split("\\s.*?");

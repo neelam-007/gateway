@@ -35,12 +35,9 @@ public class TestComponent extends TestCase {
 
     public void testStuff() throws Exception {
         System.out.println(Component.GATEWAY);
-        System.out.println(Component.GW_MESSAGE_PROCESSOR);
+        System.out.println(Component.GW_POLICY);
+        System.out.println(Component.HTTP_BASIC);
         System.out.println(Component.GW_CLUSTER);
-
-        System.out.println(Component.fromCode("GSM"));
-        System.out.println(Component.fromCode("GC"));
-        System.out.println(Component.fromCode("GD"));
     }
 
     /**

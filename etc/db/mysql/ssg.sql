@@ -420,10 +420,10 @@ CREATE TABLE audit_message (
 DROP TABLE IF EXISTS audit_system;
 CREATE TABLE audit_system (
   objectid bigint(20) NOT NULL,
-  component varchar(32) NOT NULL,
+  component_id integer NOT NULL,
   action varchar(32) NOT NULL,
   PRIMARY KEY (objectid),
-  KEY idx_component (component),
+  KEY idx_component_id (component_id),
   KEY idx_action (action)
 ) TYPE=InnoDB;
 
@@ -432,13 +432,22 @@ CREATE TABLE audit_detail (
   objectid bigint(20) NOT NULL,
   audit_oid bigint(20) NOT NULL,
   time bigint(20) NOT NULL,
-  component_oid bigint(20) NOT NULL,
-  message_id integer NOT NULL,
+  component_id integer,
   ordinal integer,
+  message_id integer NOT NULL,
+  exception MEDIUMTEXT,
   PRIMARY KEY (objectid),
-  KEY idx_component_oid (component_oid),
+  KEY idx_component_id (component_id),
   KEY idx_audit_oid (audit_oid)
 ) TYPE=InnoDB;
+
+DROP TABLE IF EXISTS audit_detail_params;
+CREATE TABLE audit_detail_params (
+  audit_detail_oid bigint(20) NOT NULL,
+  position integer NOT NULL,
+  value varchar(255) NOT NULL,
+  PRIMARY KEY (audit_detail_oid, position)
+) Type=InnoDB;
 
 DROP TABLE IF EXISTS message_id;
 CREATE TABLE message_id (

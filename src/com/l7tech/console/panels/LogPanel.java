@@ -7,9 +7,9 @@ import com.l7tech.common.audit.SystemAuditRecord;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
+import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
-import com.l7tech.logging.GenericLogAdmin;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -155,7 +155,7 @@ public class LogPanel extends JPanel {
                     msg += "Event Type : System Message" + "\n";
                     msg += "Node IP    : " + arec.getIpAddress() + "\n";
                     msg += "Action     : " + sys.getAction() + "\n";
-                    msg += "Component  : " + fixComponent(sys.getComponent()) + "\n";
+                    msg += "Component  : " + fixComponent(sys.getComponentId()) + "\n";
                     msg += "Entity name: " + arec.getName() + "\n";
                 } else {
                     msg += "Event Type : Unknown" + "\n";
@@ -186,9 +186,9 @@ public class LogPanel extends JPanel {
         return num < 0 ? s : String.valueOf(num);
     }
 
-    private String fixComponent(String component) {
-        com.l7tech.common.Component c = com.l7tech.common.Component.fromCode(component);
-        if (c == null) return "Unknown Component '" + component + "'";
+    private String fixComponent(int componentId) {
+        com.l7tech.common.Component c = com.l7tech.common.Component.fromId(componentId);
+        if (c == null) return "Unknown Component #" + componentId;
         StringBuffer ret = new StringBuffer(c.getName());
         while (c.getParent() != null && c.getParent() != c) {
             ret.insert(0, ": ");

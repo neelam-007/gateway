@@ -7,7 +7,9 @@ package com.l7tech.common.audit;
 
 import com.l7tech.objectmodel.imp.EntityImp;
 
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 
 /**
  * An audit detail record.
@@ -16,16 +18,34 @@ public class AuditDetail extends EntityImp implements Serializable {
     private transient AuditRecord auditRecord;
     private long auditOid;
     private long time;
-    private long componentOid;
-    private long messageOid;
-    private int ordinal;
+    private int messageId;
+    /** can be null */
+    private String[] params;
+    private int componentId;
+    private String exception;
 
-    public AuditDetail(long time, long componentOid, long messageOid, int ordinal) {
-        // auditOid is probably not known at this time
-        this.time = time;
-        this.componentOid = componentOid;
-        this.messageOid = messageOid;
-        this.ordinal = ordinal;
+    public AuditDetail(AuditDetailMessage message) {
+        this(message, null, (Throwable)null);
+    }
+
+    public AuditDetail(AuditDetailMessage message, String param1) {
+        this(message, param1 == null ? null : new String[] { param1 }, null);
+    }
+
+    public AuditDetail(AuditDetailMessage message, String param1, String param2) {
+        this(message, (param1 == null && param2 == null) ? null : new String[] { param1, param2 }, null);
+    }
+
+    public AuditDetail(AuditDetailMessage message, String[] params, Throwable e) {
+        // auditOid is probably not known at this time but will be by the time it's saved
+        this.time = System.currentTimeMillis();
+        this.messageId = message.getId();
+        this.params = params;
+        if (e != null) {
+            StringWriter sw = new StringWriter(4096);
+            e.printStackTrace(new PrintWriter(sw));
+            this.exception = sw.toString();
+        }
     }
 
     public AuditRecord getAuditRecord() {
@@ -40,20 +60,17 @@ public class AuditDetail extends EntityImp implements Serializable {
         return time;
     }
 
-    public long getComponentOid() {
-        return componentOid;
-    }
-
-    public long getMessageOid() {
-        return messageOid;
-    }
-
-    public int getOrdinal() {
-        return ordinal;
+    public int getMessageId() {
+        return messageId;
     }
 
     public long getAuditOid() {
         return auditOid;
+    }
+
+    /** Can be null. */
+    public String[] getParams() {
+        return params;
     }
 
     /**
@@ -64,8 +81,21 @@ public class AuditDetail extends EntityImp implements Serializable {
         this.auditOid = oid;
     }
 
+    public String getException() {
+        return exception;
+    }
+
+    public int getComponentId() {
+        return componentId;
+    }
+
     /** @deprecated only for persistence */
     public AuditDetail() {
+    }
+
+    /** @deprecated only for persistence */
+    public void setComponentId(int componentId) {
+        this.componentId = componentId;
     }
 
     /** @deprecated only for persistence */
@@ -74,18 +104,17 @@ public class AuditDetail extends EntityImp implements Serializable {
     }
 
     /** @deprecated only for persistence */
-    public void setComponentOid(long componentOid) {
-        this.componentOid = componentOid;
+    public void setMessageId(int messageId) {
+        this.messageId = messageId;
     }
 
     /** @deprecated only for persistence */
-    public void setMessageOid(long messageOid) {
-        this.messageOid = messageOid;
+    public void setParams(String[] params) {
+        this.params = params;
     }
 
     /** @deprecated only for persistence */
-    public void setOrdinal(int ordinal) {
-        this.ordinal = ordinal;
+    public void setException(String exception) {
+        this.exception = exception;
     }
-
 }

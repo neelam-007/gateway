@@ -5,22 +5,28 @@
  */
 package com.l7tech.common.audit;
 
-import com.l7tech.objectmodel.imp.EntityImp;
+import java.util.logging.Level;
 
 /**
  * A record pertaining to the string table for AuditDetail records
  */
-public class AuditDetailMessage extends EntityImp {
-    /** @deprecated */
-    public AuditDetailMessage() {
-    }
+public class AuditDetailMessage {
 
-    public AuditDetailMessage(String level, String message) {
+    public AuditDetailMessage(int id, Level level, String message) {
+        this.id = id;
         this.level = level;
         this.message = message;
     }
 
-    public String getLevel() {
+    public int getId() {
+        return id;
+    }
+
+    public String getLevelName() {
+        return level.getName();
+    }
+
+    public Level getLevel() {
         return level;
     }
 
@@ -28,16 +34,7 @@ public class AuditDetailMessage extends EntityImp {
         return message;
     }
 
-    /** @deprecated */
-    public void setLevel(String level) {
-        this.level = level;
-    }
-
-    /** @deprecated */
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    private String level;
-    private String message;
+    private final int id;
+    private final Level level;
+    private final String message;
 }

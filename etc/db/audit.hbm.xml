@@ -23,6 +23,11 @@
         <property name="ipAddress" column="ip_address" type="string"/>
         <property name="name" column="name" type="string"/>
 
+        <set name="details" lazy="false" inverse="true" cascade="all">
+            <key column="audit_oid"/>
+            <one-to-many class="com.l7tech.common.audit.AuditDetail"/>
+        </set>
+        
         <joined-subclass name="com.l7tech.common.audit.MessageSummaryAuditRecord" table="audit_message" >
             <key column="objectid"/>
             <property name="status" type="int"/>
@@ -48,9 +53,29 @@
 
         <joined-subclass name="com.l7tech.common.audit.SystemAuditRecord" table="audit_system">
             <key column="objectid"/>
-            <property name="component" type="string"/>
+            <property name="componentId" column="component_id" type="int"/>
             <property name="action" type="string"/>
         </joined-subclass>
+    </class>
+
+    <class name="com.l7tech.common.audit.AuditDetail" table="audit_detail">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <property name="time" type="long"/>
+        <property name="componentId" column="component_id" type="int"/>
+<!--    <property name="ordinal" type="int"/>-->
+        <property name="messageId" column="message_id" type="int"/>
+        <property name="exception" type="text"/>
+
+        <array name="params" table="audit_detail_params" cascade="all" outer-join="true">
+            <key column="audit_detail_oid"/>
+            <index column="position"/>
+            <element column="value" type="string"/>
+        </array>
+
+        <many-to-one name="auditRecord" class="com.l7tech.common.audit.AuditRecord" column="audit_oid"/>
     </class>
 
 </hibernate-mapping>

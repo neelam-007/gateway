@@ -33,16 +33,16 @@ public class SystemAuditRecord extends AuditRecord {
      */
     public SystemAuditRecord(Level level, String nodeId, Component component, String action, String ip) {
         super(level, nodeId, ip, component.getName(), component.getName() + " " + action);
-        this.component = component.getCode();
+        this.componentId = component.getId();
         this.action = action;
     }
 
     /**
      * The code for the component this audit record relates to
-     * @see com.l7tech.common.Component#getCode() 
+     * @see com.l7tech.common.Component#getId()
      */
-    public String getComponent() {
-        return component;
+    public int getComponentId() {
+        return componentId;
     }
 
     /**
@@ -54,8 +54,8 @@ public class SystemAuditRecord extends AuditRecord {
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
-    public void setComponent( String component ) {
-        this.component = component;
+    public void setComponentId(int componentId) {
+        this.componentId = componentId;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
@@ -64,5 +64,5 @@ public class SystemAuditRecord extends AuditRecord {
     }
 
     private String action;
-    private String component;
+    private int componentId;
 }
