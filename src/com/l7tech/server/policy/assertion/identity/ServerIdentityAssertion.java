@@ -48,7 +48,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
      */
     public AssertionStatus checkRequest( Request request, Response response ) {
         LoginCredentials pc = request.getPrincipalCredentials();
-        if ( pc == null ) {
+        if (pc == null && request.getUser() == null) {
             // No credentials have been found yet
             if (request.isAuthenticated()) {
                 String err = "Request is authenticated but request has no LoginCredentials!";
