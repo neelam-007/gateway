@@ -5,14 +5,14 @@
     <vendor>Layer7 Technologies</vendor>
     <description>SecureSpan Manager</description>
     <homepage href="http://www.layer7tech.com"/>
-    <icon href="images/64x64-logo-bevel.gif"/>
+    <icon href="images/layer7_logo_small_64x64.png"/>
   </information>
+  <security>
+      <all-permissions/>
+  </security> 
   <resources>
     <j2se version="1.4+"/>
     <jar href="Manager.jar"/>
-    <jar href="lib/jsk-platform.jar"/>
-    <jar href="lib/jsk-policy.jar"/>
-    <jar href="lib/jsk-resources.jar"/>
     <jar href="lib/jini-core.jar"/>
     <jar href="lib/jini-ext.jar"/>
     <jar href="lib/reggie-dl.jar"/>

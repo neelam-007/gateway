@@ -63,6 +63,12 @@
         </servlet-class>
         <load-on-startup>100</load-on-startup>
     </servlet>
+    
+    <!-- WebStart servlet -->
+    <servlet>
+        <servlet-name>JnlpDownloadServlet</servlet-name>
+        <servlet-class>com.sun.javaws.servlet.JnlpDownloadServlet</servlet-class>
+    </servlet>
 
     <!--
     <servlet>
@@ -135,7 +141,10 @@
         <url-pattern>/ssg/services/*</url-pattern>
     </servlet-mapping>
 
-    <!-- uncomment this if you want the admin servlet -->
+    <!--
+        ** uncomment this if you want the admin servlet
+        ** todo: probably should be disabled - em08012004
+    -->
     <!-- -->
      <servlet-mapping>
        <servlet-name>AdminServlet</servlet-name>
@@ -159,6 +168,13 @@
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
     -->
+
+    <!-- WebStart servlet mapping -->
+
+    <servlet-mapping>
+        <servlet-name>JnlpDownloadServlet</servlet-name>
+        <url-pattern>*.jnlp</url-pattern>
+    </servlet-mapping>
 
     <welcome-file-list id="WelcomeFileList_1">
         <welcome-file>index.html</welcome-file>
