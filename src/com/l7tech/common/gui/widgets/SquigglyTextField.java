@@ -60,11 +60,20 @@ public class SquigglyTextField extends JTextField {
         _squiggleEnd = NONE;
     }
 
+    public synchronized Color getSquiggleColor() {
+        return _squiggleColor;
+    }
+
+    public synchronized void setSquiggleColor(Color squiggleColor) {
+        _squiggleColor = squiggleColor;
+    }
+
     public void paint( Graphics g ) {
         super.paint(g);
 
         int begin;
         int end;
+
         synchronized( this ) {
             begin = _squiggleBegin;
             end = _squiggleEnd;
@@ -72,7 +81,7 @@ public class SquigglyTextField extends JTextField {
 
         if ( begin == NONE || end == NONE ) return;
 
-        g.setColor( Color.RED );
+        g.setColor( _squiggleColor );
 
         int ya = getHeight()-7;
         int xb = 0;
@@ -102,6 +111,7 @@ public class SquigglyTextField extends JTextField {
         }
     }
 
+    private Color _squiggleColor = Color.RED;
     private int _squiggleBegin = NONE;
     private int _squiggleEnd = NONE;
 
