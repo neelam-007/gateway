@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.console.action.XmlSecurityPropertiesAction;
+import com.l7tech.console.action.SamlPropertiesAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -29,14 +30,14 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
         int nprops = 0;
         if (ss.isEncryption())  {
             sb = new StringBuffer("[");
-            sb.append("encryption required");
+            sb.append("require encryption");
             nprops++;
         }
         if (ss.isValidateValidityPeriod()){
             if (nprops >0) {
                 sb.append(", ");
             }
-            sb.append("validate validity period");
+            sb.append("check period");
             nprops++;
         }
 
@@ -44,7 +45,7 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
             if (nprops >0) {
                 sb.append(", ");
             }
-            sb.append("validate signature");
+            sb.append("require signature");
             nprops++;
         }
 
@@ -63,6 +64,7 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
+        list.add(new SamlPropertiesAction(this));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
