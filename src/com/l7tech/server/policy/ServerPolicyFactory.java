@@ -24,11 +24,11 @@ public class ServerPolicyFactory extends PolicyFactory {
         return _instance;
     }
 
-    protected String getPackageName() {
+    protected String getProductRootPackageName() {
         return "com.l7tech.server.policy.assertion";
     }
 
-    protected String getPrefix() {
+    protected String getProductClassnamePrefix() {
         return "Server";
     }
 

@@ -48,11 +48,11 @@ public class ClientPolicyFactory extends PolicyFactory {
         return _instance;
     }
 
-    protected String getPackageName() {
+    protected String getProductRootPackageName() {
         return "com.l7tech.proxy.policy.assertion";
     }
 
-    protected String getPrefix() {
+    protected String getProductClassnamePrefix() {
         return "Client";
     }
 

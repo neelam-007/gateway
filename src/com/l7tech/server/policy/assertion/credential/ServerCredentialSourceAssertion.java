@@ -17,8 +17,6 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -81,7 +79,6 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
     protected abstract void challenge( Request request, Response response );
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
-    protected transient Map _credentialFinders = new HashMap();
 
     protected CredentialSourceAssertion _data;
 }

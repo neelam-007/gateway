@@ -18,10 +18,20 @@ import java.util.*;
  * @version $Revision$
  */
 public abstract class PolicyFactory {
-    protected abstract String getPackageName();
-    protected abstract String getPrefix();
+    protected abstract String getProductRootPackageName();
+    protected abstract String getProductClassnamePrefix();
 
     public static final String PACKAGE_PREFIX = "com.l7tech.policy.assertion";
+
+    public List makeCompositePolicy( CompositeAssertion compositeAssertion ) {
+        Assertion child;
+        List result = new ArrayList();
+        for (Iterator i = compositeAssertion.children(); i.hasNext();) {
+            child = (Assertion)i.next();
+            result.add( makeSpecificPolicy(child) );
+        }
+        return result;
+    }
 
     private Constructor getConstructor( Class genericAssertionClass ) {
         Constructor ctor = (Constructor)_genericClassToConstructorMap.get( genericAssertionClass );
@@ -33,24 +43,24 @@ public abstract class PolicyFactory {
         String genericPackage = genericAssertionClassname.substring(0,ppos);
         String genericName = genericAssertionClassname.substring(ppos+1);
 
-        StringBuffer specificName = new StringBuffer( getPackageName() );
+        StringBuffer specificClassName = new StringBuffer( getProductRootPackageName() );
 
         if ( genericPackage.equals( PACKAGE_PREFIX ) ) {
-            specificName.append( "." );
-            specificName.append( getPrefix() );
-            specificName.append( genericName );
+            specificClassName.append( "." );
+            specificClassName.append( getProductClassnamePrefix() );
+            specificClassName.append( genericName );
         } else if ( genericPackage.startsWith( PACKAGE_PREFIX ) ) {
-            specificName.append( genericPackage.substring( PACKAGE_PREFIX.length() ) );
-            specificName.append( "." );
-            specificName.append( getPrefix() );
-            specificName.append( genericName );
+            specificClassName.append( genericPackage.substring( PACKAGE_PREFIX.length() ) );
+            specificClassName.append( "." );
+            specificClassName.append( getProductClassnamePrefix() );
+            specificClassName.append( genericName );
         } else
             throw new RuntimeException( "Couldn't handle " + genericAssertionClassname );
 
-        Class serverClass;
+        Class specificClass;
         try {
-            serverClass = Class.forName( specificName.toString() );
-            ctor = serverClass.getConstructor( new Class[] { genericAssertionClass } );
+            specificClass = Class.forName( specificClassName.toString() );
+            ctor = specificClass.getConstructor( new Class[] { genericAssertionClass } );
             return ctor;
         } catch ( ClassNotFoundException cnfe ) {
             throw new RuntimeException( cnfe );
@@ -59,11 +69,11 @@ public abstract class PolicyFactory {
         }
     }
 
-    protected Object makeSpecificPolicy( Assertion rootAssertion ) {
+    protected Object makeSpecificPolicy( Assertion genericAssertion ) {
         try {
-            Class assClass = rootAssertion.getClass();
+            Class genericClass = genericAssertion.getClass();
 
-            return getConstructor( assClass ).newInstance( new Object[] { rootAssertion } );
+            return getConstructor( genericClass ).newInstance( new Object[] { genericAssertion } );
         } catch ( InstantiationException ie ) {
             throw new RuntimeException( ie );
         } catch ( IllegalAccessException iae ) {
@@ -71,16 +81,6 @@ public abstract class PolicyFactory {
         } catch ( InvocationTargetException ite ) {
             throw new RuntimeException( ite );
         }
-    }
-
-    public List makeCompositePolicy( CompositeAssertion compositeAssertion ) {
-        Assertion ass;
-        List result = new ArrayList();
-        for (Iterator i = compositeAssertion.children(); i.hasNext();) {
-            ass = (Assertion)i.next();
-            result.add( makeSpecificPolicy( ass ) );
-        }
-        return result;
     }
 
     protected Map _genericClassToConstructorMap = new HashMap(23);
