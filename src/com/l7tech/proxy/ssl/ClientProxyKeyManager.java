@@ -121,7 +121,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
             }
         } catch (SsgNotFoundException e) {
         }
-        log.info("No client cert found for this connection");
+        log.info("No client cert found for this connection to hostname " + hostname);
         return null;
     }
 }
