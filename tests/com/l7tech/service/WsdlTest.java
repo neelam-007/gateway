@@ -23,6 +23,8 @@ import java.net.URL;
 public class WsdlTest extends TestCase {
     private static final Category log = Category.getInstance(WsdlTest.class);
     private static final String WSDL = "com/l7tech/service/resources/StockQuoteService.wsdl";
+    private static final String WSDL2PORTS = "com/l7tech/service/resources/xmltoday-delayed-quotes-2ports.wsdl";
+    private static final String WSDL2SERVICES = "com/l7tech/service/resources/xmltoday-delayed-quotes-2services.wsdl";
 
     /**
      * test <code>AbstractLocatorTest</code> constructor
@@ -48,9 +50,12 @@ public class WsdlTest extends TestCase {
         // put tear down code here
     }
 
-    public static Reader getWsdlReader() {
+    public static Reader getWsdlReader(String resourcetoread) {
+        if (resourcetoread == null) {
+            resourcetoread = WSDL;
+        }
         ClassLoader cl = WsdlTest.class.getClassLoader();
-        InputStream i = cl.getResourceAsStream(WSDL);
+        InputStream i = cl.getResourceAsStream(resourcetoread);
         InputStreamReader r = new InputStreamReader(i);
         return r;
     }
@@ -60,7 +65,7 @@ public class WsdlTest extends TestCase {
      * @throws Exception on tesat errors
      */
     public void testReadWsdlFromString() throws Exception {
-        Reader fr = getWsdlReader();
+        Reader fr = getWsdlReader(WSDL);
         StringWriter sw = new StringWriter();
         char[] buf = new char[500];
         int len = 0;
@@ -84,7 +89,7 @@ public class WsdlTest extends TestCase {
      */
     public void testReadWsdlFromFile() throws Exception {
         Wsdl wsdl =
-                Wsdl.newInstance(null, getWsdlReader());
+                Wsdl.newInstance(null, getWsdlReader(WSDL));
         wsdl.getTypes();
         wsdl.getBindings();
         wsdl.getMessages();
@@ -92,8 +97,29 @@ public class WsdlTest extends TestCase {
         wsdl.getServices();
     }
 
+    public void testReadWsdl2PortsFromFile() throws Exception {
+        log.info("Enter testReadWsdl2PortsFromFile");
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(WSDL2PORTS));
+        wsdl.getTypes();
+        wsdl.getBindings();
+        wsdl.getMessages();
+        wsdl.getPortTypes();
+        wsdl.getServices();
+        wsdl.getSoapPort();
+    }
+
+    public void testReadWsdl2ServicesFromFile() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(WSDL2SERVICES));
+        wsdl.getTypes();
+        wsdl.getBindings();
+        wsdl.getMessages();
+        wsdl.getPortTypes();
+        wsdl.getServices();
+        wsdl.getSoapPort();
+    }
+
     public void testGetAndSetPortUrl() throws FileNotFoundException, WSDLException, MalformedURLException {
-        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader());
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(WSDL));
         Port port = wsdl.getSoapPort();
         URL url = wsdl.getUrlFromPort(port);
         log.info("Read port URL: " + url);
