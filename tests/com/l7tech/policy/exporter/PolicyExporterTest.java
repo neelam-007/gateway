@@ -4,6 +4,9 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import junit.framework.Test;
@@ -40,7 +43,15 @@ public class PolicyExporterTest extends TestCase {
         jrass.setEndpointOid(new Long(25));
         jrass.setResponseTimeout(55);
         root.getChildren().add(jrass);
-        // todo, more
+        // todo, plug in a real custom assertion, the WSPWriter cannot handle this garbage
+        CustomAssertionHolder cahass = new CustomAssertionHolder();
+        cahass.setCategory(Category.MESSAGE);
+        cahass.setCustomAssertion(new CustomAssertion() {
+            public String getName() {
+                return "Some Custom Assertion Lame name";
+            }
+        });
+        root.getChildren().add(cahass);
         return root;
     }
 
