@@ -242,7 +242,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         if (authenticationMethodComboBox != null)
             return authenticationMethodComboBox;
         authenticationMethodComboBox =
-          Components.getCredentialsLocationComboBox();
+          CredentialsLocation.getCredentialsLocationComboBox();
 
         return authenticationMethodComboBox;
     }

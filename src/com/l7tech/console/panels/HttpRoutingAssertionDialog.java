@@ -286,7 +286,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         if (authenticationMethodComboBox != null)
             return authenticationMethodComboBox;
         authenticationMethodComboBox =
-          Components.getCredentialsLocationComboBox();
+          CredentialsLocation.getCredentialsLocationComboBox();
 
         return authenticationMethodComboBox;
     }

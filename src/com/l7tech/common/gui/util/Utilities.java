@@ -206,7 +206,7 @@ public class Utilities {
 
 
     /**
-     * Sets the Components in the array to be the same size.
+     * Sets the CredentialsLocation in the array to be the same size.
      * This is done dynamically by setting each button's
      * preferred and maximum sizes after the components have
      * been created.

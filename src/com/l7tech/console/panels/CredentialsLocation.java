@@ -1,35 +1,33 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.security.xml.ElementSecurity;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.wss.WssDigest;
-import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
-import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.security.xml.ElementSecurity;
 
 import javax.swing.*;
 import javax.xml.soap.SOAPConstants;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.HashMap;
 
 /**
- * This class is a bag of UI components  shared by panels.
+ * This class contains UI utilities for handling credentials locations such as
+ * create <code>ComboBoxModel</code>, <code>JComboBox</code> etc.
  * <p>
  * The class cannot be instantiated.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class Components {
+public class CredentialsLocation {
 
     /** private constructor, this class cannot be instantiated */
-    private Components() {
+    private CredentialsLocation() {
     }
 
     /**
@@ -82,7 +80,7 @@ public class Components {
         credentialsLocationMap.put("HTTP Client Certificate", new HttpClientCert());
 
         credentialsLocationMap.put("WS Token Basic", new WssBasic());
-        credentialsLocationMap.put("WS Token Digest", new WssDigest());
+        // credentialsLocationMap.put("WS Token Digest", new WssDigest());
 
         XmlRequestSecurity xmlRequestSecurity = new XmlRequestSecurity();
         Map namespaces = new HashMap();

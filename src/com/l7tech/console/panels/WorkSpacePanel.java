@@ -314,7 +314,7 @@ public class WorkSpacePanel extends JPanel {
 
             int tabCount = getTabCount();
             // We invoke removeTabAt for each tab, otherwise we may end up
-            // removing Components added by the UI.
+            // removing CredentialsLocation added by the UI.
             while (tabCount-- > 0) {
                 removeTabAt(tabCount);
             }

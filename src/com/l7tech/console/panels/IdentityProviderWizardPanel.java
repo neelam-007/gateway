@@ -41,7 +41,7 @@ import java.security.Principal;
  */
 public class IdentityProviderWizardPanel extends WizardStepPanel {
     private DefaultComboBoxModel providersComboBoxModel;
-    private Map credentialsLocationMap = Components.newCredentialsLocationMap();
+    private Map credentialsLocationMap = CredentialsLocation.newCredentialsLocationMap();
 
     /**
      * Creates new form IdentityProviderWizardPanel
@@ -75,7 +75,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         ToolTipManager.sharedInstance().registerComponent(identitiesOutTable);
 
         credentialsLocationComboBox = new JComboBox();
-        credentialsLocationComboBox.setModel(Components.getCredentialsLocationComboBoxModelNonAnonymous());
+        credentialsLocationComboBox.setModel(CredentialsLocation.getCredentialsLocationComboBoxModelNonAnonymous());
 
         sslCheckBox = new JCheckBox();
 
