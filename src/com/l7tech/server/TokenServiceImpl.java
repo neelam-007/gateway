@@ -15,9 +15,16 @@ import com.l7tech.common.message.XmlKnob;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.server.saml.HolderOfKeyHelper;
@@ -146,10 +153,19 @@ public class TokenServiceImpl implements TokenService {
             AllAssertion base = new AllAssertion();
             OneOrMoreAssertion root = new OneOrMoreAssertion();
             base.addChild(root);
-
-            // todo, construct a policy to enforce on token requests
-            // should allow for WSS signature, SAML auth, and transport level authentication
-
+            root.addChild(new RequestWssX509Cert());
+            root.addChild(new SamlSecurity(SamlSecurity.CONFIRMATION_METHOD_WHATEVER));
+            root.addChild(new SecureConversation());
+            root.addChild(new HttpClientCert());
+            OneOrMoreAssertion validCredSrcOverSSL = new OneOrMoreAssertion();
+            validCredSrcOverSSL.addChild(new HttpBasic());
+            validCredSrcOverSSL.addChild(new WssBasic());
+            validCredSrcOverSSL.addChild(new HttpDigest());
+            AllAssertion transportSecBranch = new AllAssertion();
+            transportSecBranch.addChild(new SslAssertion());
+            transportSecBranch.addChild(validCredSrcOverSSL);
+            root.addChild(transportSecBranch);
+            logger.fine("TokenService enforcing policy: " + base.toString());
             ServerPolicyFactory policyFactory = new ServerPolicyFactory();
             tokenServicePolicy = policyFactory.makeServerPolicy(base);
         }
