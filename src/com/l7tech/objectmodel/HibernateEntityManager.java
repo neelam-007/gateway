@@ -134,12 +134,15 @@ public abstract class HibernateEntityManager implements EntityManager {
     }
 
     private String alias = getTableName();
+
     /**
      * all headers query,
      */
-    private final String allHeadersQuery = "select " + alias + ".oid, " +
-                                            alias + ".name from " + alias + " in class "+
-                                            getImpClass().getName();
+    protected final String allHeadersQuery = "select " + alias + ".oid, " +
+                                             alias + ".name from " + alias + " in class "+
+                                             getImpClass().getName();
     protected PersistenceManager _manager;
     protected Logger logger = LogManager.getInstance().getSystemLogger();
+
+
 }

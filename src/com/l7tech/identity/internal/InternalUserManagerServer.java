@@ -15,10 +15,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,6 +68,15 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         }
     }
 
+    /**
+     * Search for the user headers using the given search string.
+     *
+     * @param searchString the search string (supports '*' wildcards)
+     * @return the never <b>null</b> collection of entitites
+     * @throws FindException thrown if an SQL error is encountered
+     * @see InternalGroupManagerServer
+     * @see InternalUserManagerServer
+     */
     public Collection search(String searchString) throws FindException {
         // replace wildcards to match stuff understood by mysql
         // replace * with % and ? with _
@@ -78,16 +84,20 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         searchString = searchString.replace('*', '%');
         searchString = searchString.replace('?', '_');
         try {
-            List users = _manager.find(getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".login like ?", searchString, String.class);
-            Collection output = new ArrayList();
-            logger.finest("search for " + searchString + " returns " + users.size() + " users.");
-            for (Iterator i = users.iterator(); i.hasNext();) {
-                output.add(userToHeader((User)i.next()));
+            List results = PersistenceManager.find(getContext(),
+                                                   allHeadersQuery + " where " + getTableName() + ".login like ?",
+                                                   searchString, String.class);
+            List headers = new ArrayList();
+            for (Iterator i = results.iterator(); i.hasNext();) {
+                Object[] row = (Object[])i.next();
+                final long id = ((Long)row[0]).longValue();
+                headers.add(new EntityHeader(id, EntityType.fromInterface(getInterfaceClass()), row[1].toString(), EMPTY_STRING));
             }
-            return output;
+            return Collections.unmodifiableList(headers);
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "error searching users with pattern " + searchString, e);
-            throw new FindException(e.toString(), e);
+            final String msg = "Error while searching for "+getInterfaceClass() + " instances.";
+            logger.log(Level.SEVERE, msg, e);
+            throw new FindException(msg, e);
         }
     }
 
@@ -387,4 +397,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     public static final String F_LOGIN = "login";
     public static final String F_NAME = "name";
     private Logger logger = null;
+
+
 }
