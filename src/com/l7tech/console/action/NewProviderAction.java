@@ -41,7 +41,7 @@ abstract public class NewProviderAction extends NodeAction {
      *
      * @param listener the EntityListener
      */
-    protected void addEntityListener(EntityListener listener) {
+    public void addEntityListener(EntityListener listener) {
         listenerList.add(EntityListener.class, listener);
     }
 
