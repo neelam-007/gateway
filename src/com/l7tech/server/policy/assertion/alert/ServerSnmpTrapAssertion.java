@@ -88,10 +88,10 @@ public class ServerSnmpTrapAssertion implements ServerAssertion {
                                                   pdu,
                                                   false);
         } catch (MessageException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"The configured SNMP server hostname could not be found: " + e.getMessage()}, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"The configured SNMP server hostname could not be found: " + e.getMessage()}, e);
             return AssertionStatus.FAILED;
         } catch (UnknownHostException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"The configured SNMP server could not be reached: " + e.getMessage()}, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"The configured SNMP server could not be reached: " + e.getMessage()}, e);
             return AssertionStatus.FAILED;
         }
 
