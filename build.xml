@@ -320,6 +320,12 @@
                 <include name="com/l7tech/service/PublishedService.class"/>
             </fileset>
         </jar>
+
+        <exec executable="perl" failonerror="true" dir="installer" >
+            <env key="JAVA_HOME" value="${java.home}" />
+            <arg line="make_installers.pl" />
+            <arg line="-N" />
+        </exec>
     </target>
 
     <target name="testpackage" depends="package">
