@@ -11,5 +11,5 @@ import com.l7tech.credential.*;
 /**
  * @author alex
  */
-public abstract class WssCredentialFinder extends AbstractCredentialFinder {
+public abstract class WssCredentialFinder implements CredentialFinder {
 }
