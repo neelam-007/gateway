@@ -42,7 +42,7 @@ public class EntityTreeCellRenderer
         if (object instanceof BasicTreeNode) {
             BasicTreeNode node = (BasicTreeNode)object;
             setText(node.getLabel());
-            Icon icon = IconManager.getIcon(node);
+            Icon icon = IconManager.getInstance().getIcon(node);
 
             if (icon == null) {
                 if (isFolder(node)) {

@@ -422,7 +422,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
                     if (value instanceof BasicTreeNode) {
                         BasicTreeNode bn = (BasicTreeNode) value;
                         if (column == 0) {
-                            ImageIcon icon = IconManager.getIcon(bn);
+                            ImageIcon icon = IconManager.getInstance().getIcon(bn);
                             if (icon == null) {
                                 if (isFolder(bn)) {
                                     setIcon(UIManager.getIcon("Tree.closedIcon"));
@@ -438,7 +438,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
                         EntityHeader h = (EntityHeader) value;
                         Class cls = h.getType();
                         if (column == 0) {
-                            ImageIcon icon = IconManager.getIcon(cls);
+                            ImageIcon icon = IconManager.getInstance().getIcon(cls);
                             if (icon != null) setIcon(icon);
                             setText(h.getName());
                         }
@@ -659,7 +659,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
 
         private void initComponents() {
             buttonUp = new JButton();
-            buttonUp.setIcon(IconManager.getUpOneLevelIcon());
+            buttonUp.setIcon(IconManager.getInstance().getUpOneLevelIcon());
             buttonUp.setFont(new Font("Dialog", 1, 10));
             buttonUp.setText("Up");
             buttonUp.setMargin(new Insets(0, 0, 0, 0));
@@ -675,7 +675,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
             buttonUp.setEnabled(!isParentRoot());
 
             buttonOpen = new JButton();
-            buttonOpen.setIcon(IconManager.getOpenFolderIcon());
+            buttonOpen.setIcon(IconManager.getInstance().getOpenFolderIcon());
             buttonOpen.setFont(new Font("Dialog", 1, 10));
             buttonOpen.setText("Open");
             buttonOpen.setMargin(new Insets(0, 0, 0, 0));
@@ -696,7 +696,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
             buttonOpen.setEnabled(false);
 
             buttonNew = new JButton();
-            buttonNew.setIcon(IconManager.getDefaultNewIcon());
+            buttonNew.setIcon(IconManager.getInstance().getDefaultNewIcon());
             buttonNew.setFont(new Font("Dialog", 1, 10));
             buttonNew.setText("New");
             buttonNew.setMargin(new Insets(0, 0, 0, 0));
@@ -713,7 +713,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
 
 
             buttonEdit = new JButton();
-            buttonEdit.setIcon(IconManager.getDefaultEditIcon());
+            buttonEdit.setIcon(IconManager.getInstance().getDefaultEditIcon());
             buttonEdit.setFont(new Font("Dialog", 1, 10));
             buttonEdit.setText("Edit");
             buttonEdit.setMargin(new Insets(0, 0, 0, 0));
@@ -733,7 +733,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
             buttonEdit.setEnabled(false);
 
             buttonDelete = new JButton();
-            buttonDelete.setIcon(IconManager.getDefaultDeleteIcon());
+            buttonDelete.setIcon(IconManager.getInstance().getDefaultDeleteIcon());
             buttonDelete.setFont(new Font("Dialog", 1, 10));
             buttonDelete.setText("Delete");
             buttonDelete.setMargin(new Insets(0, 0, 0, 0));

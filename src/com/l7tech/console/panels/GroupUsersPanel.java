@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityHeader;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -15,10 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.ArrayList;
-import java.util.Set;
+import java.util.*;
 
 /**
  * GroupUsersPanel is the panel for administering the
@@ -42,8 +40,7 @@ class GroupUsersPanel extends JPanel {
     private JScrollPane groupInListJScrollPane;
     private JList groupMemberList = null;
 
-    private SortedListModel listInModel;
-    private SortedListModel listOutModel;
+    SortedListModel listInModel;
 
     private JButton groupAdd = null;
     private JButton groupRemove = null;
@@ -68,6 +65,21 @@ class GroupUsersPanel extends JPanel {
             log.error("GroupUsersPanel()", e);
         }
     }
+
+    /**
+     * package private method, allows adding users
+     */
+    void addUsers(Set userHeaders) {
+        listInModel.addAll(userHeaders);
+    }
+
+    /**
+     * package private method, allows adding users
+     */
+    Set getCurrentUsers() {
+        return new HashSet(Arrays.asList(listInModel.toArray()));
+    }
+
 
     /**
      * This is the main initialization code.
@@ -135,10 +147,10 @@ class GroupUsersPanel extends JPanel {
                      * 	       being compared by this Comparator.
                      */
                     public int compare(Object o1, Object o2) {
-                        User u1 = (User) o1;
-                        User u2 = (User) o2;
+                        EntityHeader e1 = (EntityHeader)o1;
+                        EntityHeader e2 = (EntityHeader)o2;
 
-                        return u1.getLogin().compareTo(u2.getLogin());
+                        return e1.getName().compareTo(e2.getName());
                     }
                 });
 
@@ -322,8 +334,9 @@ class GroupUsersPanel extends JPanel {
 
             groupAdd.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    JDialog d = (JDialog) SwingUtilities.windowForComponent(GroupUsersPanel.this);
-                    JDialog dialog = new NewGroupMemberDialog(d, groupPanel);
+                    JDialog d = (JDialog)SwingUtilities.windowForComponent(GroupUsersPanel.this);
+
+                    JDialog dialog = new NewGroupMemberDialog(d, GroupUsersPanel.this);
                     dialog.setResizable(false);
                     dialog.show();
 
@@ -362,20 +375,6 @@ class GroupUsersPanel extends JPanel {
         return groupRemove;
     }
 
-    /**
-     * Create if needed the default list model for the
-     * Non Members
-     *
-     * @return SortedListModel
-     */
-    private SortedListModel getListOutModel() {
-        if (listOutModel == null) {
-            listOutModel = new SortedListModel();
-        }
-        return listOutModel;
-    }
-
-
     // hierarchy listener
     private final HierarchyListener hierarchyListener = new HierarchyListener() {
         /** Called when the hierarchy has been changed.*/
@@ -392,14 +391,13 @@ class GroupUsersPanel extends JPanel {
     private void loadGroupUsers() {
         try {
             isLoading = true;
-            Collection members = groupPanel.getGroup().getMembers();
+            Collection members = groupPanel.getGroup().getMemberHeaders();
             if (members != null) {
                 listInModel.addAll(members);
             }
         } finally {
             isLoading = false;
         }
-
     }
 
     private final ListCellRenderer renderer = new DefaultListCellRenderer() {
@@ -416,9 +414,9 @@ class GroupUsersPanel extends JPanel {
             this.setFont(new Font("Dialog", Font.PLAIN, 12));
 
             // Based on value type, determine cell contents
-            setIcon(IconManager.getIcon(User.class));
-            User u = (User) value;
-            setText(u.getLogin() + " - " + u.getFirstName() + " " + u.getFirstName());
+            setIcon(IconManager.getInstance().getIcon(User.class));
+            EntityHeader eh = (EntityHeader)value;
+            setText(eh.getName());
 
             return this;
         }

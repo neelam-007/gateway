@@ -205,7 +205,7 @@ public class GroupPanel extends EntityEditorPanel {
             detailsPanel = new JPanel();
             detailsPanel.setLayout(new GridBagLayout());
 
-            detailsPanel.add(new JLabel(IconManager.getIcon(Group.class)),
+            detailsPanel.add(new JLabel(IconManager.getInstance().getIcon(Group.class)),
                     new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                             GridBagConstraints.WEST,
                             GridBagConstraints.NONE,
@@ -416,6 +416,7 @@ public class GroupPanel extends EntityEditorPanel {
      */
     private Group collectChanges() {
         group.setDescription(this.getDescriptionTextField().getText());
+        group.setMemberHeaders(usersPanel.getCurrentUsers());
         return group;
     }
 

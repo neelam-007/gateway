@@ -5,22 +5,29 @@ import com.l7tech.console.MainWindow;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
+import com.l7tech.util.WeakSet;
 
 import javax.swing.*;
 
 /**
- * A class that contains icon resources
+ * A singleton class that contains icon resources.
+ * todo: rework this with weak cache and icons lazy loading
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class IconManager {
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
+    private static IconManager instance  = new IconManager();
 
+    public static IconManager getInstance() {
+        return instance;
+    }
     /**
      * default constructor
      */
     protected IconManager() {
+        loadimages();
     }
 
     /**
@@ -29,7 +36,7 @@ public class IconManager {
      * @param node   the BasicTreeNode instance
      * @return ImageIcon for the given node
      */
-    public static ImageIcon getIcon(BasicTreeNode node) {
+    public ImageIcon getIcon(BasicTreeNode node) {
         if (node == null) {
             throw new NullPointerException("node");
         }
@@ -61,7 +68,7 @@ public class IconManager {
      * @param node   the EntityHeader instance
      * @return ImageIcon for the given node
      */
-    public static ImageIcon getIcon(EntityHeader node) {
+    public ImageIcon getIcon(EntityHeader node) {
         if (node == null) {
             throw new NullPointerException("node");
         }
@@ -76,7 +83,7 @@ public class IconManager {
        * @param clazz   the class
        * @return ImageIcon for the given node
        */
-      public static ImageIcon getIcon(Class clazz) {
+      public ImageIcon getIcon(Class clazz) {
           if (clazz == null) {
               throw new NullPointerException("clazz");
           }
@@ -95,7 +102,7 @@ public class IconManager {
      * Returns an up button
      * enabled.
      */
-    public static ImageIcon getUpButton() {
+    public ImageIcon getUpButton() {
         return upButton;
     }
 
@@ -103,7 +110,7 @@ public class IconManager {
      * Returns a down button
      * enabled.
      */
-    public static ImageIcon getDownButton() {
+    public ImageIcon getDownButton() {
         return downButton;
     }
 
@@ -146,62 +153,62 @@ public class IconManager {
     }
 
 
-    public static ImageIcon getIconAdd() {
+    public ImageIcon getIconAdd() {
         return iconAdd;
     }
 
-    public static ImageIcon getIconAddAll() {
+    public ImageIcon getIconAddAll() {
         return iconAddAll;
     }
 
-    public static ImageIcon getIconRemove() {
+    public ImageIcon getIconRemove() {
         return iconRemove;
     }
 
-    public static ImageIcon getIconRemoveAll() {
+    public ImageIcon getIconRemoveAll() {
         return iconRemoveAll;
     }
 
     /** @return the default Edit icon */
-    public static ImageIcon getDefaultEditIcon() {
+    public ImageIcon getDefaultEditIcon() {
         return defaultEdit;
     }
 
     /** @return the default Delete icon */
-    public static ImageIcon getDefaultDeleteIcon() {
+    public ImageIcon getDefaultDeleteIcon() {
         return defaultDelete;
     }
 
     /** @return the default New icon */
-    public static ImageIcon getDefaultNewIcon() {
+    public ImageIcon getDefaultNewIcon() {
         return defaultNew;
     }
 
     /** @return the 'up one level' icon */
-    public static ImageIcon getUpOneLevelIcon() {
+    public ImageIcon getUpOneLevelIcon() {
         return upOneLevel;
     }
 
     /** @return the 'open folder' icon */
-    public static ImageIcon getOpenFolderIcon() {
+    public ImageIcon getOpenFolderIcon() {
         return openFolder;
     }
 
-    private static ImageIcon iconAdd;
-    private static ImageIcon iconAddAll;
-    private static ImageIcon iconRemove;
-    private static ImageIcon iconRemoveAll;
-    private static ImageIcon upButton;
-    private static ImageIcon downButton;
+    private ImageIcon iconAdd;
+    private ImageIcon iconAddAll;
+    private ImageIcon iconRemove;
+    private ImageIcon iconRemoveAll;
+    private ImageIcon upButton;
+    private ImageIcon downButton;
 
     /** the default Edit icon */
-    private static ImageIcon defaultEdit;
+    private ImageIcon defaultEdit;
     /** the default Delete icon */
-    private static ImageIcon defaultDelete;
+    private ImageIcon defaultDelete;
     /** the default New icon */
-    private static ImageIcon defaultNew;
+    private ImageIcon defaultNew;
     /** the 'up one level' icon */
-    private static ImageIcon upOneLevel;
+    private ImageIcon upOneLevel;
     /** the 'action open folder' icon */
-    private static ImageIcon openFolder;
+    private ImageIcon openFolder;
 }
