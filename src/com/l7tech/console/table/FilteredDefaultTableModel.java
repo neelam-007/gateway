@@ -4,13 +4,14 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.event.TableModelListener;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Sep 18, 2003
- * Time: 4:15:08 PM
- * To change this template use Options | File Templates.
+/*
+ * This class encapsulates the table model with filtering support.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 
 public abstract class FilteredDefaultTableModel extends AbstractTableModel {
 

@@ -2,13 +2,14 @@ package com.l7tech.console.table;
 
 import javax.swing.table.DefaultTableModel;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Sep 18, 2003
- * Time: 10:21:18 AM
- * To change this template use Options | File Templates.
+/*
+ * This class encapsulates the table model for log messages.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class LogTableModel extends DefaultTableModel {
 
     public LogTableModel(String[][] data, String[] columnNames){

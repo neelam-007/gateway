@@ -15,13 +15,14 @@ import java.awt.event.WindowEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Oct 21, 2003
- * Time: 10:30:12 AM
- * To change this template use Options | File Templates.
+/*
+ * This class creates a dialog for editing policy template name.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class EditPolicyTemplateNameDialog extends JDialog {
     static final Logger log = Logger.getLogger(EditPolicyTemplateNameDialog.class.getName());
 

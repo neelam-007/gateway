@@ -11,13 +11,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Vector;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Oct 14, 2003
- * Time: 10:26:33 AM
- * To change this template use Options | File Templates.
+/*
+ * This class retrieves logs from a node.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class LogsWorker  extends SwingWorker {
 
     private LogAdmin log = null;

@@ -2,13 +2,14 @@ package com.l7tech.logging;
 
 import java.util.StringTokenizer;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Sep 17, 2003
- * Time: 1:39:25 PM
- * To change this template use Options | File Templates.
+/*
+ * This class encapsulates the log message.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class LogMessage {
     private long msgNumber = 0;
     private String time = null;

@@ -1,11 +1,11 @@
 package com.l7tech.console.table;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Oct 27, 2003
- * Time: 2:57:24 PM
- * To change this template use Options | File Templates.
+/*
+ * This class encapsulates the data model for statistics with sorting capability
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
 
 import com.l7tech.logging.StatisticsRecord;

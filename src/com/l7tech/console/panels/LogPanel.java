@@ -15,13 +15,14 @@ import java.util.Hashtable;
 import java.util.ResourceBundle;
 
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Sep 12, 2003
- * Time: 4:12:07 PM
- * This class implements the display for log messsgaes.
+/*
+ * This class creates a log panel.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class LogPanel extends JPanel {
 
      // Titles/Labels

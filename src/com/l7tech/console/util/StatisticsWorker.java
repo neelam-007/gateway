@@ -13,13 +13,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Oct 14, 2003
- * Time: 10:48:13 AM
- * To change this template use Options | File Templates.
+/*
+ * This class retrieves statistics from a node.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class StatisticsWorker extends SwingWorker {
 
     private UptimeMetrics metrics = null;

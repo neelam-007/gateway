@@ -8,13 +8,14 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.util.ResourceBundle;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Sep 26, 2003
- * Time: 12:18:13 PM
- * To change this template use Options | File Templates.
+/*
+ * This class creates a monitor panel.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class MonitorPanel extends JTabbedPane {
 
     private final ComponentRegistry componentRegistry = Registry.getDefault().getComponentRegistry();

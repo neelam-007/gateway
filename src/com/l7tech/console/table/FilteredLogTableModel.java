@@ -8,13 +8,14 @@ import com.l7tech.console.util.LogsWorker;
 
 import java.util.Vector;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Sep 19, 2003
- * Time: 9:38:30 AM
- * To change this template use Options | File Templates.
+/*
+ * This class encapsulates the table model for filtered logs.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class FilteredLogTableModel extends FilteredDefaultTableModel{
 
      public static final int MAX_MESSAGE_BLOCK_SIZE = 100;

@@ -3,13 +3,14 @@ package com.l7tech.console.icons;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Oct 29, 2003
- * Time: 12:10:30 PM
- * To change this template use Options | File Templates.
+/*
+ * This class creates an arrow icon.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class ArrowIcon implements Icon {
     public static final int UP = 0;         // direction
     public static final int DOWN = 1;

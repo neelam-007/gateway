@@ -20,13 +20,14 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Oct 21, 2003
- * Time: 8:56:25 AM
- * To change this template use Options | File Templates.
+/*
+ * This class handles the action of editing policy template name.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class EditPolicyTemplateNameAction extends BaseAction {
 
     static final Logger log = Logger.getLogger(EditServiceNameAction.class.getName());

@@ -23,13 +23,14 @@ import java.util.Vector;
 import java.util.HashMap;
 
 
-/**
- * Created by IntelliJ IDEA.
- * User: fpang
- * Date: Sep 26, 2003
- * Time: 12:51:48 PM
- * To change this template use Options | File Templates.
+/*
+ * This class creates a statistics panel.
+ *
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
+
 public class StatisticsPanel extends JPanel {
 
     private static final String STATISTICS_UNAVAILABLE = "unavailable";
