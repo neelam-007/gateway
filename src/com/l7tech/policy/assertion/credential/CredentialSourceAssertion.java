@@ -14,6 +14,7 @@ import org.apache.log4j.Category;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.io.IOException;
 
 /**
  * Asserts that the requester's credentials were found, and using a particular authentication mechanism.
@@ -26,7 +27,7 @@ public abstract class CredentialSourceAssertion extends Assertion {
         super();
     }
 
-    public AssertionStatus checkRequest( Request request, Response response ) throws PolicyAssertionException {
+    public AssertionStatus checkRequest( Request request, Response response ) throws IOException, PolicyAssertionException {
         try {
             PrincipalCredentials pc = request.getPrincipalCredentials();
             if ( pc == null ) {
@@ -46,6 +47,7 @@ public abstract class CredentialSourceAssertion extends Assertion {
 
             if ( pc == null ) {
                 response.setAuthenticationMissing( true );
+
                 _log.info( AssertionStatus.AUTH_REQUIRED.getMessage() );
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
