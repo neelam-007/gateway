@@ -220,8 +220,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
     private class MessageLoop implements Runnable {
         MessageLoop( JmsBag bag ) throws JMSException, NamingException {
             _bag = bag;
-            _thread = new Thread( this, "MessageLoop_" + _connection.getOid() + "/" +
-                                        _inboundRequestEndpoint.getOid() );
+            _thread = new Thread( this, toString() );
             _thread.setDaemon( true );
             Session session = _bag.getSession();
             if ( session instanceof QueueSession ) {
@@ -232,12 +231,23 @@ public class JmsReceiver implements ServerComponentLifecycle {
                 throw new IllegalArgumentException("Only QueueSession is supported");
         }
 
+        public String toString() {
+            StringBuffer s = new StringBuffer( "MessageLoop-" );
+            s.append( _connection.getOid() );
+            s.append( "/" );
+            s.append( _inboundRequestEndpoint.getDestinationName() );
+            return s.toString();
+        }
+
         public void start() throws JMSException {
+            _logger.fine( "Starting " + toString() );
             _bag.getConnection().start();
             _thread.start();
+            _logger.fine( "Started " + toString() );
         }
 
         public void stop() {
+            _logger.fine( "Stopping " + toString() );
             _stop = true;
             _thread.interrupt();
             try {
@@ -245,6 +255,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
             } catch ( InterruptedException e ) {
                 Thread.currentThread().interrupt();
             }
+            _logger.fine( "Stopped " + toString() );
         }
 
         public void run() {
@@ -276,8 +287,10 @@ public class JmsReceiver implements ServerComponentLifecycle {
         }
 
         public void close() {
+            _logger.fine( "Closing " + toString() );
             stop();
             if ( _bag != null ) _bag.close();
+            _logger.fine( "Closed " + toString() );
         }
 
         // JMS stuff
