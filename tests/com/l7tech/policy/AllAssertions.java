@@ -55,7 +55,6 @@ public class AllAssertions {
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
         new WsTrustCredentialExchange(),
-        new SnmpTrapAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
