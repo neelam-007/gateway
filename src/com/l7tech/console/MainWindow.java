@@ -105,6 +105,7 @@ public class MainWindow extends JFrame {
     private Action assertionMoveUpAction;
     private Action assertionMoveDownAction;
     private Action deleteAssertionAction;
+    private JMenu gotoMenu;
 
     /**
      * MainWindow constructor comment.
@@ -281,6 +282,7 @@ public class MainWindow extends JFrame {
         viewMenu.add(item);
         int mnemonic = viewMenu.getText().toCharArray()[0];
         viewMenu.setMnemonic(mnemonic);
+        viewMenu.add(getGotoSubmenu());
         viewMenu.addSeparator();
 
         JCheckBoxMenuItem jcm = new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
@@ -291,6 +293,23 @@ public class MainWindow extends JFrame {
         }
         viewMenu.add(jcm);
         return viewMenu;
+    }
+    /**
+     * Return the newMenu property value.
+     * @return JMenuItem
+     */
+    private JMenu getGotoSubmenu() {
+        if (gotoMenu != null) return gotoMenu;
+
+        gotoMenu = new JMenu("Go To");
+        int mnemonic = gotoMenu.getText().toCharArray()[0];
+        gotoMenu.setMnemonic(mnemonic);
+
+        JMenuItem menuItem;
+
+        menuItem = new JMenuItem(new HomeAction(getWorkBenchPanel()));
+        gotoMenu.add(menuItem);
+     return gotoMenu;
     }
 
     /**
@@ -550,7 +569,7 @@ public class MainWindow extends JFrame {
         mainSplitPaneRight.setLayout(new GridBagLayout());
 
         // check if node/context supports listing
-        workBenchPanel = new WorkBenchPanel();
+
         getMainSplitPaneRight().removeAll();
         GridBagConstraints constraints
           = new GridBagConstraints(0, // gridx
@@ -564,10 +583,17 @@ public class MainWindow extends JFrame {
             new Insets(0, 0, 0, 0), // inses
             0, // padx
             0); // pady
-        getMainSplitPaneRight().add(workBenchPanel, constraints);
-
+        getMainSplitPaneRight().add(getWorkBenchPanel(), constraints);
 
         return mainSplitPaneRight;
+    }
+
+    private WorkBenchPanel getWorkBenchPanel() {
+        if (workBenchPanel != null)
+            return workBenchPanel;
+        workBenchPanel = new WorkBenchPanel();
+        return workBenchPanel;
+
     }
 
     /**
@@ -612,10 +638,10 @@ public class MainWindow extends JFrame {
      */
     private void setJtreeRootNodes() {
         // palette tree paletteRootNode
-        final AbstractTreeNode paletteRootNode =
-          new RootNode("Policy Assertions");
 
-        TreeModel treeModel = new FilteredTreeModel(paletteRootNode);
+        DefaultTreeModel treeModel = new FilteredTreeModel(null);
+        final AbstractTreeNode paletteRootNode =   new RootNode("Policy Assertions", treeModel);
+        treeModel.setRoot(paletteRootNode);
         getPaletteJTreeView().setRootVisible(true);
         getPaletteJTreeView().setModel(treeModel);
         TreePath path = new TreePath(paletteRootNode.getPath());
@@ -630,10 +656,11 @@ public class MainWindow extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
         final AbstractTreeNode servicesRootNode =
-          new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
+                  new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle, servicesTreeModel);
+        servicesTreeModel.setRoot(servicesRootNode);
 
-        TreeModel servicesTreeModel = new FilteredTreeModel(servicesRootNode);
         getServicesTreeView().setRootVisible(true);
         getServicesTreeView().setModel(servicesTreeModel);
         TreePath initialPath = new TreePath(servicesRootNode.getPath());
@@ -1010,12 +1037,14 @@ public class MainWindow extends JFrame {
 
     /**
      * The connect handler.
-     *
+     * todo: rework with connect listeners
      * @param event  ActionEvent
      */
     private void connectHandler(ActionEvent event) {
         if (logon()) {
             toggleConnectedMenus(true);
+            new HomeAction(getWorkBenchPanel()).performAction();
+
         }
     }
 
@@ -1042,8 +1071,7 @@ public class MainWindow extends JFrame {
         }
 
     }
-
-    // the PanelListener that handles the object events
+  // the PanelListener that handles the object events
     // and performs the corresponding tree action
     private PanelListener
       paletteTreeObjectListener = new PanelListenerAdapter() {
@@ -1155,7 +1183,7 @@ public class MainWindow extends JFrame {
         JComponentFactory jcf =
           (JComponentFactory)Locator.getDefault().lookup(JComponentFactory.class);
         JComponent jc = jcf.getJComponent(o);
-        workBenchPanel.setComponent(jc);
+        getWorkBenchPanel().setComponent(jc);
     }
 
 

@@ -8,7 +8,7 @@ import java.util.*;
  * Class IdentityProviderConfigManagerStub.
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class IdentityProviderConfigManagerStub implements IdentityProviderConfigManager {
+public class IdentityProviderConfigManagerStub implements GlobalIdProviderConfManager {
     private StubDataStore dataStore;
 
     public IdentityProviderConfigManagerStub() {
@@ -147,5 +147,19 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
     private EntityHeader fromIdentityProviderConfig(IdentityProviderConfig c) {
         return
           new EntityHeader(c.getOid(), EntityType.ID_PROVIDER_CONFIG, c.getName(), null);
+    }
+
+    public IdentityProvider getInternalIdentityProvider() {
+        try {
+            for (Iterator it = findAllIdentityProviders().iterator(); it.hasNext();) {
+               IdentityProvider provider = (IdentityProvider)it.next();
+                if (IdentityProviderType.INTERNAL.equals(provider.getConfig().type())) {
+                    return provider;
+                }
+            }
+            throw new RuntimeException(); //bug, no internal provider
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

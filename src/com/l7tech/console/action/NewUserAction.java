@@ -3,6 +3,8 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.NewUserDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
 
+import javax.swing.*;
+
 /**
  * The <code>NewUserAction</code> action adds the new user.
  *
@@ -34,7 +36,7 @@ public class NewUserAction extends NodeAction {
      * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/user16.png";
+        return "com/l7tech/console/resources/New16.gif";
     }
 
     /** Actually perform the action.
@@ -44,8 +46,13 @@ public class NewUserAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        NewUserDialog dialog = new NewUserDialog(null);
-        dialog.setResizable(false);
-        dialog.show();
+        SwingUtilities.invokeLater(
+          new Runnable() {
+            public void run() {
+                NewUserDialog dialog = new NewUserDialog(null);
+                dialog.setResizable(false);
+                dialog.show();
+            }
+        });
     }
 }

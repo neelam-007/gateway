@@ -2,6 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.tree.EntityListener;
+import com.l7tech.console.tree.EntityEvent;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.objectmodel.EntityHeader;
@@ -9,10 +11,12 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
+import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.EventListener;
 
 /**
  * New Group dialog.
@@ -38,10 +42,8 @@ public class NewGroupDialog extends JDialog {
     private boolean insertSuccess = false;
     private boolean createThenEdit = false;
 
-    /* the panel listener */
-    private PanelListener panelListener;
-
     Group group = new GroupImp();
+    private EventListenerList listenerList = new EventListenerList();
 
     /**
      * Create a new NewUserDialog fdialog for a given Company
@@ -58,13 +60,23 @@ public class NewGroupDialog extends JDialog {
     }
 
     /**
-     * set the PanelListener
+     * add the EntityListener
      *
-     * @param listener the PanelListener
+     * @param listener the EntityListener
      */
-    public void setPanelListener(PanelListener listener) {
-        this.panelListener = listener;
+    public void addEntityListener(EntityListener listener) {
+        listenerList.add(EntityListener.class, listener);
     }
+
+    /**
+     * remove the the EntityListener
+     *
+     * @param listener the EntityListener
+     */
+    public void removeEntityListener(EntityListener listener) {
+        listenerList.remove(EntityListener.class, listener);
+    }
+
 
     /**
      * Loads locale-specific resources: strings  etc
@@ -317,7 +329,7 @@ public class NewGroupDialog extends JDialog {
                             header.setType(EntityType.GROUP);
                             header.setName(group.getName());
                             Registry.getDefault().getInternalGroupManager().save(group);
-                            panelListener.onInsert(header);
+                            NewGroupDialog.this.notify(header);
                             insertSuccess = true;
                         } catch (SaveException e) {
                             e.printStackTrace();
@@ -328,6 +340,14 @@ public class NewGroupDialog extends JDialog {
                     }
                 });
 
+    }
+
+    private void notify(EntityHeader header) {
+       EntityEvent event = new EntityEvent(header);
+       EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i< listeners.length; i++) {
+            ((EntityListener)listeners[i]).entityAdded(event);
+        }
     }
 
     /**
@@ -346,7 +366,7 @@ public class NewGroupDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.GROUP, panelListener);
+                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.GROUP, null);
                                 if (panel == null) return;
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.GROUP);

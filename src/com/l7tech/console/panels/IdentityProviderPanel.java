@@ -287,6 +287,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
         providersComboBoxModel = new DefaultComboBoxModel();
         try {
+            providersComboBoxModel.addElement(Registry.getDefault().getInternalProvider());
             Iterator providers =
               Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
             while (providers.hasNext()) {

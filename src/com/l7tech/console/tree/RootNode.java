@@ -3,6 +3,7 @@ package com.l7tech.console.tree;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import java.util.*;
 
 /**
@@ -13,15 +14,19 @@ import java.util.*;
  * @version 1.1
  */
 public class RootNode extends AbstractTreeNode {
+    private DefaultTreeModel model;
+
     /**
      * construct the <CODE>RootNode</CODE> instance
      */
-    public RootNode(String title)
+    public RootNode(String title, DefaultTreeModel model)
       throws IllegalArgumentException {
         super(null);
         if (title == null)
             throw new IllegalArgumentException();
         label = title;
+
+        this.model = model;
     }
 
     /**
@@ -49,7 +54,7 @@ public class RootNode extends AbstractTreeNode {
           Arrays.asList(
             new AbstractTreeNode[]{
                 new UserFolderNode(r.getInternalUserManager()),
-                new GroupFolderNode(r.getInternalGroupManager()),
+                new GroupFolderNode(r.getInternalGroupManager(), model),
                 new ProvidersFolderNode(),
                 new PoliciesFolderNode()
             });

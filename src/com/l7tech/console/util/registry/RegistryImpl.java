@@ -1,9 +1,6 @@
 package com.l7tech.console.util.registry;
 
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.UserManager;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.*;
 import com.l7tech.util.Locator;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
@@ -20,54 +17,58 @@ import java.util.Collection;
  * @version 1.0
  */
 public class RegistryImpl extends Registry {
-
     /**
      * @return the identity provider config manager
      */
     public IdentityProviderConfigManager getProviderConfigManager()
       throws RuntimeException {
         IdentityProviderConfigManager ipc =
-        (IdentityProviderConfigManager)Locator.
-                getDefault().lookup(IdentityProviderConfigManager.class);
+          (IdentityProviderConfigManager)Locator.
+          getDefault().lookup(IdentityProviderConfigManager.class);
         if (ipc == null) {
-            throw new RuntimeException("Could not find registered "+IdentityProviderConfigManager.class);
+            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
         }
         return ipc;
     }
 
     /**
+     * @return the identity provider config manager
+     */
+    private GlobalIdProviderConfManager getGlobalIdProviderConfManager()
+      throws RuntimeException {
+        GlobalIdProviderConfManager ipc =
+          (GlobalIdProviderConfManager)Locator.
+          getDefault().lookup(GlobalIdProviderConfManager.class);
+        if (ipc == null) {
+            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+        }
+        return ipc;
+    }
+
+
+    /**
      * @return the internal identity provider
      */
     public IdentityProvider getInternalProvider() {
-        try {
-            IdentityProviderConfigManager ipc = getProviderConfigManager();
-            if (ipc == null) {
-                throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
-            }
-            Collection ips = ipc.findAllIdentityProviders();
-
-            if (ips.isEmpty()) {
-                throw new RuntimeException("Could not retrieve identity providers.");
-            }
-            return (IdentityProvider) ips.iterator().next();
-        } catch (FindException e) {
-            throw new RuntimeException(e);
+        GlobalIdProviderConfManager ipc = getGlobalIdProviderConfManager();
+        if (ipc == null) {
+            throw new RuntimeException("Could not find registered " + GlobalIdProviderConfManager.class);
         }
-
+        return ipc.getInternalIdentityProvider();
     }
 
     /**
      * @return the internal user manager
      */
     public UserManager getInternalUserManager() {
-     return getInternalProvider().getUserManager();
+        return getInternalProvider().getUserManager();
     }
 
     /**
      * @return the internal group manager
      */
     public GroupManager getInternalGroupManager() {
-     return getInternalProvider().getGroupManager();
+        return getInternalProvider().getGroupManager();
     }
 
     /**
@@ -75,10 +76,10 @@ public class RegistryImpl extends Registry {
      */
     public ServiceManager getServiceManager() {
         ServiceManager sm =
-        (ServiceManager)Locator.
-                getDefault().lookup(ServiceManager.class);
+          (ServiceManager)Locator.
+          getDefault().lookup(ServiceManager.class);
         if (sm == null) {
-            throw new RuntimeException("Could not find registered "+ServiceManager.class);
+            throw new RuntimeException("Could not find registered " + ServiceManager.class);
         }
         return sm;
     }

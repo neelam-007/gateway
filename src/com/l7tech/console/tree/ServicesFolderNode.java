@@ -1,8 +1,12 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.service.ServiceManager;
+import com.l7tech.console.action.NewUserAction;
+import com.l7tech.console.action.PublishServiceAction;
 
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.*;
 import java.util.Enumeration;
 
 
@@ -16,16 +20,18 @@ import java.util.Enumeration;
 public class ServicesFolderNode extends AbstractTreeNode {
     private ServiceManager serviceManager;
     private String title;
+    private DefaultTreeModel model;
 
 
     /**
      * construct the <CODE>ServicesFolderNode</CODE> instance for
      * a given servcie manager with the name.
      */
-    public ServicesFolderNode(ServiceManager sm, String name) {
+    public ServicesFolderNode(ServiceManager sm, String name, DefaultTreeModel model) {
         super(null);
         serviceManager = sm;
         title = name;
+        this.model = model;
     }
 
     /**
@@ -42,6 +48,16 @@ public class ServicesFolderNode extends AbstractTreeNode {
      */
     public boolean getAllowsChildren() {
         return true;
+    }
+
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        return new Action[]{new PublishServiceAction(this, model)};
     }
 
     /**

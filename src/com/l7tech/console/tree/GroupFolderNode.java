@@ -6,6 +6,7 @@ import com.l7tech.console.action.NewUserAction;
 import com.l7tech.console.action.NewGroupAction;
 
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.*;
 import java.util.Enumeration;
 
@@ -19,14 +20,16 @@ import java.util.Enumeration;
  */
 public class GroupFolderNode extends AbstractTreeNode {
     private final GroupManager groupManager;
+    private DefaultTreeModel model;
 
     /**
      * construct the <CODE>GroupFolderNode</CODE> instance for
      * a given entry.
      */
-    public GroupFolderNode(GroupManager gm) {
+    public GroupFolderNode(GroupManager gm, DefaultTreeModel model) {
         super(null);
         groupManager = gm;
+        this.model = model;
 
     }
 
@@ -67,7 +70,7 @@ public class GroupFolderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{new NewGroupAction(this)};
+        return new Action[]{new NewGroupAction(this, model)};
     }
 
     /**

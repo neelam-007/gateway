@@ -2,6 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.service.PublishedService;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.tree.EntityListener;
+import com.l7tech.console.tree.EntityEvent;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -9,12 +11,15 @@ import com.l7tech.objectmodel.EntityType;
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.EventListenerList;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Iterator;
+import java.util.EventListener;
 
 /**
  * The <code>JDialog</code> wizard that drives the publish service
@@ -36,7 +41,7 @@ public class PublishServiceWizard extends JDialog {
       };
 
     private int currentPanel = 0;
-    private PanelListener panelListener;
+    private EventListenerList listenerList = new EventListenerList();
 
 
     /** Creates new form PublishServiceWizard */
@@ -50,13 +55,23 @@ public class PublishServiceWizard extends JDialog {
     }
 
     /**
-     * set the PanelListener
+     * add the EntityListener
      *
-     * @param listener the PanelListener
+     * @param listener the EntityListener
      */
-    public void setPanelListener(PanelListener listener) {
-        this.panelListener = listener;
+    public void addEntityListener(EntityListener listener) {
+        listenerList.add(EntityListener.class, listener);
     }
+
+    /**
+     * remove the the EntityListener
+     *
+     * @param listener the EntityListener
+     */
+    public void removeEntityListener(EntityListener listener) {
+        listenerList.remove(EntityListener.class, listener);
+    }
+
 
     /**
      * This method is called from within the constructor to
@@ -139,9 +154,7 @@ public class PublishServiceWizard extends JDialog {
                     header.setType(EntityType.SERVICE);
                     header.setName(service.getName());
                     header.setOid(oid);
-                    if (panelListener != null) {
-                        panelListener.onInsert(header);
-                    }
+                    PublishServiceWizard.this.notify(header);
                 } catch (SaveException e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(null,
@@ -212,6 +225,18 @@ public class PublishServiceWizard extends JDialog {
         pack();
         setSize(new Dimension(800, 500));
         Utilities.centerOnScreen(this);
+    }
+
+    /**
+     * notfy the listeners
+     * @param header
+     */
+    private void notify(EntityHeader header) {
+        EntityEvent event = new EntityEvent(header);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((EntityListener)listeners[i]).entityAdded(event);
+        }
     }
 
     private void formHierarchyChanged(HierarchyEvent evt) {

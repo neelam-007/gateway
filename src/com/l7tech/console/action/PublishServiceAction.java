@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.NewGroupDialog;
+import com.l7tech.console.panels.NewUserDialog;
+import com.l7tech.console.panels.PublishServiceWizard;
 import com.l7tech.console.tree.*;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -8,15 +9,16 @@ import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 
 /**
- * The <code>NewGroupAction</code> action adds the new group.
+ * The <code>PublishServiceAction</code> action invokes the pubish
+ * service wizard.                                             l
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
-public class NewGroupAction extends NodeAction {
+public class PublishServiceAction extends NodeAction {
     private DefaultTreeModel model;
 
-    public NewGroupAction(AbstractTreeNode node, DefaultTreeModel model) {
+    public PublishServiceAction(AbstractTreeNode node, DefaultTreeModel model) {
         super(node);
         this.node = node;
         this.model = model;
@@ -26,21 +28,21 @@ public class NewGroupAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Create new group";
+        return "Publish Service";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Create new group";
+        return "Punblish a service specigying access control";
     }
 
     /**
      * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/New16.gif";
+        return "com/l7tech/console/resources/New16.png";
     }
 
     /** Actually perform the action.
@@ -50,10 +52,9 @@ public class NewGroupAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        SwingUtilities.invokeLater(
-          new Runnable() {
+        SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                NewGroupDialog dialog = new NewGroupDialog(null);
+                PublishServiceWizard dialog = new PublishServiceWizard(null, true);
                 dialog.addEntityListener(listener);
                 dialog.setResizable(false);
                 dialog.show();
@@ -75,6 +76,4 @@ public class NewGroupAction extends NodeAction {
             });
         }
     };
-
-
 }

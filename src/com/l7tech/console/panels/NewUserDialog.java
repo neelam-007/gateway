@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.tree.EntityListener;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
@@ -9,6 +10,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
+import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
@@ -45,10 +47,8 @@ public class NewUserDialog extends JDialog {
     /* new user Password */
     private char[] newPassword;
 
-    /* the panel listener */
-    private PanelListener panelListener;
-
     private int MIN_PASSWORD_LENGTH = 6;
+    private EventListenerList listenerList = new EventListenerList();
 
     /**
      * Create a new NewUserDialog fdialog for a given Company
@@ -64,14 +64,25 @@ public class NewUserDialog extends JDialog {
         Utilities.centerOnScreen(this);
     }
 
+
     /**
-     * set the PanelListener
+     * add the EntityListener
      *
-     * @param listener the PanelListener
+     * @param listener the EntityListener
      */
-    public void setPanelListener(PanelListener listener) {
-        this.panelListener = listener;
+    public void addEntityListener(EntityListener listener) {
+        listenerList.add(EntityListener.class, listener);
     }
+
+    /**
+     * remove the the EntityListener
+     *
+     * @param listener the EntityListener
+     */
+    public void removeEntityListener(EntityListener listener) {
+        listenerList.remove(EntityListener.class, listener);
+    }
+
 
     /**
      * Loads locale-specific resources: strings  etc
@@ -441,7 +452,7 @@ public class NewUserDialog extends JDialog {
                             header.setType(EntityType.USER);
                             header.setName(user.getName());
                             Registry.getDefault().getInternalUserManager().save(user);
-                            panelListener.onInsert(header);
+                            //panelListener.onInsert(header);
                             insertSuccess = true;
                         } catch (SaveException e) {
                             e.printStackTrace();
@@ -471,7 +482,7 @@ public class NewUserDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.USER, panelListener);
+                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.USER, null);
                                 if (panel == null) return;
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.USER);
