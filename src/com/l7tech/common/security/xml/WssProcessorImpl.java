@@ -20,13 +20,19 @@ import org.xml.sax.SAXException;
 import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import sun.misc.BASE64Decoder;
 
 /**
  * An implementation of the WssProcessor for use in both the SSG and the SSA.
@@ -386,9 +392,34 @@ public class WssProcessorImpl implements WssProcessor {
         // todo
     }
 
-    private void processBinarySecurityToken(Element binarySecurityTokenElement) {
+    private void processBinarySecurityToken(Element binarySecurityTokenElement) throws ProcessorException {
         logger.finest("Processing BinarySecurityToken");
-        // todo
+
+        // assume that this is a b64ed binary x509 cert, get the value
+        // todo, look into the ValueType argument instead of assuming this
+        String value = XmlUtil.getTextValue(binarySecurityTokenElement);
+        if (value == null || value.length() < 1) {
+            String msg = "The " + binarySecurityTokenElement.getLocalName() + " does not contain a value.";
+            logger.warning(msg);
+            throw new ProcessorException(msg);
+        }
+        BASE64Decoder decoder = new BASE64Decoder();
+        byte[] decodedValue = null;
+        try {
+            decodedValue = decoder.decodeBuffer(value);
+        } catch (IOException e) {
+            throw new ProcessorException(e);
+        }
+        // create the x509 binary cert based on it
+        X509Certificate referencedCert = null;
+        try {
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            InputStream is = new ByteArrayInputStream(decodedValue);
+            referencedCert = (X509Certificate)factory.generateCertificate(is);
+        } catch (CertificateException e) {
+            throw new ProcessorException(e);
+        }
+        // todo, remember this cert
     }
 
     private void processSignature(Element signatureElement) {
