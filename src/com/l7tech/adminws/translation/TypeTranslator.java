@@ -3,8 +3,10 @@ package com.l7tech.adminws.translation;
 import com.l7tech.identity.imp.IdentityProviderConfigImp;
 import com.l7tech.identity.imp.IdentityProviderTypeImp;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Layer 7 Technologies, inc.
@@ -67,5 +69,46 @@ public class TypeTranslator {
             return ret;
         }
         else return new java.util.ArrayList();
+    }
+
+    public static com.l7tech.adminws.service.Header[] collectionToServiceHeaders(Collection collectionOfGenHeaders) {
+        if (collectionOfGenHeaders == null) return new com.l7tech.adminws.service.Header[0];
+        com.l7tech.adminws.service.Header[] ret = new com.l7tech.adminws.service.Header[collectionOfGenHeaders.size()];
+        Iterator iter = collectionOfGenHeaders.iterator();
+        int count = 0;
+        while(iter.hasNext()){
+            EntityHeader colMember = (EntityHeader)iter.next();
+            ret[count] = new com.l7tech.adminws.service.Header(colMember.getOid(), colMember.getType().toString(), colMember.getName());
+            ++count;
+        }
+        return ret;
+    }
+
+    public static com.l7tech.adminws.service.IdentityProviderConfig genericToServiceIdProviderConfig(com.l7tech.identity.IdentityProviderConfig serviceConfig) {
+        if (serviceConfig == null) return null;
+        com.l7tech.adminws.service.IdentityProviderConfig ret = new com.l7tech.adminws.service.IdentityProviderConfig();
+        ret.setDescription(serviceConfig.getDescription());
+        ret.setName(serviceConfig.getName());
+        ret.setOid(serviceConfig.getOid());
+        ret.setTypeClassName(serviceConfig.getType().getClassName());
+        ret.setTypeDescription(serviceConfig.getType().getDescription());
+        ret.setTypeName(serviceConfig.getType().getName());
+        ret.setTypeOid(serviceConfig.getType().getOid());
+        return ret;
+    }
+
+    public static com.l7tech.identity.IdentityProviderConfig serviceIdentityProviderConfigToGenericOne(com.l7tech.adminws.service.IdentityProviderConfig stub) {
+        if (stub == null) return null;
+        IdentityProviderConfigImp ret = new IdentityProviderConfigImp();
+        ret.setDescription(stub.getDescription());
+        ret.setName(stub.getName());
+        ret.setOid(stub.getOid());
+        IdentityProviderTypeImp retType = new IdentityProviderTypeImp();
+        retType.setClassName(stub.getTypeClassName());
+        retType.setDescription(stub.getTypeDescription());
+        retType.setName(stub.getTypeName());
+        retType.setOid(stub.getTypeOid());
+        ret.setType(retType);
+        return ret;
     }
 }

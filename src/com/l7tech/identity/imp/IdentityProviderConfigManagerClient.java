@@ -33,7 +33,7 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
         if (ipcStubFormat != null) {
             return TypeTranslator.transferStubIdentityProviderConfigToGenericOne(ipcStubFormat);
         }
-        return null;
+        else return null;
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) {
