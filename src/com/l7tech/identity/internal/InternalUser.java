@@ -21,6 +21,7 @@ public class InternalUser extends NamedEntityImp implements User {
 
     public InternalUser() {
         _userBean = new UserBean();
+        _userBean.setProviderId(DEF_PROVIDER_ID);
     }
 
     public String getUniqueIdentifier() {
@@ -44,7 +45,7 @@ public class InternalUser extends NamedEntityImp implements User {
      * this is not persisted, it is set at run time by the provider who creates the object
      */
     public void setProviderId( long providerId) {
-        this.providerId = providerId;
+        _userBean.setProviderId(providerId);
     }
 
     public UserBean getUserBean() {
@@ -63,7 +64,7 @@ public class InternalUser extends NamedEntityImp implements User {
      * this is not persisted, it is set at run time by the provider who creates the object
      */
     public long getProviderId() {
-        return providerId;
+        return _userBean.getProviderId();
     }
 
     public String getLogin() {
@@ -100,14 +101,15 @@ public class InternalUser extends NamedEntityImp implements User {
                 "\n\tFirst name=" + _userBean.getFirstName() +
                 "\n\tLast name=" + _userBean.getLastName() +
                 "\n\tLogin=" + _userBean.getLogin() +
-                "\n\tproviderId=" + providerId;
+                "\n\tproviderId=" + _userBean.getProviderId();
     }
 
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof InternalUser)) return false;
         final InternalUser userImp = (InternalUser) o;
-        if ( providerId != DEFAULT_OID ? !( providerId== userImp.providerId ) : userImp.providerId != DEFAULT_OID ) return false;
+        if (_userBean.getProviderId() != DEFAULT_OID ? !( _userBean.getProviderId()== userImp._userBean.getProviderId())
+                : userImp._userBean.getProviderId() != DEFAULT_OID ) return false;
         String login = getLogin();
         String ologin = userImp.getLogin();
         if ( login != null ? !login.equals(ologin) : ologin != null) return false;
@@ -120,7 +122,7 @@ public class InternalUser extends NamedEntityImp implements User {
         if ( login == null ) return System.identityHashCode(this);
 
         int hash = login.hashCode();
-        hash += 29 * (int)providerId;
+        hash += 29 * (int)_userBean.getProviderId();
         return hash;
     }
 
@@ -178,5 +180,5 @@ public class InternalUser extends NamedEntityImp implements User {
     // ************************************************
 
     private UserBean _userBean;
-    private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
+    private static final long DEF_PROVIDER_ID = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
 }
