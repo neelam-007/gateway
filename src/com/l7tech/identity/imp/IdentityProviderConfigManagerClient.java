@@ -80,10 +80,12 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
     }
 
     public Collection findAll() {
+        // todo, throw exception instead ?
         return findAllHeaders();
     }
 
     public Collection findAll(int offset, int windowSize) {
+        // todo, throw exception instead ?
         return findAllHeaders(offset, windowSize);
     }
 

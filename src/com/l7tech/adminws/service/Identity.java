@@ -14,10 +14,23 @@ public class Identity {
     }
     // identity provider config
     public Header[] findAlllIdentityProviderConfig(){
-        return null;
+
+        // test
+        Header[] res = new Header[3];
+        res[0] = new Header(321, "blahtype1", "blahname1");
+        res[1] = new Header(322, "blahtype2", "blahname2");
+        res[2] = new Header(322, "blahtype3", "blahname3");
+        return res;
+        //
     }
-    public Header[] findAllIdentityProviderConfig(int offset, int windowSize){
-        return null;
+    public Header[] findAllIdentityProviderConfigByOffset(int offset, int windowSize){
+        // test
+        Header[] res = new Header[3];
+        res[0] = new Header(321, "blahtype1", "blahname1");
+        res[1] = new Header(322, "blahtype2", "blahname2");
+        res[2] = new Header(322, "blahtype3", "blahname3");
+        return res;
+        //
     }
     public IdentityProviderConfig findIdentityProviderConfigByPrimaryKey( long oid ){
         return null;
@@ -37,10 +50,22 @@ public class Identity {
         return 0;
     }
     public Header[] findAllUsers(long identityProviderConfigId){
-        return null;
+        // test
+        Header[] res = new Header[3];
+        res[0] = new Header(321, "blahtype1", "blahname1");
+        res[1] = new Header(322, "blahtype2", "blahname2");
+        res[2] = new Header(322, "blahtype3", "blahname3");
+        return res;
+        //
     }
-    public Header[] findAllUsers(long identityProviderConfigId, int offset, int windowSize){
-        return null;
+    public Header[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize){
+        // test
+        Header[] res = new Header[3];
+        res[0] = new Header(321, "blahtype1", "blahname1");
+        res[1] = new Header(322, "blahtype2", "blahname2");
+        res[2] = new Header(322, "blahtype3", "blahname3");
+        return res;
+        //
     }
     // group manager
     public Group findGroupByPrimaryKey(long identityProviderConfigId, long groupId){
@@ -52,9 +77,21 @@ public class Identity {
         return 0;
     }
     public Header[] findAllGroups(long identityProviderConfigId){
-        return null;
+        // test
+        Header[] res = new Header[3];
+        res[0] = new Header(321, "blahtype1", "blahname1");
+        res[1] = new Header(322, "blahtype2", "blahname2");
+        res[2] = new Header(322, "blahtype3", "blahname3");
+        return res;
+        //
     }
-    public Header[] findAllGroups(long identityProviderConfigId, int offset, int windowSize){
-        return null;
+    public Header[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize){
+        // test
+        Header[] res = new Header[3];
+        res[0] = new Header(321, "blahtype1", "blahname1");
+        res[1] = new Header(322, "blahtype2", "blahname2");
+        res[2] = new Header(322, "blahtype3", "blahname3");
+        return res;
+        //
     }
 }

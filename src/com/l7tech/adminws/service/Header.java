@@ -7,6 +7,13 @@ package com.l7tech.adminws.service;
  *
  */
 public class Header {
+    public Header() {
+    }
+    public Header(long oid, String type, String name) {
+        setType(type);
+        setName(name);
+        setOid(oid);
+    }
     public String getType() {
         return type;
     }
