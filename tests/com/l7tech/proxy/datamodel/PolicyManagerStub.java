@@ -27,7 +27,7 @@ public class PolicyManagerStub implements PolicyManager {
         return policy;
     }
 
-    public Assertion getPolicy(Ssg ssg) throws IOException {
+    public Assertion getPolicy(PendingRequest request) {
         return policy;
     }
 }

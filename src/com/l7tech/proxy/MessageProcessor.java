@@ -16,7 +16,6 @@ import org.apache.axis.message.SOAPEnvelope;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpException;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -43,14 +42,15 @@ public class MessageProcessor {
      * @return
      * @throws HttpException
      */
-    public SOAPEnvelope processMessage(PendingRequest pendingRequest) throws IOException, PolicyAssertionException {
-        Assertion policy = policyManager.getPolicy(pendingRequest.getSsg());
+    public SOAPEnvelope processMessage(PendingRequest pendingRequest) throws PolicyAssertionException, RemoteException, HttpException {
+        Assertion policy = policyManager.getPolicy(pendingRequest);
         policy.decorateRequest(pendingRequest);
         return callSsg(pendingRequest);
     }
 
     /**
      * Transmit the modified request to the SSG and return its response.
+     * We may make more than one call to the SSG if we need to resolve a policy.
      * @param pendingRequest
      * @return
      * @throws HttpException
@@ -76,7 +76,15 @@ public class MessageProcessor {
                 call.setPassword(pendingRequest.getHttpDigestPassword());
             }
 
-            return call.invoke(pendingRequest.getSoapEnvelope());
+            SOAPEnvelope result;
+            try {
+                result = call.invoke(pendingRequest.getSoapEnvelope());
+            } catch (RemoteException e) {
+                log.error("callSsg(): Got back a RemoteException: ");
+                log.error(e);
+                throw e;
+            }
+            return result;
         } catch (MalformedURLException e) {
             throw new HttpException(500, "Client Proxy: this SSG has an invalid server url: " + ssg.getServerUrl());
         }

@@ -15,10 +15,11 @@ import java.io.*;
  */
 class SsgManagerImpl implements SsgManager {
     private static final Category log = Category.getInstance(SsgManagerImpl.class);
-    private static final SsgManagerImpl INSTANCE = new SsgManagerImpl();
 
     private static final String STORE_DIR = System.getProperty("user.home") + File.separator + ".l7proxy";
     private static final String STORE_FILE = STORE_DIR + File.separator + "ssgs.xml";
+    private static final String STORE_FILE_NEW = STORE_DIR + File.separator + "ssgs_xml.OLD";
+    private static final String STORE_FILE_OLD = STORE_DIR + File.separator + "ssgs_xml.NEW";
 
     private SortedSet ssgs = new TreeSet();
     private boolean init = false;
@@ -27,9 +28,13 @@ class SsgManagerImpl implements SsgManager {
     private SsgManagerImpl() {
     }
 
+    private static class SsgManagerHolder {
+        private static final SsgManagerImpl ssgManager = new SsgManagerImpl();
+    }
+
     /** Get the singleton SsgManagerImpl. */
     public static SsgManagerImpl getInstance() {
-        return INSTANCE;
+        return SsgManagerHolder.ssgManager;
     }
 
     /**
@@ -56,7 +61,12 @@ class SsgManagerImpl implements SsgManager {
         FileInputStream in = null;
         XMLDecoder decoder = null;
         try {
-            in = new FileInputStream(STORE_FILE);
+            try {
+                in = new FileInputStream(STORE_FILE);
+            } catch (FileNotFoundException e) {
+                // Check for an interrupted update operation
+                in = new FileInputStream(STORE_FILE_OLD);
+            }
             decoder = new XMLDecoder(in);
             final Collection newssgs = (Collection)decoder.readObject();
             if (newssgs != null) {
@@ -83,11 +93,27 @@ class SsgManagerImpl implements SsgManager {
         init = true;
     }
 
-
     /**
-     * Save our SSG state to disk.
+     * Save our SSG state to disk.  Caller is responsible for ensuring that only one process will be
+     * calling this method at any given time.
+     */
+    /*
+     *    oldFile   curFile  newFile  Description                    Action to take
+     *    --------  -------  -------  -----------------------------  --------------------------------
+     *  1    -         -        -     Newly created store file       (>newFile) => curFile
+     *  2    -         -        +     Create was interrupted         -newFile; (do #1)
+     *  3    -         +        -     Normal operation               curFile => oldFile; (do #1); -oldFile
+     *  4    -         +        +     Invalid; can't happen          -newFile; (do #3)
+     *  5    +         -        -     Update was interrupted         oldFile => curFile; (do #3)
+     *  6    +         -        +     Update was interrupted         -newFile; (do #5)
+     *  7    +         +        -     Update was interrupted         -oldFile; (do #3)
+     *  8    +         +        +     Invalid; can't happen          -newFile; -oldFile; (do #3)
+     *
+     *  We guarantee to end up in state #3 if we complete successfully.
      */
     public synchronized void save() throws IOException {
+        // TODO: add lockfile so multiple Client Proxy instances can share a data store
+
         FileOutputStream out = null;
         XMLEncoder encoder = null;
 
@@ -95,9 +121,29 @@ class SsgManagerImpl implements SsgManager {
         new File(STORE_DIR).mkdir();
 
         try {
-            out = new FileOutputStream(STORE_FILE);
+            File oldFile = new File(STORE_FILE_OLD);
+            File curFile = new File(STORE_FILE);
+            File newFile = new File(STORE_FILE_NEW);
+
+            if (!curFile.exists())
+                if (oldFile.exists())
+                    oldFile.renameTo(curFile);
+            if (newFile.exists())
+                newFile.delete();
+            if (oldFile.exists())
+                oldFile.delete();
+            if (curFile.exists())
+                curFile.renameTo(oldFile);
+
+            out = new FileOutputStream(newFile);
             encoder = new XMLEncoder(out);
             encoder.writeObject(ssgs);
+            encoder.close();
+            encoder = null;
+            out = null;
+
+            if (newFile.renameTo(curFile))
+                oldFile.delete();
         } finally {
             if (encoder != null)
                 encoder.close();

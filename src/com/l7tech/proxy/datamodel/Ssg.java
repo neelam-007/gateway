@@ -1,5 +1,6 @@
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.policy.assertion.Assertion;
 import org.apache.log4j.Category;
 
 /**
@@ -19,6 +20,7 @@ public class Ssg implements Cloneable, Comparable {
     private String username = null;
     private String password = null;
     private String keyStorePath = null;
+    private Assertion policy = null;   // null = no policy set
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -65,7 +67,10 @@ public class Ssg implements Cloneable, Comparable {
     }
 
     public Object clone() throws CloneNotSupportedException {
-        return super.clone();
+        Ssg ssg = (Ssg)super.clone();
+        if (policy != null)
+            ssg.setPolicy((Assertion)getPolicy().clone());
+        return ssg;
     }
 
     /**
@@ -160,5 +165,13 @@ public class Ssg implements Cloneable, Comparable {
 
     public void setSslPort(int sslPort) {
         this.sslPort = sslPort;
+    }
+
+    public Assertion getPolicy() {
+        return policy;
+    }
+
+    public void setPolicy(Assertion policy) {
+        this.policy = policy;
     }
 }

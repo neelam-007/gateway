@@ -7,22 +7,17 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-
-import java.io.IOException;
-import java.util.Arrays;
+import com.l7tech.policy.assertion.TrueAssertion;
 
 /**
  * The ClientProxy's default PolicyManager.  Loads policies from the SSG on-demand
- * TODO: cache polcies inside their SSG objects
  * User: mike
  * Date: Jun 17, 2003
  * Time: 10:22:35 AM
  */
 public class PolicyManagerImpl implements PolicyManager {
     private static final PolicyManagerImpl INSTANCE = new PolicyManagerImpl();
+    private static final Assertion nullPolicy = TrueAssertion.getInstance();
 
     private PolicyManagerImpl() {
     }
@@ -33,16 +28,13 @@ public class PolicyManagerImpl implements PolicyManager {
 
     /**
      * Obtain the policy for this SSG, possibly by downloading it over the network.
-     * @param ssg
+     * TODO: This currently assumes only one service per Ssg object.  fix this
+     *
+     * @param request the request whose policy is to be found
      * @return The root of policy Assertion tree.
-     * @throws IOException if we were unable to read the policy.
      */
-    public Assertion getPolicy(Ssg ssg) throws IOException {
-
-        // TODO: write this for real, instead of using hardcoded policy
-        return new AllAssertion(Arrays.asList(new Assertion[] {
-            new SslAssertion(),
-            new HttpBasic()
-        }));
+    public Assertion getPolicy(PendingRequest request) {
+        Assertion policy = request.getSsg().getPolicy();
+        return policy == null ? nullPolicy : policy;
     }
 }

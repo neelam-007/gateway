@@ -4,6 +4,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.axis.AxisEngine;
+import org.apache.axis.AxisFault;
 import org.apache.axis.client.Call;
 import org.apache.axis.encoding.DeserializationContextImpl;
 import org.apache.axis.message.*;
@@ -63,7 +64,7 @@ public class SsgFakerTest extends TestCase {
      * Bounce a message off of the echo server, bypassing the client proxy, and verify that it worked.
      * @param ssgUrl the SSG server to talk to
      */
-    private void doTestPing(String ssgUrl) throws RemoteException, SOAPException, MalformedURLException {
+    private void doTestPing(String ssgUrl) throws SOAPException, MalformedURLException, RemoteException {
         SOAPEnvelope reqEnvelope = new SOAPEnvelope();
 
         SOAPHeader reqHeader = new SOAPHeader(pingNamespace,
@@ -84,7 +85,13 @@ public class SsgFakerTest extends TestCase {
         reqEnvelope.addBodyElement(reqBe);
 
         Call call = new Call(ssgUrl);
-        SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);
+        SOAPEnvelope responseEnvelope = null;
+        try {
+            responseEnvelope = call.invoke(reqEnvelope);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            throw e;
+        }
 
         System.out.println("Client:  I Sent: " + reqEnvelope);
         System.out.println("Client:  I Got back: " + responseEnvelope);
