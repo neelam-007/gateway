@@ -76,7 +76,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                 CredentialFormat format = pc.getFormat();
 
                 // TODO: This is really ugly.  Move to CredentialFormat subclasses?
-                if ( format == CredentialFormat.CLIENTCERT ) {
+                if ( format.isClientCert() ) {
                     Certificate dbCert = null;
                     X509Certificate dbCertX509 = null;
 
