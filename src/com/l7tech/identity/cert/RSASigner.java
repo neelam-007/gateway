@@ -468,7 +468,7 @@ public class RSASigner {
         // Get env variables and read in nessecary data
         //KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
         // KeyStore keyStore = KeyStore.getInstance(keyStoreType); fla modif
-        KeyStore keyStore = KeyStore.getInstance("JCEKS");
+        KeyStore keyStore = KeyStore.getInstance("JKS");
         InputStream is = new FileInputStream(keyStorePath);
 
         char[] keyStorePass = getPassword(storePass, "Please enter your keystore password: ");
