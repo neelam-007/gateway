@@ -174,7 +174,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     samlOptions.setExpiryMinutes(5);
                     ag.attachSenderVouches(document, si, request.getPrincipalCredentials(), samlOptions);
                     requestXml = XmlUtil.nodeToString(document);
-                    logger.info(requestXml);
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.fine(requestXml);
+                    }
                 }
                 attachCookies(client, request.getTransportMetadata());
                 postMethod.setRequestBody(requestXml);
