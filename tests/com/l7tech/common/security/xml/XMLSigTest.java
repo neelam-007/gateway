@@ -8,6 +8,7 @@ import org.apache.xml.serialize.OutputFormat;
 import javax.xml.parsers.DocumentBuilder;
 
 import com.ibm.xml.dsig.util.DOMParserNS;
+import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
 import com.ibm.xml.sax.StandardErrorHandler;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.security.xml.InvalidSignatureException;
@@ -51,10 +52,46 @@ public class XMLSigTest extends TestCase {
         // sign it
         SoapMsgSigner signer = new SoapMsgSigner();
         signer.signEnvelope(doc, privateKey, cert);
-        System.out.println("SIGNATURE RESULT:\n\n" + serializeDoc(doc));
 
         // validate the signature (will throw if doesn't validate)
         X509Certificate cert2 = signer.validateSignature(doc);
+
+        assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
+
+        // test with other documents
+        doc = readDocFromString(simpleDocWithHeader);
+        // append SecureConversationToken
+        SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
+        // sign it
+        signer = new SoapMsgSigner();
+        signer.signEnvelope(doc, privateKey, cert);
+
+        // validate the signature (will throw if doesn't validate)
+        cert2 = signer.validateSignature(doc);
+
+        assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
+
+        doc = readDocFromString(simpleDocWithSecurity);
+        // append SecureConversationToken
+        SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
+        // sign it
+        signer = new SoapMsgSigner();
+        signer.signEnvelope(doc, privateKey, cert);
+
+        // validate the signature (will throw if doesn't validate)
+        cert2 = signer.validateSignature(doc);
+
+        assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
+
+        doc = readDocFromString(simpleDocWithSecurityContext);
+        // append SecureConversationToken
+        SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
+        // sign it
+        signer = new SoapMsgSigner();
+        signer.signEnvelope(doc, privateKey, cert);
+
+        // validate the signature (will throw if doesn't validate)
+        cert2 = signer.validateSignature(doc);
 
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
     }
@@ -62,19 +99,27 @@ public class XMLSigTest extends TestCase {
     public void testAndValidateDSigOnTrickyDoc() throws Exception {
         // get document
         Document doc = readDocFromString(simpleDocWithComplexTextEl);
-        System.out.println("ORIGINAL DOC:\n\n" + serializeDoc(doc));
         // sign it
         SoapMsgSigner signer = new SoapMsgSigner();
         signer.signEnvelope(doc, privateKey, cert);
-        System.out.println("SIGNATURE RESULT:\n\n" + serializeDoc(doc));
 
         // serialize and deserialize
         doc = readDocFromString(serializeDoc(doc));
 
-        System.out.println("AFTER SERIAL & DESERIAL:\n\n" + serializeDoc(doc));
-
         // validate the signature (will throw if doesn't validate)
         X509Certificate cert2 = signer.validateSignature(doc);
+        assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
+
+        // same thing with trickyer doc
+        doc = readDocFromString(simpleDocWithComplexTextEl2);
+        // sign it
+        signer.signEnvelope(doc, privateKey, cert);
+
+        // serialize and deserialize
+        doc = readDocFromString(serializeDoc(doc));
+
+        // validate the signature (will throw if doesn't validate)
+        cert2 = signer.validateSignature(doc);
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
     }
 
@@ -178,7 +223,15 @@ public class XMLSigTest extends TestCase {
                                                 "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
                                                     "<S:Body>" +
                                                         "<blah:BodyContent xmlns:blah=\"http://blah.com/blahns\">" +
-                                                        "blahblah blahblah\n\t\t\tblahblah blahblah</blah:BodyContent>" +
+                                                        "blahblah blahblah blahblah blahblah</blah:BodyContent>" +
+                                                    "</S:Body>" +
+                                                "</S:Envelope>";
+
+    private String simpleDocWithComplexTextEl2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                                                "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+                                                    "<S:Body>" +
+                                                        "<blah:BodyContent xmlns:blah=\"http://blah.com/blahns\">" +
+                                                        " blahblah\tblahblah\t\tblahblah\t\t\r\nblahblah\n\n\n</blah:BodyContent>" +
                                                     "</S:Body>" +
                                                 "</S:Envelope>";
 
