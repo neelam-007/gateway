@@ -1,6 +1,7 @@
 package com.l7tech.policy.exporter;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -50,7 +51,19 @@ public class IdProviderReference extends ExternalReference {
     }
 
     public void serializeToRefElement(Element referencesParentElement) {
-        // todo
+        Element refEl = referencesParentElement.getOwnerDocument().createElement("IDProviderReference");
+        refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, IdProviderReference.class.getName());
+        referencesParentElement.appendChild(refEl);
+        Element oidEl = referencesParentElement.getOwnerDocument().createElement("OID");
+        Text txt = referencesParentElement.getOwnerDocument().createTextNode(Long.toString(providerId));
+        oidEl.appendChild(txt);
+        refEl.appendChild(oidEl);
+        Element propsEl = referencesParentElement.getOwnerDocument().createElement("Props");
+        if (idProviderConfProps != null) {
+            txt = referencesParentElement.getOwnerDocument().createTextNode(idProviderConfProps);
+            propsEl.appendChild(txt);
+        }
+        refEl.appendChild(propsEl);
     }
 
     public boolean equals(Object o) {
