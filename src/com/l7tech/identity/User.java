@@ -1,7 +1,6 @@
 package com.l7tech.identity;
 
 import java.security.Principal;
-import java.util.Set;
 
 /**
  * Layer 7 Technologies, inc.
@@ -34,9 +33,6 @@ public interface User extends Principal {
     String getEmail();
     String getTitle();
     String getDepartment();
-
-    Set getGroups();
-    Set getGroupHeaders();
 
     UserBean getUserBean();
 }

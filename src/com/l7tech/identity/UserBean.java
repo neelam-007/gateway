@@ -8,7 +8,6 @@ package com.l7tech.identity;
 
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
-import java.util.Set;
 import java.io.Serializable;
 
 /**
@@ -54,14 +53,6 @@ public class UserBean implements User, Serializable {
 
     public String getDepartment() {
         return _department;
-    }
-
-    public Set getGroups() {
-        throw new UnsupportedOperationException();
-    }
-
-    public Set getGroupHeaders() {
-        throw new UnsupportedOperationException();
     }
 
     public UserBean getUserBean() {
