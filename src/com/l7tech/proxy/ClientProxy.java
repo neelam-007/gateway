@@ -99,6 +99,9 @@ public class ClientProxy {
         isInitialized = true;
     }
 
+    public  SsgFinder getSsgFinder() {
+        return ssgFinder;
+    }
     /**
      * Get our RequestHandler.
      * @return the RequestHandler we are using.
