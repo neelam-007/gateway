@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.NewGroupDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 
@@ -53,7 +54,7 @@ public class NewGroupAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                NewGroupDialog dialog = new NewGroupDialog(f);
+                NewGroupDialog dialog = new NewGroupDialog(f, getIdentityProviderConfig((EntityHeaderNode) node));
                 dialog.setResizable(false);
                 dialog.show();
             }
