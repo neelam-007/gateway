@@ -45,19 +45,19 @@ public class LogonDialog extends JDialog {
     /** password text field */
     private JPasswordField passwordField = null;
 
+    private static JFrame frame;
+
     /**
      * Create a new LogonDialog
-     *
-     * @param parent the parent Frame. May be <B>null</B>
      */
-    public LogonDialog(Frame parent, String title, String defaultUsername) {
+    public LogonDialog(JFrame parent, String title, String defaultUsername) {
         super(parent, true);
         setTitle("Log on to SSG " + title);
         initComponents();
         if (defaultUsername != null)
             userNameTextField.setText(defaultUsername);
+        this.frame = parent;
     }
-
 
     /**
      * This method is called from within the constructor to
@@ -228,38 +228,18 @@ public class LogonDialog extends JDialog {
     /**
      * invoke logon dialog
      *
-     * @param frame the parent frame.  May be null, but then the dialog might appear behind the program window.
-     * @param ssgName SSG name to display in the prompt
-     * @return PasswordAuthentication containing the username and password, or NULL if the dialog was canceled.
-    public static PasswordAuthentication logon(JFrame frame, String ssgName) {
-        return logon(frame, SsgName, null);
-    }
-
-    /**
-     * invoke logon dialog
-     *
-     * @param frame the parent frame.  May be null, but then the dialog might appear behind the program window.
      * @param ssgName SSG name to display in the prompt
      * @param defaultUsername what to fill in the Username field with by default.
      * @return PasswordAuthentication containing the username and password, or NULL if the dialog was canceled.
      */
-    public static PasswordAuthentication logon(JFrame frame, String ssgName, String defaultUsername) {
-        final LogonDialog dialog = new LogonDialog(frame, ssgName, defaultUsername);
+    public static PasswordAuthentication logon(JFrame parent, String ssgName, String defaultUsername) {
+        final LogonDialog dialog = new LogonDialog(parent, ssgName, defaultUsername);
         dialog.setResizable(false);
         dialog.setSize(300, 275);
 
         // service available attempt authenticating
         PasswordAuthentication pw = null;
-
-        while (!dialog.isAborted()) {
-            frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-            pw = dialog.getAuthentication();
-            if (dialog.isAborted()) break;
-            frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            break;
-        }
-
-        frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        pw = dialog.getAuthentication();
         dialog.dispose();
         return dialog.isAborted() ? null : pw;
     }
@@ -271,6 +251,33 @@ public class LogonDialog extends JDialog {
     public void show() {
         userNameTextField.requestFocus();
         userNameTextField.selectAll();
+        addWindowListener(new WindowAdapter() {
+            boolean didOpen = false;
+
+            /**
+             * Invoked when a window has been opened.
+             */
+            public void windowOpened(WindowEvent e) {
+                if (didOpen)
+                    return;
+                didOpen = true;
+
+                frame.setState(JFrame.ICONIFIED);
+                frame.toFront();
+                frame.setState(JFrame.NORMAL);
+                LogonDialog.this.requestFocus();
+            }
+
+            public void windowDeactivated(WindowEvent e) {
+                if (didOpen)
+                    return;
+                didOpen = true;
+                frame.setState(JFrame.ICONIFIED);
+                frame.toFront();
+                frame.setState(JFrame.NORMAL);
+                LogonDialog.this.requestFocus();
+            }
+        });
         super.show();
     }
 
@@ -306,31 +313,4 @@ public class LogonDialog extends JDialog {
         return true;
 
     }
-
-
-    public static void main(String[] args) {
-        try {
-
-            JFrame frame = new JFrame() {
-                public Dimension getPreferredSize() {
-                    return new Dimension(200, 100);
-                }
-            };
-            frame.setTitle("Debugging frame");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.pack();
-            frame.setVisible(true);
-            PasswordAuthentication pw = LogonDialog.logon(frame, "Testing123Ssg", "Testuser");
-            if (pw != null) {
-                log.info("Got username=" + pw.getUserName());
-                log.info("Got password=" + new String(pw.getPassword()));
-            } else {
-                log.info("Dialog was canceled");
-            }
-            System.exit(0);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 }
