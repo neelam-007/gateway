@@ -1,7 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 
 import javax.swing.*;
 
@@ -44,7 +44,7 @@ public class RequestWssConfidentialityNode extends AbstractTreeNode {
      * @return the assertion this node represnts
      */
     public Assertion asAssertion() {
-        return new RequestWssIntegrity();
+        return new RequestWssConfidentiality();
     }
 
     /**
