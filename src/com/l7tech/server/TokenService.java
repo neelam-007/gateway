@@ -2,6 +2,8 @@ package com.l7tech.server;
 
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
+import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.WssDecoratorImpl;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -10,10 +12,14 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.secureconversation.DuplicateSessionException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
 
+import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -129,9 +135,81 @@ public class TokenService {
         return response;
     }
 
-    private Document handleSecureConversationContextRequest(User requestor, X509Certificate requestorCert) {
-        // todo
-        return null;
+    private Document handleSecureConversationContextRequest(User requestor, X509Certificate requestorCert)
+                                                                throws TokenServiceException{
+        SecureConversationSession newSession = null;
+        try {
+            newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor);
+        } catch (DuplicateSessionException e) {
+            throw new TokenServiceException(e);
+        }
+        // xml newSession
+        Document response = null;
+        try {
+            String xmlStr = "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+                                "<soap:Body>" +
+                                  "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\">" +
+                                    "<wst:RequestedSecurityToken>" +
+                                        // todo, add wsc:Identifier here
+                                       // todo, add wsu:Expires here
+                                    "</wst:RequestedSecurityToken>" +
+                                    "<wst:RequestedProofToken>" +
+                                      // todo, add encrypted key here with the shared secret
+                                    "</wst:RequestedProofToken>" +
+                                  "</wst:RequestSecurityTokenResponse>" +
+                                "</soap:Body>" +
+                            "</soap:Envelope>";
+            response = XmlUtil.stringToDocument(xmlStr);
+        } catch (IOException e) {
+            throw new TokenServiceException(e);
+        } catch (SAXException e) {
+            throw new TokenServiceException(e);
+        }
+
+        Element body = null;
+        try {
+            body = SoapUtil.getBodyElement(response);
+        } catch (InvalidDocumentFormatException e) {
+            throw new TokenServiceException(e);
+        }
+
+
+        X509Certificate serverSSLcert = null;
+        PrivateKey sslPrivateKey = null;
+        try {
+            serverSSLcert = getServerCert();
+            sslPrivateKey = getServerKey();
+        } catch (CertificateException e) {
+            String msg = "Error getting server cert/private key";
+            logger.log(Level.SEVERE, msg, e);
+            throw new TokenServiceException(msg, e);
+        } catch (KeyStoreException e) {
+            String msg = "Error getting server cert/private key";
+            logger.log(Level.SEVERE, msg, e);
+            throw new TokenServiceException(msg, e);
+        } catch (IOException e){
+            String msg = "Error getting server cert/private key";
+            logger.log(Level.SEVERE, msg, e);
+            throw new TokenServiceException(msg, e);
+        }
+
+        WssDecorator wssDecorator = new WssDecoratorImpl();
+        WssDecorator.DecorationRequirements req = new WssDecorator.DecorationRequirements();
+        req.setSignTimestamp(true);
+        req.setSenderCertificate(serverSSLcert);
+        req.setSenderPrivateKey(sslPrivateKey);
+        req.getElementsToSign().add(body);
+
+        try {
+            wssDecorator.decorateMessage(response, req);
+        } catch (InvalidDocumentFormatException e) {
+            throw new TokenServiceException(e);
+        } catch (GeneralSecurityException e) {
+            throw new TokenServiceException(e);
+        } catch (WssDecorator.DecoratorException e) {
+            throw new TokenServiceException(e);
+        }
+        return response;
     }
 
     private boolean isValidRequestForSecureConversationContext(Document request,
