@@ -60,7 +60,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                     continue;
                 }
                 Long oid = new Long(certOids[i]);
-                certOidSet.add(oid);
+                validTrustedCertOids.add(oid);
             } catch ( FindException e ) {
                 logger.log( Level.SEVERE, msg + ", which could not be found", e );
             } catch ( IOException e ) {
@@ -70,8 +70,8 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             }
         }
 
-        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, certOidSet);
-        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, certOidSet);
+        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, validTrustedCertOids);
+        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, validTrustedCertOids);
     }
 
     public IdentityProviderConfig getConfig() {
@@ -87,7 +87,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
     }
 
     public Set getValidTrustedCertOids() {
-        return Collections.unmodifiableSet(certOidSet);
+        return Collections.unmodifiableSet(validTrustedCertOids);
     }
 
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
@@ -118,7 +118,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         if (userDn != clientCertDn)
             throw new ClientCertManager.VetoSave("User's X.509 Subject DN '" + userDn +
                                                  "'doesn't match cert's Subject DN '" + clientCertDn + "'");
-        if (certOidSet.isEmpty()) {
+        if (validTrustedCertOids.isEmpty()) {
             X509Certificate caCert = null;
             try {
                 caCert = KeystoreUtils.getInstance().getRootCert();
@@ -140,7 +140,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                 caTrust = trustedCertManager.getCachedCertBySubjectDn(caDn, MAX_CACHE_AGE);
                 if (caTrust == null)
                     throw new ClientCertManager.VetoSave("User's cert was not signed by a recognized trusted cert");
-                if (!certOidSet.contains(new Long(caTrust.getOid())))
+                if (!validTrustedCertOids.contains(new Long(caTrust.getOid())))
                     throw new ClientCertManager.VetoSave("User's cert was not signed by any of this identity provider's trusted certs");
                 if (!caTrust.isTrustedForSigningClientCerts())
                     throw new ClientCertManager.VetoSave("User's cert was signed by an authority that is not trusted for signing client certs");
@@ -176,7 +176,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
     private final TrustedCertManager trustedCertManager;
     private final ClientCertManager clientCertManager;
 
-    private final Set certOidSet = new HashSet();
+    private final Set validTrustedCertOids = new HashSet();
 
     private static final Logger logger = Logger.getLogger(FederatedIdentityProvider.class.getName());
     private static final int MAX_CACHE_AGE = 5000;
