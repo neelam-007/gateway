@@ -81,6 +81,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         headerel.appendChild(secElement);
 
         request.setSoapEnvelope(soapmsg);
+        request.setSslRequired(true);
         return AssertionStatus.NONE;
     }
 
