@@ -63,7 +63,7 @@ public class ServerSecureConversation implements ServerAssertion {
                 request.setAuthenticated(true);
                 request.setUser(authenticatedUser);
                 response.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
-                logger.fine("Secure COnversation session recognized for user " + authenticatedUser.getLogin());
+                logger.fine("Secure Conversation session recognized for user " + authenticatedUser.getLogin());
                 return AssertionStatus.NONE;
             }
         }
