@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -244,5 +245,23 @@ public class Actions {
             }
         };
         SwingUtilities.invokeLater(r);
+    }
+
+    /**
+     * Update the input map of the JDialog's <code>JLayeredPane</code> so
+     * the ESC keystroke  invoke dispose on the dialog.
+     *  
+     * @param d the dialog
+     */
+    public static void setEscKeyStrokeDisposes(final JDialog d) {
+        JLayeredPane layeredPane = d.getLayeredPane();
+        final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escKeyStroke, "close-it");
+        layeredPane.getActionMap().put("close-it",
+          new AbstractAction() {
+              public void actionPerformed(ActionEvent evt) {
+                  d.dispose();
+              }
+          });
     }
 }
