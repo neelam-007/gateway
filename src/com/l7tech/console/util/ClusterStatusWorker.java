@@ -84,8 +84,8 @@ public class ClusterStatusWorker extends SwingWorker {
             System.err.println("ERROR " + e.getMessage());
         }
 
-        System.out.println("Number of nodes in the new list is: " + cluster.length);
-        System.out.println("Number of nodes in the old list is: " + currentNodeList.size());
+//        System.out.println("Number of nodes in the new list is: " + cluster.length);
+//        System.out.println("Number of nodes in the old list is: " + currentNodeList.size());
 
         Object node = null;
         for (int i = 0; i < cluster.length; i++) {
@@ -122,7 +122,7 @@ public class ClusterStatusWorker extends SwingWorker {
         }
 
         if (serviceStats != null) {
-            System.out.println("Number of service statistics is: " + serviceStats.length);
+//            System.out.println("Number of service statistics is: " + serviceStats.length);
         }
 
         com.l7tech.objectmodel.EntityHeader[] entityHeaders = null;
@@ -157,7 +157,7 @@ public class ClusterStatusWorker extends SwingWorker {
 
             Object clusterServiceUsage =  statsList.get(new Long(serviceStats[i].getServiceid()));
 
-            System.out.println("Service id: " + new Long(serviceStats[i].getServiceid()));
+//            System.out.println("Service id: " + new Long(serviceStats[i].getServiceid()));
             // update cluster service usage
             if(clusterServiceUsage != null){
                 if(clusterServiceUsage instanceof ServiceUsage){

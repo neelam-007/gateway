@@ -956,13 +956,15 @@ public class MainWindow extends JFrame {
         clusterStatusWindow.addWindowListener(new WindowAdapter() {
             public void windowClosing(final WindowEvent e) {
                 statMenuItem.setSelected(false);
-                clusterStatusWindow.hide();
+
+                clusterStatusWindow.dispose();
+                clusterStatusWindow = null;
             }
 
-            public void windowStateChanged(final WindowEvent e) {
+/*            public void windowStateChanged(final WindowEvent e) {
                 statMenuItem.setSelected(clusterStatusWindow.isShowing());
                 clusterStatusWindow.show();
-            }
+            }*/
         });
 
         return clusterStatusWindow;
@@ -975,13 +977,16 @@ public class MainWindow extends JFrame {
         gatewayLogWindow.addWindowListener(new WindowAdapter() {
             public void windowClosing(final WindowEvent e) {
                 logMenuItem.setSelected(false);
-                gatewayLogWindow.hide();
+
+                //todo: override the dispose if something need to be cleanup first
+                gatewayLogWindow.dispose();
+                gatewayLogWindow = null;
             }
 
-            public void windowStateChanged(final WindowEvent e) {
+/*            public void windowStateChanged(final WindowEvent e) {
                 logMenuItem.setSelected(gatewayLogWindow.isShowing());
                 gatewayLogWindow.show();
-            }
+            }*/
         });
 
         return gatewayLogWindow;
@@ -1054,10 +1059,16 @@ public class MainWindow extends JFrame {
               ConnectionListener listener = new ConnectionListener() {
                   public void onConnect(ConnectionEvent e) {
                       setEnabled(true);
+                      if(getLogMenuItem().isSelected()){
+                           getClusterStatusWindow().onConnect();
+                      }
                   }
 
                   public void onDisconnect(ConnectionEvent e) {
                       setEnabled(false);
+                      if(getLogMenuItem().isSelected()){
+                          getClusterStatusWindow().onDisconnect();
+                      }
                   }
               };
 

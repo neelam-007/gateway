@@ -55,16 +55,16 @@ public class GatewayStatus {
     public int getRequestFailure() {
         long totalRequest = getTotalCountFromCache(requestCounterCache);
 
-        System.out.println("Node is: " + getName());
-        System.out.println("totalRequest : " + totalRequest);
+ //       System.out.println("Node is: " + getName());
+ //       System.out.println("totalRequest : " + totalRequest);
         if(totalRequest > 0) {
             long totalCompleted = getTotalCountFromCache(completedCounterCache);
-            System.out.println("totalCompleted : " + totalCompleted);
+ //           System.out.println("totalCompleted : " + totalCompleted);
 
             return (new Long((totalRequest - totalCompleted)*100/ totalRequest)).intValue();
         }
         else {
-            System.out.println("totalRequest : 0");
+ //           System.out.println("totalRequest : 0");
             return 0;
         }
 

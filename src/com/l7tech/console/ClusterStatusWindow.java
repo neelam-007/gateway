@@ -66,30 +66,8 @@ public class ClusterStatusWindow extends JFrame {
                     }
                 });
 
-        ConnectionListener listener = new ConnectionListener() {
-            public void onConnect(ConnectionEvent e) {
-
-               initAdminConnection();
-
-                // todo:intantiate the cache
-                //lastMinuteCompletedCountsCache = new HashMap();
-                //statsList = new Vector();
-            }
-
-            public void onDisconnect(ConnectionEvent e) {
-
-                serviceManager = null;
-                //todo:
-                //lastMinuteCompletedCountsCache = null;
-
-                getStatusRefreshTimer().stop();
-                //clearStatiistics();
-            }
-        };
-
-        Registry.getDefault().getComponentRegistry().getMainWindow().addConnectionListener(listener);
-
         initAdminConnection();
+        initCaches();
 
         // refresh the status
         refreshStatus();
@@ -367,14 +345,15 @@ public class ClusterStatusWindow extends JFrame {
     }
 
     private void initAdminConnection(){
+
+        System.out.println("Initializing Admin Service....");
+
         serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
          if (serviceManager == null) throw new IllegalStateException("Cannot obtain ServiceManager remote reference");
 
          clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
          if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
 
-         // create an empty node list
-         currentNodeList = new Hashtable();
     }
 
     // This customized renderer can render objects of the type TextandIcon
@@ -612,6 +591,33 @@ public class ClusterStatusWindow extends JFrame {
         };
 
         statsWorker.start();
+    }
+
+    public void dispose(){
+        getStatusRefreshTimer().stop();
+        super.dispose();
+    }
+
+    public void onConnect() {
+
+        System.out.println("Connection is UP.....");
+        initAdminConnection();
+        initCaches();
+
+        getStatusRefreshTimer().start();
+    }
+
+    public void onDisconnect() {
+
+        System.out.println("Connection is DOWN");
+        getStatusRefreshTimer().stop();
+        serviceManager = null;
+        clusterStatusAdmin = null;
+    }
+
+    private void initCaches(){
+        currentNodeList = new Hashtable();
+        clusterRequestCounterCache = new Vector();
     }
 
     private javax.swing.JLabel jLabel1;
