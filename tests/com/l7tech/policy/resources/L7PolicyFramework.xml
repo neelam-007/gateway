@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy" xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/12/secext" xmlns:l7="http://www.layer7-tech.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"
+    xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/12/secext"
+    xmlns:l7="http://schemas.l7tech.com/2003/06/01/policy"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    >
 	<!--
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://schemas.xmlsoap.org/ws/2002/12/policy/"
@@ -11,16 +15,16 @@ xsi:noNamespaceSchemaLocation="Policy.xsd"
      -->
 
 	<!-- Need to specify URI of service here. Has implications on addressing  -->
-	<wsp:SpecVersion wsp:Usage="Required" URI="TBD">
-		<l7:Policy version="123"/>
+	<wsp:SpecVersion Usage="Required" URI="TBD">
+		<l7:Policy version="1.0"/>
 	</wsp:SpecVersion>
 
-	<wsp:All wsp:Preference="100">
+	<wsp:All Preference="100">
 		<!-- Basic authentication -->
 		<wsse:SecurityToken wsp:Usage="wsp:Required">
 			<wsse:TokenType>wsse:UsernameToken</wsse:TokenType>
 			<wsse:Claims>
-				<wsse:UsePassword wsp:Usage="wsp:Required" Type="wsse:PasswordText"/>
+				<wsse:UsePassword wsp:Usage="wsp:Required" wsp:Type="wsse:PasswordText"/>
 			</wsse:Claims>
 		</wsse:SecurityToken>
 
