@@ -16,6 +16,7 @@ import com.l7tech.server.util.MessageIdManager;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This assertion verifies that the message contained an
@@ -90,25 +91,40 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             throw new IOException("Request timestamp contained Created older than the maximum message age hard cap");
         }
 
-        // TODO support signatures signed via WS-SecureConversation
-        if ((timestamp.getSigningSecurityToken() instanceof WssProcessor.X509SecurityToken))
-            throw new IOException("Unable to generate replay-protection ID for timestamp -- it was signed, but not with an X509 security token");
+        WssProcessor.SecurityToken signingToken = timestamp.getSigningSecurityToken();
 
-        WssProcessor.X509SecurityToken signingToken = (WssProcessor.X509SecurityToken) timestamp.getSigningSecurityToken();
-        if (signingToken == null)
-            throw new IOException("Timestamp present and signed, but no signing token"); // can't happen
+        String messageIdStr = null;
+        if (signingToken instanceof WssProcessor.X509SecurityToken) {
+            // It was signed by a client certificate
+            logger.log(Level.FINER, "Timestamp was signed with an X509 BinarySecurityToken");
+            X509Certificate signingCert = ((WssProcessor.X509SecurityToken)signingToken).asX509Certificate();
 
-        X509Certificate signingCert = signingToken.asX509Certificate();
+            // Use cert info as sender id
+            StringBuffer sb = new StringBuffer();
+            sb.append(signingCert.getSubjectDN().toString());
+            sb.append(";");
+            sb.append(skiToString(signingCert));
+            sb.append(";");
+            sb.append(signingCert.getIssuerDN().toString());
+            sb.append(";");
+            sb.append(created);
+            messageIdStr = sb.toString();
 
-        StringBuffer sb = new StringBuffer();
-        sb.append(signingCert.getSubjectDN().toString());
-        sb.append(";");
-        sb.append(skiToString(signingCert));
-        sb.append(";");
-        sb.append(signingCert.getIssuerDN().toString());
-        sb.append(";");
-        sb.append(created);
-        String messageIdStr = sb.toString();
+        } else if (signingToken instanceof WssProcessor.SecurityContextToken) {
+            // It was signed by a WS-SecureConversation session's derived key
+            logger.log(Level.FINER, "Timestamp was signed with a WS-SecureConversation derived key");
+            String sessionID = ((WssProcessor.SecurityContextToken)signingToken).getContextIdentifier();
+
+            // Use session ID as sender ID
+            StringBuffer sb = new StringBuffer();
+            sb.append("SessionID=");
+            sb.append(sessionID);
+            sb.append(";");
+            sb.append(created);
+            messageIdStr = sb.toString();
+        } else
+            throw new IOException("Unable to generate replay-protection ID for timestamp -- " +
+                                  "it was signed, but not with an unsupported token type " + signingToken.getClass().getName());
 
         MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
         try {
