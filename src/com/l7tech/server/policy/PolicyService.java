@@ -204,6 +204,7 @@ public class PolicyService {
                 return;
             }
             response.setDocument(fault);
+            return;
         }
         try {
             wrapFilteredPolicyInResponse(policyDoc, response);
