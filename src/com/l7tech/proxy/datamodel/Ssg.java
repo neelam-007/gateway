@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
@@ -54,6 +55,9 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient long credentialsUpdatedTimeMillis = 0;
     private transient Session session = null;
     private transient List listeners = new ArrayList(); // List of weak references to listeners
+    private transient PrivateKey privateKey = null; // cache of private key
+    private transient boolean passwordWorkedForPrivateKey = false;
+    private transient boolean passwordWorkedWithSsg = false;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -386,7 +390,20 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     public void password(final char[] password) {
+        if (this.password != password) {
+            this.passwordWorkedForPrivateKey = false;
+            this.passwordWorkedWithSsg = false;
+        }
         this.password = password;
+    }
+
+    /** Check if the currently-configured password is known to have worked with the SSG. */
+    public boolean passwordWorkedWithSsg() {
+        return passwordWorkedWithSsg;
+    }
+
+    public void passwordWorkedWithSsg(boolean worked) {
+        passwordWorkedWithSsg = worked;
     }
 
     public int getSslPort() {
@@ -457,6 +474,26 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      */
     void haveClientCert(Boolean haveClientCert) {
         this.haveClientCert = haveClientCert;
+    }
+
+    /** Transient cache of private key for client cert in keystore; used by SsgKeyStoreManager. */
+    PrivateKey privateKey() {
+        return privateKey;
+    }
+
+    /** Transient cache of private key for client cert in keystore; used by SsgKeyStoreManager. */
+    void privateKey(PrivateKey privateKey) {
+        this.privateKey = privateKey;
+    }
+
+    /** Transient check if this password worked to unlock the private key; used by SsgKeyStoreManager. */
+    void passwordWorkedForPrivateKey(boolean worked) {
+        this.passwordWorkedForPrivateKey = worked;
+    }
+
+    /** Transient check if this password worked to unlock the private key; used by SsgKeyStoreManager. */
+    boolean passwordWorkedForPrivateKey() {
+        return this.passwordWorkedForPrivateKey;
     }
 
     public synchronized int incrementNumTimesLogonDialogCanceled() {
