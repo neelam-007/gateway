@@ -10,6 +10,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -110,6 +111,21 @@ public class WssDecoratorTest extends TestCase {
 
     public void testSimpleDecoration() throws Exception {
         runTest(getSimpleTestDocument());
+    }
+
+    public void testUsernameTokenDecoration() throws Exception {
+        WssDecorator decorator = new WssDecoratorImpl();
+        Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        log.info("Before decoration:" + XmlUtil.nodeToFormattedString(doc));
+        decorator.decorateMessage(doc,
+                                  null,
+                                  null,
+                                  null,
+                                  false,
+                                  new Element[0],
+                                  new Element[0],
+                                  new LoginCredentials("franco", "blahblah".getBytes()));
+        log.info("Decorated message:" + XmlUtil.nodeToFormattedString(doc));
     }
 
     public TestDocument getSimpleTestDocument() throws Exception {
