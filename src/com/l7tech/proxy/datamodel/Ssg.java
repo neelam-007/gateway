@@ -111,11 +111,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return getName() + (isDefaultSsg() ? " (Default)" : "");
     }
 
-    // Generate a lookup key given a uri and a soapAction
-    private PolicyAttachmentKey makeKey(String uri, String soapAction) {
-        return new PolicyAttachmentKey(uri, soapAction);
-    }
-
     /**
      * Attach (or update) a policy for this SSG.  The policy will be filed
      * under the specified URI and/or SOAPAction, at least one of which must
@@ -132,7 +127,17 @@ public class Ssg implements Serializable, Cloneable, Comparable {
             uri = "";
         if (soapAction == null)
             soapAction = "";
-        policyMap.put(makeKey(uri, soapAction), policy);
+        policyMap.put(new PolicyAttachmentKey(uri, soapAction), policy);
+    }
+
+    /**
+     * Attach (or update) a policy for this SSG.  The policy will be filed
+     * under the provided PolicyAttachmentKey.
+     * @param key
+     * @param policy
+     */
+    public synchronized void attachPolicy(PolicyAttachmentKey key, Assertion policy) {
+        policyMap.put(key, policy);
     }
 
     /**
@@ -151,7 +156,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * @return A policy if found, or null
      */
     public synchronized Assertion lookupPolicy(String uri, String soapAction) {
-        return lookupPolicy(makeKey(uri, soapAction));
+        return lookupPolicy(new PolicyAttachmentKey(uri, soapAction));
     }
 
     /**
