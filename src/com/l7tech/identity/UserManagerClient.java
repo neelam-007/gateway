@@ -1,18 +1,12 @@
 package com.l7tech.identity;
 
-import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateException;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.rmi.RemoteException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -45,24 +39,27 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
     }
 
     public void delete(User user) throws DeleteException {
+        delete( user.getUniqueIdentifier() );
+    }
+
+    public void delete(String id ) throws DeleteException {
         try {
-            if (userIsCurrentlyAdministrator(Long.toString(user.getOid()))) {
+            if (userIsCurrentlyAdministrator( id ) ) {
                 throw new CannotDeleteAdminAccountException();
             }
             // todo, user must be refactored so that it's id is always a string
-            getStub().deleteUser(config.getOid(), Long.toString(user.getOid()));
+            getStub().deleteUser(config.getOid(), id );
         } catch (RemoteException e) {
             throw new DeleteException(e.getMessage(), e);
         } catch (FindException e) {
             throw new DeleteException(e.getMessage(), e);
         }
+
     }
 
-    public long save(User user) throws SaveException {
+    public String save(User user) throws SaveException {
         try {
-            long res = getStub().saveUser(config.getOid(), user);
-            if (res > 0) user.setOid(res);
-            return res;
+            return getStub().saveUser(config.getOid(), user);
         } catch (UpdateException e) { // because the stub uses same method for save and update
             throw new SaveException(e.getMessage(), e);
         } catch (RemoteException e) {

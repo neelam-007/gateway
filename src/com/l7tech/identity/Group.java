@@ -1,88 +1,26 @@
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-
-import java.util.*;
 import java.security.Principal;
+import java.util.Set;
 
-public class Group extends NamedEntityImp implements Principal {
-
-    public static final String ADMIN_GROUP_NAME = "Gateway Administrators";
-
-    public String getDescription() {
-        return _description;
-    }
-
-    public Set getMembers() {
-        return _members;
-    }
-
-    public Set getMemberHeaders() {
-        return _memberHeaders;
-    }
-
-    public void setMembers( Set members ) {
-        _members = members;
-    }
-
-    public void setMemberHeaders( Set memberHeaders ) {
-        _memberHeaders = memberHeaders;
-    }
-
-    public void setDescription(String description) {
-        _description = description;
-    }
+public interface Group extends Principal {
+    static final String ADMIN_GROUP_NAME = "Gateway Administrators";
 
     /**
-     * this is not persisted, it is set at run time by the provider who creates the object
+     * Returns a String that uniquely identifies this Group within its IdentityProvider.
+     * For internal groups, this will be a String representation of the OID.
+     * For LDAP groups, this will be the DN.
      */
-    public long getProviderId() {
-        return providerId;
-    }
+    String getUniqueIdentifier();
 
-    /**
-     * this is not persisted, it is set at run time by the provider who creates the object
-     */
-    public void setProviderId(long providerId) {
-        this.providerId = providerId;
-    }
+    long getProviderId();
 
-    public String toString() {
-        return "com.l7tech.identity.Group." +
-                "\n\tName=" + _name +
-                "\n\tproviderId=" + providerId;
-    }
+    String getDescription();
 
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Group)) return false;
-        final Group groupImp = (Group) o;
-        if (_oid != DEFAULT_OID ? !(_oid == groupImp._oid) : groupImp._oid != DEFAULT_OID ) return false;
-        return true;
-    }
+    Set getMembers();
+    Set getMemberHeaders();
 
-    public int hashCode() {
-        if ( _oid > 0 ) return (int)_oid;
-        if ( _name == null ) return System.identityHashCode(this);
+    void copyFrom(Group objToCopy);
 
-        int hash = _name.hashCode();
-        hash += 29 * (int)providerId;
-        return hash;
-    }
-
-    /**
-     * allows to set all properties from another object
-     */
-    public void copyFrom(Group objToCopy) {
-        setOid(objToCopy.getOid());
-        setDescription(objToCopy.getDescription());
-        setMembers(objToCopy.getMembers());
-        setName(objToCopy.getName());
-        setProviderId(objToCopy.getProviderId());
-    }
-
-    private String _description;
-    private Set _members = new HashSet();
-    private Set _memberHeaders = new HashSet();
-    private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
+    GroupBean getGroupBean();
 }
