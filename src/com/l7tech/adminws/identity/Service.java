@@ -79,20 +79,19 @@ public class Service {
             endTransaction();
         }
     }
-    public long saveIdentityProviderConfig(com.l7tech.identity.IdentityProviderConfig identityProviderConfig) throws java.rmi.RemoteException {
+    public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig) throws java.rmi.RemoteException {
         try {
             if (identityProviderConfig.getOid() > 0) {
-                getIdentityProviderConfigManagerAndBeginTransaction().update(identityProviderConfig);
+                IdentityProviderConfigManager manager = getIdentityProviderConfigManagerAndBeginTransaction();
+                IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
+                originalConfig.copyFrom(identityProviderConfig);
+                manager.update(originalConfig);
                 return identityProviderConfig.getOid();
             }
             return getIdentityProviderConfigManagerAndBeginTransaction().save(identityProviderConfig);
-        } catch (SaveException e) {
+        } catch (Exception e) {
             e.printStackTrace(System.err);
-            throw new java.rmi.RemoteException("SaveException in saveIdentityProviderConfig", e);
-        }
-        catch (UpdateException e) {
-            e.printStackTrace(System.err);
-            throw new java.rmi.RemoteException("UpdateException in saveIdentityProviderConfig", e);
+            throw new java.rmi.RemoteException("Exception in saveIdentityProviderConfig", e);
         } finally {
             endTransaction();
         }
@@ -169,16 +168,15 @@ public class Service {
         if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
         try {
             if (user.getOid() > 0) {
-                userManager.update(user);
+                User originalUser = userManager.findByPrimaryKey(Long.toString(user.getOid()));
+                originalUser.copyFrom(user);
+                userManager.update(originalUser);
                 return user.getOid();
             }
             return userManager.save(user);
-        } catch (SaveException e) {
+        } catch (Exception e) {
             e.printStackTrace(System.err);
-            throw new java.rmi.RemoteException("SaveException in saveUser", e);
-        } catch (UpdateException e) {
-            e.printStackTrace(System.err);
-            throw new java.rmi.RemoteException("UpdateException in saveUser", e);
+            throw new java.rmi.RemoteException("Exception in saveUser", e);
         } finally {
             endTransaction();
         }
@@ -232,12 +230,9 @@ public class Service {
         try {
             GroupManager groupManager = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId);
             if (group.getOid() > 0) {
-                // todo patch to fix bug 17
+                // patch to fix hibernate update issue
                 Group originalGroup = groupManager.findByPrimaryKey(Long.toString(group.getOid()));
-                originalGroup.setDescription(group.getDescription());
-                originalGroup.setMembers(group.getMembers());
-                originalGroup.setName(group.getName());
-                originalGroup.setProviderId(group.getProviderId());
+                originalGroup.copyFrom(group);
                 groupManager.update(originalGroup);
                 // end of patch
                 //groupManager.update(group);
@@ -262,7 +257,7 @@ public class Service {
     // PRIVATES
     // ************************************************
 
-    private com.l7tech.identity.IdentityProviderConfigManager getIdentityProviderConfigManagerAndBeginTransaction() throws java.rmi.RemoteException {
+    private IdentityProviderConfigManager getIdentityProviderConfigManagerAndBeginTransaction() throws java.rmi.RemoteException {
         if (identityProviderConfigManager == null){
             initialiseConfigManager();
         }
