@@ -7,7 +7,7 @@
 package com.l7tech.service;
 
 import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -37,20 +37,20 @@ public class JmsAdminStub implements JmsAdmin {
         Collection list = new ArrayList();
         for (Iterator i = providers.keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
-            list.add(fromProvider((JmsProvider) providers.get(key)));
+            list.add(fromProvider((JmsConnection) providers.get(key)));
         }
         return (EntityHeader[]) list.toArray(new EntityHeader[] {});
     }
 
-    private EntityHeader fromProvider(JmsProvider p) {
+    private EntityHeader fromProvider(JmsConnection p) {
         return new EntityHeader(p.getOid(), EntityType.JMS_PROVIDER, p.getName(), null);
     }
 
-    public JmsProvider findProviderByPrimaryKey(long oid) throws RemoteException, FindException {
-        return (JmsProvider) providers.get(new Long(oid));
+    public JmsConnection findProviderByPrimaryKey(long oid) throws RemoteException, FindException {
+        return (JmsConnection) providers.get(new Long(oid));
     }
 
-    public long saveProvider(JmsProvider provider) throws RemoteException, UpdateException, SaveException, VersionException {
+    public long saveProvider(JmsConnection provider) throws RemoteException, UpdateException, SaveException, VersionException {
         long oid = provider.getOid();
         if (oid == 0) {
             oid = StubDataStore.defaultStore().nextObjectId();

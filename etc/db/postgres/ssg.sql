@@ -237,8 +237,12 @@ CREATE TABLE ssg_logs (
 -- Dumping data for table 'ssg_logs'
 --
 
-DROP TABLE jms_provider;
-CREATE TABLE jms_provider (
+--
+-- Table structure for table 'jms_connection'
+--
+
+DROP TABLE jms_connection;
+CREATE TABLE jms_connection (
   objectid bigint NOT NULL default '0',
   version integer NOT NULL default '0',
   name varchar(128) NOT NULL default '',
@@ -253,14 +257,14 @@ CREATE TABLE jms_provider (
 );
 
 --
--- Table structure for table 'jms_destination'
+-- Table structure for table 'jms_endpoint'
 --
 
-DROP TABLE jms_destination;
-CREATE TABLE jms_destination (
+DROP TABLE jms_endpoint;
+CREATE TABLE jms_endpoint (
   objectid bigint NOT NULL default '0',
   version integer NOT NULL default '0',
-  provider_oid bigint NOT NULL default '0',
+  connection_oid bigint NOT NULL default '0',
   name varchar(128) NOT NULL default '',
   destination_name varchar(128) NOT NULL default '',
   reply_type integer default '0',

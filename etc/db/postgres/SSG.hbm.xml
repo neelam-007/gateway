@@ -166,7 +166,7 @@
         <property name="strRequestId" column="strrequestid" type="string"/>
     </class>
 
-    <class name="com.l7tech.common.transport.jms.JmsProvider" table="jms_providers">
+    <class name="com.l7tech.common.transport.jms.JmsConnection" table="jms_connections">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -181,18 +181,18 @@
         <property name="username" column="username" type="string"/>
         <property name="password" column="password" type="string"/>
 
-        <set name="destinations" table="jms_destinations">
-            <one-to-many class="com.l7tech.common.transport.jms.JmsDestination"/>
+        <set name="endpoints" table="jms_endpoints">
+            <one-to-many class="com.l7tech.common.transport.jms.JmsEndpoint"/>
         </set>
     </class>
 
-    <class name="com.l7tech.common.transport.jms.JmsDestination" table="jms_destinations">
+    <class name="com.l7tech.common.transport.jms.JmsEndpoint" table="jms_endpoints">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
         <version name="version" column="version" type="integer"/>
 
-        <property name="provider" column="provider_oid" type="com.l7tech.common.transport.jms.JmsProvider"/>
+        <property name="provider" column="provider_oid" type="com.l7tech.common.transport.jms.JmsConnection"/>
 
         <property name="name" column="name" type="string"/>
         <property name="destinationName" column="destination_name" type="string"/>

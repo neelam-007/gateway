@@ -264,11 +264,11 @@ CREATE TABLE ssg_logs (
 --
 
 --
--- Table structure for table 'jms_provider'
+-- Table structure for table 'jms_connection'
 --
 
-DROP TABLE IF EXISTS jms_provider;
-CREATE TABLE jms_provider (
+DROP TABLE IF EXISTS jms_connection;
+CREATE TABLE jms_connection (
   oid bigint NOT NULL default '0',
   version integer NOT NULL default '0',
   name varchar(128) NOT NULL default '',
@@ -283,14 +283,14 @@ CREATE TABLE jms_provider (
 ) TYPE=InnoDB;
 
 --
--- Table structure for table 'jms_destination'
+-- Table structure for table 'jms_endpoint'
 --
 
-DROP TABLE IF EXISTS jms_destination;
-CREATE TABLE jms_destination (
+DROP TABLE IF EXISTS jms_endpoint;
+CREATE TABLE jms_endpoint(
   oid bigint NOT NULL default '0',
   version integer NOT NULL default '0',
-  provider_oid bigint NOT NULL default '0',
+  connection_oid bigint NOT NULL default '0',
   name varchar(128) NOT NULL default '',
   destination_name varchar(128) NOT NULL default '',
   reply_type integer default '0',

@@ -10,76 +10,76 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.common.transport.jms.JmsDestination;
-import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.transport.jms.JmsConnection;
 
 import java.sql.SQLException;
 
 /**
- * Hibernate manager for JMS providers and destinations.  Destinations cannot be found
- * directly using this class, only by reference from their associated Provider.
+ * Hibernate manager for JMS connections and endpoints.  Endpoints cannot be found
+ * directly using this class, only by reference from their associated Connection.
  *
  * @author alex
  * @version $Revision$
  */
 public class JmsManager extends HibernateEntityManager {
-    public long save( JmsProvider provider ) throws SaveException {
+    public long save( JmsConnection conn ) throws SaveException {
         try {
-            return _manager.save( getContext(), provider );
+            return _manager.save( getContext(), conn );
         } catch (SQLException e) {
             throw new SaveException(e.toString(), e);
         }
     }
 
-    public long save( JmsDestination destination ) throws SaveException {
+    public long save( JmsEndpoint endpoint ) throws SaveException {
         try {
-            return _manager.save( getContext(), destination );
+            return _manager.save( getContext(), endpoint );
         } catch (SQLException e) {
             throw new SaveException(e.toString(), e);
         }
     }
 
-    public void update( JmsProvider provider ) throws UpdateException {
+    public void update( JmsConnection conn ) throws UpdateException {
         try {
-            _manager.update( getContext(), provider );
+            _manager.update( getContext(), conn );
         } catch (SQLException e) {
             throw new UpdateException(e.toString(), e);
         }
     }
 
-    public void update( JmsDestination destination ) throws UpdateException {
+    public void update( JmsEndpoint endpoint ) throws UpdateException {
         try {
-            _manager.update( getContext(), destination );
+            _manager.update( getContext(), endpoint );
         } catch (SQLException e) {
             throw new UpdateException(e.toString(), e);
         }
     }
 
-    public void delete( JmsProvider provider ) throws DeleteException {
+    public void delete( JmsConnection connection ) throws DeleteException {
         try {
-            _manager.delete( getContext(), provider );
+            _manager.delete( getContext(), connection );
         } catch ( SQLException e ) {
             throw new DeleteException( e.toString(), e );
         }
     }
 
-    public void delete( JmsDestination destination ) throws DeleteException {
+    public void delete( JmsEndpoint endpoint ) throws DeleteException {
         try {
-            _manager.delete( getContext(), destination );
+            _manager.delete( getContext(), endpoint );
         } catch ( SQLException e ) {
             throw new DeleteException( e.toString(), e );
         }
     }
 
     public Class getImpClass() {
-        return JmsProvider.class;
+        return JmsConnection.class;
     }
 
     public Class getInterfaceClass() {
-        return JmsProvider.class;
+        return JmsConnection.class;
     }
 
     public String getTableName() {
-        return "jms_provider";
+        return "jms_connection";
     }
 }
