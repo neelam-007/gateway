@@ -25,9 +25,18 @@ public class MemberOfGroup extends IdentityAssertion {
         _groupName = groupName;
     }
 
-    public MemberOfGroup(long providerOid, String groupName) {
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public MemberOfGroup(long providerOid, String groupName, String groupID) {
         super(providerOid);
         _groupName = groupName;
+        this.groupId = groupID;
     }
 
     public String toString() {
@@ -35,4 +44,5 @@ public class MemberOfGroup extends IdentityAssertion {
     }
 
     protected String _groupName;
+    protected String groupId;
 }
