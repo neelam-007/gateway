@@ -30,19 +30,6 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
         } else
             throw new IllegalArgumentException("assertion passed must be of type " +
               SchemaValidation.class.getName());
-        try {
-            if (getServiceNodeCookie() != null) {
-                service = getServiceNodeCookie().getPublishedService();
-            } else {
-                log.log(Level.WARNING, "no access to service node cookie");
-            }
-
-        } catch (FindException e) {
-            log.log(Level.WARNING, "cannot get service", e);
-        } catch (RemoteException e) {
-            log.log(Level.WARNING, "cannot get service", e);
-        }
-
     }
 
     public String getName() {
@@ -54,6 +41,22 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
         return "com/l7tech/console/resources/xmlsignature.gif";
     }
 
+    protected synchronized PublishedService getService() {
+        if (service != null) return service;
+        try {
+            if (getServiceNodeCookie() != null) {
+                service = getServiceNodeCookie().getPublishedService();
+            } else {
+                log.log(Level.WARNING, "no access to service node cookie");
+            }
+        } catch (FindException e) {
+            log.log(Level.WARNING, "cannot get service", e);
+        } catch (RemoteException e) {
+            log.log(Level.WARNING, "cannot get service", e);
+        }
+        return service;
+    }
+
     /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
@@ -62,14 +65,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-
-        final PublishedService publishedService;
-        try {
-            publishedService = getServiceNodeCookie().getPublishedService();
-            list.add(new SchemaValidationPropertiesAction(this, publishedService));
-        } catch (Exception e) {
-            // tango down!
-        }
+        list.add(new SchemaValidationPropertiesAction(this, getService()));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
@@ -80,13 +76,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        try {
-            final PublishedService publishedService = getServiceNodeCookie().getPublishedService();
-            return new SchemaValidationPropertiesAction(this, publishedService);
-        } catch (Exception e) {
-            // tango down!
-        }
-        return null;
+        return new SchemaValidationPropertiesAction(this, getService());
     }
 
     /**
