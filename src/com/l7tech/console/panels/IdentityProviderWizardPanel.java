@@ -52,6 +52,14 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         populateIdentityTables();
     }
 
+    public String getDescription() {
+        if (isSoap) {
+            return "Specify Web Service access security and permissions.";
+        } else {
+            return "Specify non-SOAP application access security and permissions.";
+        }
+    }
+
     public IdentityProviderWizardPanel(WizardStepPanel next, boolean isSoap) {
         super(next);
         this.isSoap = isSoap;

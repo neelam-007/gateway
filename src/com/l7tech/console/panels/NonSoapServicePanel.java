@@ -33,7 +33,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
     }
 
     public String getDescription() {
-        return "Provide the SecureSpan Gateway basic information about the " +
+        /*return "Provide the SecureSpan Gateway basic information about the " +
                "non-soap xml application you are about to publish.<p>" +
                "The field \"Service Name\" lets you define a name to refer to " +
                "this service in the SecureSpan Manager.<p>" +
@@ -41,7 +41,8 @@ public class NonSoapServicePanel extends WizardStepPanel {
                "the SecureSpan Gateway will forward the incoming requests to. " +
                "This can later be changed by editing the resulting policy.<p>The field " +
                "\"SSG URL\" lets you customize the incoming HTTP URL on the SecureSpan Gateway " +
-               "where clients will send their XML requests to consume this XML application.";
+               "where clients will send their XML requests to consume this XML application.";*/
+        return "Specify the connection and routing information for the non-SOAP application.";
     }
 
     private void initialize() {
@@ -53,14 +54,14 @@ public class NonSoapServicePanel extends WizardStepPanel {
     }
 
     private void bark(Component control, String msg) {
-        JOptionPane.showMessageDialog(control, msg);
+        JOptionPane.showMessageDialog(control, msg, "Information Missing", JOptionPane.WARNING_MESSAGE);
     }
 
     public boolean onNextButton() {
         // make sure a name is provided
         publishedServiceName = serviceName.getText();
         if (publishedServiceName == null || publishedServiceName.length() < 1) {
-            String msg = "published service name not set";
+            String msg = "Published Service name is missing.";
             logger.info(msg);
             bark(serviceName, msg);
             return false;
@@ -68,7 +69,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
         routingURI = null;
         String tmp = ssgURLSuffix.getText();
         if (tmp == null || tmp.length() < 1) {
-            String msg = "must complete the routing URI";
+            String msg = "Routing URI is not complete.";
             logger.info(msg);
             bark(ssgURLSuffix, msg);
             return false;
@@ -76,7 +77,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
         if (tmp.startsWith("/")) tmp = tmp.substring(1);
         ssgURLSuffix.setText(tmp);
         if (tmp == null || tmp.length() < 1) {
-            String msg = "must complete the routing URI";
+            String msg = "Routing URI is not complete.";
             logger.info(msg);
             bark(ssgURLSuffix, msg);
             return false;
@@ -94,7 +95,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
         }
         downstreamURL = targetURL.getText();
         if (downstreamURL == null || downstreamURL.length() < 1) {
-            String msg = "must provide a downstream url";
+            String msg = "Downstream target is missing.";
             logger.info(msg);
             bark(targetURL, msg);
             return false;
