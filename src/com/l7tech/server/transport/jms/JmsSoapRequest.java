@@ -6,6 +6,7 @@
 
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.SoapRequest;
 
@@ -47,16 +48,10 @@ public class JmsSoapRequest extends SoapRequest {
                 throw new IOException( e.toString() );
             }
         } else if ( request instanceof BytesMessage ) {
-             // TODO read XML header and guess encoding
-
-            final BytesMessage breq = (BytesMessage)request;
-
-            return new BytesMessageInputStream( breq );
-            //return new InputStreamReader( is, JmsUtil.DEFAULT_ENCODING );     // todo sane encoding
+            return new BytesMessageInputStream( (BytesMessage)request );
         } else {
-            _logger.warning( "Can't get a reader for a non-text message! Returning a reader on an empty String!" );
-            return new ByteArrayInputStream( new String("").getBytes(JmsUtil.DEFAULT_ENCODING) );
-            //return new StringReader("");
+            _logger.warning( "Can't get an InputStream for messages that are neither Text nore Bytes! Returning an empty InputStream!" );
+            return new EmptyInputStream();
         }
     }
 
