@@ -22,14 +22,14 @@ import net.sf.hibernate.Query;
 
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
+ * Hibernate implementation of the ClientCertManager.
  *
- * User: flascell
- * Date: Oct 23, 2003
- * Time: 10:53:57 AM
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Oct 23, 2003<br/>
  * $Id$
- *
- * Hibernate implementation of the ClientCertManager
  */
 public class ClientCertManagerImp implements ClientCertManager {
 

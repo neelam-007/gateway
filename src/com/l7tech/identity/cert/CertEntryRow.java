@@ -1,15 +1,14 @@
 package com.l7tech.identity.cert;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
+ * Bean representation of a row in the client_cert table. This bean class is meant to be used by hibernate only.
  *
- * User: flascell
- * Date: Oct 23, 2003
- * Time: 11:04:50 AM
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Oct 23, 2003<br/>
  * $Id$
- *
- * This bean class is meant to be used by hibernate only.
- * (because hibernate needs to map a class type to a table)
  */
 public class CertEntryRow {
     public long getProvider() {

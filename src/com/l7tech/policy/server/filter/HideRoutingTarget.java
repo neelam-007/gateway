@@ -7,15 +7,15 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import java.util.Iterator;
 
 /**
- * User: flascell
- * Date: Aug 14, 2003
- * Time: 3:13:44 PM
- * $Id$
- *
  * Removes all routing assertions.
  *
  * If, as a result, a composite is left with no children, this composite assertion is also removed from it's parent
  * except if it's the root assertion in the tree.
+ *
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Aug 14, 2003<br/>
+ * $Id$
  */
 public class HideRoutingTarget extends Filter {
     public Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException {

@@ -38,19 +38,17 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
- * User: flascell
- * Date: Aug 26, 2003
- * Time: 2:54:01 PM
- * $Id$
- *
  * XML Digital signature on the soap response sent from the ssg server to the requestor (probably proxy). May also enforce
  * xml encryption for the body element of the response.
  *
  * On the server side, this decorates a response with an xml d-sig and maybe xml-enc the response's body
  * On the proxy side, this verifies that the Soap Response contains a valid xml d-sig for the entire envelope and decrypts
  * the response's body if necessary.
- *
- * @author flascell
+ * 
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Aug 26, 2003<br/>
+ * $Id$
  */
 public class ClientXmlResponseSecurity extends ClientAssertion {
     private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);

@@ -6,13 +6,16 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: Jun 24, 2003
- *
- * User from the internal identity provider
+ * User from the internal identity provider.
  * Password property is stored as HEX(MD5(login:L7SSGDigestRealm:password)). If you pass a clear text passwd in
  * setPassword, this encoding will be done ofr you (provided that login was set before).
+ * 
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: Jun 24, 2003
+ *
+ *
  */
 public class InternalUser extends NamedEntityImp implements User {
     public InternalUser( UserBean bean ) {

@@ -14,12 +14,12 @@ import java.util.logging.Level;
 import java.io.FileNotFoundException;
 
 /**
- * Layer 7 technologies, inc.
- * User: flascell
- * Date: Jul 3, 2003
- * Time: 12:45:24 PM
+ * AdminWS for consulting the server system log.
  *
- * AdminWS for consulting the server system log
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell<br/>
+ * Date: Jul 3, 2003<br/>
  */
 public class LogAdminImpl implements LogAdmin {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/loggingAdmin";

@@ -1,14 +1,15 @@
 package com.l7tech.objectmodel;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
+ * Object being updated is outdated.
+ * Might mean that is was updated by another administrator.
+ * 
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
  *
- * User: flascell
- * Date: Sep 2, 2003
- * Time: 1:57:10 PM
+ * User: flascell<br/>
+ * Date: Sep 2, 2003<br/>
  * $Id$
- *
- *
  */
 public class VersionException extends Exception{
     public VersionException() {

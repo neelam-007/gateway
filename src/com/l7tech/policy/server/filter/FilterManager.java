@@ -11,12 +11,12 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- * User: flascell
- * Date: Aug 14, 2003
- * Time: 2:58:48 PM
- * $Id$
- *
  * Manages the filters that are applied to the policies before they are sent back to a requestor.
+ *
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Aug 14, 2003<br/>
+ * $Id$
  */
 public class FilterManager {
     public static FilterManager getInstance() {

@@ -13,14 +13,13 @@ import java.util.Collection;
 import java.util.logging.Level;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: Jun 20, 2003
- *
  * This IdentityProviderConfigManager is the server side manager who manages the one and only
  * internal identity provider as well as the other providers (ldap) configured by the administrator.
  *
- * TODO: Singleton?
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: Jun 20, 2003
  *
  */
 public class IdProvConfManagerServer extends HibernateEntityManager implements IdentityProviderConfigManager {

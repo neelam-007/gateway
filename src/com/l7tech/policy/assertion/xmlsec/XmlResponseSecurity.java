@@ -3,17 +3,17 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.policy.assertion.Assertion;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Aug 27, 2003
- * Time: 2:08:56 PM
- * $Id$
- *
  * Enforces XML digital signature on the entire envelope of the request and maybe XML encryption on the body
  * element of the request.
  *
- * Whether XML encryption is used depends on the property encryption
+ * Whether XML encryption is used depends on the property encryption.
+ *
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Aug 27, 2003<br/>
+ * $Id$
  */
 public class XmlResponseSecurity extends Assertion implements XmlSecurityAssertion {
     /**

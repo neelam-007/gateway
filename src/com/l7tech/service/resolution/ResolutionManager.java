@@ -14,18 +14,18 @@ import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Nov 25, 2003
- * Time: 10:46:59 AM
- * $Id$
  *
  * The ResolutionManager (actually its corresponding table) enforces the uniqueness of resolution
  * parameters across all services.
  *
  * This is used by the ServiceManager when updating and saving services to ensure that resolution
  * parameters do not conflict.
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Nov 25, 2003<br/>
+ * $Id$
  *
  */
 public class ResolutionManager {

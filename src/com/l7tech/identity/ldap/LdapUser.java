@@ -6,11 +6,12 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import java.io.Serializable;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: Jun 24, 2003
- *
  * User from an LDAP directory.
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: Jun 24, 2003
  */
 public class LdapUser implements User, Serializable {
     public LdapUser( UserBean bean ) {

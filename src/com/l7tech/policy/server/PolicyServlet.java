@@ -30,21 +30,23 @@ import java.util.logging.Level;
 
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: Jun 11, 2003
- *
  * This servlet returns policy documents (type xml).
  * The following parameters can be passed to resolve the PublishedService:
  * serviceoid : the internal object identifier of the PublishedService. if specified, this parameter is sufficient to
  *              retrieve the policy
+ * <br/>
  * urn : the urn of the service. if more than one service have the same urn, at least one more paramater will be
  *       necessary
+ * <br/>
  * soapaction : the soapaction of the PublishedService
- *
+ * <br/>
  * Pass the parameters as part of the url as in the samples below
  * http://localhost:8080/ssg/policy/disco.modulator?serviceoid=666
  *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: Jun 11, 2003
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
     public static final String PARAM_SERVICEOID = "serviceoid";

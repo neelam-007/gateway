@@ -8,11 +8,11 @@ import com.l7tech.objectmodel.UpdateException;
 import java.security.cert.Certificate;
 
 /**
- * User: flascell
- * Date: Jul 29, 2003
- * Time: 11:35:46 AM
+ * This is our internal CA. It manages the client_cert data.
  *
- * This is our internal CA. It manages the client_cert data
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Jul 29, 2003<br/>
  */
 public interface ClientCertManager {
 

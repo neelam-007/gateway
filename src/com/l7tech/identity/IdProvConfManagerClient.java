@@ -8,12 +8,13 @@ import java.util.Iterator;
 import java.rmi.RemoteException;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: Jun 23, 2003
- *
  * Main entry point for the console for everything that has to do with identity including the internal id provider
  * and the ldap identity provider.
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascellesv
+ * Date: Jun 23, 2003
  *
  */
 public class IdProvConfManagerClient implements IdentityProviderConfigManager {

@@ -21,9 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: June 2, 2003
+ * Axis handler that authenticates admin requests.
  *
  * This axis handler class does the following
  * 1. reads a basic auth header from the http request
@@ -44,6 +42,11 @@ import java.util.logging.Logger;
  *     <handler type="java:com.l7tech.remote.ws.security.AuthenticationAxisHandler"/>
  *   </requestFlow>
  * </transport>
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: June 2, 2003
  */
 public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHandler {
     public static final long SESSION_MAX_LENGTH = 120000; // two minutes

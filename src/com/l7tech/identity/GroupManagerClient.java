@@ -9,8 +9,11 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
+ * SSM-side implementation of the GroupManager interface.
+ * 
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
  * Date: Jun 24, 2003
  */
 public class GroupManagerClient extends GroupManagerAdapter implements GroupManager {

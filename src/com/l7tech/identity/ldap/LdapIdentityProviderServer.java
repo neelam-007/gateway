@@ -5,8 +5,11 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
+ * IdentityProvider implementation for an identity provider of type LDAP.
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
  * Date: Jun 13, 2003
  *
  */

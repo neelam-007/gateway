@@ -6,8 +6,11 @@ import com.l7tech.common.util.Locator;
 import java.rmi.RemoteException;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
+ * Subclass of UserManagerClient.
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
  * Date: Jun 24, 2003
  *
  */

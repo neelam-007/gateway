@@ -13,10 +13,12 @@ import java.util.logging.Logger;
 import java.rmi.RemoteException;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: Jun 5, 2003
+ * For SSM-side admin session management.
  *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: Jun 5, 2003
  */
 public abstract class ClientCredentialManager implements ConnectionListener {
     protected static final Logger logger = Logger.getLogger(ClientCredentialManager.class.getName());

@@ -12,8 +12,11 @@ import java.util.Collection;
 import java.rmi.RemoteException;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
+ * SSM-side implementation of the identity provider.
+ * 
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
  * Date: Jun 24, 2003
  *
  */

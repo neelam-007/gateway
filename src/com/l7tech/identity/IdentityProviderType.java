@@ -4,8 +4,11 @@ import java.io.Serializable;
 import java.io.ObjectStreamException;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
+ * Enum that specifies which type of id provider.
+ * 
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
  * Date: Jun 23, 2003
  *
  */

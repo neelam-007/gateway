@@ -14,8 +14,11 @@ import net.sf.hibernate.Query;
 import net.sf.hibernate.HibernateException;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
+ * GroupManager implementation for the internal identity provider.
+ * 
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
  * Date: Jun 24, 2003
  */
 public class InternalGroupManagerServer extends HibernateEntityManager implements GroupManager {

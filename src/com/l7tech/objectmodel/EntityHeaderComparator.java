@@ -3,12 +3,12 @@ package com.l7tech.objectmodel;
 import java.util.Comparator;
 
 /**
- * User: flascell
- * Date: Jul 21, 2003
- * Time: 11:17:46 AM
- *
  * Used by sorted sets containing EntityHeaders.
  * Could be extended to compare on properties other than name.
+ *
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Jul 21, 2003<br/>
  */
 public class EntityHeaderComparator implements Comparator {
     public int compare(Object o1, Object o2) {

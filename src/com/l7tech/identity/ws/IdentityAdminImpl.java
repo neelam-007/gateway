@@ -19,12 +19,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: May 26, 2003
- * <p/>
- * Server side implementation of the IdentityAdmin interface
+ * Server side implementation of the IdentityAdmin interface.
  * This was originally used with the Axis layer
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: May 26, 2003
  */
 public class IdentityAdminImpl implements IdentityAdmin {
 

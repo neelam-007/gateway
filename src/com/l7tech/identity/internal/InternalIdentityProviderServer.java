@@ -28,10 +28,12 @@ import java.util.logging.Logger;
 import java.sql.SQLException;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
+ * IdentityProvider implementation for the internal identity provider.
+ * 
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
  * Date: Jun 24, 2003
- *
  */
 public class InternalIdentityProviderServer implements IdentityProvider {
     public static final String ENCODING = "UTF-8";

@@ -3,7 +3,7 @@ package com.l7tech.common.security;
 import javax.crypto.SecretKey;
 
 /**
- * Key Used by the xml mangler
+ * Key Used by the xml mangler.
  *
  * <br/><br/>
  * Layer 7 technologies, inc.<br/>

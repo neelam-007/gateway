@@ -18,11 +18,6 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * User: flascell
- * Date: Aug 14, 2003
- * Time: 3:11:22 PM
- * $Id$
- *
  * If there is at least one identity assertion, and the user does not "pass" any of them, the result will be null
  * meaning that this user cannot consume this service and therefore has no business seeing it.
  *
@@ -33,6 +28,11 @@ import java.util.logging.Level;
  *
  * CompositeAssertion that become child-less as a result of processing this tree are removed from their parents -
  * except if this results in the root assertion to be deleted.
+ *
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Aug 14, 2003<br/>
+ * $Id$
  */
 public class IdentityRule extends Filter {
     public IdentityRule() {

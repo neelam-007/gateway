@@ -5,8 +5,11 @@ import java.io.Serializable;
 import java.io.ObjectStreamException;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
+ * Type of entity represented by an EntityHeader.
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
  * Date: May 26, 2003
  *
  */

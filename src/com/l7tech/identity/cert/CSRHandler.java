@@ -31,13 +31,13 @@ import org.apache.commons.httpclient.methods.PostMethod;
 
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: Jul 25, 2003
- *
  * Servlet which handles the CSR requests coming from the Client Proxy. Must come
  * through ssl and must contain valid credentials embedded in basic auth header.
  *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: Jul 25, 2003
  */
 public class CSRHandler extends AuthenticatableHttpServlet {
 

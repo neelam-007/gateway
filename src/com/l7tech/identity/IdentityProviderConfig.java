@@ -8,13 +8,15 @@ import java.util.HashMap;
 import java.util.Set;
 
 /**
- * User: flascell
- * Date: Jun 23, 2003
- * @author flascell
- *
  * Configuration of an Identity Provider object.
+ *
  * The properties depend on the type of identity provider and are defined in the
  * IdentityProvider type implementations.
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: Jun 23, 2003
  *
  */
 public class IdentityProviderConfig extends NamedEntityImp {

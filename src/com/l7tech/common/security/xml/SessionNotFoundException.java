@@ -1,7 +1,7 @@
 package com.l7tech.common.security.xml;
 
 /**
- * A session was not found
+ * A session was not found.
  * 
  * <br/><br/>
  * Layer 7 technologies, inc.<br/>

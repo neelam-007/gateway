@@ -11,12 +11,12 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * User: flascell
- * Date: Aug 14, 2003
- * Time: 2:54:54 PM
- * $Id$
- *
  * A filter that implements an encapsulable rule.
+ *
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Aug 14, 2003<br/>
+ * $Id$
  */
 public abstract class Filter {
     /**

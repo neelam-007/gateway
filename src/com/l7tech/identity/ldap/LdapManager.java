@@ -11,12 +11,12 @@ import javax.naming.directory.InitialDirContext;
 import java.util.Hashtable;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
+ * Implements common functionality shared between UserManager and GroupManager.
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
  * Date: Jun 18, 2003
- *
- * Implements common functionality shared between UserManager and GroupManager
- *
  */
 public class LdapManager {
     protected LdapManager(IdentityProviderConfig config) {

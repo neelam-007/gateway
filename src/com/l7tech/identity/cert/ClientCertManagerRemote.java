@@ -16,14 +16,15 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
+ * Client side implementation of the ClientCertManager - the internal CA.
  *
- * User: flascell
- * Date: Oct 27, 2003
- * Time: 10:32:13 AM
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Oct 27, 2003<br/>
  * $Id$
  *
- * Client side implementation of the ClientCertManager - the internal CA
  */
 public class ClientCertManagerRemote implements ClientCertManager {
 

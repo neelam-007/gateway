@@ -1,15 +1,14 @@
 package com.l7tech.objectmodel;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Dec 8, 2003
- * Time: 11:46:16 AM
- * $Id$
- *
  * Used in the PersistenceContext to get notifications after successful commits and rollbacks.
  *
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Dec 8, 2003<br/>
+ * $Id$
  */
 public interface TransactionListener {
     /**

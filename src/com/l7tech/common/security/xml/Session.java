@@ -2,7 +2,7 @@ package com.l7tech.common.security.xml;
 
 
 /**
- * XML-ENC session
+ * XML-ENC session.
  *
  * <br/><br/>
  * Layer 7 technologies, inc.<br/>

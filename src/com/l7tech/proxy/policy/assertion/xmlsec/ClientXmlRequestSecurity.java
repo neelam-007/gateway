@@ -30,11 +30,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
 /**
- * User: flascell
- * Date: Aug 26, 2003
- * Time: 2:54:01 PM
- * $Id$
- *
  * XML Digital signature on the soap request sent from the proxy to the ssg server. Also does XML
  * Encryption of the request's body if the assertion's property requires it.
  *
@@ -43,7 +38,10 @@ import java.security.cert.X509Certificate;
  *
  * On the proxy side, this must decorate a request with an xml d-sig and maybe encrypt the body.
  *
- * @author flascell
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Aug 26, 2003<br/>
+ * $Id$
  */
 public class ClientXmlRequestSecurity extends ClientAssertion {
     private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);

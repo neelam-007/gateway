@@ -12,9 +12,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: Jun 24, 2003
+ * SSG-side implementation of the UserManager for the internal identity provider.
+ * 
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: Jun 24, 2003<br/>
  *
  * @version $Revision$
  *

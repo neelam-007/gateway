@@ -12,11 +12,12 @@ import java.security.cert.CertificateEncodingException;
 import java.util.Set;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: May 26, 2003
+ * RMI implementation of the IdentityAdmin.
  *
- * RMI implementation of the IdentityAdmin
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: May 26, 2003
  */
 public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
     public IdentityAdminImpl(String[] configOptions, LifeCycle lc)

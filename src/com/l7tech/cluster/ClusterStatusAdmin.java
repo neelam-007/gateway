@@ -6,7 +6,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /**
- * Admin interface for the cluster status panel of the SSM
+ * Admin interface for the cluster status panel of the SSM.
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>

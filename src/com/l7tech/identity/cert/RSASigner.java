@@ -9,13 +9,14 @@ import java.io.FileOutputStream;
 import java.security.cert.Certificate;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: Jul 28, 2003
- *
  * Creates X509 certificates using RSA keys.
- * recycled code from smorrison who originally stole it from Justin Wood & Tomas Gustavson
+ * Recycled code from smorrison who originally stole it from Justin Wood & Tomas Gustavson
  * stripped out the se.anatom.ejbca dependencies and removed deprecated calls
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: Jul 28, 2003
  */
 public class RSASigner {
     private RsaSignerEngine rsaSignerEngine;

@@ -10,13 +10,15 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
+ * An assertion node in an assertion tree that refers to a user or group.
  *
- * User: flascell
- * Date: Oct 7, 2003
- * Time: 2:49:00 PM
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Oct 7, 2003<br/>
+ * Time: 2:49:00 PM<br/>
  * $Id$
- *
  *
  */
 public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode {
