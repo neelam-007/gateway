@@ -833,7 +833,7 @@
       -->
     <target name="compile" depends="prepare, configure_properties.dev, compile.forms" unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
-            deprecation="on" depend="on" verbose="no">
+            deprecation="on" depend="on" verbose="no" target="1.4" source="1.4" >
             <classpath refid="project.classpath"/>
         </javac>
         <copy todir="${build.classes}">
@@ -850,7 +850,7 @@
     </target>
 
     <target name="compile.forms">
-        <javac2 srcdir="src" destdir="${build.classes}" debug="on"
+        <javac2 srcdir="src" destdir="${build.classes}" debug="on" target="1.4" optimize="on" source="1.4"
             classpathref="project.classpath"/>
     </target>
 
