@@ -622,7 +622,7 @@ public class MessageProcessor {
             Header contentType = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE);
             log.info("Response Content-Type: " + contentType);
             if (contentType == null || contentType.getValue() == null)
-                throw new IOException("Response from Gateway did not inlcude a Content-Type");
+                throw new IOException("Response from Gateway did not include a Content-Type");
             final ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(contentType.getValue());
             if (!(outerContentType.isXml() || outerContentType.isMultipart()))
                 throw new IOException("Response from Gateway was unsupported Content-Type " + outerContentType.getFullValue());
