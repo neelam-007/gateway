@@ -48,7 +48,14 @@ public class IdentityPolicyView extends JDialog {
             return mg.getGroupName();
         } else if (ida instanceof SpecificUser) {
             SpecificUser su = (SpecificUser)ida;
-            return su.getUserLogin();
+            String output = su.getUserLogin();
+            if (output == null || output.length() < 1) {
+                output = su.getUserName();
+            }
+            if (output == null || output.length() < 1) {
+                output = su.getUserUid();
+            }
+            return output;
         }
         throw new IllegalArgumentException("Don't know how to handle class " + ida.getClass());
     }
@@ -99,7 +106,9 @@ public class IdentityPolicyView extends JDialog {
 
     /** * Initialize the class. */
     private void initialize() throws FindException, IOException {
-        setTitle("Identity Policy - " + extractName((IdentityAssertion)idAssertion.asAssertion()));
+        String suffix = extractName((IdentityAssertion)idAssertion.asAssertion());
+        if (suffix != null && suffix.length() > 0) setTitle("Identity Policy - " + suffix);
+        else setTitle("Identity Policy");
         setContentPane(getWindowContentPane());
         Actions.setEscKeyStrokeDisposes(this);
         initializeListeners();
