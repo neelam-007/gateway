@@ -17,6 +17,8 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -30,6 +32,7 @@ public class RequestHandler extends AbstractHttpHandler {
     private SsgFinder ssgFinder;
     private MessageProcessor messageProcessor;
     private RequestInterceptor interceptor = NullRequestInterceptor.INSTANCE;
+    private int bindPort;
 
     /**
      * Client proxy HTTP handler.  Proxies all incoming SOAP calls to the given
@@ -37,9 +40,10 @@ public class RequestHandler extends AbstractHttpHandler {
      *
      * @param ssgFinder the list of SSGs (SSG URLs and local endpoints) we support.
      */
-    public RequestHandler(final SsgFinder ssgFinder, final MessageProcessor messageProcessor) {
+    public RequestHandler(final SsgFinder ssgFinder, final MessageProcessor messageProcessor, int bindPort) {
         this.ssgFinder = ssgFinder;
         this.messageProcessor = messageProcessor;
+        this.bindPort = bindPort;
     }
 
     /**
@@ -51,7 +55,10 @@ public class RequestHandler extends AbstractHttpHandler {
                                          Document requestEnvelope,
                                          Ssg ssg)
     {
-        PendingRequest pr = new PendingRequest(requestEnvelope, ssg, interceptor);
+        PendingRequest pr = new PendingRequest(requestEnvelope,
+                                               ssg,
+                                               interceptor,
+                                               getOriginalUrl(request));
         String sa = request.getField("SOAPAction");
         if (sa != null)
             pr.setSoapAction(sa);
@@ -59,6 +66,19 @@ public class RequestHandler extends AbstractHttpHandler {
         pr.setUri(SoapUtil.getNamespaceUri(requestEnvelope));
         log.info("Request SOAPAction=" + pr.getSoapAction() + "   BodyURI=" + pr.getUri());
         return pr;
+    }
+
+    private URL getOriginalUrl(HttpRequest request) {
+        try {
+            int port = request.getPort();
+            if (port == 0)
+                port = bindPort;
+            return new URL("http", request.getHost(), port, request.getURI().toString());
+        } catch (MalformedURLException e) {
+            // can't happen
+            log.error("Malformed URL from client", e);
+            throw new RuntimeException("Malformed URL from client", e);
+        }
     }
 
     /**
