@@ -59,6 +59,7 @@ public class UserImp extends EntityImp implements User {
     }
 
     public Collection getGroups() {
+        if (_groups == null) _groups = new java.util.ArrayList();
         return _groups;
     }
 
