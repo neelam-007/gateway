@@ -184,7 +184,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
         Session s = h._session;
 
         try {
-            s.saveOrUpdate( obj );
+            s.update( obj );
         } catch ( HibernateException he ) {
             throw new UpdateException( he.toString(), he );
         } catch ( SQLException se ) {
