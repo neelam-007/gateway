@@ -112,7 +112,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @return the newly created message
      */
     public Message addMessage(QName name) {
-        Message m = new MessageElement();
+        Message m = new MutableMessage();
         m.setQName(name);
         addMessage(m);
         return m;
@@ -264,12 +264,30 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
         throw new IndexOutOfBoundsException("" + rowIndex + " > " + messageList.size());
     }
 
-    // hack, so the internal list can be modified
-    // the list in question is not exposed, while
-    // the, parts map is.
-    public static class MessageElement extends MessageImpl {
+    // hack so MessageImpl is editable. Make the internal list
+    // accessible.
+    public static class MutableMessage extends MessageImpl {
         public List getadditionOrderOfParts() {
             return additionOrderOfParts;
+        }
+
+        /**
+         * Replace the message part.
+         * 
+         * @param part the part to be added
+         */
+        public void replacePart(String name, Part part) {
+            parts.remove(name);
+
+            final int size = additionOrderOfParts.size();
+            for (int i = 0; i < size; i++) {
+                String s = (String)additionOrderOfParts.get(i);
+                if (s.equals(name)) {
+                    additionOrderOfParts.set(i, part.getName());
+                    break;
+                }
+            }
+            parts.put(part.getName(), part);
         }
     }
 

@@ -228,9 +228,9 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         final JTable _16;
         _16 = new JTable();
         namespaceDetails = _16;
-        _16.setShowVerticalLines(true);
         _16.setAutoCreateColumnsFromModel(true);
         _16.setShowHorizontalLines(true);
+        _16.setShowVerticalLines(true);
         _15.setViewportView(_16);
         final JLabel _17;
         _17 = new JLabel();

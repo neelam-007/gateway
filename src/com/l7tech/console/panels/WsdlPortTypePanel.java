@@ -361,8 +361,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         final JButton _10;
         _10 = new JButton();
         addOperationButton = _10;
-        _10.setLabel("Add");
         _10.setText("Add");
+        _10.setLabel("Add");
         _8.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final com.intellij.uiDesigner.core.Spacer _11;
         _11 = new com.intellij.uiDesigner.core.Spacer();

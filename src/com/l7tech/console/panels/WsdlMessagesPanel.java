@@ -226,7 +226,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                   QName on = message.getQName();
                   QName nn =
                     new QName(on.getNamespaceURI(), (String)super.getCellEditorValue());
-                  Message nm = new WsdlMessagesTableModel.MessageElement();
+                  Message nm = new WsdlMessagesTableModel.MutableMessage();
                   nm.setUndefined(false);
                   nm.setQName(nn);
                   return nm;
@@ -361,12 +361,9 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                       new String[]{"Name", "Type"}, 0));
                   return;
               }
-              Message m =
-                (Message)messagesTable.getValueAt(
-                  selectedRow,
-                  messagesTable.getSelectedColumn()
-                );
-
+              WsdlMessagesTableModel.MutableMessage m =
+                (WsdlMessagesTableModel.MutableMessage)messagesTable.getValueAt(selectedRow,
+                                                                                messagesTable.getSelectedColumn());
               partsTableModel = new WsdlMessagePartsTableModel(m, definition);
               partsTable.setModel(partsTableModel);
               partsTable.setDefaultRenderer(Object.class, partsTableCellRenderer);
@@ -539,14 +536,14 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         final JButton _10;
         _10 = new JButton();
         removeMessagePartButton = _10;
-        _10.setLabel("Remove");
         _10.setText("Remove");
+        _10.setLabel("Remove");
         _9.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final JButton _11;
         _11 = new JButton();
         addMessagePartButton = _11;
-        _11.setLabel("Add");
         _11.setText("Add");
+        _11.setLabel("Add");
         _9.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final com.intellij.uiDesigner.core.Spacer _12;
         _12 = new com.intellij.uiDesigner.core.Spacer();
@@ -562,14 +559,14 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         _15 = new JButton();
         removeMessageButton = _15;
         _15.setActionCommand("AddMessage");
-        _15.setLabel("Remove");
         _15.setText("Remove");
+        _15.setLabel("Remove");
         _14.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final JButton _16;
         _16 = new JButton();
         addMessageButton = _16;
-        _16.setLabel("Add");
         _16.setText("Add");
+        _16.setLabel("Add");
         _14.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final com.intellij.uiDesigner.core.Spacer _17;
         _17 = new com.intellij.uiDesigner.core.Spacer();
