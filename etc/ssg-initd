@@ -12,7 +12,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-if [ -z "$TOMCAT_HOME"] then 
+if [ -z "$TOMCAT_HOME"]; then 
 	TOMCAT_HOME="/ssg/tomcat/"
 	echo "Setting TOMCAT_HOME to /ssg/tomcat"
 fi
@@ -26,7 +26,7 @@ ssguser="gateway"
 # when not running is also a failure.  So we just do it the way init scripts
 # are expected to behave here.
 start() {
-        echo -n $"Starting $prog: "
+#        echo -n $"Starting $prog: "
         su - $ssguser -c "$ssg start -security"
         RETVAL=$?
         echo
@@ -34,7 +34,7 @@ start() {
         return $RETVAL
 }
 stop() {
-	echo -n $"Stopping $prog: "
+#	echo -n $"Stopping $prog: "
 	su - $ssguser -c "$ssg stop "
 	RETVAL=$?
 	echo
