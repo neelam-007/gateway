@@ -321,7 +321,7 @@ public class MessageProcessor {
         Policy policy = policyManager.getPolicy(req);
         if (policy == null || !policy.isValid()) {
             if (policy != null)
-                log.warning("Ignoring this policy -- it's thrown PolicyAssertionException before");
+                log.warning("Ignoring this policy -- it has previously failed to complete successfully.");
             if (req.getSsg().isUseSslByDefault()) {
                 // Use a default policy requiring SSL.
                 policy = SSL_POLICY;
