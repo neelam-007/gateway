@@ -165,19 +165,13 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                             if(mimepartRequest != null) {
                                 // validate the content type
-                                String requiredContentType = part.getContentType();
-                                if(requiredContentType.equals("text/enriched")) {
-                                    // text/enriched implies that text/plain is allowed
-                                    if(!(!mimepartRequest.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(requiredContentType)) &&
-                                            (mimepartRequest.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals("text/plain"))) {
-                                        logger.info("The content type of the attachment " + mimePartCID + " must be: " + part.getContentType());
-                                        return AssertionStatus.FALSIFIED;
+                                if(!part.validateContentType(mimepartRequest.getHeader(XmlUtil.CONTENT_TYPE).getValue())) {
+                                    if(part.getContentTypes().length > 1) {
+                                        logger.info("The content type of the attachment " + mimePartCID + " must be one of the types: " + part.retrieveAllContentTypes());
+                                    } else {
+                                        logger.info("The content type of the attachment " + mimePartCID + " must be: " + part.retrieveAllContentTypes());
                                     }
-                                } else {
-                                    if(!mimepartRequest.getHeader(XmlUtil.CONTENT_TYPE).equals(part.getContentType())) {
-                                        logger.info("The content type of the attachment " + mimePartCID + " must be: " + part.getContentType());
-                                        return AssertionStatus.FALSIFIED;
-                                    }
+                                    return AssertionStatus.FALSIFIED;
                                 }
 
                                 // check the max. length allowed

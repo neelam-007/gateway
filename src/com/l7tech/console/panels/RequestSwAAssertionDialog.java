@@ -366,10 +366,9 @@ public class RequestSwAAssertionDialog extends JDialog {
                                         //concat the content type if the part alreay exists
                                         MimePartInfo retrievedPart = (MimePartInfo) partList.get(mimeContent.getPart());
                                         if (retrievedPart != null) {
-                                            retrievedPart.setContentType(retrievedPart.getContentType() + mimeContent.getType());
+                                            retrievedPart.addContentType(mimeContent.getType());
                                         } else {
                                             MimePartInfo newPart = new MimePartInfo(mimeContent.getPart(), mimeContent.getType());
-                                            newPart.setContentType( mimeContent.getType());
 
                                             // default length 1000 Kbytes
                                             newPart.setMaxLength(1000);

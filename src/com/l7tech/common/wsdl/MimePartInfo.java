@@ -1,6 +1,7 @@
 package com.l7tech.common.wsdl;
 
 import java.io.Serializable;
+import java.util.Vector;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -9,7 +10,7 @@ import java.io.Serializable;
  */
 public class MimePartInfo implements Serializable {
     protected String name;
-    protected String contentType;
+    protected Object[] contentTypes = null;
     private int maxLength;
 
     public MimePartInfo() {
@@ -17,7 +18,8 @@ public class MimePartInfo implements Serializable {
 
     public MimePartInfo(String name, String contentType) {
         this.name = name;
-        this.contentType = contentType;
+        contentTypes = new String[1];
+        contentTypes[0] = contentType;
     }
 
     public String getName() {
@@ -28,12 +30,45 @@ public class MimePartInfo implements Serializable {
         this.name = name;
     }
 
-    public String getContentType() {
-        return contentType;
+    public Object[] getContentTypes() {
+        return contentTypes;
     }
 
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
+    public void setContentTypes(Object[] contentTypes) {
+        this.contentTypes = contentTypes;
+    }
+
+    public void addContentType(String contentType) {
+        Vector newContentTypes = new Vector();
+        for (int i = 0; i < contentTypes.length; i++) {
+            newContentTypes.add(contentTypes[i]);
+        }
+        contentTypes = newContentTypes.toArray();
+    }
+
+    public String retrieveAllContentTypes() {
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < contentTypes.length; i++) {
+            sb.append((String) contentTypes[i]).append(", ");
+        }
+
+        String resultString = sb.toString();
+
+        // don't show the last 2 characters
+        return resultString.substring(0, resultString.length()-2);
+    }
+
+    public boolean validateContentType(String contentType) {
+        for (int i = 0; i < contentTypes.length; i++) {
+            String validContentType = (String) contentTypes[i];
+            if(validContentType.equals(contentType) ||
+                 (validContentType.equals("text/enriched") && contentType.equals("text/plain"))) {
+                // content type is valid
+                return true;
+            }
+        }
+        // not found
+        return false;
     }
 
     public int getMaxLength() {
@@ -42,26 +77,5 @@ public class MimePartInfo implements Serializable {
 
     public void setMaxLength(int maxLength) {
         this.maxLength = maxLength;
-    }
-
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof MimePartInfo)) return false;
-
-        final MimePartInfo mimePartInfo = (MimePartInfo) o;
-
-        if (maxLength != mimePartInfo.maxLength) return false;
-        if (contentType != null ? !contentType.equals(mimePartInfo.contentType) : mimePartInfo.contentType != null) return false;
-        if (name != null ? !name.equals(mimePartInfo.name) : mimePartInfo.name != null) return false;
-
-        return true;
-    }
-
-    public int hashCode() {
-        int result;
-        result = (name != null ? name.hashCode() : 0);
-        result = 29 * result + (contentType != null ? contentType.hashCode() : 0);
-        result = 29 * result + maxLength;
-        return result;
     }
 }

@@ -1,8 +1,6 @@
 package com.l7tech.console.table;
 
-import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.wsdl.MimePartInfo;
-
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Logger;
 import java.util.Vector;
@@ -178,7 +176,7 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
                     return multipartInfo.getName();
 
                 case MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX:
-                    return multipartInfo.getContentType();
+                    return multipartInfo.retrieveAllContentTypes();
 
                 case MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX:
                     return new Integer(multipartInfo.getMaxLength());
@@ -230,8 +228,8 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
                     break;
 
                 case MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX:
-                    elementA = ((MimePartInfo) a).getContentType();
-                    elementB = ((MimePartInfo) b).getContentType();
+                    elementA = ((MimePartInfo) a).retrieveAllContentTypes();
+                    elementB = ((MimePartInfo) b).retrieveAllContentTypes();
 
                     break;
 
