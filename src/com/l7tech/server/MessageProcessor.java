@@ -14,15 +14,18 @@ import com.l7tech.service.resolution.ServiceResolutionException;
 import com.l7tech.objectmodel.ObjectModelException;
 import org.apache.log4j.Category;
 
+import java.io.IOException;
+
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class MessageProcessor {
-    public AssertionStatus processMessage( Request request, Response response ) throws PolicyAssertionException, MessageProcessingException {
+    public AssertionStatus processMessage( Request request, Response response ) throws IOException, PolicyAssertionException, MessageProcessingException {
         if ( _serviceManager == null ) throw new IllegalStateException( "ServiceManager is null!" );
         try {
+
             PublishedService service = _serviceManager.resolveService( request );
 
             AssertionStatus status;

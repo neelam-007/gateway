@@ -8,16 +8,18 @@ package com.l7tech.credential;
 
 import com.l7tech.message.Request;
 
+import java.io.IOException;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public abstract class AbstractCredentialFinder implements CredentialFinder {
-    public PrincipalCredentials findCredentials( Request request ) throws CredentialFinderException {
+    public PrincipalCredentials findCredentials( Request request ) throws IOException, CredentialFinderException {
         PrincipalCredentials pc = doFindCredentials( request );
-        pc.setFinder(this);
+        if ( pc != null ) pc.setFinder(this);
         return pc;
     }
 
-    protected abstract PrincipalCredentials doFindCredentials( Request request ) throws CredentialFinderException;
+    protected abstract PrincipalCredentials doFindCredentials( Request request ) throws IOException, CredentialFinderException;
 }

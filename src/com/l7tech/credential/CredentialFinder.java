@@ -6,12 +6,13 @@
 
 package com.l7tech.credential;
 
-import com.l7tech.message.Message;
 import com.l7tech.message.Request;
+
+import java.io.IOException;
 
 /**
  * @author alex
  */
 public interface CredentialFinder {
-    PrincipalCredentials findCredentials( Request request ) throws CredentialFinderException;
+    PrincipalCredentials findCredentials( Request request ) throws IOException, CredentialFinderException;
 }
