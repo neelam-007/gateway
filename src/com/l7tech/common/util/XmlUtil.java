@@ -154,6 +154,12 @@ public class XmlUtil {
         nodeToOutputStream(node, out);
         return out.toString();
     }
+    
+    public static byte[] toByteArray(Node node) throws IOException {
+         final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
+         nodeToOutputStream(node, out);
+         return out.toByteArray();
+     }
 
     public static String nodeToFormattedString(Node node) throws IOException {
         final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
