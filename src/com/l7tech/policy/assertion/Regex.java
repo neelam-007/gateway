@@ -10,10 +10,17 @@ package com.l7tech.policy.assertion;
  * @version Mar 21, 2005
  */
 public class Regex extends Assertion {
+    public static final int MAX_LENGTH = 1024 * 512;
+
     private String regex;
     private String replacement;
     private boolean caseInsensitive;
     private boolean replace;
+    /**
+     * Which MIME part to do the replacement in. Use null to indicate the first (SOAP)
+     * part or any other Integer (zero-based) for a specific MIME part.
+     */
+    private Integer mimePart = null;
 
     /**
      * Test whether the assertion is a credential source. The <code>RegexAssertion</code>
@@ -63,5 +70,13 @@ public class Regex extends Assertion {
      */
     public void setReplace(boolean replace) {
         this.replace = replace;
+    }
+
+    public Integer getMimePart() {
+        return mimePart;
+    }
+
+    public void setMimePart(Integer mimePart) {
+        this.mimePart = mimePart;
     }
 }
