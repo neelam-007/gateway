@@ -12,6 +12,8 @@ import com.l7tech.credential.wss.WssBasicCredentialFinder;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.proxy.datamodel.PendingRequest;
 
 /**
  * @author alex
@@ -32,5 +34,26 @@ public class WssBasic extends WssCredentialSourceAssertion {
 
     public Class getCredentialFinderClass() {
         return WssBasicCredentialFinder.class;
+    }
+
+    /**
+     * decorate the xml soap message with a WSS header containing the username and password
+     * @param request
+     * @return
+     * @throws PolicyAssertionException
+     */
+    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
+        String username = request.getSsg().getUsername();
+        char[] password = request.getSsg().getPassword();
+        if (username == null || password == null || username.length() < 1) {
+            //log.info("HttpBasic: no credentials configured for the SSG " + request.getSsg());
+            request.setCredentialsWouldHaveHelped(true);
+            return AssertionStatus.AUTH_REQUIRED;
+        }
+        // todo, what if there is already such a header element? let's make sure we dont override it
+        // add the sec element to the request
+        // org.apache.axis.message.SOAPHeaderElement soapheader = new org.apache.axis.message.SOAPHeaderElement(element);
+        // todo, change this return value
+        return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 }
