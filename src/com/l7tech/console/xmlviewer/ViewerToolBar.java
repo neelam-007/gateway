@@ -1,6 +1,7 @@
 package com.l7tech.console.xmlviewer;
 
 import com.l7tech.console.xmlviewer.properties.ViewerProperties;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -32,7 +33,8 @@ public class ViewerToolBar extends JToolBar {
         void selected(String xpathSelected);
     }
 
-    public ViewerToolBar(ViewerProperties props, Viewer v, final XPathSelectFeedback selectionFeedback) {
+    public ViewerToolBar(ViewerProperties props, Viewer v, final XPathSelectFeedback selectionFeedback,
+                         final JRootPane rootPane) {
         viewer = v;
         properties = props;
 
@@ -64,6 +66,8 @@ public class ViewerToolBar extends JToolBar {
             }
         });
 
+        if (rootPane != null)
+            rootPane.setDefaultButton(selectXpath);        
         setXPaths();
 
         JLabel xpathLabel = new JLabel("XPath:");

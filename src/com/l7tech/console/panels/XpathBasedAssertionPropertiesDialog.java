@@ -60,7 +60,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JPanel messageViewerPanel;
     private JPanel messageViewerToolbarPanel;
     private JLabel operationsLabel;
-    private JTextField xPathExpressionTxtField;
     private JTree operationsTree;
     private JButton okButton;
     private JButton cancelButton;
@@ -130,7 +129,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         initialize();
 
         // display the existing xpath expression
-        xPathExpressionTxtField.setText(xmlSecAssertion.getXpathExpression().getExpression());
+        messageViewerToolBar.getXpathComboBox().getEditor().setItem(xmlSecAssertion.getXpathExpression().getExpression());
 
         // ok button is disabled until a change is made
         okButton.setEnabled(false);
@@ -149,7 +148,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 // get xpath from control and the namespace map
                 // then save it in assertion
-                String xpath = xPathExpressionTxtField.getText();
+                String xpath = (String)messageViewerToolBar.getXpathComboBox().getEditor().getItem();
                 xmlSecAssertion.setXpathExpression(new XpathExpression(xpath, namespaces));
                 XpathBasedAssertionPropertiesDialog.this.dispose();
             }
@@ -291,10 +290,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                                                  messageViewer,
                                                  new ViewerToolBar.XPathSelectFeedback() {
                                                     public void selected(String xpathSelected) {
-                                                        xPathExpressionTxtField.setText(xpathSelected);
+                                                        messageViewerToolBar.getXpathComboBox().getEditor().setItem(xpathSelected);
                                                         okButton.setEnabled(true);
+                                                        okButton.doClick();
                                                     }
-                                                 });
+                                                 }, getRootPane());
         com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
         messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
@@ -505,8 +505,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         final JLabel _5;
         _5 = new JLabel();
         operationsLabel = _5;
-        _5.setHorizontalTextPosition(0);
         _5.setText("Web Service Operations");
+        _5.setHorizontalTextPosition(0);
         _4.add(_5, new GridConstraints(0, 0, 1, 1, 0, 3, 7, 0, null, null, null));
         final JScrollPane _6;
         _6 = new JScrollPane();
@@ -538,38 +538,29 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         _10.setViewportView(_11);
         final JPanel _12;
         _12 = new JPanel();
-        _12.setLayout(new GridLayoutManager(3, 7, new Insets(5, 0, 5, 0), -1, -1));
+        _12.setLayout(new GridLayoutManager(2, 7, new Insets(5, 0, 5, 0), -1, -1));
         _1.add(_12, new GridConstraints(4, 0, 1, 1, 0, 3, 7, 3, null, null, null));
         final JButton _13;
         _13 = new JButton();
         okButton = _13;
         _13.setText("OK");
-        _12.add(_13, new GridConstraints(2, 4, 1, 1, 0, 1, 3, 0, null, null, null));
+        _12.add(_13, new GridConstraints(1, 4, 1, 1, 0, 1, 3, 0, null, null, null));
         final Spacer _14;
         _14 = new Spacer();
-        _12.add(_14, new GridConstraints(2, 3, 1, 1, 0, 1, 6, 1, null, null, null));
+        _12.add(_14, new GridConstraints(1, 3, 1, 1, 0, 1, 6, 1, null, null, null));
         final JButton _15;
         _15 = new JButton();
         helpButton = _15;
         _15.setText("Help");
-        _12.add(_15, new GridConstraints(2, 6, 1, 1, 0, 1, 3, 0, null, null, null));
+        _12.add(_15, new GridConstraints(1, 6, 1, 1, 0, 1, 3, 0, null, null, null));
         final JButton _16;
         _16 = new JButton();
         cancelButton = _16;
         _16.setText("Cancel");
-        _12.add(_16, new GridConstraints(2, 5, 1, 1, 0, 1, 3, 0, null, null, null));
+        _12.add(_16, new GridConstraints(1, 5, 1, 1, 0, 1, 3, 0, null, null, null));
         final Spacer _17;
         _17 = new Spacer();
         _12.add(_17, new GridConstraints(0, 3, 1, 1, 0, 2, 1, 6, null, null, null));
-        final JTextField _18;
-        _18 = new JTextField();
-        xPathExpressionTxtField = _18;
-        _18.setToolTipText("The Xpath to save in the assertion");
-        _18.setEditable(false);
-        _18.setText("blahblahs");
-        _18.setFocusCycleRoot(false);
-        _18.setFocusable(true);
-        _12.add(_18, new GridConstraints(1, 1, 1, 6, 8, 1, 6, 0, null, new Dimension(150, 25), null));
     }
 
 }
