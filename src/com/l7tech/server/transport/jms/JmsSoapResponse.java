@@ -13,7 +13,11 @@ import com.l7tech.message.SoapResponse;
  * @version $Revision$
  */
 public class JmsSoapResponse extends SoapResponse {
-    public JmsSoapResponse( JmsTransportMetadata tm ) {
-        super( tm );
+    public JmsSoapResponse(JmsTransportMetadata tm) {
+        super(tm);
+    }
+
+    public Object doGetParameter(String name) {
+        return _transportMetadata.getResponseParameter(name);
     }
 }

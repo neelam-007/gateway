@@ -23,6 +23,10 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JmsSoapRequest extends SoapRequest {
+    public Object doGetParameter( String name ) {
+        return _transportMetadata.getRequestParameter(name);
+    }
+
     private final Logger _logger = Logger.getLogger(getClass().getName());
 
     public JmsSoapRequest( JmsTransportMetadata mt ) {

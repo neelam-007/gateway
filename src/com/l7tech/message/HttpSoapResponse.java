@@ -6,8 +6,8 @@
 
 package com.l7tech.message;
 
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.assertion.AssertionStatus;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Iterator;
@@ -74,5 +74,9 @@ public class HttpSoapResponse extends SoapResponse {
                 }
             }
         }
+    }
+
+    public Object doGetParameter( String name ) {
+        return _transportMetadata.getResponseParameter(name);
     }
 }

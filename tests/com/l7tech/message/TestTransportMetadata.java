@@ -14,7 +14,11 @@ public class TestTransportMetadata extends TransportMetadata {
         return TransportProtocol.UNKNOWN;
     }
 
-    public Object getParameter(String name) {
+    public Object getRequestParameter(String name) {
+        return null;
+    }
+
+    public Object getResponseParameter( String name ) {
         return null;
     }
 }

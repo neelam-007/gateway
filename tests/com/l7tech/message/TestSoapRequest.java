@@ -6,17 +6,22 @@
 
 package com.l7tech.message;
 
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-import java.io.*;
-
-import com.l7tech.common.util.XmlUtil;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Simple standalone SoapRequest for testing.
  */
 public class TestSoapRequest extends SoapRequest {
+    public Object doGetParameter( String name ) {
+        return null;
+    }
+
     private Node requestMessage;
 
     public TestSoapRequest(Document requestMessage) {

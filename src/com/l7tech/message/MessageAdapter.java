@@ -30,7 +30,7 @@ public abstract class MessageAdapter implements Message {
     }
 
     public Object getParameter( String name ) {
-        Object value = _transportMetadata.getParameter(name);
+        Object value = doGetParameter(name);
         if ( value == null ) value = _params.get( name );
         if ( value instanceof Object[] )
             return ((Object[])value)[0];
@@ -38,8 +38,10 @@ public abstract class MessageAdapter implements Message {
             return value;
     }
 
+    public abstract Object doGetParameter(String name);
+
     public Object[] getParameterValues( String name ) {
-        Object value = _transportMetadata.getParameter(name);
+        Object value = doGetParameter(name);
         if ( value == null ) value = _params.get(name);
         if ( value instanceof Object[] ) {
             return (Object[])value;

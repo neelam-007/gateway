@@ -7,7 +7,6 @@
 package com.l7tech.message;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.io.InputStream;
 
 /**
@@ -20,11 +19,15 @@ public class HttpSoapRequest extends SoapRequest {
     }
 
     protected InputStream doGetRequestInputStream() throws IOException {
-           HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
-           return htm.getRequest().getInputStream();
-       }
+        HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
+        return htm.getRequest().getInputStream();
+    }
 
     public boolean isReplyExpected() {
         return true;
+    }
+
+    public Object doGetParameter( String name ) {
+        return _transportMetadata.getRequestParameter(name);
     }
 }

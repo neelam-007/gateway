@@ -12,5 +12,6 @@ package com.l7tech.message;
  */
 public abstract class TransportMetadata {
     public abstract TransportProtocol getProtocol();
-    public abstract Object getParameter( String name );
+    public abstract Object getRequestParameter(String name);
+    public abstract Object getResponseParameter(String name);
 }

@@ -13,4 +13,8 @@ public class TestSoapResponse extends SoapResponse {
     public TestSoapResponse() {
         super(new TestTransportMetadata());
     }
+
+    public Object doGetParameter( String name ) {
+        return null;
+    }
 }

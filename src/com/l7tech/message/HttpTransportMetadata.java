@@ -46,7 +46,7 @@ public class HttpTransportMetadata extends TransportMetadata {
             return TransportProtocol.UNKNOWN;
     }
 
-    public Object getParameter(String name) {
+    public Object getRequestParameter(String name) {
         if ( name == null ) return null;
         Object value = null;
         value = _request.getAttribute( name );
@@ -77,6 +77,11 @@ public class HttpTransportMetadata extends TransportMetadata {
         }
 
         return value;
+    }
+
+    public Object getResponseParameter( String name ) {
+        // There are no meaningful response parameters in the servlet API 
+        return null;
     }
 
     protected final HttpServletRequest _request;
