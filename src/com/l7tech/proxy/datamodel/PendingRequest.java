@@ -6,30 +6,19 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
-import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import java.util.logging.Logger;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.logging.Logger;
 
 /**
  * Holds request state while the client proxy is processing it.
@@ -66,7 +55,7 @@ public class PendingRequest {
         private boolean isDigestAuthRequired = false;
         private boolean isNonceRequired = false;
         private WssDecorator.DecorationRequirements wssRequirements = new WssDecorator.DecorationRequirements();
-        private Map pendingDecorations = new HashMap();
+        private Map pendingDecorations = new LinkedHashMap();
     }
     private PolicySettings policySettings = new PolicySettings();
 
