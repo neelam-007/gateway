@@ -1,5 +1,6 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.Enumeration;
@@ -28,12 +29,16 @@ public class TreeNodeFactory {
      *
      * @return the TreeNode for a given Entry
      */
-    public static BasicTreeNode getTreeNode(EntityHeader entry) {
-        if (entry == null) {
-            throw new NullPointerException("entry");
+    public static BasicTreeNode getTreeNode(EntityHeader entity) {
+        if (entity == null) {
+            throw new NullPointerException("entity");
         }
-        return null;
+        if (IdentityProviderConfig.class.equals(entity.getType())) {
+            return new ProviderNode(entity);
+        }
+        throw new IllegalArgumentException("Unknown entity type "+entity.getType());
     }
+
 
     /**
      * returns an TreeNodeEnumeration for a given Enumeration

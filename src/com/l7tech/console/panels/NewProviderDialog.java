@@ -1,6 +1,9 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.imp.EntityHeaderImp;
+import com.l7tech.identity.IdentityProviderConfig;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -13,346 +16,354 @@ import java.util.ResourceBundle;
  * This class is the New Provider dialog.
  */
 public class NewProviderDialog extends JDialog {
-  /**
-   * Create a new NewProviderDialog
-   *
-   * @param parent the parent Frame. May be <B>null</B>
-   */
-  public NewProviderDialog(JFrame parent) {
-    super(parent, true);
-    initResources();
-    initComponents();
-    pack();
-    Utilities.centerOnScreen(this);
-  }
 
-  /**
-   * set the PanelListener
-   *
-   * @param listener the PanelListener
-   */
-  public void setPanelListener(PanelListener listener) {
-  }
+    private PanelListener listener;
+    private IdentityProviderConfig iProvider = new com.l7tech.identity.imp.IdentityProviderConfigImp();
 
-  /**
-   * Loads locale-specific resources: strings  etc
-   */
-  private void initResources() {
-    Locale locale = Locale.getDefault();
-    resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewProviderDialog",locale);
-  }
+    /**
+     * Create a new NewProviderDialog
+     *
+     * @param parent the parent Frame. May be <B>null</B>
+     */
+    public NewProviderDialog(JFrame parent) {
+        super(parent, true);
+        initResources();
+        initComponents();
+        pack();
+        Utilities.centerOnScreen(this);
+    }
 
-  /**
-   * This method is called from within the constructor to
-   * initialize the dialog.
-   */
-  private void initComponents() {
+    /**
+     * set the PanelListener
+     *
+     * @param l the PanelListener
+     */
+    public void setPanelListener(PanelListener l) {
+        listener = l;
+    }
 
-    GridBagConstraints constraints = null;
+    /**
+     * Loads locale-specific resources: strings  etc
+     */
+    private void initResources() {
+        Locale locale = Locale.getDefault();
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewProviderDialog", locale);
+    }
 
-    Container contents = getContentPane();
-    JPanel panel = new JPanel();
-    panel.setDoubleBuffered(true);
-    contents.add(panel);
-    panel.setLayout(new GridBagLayout());
-    setTitle (resources.getString("dialog.title"));
+    /**
+     * This method is called from within the constructor to
+     * initialize the dialog.
+     */
+    private void initComponents() {
 
-    addWindowListener(new WindowAdapter () {
-                        public void windowClosing(WindowEvent event) {
-                          // user hit window manager close button
-                          windowAction(CMD_CANCEL);
-                        }
-                      });
+        GridBagConstraints constraints = null;
 
-    // Realm ID label
-    JLabel realmIdLabel = new JLabel();
-    realmIdLabel.setToolTipText(resources.getString("realmIdTextField.tooltip"));
-    realmIdLabel.setText(resources.getString("realmIdTextField.label"));
+        Container contents = getContentPane();
+        JPanel panel = new JPanel();
+        panel.setDoubleBuffered(true);
+        contents.add(panel);
+        panel.setLayout(new GridBagLayout());
+        setTitle(resources.getString("dialog.title"));
 
-    constraints = new GridBagConstraints();
-    constraints.gridx=0;
-    constraints.gridy=0;
-    constraints.weightx=0.0;
-    constraints.gridwidth=1;
-    constraints.fill = GridBagConstraints.NONE;
-    constraints.anchor = GridBagConstraints.WEST;
-    constraints.insets = new Insets(12,12,0,0);
-    panel.add(realmIdLabel, constraints);
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent event) {
+                // user hit window manager close button
+                windowAction(CMD_CANCEL);
+            }
+        });
 
-    // Realm ID text field
-    constraints = new GridBagConstraints();
-    constraints.gridx=1;
-    constraints.gridy=0;
-    constraints.weightx=0.0;
-    constraints.gridwidth=1;
-    constraints.fill = GridBagConstraints.NONE;
-    constraints.anchor = GridBagConstraints.WEST;
-    constraints.insets = new Insets(12,7,0,11);
-    panel.add(getRealmIdTextField(), constraints);
+        // Provider ID label
+        JLabel providerNameLabel = new JLabel();
+        providerNameLabel.setToolTipText(resources.getString("providerNameTextField.tooltip"));
+        providerNameLabel.setText(resources.getString("providerNameTextField.label"));
 
-    // additional properties
-    constraints = new GridBagConstraints();
-    constraints.gridx = 0;
-    constraints.gridy = 1;
-    constraints.gridwidth = 2;
-    constraints.fill = GridBagConstraints.NONE;
-    constraints.anchor = GridBagConstraints.WEST;
-    constraints.weightx = 0.0;
-    constraints.insets = new Insets(12,12,0,0);
-    panel.add(getAdditionalProperties(), constraints);
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(12, 12, 0, 0);
+        panel.add(providerNameLabel, constraints);
 
-    // Buttons
-    constraints = new GridBagConstraints();
-    constraints.gridx = 1;
-    constraints.gridy = 2;
-    constraints.gridwidth = 2;
-    constraints.fill = GridBagConstraints.NONE;
-    constraints.anchor = GridBagConstraints.EAST;
-    constraints.weightx = 1.0;
-    constraints.insets = new Insets(12,0,12,21);
-    JPanel buttonPanel = createButtonPanel();
-    panel.add(buttonPanel, constraints);
+        // Provider ID text field
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 0;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(12, 7, 0, 11);
+        panel.add(getProviderNameTextField(), constraints);
 
-    // bottom filler
-    constraints = new GridBagConstraints();
-    constraints.gridx = 0;
-    constraints.gridy = 3;
-    constraints.gridwidth = 2;
-    constraints.fill = GridBagConstraints.BOTH;
-    constraints.anchor = GridBagConstraints.CENTER;
-    constraints.weightx = 1.0;
-    constraints.weighty = 1.0;
-    constraints.insets = new Insets(0,0,0,0);
-    Component filler = Box.createHorizontalStrut(8);
-    panel.add(filler, constraints);
+        // additional properties
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.gridwidth = 2;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets(12, 12, 0, 0);
+        panel.add(getAdditionalProperties(), constraints);
 
-    // side filler
-    constraints = new GridBagConstraints();
-    constraints.gridx = 2;
-    constraints.gridy = 0;
-    constraints.gridwidth = 1;
-    constraints.gridheight = 3;
-    constraints.fill = GridBagConstraints.BOTH;
-    constraints.anchor = GridBagConstraints.CENTER;
-    constraints.weightx = 1.0;
-    constraints.weighty = 1.0;
-    constraints.insets = new Insets(0,0,0,0);
-    Component filler2 = Box.createHorizontalStrut(8);
-    panel.add(filler2, constraints);
+        // Buttons
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 2;
+        constraints.gridwidth = 2;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.EAST;
+        constraints.weightx = 1.0;
+        constraints.insets = new Insets(12, 0, 12, 21);
+        JPanel buttonPanel = createButtonPanel();
+        panel.add(buttonPanel, constraints);
 
-    getRootPane().setDefaultButton(createButton);
+        // bottom filler
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 3;
+        constraints.gridwidth = 2;
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.anchor = GridBagConstraints.CENTER;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+        constraints.insets = new Insets(0, 0, 0, 0);
+        Component filler = Box.createHorizontalStrut(8);
+        panel.add(filler, constraints);
 
-  } // initComponents()
+        // side filler
+        constraints = new GridBagConstraints();
+        constraints.gridx = 2;
+        constraints.gridy = 0;
+        constraints.gridwidth = 1;
+        constraints.gridheight = 3;
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.anchor = GridBagConstraints.CENTER;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+        constraints.insets = new Insets(0, 0, 0, 0);
+        Component filler2 = Box.createHorizontalStrut(8);
+        panel.add(filler2, constraints);
 
-  /**
-   * A method that returns a JTextField containing realmId information
-   *
-   * @return the realm ID textfield
-   */
-  public JTextField getRealmIdTextField() {
-    if(realmIdTextField != null) return realmIdTextField;
+        getRootPane().setDefaultButton(createButton);
 
-    realmIdTextField = new JTextField();
-    realmIdTextField.setPreferredSize(new Dimension(217,20));
-    realmIdTextField.setMinimumSize(new Dimension(217,20));
-    realmIdTextField.setToolTipText(resources.getString("realmIdTextField.tooltip"));
+    } // initComponents()
 
-    realmIdTextField.
-      setDocument(
-                 new FilterDocument(24,
-                                    new FilterDocument.Filter() {
-                                      public boolean accept(String str) {
+    /**
+     * A method that returns a JTextField containing provider information
+     *
+     * @return the ID textfield
+     */
+    public JTextField getProviderNameTextField() {
+        if (providerNameTextField != null) return providerNameTextField;
+
+        providerNameTextField = new JTextField();
+        providerNameTextField.setPreferredSize(new Dimension(217, 20));
+        providerNameTextField.setMinimumSize(new Dimension(217, 20));
+        providerNameTextField.setToolTipText(resources.getString("providerNameTextField.tooltip"));
+
+        providerNameTextField.
+                setDocument(
+                        new FilterDocument(24,
+                                new FilterDocument.Filter() {
+                                    public boolean accept(String str) {
                                         if (str == null) return false;
                                         return true;
-                                      }
-                                    }));
+                                    }
+                                }));
 
-    return realmIdTextField;
-  }
-
-  /**
-   * A method that returns a JCheckBox that indicates 
-   * wether the user wishes to define additional properties
-   * of the entity
-   * 
-   * @return the CheckBox component
-   */
-  private JCheckBox getAdditionalProperties() {
-    if (additionalPropertiesCheckBox == null)  {
-      additionalPropertiesCheckBox = new JCheckBox(resources.getString("additionalProperties.label"));
-      additionalPropertiesCheckBox.setHorizontalTextPosition(SwingConstants.LEADING);
-    
-      additionalPropertiesCheckBox.addItemListener(new ItemListener() {
-          /**
-           * Invoked when an item has been selected or deselected.
-           * The code written for this method performs the operations
-           * that need to occur when an item is selected (or deselected).
-           */
-          public void itemStateChanged(ItemEvent e) {
-            if(e.getStateChange() == e.SELECTED) {
-              createThenEdit = true;
-            }
-          }
-        });
+        return providerNameTextField;
     }
-      
-    return additionalPropertiesCheckBox;
-  }
 
-  /**
-   * Creates the panel of buttons that goes along the bottom
-   * of the dialog
-   *
-   * Sets the variable okButton
-   */
-  private JPanel createButtonPanel() {
+    /**
+     * A method that returns a JCheckBox that indicates
+     * wether the user wishes to define additional properties
+     * of the entity
+     *
+     * @return the CheckBox component
+     */
+    private JCheckBox getAdditionalProperties() {
+        if (additionalPropertiesCheckBox == null) {
+            additionalPropertiesCheckBox = new JCheckBox(resources.getString("additionalProperties.label"));
+            additionalPropertiesCheckBox.setHorizontalTextPosition(SwingConstants.LEADING);
 
-    JPanel panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, 0));
-
-      // OK button (global variable)
-    createButton = new JButton();
-    createButton.setText(resources.getString("createButton.label"));
-    createButton.setToolTipText(resources.getString("createButton.tooltip"));
-    createButton.setActionCommand(CMD_OK);
-    createButton.
-      addActionListener(new ActionListener() {
-                          public void actionPerformed(ActionEvent event) {
-                            windowAction(event);
-                          }
-                        });
-    panel.add(createButton);
-
-    // space
-    panel.add(Box.createRigidArea(new Dimension(5,0)));
-
-    // cancel button
-    JButton cancelButton = new JButton();
-    cancelButton.setText(resources.getString("cancelButton.label"));
-    cancelButton.setActionCommand(CMD_CANCEL);
-    cancelButton.
-      addActionListener(new ActionListener() {
-                          public void actionPerformed(ActionEvent event) {
-                            windowAction(event);
-                          }
-                        });
-    panel.add(cancelButton);
-
-    // equalize buttons
-    Utilities.equalizeButtonSizes(new JButton[] {createButton, cancelButton});
-
-    return panel;
-  } // createButtonPanel()
-
-  /**
-   * The user has selected an option. Here we close and dispose
-   * the dialog.
-   * If actionCommand is an ActionEvent, getCommandString() is
-   * called, otherwise toString() is used to get the action command.
-   *
-   * @param actionCommand
-   *               may be null
-   */
-  private void windowAction(Object actionCommand) {
-    String cmd = null;
-
-    if (actionCommand != null) {
-      if (actionCommand instanceof ActionEvent) {
-        cmd = ((ActionEvent)actionCommand).getActionCommand();
-      } else {
-        cmd = actionCommand.toString();
-      }
-    }
-    if (cmd == null) {
-      // do nothing
-    } else if (cmd.equals(CMD_CANCEL)) {
-      this.dispose();
-    } else if (cmd.equals(CMD_OK)) {
-      if (!validateInput()) {
-        realmIdTextField.requestFocus();
-        return;
-      }
-      insertRealm();
-    }
-  }
-
-  /** insert Realm */
-  private void insertRealm() {
-
-
-    SwingUtilities.invokeLater(
-      new Runnable() {
-      public void run() {
-      }
-    });
-  }
-
-  /**
-   * override the Dialogue method so tha we can open and editor
-   * panel if requested
-   */
-  public void dispose() {
-    super.dispose();
-
-    // maybe cancel was pressed, this ensures that
-    // an object has been inserted
-    if(insertSuccess) {
-      if(createThenEdit){
-        // yes the additional properties are to be defined
-        createThenEdit = false;
-        SwingUtilities.invokeLater(
-          new Runnable() {
-            public void run() {
-            }
-          });
-      }
-    }
-  }
-
-  /**
-   * validate the input
-   *
-   * @return true validated, false othwerwise
-   */
-  private boolean validateInput() {
-    return true;
-  }
-
-  /**
-   * main for testing
-   *
-   * @param args
-   */
-  public static void main(String[] args) {
-    try {
-
-      JFrame frame = new JFrame() {
-        public Dimension getPreferredSize() {
-          return new Dimension(200,100);
+            additionalPropertiesCheckBox.addItemListener(new ItemListener() {
+                /**
+                 * Invoked when an item has been selected or deselected.
+                 * The code written for this method performs the operations
+                 * that need to occur when an item is selected (or deselected).
+                 */
+                public void itemStateChanged(ItemEvent e) {
+                    if (e.getStateChange() == e.SELECTED) {
+                        createThenEdit = true;
+                    }
+                }
+            });
         }
-      };
-      new NewProviderDialog(frame).show();
-    } catch (Exception e) {
-      e.printStackTrace();
+
+        return additionalPropertiesCheckBox;
     }
-  }
 
-  /** Resource bundle with default locale */
-  private ResourceBundle resources = null;
+    /**
+     * Creates the panel of buttons that goes along the bottom
+     * of the dialog
+     *
+     * Sets the variable okButton
+     */
+    private JPanel createButtonPanel() {
 
-  private String CMD_CANCEL = "cmd.cancel";
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, 0));
 
-  private String CMD_OK = "cmd.ok";
+        // OK button (global variable)
+        createButton = new JButton();
+        createButton.setText(resources.getString("createButton.label"));
+        createButton.setToolTipText(resources.getString("createButton.tooltip"));
+        createButton.setActionCommand(CMD_OK);
+        createButton.
+                addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent event) {
+                        windowAction(event);
+                    }
+                });
+        panel.add(createButton);
 
-  private JButton createButton = null;
-  private JButton editButton = null;
+        // space
+        panel.add(Box.createRigidArea(new Dimension(5, 0)));
 
-  private boolean insertSuccess = false;
-  private boolean createThenEdit = false;
+        // cancel button
+        JButton cancelButton = new JButton();
+        cancelButton.setText(resources.getString("cancelButton.label"));
+        cancelButton.setActionCommand(CMD_CANCEL);
+        cancelButton.
+                addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent event) {
+                        windowAction(event);
+                    }
+                });
+        panel.add(cancelButton);
 
-  /** realm ID text field */
-  private JTextField realmIdTextField = null;
-  private JCheckBox additionalPropertiesCheckBox = null;
- private static final Category log = Category.getInstance(NewProviderDialog.class.getName());
+        // equalize buttons
+        Utilities.equalizeButtonSizes(new JButton[]{createButton, cancelButton});
+
+        return panel;
+    } // createButtonPanel()
+
+    /**
+     * The user has selected an option. Here we close and dispose
+     * the dialog.
+     * If actionCommand is an ActionEvent, getCommandString() is
+     * called, otherwise toString() is used to get the action command.
+     *
+     * @param actionCommand
+     *               may be null
+     */
+    private void windowAction(Object actionCommand) {
+        String cmd = null;
+
+        if (actionCommand != null) {
+            if (actionCommand instanceof ActionEvent) {
+                cmd = ((ActionEvent)actionCommand).getActionCommand();
+            } else {
+                cmd = actionCommand.toString();
+            }
+        }
+        if (cmd == null) {
+            // do nothing
+        } else if (cmd.equals(CMD_CANCEL)) {
+            this.dispose();
+        } else if (cmd.equals(CMD_OK)) {
+            if (!validateInput()) {
+                providerNameTextField.requestFocus();
+                return;
+            }
+            insertProvider();
+        }
+    }
+
+    /** insert the provider */
+    private void insertProvider() {
+        iProvider.setName(providerNameTextField.getText());
+        final EntityHeader header = new EntityHeaderImp();
+
+        SwingUtilities.invokeLater(
+                new Runnable() {
+                    public void run() {
+                        header.setName(iProvider.getName());
+                        header.setType(IdentityProviderConfig.class);
+                        listener.onInsert(header);
+                    }
+                });
+    }
+
+    /**
+     * override the Dialogue method so tha we can open and editor
+     * panel if requested
+     */
+    public void dispose() {
+        super.dispose();
+
+        // maybe cancel was pressed, this ensures that
+        // an object has been inserted
+        if (insertSuccess) {
+            if (createThenEdit) {
+                // yes the additional properties are to be defined
+                createThenEdit = false;
+                SwingUtilities.invokeLater(
+                        new Runnable() {
+                            public void run() {
+                            }
+                        });
+            }
+        }
+    }
+
+    /**
+     * validate the input
+     *
+     * @return true validated, false othwerwise
+     */
+    private boolean validateInput() {
+        return true;
+    }
+
+    /**
+     * main for testing
+     *
+     * @param args
+     */
+    public static void main(String[] args) {
+        try {
+
+            JFrame frame = new JFrame() {
+                public Dimension getPreferredSize() {
+                    return new Dimension(200, 100);
+                }
+            };
+            new NewProviderDialog(frame).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /** Resource bundle with default locale */
+    private ResourceBundle resources = null;
+
+    private String CMD_CANCEL = "cmd.cancel";
+
+    private String CMD_OK = "cmd.ok";
+
+    private JButton createButton = null;
+    private JButton editButton = null;
+
+    private boolean insertSuccess = false;
+    private boolean createThenEdit = false;
+
+    /** provider ID text field */
+    private JTextField providerNameTextField = null;
+    private JCheckBox additionalPropertiesCheckBox = null;
 }
 

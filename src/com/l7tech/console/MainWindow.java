@@ -6,6 +6,7 @@ import com.l7tech.console.sbar.JOutlookBar;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Entity;
 import org.apache.log4j.Category;
 
 import javax.help.HelpBroker;
