@@ -43,6 +43,7 @@ public class SsgListModel extends AbstractListModel {
             saveSsgList();
             fireIntervalAdded(this, getSize(), getSize());
         }
+        ssgManager.onSsgUpdated(ssg);
     }
 
     public void removeSsg(final Ssg ssg) {
@@ -53,6 +54,7 @@ public class SsgListModel extends AbstractListModel {
         } catch (SsgNotFoundException e) {
             // who cares
         }
+        ssgManager.onSsgUpdated(ssg);
     }
 
     public void setDefaultSsg(Ssg ssg) {
@@ -61,6 +63,7 @@ public class SsgListModel extends AbstractListModel {
         } catch (SsgNotFoundException e) {
             log.error(e); // shouldn't ever happen
         }
+        ssgManager.onSsgUpdated(ssg);
     }
 
     public void editedSsg() {
