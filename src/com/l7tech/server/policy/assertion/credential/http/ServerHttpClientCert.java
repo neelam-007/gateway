@@ -6,7 +6,6 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -31,7 +30,7 @@ import java.util.logging.Logger;
 /**
  * This class functionality heas been replaces with the ServerSslAssertion that
  * requires the client certificate. This class exists as the SslAssertion uses it
- * to extract and validate the ssl client certificate.   
+ * to extract and validate the ssl client certificate.
  *
  * The server-side processing for HTTPS with client certificates.  Note that this
  * class is not a subclass of <code>ServerHttpCredentialSource</code> because it
@@ -50,8 +49,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
                 return SCHEME;
             }
             public static final String SCHEME = "ClientCert";
-        });
-        this.auditor = new Auditor(this, springContext, logger);
+        }, springContext);
     }
 
     protected LoginCredentials findCredentials(Message request, Map authParams)

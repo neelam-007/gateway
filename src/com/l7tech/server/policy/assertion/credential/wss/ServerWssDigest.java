@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Map;
@@ -22,8 +23,8 @@ import java.util.Map;
  * @version $Revision$
  */
 public class ServerWssDigest extends ServerWssCredentialSource implements ServerAssertion {
-    public ServerWssDigest( WssDigest data ) {
-        super( data );
+    public ServerWssDigest(WssDigest data, ApplicationContext springContext) {
+        super(data, springContext);
         _data = data;
     }
 

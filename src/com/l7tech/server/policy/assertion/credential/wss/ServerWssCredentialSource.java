@@ -10,14 +10,15 @@ import com.l7tech.policy.assertion.credential.wss.WssCredentialSourceAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
+import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public abstract class ServerWssCredentialSource extends ServerCredentialSourceAssertion implements ServerAssertion {
-    public ServerWssCredentialSource( WssCredentialSourceAssertion data ) {
-        super( data );
+    public ServerWssCredentialSource( WssCredentialSourceAssertion data, ApplicationContext springContext ) {
+        super( data, springContext );
         _data = data;
     }
 
