@@ -63,7 +63,7 @@ public class SamplePolicyTest extends TestCase {
             new HttpBasic(),
 
             // Authorize:
-            new SpecificUser(identityProvider, userAlice),
+            new SpecificUser( identityProvider.getConfig().getOid(), userAlice.getLogin() ),
 
             // Route:
             new RoutingAssertion()
@@ -77,7 +77,7 @@ public class SamplePolicyTest extends TestCase {
             new HttpDigest(),
 
             // Authorize:
-            new SpecificUser(identityProvider, userAlice),
+            new SpecificUser( identityProvider.getConfig().getOid(), userAlice.getLogin() ),
 
             // Route:
             new RoutingAssertion()
@@ -95,8 +95,8 @@ public class SamplePolicyTest extends TestCase {
 
             // Authorize:
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
-                new SpecificUser(identityProvider, userAlice),
-                new SpecificUser(identityProvider, userBob)
+                new SpecificUser( identityProvider.getConfig().getOid(), userAlice.getLogin() ),
+                new SpecificUser( identityProvider.getConfig().getOid(), userBob.getLogin() )
             })),
 
             // Route:
@@ -111,7 +111,7 @@ public class SamplePolicyTest extends TestCase {
             new HttpDigest(),
 
             // Authorize:
-            new MemberOfGroup(identityProvider, groupStaff),
+            new MemberOfGroup( identityProvider.getConfig().getOid(), groupStaff.getName() ),
 
             // Route:
             new RoutingAssertion()
@@ -127,11 +127,11 @@ public class SamplePolicyTest extends TestCase {
             // Route:
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
                 new AllAssertion(Arrays.asList(new Assertion[] {
-                    new SpecificUser(identityProvider, userAlice),
+                    new SpecificUser( identityProvider.getConfig().getOid(), userAlice.getLogin() ),
                     new RoutingAssertion("http://backend.example.com/service1/soap")
                 })),
                 new AllAssertion(Arrays.asList(new Assertion[] {
-                    new SpecificUser(identityProvider, userBob),
+                    new SpecificUser( identityProvider.getConfig().getOid(), userBob.getLogin() ),
                     new RoutingAssertion("http://backend.example.com/service2/soap")
                 })),
             })),

@@ -407,11 +407,11 @@ public class IdentityProviderPanel extends WizardStepPanel {
                     User u = new User();
                     u.setName(eh.getName());
                     u.setLogin(eh.getName());
-                    identityAssertions.add(new SpecificUser(ip, u));
+                    identityAssertions.add(new SpecificUser(ip.getConfig().getOid(), u.getLogin() ));
                 } else if (EntityType.GROUP.equals(eh.getType())) {
                     Group g = new Group();
                     g.setName(eh.getName());
-                    identityAssertions.add(new MemberOfGroup(ip, g));
+                    identityAssertions.add(new MemberOfGroup(ip.getConfig().getOid(), g.getName() ));
                 }
             }
             // crenedtials location, safe

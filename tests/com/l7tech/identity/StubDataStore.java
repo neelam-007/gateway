@@ -178,7 +178,7 @@ public class StubDataStore {
         Group g =
           (Group)groups.values().iterator().next();
         Assertion assertion =
-          new MemberOfGroup(makeProvider(pc), g);
+          new MemberOfGroup( makeProvider(pc).getConfig().getOid(), g.getName() );
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         WspWriter.writePolicy(assertion, bo);
 
