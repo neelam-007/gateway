@@ -6,7 +6,6 @@ import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.audit.AuditRecordManager;
-import com.l7tech.server.event.admin.Created;
 import com.l7tech.service.PublishedService;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -42,7 +41,7 @@ public class AuditPersistenceTest extends TestCase {
         HibernatePersistenceContext context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
         context.beginTransaction();
         Session s = context.getSession();
-        Object id = s.save(new AdminAuditRecord(Level.INFO, "thisnode", new Created(new PublishedService()), "admin", InetAddress.getLocalHost().getHostAddress()));
+        Object id = s.save(new AdminAuditRecord(Level.INFO, "thisnode", 1234, PublishedService.class.getName(), "My Service", AdminAuditRecord.ACTION_CREATED, "Created", "admin", InetAddress.getLocalHost().getHostAddress()));
         System.out.println("Saved " + id);
         context.commitTransaction();
     }
