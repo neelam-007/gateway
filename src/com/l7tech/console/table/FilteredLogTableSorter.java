@@ -21,7 +21,7 @@ import java.util.*;
 
 public class FilteredLogTableSorter extends FilteredLogTableModel {
     static Logger logger = Logger.getLogger(StatisticsTableSorter.class.getName());
-    boolean ascending = true;
+    boolean ascending = false;
     int columnToSort = 0;
     int compares;
     private Object[] sortedData = null;
