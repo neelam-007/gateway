@@ -88,16 +88,16 @@ public class ClusterBootProcess implements TransactionalComponent {
     }
 
     public void stop() throws LifecycleException {
-    }
-
-    public void close() throws LifecycleException {
-        // if we were updating cluster status, stop doing it
-        StatusUpdater.stopUpdater();
         try {
             DistributedMessageIdManager.getInstance().close();
         } catch ( Exception e ) {
             throw new LifecycleException("DistributedMessageIdManager couldn't shut down properly");
         }
+    }
+
+    public void close() throws LifecycleException {
+        // if we were updating cluster status, stop doing it
+        StatusUpdater.stopUpdater();
     }
 
     public static final String CHANNEL_NAME = "com.l7tech.cluster.jgroupsChannel";
