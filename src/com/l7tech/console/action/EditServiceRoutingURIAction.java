@@ -48,6 +48,7 @@ public class EditServiceRoutingURIAction extends NodeAction {
         try {
             PublishedService svc = ((ServiceNode)node).getPublishedService();
             String existingRoutingURI = svc.getRoutingUri();
+            if (existingRoutingURI == null) existingRoutingURI = ""; //  should not happen
             if (existingRoutingURI.length() > NonSoapServicePanel.DEF_PREFIX.length()) {
                 existingRoutingURI = existingRoutingURI.substring(NonSoapServicePanel.DEF_PREFIX.length());
             }

@@ -28,7 +28,9 @@ public class HttpUriResolver extends NameValueServiceResolver {
     }
 
     protected Object[] doGetTargetValues( PublishedService service ) {
-        return new String[] {service.getRoutingUri()};
+        String uri = service.getRoutingUri();
+        if (uri == null) uri = "";
+        return new String[] {uri};
     }
 
     protected Object getRequestValue(Request request) throws ServiceResolutionException {
