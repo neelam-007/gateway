@@ -2,6 +2,8 @@ package com.l7tech.adminws;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Layer 7 Technologies, inc.
@@ -37,12 +39,21 @@ public abstract class ClientCredentialManager {
         return String.valueOf(cachedCredentials.getPassword());
     }
 
+    public synchronized void registerForInvalidation(CredentialsInvalidatorCallback callback) {
+        if (callback != null && !credsInvalidationCallbacks.contains(callback)) credsInvalidationCallbacks.add(callback);
+    }
+
     /**
      * Subclasses reset the credentials using this method.
      */
     protected final void resetCredentials() {
         synchronized (ClientCredentialManager.class) {
             cachedCredentials = new PasswordAuthentication("", new char[]{});
+            Iterator i = credsInvalidationCallbacks.iterator();
+            while (i.hasNext()) {
+                CredentialsInvalidatorCallback callbackdude = (CredentialsInvalidatorCallback)i.next();
+                callbackdude.invalidateCredentials();
+            }
         }
     }
 
@@ -57,4 +68,5 @@ public abstract class ClientCredentialManager {
     }
 
     protected static PasswordAuthentication cachedCredentials = new PasswordAuthentication("", new char[]{});
+    protected static ArrayList credsInvalidationCallbacks = new ArrayList();
 }
