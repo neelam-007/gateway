@@ -16,7 +16,7 @@ Networking
 ----------
 As root user
 
-Set hostname. /etc/sysconfig/networking sets it permanently
+Set hostname. /etc/sysconfig/network sets it permanently
 
 Hostname command with the above name to set it on a running system
 
