@@ -60,7 +60,7 @@ public class DistributedMessageIdManager implements MessageIdManager {
                 try {
                     if (tx != null) tx.rollback();
                 } catch ( SystemException e1 ) {
-                    logger.log( Level.WARNING, "Caught exception while trying to rollback garbage collection transaction", e );
+                    logger.log( Level.WARNING, "Caught exception while trying to rollback garbage collection transaction", e1 );
                 }
             }
         }
