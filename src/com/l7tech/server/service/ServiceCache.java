@@ -134,12 +134,15 @@ public class ServiceCache extends ApplicationObjectSupport {
             }
             for (int i = 0; i < resolvers.length; i++) {
                 Set resolvedServices = resolvers[i].resolve(req, serviceSet);
-                if (resolvedServices == null || resolvedServices.isEmpty()) return null;
+
                 if (resolvedServices.size() == 1) {
                     logger.finest("service resolved by " + resolvers[i].getClass().getName());
                     return (PublishedService)resolvedServices.iterator().next();
                 }
-                serviceSet = resolvedServices;
+
+                if (resolvedServices != null && !resolvedServices.isEmpty()) {
+                    serviceSet = resolvedServices;
+                }
             }
 
             if (serviceSet == null || serviceSet.isEmpty()) {
