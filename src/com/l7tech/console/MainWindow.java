@@ -574,9 +574,9 @@ public class MainWindow extends JFrame {
                   //                 if (comps[i] instanceof JSplitPane) {
                   //
                   if (item.isSelected()) {
-                      logPane.getLogs();
+                      getLogPane().getLogs();
                   }
-                  logPane.getPane().setVisible(item.isSelected());
+                  getLogPane().getPane().setVisible(item.isSelected());
                   mainJSplitPane.setDividerLocation(700);
 
                   validate();
@@ -945,7 +945,7 @@ public class MainWindow extends JFrame {
             mainJSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
             mainJSplitPane.setResizeWeight(0.75);
             mainJSplitPane.setTopComponent(getMainJSplitPaneTop());
-            mainJSplitPane.setBottomComponent(logPane.getPane());
+            mainJSplitPane.setBottomComponent(getLogPane().getPane());
             // mainJSplitPane.setDividerLocation(mainJSplitPane.getSize().getHeight() * 0.5);
             mainJSplitPane.setDividerLocation(700);
         }

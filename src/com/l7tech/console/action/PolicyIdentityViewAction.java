@@ -19,14 +19,14 @@ public class PolicyIdentityViewAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Identity view";
+        return "Toggle view";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View the identity policy view";
+        return "Toggle the policy view policy/identity";
     }
 
     /**
