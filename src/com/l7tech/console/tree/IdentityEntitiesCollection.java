@@ -1,8 +1,10 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -13,12 +15,12 @@ import java.util.Collections;
  * @version 1.0
  */
 public class IdentityEntitiesCollection implements EntitiesCollection {
-    final IdentityProvider identityProvider;
+    final IdentityProviderConfig identityProviderConfig;
     private boolean exhausted = false;
     private EntityType[] searchTypes;
 
-    IdentityEntitiesCollection(IdentityProvider ip, EntityType[] et) {
-        identityProvider= ip;
+    IdentityEntitiesCollection(IdentityProviderConfig ip, EntityType[] et) {
+        identityProviderConfig = ip;
         searchTypes = et;
     }
 
@@ -33,7 +35,7 @@ public class IdentityEntitiesCollection implements EntitiesCollection {
         }
         try {
             exhausted = true;
-            return identityProvider.search(searchTypes, "*");
+            return Arrays.asList(Registry.getDefault().getIdentityAdmin().searchIdentities(identityProviderConfig.getOid(), searchTypes, "*"));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

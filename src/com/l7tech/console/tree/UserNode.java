@@ -1,9 +1,8 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.UserPropertiesAction;
-import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.action.FederatedUserPropertiesAction;
-import com.l7tech.console.action.BaseAction;
+import com.l7tech.console.action.GenericUserPropertiesAction;
+import com.l7tech.console.action.UserPropertiesAction;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
@@ -45,7 +44,7 @@ public class UserNode extends EntityHeaderNode {
         java.util.List list = new ArrayList();
         final UserPropertiesAction userPropertiesAction;
 
-        if (getProvider().getConfig().type() == IdentityProviderType.FEDERATED) {
+        if (getProviderConfig().type() == IdentityProviderType.FEDERATED) {
             userPropertiesAction = new FederatedUserPropertiesAction(this);
         } else {
             userPropertiesAction = new GenericUserPropertiesAction(this);
@@ -87,7 +86,6 @@ public class UserNode extends EntityHeaderNode {
      */
     public Assertion asAssertion() {
         ProviderNode parent = (ProviderNode)getParent();
-        EntityHeader e = parent.getEntityHeader();
         return new SpecificUser(parent.getEntityHeader().getOid(), getEntityHeader().getName());
     }
 

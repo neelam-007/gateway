@@ -1,19 +1,18 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
 
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.DefaultMutableTreeNode;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import javax.swing.tree.TreeNode;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An assertion node in an assertion tree that refers to a user or group.
@@ -40,7 +39,7 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode {
                 if (providerid == IdentityProviderConfig.DEFAULT_OID)
                     provName = NA;
                 else {
-                    cfg = getProviderConfigManager().findByPrimaryKey(providerid);
+                    cfg = getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(providerid);
                     if (cfg == null)
                         provName = NA;
                     else
@@ -49,23 +48,16 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode {
             } catch (FindException e) {
                 provName = NA;
                 log.log(Level.SEVERE, "could not find provider associated with this assertion", e);
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
                 provName = NA;
-                log.log(Level.SEVERE, "could not loookup the IdentityProviderConfigManager", e);
+                log.log(Level.SEVERE, "could not loookup the IdentityAdmin", e);
             }
         }
         return provName;
     }
 
-    private IdentityProviderConfigManager getProviderConfigManager() throws RuntimeException {
-        IdentityProviderConfigManager ipc =
-          (IdentityProviderConfigManager)Locator.
-          getDefault().lookup(IdentityProviderConfigManager.class);
-        if (ipc == null) {
-            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
-        }
-
-        return ipc;
+    private IdentityAdmin getIdentityAdmin() throws RuntimeException {
+        return Registry.getDefault().getIdentityAdmin();
     }
 
     /**

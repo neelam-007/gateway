@@ -1,9 +1,10 @@
 package com.l7tech.console.tree.identity;
 
-import com.l7tech.console.action.NewLdapProviderAction;
 import com.l7tech.console.action.NewFederatedIdentityProviderAction;
+import com.l7tech.console.action.NewLdapProviderAction;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityAdmin;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -54,10 +55,10 @@ public class IdentitiesRootNode extends AbstractTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
-        Registry r = Registry.getDefault();
+        IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
         List nodeList = new ArrayList();
         Enumeration e = TreeNodeFactory.
-          getTreeNodeEnumeration(new EntitiesEnumeration(new ProviderEntitiesCollection(r.getProviderConfigManager())));
+          getTreeNodeEnumeration(new EntitiesEnumeration(new ProviderEntitiesCollection(admin)));
         nodeList.addAll(Collections.list(e));
 
         AbstractTreeNode[] nodes = (AbstractTreeNode[])nodeList.toArray(new AbstractTreeNode[]{});

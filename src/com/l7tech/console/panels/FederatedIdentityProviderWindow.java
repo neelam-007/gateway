@@ -1,30 +1,26 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.util.Locator;
-import com.l7tech.console.table.TrustedCertsTable;
-import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.event.*;
-import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.table.TrustedCertTableSorter;
+import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SaveException;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.EventListenerList;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.util.EventListener;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.EventListener;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -46,7 +42,6 @@ public class FederatedIdentityProviderWindow extends JDialog {
     private EventListenerList listenerList = new EventListenerList();
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
-    private static Logger logger = Logger.getLogger(FederatedIdentityProviderWindow.class.getName());
 
 
     /**
@@ -182,35 +177,6 @@ public class FederatedIdentityProviderWindow extends JDialog {
         if(providerConfig != null) {
             providerConfig.setName(providerNameTextField.getText().trim());
         }
-    }
-
-    /**
-     * Retrieve the object reference of the Trusted Cert Admin service
-     *
-     * @return TrustedCertAdmin  - The object reference.
-     * @throws RuntimeException  if the object reference of the Trusted Cert Admin service is not found.
-     */
-    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca =
-                (TrustedCertAdmin) Locator.
-                getDefault().lookup(TrustedCertAdmin.class);
-        if (tca == null) {
-            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
-        }
-
-        return tca;
-    }
-
-    private IdentityProviderConfigManager getProviderConfigManager()
-            throws RuntimeException {
-        IdentityProviderConfigManager ipc =
-                (IdentityProviderConfigManager) Locator.
-                getDefault().lookup(IdentityProviderConfigManager.class);
-        if (ipc == null) {
-            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
-        }
-
-        return ipc;
     }
 
     /**

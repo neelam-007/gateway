@@ -1,24 +1,23 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.event.*;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
-import com.l7tech.console.panels.*;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.event.*;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SaveException;
 
 import javax.swing.*;
-import javax.swing.tree.TreePath;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
-import java.util.logging.Logger;
+import javax.swing.tree.TreePath;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -108,8 +107,8 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                         header.setName(iProvider.getName());
                         header.setType(EntityType.ID_PROVIDER_CONFIG);
                         try {
-                            header.setOid(getProviderConfigManager().save(iProvider));
-                        } catch (SaveException e) {
+                            header.setOid(getIdentityAdmin().saveIdentityProviderConfig(iProvider));
+                        } catch (Exception e) {
                             ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
                             header = null;
                         }

@@ -1,16 +1,16 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.common.util.Locator;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -125,16 +125,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         return ldapBindPassTextField;
     }
 
-    private IdentityProviderConfigManager getProviderConfigManager()
+    private IdentityAdmin getIdentityAdmin()
             throws RuntimeException {
-        IdentityProviderConfigManager ipc =
-                (IdentityProviderConfigManager) Locator.
-                getDefault().lookup(IdentityProviderConfigManager.class);
-        if (ipc == null) {
-            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
-        }
-
-        return ipc;
+        return Registry.getDefault().getIdentityAdmin();
     }
 
     /**
@@ -363,11 +356,11 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JComboBox getProviderTypes() {
         if (providerTypesCombo == null) {
             try {
-                templates = getProviderConfigManager().getLdapTemplates();
+                templates = getIdentityAdmin().getLdapTemplates();
             } catch (FindException e) {
                 log.log(Level.WARNING, "cannot retrieve templates", e);
                 templates = new LdapIdentityProviderConfig[0];
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
                 log.log(Level.WARNING, "cannot retrieve templates", e);
                 templates = new LdapIdentityProviderConfig[0];
             }

@@ -1,8 +1,9 @@
 package com.l7tech.console.tree.identity;
 
 import com.l7tech.console.tree.EntitiesCollection;
-import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityAdmin;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -12,11 +13,11 @@ import java.util.Collections;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class ProviderEntitiesCollection implements EntitiesCollection {
-    final IdentityProviderConfigManager manager;
+    final IdentityAdmin admin;
     private boolean exhausted = false;
 
-    public ProviderEntitiesCollection(IdentityProviderConfigManager im) {
-        manager = im;
+    public ProviderEntitiesCollection(IdentityAdmin admin) {
+        this.admin = admin;
     }
 
     /**
@@ -29,7 +30,7 @@ public class ProviderEntitiesCollection implements EntitiesCollection {
         }
         try {
             exhausted = true;
-            return manager.findAllHeaders();
+            return Arrays.asList(admin.findAllIdentityProviderConfig());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

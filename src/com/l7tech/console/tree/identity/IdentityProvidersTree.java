@@ -1,9 +1,9 @@
 package com.l7tech.console.tree.identity;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Refreshable;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
@@ -163,7 +163,7 @@ public class IdentityProvidersTree extends JTree implements DragGestureListener,
                 if (!node.canDelete()) return;
                 if (node instanceof EntityHeaderNode) {
                     final EntityHeaderNode en = (EntityHeaderNode)node;
-                    new DeleteEntityAction(en, en.getProvider()).actionPerformed(null);
+                    new DeleteEntityAction(en, en.getProviderConfig()).actionPerformed(null);
                 } else if (node instanceof PolicyTemplateNode)
                     new DeletePolicyTemplateAction((PolicyTemplateNode)node).actionPerformed(null);
             } else if (keyCode == KeyEvent.VK_ENTER) {

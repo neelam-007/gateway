@@ -21,20 +21,6 @@ import com.l7tech.service.ServiceAdmin;
  */
 public class RegistryImpl extends Registry {
     /**
-     * @return the identity provider config manager
-     */
-    public IdentityProviderConfigManager getProviderConfigManager()
-      throws RuntimeException {
-        IdentityProviderConfigManager ipc =
-          (IdentityProviderConfigManager)Locator.
-          getDefault().lookup(IdentityProviderConfigManager.class);
-        if (ipc == null) {
-            throw new RuntimeException("Could not get " + IdentityProviderConfigManager.class);
-        }
-        return ipc;
-    }
-
-    /**
      * @return the {@link IdentityAdmin} implementation
      */
     public IdentityAdmin getIdentityAdmin() {

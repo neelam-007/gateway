@@ -1,11 +1,11 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.common.util.Locator;
 
 import javax.swing.event.EventListenerList;
 import java.util.EventListener;
@@ -54,15 +54,13 @@ abstract public class NewProviderAction extends NodeAction {
         listenerList.remove(EntityListener.class, listener);
     }
 
-    protected IdentityProviderConfigManager getProviderConfigManager()
+    protected IdentityAdmin getIdentityAdmin()
             throws RuntimeException {
-        IdentityProviderConfigManager ipc =
-                (IdentityProviderConfigManager) Locator.
-                getDefault().lookup(IdentityProviderConfigManager.class);
-        if (ipc == null) {
-            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+        IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+        if (admin == null) {
+            throw new RuntimeException("Could not find registered " + IdentityAdmin.class);
         }
 
-        return ipc;
+        return admin;
     }
 }

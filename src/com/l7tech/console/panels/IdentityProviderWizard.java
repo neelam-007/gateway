@@ -1,17 +1,17 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.InvalidIdProviderCfgException;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.common.util.Locator;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
-import java.util.ResourceBundle;
-import java.util.Locale;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /*
  * This is a base class for create/edit identity provider wizard.
@@ -84,10 +84,10 @@ public class IdentityProviderWizard extends Wizard {
 
         String errorMsg = null;
         try {
-            getProviderConfigManager().test((IdentityProviderConfig) wizardInput);
+            getIdentityAdmin().testIdProviderConfig((IdentityProviderConfig) wizardInput);
         } catch (InvalidIdProviderCfgException e) {
             errorMsg = e.getMessage();
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             errorMsg = resources.getString("test.error.runtime") + "\n" + e.getMessage();
         }
         if (errorMsg == null) {
@@ -101,16 +101,14 @@ public class IdentityProviderWizard extends Wizard {
         }
     }
 
-    private IdentityProviderConfigManager getProviderConfigManager()
+    private IdentityAdmin getIdentityAdmin()
             throws RuntimeException {
-        IdentityProviderConfigManager ipc =
-                (IdentityProviderConfigManager) Locator.
-                getDefault().lookup(IdentityProviderConfigManager.class);
-        if (ipc == null) {
-            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+        IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+        if (admin == null) {
+            throw new RuntimeException("Could not find registered " + IdentityAdmin.class);
         }
 
-        return ipc;
+        return admin;
     }
 
     /**

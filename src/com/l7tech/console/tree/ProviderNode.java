@@ -2,7 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.panels.FindIdentitiesDialog;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -57,14 +57,14 @@ public class ProviderNode extends EntityHeaderNode {
         final Action newUserAction;
         final NewGroupAction newGroupAction;
 
-        IdentityProvider iProvider = getProvider();
+        IdentityProviderConfig config = getProviderConfig();
 
-        if (iProvider.getConfig().type() == IdentityProviderType.INTERNAL) {
+        if (config.type() == IdentityProviderType.INTERNAL) {
             newUserAction = new NewInternalUserAction(this);
             newGroupAction = new NewGroupAction(this);
             newUserAction.setEnabled(true);
             newGroupAction.setEnabled(true);
-        } else if (iProvider.getConfig().type() == IdentityProviderType.FEDERATED) {
+        } else if (config.type() == IdentityProviderType.FEDERATED) {
             newUserAction = new NewFederatedUserAction(this);
             newGroupAction = new NewGroupAction(this);
             newUserAction.setEnabled(true);
@@ -86,7 +86,7 @@ public class ProviderNode extends EntityHeaderNode {
         for (Iterator iterator = list.iterator(); iterator.hasNext();) {
             Action action = (Action)iterator.next();
             if (action instanceof DeleteEntityAction) {
-                action.setEnabled(iProvider.getConfig().type() != IdentityProviderType.INTERNAL);
+                action.setEnabled(config.type() != IdentityProviderType.INTERNAL);
             }
 
         }
@@ -110,7 +110,7 @@ public class ProviderNode extends EntityHeaderNode {
         /*
         try {
             long oid = getEntityHeader().getOid();
-            IdentityProvider ip =
+            IdentityProviderConfig ipc = // TODO BOGUS
               Registry.getDefault().getProviderConfigManager().getIdentityProvider(oid);
             final IdentityEntitiesCollection collection =
               new IdentityEntitiesCollection(ip, new EntityType[]{EntityType.USER, EntityType.GROUP});

@@ -1,20 +1,19 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.event.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.ProviderNode;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -75,7 +74,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
                     try {
                         iProvider =
-                          getProviderConfigManager().findByPrimaryKey(header.getOid());
+                          getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(header.getOid());
 
                         WizardStepPanel configPanel = null;
                         Wizard w = null;
@@ -158,18 +157,6 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         listenerList.remove(EntityListener.class, listener);
     }
 
-    private IdentityProviderConfigManager getProviderConfigManager()
-      throws RuntimeException {
-        IdentityProviderConfigManager ipc =
-          (IdentityProviderConfigManager)Locator.
-          getDefault().lookup(IdentityProviderConfigManager.class);
-        if (ipc == null) {
-            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
-        }
-
-        return ipc;
-    }
-
     private WizardListener wizardListener = new WizardAdapter() {
         /**
          * Invoked when the wizard has finished.
@@ -187,7 +174,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                     public void run() {
 
                         try {
-                            getProviderConfigManager().update(iProvider);
+                            getIdentityAdmin().saveIdentityProviderConfig(iProvider);
 
                             // update the node name in the identity provider tree
                             EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
@@ -195,7 +182,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                             header.setType(EntityType.ID_PROVIDER_CONFIG);
                             fireEventProviderUpdated(header);
 
-                        } catch (UpdateException e) {
+                        } catch (Exception e) {
                             ErrorManager.getDefault().notify(Level.WARNING, e, "Error updating the identity provider.");
                         }
                     }
@@ -204,6 +191,10 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         }
 
     };
+
+    private IdentityAdmin getIdentityAdmin() {
+        return Registry.getDefault().getIdentityAdmin();
+    }
 
     EntityListener entityListener = new EntityListenerAdapter() {
         public void entityUpdated(EntityEvent ev) {

@@ -3,7 +3,8 @@ package com.l7tech.console.util;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.Locator;
-import com.l7tech.identity.*;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 
@@ -81,27 +82,11 @@ public abstract class Registry {
         Empty() {
         }
 
-        /**
-         * @return the identity provider config manager
-         */
-        public IdentityProviderConfigManager getProviderConfigManager() {
-            return null;
-        }
-
-
         public IdentityAdmin getIdentityAdmin() {
             return null;
         }
 
         public IdentityProviderConfig getInternalProviderConfig() {
-            return null;
-        }
-
-        public UserManager getInternalUserManager() {
-            return null;
-        }
-
-        public GroupManager getInternalGroupManager() {
             return null;
         }
 

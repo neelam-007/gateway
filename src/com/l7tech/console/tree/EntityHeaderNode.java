@@ -1,10 +1,10 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.DeleteEntityAction;
-import com.l7tech.console.util.Registry;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import java.util.Comparator;
@@ -17,7 +17,7 @@ import java.util.Comparator;
  * @version 1.1
  */
 public abstract class EntityHeaderNode extends AbstractTreeNode {
-    private IdentityProvider provider;
+    private IdentityProviderConfig config;
 
     /**
      * The entity name comparator
@@ -77,7 +77,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        final DeleteEntityAction deleteAction = new DeleteEntityAction(this, provider);
+        final DeleteEntityAction deleteAction = new DeleteEntityAction(this, config);
         deleteAction.setEnabled(canDelete());
         return new Action[]{deleteAction};
     }
@@ -102,19 +102,23 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
     }
 
     /**
-     * @return the <code>IdentityProvider</code>
+     * @return the <code>IdentityProviderConfig</code>
      */
-    public IdentityProvider getProvider() {
-        if (provider != null) {
-            return provider;
+    public IdentityProviderConfig getProviderConfig() {
+        if (config != null) {
+            return config;
         }
         try {
             long oid = getEntityHeader().getOid();
-            provider = Registry.getDefault().getProviderConfigManager().getIdentityProvider(oid);
-            return provider;
-        } catch (FindException e) {
+            config = getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(oid);
+            return config;
+        } catch (Exception e) {
             throw new RuntimeException("Unable to locate the identity provider " + getEntityHeader().getName(), e);
         }
+    }
+
+    private IdentityAdmin getIdentityAdmin() {
+        return (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
     }
 
     /**
