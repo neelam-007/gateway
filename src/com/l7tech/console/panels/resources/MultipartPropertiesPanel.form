@@ -75,7 +75,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                     </constraints>
                     <properties>
-                      <text value="Input parameters (only those bound to an attachment are shown):"/>
+                      <text value="Input Parameters (only those bound to an attachment are shown):"/>
                     </properties>
                   </component>
                   <scrollpane id="1fc96" binding="multipartScrollPane">
@@ -114,7 +114,7 @@
               </component>
               <component id="306e8" class="javax.swing.JComboBox" binding="bindingsListComboxBox">
                 <constraints>
-                  <xy x="0" y="35" width="200" height="23"/>
+                  <xy x="0" y="35" width="300" height="23"/>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1">
                     <preferred-size width="200" height="-1"/>
                     <maximum-size width="300" height="-1"/>
@@ -141,7 +141,7 @@
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
-              <text value="Canel"/>
+              <text value="Cancel"/>
             </properties>
           </component>
           <hspacer id="2751">
