@@ -3,10 +3,15 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.console.action.SchemaValidationPropertiesAction;
+import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 /**
  * Policy tree node for Schema Validation Assertion.
@@ -25,6 +30,18 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
             nodeAssertion = (SchemaValidation)assertion;
         } else throw new IllegalArgumentException("assertion passed must be of type " +
                                                    SchemaValidation.class.getName());
+        try {
+            if (getServiceNodeCookie() != null) {
+                service = getServiceNodeCookie().getPublishedService();
+            } else {
+                log.log(Level.WARNING, "no access to service node cookie");
+            }
+
+        } catch (FindException e) {
+            log.log(Level.WARNING, "cannot get service", e);
+        } catch (RemoteException e) {
+            log.log(Level.WARNING, "cannot get service", e);
+        }
 
     }
     public String getName() {
@@ -44,7 +61,8 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        list.add(new SchemaValidationPropertiesAction(this));
+
+        list.add(new SchemaValidationPropertiesAction(this, service));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
@@ -55,7 +73,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new SchemaValidationPropertiesAction(this);
+        return new SchemaValidationPropertiesAction(this, service);
     }
 
     /**
@@ -70,4 +88,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
     public SchemaValidation getAssertion() {return nodeAssertion;}
 
     private SchemaValidation nodeAssertion;
+    private PublishedService service;
+
+    private final Logger log = Logger.getLogger(getClass().getName());
 }
