@@ -60,7 +60,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
         _inboundRequestEndpoint = inbound;
         if (replyType == null) replyType = JmsReplyType.AUTOMATIC;
         _replyType = replyType;
-        _handler = new JmsRequestHandler(serverConfig.getSpringContext());
     }
 
     /**
@@ -142,6 +141,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
         _logger.info( "Initializing " + toString() + "..." );
         try {
             _initialized = true;
+            _handler = new JmsRequestHandler(serverConfig.getSpringContext());
             _loop = new MessageLoop();
             _logger.info( toString() + " initialized successfully" );
         } finally {
@@ -337,6 +337,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
         if ( _loop != null ) _loop.close();
     }
 
-    private final JmsRequestHandler _handler;
+    private JmsRequestHandler _handler;
     private MessageLoop _loop;
 }
