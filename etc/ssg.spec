@@ -10,7 +10,6 @@ Packager: Layer7 Technologies, <support@layer7tech.com>
 Source0: /tmp/ssg.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
 provides: ssg
-Requires: MySQL-Max >= 4.0.17
 
 # Prevents rpm build from erroring and halting
 %undefine       __check_files
