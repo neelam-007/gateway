@@ -1,6 +1,10 @@
 package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.internal.imp.UserImp;
+import com.l7tech.objectmodel.EntityHeader;
+
+import java.util.Set;
+import java.util.Iterator;
 
 /**
  * Layer 7 Technologies, inc.
@@ -28,7 +32,7 @@ public class LdapUser extends UserImp {
     }
 
     public String toString() {
-        return "com.l7tech.identity.ldap.LdapUser."
+        String out = "com.l7tech.identity.ldap.LdapUser."
                 + "\n\tFirst name=" + getFirstName()
                 + "\n\tLast name=" + getLastName()
                 + "\n\tLogin=" + getLogin()
@@ -36,6 +40,14 @@ public class LdapUser extends UserImp {
                 + "\n\tName=" + getName()
                 + "\n\tPassword=" + getPassword()
                 + "\n\tDN=" + getDN();
+        Set membershipHeaders = this.getGroupHeaders();
+        Iterator i = membershipHeaders.iterator();
+        out += "\n\tMember of: ";
+        while (i.hasNext()) {
+            EntityHeader header = (EntityHeader)i.next();
+            out += header.getName() + ", ";
+        }
+        return out;
     }
 
     // ************************************************
