@@ -10,6 +10,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.message.Request;
 import com.l7tech.message.XmlRequest;
+import com.l7tech.message.Response;
+import com.l7tech.message.XmlResponse;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.service.PublishedService;
@@ -24,12 +26,12 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class RequestAuditRecord extends AuditRecord {
-    public RequestAuditRecord( Level level, String message ) {
-        this( level, message, AssertionStatus.UNDEFINED );
+    public RequestAuditRecord( String message ) {
+        this( message, AssertionStatus.UNDEFINED );
     }
 
-    public RequestAuditRecord( Level level, String message, AssertionStatus status ) {
-        super( level, message );
+    public RequestAuditRecord( String message, AssertionStatus status ) {
+        super( Level.FINEST, message );
         _status = status;
 
         Request currentRequest = MessageProcessor.getCurrentRequest();
@@ -58,12 +60,27 @@ public class RequestAuditRecord extends AuditRecord {
             }
         }
 
+        Response currentResponse = MessageProcessor.getCurrentResponse();
+        if ( currentResponse != null ) {
+            if ( currentResponse instanceof XmlResponse ) {
+                XmlResponse xresp = (XmlResponse)currentResponse;
+                try {
+                    _responseXml = xresp.getResponseXml();
+                } catch (IOException e) {
+                    _responseXml = null;
+                }
+            }
+        }
+
     }
     /** Status of the request so far, or AssertionStatus.UNDEFINED if it's not yet known. */
     protected AssertionStatus _status;
 
     /** String containing XML from request, or null if the current request has no XML */
     protected String _requestXml;
+
+    /** String containing XML from response, or null if the current response has no XML */
+    protected String _responseXml;
 
     /** OID of the PublishedService that this request was resolved to, or -1 if it has not yet been successfully resolved. */
     protected long _serviceOid = PublishedService.DEFAULT_OID;
