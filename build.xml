@@ -24,7 +24,10 @@
     <property name="dev.build.home" value="${src.root}/build"/>
 
     <!-- distribution archive names -->
+    <!--
     <property name="war" value="${app.name}.war"/>
+    -->
+    <property name="war" value="ROOT.war"/>
     <property name="tar" value="${app.name}.tar"/>
     <property name="tar.gz" value="${app.name}_${app.version}.tar.gz"/>
 
