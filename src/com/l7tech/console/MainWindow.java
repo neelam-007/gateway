@@ -1066,6 +1066,7 @@ public class MainWindow extends JFrame {
         };
         manageJmsEndpointsAction.putValue(Action.NAME, atext);
         manageJmsEndpointsAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        manageJmsEndpointsAction.setEnabled(false);
         enableActionWhileConnected(manageJmsEndpointsAction);
         return manageJmsEndpointsAction;
     }
