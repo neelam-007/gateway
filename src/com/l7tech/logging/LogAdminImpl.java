@@ -1,4 +1,4 @@
-package com.l7tech.logging.rmi;
+package com.l7tech.logging;
 
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.SSGLogRecord;
