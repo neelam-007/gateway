@@ -6,7 +6,7 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.adminws.service.ServiceAdminStub;
+import com.l7tech.service.ServiceAdminStub;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.GroupManager;
@@ -23,6 +23,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.ServiceAdminStub;
 import org.apache.log4j.Category;
 
 import javax.swing.*;

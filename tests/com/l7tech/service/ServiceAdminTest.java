@@ -1,4 +1,4 @@
-package com.l7tech.adminws.service;
+package com.l7tech.service;
 
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
