@@ -192,7 +192,7 @@ public class StubDataStore {
         Group g =
           (Group)groups.values().iterator().next();
         Assertion assertion =
-          new MemberOfGroup(IdentityProviderFactory.makeProvider(pc), g);
+          new MemberOfGroup(makeProvider(pc), g);
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         WspWriter.writePolicy(assertion, bo);
 
@@ -200,6 +200,12 @@ public class StubDataStore {
         encoder.writeObject(service);
         populate(service);
 
+    }
+
+    private IdentityProvider makeProvider(IdentityProviderConfig pc) {
+        IdentityProvider provider = new IdentityProviderStub();
+        provider.initialize(pc);
+        return provider;
     }
 
     private void reconstituteFrom(String path)

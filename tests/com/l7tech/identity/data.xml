@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<java version="1.4.1_01" class="java.beans.XMLDecoder"> 
+ <object class="com.l7tech.identity.imp.IdentityProviderConfigImp"> 
+  <void property="description"> 
+   <string>Internal identity provider (stub)</string> 
+  </void> 
+  <void property="oid"> 
+   <long>1</long> 
+  </void> 
+ </object> 
+ <object id="UserImp0" class="com.l7tech.identity.internal.imp.UserImp"> 
+  <void property="email"> 
+   <string>fred@layer7-tech.com</string> 
+  </void> 
+  <void property="firstName"> 
+   <string>Fred</string> 
+  </void> 
+  <void property="lastName"> 
+   <string>Bunky</string> 
+  </void> 
+  <void property="login"> 
+   <string>fred</string> 
+  </void> 
+  <void property="oid"> 
+   <long>2</long> 
+  </void> 
+  <void property="providerOid"> 
+   <long>1</long> 
+  </void> 
+ </object> 
+ <object id="UserImp1" class="com.l7tech.identity.internal.imp.UserImp"> 
+  <void property="email"> 
+   <string>don@layer7-tech.com</string> 
+  </void> 
+  <void property="firstName"> 
+   <string>Don</string> 
+  </void> 
+  <void property="lastName"> 
+   <string>Freeman</string> 
+  </void> 
+  <void property="login"> 
+   <string>don</string> 
+  </void> 
+  <void property="oid"> 
+   <long>3</long> 
+  </void> 
+  <void property="providerOid"> 
+   <long>1</long> 
+  </void> 
+ </object> 
+ <object id="UserImp2" class="com.l7tech.identity.internal.imp.UserImp"> 
+  <void property="email"> 
+   <string>hertz@layer7-tech.com</string> 
+  </void> 
+  <void property="firstName"> 
+   <string>Hertz</string> 
+  </void> 
+  <void property="lastName"> 
+   <string>Schwartz</string> 
+  </void> 
+  <void property="login"> 
+   <string>schwartz</string> 
+  </void> 
+  <void property="oid"> 
+   <long>4</long> 
+  </void> 
+  <void property="providerOid"> 
+   <long>1</long> 
+  </void> 
+ </object> 
+ <object class="com.l7tech.identity.internal.imp.GroupImp"> 
+  <void property="description"> 
+   <string>All staff group</string> 
+  </void> 
+  <void property="memberHeaders"> 
+   <object class="java.util.HashSet"> 
+    <void method="add"> 
+     <object class="com.l7tech.objectmodel.EntityHeader"> 
+      <void property="description"> 
+       <null/> 
+      </void> 
+      <void property="name"> 
+       <string>schwartz</string> 
+      </void> 
+      <void property="oid"> 
+       <long>4</long> 
+      </void> 
+      <void property="type"> 
+       <void property="val"> 
+        <int>2</int> 
+       </void> 
+      </void> 
+     </object> 
+    </void> 
+    <void method="add"> 
+     <object class="com.l7tech.objectmodel.EntityHeader"> 
+      <void property="description"> 
+       <null/> 
+      </void> 
+      <void property="name"> 
+       <string>don</string> 
+      </void> 
+      <void property="oid"> 
+       <long>3</long> 
+      </void> 
+     </object> 
+    </void> 
+    <void method="add"> 
+     <object class="com.l7tech.objectmodel.EntityHeader"> 
+      <void property="description"> 
+       <null/> 
+      </void> 
+      <void property="name"> 
+       <string>fred</string> 
+      </void> 
+      <void property="oid"> 
+       <long>2</long> 
+      </void> 
+     </object> 
+    </void> 
+   </object> 
+  </void> 
+  <void property="members"> 
+   <object class="java.util.HashSet"> 
+    <void method="add"> 
+     <object idref="UserImp2"/> 
+    </void> 
+    <void method="add"> 
+     <object idref="UserImp0"/> 
+    </void> 
+    <void method="add"> 
+     <object idref="UserImp1"/> 
+    </void> 
+   </object> 
+  </void> 
+  <void property="name"> 
+   <string>all-staff</string> 
+  </void> 
+  <void property="oid"> 
+   <long>5</long> 
+  </void> 
+  <void property="providerOid"> 
+   <long>1</long> 
+  </void> 
+ </object> 
+ <object class="com.l7tech.identity.internal.imp.GroupImp"> 
+  <void property="description"> 
+   <string>Marketing group</string> 
+  </void> 
+  <void property="name"> 
+   <string>marketing</string> 
+  </void> 
+  <void property="oid"> 
+   <long>6</long> 
+  </void> 
+  <void property="providerOid"> 
+   <long>1</long> 
+  </void> 
+ </object> 
+ <object class="com.l7tech.identity.internal.imp.GroupImp"> 
+  <void property="description"> 
+   <string>Engineering group</string> 
+  </void> 
+  <void property="name"> 
+   <string>engineering</string> 
+  </void> 
+  <void property="oid"> 
+   <long>7</long> 
+  </void> 
+  <void property="providerOid"> 
+   <long>1</long> 
+  </void> 
+ </object> 
+ <object class="com.l7tech.service.PublishedService"> 
+  <void property="name"> 
+   <string>urn:xmltoday-delayed-quotes</string> 
+  </void> 
+  <void property="oid"> 
+   <long>8</long> 
+  </void> 
+  <void property="policyXml"> 
+   <string>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt; 
+&lt;java version=&quot;1.4.1_01&quot; class=&quot;java.beans.XMLDecoder&quot;&gt; 
+ &lt;object class=&quot;com.l7tech.policy.assertion.identity.MemberOfGroup&quot;&gt; 
+  &lt;void property=&quot;group&quot;&gt; 
+   &lt;object class=&quot;com.l7tech.identity.internal.imp.GroupImp&quot;&gt; 
+    &lt;void property=&quot;description&quot;&gt; 
+     &lt;string&gt;Marketing group&lt;/string&gt; 
+    &lt;/void&gt; 
+    &lt;void property=&quot;name&quot;&gt; 
+     &lt;string&gt;marketing&lt;/string&gt; 
+    &lt;/void&gt; 
+    &lt;void property=&quot;oid&quot;&gt; 
+     &lt;long&gt;6&lt;/long&gt; 
+    &lt;/void&gt; 
+    &lt;void property=&quot;providerOid&quot;&gt; 
+     &lt;long&gt;1&lt;/long&gt; 
+    &lt;/void&gt; 
+   &lt;/object&gt; 
+  &lt;/void&gt; 
+  &lt;void property=&quot;identityProvider&quot;&gt; 
+   &lt;object class=&quot;com.l7tech.identity.IdentityProviderStub&quot;/&gt; 
+  &lt;/void&gt; 
+ &lt;/object&gt; 
+&lt;/java&gt; 
+</string> 
+  </void> 
+  <void property="urn"> 
+   <string>urn:xmltoday-delayed-quotes</string> 
+  </void> 
+  <void property="wsdlUrl"> 
+   <string>file:/D:/src/UneasyRooster/tests/com/l7tech/service/StockQuoteService.wsdl</string> 
+  </void> 
+  <void property="wsdlXml"> 
+   <string>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#13;
+&lt;definitions name=&quot;StockQuoteService&quot; targetNamespace=&quot;urn:xmltoday-delayed-quotes&quot; xmlns:tns=&quot;urn:xmltoday-delayed-quotes&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:soap=&quot;http://schemas.xmlsoap.org/wsdl/soap/&quot; xmlns=&quot;http://schemas.xmlsoap.org/wsdl/&quot;&gt;&#13;
+  &lt;message name=&quot;getQuoteInput&quot;&gt;&#13;
+    &lt;part name=&quot;symbol&quot; type=&quot;xsd:string&quot;/&gt;&#13;
+  &lt;/message&gt;&#13;
+  &lt;message name=&quot;getQuoteOutput&quot;&gt;&#13;
+    &lt;part name=&quot;quote&quot; type=&quot;xsd:float&quot;/&gt;&#13;
+  &lt;/message&gt;&#13;
+  &lt;portType name=&quot;GetQuote&quot;&gt;&#13;
+    &lt;operation name=&quot;getQuote&quot;&gt;&#13;
+      &lt;input message=&quot;tns:getQuoteInput&quot;/&gt;&#13;
+      &lt;output message=&quot;tns:getQuoteOutput&quot;/&gt;&#13;
+    &lt;/operation&gt;&#13;
+  &lt;/portType&gt;&#13;
+  &lt;binding name=&quot;GetQuoteSoapBinding&quot; type=&quot;tns:GetQuote&quot;&gt;&#13;
+    &lt;soap:binding style=&quot;rpc&quot; transport=&quot;http://schemas.xmlsoap.org/soap/http&quot;/&gt;&#13;
+    &lt;operation name=&quot;getQuote&quot;&gt;&#13;
+      &lt;soap:operation soapAction=&quot;&quot;/&gt;&#13;
+      &lt;input&gt;&#13;
+        &lt;soap:body use=&quot;encoded&quot; encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:xmltoday-delayed-quotes&quot;/&gt;&#13;
+      &lt;/input&gt;&#13;
+      &lt;output&gt;&#13;
+        &lt;soap:body use=&quot;encoded&quot; encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:xmltoday-delayed-quotes&quot;/&gt;&#13;
+      &lt;/output&gt;&#13;
+    &lt;/operation&gt;&#13;
+    &lt;operation name=&quot;getQuote2&quot;&gt;&#13;
+      &lt;soap:operation soapAction=&quot;&quot;/&gt;&#13;
+      &lt;input&gt;&#13;
+        &lt;soap:body use=&quot;encoded&quot; encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:xmltoday-delayed-quotes&quot;/&gt;&#13;
+      &lt;/input&gt;&#13;
+      &lt;output&gt;&#13;
+        &lt;soap:body use=&quot;encoded&quot; encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:xmltoday-delayed-quotes&quot;/&gt;&#13;
+      &lt;/output&gt;&#13;
+    &lt;/operation&gt;&#13;
+  &lt;/binding&gt;&#13;
+  &lt;service name=&quot;StockQuoteService&quot;&gt;&#13;
+    &lt;port name=&quot;StockQuotePort&quot; binding=&quot;tns:GetQuoteSoapBinding&quot;&gt;&#13;
+      &lt;soap:address location=&quot;http://localhost:8080/soap/servlet/rpcrouter&quot;/&gt;&#13;
+    &lt;/port&gt;&#13;
+  &lt;/service&gt;&#13;
+&lt;/definitions&gt;&#13;
+</string> 
+  </void> 
+ </object> 
+</java> 

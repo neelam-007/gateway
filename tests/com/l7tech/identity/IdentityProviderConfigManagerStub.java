@@ -2,19 +2,17 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Class IdentityProviderConfigManagerStub.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class IdentityProviderConfigManagerStub implements IdentityProviderConfigManager {
     private StubDataStore dataStore;
 
     public IdentityProviderConfigManagerStub() {
-            this.dataStore = StubDataStore.defaultStore();
+        this.dataStore = StubDataStore.defaultStore();
     }
 
 
@@ -34,7 +32,7 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
     }
 
     public void update(IdentityProviderConfig c) throws UpdateException {
-          Long key = new Long(c.getOid());
+        Long key = new Long(c.getOid());
         if (dataStore.getIdentityProviderConfigs().get(key) == null) {
             throw new UpdateException("Record missing, IdentityProviderConfig oid= " + c.getOid());
         }
@@ -43,13 +41,27 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
     }
 
     public void delete(IdentityProviderConfig c) throws DeleteException {
-           if (dataStore.getIdentityProviderConfigs().remove(new Long(c.getOid())) == null) {
+        if (dataStore.getIdentityProviderConfigs().remove(new Long(c.getOid())) == null) {
             throw new DeleteException("Could not find IdentityProviderConfig oid= " + c.getOid());
         }
     }
 
-    public Collection findAllIdentityProviders() throws FindException {
-        return IdentityProviderFactory.findAllIdentityProviders(this);
+    public Collection findAllIdentityProviders()
+      throws FindException {
+        List providers = new ArrayList();
+        Iterator i = findAll().iterator();
+        IdentityProviderConfig config;
+        while (i.hasNext()) {
+            config = (IdentityProviderConfig) i.next();
+            providers.add(makeProvider(config));
+        }
+        return Collections.unmodifiableList(providers);
+    }
+
+    private Object makeProvider(IdentityProviderConfig config) {
+        IdentityProvider provider = new IdentityProviderStub();
+        provider.initialize(config);
+        return provider;
     }
 
     /**
@@ -59,9 +71,9 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAllHeaders() throws FindException {
-            Collection list = new ArrayList();
+        Collection list = new ArrayList();
         for (Iterator i =
-                dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext();) {
+          dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
             list.add(fromIdentityProviderConfig((IdentityProviderConfig) dataStore.getIdentityProviderConfigs().get(key)));
         }
@@ -76,11 +88,11 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-           Collection list = new ArrayList();
+        Collection list = new ArrayList();
         int index = 0;
         int count = 0;
         for (Iterator i =
-                dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext(); index++) {
+          dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext(); index++) {
             Long key = (Long) i.next();
 
             if (index >= offset && count <= windowSize) {
@@ -99,9 +111,9 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
      * @return A <code>Collection</code> of Entity objects.
      */
     public Collection findAll() throws FindException {
-            Collection list = new ArrayList();
+        Collection list = new ArrayList();
         for (Iterator i =
-                dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext();) {
+          dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
             list.add(dataStore.getIdentityProviderConfigs().get(key));
         }
@@ -116,11 +128,11 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAll(int offset, int windowSize) throws FindException {
-            Collection list = new ArrayList();
+        Collection list = new ArrayList();
         int index = 0;
         int count = 0;
         for (Iterator i =
-                dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext(); index++) {
+          dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext(); index++) {
             Long key = (Long) i.next();
 
             if (index >= offset && count <= windowSize) {
@@ -132,9 +144,8 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
     }
 
 
-
     private EntityHeader fromIdentityProviderConfig(IdentityProviderConfig c) {
         return
-                new EntityHeader(c.getOid(), EntityType.ID_PROVIDER_CONFIG, c.getName(), null);
+          new EntityHeader(c.getOid(), EntityType.ID_PROVIDER_CONFIG, c.getName(), null);
     }
 }
