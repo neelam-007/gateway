@@ -159,7 +159,7 @@ public class ClusterInfoManager {
 
     private ClusterInfo getNodeStatusFromDB(String mac) {
         String query = "from " + TABLE_NAME + " in class " + ClusterInfo.class.getName() +
-                       " where " + TABLE_NAME + "." + MAC_COLUMN_NAME + " = " + mac;
+                       " where " + TABLE_NAME + "." + MAC_COLUMN_NAME + " = \'" + mac + "\'";
         HibernatePersistenceContext context = null;
         List hibResults = null;
         try {
@@ -281,9 +281,9 @@ public class ClusterInfoManager {
                     up.destroy();
             }
         } catch (IOException e) {
-            logger.log(Level.FINE, "error getting ipconfig", e);
+            logger.fine("error getting ipconfig: " + e.getMessage());
         } catch (InterruptedException e) {
-            logger.log(Level.FINE, "error getting ipconfig", e);
+            logger.fine("error getting ipconfig: " + e.getMessage());
         }
         // ipconfig output
         // ... stuff
