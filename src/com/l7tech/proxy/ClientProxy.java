@@ -99,7 +99,10 @@ public class ClientProxy {
         this.keyManager = keyManager;
     }
 
-    /** Used by ClientProxyStub, a fake CP for testing GUI widgets. */
+    /**
+     * Used by ClientProxyStub, a fake CP for testing GUI widgets.
+     * @deprecated Do not use this constructor except while writing GUI test code that needs a fake ClientProxy.
+     */
     protected ClientProxy(int bindPort) {
         this.bindPort = bindPort;
     }
