@@ -129,11 +129,11 @@ public class Service {
             endTransaction();
         }
     }
-    public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, long userId) throws java.rmi.RemoteException {
+    public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
         UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
         if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
         try {
-            return userManager.findByPrimaryKey(Long.toString(userId));
+            return userManager.findByPrimaryKey(userId);
         } catch (FindException e) {
             throw new java.rmi.RemoteException("FindException in findUserByPrimaryKey", e);
         } finally {
