@@ -10,7 +10,7 @@
 
 DROP TABLE hibernate_unique_key;
 
-CREATE TABLE hibernate_unique_key ( 
+CREATE TABLE hibernate_unique_key (
   next_hi integer
 );
 
@@ -59,7 +59,7 @@ CREATE TABLE internal_group (
 --
 
 
-INSERT INTO internal_group VALUES (2,0,'SSGAdmin','Users having administration rights to the ssg');
+INSERT INTO internal_group VALUES (2,0,'Gateway Administrators','Admin console users having administration rights to the gateway');
 --
 -- Table structure for table 'internal_user'
 --

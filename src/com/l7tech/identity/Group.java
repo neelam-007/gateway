@@ -8,7 +8,7 @@ import java.security.Principal;
 
 public class Group extends NamedEntityImp implements Principal {
 
-    public static final String ADMIN_GROUP_NAME = "SSGAdmin";
+    public static final String ADMIN_GROUP_NAME = "Gateway Administrators";
 
     public String getDescription() {
         return _description;
