@@ -1,20 +1,18 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Cookie;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 
-import javax.swing.*;
 import java.io.ByteArrayOutputStream;
-import java.util.logging.Level;
 import java.util.Iterator;
+import java.util.logging.Level;
 
 
 /**

@@ -1,8 +1,5 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.tree.policy.RequestXpathPolicyTreeNode;
-
-
 /**
  * The class represents an gui node element in the TreeModel that
  * represents a routing folder.
