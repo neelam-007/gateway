@@ -100,28 +100,32 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 URL url = getProtectedServiceUrl(service, request);
 
                 HttpClient client = new HttpClient(connectionManager);
-                HostConfiguration hconf = new HostConfiguration();
+                HostConfiguration hconf = null;
 
-                synchronized( this ) {
-                    if ( protocol == null ) {
-                        protocol = new Protocol(url.getProtocol(), new SecureProtocolSocketFactory() {
-                            public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
-                                return sslContext.getSocketFactory().createSocket(socket,host,port,autoClose);
-                            }
+                if ( "https".equals(url.getProtocol()) ) {
+                    hconf = new HostConfiguration();
+                    synchronized( this ) {
+                        if ( protocol == null ) {
+                            protocol = new Protocol(url.getProtocol(), new SecureProtocolSocketFactory() {
+                                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
+                                    return sslContext.getSocketFactory().createSocket(socket,host,port,autoClose);
+                                }
 
-                            public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
-                                return sslContext.getSocketFactory().createSocket(host,port,clientAddress,clientPort);
-                            }
+                                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
+                                    return sslContext.getSocketFactory().createSocket(host,port,clientAddress,clientPort);
+                                }
 
-                            public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-                                return sslContext.getSocketFactory().createSocket(host,port);
-                            }
-                        }, url.getPort());
+                                public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+                                    return sslContext.getSocketFactory().createSocket(host,port);
+                                }
+                            }, url.getPort());
+                        }
                     }
+
+                    // TODO clear SSL Context when any TrustedCert changes
+                    hconf.setHost(url.getHost(), url.getPort(), protocol);
                 }
 
-                // TODO clear SSL Context when any TrustedCert changes
-                hconf.setHost(url.getHost(), url.getPort(), protocol);
                 postMethod = new PostMethod(url.toString());
 
                 // TODO: Attachments
@@ -164,7 +168,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 }
                 attachCookies(client, request.getTransportMetadata());
                 postMethod.setRequestBody(requestXml);
-                client.executeMethod(hconf,postMethod);
+
+                if ( hconf == null ) {
+                    client.executeMethod(postMethod);
+                } else {
+                    client.executeMethod(hconf,postMethod);
+                }
 
                 int status = postMethod.getStatusCode();
                 if (status == 200)
@@ -186,7 +195,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 return AssertionStatus.FAILED;
             } catch (IOException ioe) {
                 // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-                logger.log(Level.SEVERE, null, ioe);
+                logger.log(Level.SEVERE, ioe.getMessage(), ioe);
                 return AssertionStatus.FAILED;
             } catch (SAXException e) {
                 logger.log(Level.SEVERE, null, e);
