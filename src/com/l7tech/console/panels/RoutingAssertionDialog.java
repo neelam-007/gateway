@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.credential.CredentialFormat;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
@@ -9,12 +10,17 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssClientCert;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.event.PolicyEvent;
 
 import javax.swing.*;
+import javax.swing.event.EventListenerList;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.EventListener;
 
 
 /**
@@ -30,7 +36,7 @@ public class RoutingAssertionDialog extends JDialog {
     private JButton cancelButton;
     private JPanel buttonPanel;
     private JButton okButton;
-
+    private EventListenerList listenerList = new EventListenerList();
 
     /** Creates new form ServicePanel */
     public RoutingAssertionDialog(Frame owner, RoutingAssertion a) {
@@ -39,6 +45,45 @@ public class RoutingAssertionDialog extends JDialog {
         assertion = a;
         initComponents();
     }
+
+
+    /**
+     * add the PolicyListener
+     *
+     * @param listener the PolicyListener
+     */
+    public void addPolicyListener(PolicyListener listener) {
+        listenerList.add(PolicyListener.class, listener);
+    }
+
+    /**
+     * remove the the PolicyListener
+     *
+     * @param listener the PolicyListener
+     */
+    public void removePolicyListener(PolicyListener listener) {
+        listenerList.remove(PolicyListener.class, listener);
+    }
+
+    /**
+     * notfy the listeners
+     * @param a the assertion
+     */
+    private void fireEventAssertionChanged(final Assertion a) {
+        SwingUtilities.invokeLater(
+          new Runnable() {
+            public void run() {
+                int[] indices = new int[a.getParent().getChildren().indexOf(a)];
+                PolicyEvent event = new
+                  PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[] {a});
+                EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
+                for (int i = 0; i < listeners.length; i++) {
+                    ((PolicyListener)listeners[i]).assertionsChanged(event);
+                }
+            }
+        });
+    }
+
 
     /**
      * This method is called from within the constructor to
@@ -56,9 +101,9 @@ public class RoutingAssertionDialog extends JDialog {
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
 
+
         credentialsAndTransportPanel.setLayout(new GridBagLayout());
-
-
+        credentialsAndTransportPanel.setBorder(BorderFactory.createTitledBorder("Protected service authentication"));
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -319,6 +364,12 @@ public class RoutingAssertionDialog extends JDialog {
             // Register listener
             okButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    assertion.setProtectedServiceUrl(serviceUrlTextField.getText());
+                    assertion.setLogin(identityTextField.getText());
+                    assertion.setPassword(new String(getCredentials()));
+                    fireEventAssertionChanged(assertion);
+                    RoutingAssertionDialog.this.dispose();
+
                 }
             });
         }
@@ -351,6 +402,7 @@ public class RoutingAssertionDialog extends JDialog {
     private JTextField identityTextField;
     private JTextField realmTextField;
     private JPasswordField identityPasswordField;
+    private JPasswordField confitmPasswordField;
     private JPanel credentialsAndTransportPanel;
     private JPanel serviceUrlPanel;
     private JTextField serviceUrlTextField;
