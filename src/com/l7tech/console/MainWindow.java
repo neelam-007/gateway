@@ -559,28 +559,10 @@ public class MainWindow extends JFrame {
 
         mainSplitPaneRight = new JPanel();
         mainSplitPaneRight.setLayout(new GridBagLayout());
-
-        // check if node/context supports listing
-
-        getMainSplitPaneRight().removeAll();
-        GridBagConstraints constraints
-          = new GridBagConstraints(0, // gridx
-            0, // gridy
-            1, // widthx
-            1, // widthy
-            1.0, // weightx
-            1.0, // weigthy
-            GridBagConstraints.NORTH, // anchor
-            GridBagConstraints.BOTH, //fill
-            new Insets(0, 0, 0, 0), // inses
-            0, // padx
-            0); // pady
-        getMainSplitPaneRight().add(getWorkBenchPanel(), constraints);
-
         return mainSplitPaneRight;
     }
 
-    private WorkSpacePanel getWorkBenchPanel() {
+    private WorkSpacePanel getWorkSpacePanel() {
         return WindowManager.getInstance().getCurrentWorkspace();
     }
 
@@ -625,11 +607,9 @@ public class MainWindow extends JFrame {
     }
 
     /**
-     * Create the directory root object, and instanitate the
-     * model.
+     * Initialize the workspace. Invoked on successfull login.
      */
-    private void setJtreeRootNodes() {
-        // palette tree paletteRootNode
+    private void initalizeWorkspace() {
 
         DefaultTreeModel treeModel = new FilteredTreeModel(null);
         final AbstractTreeNode paletteRootNode =
@@ -658,6 +638,21 @@ public class MainWindow extends JFrame {
         getServicesTree().setModel(servicesTreeModel);
         TreePath initialPath = new TreePath(servicesRootNode.getPath());
         getServicesTree().setSelectionPath(initialPath);
+
+        getMainSplitPaneRight().removeAll();
+        GridBagConstraints constraints
+          = new GridBagConstraints(0, // gridx
+            0, // gridy
+            1, // widthx
+            1, // widthy
+            1.0, // weightx
+            1.0, // weigthy
+            GridBagConstraints.NORTH, // anchor
+            GridBagConstraints.BOTH, //fill
+            new Insets(0, 0, 0, 0), // inses
+            0, // padx
+            0); // pady
+        getMainSplitPaneRight().add(getWorkSpacePanel(), constraints);
     }
 
 
@@ -942,65 +937,6 @@ public class MainWindow extends JFrame {
      */
     private JPopupMenu getTreeNodeJPopupMenu(final AbstractTreeNode node) {
 //
-//        ActionListener listener = new ActionListener() {
-//            /** Invoked when an action occurs. */
-//            public void actionPerformed(ActionEvent e) {
-//                JPanel panel = null;
-//                EntityTreeNode dNode = (EntityTreeNode)node;
-//                Object object = dNode.getUserObject();
-//                DefaultMutableTreeNode parent =
-//                  (DefaultMutableTreeNode)node.getParent();
-//
-//                if (TreeNodeMenu.DELETE.equals(e.getActionCommand())) {
-//                    removeNode(dNode);
-//                } else if (TreeNodeMenu.NEW_ADMINISTRATOR.equals(e.getActionCommand())) {
-//                    AdminFolderNode adminFolder = (AdminFolderNode)object;
-//                    NewAdminDialog dialog = new NewAdminDialog(MainWindow.this, adminFolder);
-//                    dialog.setResizable(false);
-//                    dialog.setPanelListener(listenerBroker);
-//                    dialog.show();
-//                } else if (TreeNodeMenu.NEW_GROUP.equals(e.getActionCommand())) {
-//                    NewGroupDialog dialog =
-//                      new NewGroupDialog(MainWindow.this);
-//                    dialog.setResizable(false);
-//                    dialog.setPanelListener(listenerBroker);
-//                    dialog.show();
-//                } else if (TreeNodeMenu.NEW_USER.equals(e.getActionCommand())) {
-//                    NewUserDialog dialog = new NewUserDialog(MainWindow.this);
-//                    dialog.setResizable(false);
-//                    dialog.setPanelListener(listenerBroker);
-//                    dialog.show();
-//                } else if (TreeNodeMenu.NEW_PROVIDER.equals(e.getActionCommand())) {
-//                    IdentityProviderDialog dialog = new IdentityProviderDialog(MainWindow.this);
-//                    dialog.setResizable(false);
-//                    dialog.setPanelListener(listenerBroker);
-//                    dialog.show();
-//                } else if (TreeNodeMenu.NEW_SERVICE.equals(e.getActionCommand())) {
-//                    PublishServiceWizard dialog = new PublishServiceWizard(MainWindow.this, true);
-//                    dialog.setResizable(false);
-//                    dialog.setPanelListener(listenerBroker);
-//                    dialog.show();
-//
-//                } else if (TreeNodeMenu.PROPERTIES.equals(e.getActionCommand())) {
-//                    panel = PanelFactory.getPanel(dNode, listenerBroker);
-//                } else if (TreeNodeMenu.BROWSE.equals(e.getActionCommand())) {
-//                    getAssertionPaletteTree().expandPath(getAssertionPaletteTree().getSelectionPath());
-//                } else {
-//                    JOptionPane.showMessageDialog(null,
-//                      "Not yet implemented.",
-//                      "Information",
-//                      JOptionPane.INFORMATION_MESSAGE);
-//                }
-//                // only if something is returned
-//                if (panel != null) {
-//                    EditorDialog dialog = new EditorDialog(MainWindow.this, panel);
-//
-//                    dialog.pack();
-//                    Utilities.centerOnScreen(dialog);
-//                    dialog.show();
-//                }
-//            }
-//        };
         return node.getPopupMenu();
     }
 
@@ -1252,17 +1188,6 @@ public class MainWindow extends JFrame {
 
         MouseListener mouseListener =
           new MouseAdapter() {
-              public void mouseClicked(MouseEvent e) {
-                  ;
-              }
-
-              public void mouseEntered(MouseEvent e) {
-                  ;
-              }
-
-              public void mouseExited(MouseEvent e) {
-                  ;
-              }
 
               public void mousePressed(MouseEvent e) {
                   jTreePopUpEventHandler(e);
@@ -1671,7 +1596,7 @@ public class MainWindow extends JFrame {
               } catch (IOException e) {
                   log.log(Level.WARNING, "onAuthSuccess()", e);
               }
-              setJtreeRootNodes();
+              initalizeWorkspace();
               int timeout = 0;
               try {
                   timeout = Preferences.getPreferences().getInactivityTimeout();
