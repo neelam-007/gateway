@@ -4,6 +4,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.console.util.IconManager2;
+import com.l7tech.console.tree.AbstractTreeNode;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.*;
@@ -14,64 +15,20 @@ import java.awt.*;
  * Class AssertionTreeNode.
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-abstract class AssertionTreeNode extends DefaultMutableTreeNode {
-    protected boolean hasLoadedChildren;
+abstract class AssertionTreeNode extends AbstractTreeNode {
 
     AssertionTreeNode(Assertion assertion) {
         super(assertion);
     }
 
     /**
-     * Returns the number of children <code>TreeNode</code>s the receiver
-     * contains.
+     * @return the node name that is displayed
      */
-    public int getChildCount() {
-        if (!hasLoadedChildren) {
-            loadChildren();
-        }
-        return super.getChildCount();
-    }
-
-    /**
-     * subclasses override this method
-     */
-    protected abstract void loadChildren();
-
-    /**
-     * loads the icon specified by subclass iconResource()
-     * implementation.
-     *
-     * @return the <code>ImageIcon</code> or null if not found
-     */
-    public Icon getIcon() {
-        Image image = IconManager2.getInstance().getIcon(iconResource(false));
-        if (image != null) {
-            return new ImageIcon(image);
-        }
-        return null;
-    }
-
-    /**
-     * Finds an icon for this node when opened. This icon should
-     * represent the node only when it is opened (when it can have
-     * children).
-     * @return icon to use to represent the bean when opened
-     */
-    public Icon getOpenedIcon() {
-            Image image = IconManager2.getInstance().getIcon(iconResource(true));
-        if (image != null) {
-            return new ImageIcon(image);
-        }
-        return null;
+    public String getName() {
+        return this.toString();
     }
 
 
-    /**
-     * subclasses override this method specifying the resource name
-     *
-     * @param open for nodes that can be opened, can have children
-     */
-    protected abstract String iconResource(boolean open);
 }
 
 

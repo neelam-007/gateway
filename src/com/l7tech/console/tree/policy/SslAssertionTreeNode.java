@@ -21,20 +21,6 @@ class SslAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
     /**
-     * loads the icon specified by subclass iconResource()
-     * implementation.
-     *
-     * @return the <code>ImageIcon</code> or null if not found
-     */
-    public Icon getIcon() {
-        Image image = IconManager2.getInstance().getIcon(iconResource(false));
-        if (image !=null) {
-            return new ImageIcon(image);
-        }
-        return null;
-    }
-
-    /**
      * subclasses override this method specifying the resource name
      *
      * @param open for nodes that can be opened, can have children

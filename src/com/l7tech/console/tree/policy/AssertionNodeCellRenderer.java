@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.util.IconManager;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
@@ -36,10 +37,12 @@ public class AssertionNodeCellRenderer
 
         this.setBackgroundNonSelectionColor(tree.getBackground());
         Icon icon = null;
-        AssertionTreeNode assertionTreeNode = ((AssertionTreeNode) value);
+        AbstractTreeNode assertionTreeNode = ((AbstractTreeNode) value);
         Assertion ass = (Assertion) assertionTreeNode.getUserObject();
         setText(ass.getClass().getName());
-        icon = expanded ? assertionTreeNode.getOpenedIcon() : assertionTreeNode.getIcon();
+        icon = expanded ?
+          new ImageIcon(assertionTreeNode.getOpenedIcon()) :
+          new ImageIcon(assertionTreeNode.getIcon());
 
         if (icon != null) {
             setIcon(icon);

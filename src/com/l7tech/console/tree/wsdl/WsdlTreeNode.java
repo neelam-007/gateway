@@ -2,6 +2,7 @@ package com.l7tech.console.tree.wsdl;
 
 import com.l7tech.service.Wsdl;
 import com.l7tech.console.util.IconManager2;
+import com.l7tech.console.tree.AbstractTreeNode;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
@@ -21,12 +22,12 @@ import java.awt.*;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @see com.l7tech.console.tree.BasicTreeNode
  */
-public abstract class WsdlTreeNode extends DefaultMutableTreeNode {
+public abstract class WsdlTreeNode extends AbstractTreeNode {
 
     protected boolean hasLoadedChildren = false;
 
-    protected WsdlTreeNode(MutableTreeNode parent) {
-        setParent(parent);
+    protected WsdlTreeNode(Object userObject) {
+        super(userObject);
     }
 
     /**
@@ -70,6 +71,13 @@ public abstract class WsdlTreeNode extends DefaultMutableTreeNode {
      */
     public Image getOpenedIcon() {
         return IconManager2.getInstance().getIcon(iconResource(false));
+    }
+
+    /**
+     * @return the node name that is displayed
+     */
+    public String getName() {
+        return this.toString();
     }
 
     /**
