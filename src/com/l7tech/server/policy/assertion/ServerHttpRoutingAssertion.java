@@ -9,16 +9,19 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.attachments.MultipartMessageReader;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.MultipartUtil;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.transport.http.SslClientTrustManager;
-import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -228,7 +231,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             logger.warning("Couldn't resolve client IP address");
                         }
                     }
-                    samlOptions.setExpiryMinutes(5);
+                    samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
                     ag.attachSenderVouches(document, si, request.getPrincipalCredentials(), samlOptions);
                     requestXml = XmlUtil.nodeToString(document);
                     if (logger.isLoggable(Level.FINE)) {
