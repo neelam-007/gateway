@@ -363,6 +363,8 @@ public class Gui {
         aboutMenu.add( aboutMenuItem );
         menus.add( aboutMenu );
 
+        Utilities.removeToolTipsFromMenuItems(menus);
+
         return menus;
     }
 
