@@ -39,15 +39,8 @@ public class BootServlet extends HttpServlet {
             failure = true;
             throw new ServletException(e);
         } finally {
-            if (failure) {
-                try {
-                    if ( _boot != null ) _boot.close();
-                } catch ( LifecycleException e ) {
-                    throw new ServletException(e);
-                }
-            }
+            if (failure) destroy();
         }
-
     }
 
     public void doGet( HttpServletRequest request, HttpServletResponse response ) throws IOException, ServletException {
@@ -62,8 +55,13 @@ public class BootServlet extends HttpServlet {
      */
     public void destroy() {
         try {
-            _boot.stop();
-            _boot.close();
+            if ( _boot != null ) {
+                try {
+                    _boot.stop();
+                } finally {
+                    _boot.close();
+                }
+            }
         } catch ( LifecycleException e ) {
             logger.warning( "Caught exception during server shutdown" );
         }
