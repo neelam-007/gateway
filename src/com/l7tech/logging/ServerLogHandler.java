@@ -12,10 +12,7 @@ import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
@@ -130,7 +127,7 @@ public class ServerLogHandler extends Handler {
     }
 
     public void close() throws SecurityException {
-        flusherDeamon.interrupt();
+        flusherDeamon.cancel();
     }
 
     /**
@@ -151,15 +148,16 @@ public class ServerLogHandler extends Handler {
      * in turn, that class uses the LogManager.getInstance(). therefore, this manager
      * should not be initialized at part of LogManager.getInstance().
      */
-    public void initialize() throws IllegalStateException {
+    public synchronized void initialize() throws IllegalStateException {
         nodeid = ClusterInfoManager.getInstance().thisNodeId();
         // start the deamon
-        synchronized (flusherDeamon) {
-            if (flusherDeamon.parent == null) {
-                flusherDeamon.parent = this;
-                flusherDeamon.setDaemon(true);
-                flusherDeamon.start();
-            }
+        if (flusherTask == null) {
+            flusherTask = new TimerTask() {
+                public void run() {
+                    cleanAndFlush();
+                }
+            };
+            flusherDeamon.schedule(flusherTask, FLUSH_FREQUENCY, FLUSH_FREQUENCY);
         }
     }
 
@@ -238,46 +236,15 @@ public class ServerLogHandler extends Handler {
         }
     }
 
-    // todo, use a timer instead
-    private static class LogDumper extends Thread {
-        public LogDumper() {
-            super( "LogDumper" );
-        }
-
-        public void run() {
-            if (parent == null) throw new IllegalStateException("parent not set");
-            try {
-                sleep(FLUSH_FREQUENCY*2);
-            } catch (InterruptedException e) {
-                reportException("flusherDeamon interrupted. " +
-                                "this log handler will stop dumping logs to db", null);
-                return;
-            }
-            while (true) {
-                try {
-                    sleep(FLUSH_FREQUENCY);
-                } catch (InterruptedException e) {
-                    reportException("flusherDeamon interrupted. " +
-                                    "this log handler will stop dumping logs to db", null);
-                    break;
-                }
-                try {
-                    parent.cleanAndFlush();
-                } catch (Throwable e) {
-                    reportException("unhandled exception", e);
-                }
-            }
-        }
-        ServerLogHandler parent = null;
-    }
-
     /**
      * where log records are stored waiting to be flushed to the database
      */
     private ArrayList cache = new ArrayList();
     private static long MAX_CACHE_SIZE = 1000;
     private String nodeid;
-    private static final LogDumper flusherDeamon = new LogDumper();
+    private static TimerTask flusherTask = null;
+    private final Timer flusherDeamon = new Timer(true);
+
     private static final long FLUSH_FREQUENCY = 6000;
     //private static final long FLUSH_FREQUENCY = 10;
     //private static final long HOW_LONG_WE_KEEP_LOGS = (48*3600*1000);
