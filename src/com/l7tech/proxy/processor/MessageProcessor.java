@@ -15,6 +15,7 @@ import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.security.xml.WssDecoratorImpl;
 import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.AesKey;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -52,6 +53,7 @@ import org.xml.sax.SAXException;
 import org.w3c.dom.Document;
 
 import javax.net.ssl.SSLException;
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -440,7 +442,7 @@ public class MessageProcessor {
      * @throws InvalidDocumentFormatException if the response from the SSG was not a valid SOAP document
      * @throws WssProcessor.ProcessorException if the response from the SSG could not be undecorated
      */
-    private SsgResponse obtainResponse(PendingRequest req)
+    private SsgResponse obtainResponse(final PendingRequest req)
             throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
             OperationCanceledException, ClientCertificateException, BadCredentialsException,
             KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
@@ -565,7 +567,16 @@ public class MessageProcessor {
                     wssProcessor.undecorateMessage(responseDocument,
                                                    SsgKeyStoreManager.getClientCert(ssg),
                                                    SsgKeyStoreManager.getClientCertPrivateKey(ssg),
-                                                   null); // TODO ws-sc
+                                                   new WssProcessor.SecurityContextFinder() {
+                                                       public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
+                                                           return new WssProcessor.SecurityContext() {
+                                                               public SecretKey getSharedSecret() {
+                                                                   return new AesKey(req.getSecureConversationSharedSecret(),
+                                                                                     req.getSecureConversationSharedSecret().length * 8);
+                                                               }
+                                                           };
+                                                       }
+                                                   });
             responseDocument = processorResult.getUndecoratedMessage();
 
             SsgResponse response = new SsgResponse(responseDocument, processorResult, status, headers);
