@@ -71,7 +71,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
             multipartBoundary = "--" + boundary;
             String innerType = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_TYPE);
             if (innerType.startsWith(XmlUtil.TEXT_XML)) {
-                Part part = parseMessagePart(breader);
+                Part part = parseMultipart(breader);
                 if (!part.getHeader(XmlUtil.CONTENT_TYPE).value.equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
                 return part.content;
             } else throw new IOException("Expected first part of multipart message to be XML");
@@ -122,14 +122,13 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         return value;
     }
 
-    private Part parseMessagePart(BufferedReader breader) throws IOException {
+    private Part parseMultipart(BufferedReader breader) throws IOException {
         StringBuffer xml = new StringBuffer();
         String line = breader.readLine();
         if (!line.equals(multipartBoundary))
             throw new IOException("Expected MIME multipart boundary at beginning of message part");
 
         Part part = new Part();
-        breader.readLine(); // Consume blank line after part headers
         boolean headers = true;
         while ((line = breader.readLine()) != null) {
             if (headers) {
