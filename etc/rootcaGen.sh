@@ -89,7 +89,7 @@ $KEYTOOL -genkey -alias ssgroot -keystore "$KEYSTORE_FILE_OSPATH" -keyalg RSA -k
 if [ -e "$KEYSTORE_FILE" ]
 then
 # EXPORT THE SERVER CERTIFICATE
-        $KEYTOOL -export -alias tomcat -storepass "$KEYSTORE_PASSWORD" -file "$CERTIFICATE_FILE_OSPATH" -keystore "$KEYSTORE_FILE_OSPATH"
+        $KEYTOOL -export -alias ssgroot -storepass "$KEYSTORE_PASSWORD" -file "$CERTIFICATE_FILE_OSPATH" -keystore "$KEYSTORE_FILE_OSPATH"
 else
 # INFORM THE USER OF THE FAILURE
         echo "ERROR: The keystore file was not generated"
