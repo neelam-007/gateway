@@ -359,7 +359,6 @@
 
         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
-                <exclude name="com/l7tech/common/security/**/*"/>
                 <exclude name="com/l7tech/logging/rmi/**/*"/>
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <include name="com/l7tech/identity/*Exception*"/>
@@ -379,6 +378,15 @@
                 <exclude name="com/l7tech/identity/ldap/LdapIdentityProvider.class"/>
                 <exclude name="com/l7tech/identity/ldap/LdapConfigTemplateManager.class"/>
                 <include name="com/l7tech/common/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/**/*"/>
+                <exclude name="com/l7tech/common/security/saml/**/*"/>
+                <exclude name="com/l7tech/common/security/*.class"/>
+                <!-- <exclude name="com/l7tech/common/security/**/*"/>-->
+                <exclude name="com/l7tech/common/security/xml/*SecurityProcessor*.class"/>
+                <exclude name="com/l7tech/common/security/xml/SoapMsgSigner.class"/>
+                <exclude name="com/l7tech/common/security/xml/XmlMangler.class"/>
+                <include name="com/l7tech/common/security/xml/ElementSecurity.class"/>
+
                 <include name="com/l7tech/cluster/ClusterNodeInfo.class"/>
                 <include name="com/l7tech/cluster/ClusterStatusAdmin.class"/>
                 <include name="com/l7tech/cluster/ServiceUsage.class"/>
@@ -392,9 +400,6 @@
                 <include name="com/l7tech/message/**/*"/>
                 <include name="com/l7tech/objectmodel/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
-                <exclude name="com/l7tech/policy/assertion/xmlsec/Signer*"/>
-                <exclude name="com/l7tech/policy/assertion/xmlsec/Verifier*"/>
-                <exclude name="com/l7tech/policy/assertion/xmlsec/SecurityProcessor*"/>
                 <include name="com/l7tech/policy/assertion/ext/Category.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertion.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertionsRegistrar.class"/>
