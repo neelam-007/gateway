@@ -43,10 +43,24 @@ import java.net.MalformedURLException;
  */
 public class SchemaValidationPropertiesDialog extends JDialog {
 
+    /**
+     * modless construction
+     */
     public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service) {
         super(owner, false);
         setTitle("Schema validation properties");
-        subject = node;
+        subject = node.getAssertion();
+        this.service = service;
+        initialize();
+    }
+
+    /**
+     * modal construction
+     */ 
+    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidation assertion, PublishedService service) {
+        super(owner, true);
+        setTitle("Schema validation properties");
+        subject = assertion;
         this.service = service;
         initialize();
     }
@@ -97,7 +111,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             return;
         }
         // save new schema
-        subject.getAssertion().setSchema(contents);
+        subject.setSchema(contents);
         // exit
         SchemaValidationPropertiesDialog.this.dispose();
     }
@@ -293,8 +307,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         JLabel schemaTitle = new JLabel("Schema to validate against:");
         xmldisplayPanel.add(schemaTitle, BorderLayout.NORTH);
 
-        if (subject != null && subject.getAssertion() != null && subject.getAssertion().getSchema() != null) {
-            wsdlTextArea.setText(subject.getAssertion().getSchema());
+        if (subject != null && subject != null && subject.getSchema() != null) {
+            wsdlTextArea.setText(subject.getSchema());
         } else {
             okButton.setEnabled(false);
         }
@@ -395,13 +409,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         wsdlTextArea.setTokenMarker(new XMLTokenMarker());
     }
 
-    // show the dialog for test purposes
-    public static void main(String[] args) {
-        SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(null, null, null);
-        dlg.pack();
-        dlg.show();
-    }
-
     private JButton helpButton;
     private JButton okButton;
     private JButton cancelButton;
@@ -410,7 +417,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private JTextField urlTxtFld;
     private JEditTextArea wsdlTextArea;
 
-    private SchemaValidationTreeNode subject;
+    private SchemaValidation subject;
     private PublishedService service;
 
     private final Logger log = Logger.getLogger(getClass().getName());
