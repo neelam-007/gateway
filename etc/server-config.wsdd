@@ -106,7 +106,7 @@
 
 
  <service name="serviceAdmin" provider="java:RPC">
-  <parameter name="allowedMethods" value="resolveWsdlTarget"/>
+  <parameter name="allowedMethods" value="resolveWsdlTarget findServiceByPrimaryKey"/>
   <parameter name="wsdlPortType" value="servicePortType"/>
   <parameter name="scope" value="Application"/>
   <parameter name="className" value="com.l7tech.adminws.service.Service"/>
@@ -117,6 +117,13 @@
   <operation name="resolveWsdlTarget" qname="ns1:resolveWsdlTarget" returnQName="resolveWsdlTargetReturn" returnType="xsd:string" xmlns:ns1="http://www.layer7-tech.com/service" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
       <parameter name="url" type="xsd:string"/>
   </operation>
+
+  <operation name="findServiceByPrimaryKey" qname="ns4:findServiceByPrimaryKey" returnQName="findServiceByPrimaryKeyReturn" returnType="ns4:PublishedService" xmlns:ns4="http://www.layer7-tech.com/service">
+    <parameter name="oid" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+  </operation>
+
+  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns17:PublishedService" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.service.PublishedService" xmlns:ns17="http://www.layer7-tech.com/service"/>
+
  </service>
 
 
@@ -127,7 +134,6 @@
    <!-- comment the following two handlers to bypass admin ws authentication mechanism -->
    <handler type="java:com.l7tech.adminws.security.AuthenticationAxisHandler"/>
    <handler type="java:com.l7tech.adminws.security.AuthorizationAxisHandler"/>
-
   </requestFlow>
  </transport>
  <transport name="local">

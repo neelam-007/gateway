@@ -1,5 +1,7 @@
 package com.l7tech.adminws.service;
 
+import com.l7tech.service.PublishedService;
+
 /**
  * Layer 7 Technologies, inc.
  * User: flascelles
@@ -8,6 +10,8 @@ package com.l7tech.adminws.service;
  */
 public class Service {
 
+    public Service() {
+    }
     public String resolveWsdlTarget(String url) throws java.rmi.RemoteException {
         try {
             java.net.URL urltarget = new java.net.URL(url);
@@ -26,6 +30,19 @@ public class Service {
             throw new java.rmi.RemoteException("com.l7tech.adminws.service.Service cannot resolve WSDL " + e.getMessage(), e);
         }
     }
+
+    public PublishedService findServiceByPrimaryKey(long oid) throws java.rmi.RemoteException {
+        // todo, remove this test code and replace with call to server-side manager
+        PublishedService out = new PublishedService();
+        out.setName("service name");
+        out.setOid(oid);
+        out.setPolicyXml("<this is not really xml>");
+        out.setWsdlXml("<this is not really xml>");
+        return out;
+    }
+    // ************************************************
+    // PRIVATES
+    // ************************************************
 
     /*
     public static void main (String[] args) throws Exception {

@@ -6,6 +6,8 @@ import javax.xml.rpc.ServiceException;
 import javax.xml.namespace.QName;
 import java.net.MalformedURLException;
 
+import com.l7tech.service.PublishedService;
+
 /**
  * Layer 7 Technologies, inc.
  * User: flascelles
@@ -27,13 +29,23 @@ public class Client {
         return (String)call.invoke(new Object[]{url});
     }
 
+    public PublishedService findServiceByPrimaryKey(long oid) throws java.rmi.RemoteException {
+        Call call = createStubCall();
+        call.setOperationName(new QName(SERVICE_URN, "findServiceByPrimaryKey"));
+        call.setReturnClass(PublishedService.class);
+        call.addParameter(new javax.xml.namespace.QName("", "oid"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
+        return (PublishedService)call.invoke(new Object[]{new Long(oid)});
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
 
     public static void main(String[] args) throws Exception {
         Client me = new Client("http://localhost:8080/ssg/services/serviceAdmin", "ssgadmin", "ssgadminpasswd");
-        System.out.println(me.resolveWsdlTarget("blah"));
+        if (me == null) System.err.println("!!!!!!!");
+        System.out.println(me.resolveWsdlTarget("http://localhost:8080/simplewsdl.xml"));
+        System.out.println(me.findServiceByPrimaryKey(654));
     }
 
     private Call createStubCall() throws java.rmi.RemoteException {
@@ -60,22 +72,8 @@ public class Client {
     }
 
     private void registerTypeMappings(Call call) {
-        /*
-        QName qn = new QName(IDENTITY_URN, "ArrayOfHeaders");
-        call.registerTypeMapping(com.l7tech.objectmodel.EntityHeader[].class, qn, new org.apache.axis.encoding.ser.ArraySerializerFactory(), new org.apache.axis.encoding.ser.ArrayDeserializerFactory());
-        qn = new QName(IDENTITY_URN, "EntityHeader");
-        call.registerTypeMapping(com.l7tech.objectmodel.EntityHeader.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.objectmodel.EntityHeader.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.objectmodel.EntityHeader.class, qn));
-        qn = new QName(IDENTITY_URN, "EntityType");
-        call.registerTypeMapping(com.l7tech.objectmodel.EntityType.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.objectmodel.EntityType.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.objectmodel.EntityType.class, qn));
-        qn = new QName(IDENTITY_URN, "IdentityProviderConfig");
-        call.registerTypeMapping(com.l7tech.identity.imp.IdentityProviderConfigImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.imp.IdentityProviderConfigImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.imp.IdentityProviderConfigImp.class, qn));
-        qn = new QName(IDENTITY_URN, "IdentityProviderConfigType");
-        call.registerTypeMapping(com.l7tech.identity.imp.IdentityProviderTypeImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.imp.IdentityProviderTypeImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.imp.IdentityProviderTypeImp.class, qn));
-        qn = new QName(IDENTITY_URN, "User");
-        call.registerTypeMapping(com.l7tech.identity.internal.imp.UserImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.internal.imp.UserImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.internal.imp.UserImp.class, qn));
-        qn = new QName(IDENTITY_URN, "Group");
-        call.registerTypeMapping(com.l7tech.identity.internal.imp.GroupImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.internal.imp.GroupImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.internal.imp.GroupImp.class, qn));
-        */
+        QName qn = new QName(SERVICE_URN, "PublishedService");
+        call.registerTypeMapping(PublishedService.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(PublishedService.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(PublishedService.class, qn));
     }
 
     private static final String SERVICE_URN = "http://www.layer7-tech.com/service";
