@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.MessageProcessor;
 import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Session;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
+
 
 /**
  * A logging handler that records SSGLogRecord objects and stored them in a database table.
@@ -58,32 +60,21 @@ public class ServerLogHandler extends Handler {
     public void flush() {
     }
 
-    public void flushtodb() {
+    private void flushtodb(Session session) {
         Object[] data = null;
         synchronized (cache) {
+            if (cache.isEmpty()) return;
             data = cache.toArray();
             cache.clear();
         }
-
-        // get the persistence context
-        HibernatePersistenceContext context = null;
-        try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-        } catch (SQLException e) {
-            reportException("cannot get persistence context", e);
-            return;
-        }
-
         // save extracted data in the database
-        for (int i = 0; i < data.length; i++) {
-            try {
-                context.getSession().save(data[i]);
-            } catch (SQLException e) {
-                reportException("error saving to database", e);
-            } catch (HibernateException e) {
-                reportException("error saving to database", e);
-            }
+        try {
+            for (int i = 0; i < data.length; i++)
+                session.save(data[i]);
+        } catch (HibernateException e) {
+            reportException("error saving to database", e);
         }
+
     }
 
     /**
@@ -162,37 +153,14 @@ public class ServerLogHandler extends Handler {
      */
     public void initialize() throws IllegalStateException {
         nodeid = ClusterInfoManager.getInstance().thisNodeId();
-        final ServerLogHandler me = this;
         // start the deamon
-        flusherDeamon = new Thread() {
-            public void run() {
-                try {
-                    sleep(FLUSH_FREQUENCY*2);
-                } catch (InterruptedException e) {
-                    reportException("flusherDeamon interrupted. " +
-                                    "this log handler will stop dumping logs to db", null);
-                    return;
-                }
-                boolean fullclean = true;
-                while (true) {
-                    try {
-                        sleep(FLUSH_FREQUENCY);
-                    } catch (InterruptedException e) {
-                        reportException("flusherDeamon interrupted. " +
-                                        "this log handler will stop dumping logs to db", null);
-                        break;
-                    }
-                    try {
-                        me.cleanAndFlush(fullclean);
-                    } catch (Throwable e) {
-                        reportException("unhandled exception", e);
-                    }
-                    fullclean = false;
-                }
+        synchronized (flusherDeamon) {
+            if (flusherDeamon.parent == null) {
+                flusherDeamon.parent = this;
+                flusherDeamon.setDaemon(true);
+                flusherDeamon.start();
             }
-        };
-        flusherDeamon.setDaemon(true);
-        flusherDeamon.start();
+        }
     }
 
     /**
@@ -221,35 +189,38 @@ public class ServerLogHandler extends Handler {
     protected void cleanAndFlush(boolean fullClean) {
         // get the persistence context
         HibernatePersistenceContext context = null;
+        Session session = null;
         try {
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            session = context.getSession();
         } catch (SQLException e) {
             reportException("cannot get persistence context", e);
+            return;
+        } catch (HibernateException e) {
+            reportException("cannot get session", e);
             return;
         }
         try {
             context.beginTransaction();
-            String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName();
-            if (!fullClean) {
+
+            if (fullClean) {
+                String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                                            " where " + TABLE_NAME + "." + NODEID_COLNAME +
+                                            " = \'" + nodeid + "\'";
+                session.delete(deleteSQLStatement);
+                session.flush();
+            } /*else {
                 // delete records older than 48 hrs
                 long deadline = System.currentTimeMillis();
                 deadline -= HOW_LONG_WE_KEEP_LOGS;
-                deleteSQLStatement += " where " + TABLE_NAME + "." + TIMESTAMP_COLNAME +
-                                      " < " + deadline;
-            } else {
-                deleteSQLStatement += " where " + TABLE_NAME + "." + NODEID_COLNAME +
-                                      " = \'" + nodeid + "\'";
-            }
-            context.getSession().delete(deleteSQLStatement);
-            if (fullClean) {
-                context.commitTransaction();
-                context.beginTransaction();
-            }
+                String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                                            " where " + TABLE_NAME + "." + TIMESTAMP_COLNAME +
+                                            " < " + deadline;
+                session.delete(deleteSQLStatement);
+            }*/
             // flush new records
-            flushtodb();
+            flushtodb(session);
             context.commitTransaction();
-        } catch (SQLException e) {
-            reportException("error deleting old records", e);
         } catch (HibernateException e) {
             reportException("error deleting old records", e);
         } catch(TransactionException e) {
@@ -271,17 +242,49 @@ public class ServerLogHandler extends Handler {
         }
     }
 
+    private static class LogDumper extends Thread {
+        public void run() {
+            if (parent == null) throw new IllegalStateException("parent not set");
+            try {
+                sleep(FLUSH_FREQUENCY*2);
+            } catch (InterruptedException e) {
+                reportException("flusherDeamon interrupted. " +
+                                "this log handler will stop dumping logs to db", null);
+                return;
+            }
+            boolean fullclean = true;
+            while (true) {
+                try {
+                    sleep(FLUSH_FREQUENCY);
+                } catch (InterruptedException e) {
+                    reportException("flusherDeamon interrupted. " +
+                                    "this log handler will stop dumping logs to db", null);
+                    break;
+                }
+                try {
+                    parent.cleanAndFlush(fullclean);
+                } catch (Throwable e) {
+                    reportException("unhandled exception", e);
+                }
+                fullclean = false;
+            }
+        }
+        ServerLogHandler parent = null;
+    }
+
     /**
      * where log records are stored waiting to be flushed to the database
      */
     private ArrayList cache = new ArrayList();
     private static long MAX_CACHE_SIZE = 1000;
     private String nodeid;
-    private Thread flusherDeamon = null;
+    private static final LogDumper flusherDeamon = new LogDumper();
     private static final long FLUSH_FREQUENCY = 6000;
+    //private static final long FLUSH_FREQUENCY = 10;
     private static final long HOW_LONG_WE_KEEP_LOGS = (48*3600*1000);
-    private static final String TABLE_NAME = "ssg_logs";
+
     private static final String TIMESTAMP_COLNAME = "millis";
+    private static final String TABLE_NAME = "ssg_logs";
     private static final String NODEID_COLNAME = "nodeId";
     private static final String SEQ_COLNAME = "sequenceNumber";
 }
