@@ -3,6 +3,7 @@ package com.l7tech.common.security.xml;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.security.cert.X509Certificate;
@@ -43,6 +44,18 @@ public class WssProcessorImpl implements WssProcessor {
 
     static {
         JceProvider.init();
+    }
+
+    private static class ProcessorException extends WssProcessor.ProcessorException {
+        public ProcessorException(Throwable cause) {
+            super();
+            initCause(cause);
+        }
+
+        public ProcessorException(String message) {
+            super();
+            initCause(new IllegalArgumentException(message));
+        }
     }
 
     /**
@@ -98,7 +111,15 @@ public class WssProcessorImpl implements WssProcessor {
             } else if (securityChildToProcess.getLocalName().equals("Signature")) {
                 processSignature(securityChildToProcess);
             } else {
-                // todo, check for mustUnderstand
+                NodeList nl = securityChildToProcess.getElementsByTagNameNS(currentSoapNamespace, "mustUnderstand");
+                if (nl.getLength() > 0) {
+                    if (nl.getLength() > 1)
+                        throw new ProcessorException("Too many mustUnderstand attributes");
+                    Node muNode = nl.item(0);
+                    String mu = muNode.getNodeValue();
+                    if (Integer.parseInt(mu) == 1)
+                        throw new ProcessorException("Unrecognized header: " + securityChildToProcess.getNodeName() + " with mustUnderstand=\"1\"");
+                }
                 logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
             }
         }
