@@ -8,7 +8,7 @@
 # If you have problems sprinkle calls to this around the code and
 # run the script.
 #
-SRC_ROOT="."
+SRC_ROOT=`pwd`
 
 reportenv()
 {
