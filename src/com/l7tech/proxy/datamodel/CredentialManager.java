@@ -21,9 +21,10 @@ public interface CredentialManager {
      * Load credentials for this SSG.  If the SSG already contains credentials they will be
      * overwritten with new ones.  Where the credentials actually come from is up to the CredentialManager
      * implementation; in the GUI environment, it will pop up a login window.
-     * @param ssg
+     * @param ssg  the Ssg whose username and password are to be updated
+     * @return true if the credentials were updated; false if new credentials couldn't be obtained.
      */
-    void getCredentials(Ssg ssg);
+    boolean getCredentials(Ssg ssg);
 
     /**
      * Notify that the credentials for this SSG have been tried and found to be no good.

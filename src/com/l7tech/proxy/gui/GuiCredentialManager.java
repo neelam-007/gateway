@@ -32,22 +32,29 @@ public class GuiCredentialManager implements CredentialManager {
         return INSTANCE;
     }
 
+    private static class PromptState {
+        public boolean credentialsObtained = false;
+    }
+
     /**
      * Load credentials for this SSG.  If the SSG already contains credentials they will be
      * overwritten with new ones.  For the GUI, we'll pop up a login window on the main Swing thread
      * and hold here until it finishes.
      * @param ssg
      */
-    public void getCredentials(final Ssg ssg) {
-        // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
+    public boolean getCredentials(final Ssg ssg) {
+        // If this SSG isn't supposed to be hassling us with dialog boxes, stop now
         if (!ssg.promptForUsernameAndPassword())
-            return;
+            return false;
+
+        final PromptState promptState = new PromptState();
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), ssg.toString());
                     if (pw == null) {
+                        promptState.credentialsObtained = false;
                         if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
                             ssg.promptForUsernameAndPassword(false);
                             return;
@@ -55,6 +62,7 @@ public class GuiCredentialManager implements CredentialManager {
                     }
                     ssg.setUsername(pw.getUserName());
                     ssg.password(pw.getPassword()); // TODO: encoding?
+                    promptState.credentialsObtained = true;
                 }
             });
         } catch (InterruptedException e) {
@@ -62,6 +70,8 @@ public class GuiCredentialManager implements CredentialManager {
         } catch (InvocationTargetException e) {
             log.error(e);
         }
+
+        return promptState.credentialsObtained;
     }
 
     /**

@@ -32,8 +32,9 @@ public class CredentialManagerImpl implements CredentialManager {
      * Ssg is not already configured with valid credentials there's nothing we can do about it.
      * @param ssg
      */
-    public void getCredentials(Ssg ssg) {
+    public boolean getCredentials(Ssg ssg) {
         log.warn("Updated credentials needed for SSG " + ssg);
+        return false;
     }
 
     /**
