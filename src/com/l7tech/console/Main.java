@@ -1,7 +1,6 @@
 package com.l7tech.console;
 
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
-import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
 import com.jgoodies.plaf.plastic.Plastic3DLookAndFeel;
 import com.jgoodies.plaf.plastic.PlasticLookAndFeel;
 import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
@@ -178,7 +177,6 @@ public class Main {
     private void installLookAndFeel() {
         // register L&F
         new KunststoffLookAndFeel();
-        KunststoffLookAndFeel.setCurrentTheme(new KunststoffDesktopTheme());
         LookAndFeel addlf = new ExtWindowsLookAndFeel();
         UIManager.installLookAndFeel(addlf.getName(), addlf.getClass().getName());
         addlf = new PlasticLookAndFeel();
@@ -197,7 +195,6 @@ public class Main {
         LookAndFeel lf = null;
         if (lfName == null) {
             lf = new KunststoffLookAndFeel();
-            KunststoffLookAndFeel.setCurrentTheme(new KunststoffDesktopTheme());
         } else {
             try {
                 lf = (LookAndFeel)Class.forName(lfName).newInstance();
