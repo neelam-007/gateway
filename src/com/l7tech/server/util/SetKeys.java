@@ -27,7 +27,7 @@ public class SetKeys {
     private static final String CA_CERT = "ca.cer";
     private static final String CA_ALIAS = "ssgroot";
     private static final String CA_DN_PREFIX = "cn=root.";
-    private static final int CA_VALIDITY_DAYS = 730;
+    private static final int CA_VALIDITY_DAYS = 5 * 365;
 
     private static final String SSL_KS = "ssl.ks";
     private static final String SSL_CERT = "ssl.cer";
