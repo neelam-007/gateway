@@ -39,6 +39,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 /**
  * This class is the SSG console Logon dialog.
@@ -428,7 +429,6 @@ public class LogonDialog extends JDialog {
                             showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
                     break;
                 }
-
                 credentialManager.login(pw);
                 authenticated = true;
                 break;
@@ -692,6 +692,20 @@ public class LogonDialog extends JDialog {
                     MessageFormat.format(
                             dialog.resources.getString("logon.connect.error"),
                             new Object[]{getHostPart(serviceUrl)});
+            JOptionPane.
+                    showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+        } else if (cause instanceof RemoteException) {
+            log.log(Level.WARNING, "Could not connect to server", e);
+            String hostname = serviceUrl;
+            try {
+                URL url = new URL(serviceUrl);
+                hostname = url.getHost();
+            } catch (MalformedURLException e2) {
+                log.log(Level.SEVERE,  "this sould not happen", e);
+            }
+            String msg = MessageFormat.format(
+                            dialog.resources.getString("service.unavailable.error"),
+                            new Object[]{hostname});
             JOptionPane.
                     showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof LoginException) {
