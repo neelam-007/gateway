@@ -1298,7 +1298,7 @@ public class MainWindow extends JFrame {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
         getContentPane().add(getStatusBarPane(), BorderLayout.SOUTH);
-//    setContentPane(getJFrameContentPane());
+
 
         initListeners();
 

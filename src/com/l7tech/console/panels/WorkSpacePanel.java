@@ -33,8 +33,7 @@ public class WorkSpacePanel extends JPanel {
     }
 
     /**
-     * Set the active component that the work bench.
-     * The {@link JComponent#getName() } sets the tab name.
+     * Set the active component for the work space.
      *
      * @param jc the new component to host
      */
@@ -42,6 +41,15 @@ public class WorkSpacePanel extends JPanel {
         tabbedPane.removeAll();
         tabbedPane.addTab(jc.getName(), jc);
     }
+
+    /**
+     * Remove the active component that the work bench.
+     * The {@link JComponent#getName() } sets the tab name.
+     */
+    public void clearWorskpace() {
+        tabbedPane.removeAll();
+    }
+
 
     /**
      * layout components on this panel

@@ -2,7 +2,10 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.WindowManager;
+import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -61,6 +64,17 @@ public class DeleteServiceAction extends BaseAction {
               (JTree)WindowManager.getInstance().getComponent(ServicesTree.NAME);
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             model.removeNodeFromParent(node);
+            tree = (JTree)WindowManager.
+              getInstance().getComponent(PolicyTree.NAME);
+            PublishedService svc = (PublishedService)tree.getClientProperty("service");
+            try {
+                // if currently edited service was deleted
+                if (node.getPublishedService().getOid() == svc.getOid()) {
+                    WindowManager.getInstance().getCurrentWorkspace().clearWorskpace();
+                }
+            } catch (FindException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
