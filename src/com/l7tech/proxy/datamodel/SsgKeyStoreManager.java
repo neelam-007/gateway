@@ -379,6 +379,7 @@ public class SsgKeyStoreManager {
         saveSsgCertificate(ssg, cd.getCertificate());
     }
 
+
     /**
      * Generate a Certificate Signing Request, and apply to the Ssg for a certificate for the
      * current user.  If this method returns, the certificate will have been downloaded and saved
@@ -395,19 +396,40 @@ public class SsgKeyStoreManager {
      * @throws KeyStoreCorruptException   if the keystore is corrupt
      */
     public static void obtainClientCertificate(Ssg ssg, PasswordAuthentication credentials)
-            throws  ServerCertificateUntrustedException, GeneralSecurityException, IOException,
-                    BadCredentialsException, CertificateAlreadyIssuedException, KeyStoreCorruptException
+            throws BadCredentialsException, GeneralSecurityException, KeyStoreCorruptException,
+                   CertificateAlreadyIssuedException, IOException
     {
-        KeyPair keyPair;
-        CertificateRequest csr;
         try {
             log.info("Generating new RSA key pair (could take several seconds)...");
             Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
-            keyPair = JceProvider.generateRsaKeyPair();
-            csr = JceProvider.makeCsr(ssg.getUsername(), keyPair);
+            obtainClientCertificate(ssg, credentials, JceProvider.generateRsaKeyPair());
         } finally {
             Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
         }
+    }
+
+
+    /**
+     * Generate a Certificate Signing Request, and apply to the Ssg for a certificate for the
+     * current user.  If this method returns, the certificate will have been downloaded and saved
+     * locally, and the SSL context for this Client Proxy will have been reinitialized.
+     *
+     * @param ssg   the Gateway on to which we are sending our application
+     * @param credentials  the username and password to use for the application
+     * @param keyPair  the public and private keys to use.  Get this from JceProvider
+     * @throws ServerCertificateUntrustedException if we haven't yet discovered the Ssg server cert
+     * @throws GeneralSecurityException   if there was a problem making the CSR
+     * @throws GeneralSecurityException   if we were unable to complete SSL handshake with the Ssg
+     * @throws IOException                if there was a network problem
+     * @throws BadCredentialsException    if the SSG rejected the credentials we provided
+     * @throws com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException if the SSG has already issued the client certificate for this account
+     * @throws KeyStoreCorruptException   if the keystore is corrupt
+     */
+    public static void obtainClientCertificate(Ssg ssg, PasswordAuthentication credentials, KeyPair keyPair)
+            throws  ServerCertificateUntrustedException, GeneralSecurityException, IOException,
+                    BadCredentialsException, CertificateAlreadyIssuedException, KeyStoreCorruptException
+    {
+        CertificateRequest csr = JceProvider.makeCsr(ssg.getUsername(), keyPair);
 
         try {
             X509Certificate caCert = getServerCert(ssg);
