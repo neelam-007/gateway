@@ -10,12 +10,15 @@ import com.l7tech.message.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.util.SoapUtil;
 import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.PersistenceManager;
+import com.l7tech.objectmodel.ObjectModelException;
 
 import javax.servlet.http.*;
 import javax.servlet.ServletException;
 import javax.servlet.ServletConfig;
 import javax.xml.soap.*;
 import java.io.*;
+import java.sql.SQLException;
 
 import org.apache.log4j.Category;
 
@@ -80,6 +83,16 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } catch ( SOAPException se ) {
             _log.error( se );
         } finally {
+            try {
+                PersistenceManager.getContext().close();
+            } catch ( ObjectModelException ome ) {
+                _log.error( ome );
+                throw new ServletException( ome );
+            } catch ( SQLException se ) {
+                _log.error( se );
+                throw new ServletException( se );
+            }
+
             if ( respWriter != null ) respWriter.close();
             if ( respStream != null ) respStream.close();
             if ( sresp != null ) sresp.close();
