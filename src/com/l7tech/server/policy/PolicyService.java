@@ -160,7 +160,20 @@ public class PolicyService {
                 return;
             }
         } else {
-            // todo, some special soap fault
+            Document fault = null;
+            try {
+                fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
+                                                         "unauthorized policy download",
+                                                         status.getMessage(),
+                                                         "");
+            } catch (IOException e) {
+                exceptionToFault(e, response);
+                return;
+            } catch (SAXException e) {
+                exceptionToFault(e, response);
+                return;
+            }
+            response.setDocument(fault);
         }
         wrapFilteredPolicyInResponse(policyDoc, response);
         return;
@@ -212,10 +225,10 @@ public class PolicyService {
             if (e instanceof SoapFaultDetail)
                 fault = SoapFaultUtils.generateSoapFault((SoapFaultDetail)e, SoapFaultUtils.FC_SERVER);
             else
-                fault = SoapFaultUtils.generateSoapFault(e.getClass().getName(),
+                fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
                                                          e.getMessage(),
                                                          e.toString(),
-                                                         SoapFaultUtils.FC_SERVER);
+                                                         e.getClass().getName());
             response.setDocument(fault);
         } catch (IOException e1) {
             throw new RuntimeException(e1); // can't happen
