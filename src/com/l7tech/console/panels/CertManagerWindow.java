@@ -41,10 +41,6 @@ import java.rmi.RemoteException;
  */
 public class CertManagerWindow extends JDialog {
 
-    public static final int CERT_TABLE_CERT_NAME_COLUMN_INDEX = 0;
-    public static final int CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX = 1;
-    public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 2;
-
     private JPanel mainPanel;
     private JButton addButton;
     private JButton removeButton;
@@ -158,7 +154,7 @@ public class CertManagerWindow extends JDialog {
             public void actionPerformed(ActionEvent event) {
                 int sr = getTrustedCertTable().getSelectedRow();
 
-                String certName = (String) getTrustedCertTable().getValueAt(sr, CERT_TABLE_CERT_NAME_COLUMN_INDEX);
+                String certName = (String) getTrustedCertTable().getValueAt(sr, TrustedCertTableSorter.CERT_TABLE_CERT_NAME_COLUMN_INDEX);
                 TrustedCert tc = (TrustedCert) getTrustedCertTableModel().getData(sr);
 
                 Object[] options = { "Remove", "Cancel" };
@@ -339,6 +335,12 @@ public class CertManagerWindow extends JDialog {
         trustedCertTable.getTableHeader().setReorderingAllowed(false);
         trustedCertTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
+        // hide the issuer name column
+        getTrustedCertTable().getColumnModel().getColumn(TrustedCertTableSorter.CERT_TABLE_ISSUER_NAME_COLUMN_INDEX).setMinWidth(0);
+        getTrustedCertTable().getColumnModel().getColumn(TrustedCertTableSorter.CERT_TABLE_ISSUER_NAME_COLUMN_INDEX).setMaxWidth(0);
+        getTrustedCertTable().getColumnModel().getColumn(TrustedCertTableSorter.CERT_TABLE_ISSUER_NAME_COLUMN_INDEX).setPreferredWidth(0);
+
+
         trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
                     /**
                      * Called whenever the value of the selection changes.
@@ -367,7 +369,7 @@ public class CertManagerWindow extends JDialog {
         Object[][] rows = new Object[][]{};
 
         String[] cols = new String[]{
-            "Name", "Expiration Date", "Usage"
+            "Name", "Issued by", "Expiration Date", "Usage"
         };
 
         trustedCertTableSorter = new TrustedCertTableSorter(new DefaultTableModel(rows, cols) {
