@@ -62,8 +62,14 @@ public abstract class Registry {
 
     /**
      * @return the identity provider to which this node belongs to
+     * @deprecated As of release 1.5, replaced by {@link #getIdentityProvider(long)}
      */
     abstract public IdentityProvider getIdentityProvider(EntityHeaderNode node);
+
+    /**
+      * @return the identity provider given the oid of the identity provider
+      */
+    abstract public IdentityProvider getIdentityProvider(long idProviderOid);
 
     /**
      * @return the internal user manager
@@ -96,6 +102,10 @@ public abstract class Registry {
         }
 
         public IdentityProvider getIdentityProvider(EntityHeaderNode node) {
+            return null;
+        }
+
+        public IdentityProvider getIdentityProvider(long idProviderOid) {
             return null;
         }
 

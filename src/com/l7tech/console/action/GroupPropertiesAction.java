@@ -57,7 +57,7 @@ public class GroupPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 if (idProvider == null) {
-                    idProvider = Registry.getDefault().getIdentityProvider((EntityHeaderNode)node);
+                    idProvider = getIdentityProvider((EntityHeaderNode)node);
                 }
                 GroupPanel panel = new GroupPanel();
                 JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();

@@ -2,9 +2,17 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.util.Cookie;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
+import javax.swing.tree.TreeNode;
 import java.util.Iterator;
 
 /**
@@ -66,4 +74,20 @@ public abstract class NodeAction extends BaseAction {
         return null;
     }
 
+    /**
+     * @return the identity provider or null if not found
+     */
+    public IdentityProvider getIdentityProvider(EntityHeaderNode node) {
+        TreeNode parentNode = node.getParent();
+        while (parentNode != null) {
+            if (parentNode instanceof EntityHeaderNode) {
+                EntityHeader header = ((EntityHeaderNode) parentNode).getEntityHeader();
+                if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
+                    return Registry.getDefault().getIdentityProvider(header.getOid());
+                }
+            }
+            parentNode = parentNode.getParent();
+        }
+        return null;
+    }
 }

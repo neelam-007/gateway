@@ -58,7 +58,7 @@ public class UserPropertiesAction extends NodeAction {
           new Runnable() {
             public void run() {
                 if (idProvider == null) {
-                    idProvider = Registry.getDefault().getIdentityProvider((EntityHeaderNode)node);
+                    idProvider = getIdentityProvider((EntityHeaderNode)node);
                 }
                 EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 UserPanel panel = new UserPanel();
