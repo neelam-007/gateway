@@ -40,6 +40,7 @@ public class PublishNonSoapServiceWizard extends Wizard {
 
     public PublishNonSoapServiceWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
+        setTitle("Publish XML Application");
     }
 
     protected void finish(ActionEvent evt) {

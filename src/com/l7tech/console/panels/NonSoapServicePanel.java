@@ -2,14 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.logging.Logger;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Logger;
 
 /**
  * Wizard panel that allows the publication of a non-soap xml service.
@@ -35,14 +33,14 @@ public class NonSoapServicePanel extends WizardStepPanel {
     }
 
     public String getDescription() {
-        return "Provide the Secure Span Gateway basic information about the " +
-               "non-soap xml application you are about to publish.\n" +
+        return "Provide the SecureSpan Gateway basic information about the " +
+               "non-soap xml application you are about to publish.<p>" +
                "The field \"Service name:\" lets you define a name to refer to " +
-               "this service in the SecureSpan Manager.\n" +
+               "this service in the SecureSpan Manager.<p>" +
                "The field \"Target URL:\" lets you define an HTTP URL to which " +
                "the SecureSpan Gateway will forward the incoming requests to. " +
-               "This can later be changed by editing the resulting policy.\nThe field " +
-               "\"SSG URL\" lets you customize the HTTP URL on the Secure Span Gateway " +
+               "This can later be changed by editing the resulting policy.<p>The field " +
+               "\"SSG URL\" lets you customize the incoming HTTP URL on the SecureSpan Gateway " +
                "where clients will send their XML requests to consume this XML application.";
     }
 
