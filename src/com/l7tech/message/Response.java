@@ -35,18 +35,6 @@ public interface Response extends Message {
      */
     InputStream getProtectedResponseStream() throws IOException;
 
-    /**
-     * Sets the XML string containing the response from the protected service.
-     * @param xml A String containing an XML document.  Will not be validated.
-     */
-    void setResponseXml( String xml );
-
-    /**
-     * Gets the XML string containing the response from the protected service, consuming the <code>ProtectedResponseStream</code> if necessary in the process.
-     * @return a String containing an XML document returned from the protected service.
-     * @throws IOException
-     */
-    String getResponseXml() throws IOException;
 
     /**
      * Adds an <code>AssertionResult</code> to this <code>Response</code>'s list of results.
