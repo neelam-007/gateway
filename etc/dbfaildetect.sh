@@ -23,7 +23,7 @@
 
 # programs used
 IFCONFIG="/sbin/ifconfig"
-GARP="/sbin/garp"
+GARP="/usr/local/bin/garp"
 WGET="/usr/bin/wget"
 NC="/usr/bin/nc"
 # globals and configuration
