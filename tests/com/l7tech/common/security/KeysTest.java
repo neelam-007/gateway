@@ -19,9 +19,6 @@ public class KeysTest extends TestCase {
 
     /**
      * create the <code>TestSuite</code> containing the KeysTest
-     * the policy package.
-     * <p/>
-     * Add new tests at the bottom of the list.
      */
     public static Test suite() {
         return new TestSuite(KeysTest.class);
