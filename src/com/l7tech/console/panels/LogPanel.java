@@ -48,7 +48,7 @@ public class LogPanel extends JPanel {
     private JSplitPane logPaneTop = null;
     private JScrollPane msgTablePane = null;
     private JTable msgTable = null;
-    private JScrollPane msgDetailsPane = null;
+    private JTabbedPane msgDetailsPane = null;
     private JTextArea msgDetails = null;
     private JSlider slider = null;
     private JCheckBox details = null;
@@ -61,16 +61,17 @@ public class LogPanel extends JPanel {
      * Constructor
      */
     public LogPanel() {
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setLayout(new BorderLayout());
 
-        setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
+       // setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
         //setMinimumSize(new Dimension(600, 200));
 
-        add(getMsgPane());
-        add(getSelectPane());
+        add(getMsgPane(), BorderLayout.NORTH);
+        add(getMsgDetailsPane(), BorderLayout.CENTER);
+        add(getSelectPane(), BorderLayout.SOUTH);
 
         // the logPane is not shown default
-        setVisible(false);
+      //  setVisible(false);
 
         getMsgTable().getSelectionModel().
                 addListSelectionListener(new ListSelectionListener() {
@@ -126,7 +127,7 @@ public class LogPanel extends JPanel {
         clearMsgTable();
     }
 
-    public void setLogPaneDividerLocation(){
+/*    public void setLogPaneDividerLocation(){
 
        try {
            Preferences prefs = Preferences.getPreferences();
@@ -140,9 +141,9 @@ public class LogPanel extends JPanel {
        } catch (NumberFormatException e1) {
 
        }
-    }
+    }*/
 
-    public void saveLogDetailsDividerLocation(){
+ /*   public void saveLogDetailsDividerLocation(){
 
          try {
             Preferences prefs = Preferences.getPreferences();
@@ -151,7 +152,7 @@ public class LogPanel extends JPanel {
         } catch (NullPointerException e1) {
         }
     }
-
+*/
 
     /**
      * Return SelectPane property value
@@ -162,6 +163,7 @@ public class LogPanel extends JPanel {
 
         selectPane = new JPanel();
         selectPane.setMinimumSize(new Dimension((int)selectPane.getSize().getWidth(), 35));
+        selectPane.setPreferredSize(new Dimension((int)selectPane.getSize().getWidth(), 35));
         selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
         selectPane.add(getFilterPane());
         selectPane.add(getControlPane());
@@ -258,11 +260,11 @@ public class LogPanel extends JPanel {
         details.setFont(new java.awt.Font("Dialog", 0, 11));
         details.setText("Details");
         details.setSelected(true);
-        details.addActionListener(new java.awt.event.ActionListener() {
+/*        details.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 detailsActionPerformed(evt);
             }
-        });
+        });*/
 
          if(autoRefresh == null){
             autoRefresh = new JCheckBox();
@@ -320,7 +322,7 @@ public class LogPanel extends JPanel {
      * Return LogPaneTop property value
      * @return JSplitPane
      */
-    private JSplitPane getLogPaneTop(){
+/*    private JSplitPane getLogPaneTop(){
         if(logPaneTop != null)  return logPaneTop;
 
         logPaneTop = new JSplitPane();
@@ -328,18 +330,19 @@ public class LogPanel extends JPanel {
         logPaneTop.setRightComponent(getMsgDetailsPane());
         logPaneTop.setResizeWeight(0.5);
         return logPaneTop;
-    }
+    }*/
 
     /**
      * Return MsgDetailsPane property value
      * @return JScrollPane
      */
-    private JScrollPane getMsgDetailsPane(){
+    private JTabbedPane getMsgDetailsPane(){
         if(msgDetailsPane != null)  return msgDetailsPane;
 
-        msgDetailsPane = new JScrollPane();
-        msgDetailsPane.setViewportView(getMsgDetails());
-        //msgDetailsPane.setMinimumSize(new Dimension(0, 0));
+        msgDetailsPane = new JTabbedPane();
+        msgDetailsPane.setMinimumSize(new java.awt.Dimension(457, 150));
+        msgDetailsPane.setPreferredSize(new java.awt.Dimension(457, 150));
+        msgDetailsPane.addTab("Details", getMsgDetails());
 
         return msgDetailsPane;
     }
@@ -369,7 +372,7 @@ public class LogPanel extends JPanel {
         msgPane = new JPanel();
         msgPane.setLayout(new BorderLayout());
 
-        msgPane.add(getLogPaneTop(), BorderLayout.CENTER);
+        msgPane.add(getMsgTablePane(), BorderLayout.CENTER);
 
         return msgPane;
     }
@@ -488,6 +491,7 @@ public class LogPanel extends JPanel {
             }
         }
     }
+/*
 
     private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
         if (details.isSelected()) {
@@ -504,6 +508,7 @@ public class LogPanel extends JPanel {
         getLogPaneTop().setDividerLocation(1.0);
         getMsgDetails().setVisible(false);
     }
+*/
 
     private void updateMsgFilterLevel(int newFilterLevel) {
 

@@ -82,7 +82,7 @@ public class StatisticsPanel extends JPanel {
         add(getStatTotalTable());
         add(getSelectPane());
 
-        setVisible(false);
+   //     setVisible(false);
 
     }
 
