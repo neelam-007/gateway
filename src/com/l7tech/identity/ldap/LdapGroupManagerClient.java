@@ -2,6 +2,7 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
@@ -16,7 +17,7 @@ import java.util.Iterator;
  */
 public class LdapGroupManagerClient extends LdapManagerClient implements GroupManager {
 
-    public LdapGroupManagerClient(LdapIdentityProviderConfig config) {
+    public LdapGroupManagerClient(IdentityProviderConfig config) {
         super(config);
     }
 

@@ -1,6 +1,7 @@
 package com.l7tech.identity.ldap;
 
 import com.l7tech.adminws.identity.Client;
+import com.l7tech.identity.IdentityProviderConfig;
 
 import java.io.IOException;
 
@@ -12,7 +13,7 @@ import java.io.IOException;
  */
 public class LdapManagerClient {
 
-    public LdapManagerClient(LdapIdentityProviderConfig config) {
+    public LdapManagerClient(IdentityProviderConfig config) {
         this.config = config;
     }
     // ************************************************
@@ -47,5 +48,5 @@ public class LdapManagerClient {
     }
 
     protected Client localStub = null;
-    protected LdapIdentityProviderConfig config;
+    protected IdentityProviderConfig config;
 }

@@ -60,7 +60,7 @@ public class LdapIdentityProviderConfigManager  extends HibernateEntityManager i
     }
 
     public Class getImpClass() {
-        return LdapIdentityProviderConfig.class;
+        return IdentityProviderConfig.class;
     }
 
     public Class getInterfaceClass() {
@@ -68,7 +68,7 @@ public class LdapIdentityProviderConfigManager  extends HibernateEntityManager i
     }
 
     public String getTableName() {
-        return "ldap_identity_provider";
+        return "identity_provider";
     }
 
 }

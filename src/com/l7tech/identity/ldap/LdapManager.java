@@ -1,5 +1,7 @@
 package com.l7tech.identity.ldap;
 
+import com.l7tech.identity.IdentityProviderConfig;
+
 import javax.naming.directory.Attributes;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.DirContext;
@@ -17,7 +19,7 @@ import javax.naming.Context;
  */
 public class LdapManager {
 
-    protected LdapManager(LdapIdentityProviderConfig config) {
+    protected LdapManager(IdentityProviderConfig config) {
         this.config = config;
     }
 
@@ -35,7 +37,7 @@ public class LdapManager {
 
         java.util.Hashtable env = new java.util.Hashtable();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, config.getLdapHostURL());
+        env.put(Context.PROVIDER_URL, config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
 
         // Create the initial directory context. So anonymous bind for search
         return new InitialDirContext(env);
@@ -54,7 +56,7 @@ public class LdapManager {
     }
 
     //protected DirContext anonymousContext = null;
-    protected LdapIdentityProviderConfig config;
+    protected IdentityProviderConfig config;
 
     protected static final String DESCRIPTION_ATTR = "description";
     protected static final String NAME_ATTR_NAME = "cn";

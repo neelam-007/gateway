@@ -3,6 +3,7 @@ package com.l7tech.identity.ldap;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.IdentityProviderType;
 
 import java.security.Principal;
 
@@ -14,10 +15,10 @@ import java.security.Principal;
  */
 public class LdapIdentityProviderClient implements com.l7tech.identity.IdentityProvider {
     public void initialize(IdentityProviderConfig config) {
-        if (!(config instanceof LdapIdentityProviderConfig)) throw new IllegalArgumentException("Expecting LdapIdentityProviderConfig in LdapIdentityProviderServer.initialize");
-        this.config = (LdapIdentityProviderConfig)config;
-        userManager = new LdapUserManagerClient(this.config);
-        groupManager = new LdapGroupManagerClient(this.config);
+        if (!(config.type() == IdentityProviderType.LDAP)) throw new IllegalArgumentException("Expecting a ldap config type");
+        this.config = config;
+        userManager = new LdapUserManagerClient(config);
+        groupManager = new LdapGroupManagerClient(config);
     }
 
     public IdentityProviderConfig getConfig() {
@@ -42,7 +43,7 @@ public class LdapIdentityProviderClient implements com.l7tech.identity.IdentityP
     // PRIVATES
     // ************************************************
 
-    private LdapIdentityProviderConfig config;
+    private IdentityProviderConfig config;
     private LdapUserManagerClient userManager;
     private LdapGroupManagerClient groupManager;
 }

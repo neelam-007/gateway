@@ -2,6 +2,7 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 
 import javax.naming.NamingException;
@@ -26,7 +27,7 @@ import java.util.HashSet;
  */
 public class LdapUserManagerServer extends LdapManager implements UserManager {
 
-    public LdapUserManagerServer(LdapIdentityProviderConfig config) {
+    public LdapUserManagerServer(IdentityProviderConfig config) {
         super(config);
     }
 
@@ -90,7 +91,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
 
     public Collection findAllHeaders() throws FindException {
         Collection output = new ArrayList();
-        if (config.getSearchBase() == null || config.getSearchBase().length() < 1) throw new FindException("No search base provided");
+        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
         try
         {
             NamingEnumeration answer = null;
@@ -100,13 +101,13 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             //answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = getAnonymousContext();
-            answer = context.search(config.getSearchBase(), filter, sc);
+            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             while (answer.hasMore())
             {
                 String login = null;
                 String dn = null;
                 SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getSearchBase();
+                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 Attributes atts = sr.getAttributes();
                 Object tmp = extractOneAttributeValue(atts, LOGIN_ATTR_NAME);
                 if (tmp != null) login = tmp.toString();
@@ -128,7 +129,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         Collection output = new ArrayList();
-        if (config.getSearchBase() == null || config.getSearchBase().length() < 1) throw new FindException("No search base provided");
+        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
         try
         {
             NamingEnumeration answer = null;
@@ -138,7 +139,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             //answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = getAnonymousContext();
-            answer = context.search(config.getSearchBase(), filter, sc);
+            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             int count = 0;
             while (answer.hasMore())
             {
@@ -153,7 +154,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
                 String login = null;
                 String dn = null;
                 SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getSearchBase();
+                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 Attributes atts = sr.getAttributes();
                 Object tmp = extractOneAttributeValue(atts, LOGIN_ATTR_NAME);
                 if (tmp != null) login = tmp.toString();
@@ -208,7 +209,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = getAnonymousContext();
-            answer = context.search(config.getSearchBase(), filter, sc);
+            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             while (answer.hasMore())
             {
                 SearchResult sr = (SearchResult)answer.next();
@@ -223,7 +224,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
                 tmp = extractOneAttributeValue(atts, DESCRIPTION_ATTR);
                 if (tmp != null) description = tmp.toString();
 
-                dn = sr.getName() + "," + config.getSearchBase();
+                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 EntityHeader grpheader = new EntityHeader(dn, EntityType.USER, cn, description);
                 out.add(grpheader);
             }

@@ -2,6 +2,7 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 
 import javax.naming.directory.*;
@@ -24,7 +25,7 @@ import java.util.HashSet;
  */
 public class LdapGroupManagerServer extends LdapManager implements GroupManager {
 
-    public LdapGroupManagerServer(LdapIdentityProviderConfig config) {
+    public LdapGroupManagerServer(IdentityProviderConfig config) {
         super(config);
     }
 
@@ -78,7 +79,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
 
     public Collection findAllHeaders() throws FindException {
         Collection output = new ArrayList();
-        if (config.getSearchBase() == null || config.getSearchBase().length() < 1) throw new FindException("No search base provided");
+        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
         try
         {
             NamingEnumeration answer = null;
@@ -86,13 +87,13 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = getAnonymousContext();
-            answer = context.search(config.getSearchBase(), filter, sc);
+            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             while (answer.hasMore())
             {
                 String dn = null;
                 String cn = null;
                 SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getSearchBase();
+                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 Attributes atts = sr.getAttributes();
                 Object tmp = extractOneAttributeValue(atts, NAME_ATTR_NAME);
                 if (tmp != null) cn = tmp.toString();
@@ -115,7 +116,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         Collection output = new ArrayList();
-        if (config.getSearchBase() == null || config.getSearchBase().length() < 1) throw new FindException("No search base provided");
+        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
         try
         {
             NamingEnumeration answer = null;
@@ -123,7 +124,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = getAnonymousContext();
-            answer = context.search(config.getSearchBase(), filter, sc);
+            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             int count = 0;
             while (answer.hasMore())
             {
@@ -138,7 +139,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
                 String dn = null;
                 String cn = null;
                 SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getSearchBase();
+                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 Attributes atts = sr.getAttributes();
                 Object tmp = extractOneAttributeValue(atts, NAME_ATTR_NAME);
                 if (tmp != null) cn = tmp.toString();
@@ -191,13 +192,13 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
         SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         DirContext context = getAnonymousContext();
-        answer = context.search(config.getSearchBase(), filter, sc);
+        answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
         while (answer.hasMore())
         {
             String login = null;
             String dn = null;
             SearchResult sr = (SearchResult)answer.next();
-            dn = sr.getName() + "," + config.getSearchBase();
+            dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
             Attributes atts = sr.getAttributes();
             Object tmp = extractOneAttributeValue(atts, LOGIN_ATTR_NAME);
             if (tmp != null) login = tmp.toString();

@@ -2,6 +2,7 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.identity.Client;
 
@@ -18,7 +19,7 @@ import java.io.IOException;
  */
 public class LdapUserManagerClient extends LdapManagerClient implements UserManager {
 
-    public LdapUserManagerClient(LdapIdentityProviderConfig config) {
+    public LdapUserManagerClient(IdentityProviderConfig config) {
         super(config);
     }
 
