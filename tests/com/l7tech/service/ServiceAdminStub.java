@@ -66,12 +66,12 @@ public class ServiceAdminStub implements ServiceAdmin {
      * @throws RemoteException
      */
     public long savePublishedService(PublishedService service) throws RemoteException {
-        long oid = StubDataStore.defaultStore().nextObjectId();
+        long oid = service.getOid();
+        if (oid == 0) {
+            oid = StubDataStore.defaultStore().nextObjectId();
+        }
         service.setOid(oid);
         Long key = new Long(oid);
-        if (services.get(key) != null) {
-            throw new RemoteException("Record exists, service oid= " + service.getOid());
-        }
         services.put(key, service);
         return oid;
     }
