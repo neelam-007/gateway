@@ -163,19 +163,17 @@ public class SecureSpanBridgeFactory {
             try {
                 context = new PolicyApplicationContext(ssg, request, response, nri, pak, origUrl);
                 mp.processMessage(context);
-                final PolicyApplicationContext context1 = context;
+                // Copy results out before context gets closed
+                final HttpResponseKnob responseHttp = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+                final int httpStatus = responseHttp != null ? responseHttp.getStatus() : 500;
+                final Document doc = context.getOriginalDocument();
                 return new Result() {
                     public int getHttpStatus() {
-                        final Message response = context1.getResponse();
-                        HttpResponseKnob responseHttp = (HttpResponseKnob)response.getKnob(HttpResponseKnob.class);
-                        if (responseHttp != null)
-                            return responseHttp.getStatus();
-                        else
-                            return 500;
+                        return httpStatus;
                     }
 
                     public Document getResponse() {
-                        return context1.getOriginalDocument();
+                        return doc;
                     }
                 };
             } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
