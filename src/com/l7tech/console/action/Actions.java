@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.UserNode;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
@@ -21,10 +22,10 @@ public class Actions {
      * @param bn - the node to be deleted
      * @return true if deleted, false otherwise
      */
-    static boolean delete(EntityHeaderNode bn) {
+    static boolean deleteEntity(EntityHeaderNode bn) {
         boolean rb = false;
         if (bn instanceof UserNode) {
-            return deleteUser((UserNode) bn);
+            return deleteUser((UserNode)bn);
         } else {
             // Unknown node type .. do nothing
             rb = false;
@@ -32,14 +33,14 @@ public class Actions {
 
         JOptionPane.showConfirmDialog(
           getMainWindow(),
-          "Are you sure you wish to delete " + bn.getEntityHeader().getName() + "?",
+          "Are you sure you wish to deleteEntity " + bn.getEntityHeader().getName() + "?",
           "Delete",
           JOptionPane.OK_OPTION);
         return false;
 
     }
 
-    // Deletes the given Realm
+    // Deletes the given user
     private static boolean deleteUser(UserNode node) {
         // Make sure
         if ((JOptionPane.showConfirmDialog(
@@ -70,6 +71,37 @@ public class Actions {
         }
         return false;
     }
+
+
+    // Deletes the given saervice
+    static boolean deleteService(ServiceNode node) {
+        // Make sure
+        if ((JOptionPane.showConfirmDialog(
+          getMainWindow(),
+          "Are you sure you wish to delete service " +
+          node.getName() + "?",
+          "Delete Service",
+          JOptionPane.YES_NO_OPTION)) == 1) {
+            return false;
+        }
+
+        // Delete the  node and update the tree
+        try {
+            Registry.getDefault().getServiceManager().delete(node.getPublishedService());
+            return true;
+        } catch (Exception e) {
+            // Error deleting realm - display error msg
+            JOptionPane.showMessageDialog(
+              getMainWindow(),
+              "Error encountered while deleting " +
+              node.getName() +
+              ". Please try again later.",
+              "Delete Service",
+              JOptionPane.ERROR_MESSAGE);
+        }
+        return false;
+    }
+
 
     private static JFrame getMainWindow() {
         return Registry.getDefault().getWindowManager().getMainWindow();

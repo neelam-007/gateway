@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.WindowManager;
 
 import javax.swing.*;
@@ -10,21 +10,21 @@ import java.util.logging.Logger;
 
 
 /**
- * The <code>DeleteEntityAction</code> action deletes the entity
- * such as user, group etc.
+ * The <code>DeleteServiceAction</code> action deletes the service
+ * such as .
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class DeleteEntityAction extends BaseAction {
-    static final Logger log = Logger.getLogger(DeleteEntityAction.class.getName());
-    EntityHeaderNode node;
+public class DeleteServiceAction extends BaseAction {
+    static final Logger log = Logger.getLogger(DeleteServiceAction.class.getName());
+    ServiceNode node;
 
     /**
      * create the acciton that deletes
      * @param en the node to deleteEntity
      */
-    public DeleteEntityAction(EntityHeaderNode en) {
+    public DeleteServiceAction(ServiceNode en) {
         node = en;
     }
 
@@ -55,10 +55,10 @@ public class DeleteEntityAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        boolean deleted = Actions.deleteEntity(node);
+        boolean deleted = Actions.deleteService(node);
         if (deleted) {
             JTree tree =
-              (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+              (JTree)WindowManager.getInstance().getComponent(MainWindow.SERVICES_TREE);
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             model.removeNodeFromParent(node);
         }
