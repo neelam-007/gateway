@@ -9,6 +9,9 @@ import org.snmp4j.security.SecurityLevel;
 import org.snmp4j.mp.MPv2c;
 import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.smi.UdpAddress;
+import org.snmp4j.smi.OID;
+import org.snmp4j.smi.OctetString;
+import org.snmp4j.smi.VariableBinding;
 
 import java.net.InetAddress;
 import java.io.IOException;
@@ -25,6 +28,7 @@ import java.io.IOException;
  */
 public class SNMPTrapSender {
     public static final String TRAP_DESTINATION = "192.168.0.3";
+    public static final OID ERROR_MSG_OID = new OID(new int[] {1,3,6,1,7,7,7,7,7,7});
 
     public static void main(String[] args) throws Exception {
         SNMPTrapSender me = new SNMPTrapSender();
@@ -46,7 +50,7 @@ public class SNMPTrapSender {
         PDU pdu = new PDU();
         pdu.setType(PDU.TRAP);
 
-        // todo, put something useful in this PDU
+        pdu.add(new VariableBinding(ERROR_MSG_OID, new OctetString("blah error something")));
 
         dispatcher.sendPdu(new UdpAddress(InetAddress.getByName(TRAP_DESTINATION), 162),
                            SnmpConstants.version2c,
