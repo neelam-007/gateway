@@ -2,7 +2,7 @@ package com.l7tech.adminws.identity;
 
 import com.l7tech.adminws.translation.TypeTranslator;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.misc.Locator;
+import com.l7tech.util.Locator;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DeleteException;
@@ -120,7 +120,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     private IdentityProviderConfigManager getIdentityProviderConfigManager() {
         if (identityProviderConfigManager == null){
             // instantiate the server-side manager
-            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getInstance().locate(com.l7tech.identity.IdentityProviderConfigManager.class);
+            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
         }
         return identityProviderConfigManager;
     }

@@ -5,7 +5,7 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.misc.Locator;
+import com.l7tech.util.Locator;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -59,7 +59,7 @@ public abstract class PersistenceManager {
 
     public static EntityManager getEntityManager(Class clazz) {
         checkInstance();
-        EntityManager manager = (EntityManager)Locator.getInstance().locate( clazz );
+        EntityManager manager = (EntityManager)Locator.getDefault().lookup( clazz );
         return manager;
     }
 

@@ -6,7 +6,7 @@
 
 package com.l7tech.identity;
 
-import com.l7tech.misc.Locator;
+import com.l7tech.util.Locator;
 
 import java.util.*;
 
@@ -15,7 +15,7 @@ import java.util.*;
  */
 public class IdentityProviders {
     public Collection findAll() {
-        IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)Locator.getInstance().locate( IdentityProviderConfigManager.class );
+        IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)Locator.getDefault().lookup( IdentityProviderConfigManager.class );
         Iterator i = configManager.findAll().iterator();
 
         IdentityProviderConfig config;
@@ -29,7 +29,7 @@ public class IdentityProviders {
 
             try {
                 providerInterfaceClass = Class.forName( type.getClassName() );
-                provider = (IdentityProvider)Locator.getInstance().locate(providerInterfaceClass);
+                provider = (IdentityProvider)Locator.getDefault().lookup(providerInterfaceClass);
                 provider.initialize( config );
                 providers.add( provider );
             } catch ( ClassNotFoundException cnfe ) {
