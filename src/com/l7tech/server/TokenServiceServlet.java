@@ -4,14 +4,16 @@ import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.w3c.dom.Document;
@@ -36,6 +38,7 @@ import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -100,8 +103,14 @@ public class TokenServiceServlet extends HttpServlet {
         }
 
         Document response = null;
+        PersistenceContext pc = null;
         try {
+            pc = PersistenceContext.getCurrent();
+            pc.beginTransaction();
             response = tokenService.respondToRequestSecurityToken(payload, authenticator(), req.getRemoteAddr());
+            pc.commitTransaction();
+            pc.close();
+            pc = null;
         } catch (InvalidDocumentFormatException e) {
             String msg = "Request is not formatted as expected. " + e.getMessage();
             logger.log(Level.INFO, msg, e);
@@ -130,6 +139,28 @@ public class TokenServiceServlet extends HttpServlet {
         } catch (AuthenticationException e) {
             sendBackNonSoapError(res, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
             return;
+        } catch (SQLException e) {
+            String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
+            logger.log(Level.WARNING, msg, e);
+            sendBackNonSoapError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
+        } catch (TransactionException e) {
+            String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
+            logger.log(Level.WARNING, msg, e);
+            sendBackNonSoapError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
+        } finally {
+            if (pc != null) {
+                try {
+                    pc.rollbackTransaction();
+                } catch (TransactionException e) {
+                    logger.log(Level.WARNING, "Exception rolling back transaction", e);
+                    sendBackNonSoapError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+                    return;
+                } finally {
+                    pc.close();
+                }
+            }
         }
         // dont let this ioexception fall through, this is a debugging nightmare!
         try {
