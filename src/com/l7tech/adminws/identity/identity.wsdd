@@ -124,15 +124,6 @@
 
       <typeMapping
         xmlns:ns="http://www.layer7-tech.com/identity"
-        qname="ns:IdentityProviderConfigType"
-        type="java:com.l7tech.identity.imp.IdentityProviderTypeImp"
-        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
-        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
-        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
-      />
-
-      <typeMapping
-        xmlns:ns="http://www.layer7-tech.com/identity"
         qname="ns:EntityHeader"
         type="java:com.l7tech.objectmodel.EntityHeader"
         serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
