@@ -420,7 +420,7 @@ class ServiceTreeNode extends WsdlTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/Bean16.gif";
+        return "com/l7tech/console/resources/services16.png";
     }
 
     /** @return  a string representation of the object.  */
