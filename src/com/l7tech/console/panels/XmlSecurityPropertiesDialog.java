@@ -492,10 +492,12 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 Message soapRequest = soapMessages[i];
                 if (isEditingRequest()) {
                     if (soapRequest.getOperation().equals(opname)) {
-                        sp.setOperation(getBindingOperation(soapRequest));
+                        BindingOperation bop = getBindingOperation(soapRequest);
+                        sp.setOperation(bop);
                     }
                 } else {
-                    sp.setOperation(getBindingOperationByOutput(opname));
+                    BindingOperation bop = getBindingOperationByOutput(opname);
+                    sp.setOperation(bop);
                 }
             }
         }
@@ -757,10 +759,16 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 Output output = bop.getOperation().getOutput();
                 if (output == null) continue;
                 javax.wsdl.Message message = output.getMessage();
+
+                String messageName = message.getQName().getLocalPart();
+                if (messageName.equals(outputName))
+                    return bop;
+
                 Map parts = message.getParts();
                 for (Iterator ip = parts.values().iterator(); ip.hasNext();) {
                     Part part = (Part)ip.next();
-                    if (outputName.equals(part.getElementName().getLocalPart()))
+                    String name = part.getElementName() == null ? part.getName() : part.getElementName().getLocalPart();
+                    if (outputName.equals(name))
                         return bop;
                 }
             }
