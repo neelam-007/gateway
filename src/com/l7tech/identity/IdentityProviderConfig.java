@@ -127,6 +127,6 @@ public class IdentityProviderConfig extends NamedEntityImp {
     // ************************************************
     protected String description;
     protected IdentityProviderType type;
-    private transient Map props = new HashMap();
+    private Map props = new HashMap();
     private String propsXml;
 }
