@@ -21,6 +21,10 @@ public class NonSoapServicePanel extends WizardStepPanel {
         initialize();
     }
 
+    public String getStepLabel() {
+        return "XML Service Information";
+    }
+
     private void initialize() {
             setLayout(new BorderLayout());
             add(mainPanel);
