@@ -83,18 +83,14 @@ public class Client extends AdminWSClientStub {
         if (output == null) return new EntityHeader[0];
         return output;
     }
-
-    public EntityHeader[] searchUsers(long identityProviderConfigId, String pattern) throws java.rmi.RemoteException {
+    public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern) throws java.rmi.RemoteException {
         Call call = createStubCall();
-        call.setOperationName(new QName(IDENTITY_URN, "searchUsers"));
-        call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        call.addParameter(new javax.xml.namespace.QName("", "pattern"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
-		call.setReturnClass(EntityHeader[].class);
-        EntityHeader[] output = (EntityHeader[])call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), pattern});
+        call.setOperationName(new QName(IDENTITY_URN, "searchIdentities"));
+		//call.setReturnClass(EntityHeader[].class);
+        EntityHeader[] output = (EntityHeader[])call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), types, pattern});
         if (output == null) return new EntityHeader[0];
         return output;
     }
-
     public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "findUserByPrimaryKey"));
@@ -137,18 +133,6 @@ public class Client extends AdminWSClientStub {
         if (output == null) return new EntityHeader[0];
         return output;
     }
-
-    public EntityHeader[] searchGroups(long identityProviderConfigId, String pattern) throws java.rmi.RemoteException {
-        Call call = createStubCall();
-        call.setOperationName(new QName(IDENTITY_URN, "searchGroups"));
-        call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        call.addParameter(new javax.xml.namespace.QName("", "pattern"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
-		call.setReturnClass(EntityHeader[].class);
-        EntityHeader[] output = (EntityHeader[])call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), pattern});
-        if (output == null) return new EntityHeader[0];
-        return output;
-    }
-
     public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "findGroupByPrimaryKey"));
@@ -189,6 +173,8 @@ public class Client extends AdminWSClientStub {
         call.registerTypeMapping(com.l7tech.identity.User.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.User.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.User.class, qn));
         qn = new QName(IDENTITY_URN, "Group");
         call.registerTypeMapping(com.l7tech.identity.Group.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.Group.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.Group.class, qn));
+        qn = new QName(IDENTITY_URN, "ArrayOfEntityType");
+        call.registerTypeMapping(EntityType[].class, qn, new org.apache.axis.encoding.ser.ArraySerializerFactory(), new org.apache.axis.encoding.ser.ArrayDeserializerFactory());
     }
 
     protected String getFullServiceTarget() throws IOException {

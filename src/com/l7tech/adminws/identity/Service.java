@@ -144,11 +144,13 @@ public class Service {
         }
     }
 
-    public EntityHeader[] searchUsers(long identityProviderConfigId, String pattern) throws java.rmi.RemoteException {
+    public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern) throws java.rmi.RemoteException {
         try {
-            UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
-            Collection res = userManager.search(pattern);
-            return collectionToHeaderArray(res);
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            if (types != null) for (int i = 0; i < types.length; i++) types[i] = EntityType.fromValue(types[i].getVal());
+            Collection searchResults = provider.search(types, pattern);
+            return collectionToHeaderArray(searchResults);
         } catch (FindException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in searchUsers", e);
@@ -156,7 +158,6 @@ public class Service {
             endTransaction();
         }
     }
-
 
     public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
         try {
@@ -257,19 +258,6 @@ public class Service {
             endTransaction();
         }
     }
-
-    public EntityHeader[] searchGroups(long identityProviderConfigId, String pattern) throws java.rmi.RemoteException {
-        try {
-            java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).search(pattern);
-            return collectionToHeaderArray(res);
-        } catch (FindException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
-            throw new RemoteException("FindException in searchGroups", e);
-        } finally {
-            endTransaction();
-        }
-    }
-
 
     public EntityHeader[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
         try {
