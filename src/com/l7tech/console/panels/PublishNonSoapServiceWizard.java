@@ -1,25 +1,25 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.util.Registry;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EventListener;
-import java.io.ByteArrayOutputStream;
 
 /**
  * Wizard that guides the administrator through the publication of a non-soap service.
@@ -73,15 +73,15 @@ public class PublishNonSoapServiceWizard extends Wizard {
             header.setOid(oid);
             PublishNonSoapServiceWizard.this.notify(header);
         } catch (Exception e) {
-            if (ExceptionUtils.causedBy(e, TransactionException.class)) {
-                JOptionPane.showMessageDialog(null,
+            if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                JOptionPane.showMessageDialog(this,
                   "Unable to save the service '" + service.getName() + "'\n" +
                   "because an existing service is already using the URI " + service.getRoutingUri(),
                   "Service already exists",
                   JOptionPane.ERROR_MESSAGE);
             } else {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(this,
                   "Unable to save the service '" + service.getName() + "'\n",
                   "Error",
                   JOptionPane.ERROR_MESSAGE);

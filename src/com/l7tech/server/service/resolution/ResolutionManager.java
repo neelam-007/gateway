@@ -80,14 +80,16 @@ public class ResolutionManager {
 
         // insert these new ones
         try {
+            checkForDuplicateResolutionParameters(distinctItemsToSave);
             for (Iterator i = distinctItemsToSave.iterator(); i.hasNext();) {
                 ResolutionParameters toadd = (ResolutionParameters)i.next();
                 session.save(toadd);
             }
             logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + service.getOid());
         } catch (HibernateException e) {
-            String msg = "error adding resolution parameters.";
-            throw new DuplicateObjectException(msg, e);
+            throw new UpdateException("error adding resolution parameters.", e);
+        } catch (SQLException e) {
+            throw new UpdateException("error adding resolution parameters.", e);
         }
     }
 
@@ -166,6 +168,55 @@ public class ResolutionManager {
 
         return hibResults;
     }
+
+    /**
+     * This is a temporary bandage to detect duplicate resolution params as the DuplicateObjectException
+     * in this class are not working/never thrown for the duplicate param scenario, so the caller does not
+     * receive the reason, it simply receives the TransactionException with root cause in SQLException
+     * caused by DB contraint.
+     * <p/>
+     * This fix still has a problem ith multiple concurrent request, and may result in not detecting
+     * the resolution parameters added in between the read in this method, and the actual commit.
+     * Basically this transaction does not prevent concurrent transactions (asssumes typican read
+     * committed isolation.
+     * The only way how to detect duplicates accurately is to interpret the SQLException vendor erroCode
+     * and sqlState caused by DB constraint violation. Spring framework offers SQLException independent
+     * message interpretation; google for SQLErrorCodeSQLExceptionTranslator to learn more.
+     * <p/>
+     * quite correct
+     *
+     * @param parameters the resolution parameters to check
+     * @throws SQLException             on SQL error
+     * @throws DuplicateObjectException on duplicate detect
+     * @throws HibernateException       on hibernate error
+     */
+    private void checkForDuplicateResolutionParameters(Collection parameters)
+      throws SQLException, HibernateException, DuplicateObjectException {
+        String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName();
+
+        Set duplicates = new HashSet();
+        HibernatePersistenceContext context = null;
+        context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+        Query q = context.getSession().createQuery(query);
+        List results = q.list();
+        for (Iterator ir = results.iterator(); ir.hasNext();) {
+            ResolutionParameters rp = (ResolutionParameters)ir.next();
+            for (Iterator ip = parameters.iterator(); ip.hasNext();) {
+                ResolutionParameters r = (ResolutionParameters)ip.next();
+                if (r.resolutionEquals(rp)) {
+                    duplicates.add(r);
+                }
+            }
+        }
+        if (!duplicates.isEmpty()) {
+            StringBuffer sb = new StringBuffer("Duplicate resolution parameters :\n");
+            sb.append(duplicates);
+            final String msg = sb.toString();
+            logger.fine(msg);
+            throw new DuplicateObjectException(msg);
+        }
+    }
+
 
     private static final String TABLE_NAME = "service_resolution";
     private static final String SVCID_COLUMN = "serviceid";
