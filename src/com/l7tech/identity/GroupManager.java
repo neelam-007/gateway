@@ -8,10 +8,11 @@ import java.util.Set;
  * @author alex
  */
 public interface GroupManager extends EntityManager {
-    Group findByPrimaryKey( String oid ) throws FindException;
+    Group findByPrimaryKey( String identifier ) throws FindException;
     Group findByName( String name ) throws FindException;
     void delete( Group group ) throws DeleteException;
-    long save( Group group ) throws SaveException;
+    void delete( String identifier ) throws DeleteException;
+    String save( Group group ) throws SaveException;
     void update( Group group ) throws UpdateException;
 
     EntityHeader groupToHeader( Group group );
@@ -86,7 +87,12 @@ public interface GroupManager extends EntityManager {
      * @return
      * @throws FindException
      */
-    Set getGroups( User user ) throws FindException;
+    Set getGroupHeaders( User user ) throws FindException;
+
+    Set getGroupHeaders( String userId ) throws FindException;
+
+    void setGroupHeaders( User user, Set groupHeaders ) throws FindException, UpdateException;
+    void setGroupHeaders( String userId, Set groupHeaders ) throws FindException, UpdateException;
 
     /**
      * Retrieve the Set of Users belonging to a particular Group.
@@ -94,5 +100,9 @@ public interface GroupManager extends EntityManager {
      * @return
      * @throws FindException
      */
-    Set getUsers( Group group ) throws FindException;
+    Set getUserHeaders( Group group ) throws FindException;
+    Set getUserHeaders( String groupId ) throws FindException;
+
+    void setUserHeaders( Group group, Set groupHeaders ) throws FindException, UpdateException;
+    void setUserHeaders( String groupId, Set groupHeaders ) throws FindException, UpdateException;
 }
