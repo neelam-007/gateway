@@ -51,13 +51,13 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
     public FederatedIdentityProvider( IdentityProviderConfig config ) {
         if ( !(config instanceof FederatedIdentityProviderConfig) )
             throw new IllegalArgumentException("Config must be an instance of FederatedIdentityProviderConfig");
-        this.config = (FederatedIdentityProviderConfig)config;
+        this.providerConfig = (FederatedIdentityProviderConfig)config;
         this.userManager = new FederatedUserManager(this);
         this.groupManager = new FederatedGroupManager(this);
         this.trustedCertManager = (TrustedCertManager)Locator.getDefault().lookup(TrustedCertManager.class);
         this.clientCertManager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
 
-        long[] certOids = this.config.getTrustedCertOids();
+        long[] certOids = this.providerConfig.getTrustedCertOids();
         for ( int i = 0; i < certOids.length; i++ ) {
             long oid = certOids[i];
             TrustedCert cert = null;
@@ -104,7 +104,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
 
     public IdentityProviderConfig getConfig() {
-        return config;
+        return providerConfig;
     }
 
     public UserManager getUserManager() {
@@ -126,16 +126,17 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
     }
 
     private User authorizeSaml( LoginCredentials pc ) throws AuthenticationException {
-        if ( !config.isSamlSupported() ) throw new AuthenticationException("This identity provider is not configured to support SAML credentials");
+        if ( !providerConfig.isSamlSupported() )
+            throw new AuthenticationException("This identity provider is not configured to support SAML credentials");
         // TODO
         throw new AuthenticationException("SAML authorization is not yet implemented");
     }
 
     private User authorizeX509( LoginCredentials pc ) throws IOException, AuthenticationException, FindException {
-        if ( !config.isX509Supported() )
+        if ( !providerConfig.isX509Supported() )
             throw new BadCredentialsException("This identity provider is not configured to support X.509 credentials");
 
-        final X509Config x509Config = config.getX509Config();
+        final X509Config x509Config = providerConfig.getX509Config();
 
         X509Certificate requestCert = (X509Certificate)pc.getPayload();
         String subjectDn = requestCert.getSubjectDN().getName();
@@ -143,14 +144,13 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
         if ( !trustedCerts.isEmpty() ) {
             // There could be no trusted certs--this means that specific client certs
-            // are trusted no matter what
+            // are trusted no matter who signed them
             TrustedCert trustedCert = (TrustedCert)trustedCerts.get(issuerDn);
             if ( trustedCert == null ) throw new BadCredentialsException("Signer is not trusted");
             if ( !trustedCert.isTrustedForSigningClientCerts() )
                 throw new BadCredentialsException("The trusted certificate with DN '" +
                                                   trustedCert.getSubjectDn() +
-                                                  " is not trusted for signing client certificates");
-
+                                                  "' is not trusted for signing client certificates");
             try {
                 CertificateExpiry exp = CertUtils.checkValidity(trustedCert.getCertificate());
                 if (exp.getDays() <= CertificateExpiry.FINE_DAYS)
@@ -213,7 +213,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             return u;
         }
 
-        throw new BadCredentialsException("Federated IDP " + config.getName() + "(" + config.getOid() +
+        throw new BadCredentialsException("Federated IDP " + providerConfig.getName() + "(" + providerConfig.getOid() +
                                           ") is not configured to trust certificates found with " +
                                           csa.getName() );
     }
@@ -229,7 +229,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         // TODO
     }
 
-    private final FederatedIdentityProviderConfig config;
+    private final FederatedIdentityProviderConfig providerConfig;
     private final FederatedUserManager userManager;
     private final FederatedGroupManager groupManager;
     private final TrustedCertManager trustedCertManager;
