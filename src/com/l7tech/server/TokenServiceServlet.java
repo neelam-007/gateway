@@ -108,7 +108,7 @@ public class TokenServiceServlet extends HttpServlet {
             pc = PersistenceContext.getCurrent();
             pc.beginTransaction();
             response = tokenService.respondToRequestSecurityToken(payload, authenticator(), req.getRemoteAddr());
-            pc.commitTransaction();
+            pc.commitIfPresent();
             pc.close();
             pc = null;
         } catch (InvalidDocumentFormatException e) {
@@ -176,7 +176,7 @@ public class TokenServiceServlet extends HttpServlet {
 
     private final TokenService.CredentialsAuthenticator authenticator() {
         return new TokenService.CredentialsAuthenticator() {
-            public User authenticate(LoginCredentials creds) throws AuthenticationException {
+            public User authenticate(LoginCredentials creds) {
                 IdentityProviderConfigManager idpcm = (IdentityProviderConfigManager)Locator.getDefault().
                                                         lookup(IdentityProviderConfigManager.class);
                 User authenticatedUser = null;
