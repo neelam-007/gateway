@@ -49,15 +49,6 @@ import java.util.logging.Logger;
 public class TokenServiceClient {
     public static final Logger log = Logger.getLogger(TokenServiceClient.class.getName());
 
-    public static final class RequestType {
-        public static final RequestType ISSUE = new RequestType("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue");
-        public static final RequestType VALIDATE = new RequestType("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Validate");
-
-        private final String uri;
-        private RequestType(String uri) { this.uri = uri; }
-        String getUri() { return uri; }
-    }
-
     /**
      * Create a signed SOAP message containing a WS-Trust RequestSecurityToken message asking for the
      * specified token type.
@@ -73,7 +64,7 @@ public class TokenServiceClient {
     public static Document createRequestSecurityTokenMessage(X509Certificate clientCertificate,
                                                              PrivateKey clientPrivateKey,
                                                              SecurityTokenType desiredTokenType,
-                                                             RequestType requestType,
+                                                             TokenServiceRequestType requestType,
                                                              SecurityToken base,
                                                              String appliesToAddress,
                                                              Date timestampCreatedDate)
@@ -113,7 +104,7 @@ public class TokenServiceClient {
     }
 
     private static Document requestSecurityTokenMessageTemplate(SecurityTokenType desiredTokenType,
-                                                                RequestType requestType,
+                                                                TokenServiceRequestType requestType,
                                                                 String appliesToAddress,
                                                                 SecurityToken base)
             throws IOException, SAXException
@@ -165,7 +156,7 @@ public class TokenServiceClient {
         return msg;
     }
 
-    public static Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType, RequestType requestType, SecurityToken base, String appliesToAddress) {
+    public static Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType, TokenServiceRequestType requestType, SecurityToken base, String appliesToAddress) {
         try {
             return requestSecurityTokenMessageTemplate(desiredTokenType, requestType, appliesToAddress, base);
         } catch (IOException e) {
@@ -192,7 +183,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                SecurityTokenType.WSSC_CONTEXT, RequestType.ISSUE, null, null, timestampCreatedDate);
+                                                                SecurityTokenType.WSSC_CONTEXT, TokenServiceRequestType.ISSUE, null, null, timestampCreatedDate);
         Object result = obtainResponse(httpClient, clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, null, true);
 
         if (!(result instanceof SecureConversationSession))
@@ -209,7 +200,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         if (!("https".equals(url.getProtocol()))) throw new IllegalArgumentException("URL must be HTTPS");
-        Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC_CONTEXT, RequestType.ISSUE, null, null);
+        Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC_CONTEXT, TokenServiceRequestType.ISSUE, null, null);
         Object result = obtainResponse(httpClient, null, url, requestDoc, null, serverCertificate, httpBasicCredentials, false);
 
         if (!(result instanceof SecureConversationSession))
@@ -244,7 +235,7 @@ public class TokenServiceClient {
                                                     Date timestampCreatedDate,
                                                     X509Certificate clientCertificate,
                                                     PrivateKey clientPrivateKey,
-                                                    RequestType requestType,
+                                                    TokenServiceRequestType requestType,
                                                     SecurityTokenType tokenType,
                                                     SecurityToken base,
                                                     String appliesToAddress,

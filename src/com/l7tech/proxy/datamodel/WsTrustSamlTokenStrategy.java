@@ -12,6 +12,7 @@ import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.xml.TokenServiceClient;
+import com.l7tech.common.security.xml.TokenServiceRequestType;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -105,7 +106,7 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
                                                    null, // not overriding timestamp created date
                                                    null, // no client cert (not signing message)
                                                    null, // no client private key (not signing message)
-                                                   TokenServiceClient.RequestType.VALIDATE,
+                                                   TokenServiceRequestType.VALIDATE,
                                                    null, // no token type (FIM doesn't like it)
                                                    usernameToken,
                                                    getAppliesTo(),
