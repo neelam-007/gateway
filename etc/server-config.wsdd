@@ -102,13 +102,32 @@
   <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns22:EntityType" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.objectmodel.EntityType" xmlns:ns22="http://www.layer7-tech.com/identity"/>
   <typeMapping deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns23:ArrayOfHeaders" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" type="java:com.l7tech.objectmodel.EntityHeader[]" xmlns:ns23="http://www.layer7-tech.com/identity"/>
  </service>
+
+
+
+ <service name="serviceAdmin" provider="java:RPC">
+  <parameter name="allowedMethods" value="resolveWsdlTarget"/>
+  <parameter name="wsdlPortType" value="servicePortType"/>
+  <parameter name="scope" value="Application"/>
+  <parameter name="className" value="com.l7tech.adminws.service.Service"/>
+  <parameter name="wsdlServicePort" value="servicePort"/>
+  <parameter name="wsdlTargetNamespace" value="http://www.layer7-tech.com/service"/>
+  <parameter name="wsdlServiceElement" value="svcService"/>
+
+  <operation name="resolveWsdlTarget" qname="ns1:resolveWsdlTarget" returnQName="resolveWsdlTargetReturn" returnType="xsd:string" xmlns:ns1="http://www.layer7-tech.com/service" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <parameter name="url" type="xsd:string"/>
+  </operation>
+ </service>
+
+
+
  <transport name="http">
   <requestFlow>
    <handler type="URLMapper"/>
    <!-- comment the following two handlers to bypass admin ws authentication mechanism -->
    <handler type="java:com.l7tech.adminws.security.AuthenticationAxisHandler"/>
    <handler type="java:com.l7tech.adminws.security.AuthorizationAxisHandler"/>
-      
+
   </requestFlow>
  </transport>
  <transport name="local">
