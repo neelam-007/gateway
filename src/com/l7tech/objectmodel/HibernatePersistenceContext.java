@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import com.l7tech.logging.LogManager;
+import org.apache.commons.dbcp.PoolableConnection;
 
 /**
  * @author alex
@@ -156,6 +157,15 @@ public class HibernatePersistenceContext extends PersistenceContext {
             // if jdbc connection failure, close the session and null it
             try {
                 logger.fine("session is broken, trying to reconnect jdbc connection.");
+
+                Connection theConnection = _session.connection();
+                if (theConnection instanceof PoolableConnection) {
+                    logger.fine("calling REALLY close");
+                    ((PoolableConnection)theConnection).reallyClose();
+                } else {
+                    theConnection.close();
+                }
+
                 _session.close();
             } catch ( SQLException se ) {
                 logger.log( Level.WARNING, "exception closing session", se );
