@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DeleteException;
 
 import java.util.Collection;
+import java.io.IOException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -90,10 +91,11 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
         }
         return localStub;
     }
-    private String getServiceURL() {
-        // todo, read this url from a properties file
-        // maybe com.l7tech.console.util.Preferences
-        return "http://localhost:8080/UneasyRooster/services/identities";
+    private String getServiceURL() throws IOException {
+        String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
+        prefUrl += "/services/identities";
+        return prefUrl;
+        //return "http://localhost:8080/UneasyRooster/services/identities";
     }
 
     private long identityProviderConfigId;
