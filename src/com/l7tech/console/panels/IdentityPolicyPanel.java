@@ -136,7 +136,7 @@ public class IdentityPolicyPanel extends JPanel {
         });
         okButton.addActionListener(updateIdentityPolicy);
         Utilities.equalizeButtonSizes(new JButton[]{cancelButton, okButton, helpButton});
-        authMethodComboBox.setModel(CredentialsLocation.getCredentialsLocationComboBoxModelNonAnonymous(true));
+        authMethodComboBox.setModel(CredentialsLocation.getCredentialsLocationComboBoxModelNonAnonymous(service.isSoap()));
 
         defaultUrlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
