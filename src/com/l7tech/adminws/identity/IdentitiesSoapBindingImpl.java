@@ -137,14 +137,14 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         return identityProviderConfigManager;
     }
 
-    private UserManager retrieveUserManager(long identityProviderConfigId) {
+    private UserManager retrieveUserManager(long identityProviderConfigId) throws java.rmi.RemoteException {
+        throw new java.rmi.RemoteException("Cannot instantiate UserManager");
         // todo (it)
-        return null;
     }
 
-    private GroupManager retrieveGroupManager(long identityProviderConfigId) {
+    private GroupManager retrieveGroupManager(long identityProviderConfigId) throws java.rmi.RemoteException {
+        throw new java.rmi.RemoteException("Cannot instantiate GroupManager");
         // todo (it)
-        return null;
     }
 
     IdentityProviderConfigManager identityProviderConfigManager = null;
