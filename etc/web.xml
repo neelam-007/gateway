@@ -26,7 +26,7 @@
 
         <init-param>
             <param-name>PolicyServletUri</param-name>
-            <param-value>/policy/disco.modulator?serviceoid=</param-value>
+            <param-value>/ssg/policy/disco.modulator?serviceoid=</param-value>
         </init-param>
     </servlet>
 
@@ -63,17 +63,17 @@
 
     <servlet-mapping>
         <servlet-name>SoapMessageProcessingServlet</servlet-name>
-        <url-pattern>/servlet/soap</url-pattern>
+        <url-pattern>/ssg/servlet/soap</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>SoapMessageProcessingServlet</servlet-name>
-        <url-pattern>/soap</url-pattern>
+        <url-pattern>/ssg/soap</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>AxisServlet</servlet-name>
-        <url-pattern>/servlet/AxisServlet</url-pattern>
+        <url-pattern>/ssg/servlet/AxisServlet</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
@@ -82,7 +82,7 @@
         NB: Update the PolicyServletUri <init-param> in the SoapMessageProcessingServlet
         above when you change this <url-pattern>!
         -->
-        <url-pattern>/policy/disco.modulator/*</url-pattern>
+        <url-pattern>/ssg/policy/disco.modulator/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
@@ -92,19 +92,19 @@
 
     <servlet-mapping>
         <servlet-name>AxisServlet</servlet-name>
-        <url-pattern>/services/*</url-pattern>
+        <url-pattern>/ssg/services/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>SOAPMonitorService</servlet-name>
-        <url-pattern>/SOAPMonitor</url-pattern>
+        <url-pattern>/ssg/SOAPMonitor</url-pattern>
     </servlet-mapping>
 
     <!-- uncomment this if you want the admin servlet -->
     <!-- -->
      <servlet-mapping>
        <servlet-name>AdminServlet</servlet-name>
-       <url-pattern>/servlet/AdminServlet</url-pattern>
+       <url-pattern>/ssg/servlet/AdminServlet</url-pattern>
      </servlet-mapping>
 
     <welcome-file-list id="WelcomeFileList_1">
