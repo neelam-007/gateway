@@ -58,18 +58,14 @@ public class WssDecoratorImpl implements WssDecorator {
         Context c = new Context();
 
         Element securityHeader = createSecurityHeader(message);
-        String securityHeaderId = createWsuId(c, securityHeader); // todo create Ids lazily as we find they are needed
 
-        Element timestamp = addTimestamp(securityHeader);
-        String timestampId = createWsuId(c, timestamp);
+        addTimestamp(securityHeader);
 
-        if (senderCertificate != null) {
-            Element securityToken = addX509BinarySecurityToken(securityHeader, senderCertificate);
-            String securityTokenId = createWsuId(c, securityToken);
-        }
+        if (senderCertificate != null)
+            addX509BinarySecurityToken(securityHeader, senderCertificate);
 
         // todo encrypt
-        Element encryptedKey = addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt);
+        addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt);
 
         // todo sign
         Element signature = addSignature(senderCertificate, senderPrivateKey);
@@ -83,11 +79,9 @@ public class WssDecoratorImpl implements WssDecorator {
                                     Element securityHeader,
                                     X509Certificate recipientCertificate,
                                     Element[] elementsToEncrypt)
-            throws DecoratorException, GeneralSecurityException
+            throws GeneralSecurityException
     {
         Document soapMsg = securityHeader.getOwnerDocument();
-        String wsseNs = securityHeader.getNamespaceURI();
-        String wssePrefix = securityHeader.getPrefix();
 
         // Make a bulk encryption key
         byte[] keyBytes = new byte[16];
@@ -123,7 +117,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element referenceList = soapMsg.createElementNS(xencNs, "ReferenceList");
         referenceList.setPrefix(xenc);
-        cipherData.appendChild(referenceList);
+        encryptedKey.appendChild(referenceList);
 
         for (int i = 0; i < elementsToEncrypt.length; i++) {
             Element element = elementsToEncrypt[i];
@@ -138,11 +132,18 @@ public class WssDecoratorImpl implements WssDecorator {
         return encryptedKey;
     }
 
+    /**
+     * Get the wsu:Id for the specified element.  If it doesn't already have a wsu:Id attribute a new one
+     * is created for the element.
+     * @param c
+     * @param element
+     * @return
+     */
     private String getWsuId(Context c, Element element) {
         String id = element.getAttributeNS(SoapUtil.WSU_NAMESPACE, "Id");
-        if (id == null)
+        if (id == null || id.length() < 1)
             id = element.getAttributeNS(SoapUtil.WSU_NAMESPACE2, "Id");
-        if (id == null)
+        if (id == null || id.length() < 1)
             id = createWsuId(c, element);
         return id;
     }
@@ -156,7 +157,7 @@ public class WssDecoratorImpl implements WssDecorator {
     }
 
     private byte[] padSymmetricKeyForRsaEncryption(byte[] keyBytes) {
-        // todo
+        // todo, if necessary
         return keyBytes;
     }
 
