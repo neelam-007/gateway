@@ -52,7 +52,7 @@ public class LogonDialog extends JDialog {
      */
     public LogonDialog(JFrame parent, String title, String defaultUsername) {
         super(parent, true);
-        setTitle("Log on to SSG " + title);
+        setTitle("Log on to Gateway " + title);
         initComponents();
         if (defaultUsername != null)
             userNameTextField.setText(defaultUsername);
