@@ -36,11 +36,15 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     public AssertionStatus checkCredentials( Request request, Response response ) throws CredentialFinderException {
         PrincipalCredentials pc = request.getPrincipalCredentials();
         if ( pc == null ) return AssertionStatus.AUTH_REQUIRED;
-        String realm = pc.getRealm();
-        if ( ( realm == null && _data.getRealm() == null ) || realm != null && realm.equals( _data.getRealm() ) ) {
+        String requestRealm = pc.getRealm();
+        String assertRealm = realm( request );
+
+        if ( requestRealm == null || requestRealm.length() == 0 ) requestRealm = assertRealm;
+
+        if ( requestRealm.equals( assertRealm ) ) {
             return doCheckCredentials( request, response );
         } else {
-            throw new CredentialFinderException( "Realm mismatch", AssertionStatus.AUTH_FAILED );
+            throw new CredentialFinderException( "Realm mismatch: Expected '" + assertRealm + "', got '"+ requestRealm, AssertionStatus.AUTH_FAILED );
         }
     }
 
@@ -54,15 +58,14 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     }
 
     protected PrincipalCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
-        String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
+        String authorization = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
 
-        if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
-            challenge( request, response );
+        if ( authorization == null || authorization.length() == 0 ) {
             return null;
         }
 
         Map authParams = new HashMap();
-        StringTokenizer stok = new StringTokenizer( wwwAuthorize, " " );
+        StringTokenizer stok = new StringTokenizer( authorization, ", " );
         String scheme = null;
         String token, name, value;
         while ( stok.hasMoreTokens() ) {
@@ -70,7 +73,7 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
             int epos = token.indexOf("=");
             if ( epos >= 0 ) {
                 name = token.substring(0,epos);
-                value = token.substring(1,epos+1);
+                value = token.substring(epos+1);
                 if ( value.startsWith("\"") ) {
                     if ( value.endsWith("\"") ) {
                         // Single-word quoted string
@@ -121,22 +124,26 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     protected void challenge( Request request, Response response ) {
         StringBuffer challengeHeader = new StringBuffer( scheme() );
         challengeHeader.append( " " );
-        String realm = _data.getRealm();
+        String realm = realm( request );
         if ( realm != null && realm.length() > 0 ) {
             challengeHeader.append( _data.PARAM_REALM );
             challengeHeader.append( "=" );
-            challengeHeader.append( quoted( _data.getRealm() ) );
+            challengeHeader.append( quoted( realm ) );
         }
 
         Map challengeParams = challengeParams( request, response );
         String name, value;
-        for (Iterator i = challengeParams.keySet().iterator(); i.hasNext();) {
+        Iterator i = challengeParams.keySet().iterator();
+        if ( i.hasNext() ) challengeHeader.append( ", " );
+
+        while ( i.hasNext() ) {
             name = (String)i.next();
             value = (String)challengeParams.get(name);
             if ( name != null && value != null ) {
                 challengeHeader.append( name );
                 challengeHeader.append( "=" );
                 challengeHeader.append( quoted( value ) );
+                if ( i.hasNext() ) challengeHeader.append( ", " );
             }
         }
 
@@ -146,11 +153,13 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
         response.setParameter( Response.PARAM_HTTP_WWWAUTHENTICATE, challenge.toString() );
     }
 
+    protected abstract String realm( Request request );
+
     private String quoted( String value ) {
-        if ( value.indexOf( " " ) >= 0 )
-            return '"' + value + '"';
+        if ( value == null )
+            return "\"\"";
         else
-            return value;
+            return '"' + value + '"';
     }
 
     protected abstract AssertionStatus doCheckCredentials( Request request, Response response );
