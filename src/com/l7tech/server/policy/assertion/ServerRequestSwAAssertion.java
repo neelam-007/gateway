@@ -12,6 +12,7 @@ import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.MultipartUtil;
+import com.l7tech.common.util.MultipartMessageReader;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -132,7 +133,15 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                         String mimePartCID = href.getValue();
                                         logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePartCID);
 
-                                        MultipartUtil.Part mimepartRequest = xreq.getMultipartReader().getMessagePart(mimePartCID);
+                                        if(!xreq.isMultipart()) {
+                                            logger.info("The request does not contain attachment or is not a mulitipart message");
+                                            return AssertionStatus.FALSIFIED;
+                                        }
+
+                                        MultipartMessageReader mreader = xreq.getMultipartReader();
+                                        
+                                        if(mreader == null) throw new IllegalStateException("MultipartMessageReader must be created first before use");
+                                        MultipartUtil.Part mimepartRequest = mreader.getMessagePart(mimePartCID);
 
                                         if(mimepartRequest != null) {
                                             // validate the content type
