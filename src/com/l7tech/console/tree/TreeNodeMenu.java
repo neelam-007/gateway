@@ -93,10 +93,7 @@ public class TreeNodeMenu extends JPopupMenu {
      */
     private static JPopupMenu forProvidersFolder(ProvidersFolderNode realm, ActionListener listener) {
         TreeNodeMenu treeMenu = new TreeNodeMenu(realm, listener);
-
-        JMenu menu = new JMenu(NEW);
-        menu.add(NEW_PROVIDER).addActionListener(listener);
-        treeMenu.add(menu);
+        treeMenu.add(NEW_PROVIDER).addActionListener(listener);
 
         return treeMenu;
     }
@@ -127,10 +124,7 @@ public class TreeNodeMenu extends JPopupMenu {
      */
     private static JPopupMenu forAdminFolder(AdminFolderNode admin, ActionListener listener) {
         TreeNodeMenu treeMenu = new TreeNodeMenu(admin, listener);
-
-        JMenu menu = new JMenu(NEW);
-        menu.add(NEW_ADMINISTRATOR).addActionListener(listener);
-        treeMenu.add(menu);
+        treeMenu.add(NEW_ADMINISTRATOR).addActionListener(listener);
 
         return treeMenu;
     }
@@ -163,10 +157,7 @@ public class TreeNodeMenu extends JPopupMenu {
      */
     private static JPopupMenu forUserFolder(UserFolderNode user, ActionListener listener) {
         TreeNodeMenu treeMenu = new TreeNodeMenu(user, listener);
-
-        JMenu menu = new JMenu(NEW);
-        menu.add(NEW_USER).addActionListener(listener);
-        treeMenu.add(menu);
+        treeMenu.add(NEW_USER).addActionListener(listener);
 
         return treeMenu;
     }
@@ -182,10 +173,7 @@ public class TreeNodeMenu extends JPopupMenu {
      */
     private static JPopupMenu forGroupFolder(GroupFolderNode group, ActionListener listener) {
         TreeNodeMenu treeMenu = new TreeNodeMenu(group, listener);
-
-        JMenu menu = new JMenu(NEW);
-        menu.add(NEW_GROUP).addActionListener(listener);
-        treeMenu.add(menu);
+        treeMenu.add(NEW_GROUP).addActionListener(listener);
 
         return treeMenu;
     }
@@ -232,20 +220,16 @@ public class TreeNodeMenu extends JPopupMenu {
      */
     private static JPopupMenu forServicesFolder(ServicesFolderNode node, ActionListener listener) {
         TreeNodeMenu treeMenu = new TreeNodeMenu(node, listener);
-
-        JMenu menu = new JMenu(NEW);
-        menu.add(NEW_SERVICE).addActionListener(listener);
-        treeMenu.add(menu);
-
+        treeMenu.add(NEW_SERVICE).addActionListener(listener);
         return treeMenu;
     }
 
 
-    public static final String NEW_SERVICE = "Service";
-    public static final String NEW_PROVIDER = "Provider";
-    public static final String NEW_USER = "User";
-    public static final String NEW_GROUP = "Group";
-    public static final String NEW_ADMINISTRATOR = "Admin";
+    public static final String NEW_SERVICE = "New Service";
+    public static final String NEW_PROVIDER = "New Provider";
+    public static final String NEW_USER = "New User";
+    public static final String NEW_GROUP = "New Group";
+    public static final String NEW_ADMINISTRATOR = "New Administrator";
     public static final String NEW = "New";
     public static final String FIND = "Find";
     public static final String DELETE = "Delete";
