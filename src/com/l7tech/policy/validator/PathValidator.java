@@ -12,19 +12,14 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
-import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.FindException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.rmi.RemoteException;
 
 /**
  * validate single path, and collect the validation results in the
@@ -122,54 +117,10 @@ class PathValidator {
               "a Custom Assertion is used.", null));
         }
 
-        // new fla, verify that the identity referred to by this assertion still exists
-        // this was requested in bugzilla #1018
-        if (!referredIdentityExists(a)) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath, "The identity does not exist in the " +
-                                                                              "identity provider", null));
-        }
-
         seenAccessControl = true;
         if (isSpecificUser(a)) {
             seenSpecificUserAssertion = true;
         }
-    }
-
-    private boolean referredIdentityExists(IdentityAssertion a) {
-        return true;
-/*  TODO It is a really, REALLY bad idea to do network calls here.  This code is called once per ID assertion
-         per policy path per validation! With my not-to-complex policy we were up to a several second pause
-         after every policy UI gesture. */
-/*
-        long providerId = a.getIdentityProviderOid();
-        IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
-        if (idAdmin == null) {
-            logger.warning("cannot test this because the identity admin is not available");
-            return true;
-        }
-        try {
-            if (a instanceof SpecificUser) {
-                SpecificUser su = (SpecificUser)a;
-                if (idAdmin.findUserByPrimaryKey(providerId, su.getUserUid()) != null) {
-                    return true;
-                }
-                if (idAdmin.findUserByLogin(providerId, su.getUserLogin()) != null) {
-                    return true;
-                }
-            } else if (a instanceof MemberOfGroup) {
-                MemberOfGroup mog = (MemberOfGroup)a;
-                if (idAdmin.findGroupByPrimaryKey(providerId, mog.getGroupId()) != null) {
-                    return true;
-                }
-            }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "problem getting identity", e);
-        } catch (RemoteException e) {
-            logger.log(Level.WARNING, "problem getting identity", e);
-        }
-
-        return false;
-*/
     }
 
     private void processCredentialSource(Assertion a) {
