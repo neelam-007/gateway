@@ -226,10 +226,10 @@ public class MessageProcessor {
         try {
             xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
         } catch (SessionNotFoundException e) {
-            logger.log(Level.WARNING, "Exception finding session with id=" + sessionIDHeaderValue, e);
+            logger.warning( "Exception finding session with id=" + sessionIDHeaderValue );
             return true;
         } catch (NumberFormatException e) {
-            logger.log(Level.WARNING, "Session id is not long value : " + sessionIDHeaderValue, e);
+            logger.warning( "Session id is not long value : " + sessionIDHeaderValue );
             return true;
         }
 
