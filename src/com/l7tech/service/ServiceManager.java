@@ -49,7 +49,7 @@ public interface ServiceManager extends EntityManager {
      * @param service
      * @throws UpdateException
      */
-    void update( PublishedService service ) throws UpdateException;
+    void update( PublishedService service ) throws UpdateException, VersionException;
 
     /**
      * deletes the service
