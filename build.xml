@@ -248,11 +248,11 @@
         <delete dir="${doc.root}"/>
         <delete dir="${build.lib}"/>
         <delete dir="${build.dir}"/>
-        <delete>
-            <fileset dir="${src.root}/installer">
-                <include name="Agent-*"/>
-                <include name="Manager-*"/>
-            </fileset>
+        <delete includeEmptyDirs="true">
+	  <fileset dir="${src.root}/installer">
+            <include name="Manager-*"/>
+            <include name="Agent-*"/>
+          </fileset>
         </delete>
         <delete dir="${javadoc.home}"/>
 
