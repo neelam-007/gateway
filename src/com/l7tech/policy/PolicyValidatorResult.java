@@ -33,7 +33,7 @@ public class PolicyValidatorResult implements Serializable {
      * @return the number of warning
      */
     public int getWarningCount() {
-        return errors.size();
+        return warnings.size();
     }
 
 
