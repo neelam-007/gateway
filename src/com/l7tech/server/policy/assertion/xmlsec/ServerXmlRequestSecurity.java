@@ -62,6 +62,9 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             return AssertionStatus.FALSIFIED;
         }
 
+        // increment the seq number so that it is not used again
+        xmlsecSession.incrementRequestsUsed();
+
         // validate signature
         X509Certificate cert;
         try {
@@ -85,7 +88,6 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         User u = new User();
         u.setLogin(certCN);
         request.setPrincipalCredentials(new PrincipalCredentials(u, null, CredentialFormat.CLIENTCERT, null, cert));
-
 
         // if we must also do xml-encryption,
         if (data.isEncryption()) {
