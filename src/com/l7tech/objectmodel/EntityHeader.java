@@ -11,6 +11,7 @@ package com.l7tech.objectmodel;
 
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
+import com.l7tech.service.PublishedService;
 
 import java.io.Serializable;
 
@@ -64,6 +65,21 @@ public class EntityHeader implements Serializable {
         }
         return new EntityHeader(g.getUniqueIdentifier(),EntityType.GROUP, g.getName(), g.getDescription());
     }
+
+    /**
+       * Service to header
+       *
+       * @param s the service to get the header for
+       *
+       * @return the corresponding header
+       */
+      public static EntityHeader fromService(PublishedService s) {
+          if (s == null) {
+              throw new IllegalArgumentException();
+          }
+          return new EntityHeader(s.getOid(),EntityType.SERVICE, s.getName(), "");
+      }
+
 
     public EntityHeader() {
         type = EntityType.UNDEFINED;
