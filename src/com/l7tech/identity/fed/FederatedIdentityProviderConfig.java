@@ -27,7 +27,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     public void setSamlSupported(boolean saml) {
-        props.put(PROP_SAML_SUPPORTED,Boolean.valueOf(saml));
+        setProperty(PROP_SAML_SUPPORTED,Boolean.valueOf(saml));
     }
 
     public boolean isX509Supported() {
@@ -35,38 +35,38 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     public void setX509Supported(boolean x509) {
-        props.put(PROP_X509_SUPPORTED,Boolean.valueOf(x509));
+        setProperty(PROP_X509_SUPPORTED,Boolean.valueOf(x509));
     }
 
     public SamlConfig getSamlConfig() {
-        SamlConfig config = (SamlConfig)props.get(PROP_SAML_CONFIG);
+        SamlConfig config = (SamlConfig)getProperty(PROP_SAML_CONFIG);
         if ( config == null ) {
             config = new SamlConfig();
-            props.put(PROP_SAML_CONFIG,config);
+            setProperty(PROP_SAML_CONFIG,config);
         }
         return config;
     }
 
     public X509Config getX509Config() {
-        X509Config config = (X509Config)props.get(PROP_X509_CONFIG);
+        X509Config config = (X509Config)getProperty(PROP_X509_CONFIG);
         if ( config == null ) {
             config = new X509Config();
-            props.put(PROP_X509_CONFIG, config);
+            setProperty(PROP_X509_CONFIG, config);
         }
         return config;
     }
 
     public long[] getTrustedCertOids() {
-        long[] oids = (long[])props.get(PROP_CERT_OIDS);
+        long[] oids = (long[])getProperty(PROP_CERT_OIDS);
         if ( oids == null ) {
             oids = new long[0];
-            props.put(PROP_CERT_OIDS, oids);
+            setProperty(PROP_CERT_OIDS, oids);
         }
         return oids;
     }
 
     public void setTrustedCertOids(long[] oids) {
-        props.put(PROP_CERT_OIDS, oids);
+        setProperty(PROP_CERT_OIDS, oids);
     }
 
     public String toString() {

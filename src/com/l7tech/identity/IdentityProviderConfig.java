@@ -6,7 +6,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Configuration of an Identity Provider object.
@@ -23,13 +22,11 @@ import java.util.Set;
 public class IdentityProviderConfig extends NamedEntityImp {
     public IdentityProviderConfig(IdentityProviderType type) {
         super();
-        props = new HashMap();
         this.type = type;
     }
 
     public IdentityProviderConfig() {
         super();
-        props = new HashMap();
         // only default value which makes sense for now.
         type = IdentityProviderType.LDAP;
     }
@@ -51,12 +48,12 @@ public class IdentityProviderConfig extends NamedEntityImp {
         this.description = description;
     }
 
-    public void putProperty(String name, String value) {
-        props.put(name, value);
+    public Object getProperty(String name) {
+        return props.get(name);
     }
 
-    public String getProperty(String name) {
-        return (String)props.get(name);
+    protected void setProperty(String name, Object value) {
+        props.put(name, value);
     }
 
     /**
@@ -64,16 +61,21 @@ public class IdentityProviderConfig extends NamedEntityImp {
      * to get the properties, call getProperty
      */
     public String getSerializedProps() throws java.io.IOException {
-        // if no props, return empty string
-        Set keys = props.keySet();
-        if (keys.size() < 1) return "";
-        
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        java.beans.XMLEncoder encoder = new java.beans.XMLEncoder(output);
-        encoder.writeObject(props);
-        encoder.close();
-        output.close();
-        return output.toString();
+        if (propsXml == null) {
+            // if no props, return empty string
+            if (props.size() < 1) {
+                propsXml = "";
+            } else {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                java.beans.XMLEncoder encoder = new java.beans.XMLEncoder(output);
+                encoder.writeObject(props);
+                encoder.close();
+                output.close();
+                propsXml = output.toString();
+            }
+        }
+
+        return propsXml;
     }
 
     /**
@@ -81,9 +83,10 @@ public class IdentityProviderConfig extends NamedEntityImp {
      * to set the properties, call setProperty
      */
     public void setSerializedProps(String serializedProps) {
-        if (serializedProps == null || serializedProps.length() < 2) props = new HashMap();
-        else
-        {
+        propsXml = serializedProps;
+        if (serializedProps == null || serializedProps.length() < 2) {
+            props.clear();
+        } else {
             ByteArrayInputStream in = new ByteArrayInputStream(serializedProps.getBytes());
             java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
             props = (Map)decoder.readObject();
@@ -124,5 +127,6 @@ public class IdentityProviderConfig extends NamedEntityImp {
     // ************************************************
     protected String description;
     protected IdentityProviderType type;
-    protected Map props;
+    private transient Map props = new HashMap();
+    private String propsXml;
 }
