@@ -150,7 +150,7 @@ public class WssDecoratorImpl implements WssDecorator {
         // make sure all elements already have an id
         String[] sigedIds = new String[elementsToSign.length];
         for (int i = 0; i < elementsToSign.length; i++) {
-            sigedIds[i] = getOrCreateWsuId(c, elementsToSign[i]);
+            sigedIds[i] = getOrCreateWsuId(c, elementsToSign[i], null);
         }
 
         String signaturemethod = null;
@@ -184,7 +184,7 @@ public class WssDecoratorImpl implements WssDecorator {
         //                      ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" />
         //      </wsse:SecurityTokenReference>
         // </KeyInfo>
-        String bstId = getOrCreateWsuId(c, binarySecurityToken);
+        String bstId = getOrCreateWsuId(c, binarySecurityToken, null);
         String wssePrefix = securityHeader.getPrefix();
         Element keyInfoEl = securityHeader.getOwnerDocument().createElementNS(emptySignatureElement.getNamespaceURI(),
                                                                               "KeyInfo");
@@ -302,7 +302,7 @@ public class WssDecoratorImpl implements WssDecorator {
             Element encryptedElement = encryptElement(element, keyBytes);
 
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
-            dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement));
+            dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
         }
 
         return encryptedKey;
@@ -364,12 +364,13 @@ public class WssDecoratorImpl implements WssDecorator {
      * is created for the element.
      * @param c
      * @param element
+     * @param basename  Optional.  If non-null, will be used as the start of the Id string
      * @return
      */
-    private String getOrCreateWsuId(Context c, Element element) {
+    private String getOrCreateWsuId(Context c, Element element, String basename) {
         String id = SoapUtil.getElementWsuId(element);
         if (id == null) {
-            id = createWsuId(c, element);
+            id = createWsuId(c, element, basename == null ? element.getLocalName() : basename);
         }
         return id;
     }
@@ -441,22 +442,32 @@ public class WssDecoratorImpl implements WssDecorator {
 
     /**
      * Generate a wsu:Id for the specified element, adds it to the element, and returns it.
+     * Uses the specified basename as the start of the Id.
      * @param c
      * @param element
      * @return
      */
-    private String createWsuId(Context c, Element element) {
+    private String createWsuId(Context c, Element element, String basename) {
         byte[] randbytes = new byte[16];
         c.rand.nextBytes(randbytes);
-        String id = element.getLocalName() + "-" + c.count++ + "-" + HexUtils.hexDump(randbytes);
+        String id = basename + "-" + c.count++ + "-" + HexUtils.hexDump(randbytes);
 
         if (c.idToElementCache.get(id) != null)
             throw new IllegalStateException("Duplicate wsu:ID generated: " + id); // can't happen
 
         c.idToElementCache.put(id, element);
 
-        String wsuPrefix = XmlUtil.getOrCreatePrefixForNamespace(element, SoapUtil.WSU_NAMESPACE, "wsu");
-        element.setAttributeNS(SoapUtil.WSU_NAMESPACE, wsuPrefix + ":Id", id);
+        // Check for special handling of dsig and xenc Ids
+        String ns = element.getNamespaceURI();
+        if (SoapUtil.DIGSIG_URI.equals(ns) || SoapUtil.XMLENC_NS.equals(ns)) {
+            // hack hack hack - xenc and dsig elements aren't allowed to use wsu:Id, due to their inflexible schemas.
+            // WSSE says they we required to (ab)use local namespace Id instead.
+            element.setAttribute("Id", id);
+        } else {
+            // do normal handling
+            String wsuPrefix = XmlUtil.getOrCreatePrefixForNamespace(element, SoapUtil.WSU_NAMESPACE, "wsu");
+            element.setAttributeNS(SoapUtil.WSU_NAMESPACE, wsuPrefix + ":Id", id);
+        }
 
         return id;
     }
