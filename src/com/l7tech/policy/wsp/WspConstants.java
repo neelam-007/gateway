@@ -6,6 +6,7 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -728,6 +729,7 @@ public class WspConstants {
 
         // Special types
         new BeanTypeMapping(XpathExpression.class, "xpathExpressionValue"),
+        new BeanTypeMapping(BindingInfo.class, "wsdlBindingInfo"),
 
     };
 

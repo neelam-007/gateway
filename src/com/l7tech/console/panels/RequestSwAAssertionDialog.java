@@ -1,39 +1,39 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.RequestSwAAssertion;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.AssertionPath;
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
-import com.l7tech.console.event.PolicyListener;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.event.PolicyEvent;
+import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.objectmodel.FindException;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.Spacer;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RequestSwAAssertion;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
-import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEContent;
+import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.soap.SOAPBody;
-import java.util.logging.Logger;
-import java.util.*;
-import java.util.List;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.rmi.RemoteException;
+import java.util.*;
+import java.util.List;
+import java.util.logging.Logger;
 
 
 /**
@@ -102,7 +102,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         // get the MIMEParts Info from WSDL
         loadMIMEPartsInfoFromWSDL();
 
-        if (assertion.getBindingName() == null) {
+        if (assertion.getBindingInfo().getBindingName() == null) {
             // this is the first time
             populateDataFromWSDL();
         } else {

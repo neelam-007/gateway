@@ -1,8 +1,6 @@
 package com.l7tech.policy.assertion;
 
-import javax.wsdl.BindingOperation;
-import javax.wsdl.Binding;
-import java.util.HashMap;
+import com.l7tech.common.wsdl.BindingInfo;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -10,22 +8,17 @@ import java.util.HashMap;
  * $Id$
  */
 public class RequestSwAAssertion extends SwAAssertion {
-    private String bindingName;
-    private HashMap bindingOperations;
+    private BindingInfo bindingInfo = new BindingInfo();
 
-    public String getBindingName() {
-        return bindingName;
+    /** @return the BindingInfo.  Never null. */
+    public BindingInfo getBindingInfo() {
+        return bindingInfo;
     }
 
-    public void setBindingName(String bindingName) {
-        this.bindingName = bindingName;
-    }
-
-    public HashMap getBindingOperations() {
-        return bindingOperations;
-    }
-
-    public void setBindingOperations(HashMap bindingOperations) {
-        this.bindingOperations = bindingOperations;
+    /** @param bindingInfo the new Binding info.  May not be null. */
+    public void setBindingInfo(BindingInfo bindingInfo) {
+        if (bindingInfo == null)
+            throw new IllegalArgumentException("bindingInfo may not be null");
+        this.bindingInfo = bindingInfo;
     }
 }

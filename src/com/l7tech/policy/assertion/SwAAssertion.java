@@ -5,5 +5,5 @@ package com.l7tech.policy.assertion;
  * <p> @author fpang </p>
  * $Id$
  */
-public class SwAAssertion extends Assertion {
+public abstract class SwAAssertion extends Assertion {
 }

@@ -10,12 +10,12 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -56,6 +56,7 @@ public class AllAssertions {
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
+        new RequestSwAAssertion(),
         new SamlSecurity(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
@@ -100,6 +101,7 @@ public class AllAssertions {
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
+        new RequestSwAAssertion(),
         new SamlSecurity(),
         CUSTOM_ASSERTION_HOLDER,
         new UnknownAssertion()
@@ -138,6 +140,7 @@ public class AllAssertions {
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
+        new RequestSwAAssertion(),
         new SamlSecurity(),
         new CustomAssertionHolder(),
         new UnknownAssertion()

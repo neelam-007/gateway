@@ -1,7 +1,8 @@
 package com.l7tech.common.wsdl;
 
-import java.util.HashMap;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -10,27 +11,38 @@ import java.io.Serializable;
  */
 public class BindingInfo implements Serializable {
 
-    protected String bindingName;
-    protected HashMap bindingOperations = new HashMap();   // a list of BindingOperationInfo
+    protected String bindingName = "";
+    protected Map bindingOperations = new HashMap();   // a list of BindingOperationInfo
+
+    public BindingInfo() {
+    }
 
     public BindingInfo(String bindingName, HashMap bindingOperations) {
         this.bindingName = bindingName;
         this.bindingOperations = bindingOperations;
     }
 
+    /** @return the Binding name.  Never null. */
     public String getBindingName() {
         return bindingName;
     }
 
+    /** @param bindingName the new binding name.  May not be null. */
     public void setBindingName(String bindingName) {
+        if (bindingName == null)
+            throw new IllegalArgumentException("binding name may not be null");
         this.bindingName = bindingName;
     }
 
-    public HashMap getBindingOperations() {
+    /** @return the binding operations map.  Never null. */
+    public Map getBindingOperations() {
         return bindingOperations;
     }
 
-    public void setBindingOperations(HashMap bindingOperations) {
+    /** @param bindingOperations the new binding operations map.  May not be null. */
+    public void setBindingOperations(Map bindingOperations) {
+        if (bindingOperations == null)
+            throw new IllegalArgumentException("bindingOperations may not be null.");
         this.bindingOperations = bindingOperations;
     }
 
