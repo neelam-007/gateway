@@ -208,12 +208,17 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
+    
     <!-- server side policy validator -->
     <bean id="policyValidator" class="com.l7tech.server.policy.validator.ServerPolicyValidator">
         <property name="jmsEndpointManager">
             <ref bean="jmsEndpointManager"/>
         </property>
+        <property name="identityProviderFactory">
+            <ref bean='identityProviderFactory'/>
+        </property>
     </bean>
+
     <!-- server side policy filter manager  -->
     <bean id="policyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
         <constructor-arg>

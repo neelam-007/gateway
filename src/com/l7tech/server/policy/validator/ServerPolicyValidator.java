@@ -17,16 +17,13 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.service.PublishedService;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -51,10 +48,9 @@ import java.util.logging.Logger;
  * Date: Sep 1, 2004<br/>
  * $Id$<br/>
  */
-public class ServerPolicyValidator extends PolicyValidator
-    implements ApplicationContextAware, InitializingBean {
-    private ApplicationContext applicationContext;
+public class ServerPolicyValidator extends PolicyValidator implements InitializingBean {
     private JmsEndpointManager jmsEndpointManager;
+    private IdentityProviderFactory identityProviderFactory;
 
     public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
         Assertion[] ass = ap.getPath();
@@ -86,8 +82,9 @@ public class ServerPolicyValidator extends PolicyValidator
                 case ID_FIP:
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
                         Assertion credSrc = (Assertion)iterator.next();
-                        if (credSrc instanceof RequestWssSaml || credSrc instanceof RequestWssX509Cert ||
-                          credSrc instanceof SecureConversation || credSrc instanceof SslAssertion)
+                        if (credSrc.isCredentialSource() &&
+                            (credSrc instanceof RequestWssSaml || credSrc instanceof RequestWssX509Cert ||
+                             credSrc instanceof SecureConversation || credSrc instanceof SslAssertion) )
                             ;
                         else {
                             r.addError(new PolicyValidatorResult.Error(a,
@@ -103,11 +100,11 @@ public class ServerPolicyValidator extends PolicyValidator
                 case ID_SAMLONLY:
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
                         Assertion credSrc = (Assertion)iterator.next();
-                        if (!(credSrc instanceof RequestWssSaml)) {
+                        if (credSrc.isCredentialSource() && !(credSrc instanceof RequestWssSaml || credSrc instanceof SslAssertion)) {
                             r.addError(new PolicyValidatorResult.Error(a,
                               ap,
                               "This identity can only authenticate with " +
-                              "a SAML token " +
+                              "a SAML token or SSL Client Certificate" +
                               "but another type of credential " +
                               "source is specified.",
                               null));
@@ -181,8 +178,7 @@ public class ServerPolicyValidator extends PolicyValidator
         if (output == null) {
             try {
 // get provider
-                IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
-                IdentityProvider prov = ipf.getProvider(identityAssertion.getIdentityProviderOid());
+                IdentityProvider prov = identityProviderFactory.getProvider(identityAssertion.getIdentityProviderOid());
                 if (prov == null) {
                     idAssertionStatusCache.put(identityAssertion, new Integer(PROVIDER_NOT_EXIST));
                     return PROVIDER_NOT_EXIST;
@@ -263,17 +259,22 @@ public class ServerPolicyValidator extends PolicyValidator
 
     private final Logger logger = Logger.getLogger(ServerPolicyValidator.class.getName());
 
-    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
-        applicationContext = ctx;
-    }
 
     public void setJmsEndpointManager(JmsEndpointManager jmsEndpointManager) {
         this.jmsEndpointManager = jmsEndpointManager;
     }
 
+    public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
+        this.identityProviderFactory = identityProviderFactory;
+    }
+
     public void afterPropertiesSet() throws Exception {
         if (jmsEndpointManager == null) {
             throw new IllegalArgumentException("JMS Endpoint manager is required");
+        }
+
+        if (identityProviderFactory == null) {
+            throw new IllegalArgumentException("Identity Provider Factory is required");
         }
     }
 
