@@ -1,10 +1,13 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.AesKey;
-import com.l7tech.common.security.xml.*;
-import com.l7tech.common.util.*;
-import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.security.xml.ElementSecurity;
+import com.l7tech.common.security.xml.SecurityProcessor;
+import com.l7tech.common.security.xml.SecurityProcessorException;
+import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.Locator;
 import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.message.Request;
@@ -17,7 +20,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.server.SessionManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -26,7 +28,6 @@ import sun.security.x509.X500Name;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.Key;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -58,19 +59,25 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        // get the document
-        Document soapmsg = extractDocumentFromRequest(request);
+        if (!(request instanceof SoapRequest)) {
+            throw new PolicyAssertionException("This type of assertion is only supported with SOAP type of messages");
+        }
+        SoapRequest soapreq = (SoapRequest)request;
+        final WssProcessor.ProcessorResult wssResults = soapreq.getWssProcessorOutput();
+        if (wssResults == null) {
+            throw new PolicyAssertionException("This request was not processed for WSS level security.");
+        }
 
-        if (!(request instanceof SoapRequest))
-            return AssertionStatus.NOT_APPLICABLE;      // TODO verify that this is the appropriate return value
-        SoapRequest soapRequest = (SoapRequest)request;
-        if (!soapRequest.isSoap())
-            return AssertionStatus.NOT_APPLICABLE;      // TODO verify that this is the appropriate return value
+        // get the document
+        Document soapmsg = null;
+        try {
+            soapmsg = soapreq.getDocument();
+        } catch (SAXException e) {
+            logger.log(Level.SEVERE, "Cannot get payload document.", e);
+            return AssertionStatus.BAD_REQUEST;
+        }
 
         ElementSecurity[] elements = xmlRequestSecurity.getElements();
-        final WssProcessor.ProcessorResult wssResults = soapRequest.getWssProcessorOutput();
-        if (wssResults == null)
-            throw new PolicyAssertionException("This request was not processed for WSS level security.");
         SecurityProcessor verifier =
                 SecurityProcessor.createRecipientSecurityProcessor(wssResults,
                                                                    elements);
