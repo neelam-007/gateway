@@ -77,6 +77,6 @@ public class OneOrMoreAssertionTreeNode extends CompositeAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "At least on assertion must evaluate to true";
+        return "At least one assertion must evaluate to true";
     }
 }
