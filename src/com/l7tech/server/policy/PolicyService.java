@@ -14,10 +14,14 @@ import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.MissingRequiredElementException;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.identity.User;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.util.ArrayList;
@@ -148,8 +152,23 @@ public class PolicyService {
     }
 
     private String getRequestedPolicyId(Document requestDoc) throws InvalidDocumentFormatException {
-        // todo, mike plug in your soap request format in here if you like
-        return null;
+        Element header = SoapUtil.getHeaderElement(requestDoc);
+        if (header == null) throw new MissingRequiredElementException("No SOAP Header was found in the request.");
+        Element sidEl = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE, SoapUtil.L7_SERVICEID_ELEMENT);
+        if (sidEl == null) throw new MissingRequiredElementException("No {" +SoapUtil.L7_MESSAGEID_NAMESPACE +
+                                                                         "}" + SoapUtil.L7_SERVICEID_ELEMENT +
+                                                                         " element was found in the SOAP header.");
+        String serviceId = XmlUtil.getTextValue(sidEl);
+        if (serviceId == null || serviceId.length() < 1) throw new InvalidDocumentFormatException(SoapUtil.L7_SERVICEID_ELEMENT +
+                                                                                                  " element was empty.");
+
+        // Check that this is a proper GetPolicy request.
+        Element body = SoapUtil.getBodyElement(requestDoc);
+        if (body == null) throw new MissingRequiredElementException("No SOAP Body was found in the request.");
+        Element getPolicy = XmlUtil.findOnlyOneChildElementByName(body, SoapUtil.WSX_NAMESPACE, "GetPolicy");
+        if (getPolicy == null) throw new MissingRequiredElementException("Request was not a wsx:GetPolicy request");
+
+        return serviceId;
     }
 
     private SoapResponse exceptionToFault(Exception e, SoapResponse response) {
