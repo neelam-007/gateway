@@ -11,6 +11,7 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -69,31 +70,14 @@ public class WssProcessorImpl implements WssProcessor {
      * @param recipientCert the recipient's cert to which encrypted keys may be encoded for
      * @param recipientKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys
      * @return a ProcessorResult object reffering to all the WSS related processing that happened.
-     * @throws ProcessorException
+     * @throws InvalidDocumentFormatException if there is a problem with the document format that can't be ignored
+     * @throws GeneralSecurityException if there is a problem with a key or certificate
+     * @throws ProcessorException in case of some other problem
      */
     public WssProcessor.ProcessorResult undecorateMessage(Document soapMsg,
                                                           X509Certificate recipientCert,
                                                           PrivateKey recipientKey)
-            throws WssProcessor.ProcessorException
-    {
-        try {
-            return doUndecorateMessage(soapMsg, recipientCert, recipientKey);
-        } catch (XmlUtil.MultipleChildElementsException e) {
-            throw new ProcessorException(e);
-        } catch (ParseException e) {
-            throw new ProcessorException(e);
-        } catch (IOException e) {
-            throw new ProcessorException(e);
-        } catch (GeneralSecurityException e) {
-            throw new ProcessorException(e);
-        }
-    }
-
-    private WssProcessor.ProcessorResult doUndecorateMessage(Document soapMsg,
-                                                          X509Certificate recipientCert,
-                                                          PrivateKey recipientKey)
-            throws WssProcessor.ProcessorException, XmlUtil.MultipleChildElementsException,
-                   ParseException, IOException, GeneralSecurityException
+            throws WssProcessor.ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
     {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
@@ -182,10 +166,9 @@ public class WssProcessorImpl implements WssProcessor {
     private void processEncryptedKey(Element encryptedKeyElement,
                                      PrivateKey recipientKey,
                                      byte[] ski,
-                                     ProcessingStatusHolder cntx) throws ProcessorException,
-                                                                         IOException,
-                                                                         XmlUtil.MultipleChildElementsException,
-                                                                         GeneralSecurityException {
+                                     ProcessingStatusHolder cntx)
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
+    {
         logger.finest("Processing EncryptedKey");
 
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
@@ -201,7 +184,12 @@ public class WssProcessorImpl implements WssProcessor {
                                                                        SoapUtil.KEYIDENTIFIER_EL_NAME);
                     if (ki != null) {
                         String keyIdentifierValue = XmlUtil.getTextValue(ki);
-                        byte[] keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue);
+                        byte[] keyIdValueBytes = new byte[0];
+                        try {
+                            keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue);
+                        } catch (IOException e) {
+                            throw new InvalidDocumentFormatException("Unable to parse base64 Key Identifier", e);
+                        }
                         if (keyIdValueBytes != null) {
                             // trim if necessary
                             byte[] ski2 = ski;
@@ -247,7 +235,12 @@ public class WssProcessorImpl implements WssProcessor {
         }
         // we got the value, decrypt it
         String value = XmlUtil.getTextValue(cipherValue);
-        byte[] encryptedKeyBytes = HexUtils.decodeBase64(value);
+        byte[] encryptedKeyBytes = new byte[0];
+        try {
+            encryptedKeyBytes = HexUtils.decodeBase64(value);
+        } catch (IOException e) {
+            throw new InvalidDocumentFormatException("Unable to parse base64 EncryptedKey CipherValue", e);
+        }
         Cipher rsa = null;
         rsa = Cipher.getInstance("RSA");
         rsa.init(Cipher.DECRYPT_MODE, recipientKey);
@@ -273,6 +266,9 @@ public class WssProcessorImpl implements WssProcessor {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
         } catch (XMLSecurityElementNotFoundException e) {
+            logger.log(Level.WARNING, "Error decrypting", e);
+            throw new ProcessorException(e);
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
         }
@@ -351,7 +347,7 @@ public class WssProcessorImpl implements WssProcessor {
             AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
             af.setProvider(JceProvider.getSymmetricJceProvider().getName());
             dc.setAlgorithmFactory(af);
-            Element encryptedDataElement = SoapUtil.getElementById(refList.getOwnerDocument(), dataRefUri);
+            Element encryptedDataElement = SoapUtil.getElementByWsuId(refList.getOwnerDocument(), dataRefUri);
             if (encryptedDataElement == null) {
                 String msg = "cannot resolve encrypted data element " + dataRefUri;
                 logger.warning(msg);
@@ -415,7 +411,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processTimestamp(ProcessingStatusHolder ctx, final Element timestampElement)
-            throws XmlUtil.MultipleChildElementsException, ParseException
+            throws InvalidDocumentFormatException
     {
         logger.finest("Processing Timestamp");
         final Element created = XmlUtil.findOnlyOneChildElementByName(timestampElement,
@@ -425,8 +421,14 @@ public class WssProcessorImpl implements WssProcessor {
                                                                       SoapUtil.WSU_URIS_ARRAY,
                                                                       SoapUtil.EXPIRES_EL_NAME);
 
-        final TimestampDate createdTimestampDate = created == null ? null : new TimestampDate(created);
-        final TimestampDate expiresTimestampDate = expires == null ? null : new TimestampDate(expires);
+        final TimestampDate createdTimestampDate;
+        final TimestampDate expiresTimestampDate;
+        try {
+            createdTimestampDate = created == null ? null : new TimestampDate(created);
+            expiresTimestampDate = expires == null ? null : new TimestampDate(expires);
+        } catch (ParseException e) {
+            throw new InvalidDocumentFormatException("Unable to parse Timestamp", e);
+        }
 
         ctx.timestamp = new Timestamp() {
             public WssProcessor.TimestampDate getCreated() {
@@ -452,9 +454,8 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processBinarySecurityToken(final Element binarySecurityTokenElement,
-                                            ProcessingStatusHolder cntx) throws ProcessorException,
-                                                                                IOException,
-                                                                                GeneralSecurityException
+                                            ProcessingStatusHolder cntx)
+            throws ProcessorException, GeneralSecurityException, InvalidDocumentFormatException
     {
         logger.finest("Processing BinarySecurityToken");
 
@@ -475,7 +476,12 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException(msg);
         }
 
-        byte[] decodedValue = HexUtils.decodeBase64(value, true); // must strip whitespace or base64 decoder misbehaves
+        byte[] decodedValue = new byte[0]; // must strip whitespace or base64 decoder misbehaves
+        try {
+            decodedValue = HexUtils.decodeBase64(value, true);
+        } catch (IOException e) {
+            throw new InvalidDocumentFormatException("Unable to parse base64 BinarySecurityToken", e);
+        }
         // create the x509 binary cert based on it
         X509Certificate referencedCert = (X509Certificate)CertificateFactory.getInstance("X.509").
                                             generateCertificate(new ByteArrayInputStream(decodedValue));
@@ -531,7 +537,7 @@ public class WssProcessorImpl implements WssProcessor {
                 // look for previous sec tokens with that same id
                 for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
                     WssProcessor.SecurityToken token = (WssProcessor.SecurityToken)i.next();
-                    if (uriAttr.equals(SoapUtil.getElementId(token.asElement()))) {
+                    if (uriAttr.equals(SoapUtil.getElementWsuId(token.asElement()))) {
                         if (token.asObject() instanceof X509Certificate) {
                             return (X509Certificate)token.asObject();
                         } else {
@@ -578,7 +584,7 @@ public class WssProcessorImpl implements WssProcessor {
         SignatureContext sigContext = new SignatureContext();
         sigContext.setIDResolver(new IDResolver() {
                                    public Element resolveID(Document doc, String s) {
-                                       return SoapUtil.getElementById(doc, s);
+                                       return SoapUtil.getElementByWsuId(doc, s);
                                    }
                                });
         Validity validity = sigContext.verify(signatureElement, pubKey);
@@ -598,10 +604,10 @@ public class WssProcessorImpl implements WssProcessor {
             // once the document is completly processed (signature might cover elements in the Security header that
             // will later be purged).
             String elementCoveredURI = validity.getReferenceURI(i);
-            Element elementCovered = SoapUtil.getElementById(cntx.originalDocument, elementCoveredURI);
+            Element elementCovered = SoapUtil.getElementByWsuId(cntx.originalDocument, elementCoveredURI);
             if (elementCovered == null) {
                 // i guess the element might be in the processed document (something decrypted was later signed)
-                elementCovered = SoapUtil.getElementById(signatureElement.getOwnerDocument(), elementCoveredURI);
+                elementCovered = SoapUtil.getElementByWsuId(signatureElement.getOwnerDocument(), elementCoveredURI);
             }
             if (elementCovered == null) {
                 String msg = "Element covered by signature cannot be found in original document nor in " +

@@ -11,6 +11,9 @@ import org.w3c.dom.Element;
 
 import java.security.cert.X509Certificate;
 import java.security.PrivateKey;
+import java.security.GeneralSecurityException;
+
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 
 /**
  * Creates a Security header and decorates a message according to instructions passed in.
@@ -23,5 +26,6 @@ public interface WssDecorator {
                              X509Certificate senderCertificate,
                              PrivateKey senderPrivateKey,
                              Element[] elementsToEncrypt,
-                             Element[] elementsToSign);
+                             Element[] elementsToSign)
+            throws InvalidDocumentFormatException, GeneralSecurityException;
 }

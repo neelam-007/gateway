@@ -4,8 +4,8 @@ import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.XpathEvaluator;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.*;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -103,8 +103,15 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                     check(elementSecurity);
                     Element encElement = element;
                     if (element == document.getDocumentElement()) {
-                        encElement = SoapUtil.getBody(document);
+                        try {
+                            encElement = SoapUtil.getBodyElement(document);
+                        } catch (InvalidDocumentFormatException e) {
+                            // todo Why are we logging the entire document here?
+                            logger.severe("Could not retrieve SOAP Body from the document \n" + XmlUtil.documentToString(document));
+                            throw new SecurityProcessorException("Unable to extract SOAP body", e);
+                        }
                         if (encElement == null) {
+                            // todo Why are we logging the entire document here?
                             logger.severe("Could not retrieve SOAP Body from the document \n" + XmlUtil.documentToString(document));
                             throw new IOException("Could not retrieve SOAP Body from the document");
                         }
@@ -153,13 +160,13 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
             throw se;
         } catch (JaxenException e) {
             throw new SecurityProcessorException("XPath error", e);
-        } catch ( SoapUtil.MessageNotSoapException e ) {
+        } catch ( MessageNotSoapException e ) {
             throw new SecurityProcessorException("Can't encrypt or sign a non-SOAP message", e);
         }
     }
 
     private int doSignElement(int signId, Document document, Element element, XpathExpression elementXpath)
-            throws SignatureStructureException, XSignatureException, SoapUtil.MessageNotSoapException {
+            throws SignatureStructureException, XSignatureException, MessageNotSoapException {
         // dsig
         final String referenceId = SIGN_REFERENCE + signId;
         SoapMsgSigner.signElement(document, element, referenceId, signerInfo.getPrivate(), signerInfo.getCertificateChain());

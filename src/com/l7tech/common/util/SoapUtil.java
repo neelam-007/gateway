@@ -19,6 +19,10 @@ import java.util.TimeZone;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+
 /**
  * @author alex
  * @version $Revision$
@@ -111,66 +115,43 @@ public class SoapUtil {
     public static final String DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
     public static final TimeZone DATE_FORMAT_TIMEZONE = TimeZone.getTimeZone("UTC");
 
-    public static class MessageNotSoapException extends Exception {
-        public MessageNotSoapException(String cause) {
-            super(cause);
-        }
-    }
-
-    public static Element getEnvelope(Document request) {
-        Element env = request.getDocumentElement();
+    /**
+     * Get the SOAP envelope from the message
+     * @param message the message to examine
+     * @return the SOAP:Envelope element.  never null
+     * @throws MessageNotSoapException if the message isn't SOAP
+     */
+    public static Element getEnvelopeElement(Document message) throws MessageNotSoapException {
+        Element env = message.getDocumentElement();
+        if (!ENVELOPE_EL_NAME.equals(env.getLocalName()))
+            throw new MessageNotSoapException("Document element is not " + ENVELOPE_EL_NAME);
+        if (!SoapUtil.ENVELOPE_URIS.contains(env.getNamespaceURI()))
+            throw new MessageNotSoapException(ENVELOPE_EL_NAME + " was present but the namespace was not recognized");
         return env;
     }
 
-    public static Element getHeaderElement(Document soapMsg) {
-        Element envelope = soapMsg.getDocumentElement();
-        if (!ENVELOPE_EL_NAME.equals(envelope.getLocalName())) {
-            throw new IllegalArgumentException("Invalid SOAP envelope: document element is not named 'Envelope'");
-        }
-        String soapnamespace = envelope.getNamespaceURI();
-        if (!SoapUtil.ENVELOPE_URIS.contains(soapnamespace)) {
-            throw new IllegalArgumentException("Invalid SOAP message: unrecognized envelope namespace \"" + soapnamespace + "\"");
-        }
-        return XmlUtil.findFirstChildElementByName(envelope, soapnamespace, HEADER_EL_NAME);
+    /**
+     * The Header Element, or null if it's not present
+     * @param soapMsg the message to examine
+     * @return the Header element, or null if there wasn't one
+     * @throws InvalidDocumentFormatException if the message is not SOAP or there is more than one Header element
+     */
+    public static Element getHeaderElement(Document soapMsg) throws InvalidDocumentFormatException {
+        Element envelope = getEnvelopeElement(soapMsg);
+        String soapNs = envelope.getNamespaceURI();
+        return XmlUtil.findOnlyOneChildElementByName(envelope, soapNs, HEADER_EL_NAME);
     }
 
     /**
      * The Body {@link Element}, or null if it's not present
-     * @param request
-     * @return
+     * @param message the message to examine
+     * @return the body, or null if there isn't one
+     * @throws InvalidDocumentFormatException if the message is not SOAP or there is more than one Body element
      */
-    public static Element getBodyElement(Document request) {
-        return getEnvelopePart(request, BODY_EL_NAME);
-    }
-
-    /**
-     * The requested {@link Element}, or null if it's not present
-     * @param request
-     * @param elementName
-     * @return
-     */
-    protected static Element getEnvelopePart(Document request, String elementName) {
-        Element envelope = getEnvelope(request);
-        String env;
-        Node node;
-        Element element = null;
-        for (int i = 0; i < ENVELOPE_URIS.size(); i++) {
-            env = (String)ENVELOPE_URIS.get(i);
-
-            node = envelope.getFirstChild();
-            while (node != null) {
-                if (node.getNodeType() == Node.ELEMENT_NODE) {
-                    element = (Element)node;
-                    String ln = element.getLocalName();
-                    if (ln.equals(elementName)) {
-                        String uri = element.getNamespaceURI();
-                        if (uri.equals(env)) return element;
-                    }
-                }
-                node = node.getNextSibling();
-            }
-        }
-        return element;
+    public static Element getBodyElement(Document message) throws InvalidDocumentFormatException {
+        Element env = getEnvelopeElement(message);
+        String soapNs = env.getNamespaceURI();
+        return XmlUtil.findOnlyOneChildElementByName(env, soapNs, BODY_EL_NAME);
     }
 
     public static SOAPMessage makeMessage() throws SOAPException {
@@ -193,9 +174,9 @@ public class SoapUtil {
      * Find the Namespace URI of the given document, which is assumed to contain a SOAP Envelope.
      * 
      * @param request the SOAP envelope to examine
-     * @return the body's namespace URI, or null if not found.
+     * @return the body's namespace URI, or null if not found or the document isn't SOAP.
      */
-    public static String getNamespaceUri(Document request) {
+    public static String getNamespaceUri(Document request) throws InvalidDocumentFormatException {
         Element body = SoapUtil.getBodyElement(request);
         if ( body == null ) return null;
         Node n = body.getFirstChild();
@@ -208,90 +189,84 @@ public class SoapUtil {
     }
 
     /**
-     * Returns the Header element from a soap message. If the message does not have a header yet, it creates one and
-     * adds it to the envelope, and returns it back to you. If a body element exists, the header element will be inserted right before the body element.
-     * 
-     * @param soapMsg DOM document containing the soap message
-     * @return the header element, or null if the message isn't SOAP.
+     * Finds or creates a Header element for a SOAP message, which may be partially-constructed and thus currently
+     * invalid.
+     * If the message does not have a header yet, one will be created and added to the envelope.
+     * <p>
+     * If a body element exists, the header element will be inserted right before the body element.
+     * <p>
+     * This method assumes that soapMsg is a partially-constructed SOAP message containing at least an Envelope.  No
+     * validation is done on the message.
+     * The existing envelope namespace is used for new Body or Header elements but is not checked for validity.
+     *
+     * @param soapMsg DOM document containing a SOAP Envelope.
+     * @return the possibly-new header element.  Will never be null.
+     * @throws IllegalArgumentException if there is no document element at all
      */
     public static Element getOrMakeHeader(Document soapMsg) {
         // use the soap flavor of this document
-        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
-        NodeList list = soapMsg.getElementsByTagNameNS(soapEnvNS, HEADER_EL_NAME);
-        if (list.getLength() < 1) {
-            String soapEnvNamespacePrefix = soapMsg.getDocumentElement().getPrefix();
+        Element env = soapMsg.getDocumentElement();
+        if (env == null)
+            throw new IllegalArgumentException("No document element");
+        String soapNs = env.getNamespaceURI();
+        String soapPrefix = env.getPrefix();
+        Element header = XmlUtil.findFirstChildElementByName(env, soapNs, HEADER_EL_NAME);
+        if (header != null)
+            return header; // found it
 
-            // create header element
-            Element header = soapMsg.createElementNS(soapEnvNS, HEADER_EL_NAME);
-            header.setPrefix(soapEnvNamespacePrefix);
+        header = soapMsg.createElementNS(soapNs, HEADER_EL_NAME);
+        header.setPrefix(soapPrefix);
 
-            // if the body is there, get it so that the header can be inserted before it
-            Element body = getBody(soapMsg);
-            if (body == null) {
-                // Body is required but it might have been encrypted
-                Element envelope = getEnvelope(soapMsg);
-                if ( envelope == null ) {
-                    // Not a SOAP message
-                    return null;
-                } else {
-                    return (Element)envelope.appendChild(header);
-                }
-            } else
-                soapMsg.getDocumentElement().insertBefore(header, body);
-            return header;
-        } else
-            return (Element)list.item(0);
-    }
+        Element body = XmlUtil.findFirstChildElementByName(env, soapNs, BODY_EL_NAME);
+        if (body == null)
+            return (Element)env.appendChild(header);
 
-    public static Element getBody(Document soapMsg) {
-        // use the soap flavor of this document
-        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
-        // if the body is there, get it so that the header can be inserted before it
-        NodeList bodylist = soapMsg.getElementsByTagNameNS(soapEnvNS, BODY_EL_NAME);
-        if (bodylist.getLength() > 0) {
-            return (Element)bodylist.item(0);
-        } else
-            return null;
+        env.insertBefore(header, body);
+        return header;
     }
 
     /**
-     * Returns the Security element from the header of a soap message. If the message does not have a header yet, it
-     * creates one and a child Security element and adds it all to the envelope, and returns back the Security element
-     * to you. If a body element exists, the header element will be inserted right before the body element.
-     * 
-     * @param soapMsg DOM document containing the soap message
-     * @return the security element, or null if the message is not SOAP.
+     * Finds or creates a default Security element for a SOAP message, which may be partially-constructed and hence
+     * not currently valid. If the message does not have a Header yet.  If the Header does not yet contain
+     * a default Security element, one is created.
+     * <p>
+     * Namespaces and element cardinality are not checked or enforced by this method.
+     *
+     * @param soapMsg DOM document containing the soap message.
+     * @return the security element, which will never be null.
+     * @throws IllegalArgumentException if there is no document element at all.
      */
     public static Element getOrMakeSecurityElement(Document soapMsg) {
-        NodeList listSecurityElements = null;
-        for (int i = 0; i < SECURITY_URIS_ARRAY.length; i++) {
-            listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_URIS_ARRAY[i], SECURITY_EL_NAME);
-            if (listSecurityElements.getLength() > 0) break;
+        Element header = getOrMakeHeader(soapMsg);
+        List securityElements = XmlUtil.findChildElementsByName(header, SECURITY_URIS_ARRAY, SECURITY_EL_NAME);
+        for (Iterator i = securityElements.iterator(); i.hasNext();) {
+            Element securityEl = (Element)i.next();
+            if (isDefaultSecurityHeader(securityEl))
+                return securityEl;
         }
-        if (listSecurityElements.getLength() < 1) {
-            // element does not exist
-            Element header = SoapUtil.getOrMakeHeader(soapMsg);
-            if ( header == null ) {
-                // Probably not a SOAP message
-                return null;
-            }
+        Element securityEl = soapMsg.createElementNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
+        securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
+        securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, SECURITY_NAMESPACE);
+        securityEl.setAttribute(MUSTUNDERSTAND_ATTR_NAME, "true");
 
-            Element securityEl = soapMsg.createElementNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
-            securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
-            securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, SECURITY_NAMESPACE);
-            header.insertBefore(securityEl, null);
-            return securityEl;
-        } else {
-            return (Element)listSecurityElements.item(0);
-        }
+        Element existing = XmlUtil.findFirstChildElement(header);
+        if (existing == null)
+            header.appendChild(securityEl);
+        else
+            header.insertBefore(securityEl, existing);
+        return securityEl;
     }
 
     /**
      * Resolves the element in the passed document that has the id passed in elementId.
      * The id attributes can be of any supported WSU namespaces.
+     * <p>
+     * This method just does a linear search over the entire document from
+     * top to bottom.
+     *
      * @return the leement or null if no such element exists
      */
-    public static Element getElementById(Document doc, String elementId) {
+    public static Element getElementByWsuId(Document doc, String elementId) {
         String url = null;
         if (elementId.charAt(0) == '#') {
             url = elementId.substring(1);
@@ -299,7 +274,7 @@ public class SoapUtil {
         NodeList elements = doc.getElementsByTagName("*");
         for (int i = 0; i < elements.getLength(); i++) {
             Element element = (Element)elements.item(i);
-            if (url.equals(getElementId(element))) {
+            if (url.equals(getElementWsuId(element))) {
                 return element;
             }
         }
@@ -310,7 +285,7 @@ public class SoapUtil {
      * Gets the WSU:Id attribute of the passed element using all supported WSU namespaces.
      * @return the string value of the attribute or null if the attribute is not present
      */
-    public static String getElementId(Element node) {
+    public static String getElementWsuId(Element node) {
         String id = node.getAttribute(ID_ATTRIBUTE_NAME);
         if (id == null || id.length() < 1) {
             id = node.getAttributeNS(SoapUtil.WSU_NAMESPACE, ID_ATTRIBUTE_NAME);
@@ -324,52 +299,60 @@ public class SoapUtil {
     }
 
     /**
-     * @return null if element not present or not addressed to us, the default security element if it's in the doc
-     * @throws XmlUtil.MultipleChildElementsException if there is more than one soap:Header
+     * Check if the specified Security element is a default security element.
+     * @param element the Security element to examine
+     * @return True if this element has no role/actor, or a role/actor of "next"; false otherwise.
      */
-    public static Element getSecurityElement(Document soapMsg) throws XmlUtil.MultipleChildElementsException {
+    private static boolean isDefaultSecurityHeader(Element element) {
+        // Check actor (SOAP 1.1)
+
+        String actor = element.getAttribute(ACTOR_ATTR_NAME);
+        if (actor != null && actor.length() > 0)
+            return ACTOR_VALUE_NEXT.equals(actor);
+        for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
+            String ns = (String)i.next();
+            actor = element.getAttributeNS(ns, ACTOR_ATTR_NAME);
+            if (actor != null && actor.length() > 0)
+                return ACTOR_VALUE_NEXT.equals(actor);
+        }
+
+        // No actor; check role (SOAP 1.2)
+        String role = element.getAttribute(ROLE_ATTR_NAME);
+        if (role != null && role.length() > 0)
+            return ROLE_VALUE_NEXT.equals(role);
+        for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
+            String ns = (String)i.next();
+            role = element.getAttributeNS(element.getNamespaceURI(), ROLE_ATTR_NAME);
+            if (role != null && role.length() > 0)
+                return ROLE_VALUE_NEXT.equals(role);
+        }
+
+        // No actor or role
+        return true;
+    }
+
+    /**
+     * @return null if element not present or not addressed to us, the default security element if it's in the doc
+     * @throws InvalidDocumentFormatException if there is more than one soap:Header or the message isn't SOAP
+     */
+    public static Element getSecurityElement(Document soapMsg) throws InvalidDocumentFormatException {
         List allofthem = getSecurityElements(soapMsg);
         if (allofthem == null || allofthem.size() < 1) return null;
         for (Iterator i = allofthem.iterator(); i.hasNext();) {
             Element element = (Element)i.next();
-
-            // Check actor (SOAP 1.1)
-            String actor = element.getAttributeNS(element.getNamespaceURI(), ACTOR_ATTR_NAME);
-            if (actor != null && actor.length() > 0) {
-                // we get actor
-                if (ACTOR_VALUE_NEXT.equals(actor))
-                    return element; // it has our name written all over it
-
-                // there's a specific actor and it isn't us.  Skip this security header.
-                continue;
-            }
-
-            // No actor; check role (SOAP 1.2)
-            String role = element.getAttributeNS(element.getNamespaceURI(), ROLE_ATTR_NAME);
-            if (role != null && role.length() > 0) {
-                // we get role
-                if (ROLE_VALUE_NEXT.equals(role))
-                    return element; // it has our name written all over it
-
-                // there's a specific role and it isn't us.  Skip this security header.
-                continue;
-            }
-
-            // No actor or role.  This is the default security header; we'll take it
-            return element;
+            if (isDefaultSecurityHeader(element))
+                return element;
         }
-
         return null; // no security header for us
     }
 
     /**
      * Returns all Security elements.
      * @return never null
-     * @throws XmlUtil.MultipleChildElementsException if there is more than one soap:Header
+     * @throws InvalidDocumentFormatException if there is more than one soap:Header or the message isn't SOAP
      */
-    public static List getSecurityElements(Document soapMsg) throws XmlUtil.MultipleChildElementsException {
-        Element env = soapMsg.getDocumentElement();
-        Element header = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), HEADER_EL_NAME);
+    public static List getSecurityElements(Document soapMsg) throws InvalidDocumentFormatException {
+        Element header = getHeaderElement(soapMsg);
         return XmlUtil.findChildElementsByName(header, SECURITY_URIS_ARRAY, SECURITY_EL_NAME);
     }
 
@@ -384,46 +367,6 @@ public class SoapUtil {
         if (secElements.size() < 1) return null;
         // we got it
         return (Element)secElements.get(0);
-    }
-
-    public static void cleanEmptySecurityElement(Document soapMsg) throws XmlUtil.MultipleChildElementsException {
-        Element secEl = getSecurityElement(soapMsg);
-        while (secEl != null) {
-            if (elHasChildrenElements(secEl)) {
-                return;
-            } else
-                secEl.getParentNode().removeChild(secEl);
-            secEl = getSecurityElement(soapMsg);
-        }
-    }
-
-    public static void cleanEmptyHeaderElement(Document soapMsg) {
-        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
-        NodeList list = soapMsg.getElementsByTagNameNS(soapEnvNS, HEADER_EL_NAME);
-        // is it there ?
-        if (list.getLength() < 1) return;
-        // we got it
-        Element headerEl = (Element)list.item(0);
-        if (!elHasChildrenElements(headerEl)) {
-            headerEl.getParentNode().removeChild(headerEl);
-        }
-    }
-
-    /**
-     * checks whether the passed element has any Element type children
-     * 
-     * @return true if it does false if not
-     */
-    public static boolean elHasChildrenElements(Element el) {
-        NodeList children = el.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node thisChild = children.item(i);
-            // only consider element types
-            if (thisChild.getNodeType() == Node.ELEMENT_NODE) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -551,23 +494,4 @@ public class SoapUtil {
         msg.writeTo(baos);
         return baos.toByteArray();
     }
-
-    public static void cleanEmptyRefList(Document soapMsg) {
-         List refs = new ArrayList();
-         {
-             NodeList listRefElements = soapMsg.getElementsByTagNameNS(XMLENC_NS, "ReferenceList");
-             if (listRefElements.getLength() < 1)
-                 return;
-             for (int i = 0; i < listRefElements.getLength(); ++i)
-                 refs.add(listRefElements.item(i));
-             listRefElements = null;
-         }
-
-         for (Iterator iterator = refs.iterator(); iterator.hasNext();) {
-             Element refListEl = (Element)iterator.next();
-             if (!elHasChildrenElements(refListEl))
-                 refListEl.getParentNode().removeChild(refListEl);
-         }
-     }
-
 }

@@ -45,7 +45,7 @@ public class DotNetInteropTest extends TestCase {
 
     public void testValidateSignatureFromdotNetRequest() throws Exception {
         Document signedDoc = getSignedRequest();
-        Element bodyEl = SoapUtil.getBody(signedDoc);
+        Element bodyEl = SoapUtil.getBodyElement(signedDoc);
         X509Certificate[] clientCert = SoapMsgSigner.validateSignature(signedDoc, bodyEl);
         assertTrue(clientCert.length > 0);
         assertTrue(clientCert[0].getSubjectDN().toString().equals("CN=WSE2QuickStartClient"));
@@ -54,7 +54,7 @@ public class DotNetInteropTest extends TestCase {
 
     public void testInValidateSignatureFromBaddotNetSignature() throws Exception {
         Document signedDoc = getInvalidSignedRequest();
-        Element bodyEl = SoapUtil.getBody(signedDoc);
+        Element bodyEl = SoapUtil.getBodyElement(signedDoc);
         boolean signatureFailed = false;
         try {
             SoapMsgSigner.validateSignature(signedDoc, bodyEl);
@@ -112,7 +112,7 @@ public class DotNetInteropTest extends TestCase {
             tokenMap.put(id, key);
         }
 
-        Element bodyEl = SoapUtil.getBody(derivedKeyEncryptedDoc);
+        Element bodyEl = SoapUtil.getBodyElement(derivedKeyEncryptedDoc);
         Element encryptedData = (Element) (XmlUtil.findChildElementsByName(bodyEl, XMLENC_NS, "EncryptedData")).get(0);
         Element keyInfo = (Element) (XmlUtil.findChildElementsByName(encryptedData, XMLSIG_NS, "KeyInfo")).get(0);
 
@@ -158,7 +158,7 @@ public class DotNetInteropTest extends TestCase {
         SecureConversationKeyDeriver sckd = new SecureConversationKeyDeriver();
         Key key = sckd.derivedKeyTokenToKey(derivedKeyToken, secret);
 
-        Element bodyEl = SoapUtil.getBody(derivedKeySignedDoc);
+        Element bodyEl = SoapUtil.getBodyElement(derivedKeySignedDoc);
 
         SoapMsgSigner.validateSignature(derivedKeySignedDoc, bodyEl, key);
         System.out.println("Signature verified successfully with the derived key");
@@ -167,7 +167,7 @@ public class DotNetInteropTest extends TestCase {
     public void testDecryptdotNetRequest() throws Exception {
         Document encryptedDoc = getEncryptedDoc();
         XmlMangler.ProcessedEncryptedKey encryptionKey = testGetEncryptedKey();
-        Element body = SoapUtil.getBody(encryptedDoc);
+        Element body = SoapUtil.getBodyElement(encryptedDoc);
         XmlMangler.decryptElement(body, encryptionKey.decryptedKey, encryptionKey.referenceList);
         Element bodyChild = XmlUtil.findFirstChildElement(body);
         assertTrue("listProducts".equals(bodyChild.getLocalName()));

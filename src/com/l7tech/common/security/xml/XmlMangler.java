@@ -14,6 +14,9 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -85,7 +88,7 @@ public class XmlMangler {
      * @throws IOException              if there was a problem reading or writing a key or a bit of xml
      */
     public static void encryptXml(Document soapMsg, byte[] keyBytes, String keyName)
-            throws GeneralSecurityException, IOException, IllegalArgumentException, SoapUtil.MessageNotSoapException
+            throws GeneralSecurityException, IOException, IllegalArgumentException, MessageNotSoapException
     {
         encryptXml(soapMsg.getDocumentElement(), keyBytes, keyName, id);
     }
@@ -104,7 +107,7 @@ public class XmlMangler {
      * @throws IOException              if there was a problem reading or writing a key or a bit of xml
      */
     public static void encryptXml(Element element, byte[] keyBytes, String keyName, String referenceId)
-            throws GeneralSecurityException, IOException, IllegalArgumentException, SoapUtil.MessageNotSoapException {
+            throws GeneralSecurityException, IOException, IllegalArgumentException, MessageNotSoapException {
         Document soapMsg = element.getOwnerDocument();
         if (keyBytes.length < 16)
             throw new IllegalArgumentException("keyBytes must be at least 16 bytes long for AES128");
@@ -159,7 +162,7 @@ public class XmlMangler {
      * @param element     the document element
      * @param referenceId the element reference id
      */
-    private static void addWssHeader(Element element, String referenceId) throws SoapUtil.MessageNotSoapException {
+    private static void addWssHeader(Element element, String referenceId) throws MessageNotSoapException {
         Document document = element.getOwnerDocument();
         // Add new namespaces to Envelope element, as per spec.
 
@@ -177,7 +180,7 @@ public class XmlMangler {
 
         Element securityEl = SoapUtil.getOrMakeSecurityElement(document);
         if ( securityEl == null ) {
-            throw new SoapUtil.MessageNotSoapException("Can't add WS-Security header to non-SOAP message");
+            throw new MessageNotSoapException("Can't add WS-Security header to non-SOAP message");
         }
         securityEl.appendChild(refEl);
     }
@@ -215,10 +218,11 @@ public class XmlMangler {
      * @throws ParserConfigurationException if there was a problem with the XML parser
      * @throws IOException                  if there was an IO error while reading the document or a key
      * @throws SAXException                 if there was a problem parsing the document
+     * @throws InvalidDocumentFormatException if there was an unrecoverable problem with the format of the document
      */
     public static void decryptElement(Element messagePartElement, Key key, Element keyKefList)
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
-            XMLSecurityElementNotFoundException
+            XMLSecurityElementNotFoundException, InvalidDocumentFormatException
     {
         Document soapMsg = messagePartElement.getOwnerDocument();
         Element encryptedDataElement = XmlUtil.findFirstChildElementByName(messagePartElement,
@@ -227,7 +231,7 @@ public class XmlMangler {
         if (encryptedDataElement == null)
             throw new XMLSecurityElementNotFoundException("No EncryptedData found inside the 'encrypted' message part");
 
-        String messagePartId = SoapUtil.getElementId(encryptedDataElement);
+        String messagePartId = SoapUtil.getElementWsuId(encryptedDataElement);
         Element header = SoapUtil.getHeaderElement(soapMsg);
         if (header == null)
             throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there is no SOAP header");
@@ -306,10 +310,11 @@ public class XmlMangler {
      * @throws ParserConfigurationException if there was a problem with the XML parser
      * @throws IOException                  if there was an IO error while reading the document or a key
      * @throws SAXException                 if there was a problem parsing the document
+     * @throws InvalidDocumentFormatException if there was an unrecoverable problem with the format of the document
      */
     public static void decryptDocument(Document soapMsg, Key key)
             throws GeneralSecurityException, XMLSecurityElementNotFoundException, IOException,
-            ParserConfigurationException, SAXException
+            ParserConfigurationException, SAXException, InvalidDocumentFormatException
     {
         decryptElement(soapMsg.getDocumentElement(), key, null);
     }
@@ -406,7 +411,7 @@ public class XmlMangler {
                             }
                         }
                     }
-                } catch (XmlUtil.MultipleChildElementsException e) {
+                } catch (TooManyChildElementsException e) {
                     logger.log(Level.WARNING, "unexpected construction", e);
                     continue;
                 }
@@ -417,7 +422,7 @@ public class XmlMangler {
                 encryptionMethodEl = XmlUtil.findOnlyOneChildElementByName(encryptedKey,
                                                                            SoapUtil.XMLENC_NS,
                                                                            "EncryptionMethod");
-            } catch (XmlUtil.MultipleChildElementsException e) {
+            } catch (TooManyChildElementsException e) {
                 logger.warning("EncryptedKey has more than one EncryptionMethod element");
             }
             if (encryptionMethodEl != null) {
@@ -437,7 +442,7 @@ public class XmlMangler {
                 if (cipherData != null) {
                     cipherValue = XmlUtil.findOnlyOneChildElementByName(cipherData, SoapUtil.XMLENC_NS, "CipherValue");
                 }
-            } catch (XmlUtil.MultipleChildElementsException e) {
+            } catch (TooManyChildElementsException e) {
                 logger.warning("EncryptedKey has more than one CipherData or CipherValue");
             }
             if (cipherValue == null) {
@@ -478,7 +483,7 @@ public class XmlMangler {
                 item.decryptedKey = new AesKey(unencryptedKey, unencryptedKey.length*8);
                 try {
                     item.referenceList = XmlUtil.findOnlyOneChildElementByName(encryptedKey, SoapUtil.XMLENC_NS, "ReferenceList");
-                } catch (XmlUtil.MultipleChildElementsException e) {
+                } catch (TooManyChildElementsException e) {
                     logger.warning("unexpected multiple reference list elements in encrypted key " + e.getMessage());
                 }
                 output.add(item);

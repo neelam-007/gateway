@@ -9,6 +9,7 @@ package com.l7tech.service.resolution;
 import com.l7tech.message.Request;
 import com.l7tech.message.SoapRequest;
 import com.l7tech.server.util.ServerSoapUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -88,6 +89,8 @@ public class UrnResolver extends WsdlOperationServiceResolver {
             throw new ServiceResolutionException(ioe.getMessage(), ioe);
         } catch ( XmlPullParserException xppe ) {
             throw new ServiceResolutionException(xppe.getMessage(), xppe);
+        } catch (InvalidDocumentFormatException e) {
+            throw new ServiceResolutionException(e.getMessage(), e);
         }
     }
 

@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
+import com.l7tech.common.xml.TooManyChildElementsException;
+
 /**
  * Thread-local XML parsing and pretty-printing utilities.
  * User: mike
@@ -190,9 +192,9 @@ public class XmlUtil {
      * @param nsuri the URI of the namespace to which the child must belong, NOT THE PREFIX!  Must be non-null.
      * @param name the name of the element to find. Must be non-null.
      * @return First matching child {@link Element} or null if the specified parent contains no matching elements
-     * @throws MultipleChildElementsException if multiple matching child nodes are found
+     * @throws com.l7tech.common.xml.TooManyChildElementsException if multiple matching child nodes are found
      */
-    public static Element findOnlyOneChildElementByName( Element parent, String nsuri, String name ) throws MultipleChildElementsException {
+    public static Element findOnlyOneChildElementByName( Element parent, String nsuri, String name ) throws TooManyChildElementsException {
         if ( nsuri == null || name == null ) throw new IllegalArgumentException( "nsuri and name must be non-null!" );
         NodeList children = parent.getChildNodes();
         Element result = null;
@@ -201,7 +203,7 @@ public class XmlUtil {
             if ( n.getNodeType() == Node.ELEMENT_NODE &&
                  name.equals( n.getLocalName()) &&
                  nsuri.equals( n.getNamespaceURI() ) ) {
-                if ( result != null ) throw new MultipleChildElementsException( nsuri, name );
+                if ( result != null ) throw new TooManyChildElementsException( nsuri, name );
                 result = (Element)n;
             }
         }
@@ -211,31 +213,12 @@ public class XmlUtil {
     /**
      * same as findOnlyOneChildElementByName but allows for different namespaces
      */
-    public static Element findOnlyOneChildElementByName(Element parent, String[] namespaces, String name) throws MultipleChildElementsException {
+    public static Element findOnlyOneChildElementByName(Element parent, String[] namespaces, String name) throws TooManyChildElementsException {
         for (int i = 0; i < namespaces.length; i++) {
             Element res = findOnlyOneChildElementByName(parent, namespaces[i], name);
             if (res != null) return res;
         }
         return null;
-    }
-
-    public static class MultipleChildElementsException extends Exception {
-        public MultipleChildElementsException( String nsuri, String name ) {
-            super( "Multiple matching \"" + name + "\" child elements found" );
-            this.nsuri = nsuri;
-            this.name = name;
-        }
-
-        public String getNsUri() {
-            return nsuri;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        private String nsuri;
-        private String name;
     }
 
     /**

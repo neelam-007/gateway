@@ -4,6 +4,10 @@ import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.*;
 
 import java.security.PrivateKey;
@@ -61,9 +65,9 @@ public final class SoapMsgSigner {
      *          
      */
     public static void signEnvelope(Document soapMsg, PrivateKey privateKey, X509Certificate[] certChain)
-            throws SignatureStructureException, XSignatureException, SoapUtil.MessageNotSoapException {
+            throws SignatureStructureException, XSignatureException, MessageNotSoapException {
         // is the envelope already ided?
-        String id = SoapUtil.getElementId(soapMsg.getDocumentElement());
+        String id = SoapUtil.getElementWsuId(soapMsg.getDocumentElement());
 
         if (id == null || id.length() < 1) {
             id = DEF_ENV_TAG;
@@ -89,7 +93,7 @@ public final class SoapMsgSigner {
      * @throws IllegalArgumentException if any of the parameters i <b>null</b>
      */
     public static void signElement(Document document, final Element messagePart, String referenceId, PrivateKey privateKey, X509Certificate[] certChain)
-            throws SignatureStructureException, XSignatureException, SoapUtil.MessageNotSoapException {
+            throws SignatureStructureException, XSignatureException, MessageNotSoapException {
 
         if (document == null || messagePart == null | referenceId == null ||
           privateKey == null || certChain == null || certChain.length == 0) {
@@ -117,7 +121,7 @@ public final class SoapMsgSigner {
         // Signature is inserted in Header/Security, as per WS-S
         Element securityHeaderElement = SoapUtil.getOrMakeSecurityElement(document);
         if ( securityHeaderElement == null ) {
-            throw new SoapUtil.MessageNotSoapException("Can't add Security header to non-SOAP message");
+            throw new MessageNotSoapException("Can't add Security header to non-SOAP message");
         }
 
         Element signatureElement = (Element)securityHeaderElement.appendChild(emptySignatureElement);
@@ -230,7 +234,7 @@ public final class SoapMsgSigner {
                         uriAttr = uriAttr.substring(1);
                     }
                     // resolve the element based on the URI
-                    Element referencedElement = SoapUtil.getElementById(keyInfoElement.getOwnerDocument(), uriAttr);
+                    Element referencedElement = SoapUtil.getElementByWsuId(keyInfoElement.getOwnerDocument(), uriAttr);
                     if (referencedElement == null) {
                         // not the food additive
                         String msg = "The reference could not be resolved using the URI:" + uriAttr;
@@ -322,7 +326,7 @@ public final class SoapMsgSigner {
 
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document doc, String s) {
-                return SoapUtil.getElementById(doc, s);
+                return SoapUtil.getElementByWsuId(doc, s);
             }
         });
 
@@ -335,7 +339,7 @@ public final class SoapMsgSigner {
         }
 
         // verify that the entire envelope is signed
-        String refid = SoapUtil.getElementId(bodyElement);
+        String refid = SoapUtil.getElementWsuId(bodyElement);
         if (refid == null || refid.length() < 1) {
             throw new InvalidSignatureException("No reference id on envelope");
         }
@@ -376,7 +380,7 @@ public final class SoapMsgSigner {
         SignatureContext sigContext = new SignatureContext();
         sigContext.setIDResolver(new IDResolver() {
                                                        public Element resolveID(Document doc, String s) {
-                                                           return SoapUtil.getElementById(doc, s);
+                                                           return SoapUtil.getElementByWsuId(doc, s);
                                                        }
                                                    });
 
@@ -397,7 +401,7 @@ public final class SoapMsgSigner {
         }
 
         // verify that the entire envelope is signed
-        String refid = SoapUtil.getElementId(bodyElement);
+        String refid = SoapUtil.getElementWsuId(bodyElement);
         if (refid == null || refid.length() < 1) {
             throw new InvalidSignatureException("No reference id on envelope");
         }
@@ -418,7 +422,7 @@ public final class SoapMsgSigner {
     }
 
     private static Element getSignatureHeaderElement(Document doc, Element bodyElement) {
-        String bodyId = SoapUtil.getElementId(bodyElement);
+        String bodyId = SoapUtil.getElementWsuId(bodyElement);
         if (bodyId == null) {
             logger.info("ID attribute not found in supposedly signed body element " + bodyElement.getNodeName());
             return null;
@@ -466,8 +470,8 @@ public final class SoapMsgSigner {
 
             logger.finest( "Did not find any matching Signature element" );
             return null;
-        } catch ( XmlUtil.MultipleChildElementsException e ) {
-            logger.warning( "Found multiple " + e.getName() + " elements where only one was expected" );
+        } catch ( InvalidDocumentFormatException e ) {
+            logger.warning("Unable to get signature header element: " + e.getMessage());
             return null;
         }
     }

@@ -2,6 +2,8 @@ package com.l7tech.common.security.xml;
 
 import org.w3c.dom.*;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.MessageNotSoapException;
 
 /**
  * Appends or reads nonces, sequence numbers, and session ids from a
@@ -77,9 +79,9 @@ public class SecureConversationTokenHandler {
     public static final String IDENTIFIER_EL_NAME = "Identifier";
 
 
-    public static void appendNonceToDocument(Document soapmsg, long nonce) throws SoapUtil.MessageNotSoapException {
+    public static void appendNonceToDocument(Document soapmsg, long nonce) throws MessageNotSoapException {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
-        if ( securityCtxTokEl == null ) throw new SoapUtil.MessageNotSoapException("Can't add nonce to non-SOAP message");
+        if ( securityCtxTokEl == null ) throw new MessageNotSoapException("Can't add nonce to non-SOAP message");
         writeIdentifierElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(nonce));
     }
 
@@ -102,9 +104,9 @@ public class SecureConversationTokenHandler {
         return nonceValue == null ? null : new Long(nonceValue);
     }
 
-    public static void appendSessIdAndSeqNrToDocument(Document soapmsg, long sessId, long seqNr) throws SoapUtil.MessageNotSoapException {
+    public static void appendSessIdAndSeqNrToDocument(Document soapmsg, long sessId, long seqNr) throws MessageNotSoapException {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
-        if ( securityCtxTokEl == null ) throw new SoapUtil.MessageNotSoapException("Can't add sequence number to non-SOAP message");
+        if ( securityCtxTokEl == null ) throw new MessageNotSoapException("Can't add sequence number to non-SOAP message");
         writeIdentifierElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(sessId));
         writeL7SeqElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(seqNr));
     }

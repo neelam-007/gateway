@@ -4,6 +4,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.*;
+import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.message.Request;
@@ -220,13 +221,15 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
 
         // clean empty security element and header if necessary
         
-        SoapUtil.cleanEmptyRefList(soapmsg);
+        /** todo replace with TROGDOR!  (WssProcessor)
+         SoapUtil.cleanEmptyRefList(soapmsg);
         try {
             SoapUtil.cleanEmptySecurityElement(soapmsg);
-        } catch (XmlUtil.MultipleChildElementsException e) {
+        } catch (TooManyChildElementsException e) {
             throw new IOException(e.getMessage()); // can't happen (multiple soap:Headers won't make it this far)
         }
-        SoapUtil.cleanEmptyHeaderElement(soapmsg);
+         SoapUtil.cleanEmptyHeaderElement(soapmsg);
+         */
 
         // note, the routing should no longer use the non parsed payload
         ((XmlRequest)request).setDocument(soapmsg);

@@ -1,6 +1,7 @@
 package com.l7tech.common.util;
 
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.TooManyChildElementsException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -83,7 +84,7 @@ public class XmlUtilTest extends TestCase {
                                                                           SoapUtil.DIGSIG_URI,
                                                                           SoapUtil.SIGNATURE_EL_NAME );
             fail("Expected exception not thrown");
-        } catch ( XmlUtil.MultipleChildElementsException e ) {
+        } catch ( TooManyChildElementsException e ) {
             // Expected
         }
 

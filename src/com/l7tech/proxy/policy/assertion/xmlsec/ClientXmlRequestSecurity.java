@@ -9,6 +9,8 @@ import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.common.security.xml.SecurityProcessor;
 import com.l7tech.common.security.xml.SecurityProcessorException;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -94,7 +96,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             throw new RuntimeException(e);
         } catch (SecurityProcessorException e) {
             throw new RuntimeException(e);
-        } catch ( SoapUtil.MessageNotSoapException e ) {
+        } catch ( MessageNotSoapException e ) {
             throw new RuntimeException(e);
         }
 //        XmlUtil.documentToOutputStream(soapmsg, System.out);

@@ -9,8 +9,8 @@ package com.l7tech.common.security.xml;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.XpathEvaluator;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.xml.*;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Document;
@@ -162,6 +162,8 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                             throwable = e;
                         } catch (GeneralSecurityException e) {
                             throwable = e;
+                        } catch (InvalidDocumentFormatException e) {
+                            throwable = e;
                         }
 
                         EncryptedElementInfo eei = new EncryptedElementInfo( encryptedElement, throwable );
@@ -265,7 +267,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                             encInfo = encryptedElementInfo;
                             break;
                         }
-                    } catch (XmlUtil.MultipleChildElementsException e) {
+                    } catch (TooManyChildElementsException e) {
                         return Result.error(new SecurityProcessorException("Multiple SOAP Body elements in message", e));
                     }
                 }
@@ -380,7 +382,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                     }
                 }
             }
-        } catch ( XmlUtil.MultipleChildElementsException e ) {
+        } catch ( TooManyChildElementsException e ) {
             throw new SecurityProcessorException("Multiple " + e.getName() + " elements found", e);
         }
 

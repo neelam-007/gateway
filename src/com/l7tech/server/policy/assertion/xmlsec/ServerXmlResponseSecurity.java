@@ -5,6 +5,7 @@ import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlResponse;
@@ -69,7 +70,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         if (nonceValue != null && nonceValue.length() > 0) {
             try {
                 SecureConversationTokenHandler.appendNonceToDocument(soapmsg, Long.parseLong(nonceValue));
-            } catch ( SoapUtil.MessageNotSoapException e ) {
+            } catch ( MessageNotSoapException e ) {
                 logger.log( Level.WARNING, e.getMessage(), e );
                 return AssertionStatus.FAILED;
             }

@@ -4,6 +4,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
@@ -63,8 +64,7 @@ public class RequestHandler extends AbstractHttpHandler {
      */
     private PendingRequest gatherRequest(final HttpRequest request,
                                          Document requestEnvelope,
-                                         Ssg ssg)
-    {
+                                         Ssg ssg) throws InvalidDocumentFormatException {
         HttpHeaders headers = new HttpHeaders(request.getFieldNames(), new HttpHeaders.ValueProvider() {
             public String getHeaderValue(String headerName) {
                 StringBuffer sb = new StringBuffer();

@@ -11,7 +11,10 @@ import org.w3c.dom.Element;
 
 import java.security.cert.X509Certificate;
 import java.security.PrivateKey;
+import java.security.GeneralSecurityException;
 import java.util.Date;
+
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 
 /**
  * Consumes and removes the default Security header in a message, removes any associated decorations, and returns a
@@ -62,10 +65,13 @@ public interface WssProcessor {
      * @param message the xml document containing the soap message. this document may be modified on exit
      * @param recipientCertificate the recipient's cert to which encrypted keys may be encoded for
      * @param recipientPrivateKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys
-     * @return a ProcessorResult object reffering to all the WSS related processing that happened. 
-     * @throws ProcessorException
+     * @return a ProcessorResult object reffering to all the WSS related processing that happened.
+     * @throws InvalidDocumentFormatException if the message is not SOAP or has some other problem that can't be ignored
+     * @throws ProcessorException in case of some other problem
+     * @throws GeneralSecurityException in case of problems with a key or certificate
      */
     ProcessorResult undecorateMessage(Document message,
                                       X509Certificate recipientCertificate,
-                                      PrivateKey recipientPrivateKey) throws ProcessorException;
+                                      PrivateKey recipientPrivateKey)
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException;
 }

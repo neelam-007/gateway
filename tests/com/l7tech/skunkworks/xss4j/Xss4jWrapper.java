@@ -13,6 +13,8 @@ import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Document;
@@ -73,8 +75,8 @@ public class Xss4jWrapper {
         decryptElement( doc, "amount", getSecretKey() );
 
         cleanEmptyRefList( doc );
-        SoapUtil.cleanEmptySecurityElement( doc );
-        SoapUtil.cleanEmptyHeaderElement( doc );
+        cleanEmptySecurityElement( doc );
+        cleanEmptyHeaderElement( doc );
 
         return doc;
     }
@@ -187,7 +189,7 @@ public class Xss4jWrapper {
 
         for (Iterator iterator = refs.iterator(); iterator.hasNext();) {
             Element refListEl = (Element)iterator.next();
-            if (!SoapUtil.elHasChildrenElements(refListEl))
+            if (!elHasChildrenElements(refListEl))
                 refListEl.getParentNode().removeChild(refListEl);
         }
     }
@@ -645,6 +647,46 @@ public class Xss4jWrapper {
         }
 
         return found;
+    }
+
+    public static void cleanEmptySecurityElement(Document soapMsg) throws InvalidDocumentFormatException {
+        Element secEl = SoapUtil.getSecurityElement(soapMsg);
+        while (secEl != null) {
+            if (elHasChildrenElements(secEl)) {
+                return;
+            } else
+                secEl.getParentNode().removeChild(secEl);
+            secEl = SoapUtil.getSecurityElement(soapMsg);
+        }
+    }
+
+    public static void cleanEmptyHeaderElement(Document soapMsg) {
+        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
+        NodeList list = soapMsg.getElementsByTagNameNS(soapEnvNS, HEADER_EL_NAME);
+        // is it there ?
+        if (list.getLength() < 1) return;
+        // we got it
+        Element headerEl = (Element)list.item(0);
+        if (!elHasChildrenElements(headerEl)) {
+            headerEl.getParentNode().removeChild(headerEl);
+        }
+    }
+
+    /**
+     * checks whether the passed element has any Element type children
+     *
+     * @return true if it does false if not
+     */
+    public static boolean elHasChildrenElements(Element el) {
+        NodeList children = el.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node thisChild = children.item(i);
+            // only consider element types
+            if (thisChild.getNodeType() == Node.ELEMENT_NODE) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static final String KEYINFO = "<ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\n" +

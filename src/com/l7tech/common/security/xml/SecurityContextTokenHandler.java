@@ -2,6 +2,9 @@ package com.l7tech.common.security.xml;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.xml.MessageNotSoapException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -96,9 +99,9 @@ public class SecurityContextTokenHandler {
      * TODO: should we strip any existing SecurityContextToken from the SecurityHeader?
      */
     public void appendSessionInfoToSoapMessage(Document soapmsg, byte[] sessionid, long seqnumber,
-                                                      long creationtimestamp) throws SoapUtil.MessageNotSoapException {
+                                                      long creationtimestamp) throws MessageNotSoapException {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
-        if ( securityCtxTokEl == null ) throw new SoapUtil.MessageNotSoapException("Can't append session info to non-SOAP message");
+        if ( securityCtxTokEl == null ) throw new MessageNotSoapException("Can't append session info to non-SOAP message");
         appendIDElement(securityCtxTokEl, sessionid);
         setMessageNumber(securityCtxTokEl, new Long(seqnumber));
         appendCreationElement(securityCtxTokEl, creationtimestamp);
@@ -108,10 +111,10 @@ public class SecurityContextTokenHandler {
      * Attempts to extract the session id from a wsse:Security/wsc:SecurityContextToken/wsc:Identifier element
      * @return null if not present
      * @throws IOException if the URI is formatted incorrectly
-     * @throws XmlUtil.MultipleChildElementsException if there is more than one SOAP header, security header,
+     * @throws com.l7tech.common.xml.TooManyChildElementsException if there is more than one SOAP header, security header,
      *                                                security context token, or token ID.
      */
-    public byte[] getSessionIdFromWSCToken(Document soapMsg) throws IOException, XmlUtil.MultipleChildElementsException {
+    public byte[] getSessionIdFromWSCToken(Document soapMsg) throws IOException, TooManyChildElementsException {
         // get the element
         Element token = getSecurityContextTokenElement(soapMsg);
         Element idel = XmlUtil.findOnlyOneChildElementByName(token, WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
@@ -123,10 +126,10 @@ public class SecurityContextTokenHandler {
      * Get the SecurityContextToken element from the specified SOAP message, or null if there isn't one.
      * @param doc the SOAP envelope to examine
      * @return the SecurityContextToken element from the SOAP security header, or null
-     * @throws XmlUtil.MultipleChildElementsException if there was more than one SOAP header, security header,
+     * @throws com.l7tech.common.xml.TooManyChildElementsException if there was more than one SOAP header, security header,
      *                                                or SecurityContextToken
      */
-    public Element getSecurityContextTokenElement(Document doc) throws XmlUtil.MultipleChildElementsException {
+    public Element getSecurityContextTokenElement(Document doc) throws TooManyChildElementsException {
         String soapns = doc.getDocumentElement().getNamespaceURI();
         Element header = XmlUtil.findOnlyOneChildElementByName(doc.getDocumentElement(), soapns, SoapUtil.HEADER_EL_NAME);
         if (header == null)
@@ -145,10 +148,10 @@ public class SecurityContextTokenHandler {
      *
      * @param securityContextToken the token to examine
      * @return the MessageNumber, or null if there wasn't one.
-     * @throws XmlUtil.MultipleChildElementsException if there is more than one MessageNumber element in this
+     * @throws com.l7tech.common.xml.TooManyChildElementsException if there is more than one MessageNumber element in this
      *                                                SecurityContextToken.
      */
-    public Long getMessageNumber(Element securityContextToken) throws XmlUtil.MultipleChildElementsException {
+    public Long getMessageNumber(Element securityContextToken) throws TooManyChildElementsException {
         if (securityContextToken == null)
             return null;
         Element mn = XmlUtil.findOnlyOneChildElementByName(securityContextToken, L7_NAMESPACE, MESSAGE_NUMBER_ELNAME);

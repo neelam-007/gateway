@@ -7,11 +7,8 @@ import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.SoapMessageGenerator.Message;
-import com.l7tech.common.xml.Wsdl;
-import com.l7tech.common.xml.XpathEvaluator;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.*;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.table.SecuredMessagePartsTableModel;
 import com.l7tech.console.table.SecuredMessagePartsTableModel.SecuredMessagePart;
@@ -437,7 +434,13 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         soapMessage.getSOAPMessage().writeTo(bo);
         String s = bo.toString();
         org.w3c.dom.Document document = XmlUtil.stringToDocument(s);
-        Element body = SoapUtil.getBody(document);
+        Element body = null;
+        try {
+            body = SoapUtil.getBodyElement(document);
+        } catch (InvalidDocumentFormatException e) {
+            log.warning("Unable to create the blank message from " + s + ": " + e.getMessage());
+            return;
+        }
         if (body == null) {
             log.warning("Unable to create the blank message from " + s);
             return;

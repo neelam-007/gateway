@@ -7,6 +7,7 @@
 package com.l7tech.server.util;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlMessage;
 import com.l7tech.message.Request;
@@ -52,38 +53,15 @@ public class ServerSoapUtil extends SoapUtil {
     }
 
     /**
-     * Returns the {@link Element} corresponding to a specified SOAP Part, or null if the message is not XML.
-     * @param request
-     * @param elementName
-     * @return the {@link Element} corresponding to a specified SOAP Part, or null if the message is not XML.
-     * @throws SAXException
-     * @throws IOException
-     */
-    static Element getEnvelopePart( Request request, String elementName ) throws SAXException, IOException {
-        Document doc = getDocument(request);
-        return doc == null ? null : getEnvelopePart( doc, elementName );
-    }
-
-    /**
-     * Returns the SOAP:Header {@link Element} for the specified {@link Request}, or null if the message is not SOAP or not XML.
-     * @param request
-     * @return the SOAP:Header {@link Element} for the specified {@link Request}, or null if the message is not SOAP or not XML.
-     * @throws SAXException
-     * @throws IOException
-     */
-    public static Element getHeaderElement( Request request ) throws SAXException, IOException {
-        return getEnvelopePart( request, HEADER_EL_NAME );
-    }
-
-    /**
      * Returns the SOAP:Body {@link Element} for the specified {@link Request}, or null if the message is not SOAP or not XML.
      * @param request
      * @return the SOAP:Body {@link Element} for the specified {@link Request}, or null if the message is not SOAP or not XML.
      * @throws SAXException
      * @throws IOException
      */
-    public static Element getBodyElement( Request request ) throws SAXException, IOException {
-        return getEnvelopePart( request, BODY_EL_NAME );
+    public static Element getBodyElement( Request request ) throws SAXException, IOException, InvalidDocumentFormatException {
+        Document doc = getDocument(request);
+        return doc == null ? null : getBodyElement(doc);
     }
 
 
