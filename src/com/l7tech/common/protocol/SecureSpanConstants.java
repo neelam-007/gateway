@@ -74,6 +74,12 @@ public class SecureSpanConstants {
     public static final String SESSION_SERVICE_FILE = "/ssg/xmlencsession";
 
     /**
+     * The filename portion of the URL for the Gateway's password changing service.
+     * The agent calls this servlet to change the password of an internal account.
+     */
+    public static final String PASSWD_SERVICE_FILE = "/ssg/passwd";
+
+    /**
      * The console compares this value with the value returned by IdentityAdmin.echoVersion()
      * this ensures that the console can talk to the server.
      */
@@ -308,6 +314,19 @@ public class SecureSpanConstants {
          * </ul>
          */
         public static final String HEADER_KEYRES = "keyres";
+
+        /**
+         * Sent by the client to the password service. This contains the value of the new password desired.
+         * Passwords can only be changed for internal accounts. A successful password change will result in
+         * the service returning a 200 code. Otherwise, the calling agent should not assume the password
+         * change was successful.
+         *
+         * When requesting a password change, the agent must connect through https and must present his client
+         * cert as part of the ssl handshake if he does happen to possess such a cert.
+         *
+         * As part of the password change, the existing client cert (if it exists) is revoked.
+         */
+        public static final String HEADER_NEWPASSWD = "l7-new-passwd";
     }
 
     /**
