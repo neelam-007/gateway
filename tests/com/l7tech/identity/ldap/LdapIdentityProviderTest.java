@@ -42,7 +42,7 @@ public class LdapIdentityProviderTest extends TestCase {
 
     private LdapIdentityProviderConfig getConfigForMSAD() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
-        LdapIdentityProviderConfig msadTemplate = templateManager.getTemplate("MSAD");
+        LdapIdentityProviderConfig msadTemplate = templateManager.getTemplate("MicrosoftActiveDirectory");
         //msadTemplate.setLdapUrl("ldap://localhost:3899");
         msadTemplate.setLdapUrl("ldap://mail.l7tech.com:3268");
         msadTemplate.setSearchBase("ou=Layer 7 Users,dc=L7TECH,dc=LOCAL");
