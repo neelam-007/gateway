@@ -5,6 +5,16 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import java.util.Set;
 import java.security.Principal;
 
+/**
+ * Layer 7 Technologies, inc.
+ * User: flascelles
+ * Date: Jun 24, 2003
+ *
+ * User either from the internal identity provider or a ldap directory.
+ * In the case of ldap, the name property contains the dn.
+ * Password property is stored as HEX(MD5(login:password)). If you pass a clear text passwd in
+ * setPassword, this encoding will be done ofr you (provided that login was set before). 
+ */
 public class User extends NamedEntityImp implements Principal {
 
     public String getLogin() {
