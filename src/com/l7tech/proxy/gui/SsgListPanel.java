@@ -265,6 +265,7 @@ public class SsgListPanel extends JPanel {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg newSsg = ssgTableModel.createSsg();
                     log.info("Creating new Gateway registration " + newSsg);
+                    SsgKeyStoreManager.deleteStores(newSsg);
                     if (ssgTableModel.getRowCount() < 1)
                         newSsg.setDefaultSsg(true);
                     final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, newSsg, true);
