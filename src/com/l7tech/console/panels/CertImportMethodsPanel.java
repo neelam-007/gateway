@@ -13,6 +13,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.*;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.logging.Logger;
 import java.util.ResourceBundle;
 import java.util.Locale;
@@ -180,6 +181,17 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 return false;
             }
         } else if (urlConnRadioButton.isSelected()) {
+
+            String hostnameURL = "";
+            try {
+                URL url = new URL(urlConnTextField.getText().trim());
+                hostnameURL = url.getHost();
+            } catch (MalformedURLException e) {
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.urlMalformed"),
+                                       resources.getString("view.error.title"),
+                                       JOptionPane.ERROR_MESSAGE);
+            }
+
             try {
 
                 X509Certificate[] certs = getTrustedCertAdmin().retrieveCertFromUrl(urlConnTextField.getText().trim(), true);
@@ -189,11 +201,6 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 logger.warning("Hostname does not match with the one the certificate is issued to");
                 //todo: ask your if the cert should be accept
 
-            } catch (MalformedURLException me) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.urlMalformed"),
-                                       resources.getString("view.error.title"),
-                                       JOptionPane.ERROR_MESSAGE);
-                return false;
             } catch (IllegalArgumentException iae) {
                  JOptionPane.showMessageDialog(this, iae.getMessage(),
                                        resources.getString("view.error.title"),
@@ -203,6 +210,33 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             } catch (IOException ioe) {
                 logger.warning("Unable to retrieve certificate via SSL connection: " + urlConnTextField.getText().trim());
                 return false;
+            }
+
+
+            // retrieve the value of cn
+            String subjectName = cert.getSubjectDN().getName();
+            String cn = null;
+
+            // use the subjectDN name if the CN attribute not found
+            if ((cn = retrieveSubjectCommonName(subjectName)) == null) {
+                cn = subjectName;
+            }
+
+            if (!hostnameURL.equals(cn)) {
+                Object[] options = {"Accept", "Cancel"};
+                int result = JOptionPane.showOptionDialog(null,
+                        "<html>The hostname in URL does not match with the certificate's subject name. " +
+                        "<br>" + "Hostname in URL: " + hostnameURL + "</br>" +
+                        "<br>" + "Subject DN in Certificate: " + cn + "</br>" +
+                        "<br>" + "Do you still want to add the certificate to the trusted store?" + "</br></html>",
+                        "Hostname mismatch",
+                        0, JOptionPane.WARNING_MESSAGE,
+                        null, options, options[1]);
+
+                // abort if the user does not accept the hostname mismatch
+                if (result == 1) {
+                    return false;
+                }
             }
 
         } else if (copyAndPasteRadioButton.isSelected()) {
@@ -265,6 +299,37 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         }
 
         return true;
+    }
+
+    /**
+     * Extract the value of the CN attribute from the subject DN.
+     *
+     * @return  The value of CN attribute. NULL if not found.
+     */
+    private String retrieveSubjectCommonName(String subjectDN) {
+        String cn = null;
+
+        int index1 = subjectDN.indexOf("cn=");
+        int index2 = subjectDN.indexOf("CN=");
+        int startIndex = -1;
+        int endIndex = -1;
+
+        if (index1 >= 0) {
+            startIndex = index1 + 3;
+        } else if (index2 >= 0) {
+            startIndex = index2 + 3;
+        }
+
+        if (startIndex >= 0) {
+            endIndex = subjectDN.indexOf(",", startIndex);
+            if (endIndex > 0) {
+                cn = subjectDN.substring(startIndex, endIndex);
+            } else {
+                cn = subjectDN.substring(startIndex, subjectDN.length());
+            }
+        }
+
+        return cn;
     }
 
     /**
@@ -350,8 +415,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         _4 = new JRadioButton();
         fileRadioButton = _4;
         _4.setSelected(false);
-        _4.setEnabled(true);
         _4.setText("Import from a File");
+        _4.setEnabled(true);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;
         _5 = new JRadioButton();
