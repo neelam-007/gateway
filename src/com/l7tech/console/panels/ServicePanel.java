@@ -16,6 +16,7 @@ import com.l7tech.console.event.WsdlListener;
 import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -115,21 +116,34 @@ public class ServicePanel extends WizardStepPanel {
         
         wsdlUrlBrowseButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
 
-                // open UDDI browser
-                SearchWsdlDialog swd = new SearchWsdlDialog(ServicePanel.this.getOwner());
-                swd.addWsdlListener(new WsdlListener() {
+                try {
+                    // open UDDI browser
+                    SearchWsdlDialog swd = new SearchWsdlDialog(ServicePanel.this.getOwner());
+                    swd.addWsdlListener(new WsdlListener() {
 
-                    public void wsdlSelected(WsdlEvent event) {
-                        String wsdlURL = event.getWsdlInfo().getWsdlUrl();
+                        public void wsdlSelected(WsdlEvent event) {
+                            String wsdlURL = event.getWsdlInfo().getWsdlUrl();
 
-                        // update the wsdlUrlTestField
-                        if(wsdlURL != null) wsdlUrlTextField.setText(wsdlURL);
-                    }
-                });
-                swd.setSize(700, 500);
-                swd.setModal(true);
-                swd.show();
+                            // update the wsdlUrlTestField
+                            if(wsdlURL != null) wsdlUrlTextField.setText(wsdlURL);
+                        }
+                    });
+                    swd.setSize(700, 500);
+                    swd.setModal(true);
+                    swd.show();
+                } catch (RemoteException ex) {
+                    JOptionPane.showMessageDialog(mainWindow,
+                            ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } catch (FindException ex) {
+                    JOptionPane.showMessageDialog(mainWindow,
+                            ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
 

@@ -226,6 +226,9 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
                 String s = (String) urlList.elementAt(i);
                 urls[i] = s;
             }
+        } else {
+            throw new FindException("No UDDI Registry location (URL) is specified in the uddi.properties configuration file.\n" +
+                    "Please ensure at least one UDDI Registry URL is specified in the configuration file");
         }
         return urls;
     }

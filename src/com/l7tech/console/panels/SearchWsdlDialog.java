@@ -52,14 +52,14 @@ public class SearchWsdlDialog extends JDialog {
     private JComboBox uddiURLcomboBox;
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    public SearchWsdlDialog(JDialog parent) {
+    public SearchWsdlDialog(JDialog parent) throws RemoteException, FindException {
         super(parent, resources.getString("window.title"), true);
         initialize();
         pack();
         Utilities.centerOnScreen(this);
     }
 
-    private void initialize() {
+    private void initialize() throws RemoteException, FindException {
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
@@ -73,8 +73,10 @@ public class SearchWsdlDialog extends JDialog {
             uddiRegistryURLs = seriveAdmin.findUDDIRegistryURLs();
         } catch(RemoteException re) {
             logger.warning("Remote Exception caught. Unable to get the URLs of UDDI Registries");
+            throw re;
         } catch(FindException fe) {
             logger.warning("Exception caught. Unable to get the URLs of UDDI Registries");
+            throw fe;
         }
 
         uddiURLcomboBox.setModel(new javax.swing.DefaultComboBoxModel(uddiRegistryURLs));
