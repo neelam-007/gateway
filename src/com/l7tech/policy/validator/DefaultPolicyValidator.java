@@ -4,6 +4,7 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.service.PublishedService;
 
 import java.util.Iterator;
 import java.util.logging.Logger;
@@ -34,9 +35,9 @@ public class DefaultPolicyValidator extends PolicyValidator {
     static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
 
 
-    public void validatePath(AssertionPath ap, PolicyValidatorResult r, boolean isSoap) {
+    public void validatePath(AssertionPath ap, PolicyValidatorResult r, boolean isSoap, PublishedService service) {
         Assertion[] ass = ap.getPath();
-        PathValidator pv = new PathValidator(ap, r, isSoap);
+        PathValidator pv = new PathValidator(ap, r, isSoap, service);
         for (int i = 0; i < ass.length; i++) {
             pv.validate(ass[i]);
         }

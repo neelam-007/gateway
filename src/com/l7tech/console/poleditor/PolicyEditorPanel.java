@@ -143,7 +143,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     public void validatePolicy() {
         final PolicyValidatorResult result = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(),
-                                                                                   service.isSoap());
+                                                                                   service.isSoap(),
+                                                                                   service);
         displayPolicyValidateResult(pruneDuplicates(result));
     }
 
@@ -449,7 +450,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             validateAction = new ValidatePolicyAction() {
                 protected void performAction() {
                     PolicyValidatorResult result
-                      = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(), service.isSoap());
+                      = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(),
+                                                              service.isSoap(),
+                                                              service);
                     displayPolicyValidateResult(pruneDuplicates(result));
 
                 }

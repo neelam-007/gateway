@@ -523,6 +523,38 @@ public class Wsdl {
         return result2;
     }
 
+    public String getBindingOutputNS(BindingOperation operation) {
+        BindingOutput output = operation.getBindingOutput();
+        if (output != null) {
+            Iterator eels = output.getExtensibilityElements().iterator();
+            ExtensibilityElement ee;
+            while (eels.hasNext()) {
+                ee = (ExtensibilityElement)eels.next();
+                if (ee instanceof SOAPBody) {
+                    SOAPBody body = (SOAPBody)ee;
+                    return body.getNamespaceURI();
+                }
+            }
+        }
+        return definition.getTargetNamespace();
+    }
+
+    public String getBindingInputNS(BindingOperation operation) {
+        BindingInput input = operation.getBindingInput();
+        if (input != null) {
+            Iterator eels = input.getExtensibilityElements().iterator();
+            ExtensibilityElement ee;
+            while (eels.hasNext()) {
+                ee = (ExtensibilityElement)eels.next();
+                if (ee instanceof SOAPBody) {
+                    SOAPBody body = (SOAPBody)ee;
+                    return body.getNamespaceURI();
+                }
+            }
+        }
+        return definition.getTargetNamespace();
+    }
+
     public Collection getBindingOperations() {
         Iterator bindings = getBindings().iterator();
         Binding binding;

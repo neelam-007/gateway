@@ -2,6 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.validator.DefaultPolicyValidator;
+import com.l7tech.service.PublishedService;
 
 import java.util.Iterator;
 
@@ -12,7 +13,7 @@ import java.util.Iterator;
  * methods.
  *
  * Once a PolicyValidator object has been created, it can be used to validate
- * policy/assertion trees by calling the {@link #validate(Assertion)} method
+ * policy/assertion trees by calling the {@link #validate(Assertion, boolean)} method
  * and passing it the <code>Asserion</code> to be validated.
  *
  * the result is returned in an object of <code>PolicyValidatorResult</code>
@@ -45,6 +46,13 @@ public abstract class PolicyValidator {
      * @return the result of the validation
      */
     public PolicyValidatorResult validate(Assertion assertion, boolean isSoap) {
+        return validate(assertion, isSoap, null);
+    }
+
+    /**
+     * Does all the validation done by other validate method + validations that require access to service wsdl.
+     */
+    public PolicyValidatorResult validate(Assertion assertion, boolean isSoap, PublishedService service) {
         assertion.treeChanged();
         if (assertion == null) {
             throw new IllegalArgumentException();
@@ -56,7 +64,7 @@ public abstract class PolicyValidator {
 
         for (Iterator iterator = path.paths().iterator(); iterator.hasNext();) {
             AssertionPath assertionPath = (AssertionPath)iterator.next();
-            validatePath(assertionPath, result, isSoap);
+            validatePath(assertionPath, result, isSoap, service);
         }
         return result;
     }
@@ -67,5 +75,5 @@ public abstract class PolicyValidator {
      * @param ap the assertion path to validate
      * @param r  the result collect parameter
      */
-    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r, boolean isSoap);
+    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r, boolean isSoap, PublishedService service);
 }

@@ -19,6 +19,7 @@ import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.service.PublishedService;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -44,7 +45,7 @@ import java.util.logging.Level;
  * $Id$<br/>
  */
 public class ServerPolicyValidator extends PolicyValidator {
-    public void validatePath(AssertionPath ap, PolicyValidatorResult r, boolean isSoap) {
+    public void validatePath(AssertionPath ap, PolicyValidatorResult r, boolean isSoap, PublishedService service) {
         Assertion[] ass = ap.getPath();
         PathContext pathContext = new PathContext();
         for (int i = 0; i < ass.length; i++) {

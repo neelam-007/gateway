@@ -1,5 +1,6 @@
 package com.l7tech.policy.validator;
 
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
@@ -14,12 +15,16 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.service.PublishedService;
 
+import javax.wsdl.BindingOperation;
+import javax.wsdl.WSDLException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * validate single path, and collect the validation results in the
@@ -32,13 +37,15 @@ class PathValidator {
     PolicyValidatorResult result;
     List deferredValidators = new ArrayList();
     private AssertionPath assertionPath;
-    private final Logger logger = Logger.getLogger(PathValidator.class.getName());
     private boolean isServiceSoap;
+    private PublishedService service;
+    private Collection wsdlBindingOperations;
 
-    PathValidator(AssertionPath ap, PolicyValidatorResult r, boolean isSoap) {
+    PathValidator(AssertionPath ap, PolicyValidatorResult r, boolean isSoap, PublishedService service) {
         result = r;
         assertionPath = ap;
         isServiceSoap = isSoap;
+        this.service = service;
     }
 
     public void validate(Assertion a) {
@@ -50,6 +57,14 @@ class PathValidator {
 
         if (onlyForSoap(a)) {
             processSoapSpecific(a);
+        }
+
+        if (involvesSignature(a)) {
+            try {
+                checkForRelativeURINamespaces(a);
+            } catch (WSDLException e) {
+                throw new RuntimeException(e); // can't happen
+            }
         }
 
         if (isComposite(a)) {
@@ -315,6 +330,60 @@ class PathValidator {
         }
     }
 
+    private void checkForRelativeURINamespaces(Assertion a) throws WSDLException {
+        if (service != null && service.isSoap()) {
+            Wsdl parsedWsdl = service.parsedWsdl();
+            if (wsdlBindingOperations == null) {
+                    wsdlBindingOperations = parsedWsdl.getBindingOperations();
+            }
+            class RelativeURINamespaceProblemFeedback {
+                String ns;
+                String operationName;
+                String msgname;
+
+                public RelativeURINamespaceProblemFeedback(String ns, String operationName, String msgname) {
+                    this.ns = ns;
+                    this.operationName = operationName;
+                    this.msgname = msgname;
+                }
+            }
+            Collection feedback = new ArrayList();
+            for (Iterator iterator = wsdlBindingOperations.iterator(); iterator.hasNext();) {
+                BindingOperation operation = (BindingOperation) iterator.next();
+                String ns = parsedWsdl.getBindingInputNS(operation);
+                if (ns != null && ns.indexOf(':') < 0) {
+                    feedback.add(new RelativeURINamespaceProblemFeedback(ns,
+                                                                         operation.getName(),
+                                                                         operation.getBindingInput().getName()));
+                }
+                ns = parsedWsdl.getBindingOutputNS(operation);
+                if (ns != null && ns.indexOf(':') < 0) {
+                    feedback.add(new RelativeURINamespaceProblemFeedback(ns,
+                                                                         operation.getName(),
+                                                                         operation.getBindingOutput().getName()));
+                }
+            }
+            if (!feedback.isEmpty()) {
+                StringBuffer msg = new StringBuffer("The service refers to relative uri " +
+                                                    "which will prevent xml digital signature to " +
+                                                    "function properly. See \"KBUnableToSignRelativeNamespaceURI\" " +
+                                                    "in knowledge base.");
+                for (Iterator iterator = feedback.iterator(); iterator.hasNext();) {
+                    RelativeURINamespaceProblemFeedback fb = (RelativeURINamespaceProblemFeedback)iterator.next();
+                    msg.append("<br>Namespace: " + fb.ns);
+                    msg.append(", Operation Name: " + fb.operationName);
+                    msg.append(", Message Name: " + fb.msgname);
+                }
+                result.addError(new PolicyValidatorResult.Error(a,
+                                assertionPath,
+                                msg.toString(),
+                                null));
+            }
+        }
+    }
+
+
+
     private void processSoapSpecific(Assertion a) {
         if (!this.isServiceSoap) {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
@@ -355,6 +424,15 @@ class PathValidator {
 
     private boolean isComposite(Assertion a) {
         return a instanceof CompositeAssertion;
+    }
+
+    private boolean involvesSignature(Assertion a) {
+        if (a instanceof SecureConversation ||
+            a instanceof RequestWssIntegrity  ||
+            a instanceof RequestWssX509Cert ||
+            a instanceof ResponseWssIntegrity)
+            return true;
+        return false;
     }
 
     private boolean onlyForSoap(Assertion a) {
