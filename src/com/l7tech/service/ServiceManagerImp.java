@@ -27,49 +27,84 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return null;
     }
 
-    public PublishedService resolveService(Request request) throws ServiceResolutionException {
+    /**
+     * Attempts to find a single PublishedService that can satisfy the request. If no matching PublishedService is found, or if multiple PublishedServices could satisfy the request, null is returned.
+     * @param request
+     * @return null if multiple or no PublishedServices could be found to satisfy the request.
+     * @throws ServiceResolutionException
+     */
+    public synchronized PublishedService resolveService(Request request) throws ServiceResolutionException {
+        Set services = new HashSet();
+        Set tempServices = null;
+        int size;
+        services.addAll( _allServices );
+        Iterator i = _resolvers.iterator();
+
+        while ( i.hasNext() ) {
+            ServiceResolver resolver = (ServiceResolver) i.next();
+            tempServices = resolver.resolve( request, services );
+            if ( tempServices != null ) {
+                // If for some reason it's null, we'll just pass the same old set to the next one.
+                size = tempServices.size();
+                switch ( size ) {
+                case 0:
+                    // Didn't find anything... Go around to the next Resolver
+                    break;
+                case 1:
+                    // Found one service--done!
+                    return (PublishedService)tempServices.iterator().next();
+                default:
+                    // Found more than one Service... Pass the subset to the next Resolver.
+                    services = tempServices;
+                    break;
+                }
+            }
+        }
+
         return null;
     }
 
     public ServiceManagerImp() throws NamingException, ObjectModelException {
         super();
 
-        Collection services = findAll();
+        synchronized( this ) {
+            Collection services = findAll();
+            _allServices = new HashSet();
+            _allServices.addAll(services);
 
-        InitialContext ic = new InitialContext();
-        String serviceResolvers = (String)ic.lookup( "java:comp/env/ServiceResolvers" );
-        if ( serviceResolvers == null ) {
-            StringBuffer classnames = new StringBuffer();
-            classnames.append( UrnResolver.class.getName() );
-            classnames.append( " " );
-            classnames.append( SoapActionResolver.class.getName() );
-            serviceResolvers = classnames.toString();
-        }
+            InitialContext ic = new InitialContext();
+            String serviceResolvers = (String)ic.lookup( "java:comp/env/ServiceResolvers" );
+            if ( serviceResolvers == null ) {
+                StringBuffer classnames = new StringBuffer();
+                classnames.append( UrnResolver.class.getName() );
+                classnames.append( " " );
+                classnames.append( SoapActionResolver.class.getName() );
+                serviceResolvers = classnames.toString();
+            }
 
-        _resolvers = new TreeSet();
-        StringTokenizer stok = new StringTokenizer( serviceResolvers );
-        String className;
-        Class resolverClass;
-        ServiceResolver resolver;
+            _resolvers = new TreeSet();
+            StringTokenizer stok = new StringTokenizer( serviceResolvers );
+            String className;
+            Class resolverClass;
+            ServiceResolver resolver;
 
-        while ( stok.hasMoreTokens() ) {
-            className = stok.nextToken();
-            try {
-                resolverClass = Class.forName( className );
-                resolver = (ServiceResolver)resolverClass.newInstance();
-                resolver.setServices( services );
+            while ( stok.hasMoreTokens() ) {
+                className = stok.nextToken();
+                try {
+                    resolverClass = Class.forName( className );
+                    resolver = (ServiceResolver)resolverClass.newInstance();
+                    resolver.setServices( _allServices );
 
-                _resolvers.add( resolver );
-            } catch ( ClassNotFoundException cnfe ) {
-                log.error( cnfe );
-            } catch ( InstantiationException ie ) {
-                log.error( ie );
-            } catch ( IllegalAccessException iae ) {
-                log.error( iae );
+                    _resolvers.add( resolver );
+                } catch ( ClassNotFoundException cnfe ) {
+                    log.error( cnfe );
+                } catch ( InstantiationException ie ) {
+                    log.error( ie );
+                } catch ( IllegalAccessException iae ) {
+                    log.error( iae );
+                }
             }
         }
-
-
     }
 
     public PublishedService findByPrimaryKey(long oid) throws FindException {
@@ -118,7 +153,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     private static final Category log = Category.getInstance(ServiceManagerImp.class);
     protected SortedSet _resolvers;
-    protected transient Collection _allServices;
+    protected transient Set _allServices;
     //protected transient Map _paramNameMap = new HashMap();
     //protected transient Map _paramToServiceMap = new HashMap();
 }
