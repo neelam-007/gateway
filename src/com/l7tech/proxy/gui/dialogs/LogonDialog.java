@@ -64,6 +64,7 @@ public class LogonDialog extends JDialog {
 
         setTitle("Log on to Gateway");
         initComponents();
+        getRootPane().setDefaultButton(loginButton);
 
         if (defaultUsername != null)
             userNameTextField.setText(defaultUsername);
