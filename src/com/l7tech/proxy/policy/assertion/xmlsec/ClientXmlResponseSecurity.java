@@ -22,14 +22,11 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.Map;
 
 /**
  * XML Digital signature on the soap response sent from the ssg server to the requestor (probably proxy). May also enforce
@@ -107,22 +104,13 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             throw new ResponseValidationException("Response from Gateway did not contain a nonce", e);
         }
 
-        // must we also decrypt any of trhe elements?
-        SOAPMessage soapMessage = null;
-        Map namespaces = null;
         for (int i = 0; i < data.length; i++) {
             ElementSecurity elementSecurity = data[i];
 
             try {
                 // XPath match?
                 XpathExpression xpath = elementSecurity.getXpathExpression();
-                if (soapMessage == null) {
-                    soapMessage = SoapUtil.asSOAPMessage(doc);
-                }
-                if (namespaces == null) {
-                    namespaces = XpathEvaluator.getNamespaces(soapMessage);
-                }
-                List nodes = XpathEvaluator.newEvaluator(doc, namespaces).select(xpath.getExpression());
+                List nodes = XpathEvaluator.newEvaluator(doc, xpath.getNamespaces()).select(xpath.getExpression());
                 if (nodes.isEmpty()) continue; // nothing selected
                 Object o = nodes.get(0);
                 if (!(o instanceof Element)) {
@@ -175,8 +163,6 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
                 throw new RuntimeException("failure decrypting document", e); // can't happen
             } catch (XMLSecurityElementNotFoundException e) {
                 throw new ResponseValidationException("failure decrypting document", e);
-            } catch (SOAPException e) {
-                throw new ResponseValidationException("failure extracting SOAP message", e);
             } catch (JaxenException e) {
                 throw new ResponseValidationException("failure on XPath select", e);
             }

@@ -4,7 +4,6 @@ import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.logging.LogManager;
@@ -23,8 +22,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -34,7 +31,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,8 +83,6 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             logger.finest("request did not include a nonce value to use for response's signature");
         }
 
-        SOAPMessage soapMessage = null;
-        Map namespaces = null;
         String encReferenceId = "encref";
         int encReferenceSuffix = 1;
         String signReferenceId = "signref";
@@ -100,16 +94,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             List nodes = null;
             try {
                 XpathExpression xpath = elementSecurity.getXpathExpression();
-                if (soapMessage == null) {
-                    soapMessage = SoapUtil.asSOAPMessage(soapmsg);
-                }
-                if (namespaces == null) {
-                    namespaces = XpathEvaluator.getNamespaces(soapMessage);
-                }
-                nodes = XpathEvaluator.newEvaluator(soapmsg, namespaces).select(xpath.getExpression());
-            } catch (SOAPException e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                return AssertionStatus.FALSIFIED;
+                nodes = XpathEvaluator.newEvaluator(soapmsg, xpath.getNamespaces()).select(xpath.getExpression());
             } catch (JaxenException e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 return AssertionStatus.FALSIFIED;
