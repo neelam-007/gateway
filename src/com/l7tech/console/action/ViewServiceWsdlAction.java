@@ -83,12 +83,12 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
         });
     }
 
-    private class WsdlViewDialog extends JDialog {
+    private class WsdlViewDialog extends JFrame {
         private JEditTextArea wsdlTextArea;
 
         private WsdlViewDialog(PublishedService ps) throws IOException {
-            super(ComponentRegistry.getInstance().getMainWindow(), ps.getName());
-
+            super(ps.getName());
+            setIconImage(ComponentRegistry.getInstance().getMainWindow().getIconImage());
             wsdlTextArea = new JEditTextArea();
             wsdlTextArea.setDocument(new SyntaxDocument());
             wsdlTextArea.setEditable(false);
