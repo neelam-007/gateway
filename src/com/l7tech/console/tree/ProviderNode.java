@@ -69,7 +69,7 @@ public class ProviderNode extends EntityHeaderNode {
         try {
             IdentityProvider ip =
               Registry.getDefault().getProviderConfigManager().getIdentityProvider(oid);
-            Enumeration children = Collections.enumeration(Collections.EMPTY_LIST);
+            Enumeration kids = Collections.enumeration(Collections.EMPTY_LIST);
             if (ip == null) {
                 logger.warning("Error obtaining identity provider " + oid);
             } else {
@@ -78,12 +78,12 @@ public class ProviderNode extends EntityHeaderNode {
                       new UserFolderNode(ip.getUserManager(), oid, "Users"),
                       new GroupFolderNode(ip.getGroupManager(), oid, "Groups")
                   });
-                children = Collections.enumeration(list);
+                kids = Collections.enumeration(list);
             }
             int index = 0;
             children = null;
-            for (; children.hasMoreElements();) {
-                insert((MutableTreeNode)children.nextElement(), index++);
+            for (; kids.hasMoreElements();) {
+                insert((MutableTreeNode)kids.nextElement(), index++);
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "Error obtaining identity provider " + oid, e);
