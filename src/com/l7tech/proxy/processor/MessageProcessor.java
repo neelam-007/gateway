@@ -12,32 +12,30 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.datamodel.BadCredentialsException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.BadCredentialsException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.ssl.ClientProxySslException;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
+import com.l7tech.util.XmlUtil;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
@@ -81,7 +79,8 @@ public class MessageProcessor {
      * @return     the SsgResponse containing the response from the Ssg, if processing was successful, or if
      *             a SOAP fault is being returned to the client from either the CP or the SSG.
      * @throws ClientCertificateException   if a client certificate was required but could not be obtained
-     * @throws PolicyAssertionException     if the policy evaluation could not be completed due to a serious error
+     * @throws PolicyAssertionException     if the policy evaluation of request or response could not be completed due
+     *                                        to a serious error
      * @throws OperationCanceledException   if the user declined to provide a username and password
      * @throws ConfigurationException       if a response could not be obtained from the SSG due to a problem with
      *                                      the client or server configuration, and retrying the operation
@@ -89,7 +88,7 @@ public class MessageProcessor {
      * @throws ConfigurationException       if we were unable to conform to the policy, and did not get any useful
      *                                      SOAP fault from the SSG.
      * @throws GeneralSecurityException     if the SSG SSL certificate could not be obtained or installed
-     * @throws IOException                  if a information couldn't be obtained from the SSG due to network trouble
+     * @throws IOException                  if information couldn't be obtained from the SSG due to network trouble
      * @throws IOException                  if a certificate could not be saved to disk
      */
     public SsgResponse processMessage(PendingRequest req)
@@ -184,9 +183,20 @@ public class MessageProcessor {
         return policy;
     }
 
-    private void undecorateResponse(PendingRequest req, SsgResponse res, ClientAssertion rootassertion) {
-        log.info("undecorating response...(todo)");
-        // todo
+    /**
+     * Process the response from the SSG, stripping any stuff the end user client doesn't care about or shouldn't
+     * see, according to the dictates of the policy for this request.
+     *
+     * @param req
+     * @param res
+     * @param rootassertion
+     * @throws PolicyAssertionException     if the policy evaluation could not be completed due to a serious error
+     */
+    private void undecorateResponse(PendingRequest req, SsgResponse res, ClientAssertion rootassertion)
+            throws PolicyAssertionException
+    {
+        log.info("undecorating response");
+        // TODO AssertionStatus result = rootassertion.unDecorateReply(req, res);
     }
 
     /**
@@ -312,16 +322,7 @@ public class MessageProcessor {
             postMethod.addRequestHeader("SOAPAction", req.getSoapAction());
             postMethod.addRequestHeader("L7-Original-URL", req.getOriginalUrl().toString());
 
-            // TODO: MUST BE FIXED -- using new XML serializer for each request
-            final StringWriter sw = new StringWriter();
-            XMLSerializer xmlSerializer = new XMLSerializer();
-            xmlSerializer.setOutputCharStream(sw);
-            OutputFormat of = new OutputFormat();
-            of.setIndent(4);
-            xmlSerializer.setOutputFormat(of);
-            xmlSerializer.serialize(req.getSoapEnvelopeDirectly());
-
-            String postBody = sw.toString();
+            String postBody = XmlUtil.documentToString(req.getSoapEnvelopeDirectly());
             //log.info("Posting to SSG: " + postBody);
             postMethod.setRequestBody(postBody);
 
