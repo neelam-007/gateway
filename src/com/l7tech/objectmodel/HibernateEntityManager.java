@@ -44,9 +44,9 @@ public abstract class HibernateEntityManager implements EntityManager {
                 e = (Entity)i.next();
                 if ( e instanceof NamedEntity ) {
                     ne = (NamedEntity)e;
-                    header = new EntityHeaderImp( ne.getOid(), getInterfaceClass(), ne.getName() );
+                    header = new EntityHeader(ne.getOid(), EntityType.fromInterface(getInterfaceClass()), ne.getName(), EMPTY_STRING);
                 } else
-                    header = new EntityHeaderImp( e.getOid(), getInterfaceClass(), EMPTY_STRING );
+                    header = new EntityHeader(e.getOid(), EntityType.fromInterface(getInterfaceClass()), EMPTY_STRING, EMPTY_STRING);
                 headers.add(header);
             }
             return Collections.unmodifiableList(headers);
