@@ -10,12 +10,14 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.saml.AuthenticationStatementPropertiesPanel;
 import com.l7tech.console.panels.saml.AuthorizationStatementPropertiesPanel;
+import com.l7tech.console.panels.saml.AttributeStatementPropertiesPanel;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -56,6 +58,8 @@ public class EditSamlStatementAction extends NodeAction {
             assertionChanged = editSamlAssertion((SamlAuthenticationStatement)assertion, mw);
         } else if(assertion instanceof SamlAuthorizationStatement) {
             assertionChanged = editSamlAssertion((SamlAuthorizationStatement)assertion, mw);
+        } else if(assertion instanceof SamlAttributeStatement) {
+                assertionChanged = editSamlAssertion((SamlAttributeStatement)assertion, mw);
         } else {
             throw new IllegalArgumentException("Don't know how to edit the "+assertion.getClass());
         }
@@ -90,4 +94,12 @@ public class EditSamlStatementAction extends NodeAction {
         return dlg.hasAssertionChanged();
     }
 
+    private boolean editSamlAssertion(SamlAttributeStatement samlAttributeStatement, MainWindow mw) {
+        AttributeStatementPropertiesPanel dlg =
+          new AttributeStatementPropertiesPanel(samlAttributeStatement, mw, true);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        dlg.show();
+        return dlg.hasAssertionChanged();
+    }
 }

@@ -6,11 +6,16 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -105,10 +110,70 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             titleLabel.getParent().remove(titleLabel);
         }
         attributesTableModel = new DefaultTableModel(new String[]{"Name", "Namespace", "Value"}, 0);
+        attributeTableScrollPane.getViewport().setBackground(attributeTable.getBackground());
         attributeTable.setModel(attributesTableModel);
-        removeButton.setEnabled(false);
-        editButton.setEnabled(false);
+        ListSelectionModel selectionModel = attributeTable.getSelectionModel();
+        selectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        selectionModel.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                removeButton.setEnabled(attributeTable.getSelectedRow() !=-1);
+                editButton.setEnabled(attributeTable.getSelectedRow() !=-1);
+            }
+        });
 
+        removeButton.setEnabled(false);
+        removeButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                attributesTableModel.removeRow(attributeTable.getSelectedRow());
+                notifyListeners();
+            }
+        });
+
+        editButton.setEnabled(false);
+        editButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                final int row = attributeTable.getSelectedRow();
+                final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
+                attribute.setName(attributesTableModel.getValueAt(row, 0).toString());
+                attribute.setNamespace(attributesTableModel.getValueAt(row, 1).toString());
+                attribute.setValue(attributesTableModel.getValueAt(row, 2).toString());
+                EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute);
+                editAttributeDialog.addBeanListener(new BeanAdapter() {
+                    /**
+                     * Fired when the bean edit is accepted.
+                     *
+                     * @param source the event source
+                     * @param bean   the bean being edited
+                     */
+                    public void onEditAccepted(Object source, Object bean) {
+                        attributesTableModel.setValueAt(attribute.getName(), row, 0);
+                        attributesTableModel.setValueAt(attribute.getNamespace(), row, 1);
+                        attributesTableModel.setValueAt(attribute.getValue(), row, 2);
+                        notifyListeners();
+                    }
+                });
+                editAttributeDialog.show();
+            }
+        });
+        addAttributeButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
+                EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute);
+                editAttributeDialog.addBeanListener(new BeanAdapter() {
+                    /**
+                     * Fired when the bean edit is accepted.
+                     *
+                     * @param source the event source
+                     * @param bean   the bean being edited
+                     */
+                    public void onEditAccepted(Object source, Object bean) {
+                        attributesTableModel.addRow(new Object[] {attribute.getName(), attribute.getNamespace(), attribute.getValue()});
+                        notifyListeners();
+                    }
+                });
+                editAttributeDialog.show();
+            }
+        });
     }
 
     /**
@@ -133,7 +198,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      * @return true if the panel is valid, false otherwis
      */
     public boolean canAdvance() {
-        return true;
+        return attributesTableModel.getRowCount() > 0;
     }
 
     /**
