@@ -7,15 +7,43 @@
 package com.l7tech.skunkworks;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 
 /**
  * @author mike
  */
 public class Birthday {
     public static void main(String[] args) {
-        long n = 10000000;
-        System.out.println("For " + n + " samples in field of " + FIELD + ",");
-        System.out.println("probability of remaining collision-free is " + pbirthday(n, FIELD));
+        long[] numbers = new long[] {
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 100,
+            500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000
+        };
+        int[] bits = new int[] { 8, 16, 32, 40, 50, 53 };
+        double[] fields = new double[bits.length];
+        for (int i = 0; i < bits.length; ++i) fields[i] = Math.pow(2, bits[i]);
+
+        NumberFormat nf = NumberFormat.getInstance();
+        nf.setMaximumFractionDigits(100);
+        StringBuffer out = new StringBuffer();
+        out.append("||Number");
+        for (int i = 0; i < fields.length; ++i) {
+            out.append("||" + bits[i] + " bits");
+        }
+        out.append("\n");
+        for (int num = 0; num < numbers.length; ++num) {
+            long n = numbers[num];
+            out.append("|" + n);
+            for (int i = 0; i < fields.length; ++i) {
+                out.append("|");
+                out.append(nf.format(pbirthday(n, fields[i])));
+            }
+            out.append("\n");
+        }
+
+        System.out.println(out);
+        //long n = 10000000;
+        //System.out.println("For " + n + " samples in field of " + FIELD + ",");
+        //System.out.println("probability of remaining collision-free is " + pbirthday(n, FIELD));
     }
 
     private static final int NONCE_BITS = 53;
