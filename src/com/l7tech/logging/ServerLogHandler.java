@@ -71,7 +71,66 @@ public class ServerLogHandler extends Handler {
         } catch (HibernateException e) {
             reportException("error saving to database", e);
         }
+    }
 
+    /**
+     * to skip one of those steps in the record ids
+     */
+    long skipGapBackwards(String nodeId, long idToPokeAround, HibernatePersistenceContext context)
+                                        throws HibernateException, SQLException {
+        long pokingID = idToPokeAround - 1;
+        final long pockingRange = 500;
+        final long pockingStep = 50000;
+        int iterate = 1;
+        while (true) {
+            String findOutOfGapQuery = "SELECT " + TABLE_NAME + "." + OID_COLNAME +
+                                       " FROM " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                                       " WHERE " + TABLE_NAME + "." + OID_COLNAME + " > " + (pokingID-pockingRange) +
+                                       " AND " + TABLE_NAME + "." + OID_COLNAME + " < " + pokingID +
+                                       " AND " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" + nodeId + "\'";
+            Iterator i = context.getSession().iterate(findOutOfGapQuery);
+            if (i != null && i.hasNext()) {
+                Long toto = (Long)i.next();
+                return toto.intValue();
+            } else {
+                pokingID -= pockingStep;
+                if (pokingID <= 0) break;
+            }
+            ++iterate;
+            if (iterate > 50) break;
+        }
+        reportException("could not get defire step at " + idToPokeAround, null);
+        return idToPokeAround - 1;
+    }
+
+    /**
+     * to skip one of those steps in the record ids
+     */
+    long skipGapForewards(String nodeId, long idToPokeAround, HibernatePersistenceContext context)
+                                        throws HibernateException, SQLException {
+        long pokingID = idToPokeAround + 1;
+        final long pockingRange = 500;
+        final long pockingStep = 50000;
+        int iterate = 1;
+        while (true) {
+            String findOutOfGapQuery = "SELECT " + TABLE_NAME + "." + OID_COLNAME +
+                                       " FROM " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                                       " WHERE " + TABLE_NAME + "." + OID_COLNAME + " > " + pokingID +
+                                       " AND " + TABLE_NAME + "." + OID_COLNAME + " < " + (pokingID+pockingRange) +
+                                       " AND " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" + nodeId + "\'";
+            Iterator i = context.getSession().iterate(findOutOfGapQuery
+            );
+            if (i != null && i.hasNext()) {
+                Long toto = (Long)i.next();
+                return toto.intValue();
+            } else {
+                pokingID += pockingStep;
+            }
+            ++iterate;
+            if (iterate > 50) break;
+        }
+        reportException("could not get beyond step at " + idToPokeAround, null);
+        return idToPokeAround + 1;
     }
 
     /**
@@ -124,8 +183,9 @@ public class ServerLogHandler extends Handler {
         int resB = countRecordsWithIdBiggerThan(idB, nodeId, context);
 
         // round up the data, this is tricky because it is a moving target
-        final long max_step = 500000;
+        final long max_step = 5000;
         if (resB > maxSize && resA > maxSize) {
+            // this sould not happen under normal circumstences
             long step = idA - idB;
             idB = idA;
             idA = idA + step;
@@ -140,7 +200,7 @@ public class ServerLogHandler extends Handler {
                                     resB + " for " + idB + ")", null);
                     return Collections.EMPTY_LIST;
                 }
-                step *= 10;
+                step *= 3;
                 if (step > max_step) {
                     step = max_step;
                 }
@@ -148,6 +208,10 @@ public class ServerLogHandler extends Handler {
                 idA = idA + step;
                 resB = resA;
                 resA = countRecordsWithIdBiggerThan(idA, nodeId, context);
+                if (resA == resB) { // we are in a "gap"
+                    idA = skipGapForewards(nodeId, idA, context);
+                    resA = countRecordsWithIdBiggerThan(idA, nodeId, context);
+                }
             }
         } else if (resB < maxSize && resA < maxSize) {
             long step = idA - idB;
@@ -170,7 +234,7 @@ public class ServerLogHandler extends Handler {
                         return Collections.EMPTY_LIST;
                     }
                 }
-                step *= 10;
+                step *= 3;
                 // dont let range get out of control
                 if (step > max_step) {
                     step = max_step;
@@ -187,6 +251,10 @@ public class ServerLogHandler extends Handler {
                     idB = idB - step;
                     resA = resB;
                     resB = countRecordsWithIdBiggerThan(idB, nodeId, context);
+                    if (resA == resB) { // we are in a "gap"
+                        idB = skipGapBackwards(nodeId, idB, context);
+                        resB = countRecordsWithIdBiggerThan(idB, nodeId, context);
+                    }
                 }
             }
             if (lessThanMaxTotal) {
