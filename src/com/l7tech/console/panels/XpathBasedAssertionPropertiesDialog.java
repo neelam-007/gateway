@@ -107,7 +107,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         okActionListener = okListener;
 
         xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
-        namespaces = xmlSecAssertion.getXpathExpression().getNamespaces();
+        if (xmlSecAssertion.getXpathExpression() != null) {
+            namespaces = xmlSecAssertion.getXpathExpression().getNamespaces();
+        } else {
+            namespaces = new HashMap();
+        }
         if (xmlSecAssertion instanceof RequestWssConfidentiality ||
           xmlSecAssertion instanceof ResponseWssConfidentiality) {
             isEncryption = true;
