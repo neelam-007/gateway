@@ -88,7 +88,7 @@ public class MessageViewer extends JFrame {
                                                             JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         messageList.setMinimumSize(new Dimension(150, 380));
         messageList.setMaximumSize(new Dimension(150, 32768));
-        messageList.setPreferredSize(new Dimension(150, 380));
+        //messageList.setPreferredSize(new Dimension(150, 380));
         messageListPane.setMinimumSize(new Dimension(170, 400));
         messageListPane.setMaximumSize(new Dimension(170, 32768));
 
