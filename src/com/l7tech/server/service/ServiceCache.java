@@ -197,14 +197,14 @@ public class ServiceCache {
             for (int i = 0; i < resolvers.length; i++) {
                 resolvers[i].serviceUpdated(service);
             }
-            logger.finest("updated service in cache. oid=" + service.getOid() + " version=" + service.getVersion());
+            logger.finest("updated service " + service.getName() + " in cache. oid=" + service.getOid() + " version=" + service.getVersion());
         } else {
             // make sure no duplicate exist
             //validate(service);
             for (int i = 0; i < resolvers.length; i++) {
                 resolvers[i].serviceCreated(service);
             }
-            logger.finest("added service in cache. oid=" + service.getOid());
+            logger.finest("added service " + service.getName() + " in cache. oid=" + service.getOid());
         }
         ServerAssertion serverPolicy = null;
         try {
@@ -249,7 +249,7 @@ public class ServiceCache {
         for (int i = 0; i < resolvers.length; i++) {
             resolvers[i].serviceDeleted(service);
         }
-        logger.finest("removed service from cache. oid=" + service.getOid());
+        logger.finest("removed service " + service.getName() + " from cache. oid=" + service.getOid());
     }
 
     /**
