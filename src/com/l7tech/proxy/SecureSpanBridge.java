@@ -81,6 +81,22 @@ public interface SecureSpanBridge {
      */
     Result send(String soapAction, String message) throws SAXException, SendException, IOException, BadCredentialsException,
                                                           CertificateAlreadyIssuedException;
+    /**
+     * Get the local part of the URI that will be reported to the Gateway as the L7-Original-URI.
+     *
+     * @return the local part of the L7-Original-URI: header.
+     */
+    String getUriLocalPart();
+
+    /**
+     * Set the local part of the URI to report to the Gateway as the L7-Original-URI header.  When using the
+     * SecureSpan Bridge API, this defaults to a dummy URI.  This may need to be customized to provide
+     * extra information to the Gateway's service resolver in the case of a non-SOAP XML web application, whose
+     * messages typically do not have SOAP bodies or SOAPAction headers.
+     *
+     * @param uriLocalPart the new local part to report in the L7-Original-URI header in subsequent requests.
+     */
+    void setUriLocalPart(String uriLocalPart);
 
     /**
      * Get the Gateway's CA certificate, or null if we don't yet know it.

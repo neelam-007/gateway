@@ -128,6 +128,8 @@ public class SecureSpanBridgeFactory {
         private final MessageProcessor mp;
         private final PasswordAuthentication pw;
 
+        private String localUri = "/bridge/api/NoOriginalUri";
+
         SecureSpanBridgeImpl(Ssg ssg, RequestInterceptor nri, MessageProcessor mp, PasswordAuthentication pw) {
             this.ssg = ssg;
             this.nri = nri;
@@ -148,7 +150,7 @@ public class SecureSpanBridgeFactory {
         }
 
         public SecureSpanBridge.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
-            final URL origUrl = new URL("http://layer7tech.com/bridge/api/NoOriginalUri");
+            final URL origUrl = new URL("http://layer7tech.com" + localUri);
             String namespaceUri = SoapUtil.getNamespaceUri(message);
             PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, soapAction, origUrl.getFile());
             PendingRequest pr = new PendingRequest(message, ssg, nri, pak, origUrl, null);
@@ -196,6 +198,16 @@ public class SecureSpanBridgeFactory {
 
         public SecureSpanBridge.Result send(String soapAction, String message) throws SecureSpanBridge.SendException, IOException, SAXException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
             return send(soapAction, XmlUtil.stringToDocument(message));
+        }
+
+        public String getUriLocalPart() {
+            return localUri;
+        }
+
+        public void setUriLocalPart(String uriLocalPart) {
+            if (uriLocalPart == null) uriLocalPart = "";
+            if (!uriLocalPart.startsWith("/")) uriLocalPart = "/" + uriLocalPart;
+            this.localUri = uriLocalPart;
         }
 
         public X509Certificate getServerCert() throws IOException {
