@@ -47,8 +47,13 @@ public class ClusterLogWorker extends SwingWorker {
      */
     public ClusterLogWorker(ClusterStatusAdmin clusterStatusService, GenericLogAdmin logService, Hashtable currentNodeList, Vector requests) {
         this.clusterStatusService = clusterStatusService;
-        this.currentNodeList = currentNodeList;
         this.logService = logService;
+        this.currentNodeList = currentNodeList;
+
+        if (currentNodeList == null || logService == null || clusterStatusService == null) {
+            throw new IllegalArgumentException();
+        }
+
         this.requests = requests;
 
         remoteExceptionCaught = false;
@@ -109,15 +114,6 @@ public class ClusterLogWorker extends SwingWorker {
 
         // create a new empty node list
         newNodeList = new Hashtable();
-
-        if (clusterStatusService == null) {
-            logger.log(Level.SEVERE, "ClusterServiceAdmin reference is NULL");
-            return newNodeList;
-        }
-
-        if (currentNodeList == null) {
-            throw new RuntimeException("The current node list is NULL");
-        }
 
         // retrieve node status
         ClusterNodeInfo[] cluster = new ClusterNodeInfo[0];

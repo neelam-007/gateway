@@ -224,6 +224,7 @@ public final class RegistryImpl extends Registry
         trustedCertAdmin = null;
         customAssertionsRegistrar = null;
         auditAdmin = null;
+        clusterStatusAdmin = null;
     }
 
 
