@@ -61,10 +61,14 @@ public class MimePartInfo implements Serializable {
     }
 
     public boolean validateContentType(String contentType) {
+        if(contentType == null) return false;
+        
         for (int i = 0; i < contentTypes.length; i++) {
             String validContentType = (String) contentTypes[i];
             if(validContentType.equals(contentType) ||
                  (validContentType.equals("*/*")) ||
+                 (validContentType.startsWith("*/") && contentType.endsWith(validContentType.substring(1))) ||
+                 (validContentType.endsWith("/*") && contentType.startsWith(validContentType.substring(0,validContentType.length()-1))) ||
                  (validContentType.equals("text/enriched") && contentType.equals("text/plain"))) {
                 // content type is valid
                 return true;
