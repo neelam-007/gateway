@@ -77,5 +77,20 @@ public class EntityType {
         this.val = val;
     }
 
+    public String toString() {
+        switch (val) {
+            case 1:
+                return "ID_PROVIDER_CONFIG";
+            case 2:
+                return "USER";
+            case 3:
+                return "GROUP";
+            case 4:
+                return "SERVICE";
+            default:
+                return "?";
+        }
+    }
+
     private int val;
 }

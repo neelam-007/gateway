@@ -75,7 +75,7 @@ public class EntityHeader {
     }
 
     public String toString() {
-        return "EntityHeader. Name=" + getName() + ", oid=" + getOid() + ", description=" + description;
+        return "EntityHeader. Name=" + getName() + ", oid=" + getOid() + ", description=" + description + ", type = " + type.toString();
     }
 
     /**
