@@ -148,7 +148,10 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
-        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
+        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
+            config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
+            throw new FindException("No search base provided");
+        }
         try
         {
             NamingEnumeration answer = null;
@@ -187,7 +190,10 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
-        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
+        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
+            config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
+            throw new FindException("No search base provided");
+        }
         try
         {
             NamingEnumeration answer = null;

@@ -113,7 +113,10 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
-        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
+        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
+            config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
+            throw new FindException("No search base provided");
+        }
         try
         {
             NamingEnumeration answer = null;
@@ -151,7 +154,10 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
-        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
+        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
+            config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
+            throw new FindException("No search base provided");
+        }
         try
         {
             NamingEnumeration answer = null;
@@ -161,8 +167,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             DirContext context = getAnonymousContext();
             answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             int count = 0;
-            while (answer.hasMore())
-            {
+            while (answer.hasMore()) {
                 if (count < offset) {
                     ++count;
                     continue;
@@ -237,8 +242,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         DirContext context = getAnonymousContext();
         answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
-        while (answer.hasMore())
-        {
+        while (answer.hasMore()) {
             String login = null;
             String dn = null;
             SearchResult sr = (SearchResult)answer.next();

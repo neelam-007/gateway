@@ -31,7 +31,9 @@ import java.security.NoSuchAlgorithmException;
  */
 public class LdapIdentityProviderServer implements IdentityProvider {
     public void initialize(IdentityProviderConfig config) {
-        if (!(config.type() == IdentityProviderType.LDAP)) throw new IllegalArgumentException("Expecting Ldap config type");
+        if (config.type() != IdentityProviderType.LDAP) {
+            throw new IllegalArgumentException("Expecting Ldap config type");
+        }
         cfg = config;
         groupManager = new LdapGroupManagerServer(cfg);
         userManager = new LdapUserManagerServer(cfg);
@@ -127,7 +129,7 @@ public class LdapIdentityProviderServer implements IdentityProvider {
             }
         } else {
             logger.log(Level.SEVERE, "Attempt to authenticate using unsupported method" + pc.getFormat());
-            throw new AuthenticationException( "Only cleartext credentials are currently supported!" );
+            throw new AuthenticationException("Only cleartext or digest credentials are currently supported!");
         }
     }
 
@@ -148,14 +150,18 @@ public class LdapIdentityProviderServer implements IdentityProvider {
             logger.info("invalid id provider asked for search");
             throw new FindException("provider invalidated");
         }
-        if (types == null || types.length < 1) throw new IllegalArgumentException("must pass at least one type");
+        if (types == null || types.length < 1) {
+            throw new IllegalArgumentException("must pass at least one type");
+        }
         boolean wantUsers = false;
         boolean wantGroups = false;
         for (int i = 0; i < types.length; i++) {
             if (types[i] == EntityType.USER) wantUsers = true;
             else if (types[i] == EntityType.GROUP) wantGroups = true;
         }
-        if (!wantUsers && !wantGroups) throw new IllegalArgumentException("types must contain users and or groups");
+        if (!wantUsers && !wantGroups) {
+            throw new IllegalArgumentException("types must contain users and or groups");
+        }
         // todo: get a sorted result from ldap server instead of sorting in collection
         Collection output = new TreeSet(new EntityHeaderComparator());
         try
@@ -164,11 +170,15 @@ public class LdapIdentityProviderServer implements IdentityProvider {
             // search string for users and or groups based on passed types wanted
             String filter = null;
             if (wantUsers && wantGroups) {
-                filter = "(&(|(objectclass=" + LdapGroupManagerServer.GROUP_OBJCLASS + ")(objectclass=" + LdapUserManagerServer.USER_OBJCLASS + "))(" + LdapManager.NAME_ATTR_NAME + "=" + searchString + "))";
+                filter = "(&(|(objectclass=" + LdapGroupManagerServer.GROUP_OBJCLASS + ")" +
+                         "(objectclass=" + LdapUserManagerServer.USER_OBJCLASS + "))" +
+                         "(" + LdapManager.NAME_ATTR_NAME + "=" + searchString + "))";
             } else if (wantUsers) {
-                filter = "(&(objectclass=" + LdapUserManagerServer.USER_OBJCLASS + ")(" + LdapManager.NAME_ATTR_NAME + "=" + searchString + "))";
+                filter = "(&(objectclass=" + LdapUserManagerServer.USER_OBJCLASS + ")" +
+                         "(" + LdapManager.NAME_ATTR_NAME + "=" + searchString + "))";
             } else if (wantGroups) {
-                filter = "(&(objectclass=" + LdapGroupManagerServer.GROUP_OBJCLASS + ")(" + LdapManager.NAME_ATTR_NAME + "=" + searchString + "))";
+                filter = "(&(objectclass=" + LdapGroupManagerServer.GROUP_OBJCLASS + ")" +
+                         "(" + LdapManager.NAME_ATTR_NAME + "=" + searchString + "))";
             }
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);

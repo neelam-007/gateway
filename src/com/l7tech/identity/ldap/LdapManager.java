@@ -43,18 +43,6 @@ public class LdapManager {
         return new InitialDirContext(env);
     }
 
-    protected synchronized void createAnonymousContext() throws NamingException {
-
-        // Create the initial directory context. So anonymous bind for search
-        // Identify service provider to use
-        //java.util.Hashtable env = new java.util.Hashtable();
-        //env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        //env.put(Context.PROVIDER_URL, config.getLdapHostURL());
-
-        // Create the initial directory context. So anonymous bind for search
-        //anonymousContext = new InitialDirContext(env);
-    }
-
     //protected DirContext anonymousContext = null;
     protected IdentityProviderConfig config;
 
