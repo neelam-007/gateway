@@ -37,7 +37,7 @@ public class IdentityRule extends Filter {
         if (assertionTree == null) return null;
         applyRules(assertionTree);
         if (anIdentityAssertionWasFound && !userPassedAtLeastOneIdentityAssertion) {
-            logger.log(Level.SEVERE, "This user is not authorized to consume this service. Policy filter returning null.");
+            logger.severe("This user is not authorized to consume this service. Policy filter returning null.");
             return null;
         }
         return assertionTree;

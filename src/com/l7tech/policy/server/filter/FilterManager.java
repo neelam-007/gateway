@@ -9,7 +9,6 @@ import com.l7tech.logging.LogManager;
 
 import java.io.IOException;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * User: flascell
@@ -41,7 +40,7 @@ public class FilterManager {
                 filter = (Filter)filterTypes[i].newInstance();
                 rootAssertion = filter.filter(policyRequestor, rootAssertion);
                 if (rootAssertion == null) {
-                    logger.log(Level.WARNING, "filter returned null root assertion " + filterTypes[i].getName());
+                    logger.warning("filter returned null root assertion " + filterTypes[i].getName());
                     return null;
                 }
             } catch (InstantiationException e) {
