@@ -76,6 +76,8 @@ public class PolicyAddIdentitiesDialog extends JDialog {
         identitiesInTable = new JTable();
         buttonPanel = new JPanel();
 
+        ToolTipManager.sharedInstance().registerComponent(identitiesInTable);
+        ToolTipManager.sharedInstance().registerComponent(identitiesOutTable);
 
         getContentPane().setLayout(new BorderLayout());
 
@@ -434,6 +436,18 @@ public class PolicyAddIdentitiesDialog extends JDialog {
               ImageIcon icon = PolicyAddIdentitiesDialog.this.getIcon(type);
               if (icon != null) setIcon(icon);
               setText(h.getName());
+              if (type.equals(EntityType.GROUP)) {
+                // assume that the strid is a valuable piece of information if it;s something else than a number
+                String strid = h.getStrId();
+                String tt = null;
+                try {
+                    Long.parseLong(strid);
+                    tt = null;
+                } catch (NumberFormatException nfe) {
+                    tt = strid;
+                }
+                setToolTipText(tt);
+              }
               return this;
           }
       };
