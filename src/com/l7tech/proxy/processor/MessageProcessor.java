@@ -192,7 +192,7 @@ public class MessageProcessor {
 
     private void handleBadCredentialsException(Ssg ssg, PendingRequest req, BadCredentialsException e)
             throws KeyStoreCorruptException, IOException, OperationCanceledException, ConfigurationException,
-                   KeyStoreException, NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException, HttpChallengeRequiredException
+                   KeyStoreException, HttpChallengeRequiredException
 
     {
         if (ssg.isChainCredentialsFromClient())
