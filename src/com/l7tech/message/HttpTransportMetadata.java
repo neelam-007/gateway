@@ -28,14 +28,13 @@ public class HttpTransportMetadata extends TransportMetadata {
     }
 
     public TransportProtocol getProtocol() {
-        if ( "http".equals( _request.getScheme() ) ) {
-            if ( _request.isSecure() )
-                return TransportProtocol.HTTPS;
-            else
-                return TransportProtocol.HTTP;
-        } else {
+        String scheme = _request.getScheme();
+        if ( "http".equals( scheme ) )
+            return TransportProtocol.HTTP;
+        else if ( "https".equals( scheme ) && _request.isSecure() )
+            return TransportProtocol.HTTPS;
+        else
             return TransportProtocol.UNKNOWN;
-        }
     }
 
     protected Object doGetParameter(String name) {
