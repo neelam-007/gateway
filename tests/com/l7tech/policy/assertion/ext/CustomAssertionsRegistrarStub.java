@@ -28,7 +28,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      */
     public Collection getAssertions(Category c) throws RemoteException {
         CustomAssertionHolder ca = new CustomAssertionHolder();
-        ca.setCustomAssertion(new NetegritySiteminderProperties());
+        ca.setCustomAssertion(new TestAssertionProperties());
         List list = new ArrayList();
         list.add(ca);
         return list;

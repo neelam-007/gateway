@@ -77,6 +77,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                 public Object run() throws Exception {
                     Class sa = descriptor.getServerAssertion();
                     ServiceInvocation si = (ServiceInvocation)sa.newInstance();
+                    si.setCustomAssertion(customAssertion);
                     if (isPostRouting(request)) {
                         si.onResponse(new CustomServiceResponse((XmlResponse)response));
                     } else {

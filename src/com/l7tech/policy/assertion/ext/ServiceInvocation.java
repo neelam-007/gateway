@@ -20,12 +20,18 @@ import java.security.GeneralSecurityException;
  */
 public abstract class ServiceInvocation {
     /**
-     * Create the <code>ServiceInvocation</code> isntance with the custom
-     * assertion.
-     *
-     * @param customAssertion
+     * Create the <code>ServiceInvocation</code> instance
      */
-    public ServiceInvocation(CustomAssertion customAssertion) {
+    public ServiceInvocation() {
+    }
+
+    /**
+     * Associate the service invocation with the custom assertion.
+     * The custom assertion framework sets this.
+     *
+     * @param customAssertion the
+     */
+    public void setCustomAssertion(CustomAssertion customAssertion) {
         this.customAssertion = customAssertion;
     }
 

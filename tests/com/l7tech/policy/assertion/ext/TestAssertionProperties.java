@@ -10,7 +10,7 @@ package com.l7tech.policy.assertion.ext;
  * @author emil
  * @version Feb 18, 2004
  */
-public class NetegritySiteminderProperties implements CustomAssertion {
+public class TestAssertionProperties implements CustomAssertion {
     public String getResource() {
         return resource;
     }
@@ -32,6 +32,6 @@ public class NetegritySiteminderProperties implements CustomAssertion {
     private String cookieName;
 
     public String getName() {
-        return "Netegrity Siteminder";
+        return "Test Custom Assertion";
     }
 }

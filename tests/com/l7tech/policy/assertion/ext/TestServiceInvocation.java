@@ -11,15 +11,8 @@ import java.util.logging.Logger;
  * @author emil
  * @version Feb 23, 2004
  */
-public class SiteminderServiceInvocation extends ServiceInvocation {
-    private final Logger logger = Logger.getLogger(SiteminderServiceInvocation.class.getName());
-
-    /**
-     * @param customAssertion
-     */
-    public SiteminderServiceInvocation(CustomAssertion customAssertion) {
-        super(customAssertion);
-    }
+public class TestServiceInvocation extends ServiceInvocation {
+    private final Logger logger = Logger.getLogger(TestServiceInvocation.class.getName());
 
     public void onRequest(ServiceRequest request) {
         logger.info("in request");
