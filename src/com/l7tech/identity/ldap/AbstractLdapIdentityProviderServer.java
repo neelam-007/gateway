@@ -217,7 +217,9 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
                 EntityHeader header = null;
                 // construct header accordingly
                 if (type == EntityType.GROUP) {
-                    header = new EntityHeader(dn, EntityType.GROUP, dn, null);
+                    String groupName = getGroupName(sr);
+                    if (groupName == null) groupName = dn;
+                    header = new EntityHeader(dn, EntityType.GROUP, groupName, null);
                 } else if (type == EntityType.USER) {
                     Object tmp = LdapManager.extractOneAttributeValue(atts, getConstants().userLoginAttribute());
                     if (tmp != null) {
@@ -238,7 +240,38 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
         }
         return output;
     }
-    
+
+    private String getGroupName(SearchResult sr) {
+        String output = null;
+        Attributes atts = sr.getAttributes();
+        // is it user or group ?
+        Attribute objectclasses = atts.get("objectclass");
+        // check for OU group
+        String groupclass = getConstants().oUObjClassName();
+        if (attrContainsCaseIndependent(objectclasses, groupclass)) {
+            // extract ou value
+            Attribute valuesWereLookingFor = atts.get(getConstants().oUObjAttrName());
+            if (valuesWereLookingFor != null && valuesWereLookingFor.size() > 0) {
+                try {
+                    output = valuesWereLookingFor.get(0).toString();
+                } catch (NamingException e) {
+                    logger.warning("cannot extract cn from this group");
+                }
+            }
+        } else {
+            // extract the cn
+            Attribute valuesWereLookingFor = atts.get(getConstants().userNameAttribute());
+            if (valuesWereLookingFor != null && valuesWereLookingFor.size() > 0) {
+                try {
+                    output = valuesWereLookingFor.get(0).toString();
+                } catch (NamingException e) {
+                    logger.warning("cannot extract cn from this group");
+                }
+            }
+        }
+        return output;
+    }
+
     /**
      * determines whether the SearchResult contains a User or a Group
      * @param sr

@@ -199,7 +199,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
 
         if (ou != null && ou != null) {
             String dn = sr.getName() + "," + _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
-            EntityHeader header = new EntityHeader(dn, EntityType.GROUP, dn, null);
+            EntityHeader header = new EntityHeader(dn, EntityType.GROUP, ou, null);
             return header;
         }
         return null;
@@ -449,7 +449,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
                 if (tmp != null) cn = tmp.toString();
 
                 if (cn != null && dn != null) {
-                    EntityHeader header = new EntityHeader(dn, EntityType.GROUP, dn, null);
+                    EntityHeader header = new EntityHeader(dn, EntityType.GROUP, cn, null);
                     output.add(header);
                 }
             }
