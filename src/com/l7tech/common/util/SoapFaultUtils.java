@@ -59,4 +59,7 @@ public class SoapFaultUtils {
                 " </soapenv:Body>\n" +
                 "</soapenv:Envelope>";
     }
+
+    public static final String FC_CLIENT = "Client";
+    public static final String FC_SERVER = "Server";
 }
