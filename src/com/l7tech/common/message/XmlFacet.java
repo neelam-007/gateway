@@ -22,7 +22,7 @@ import java.io.InputStream;
 /**
  * Represents a MimeFacet whose first part is text/xml.
  */
-class XmlFacet extends MessageFacet {
+public class XmlFacet extends MessageFacet {
     private Document originalDocument = null;  // the original Document
     private Document workingDocument = null;  // the working Document
     private ProcessorResult processorResult = null;
@@ -160,12 +160,14 @@ class XmlFacet extends MessageFacet {
         public Document getDocumentWritable() throws SAXException, IOException {
             Document working = getDocumentReadOnly();
             firstPartValid = false;
-            if (originalDocument == null)
+            if (getMessage().isEnableOriginalDocument() && originalDocument == null)
                 originalDocument = (Document)working.cloneNode(true); // todo find a way to skip this if it wont be needed
             return working;
         }
 
         public Document getOriginalDocument() throws SAXException, IOException {
+            if (!getMessage().isEnableOriginalDocument())
+                throw new UnsupportedOperationException("originalDocumentSupport is not enabled");
             if (originalDocument == null)
                 originalDocument = (Document)getDocumentReadOnly().cloneNode(true);
             return originalDocument;

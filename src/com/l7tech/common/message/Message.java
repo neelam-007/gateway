@@ -27,6 +27,8 @@ import java.io.InputStream;
  */
 public final class Message {
     private MessageFacet rootFacet;
+    private boolean enableOriginalDocument = false; // enable this to enable XmlKnob.getOriginalDocument().
+                                                    // This is off by default since only certain messages need this.
 
     /**
      * Create a Message with no facets.
@@ -126,6 +128,14 @@ public final class Message {
     public void initialize(Message msg)
     {
         rootFacet = msg.rootFacet;
+    }
+
+    public void setEnableOriginalDocument() {
+        this.enableOriginalDocument = true;
+    }
+
+    public boolean isEnableOriginalDocument() {
+        return enableOriginalDocument;
     }
 
     /**

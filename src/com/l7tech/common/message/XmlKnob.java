@@ -46,6 +46,8 @@ public interface XmlKnob extends MessageKnob {
      * Get a read-only view of the original Document from when the MIME bytestream was first parsed.  There is
      * currently no way to enforce that the returned Document is not modified; callers are expected to keep their
      * word.
+     * <p>
+     * This might not be enabled unless {@link Message#setEnableOriginalDocument()} has been called.
      *
      * @see #getDocumentWritable for a way to get a writable version of the current working Document, instead
      * @return the original Document as it came from the MIME bytestream.  Caller must not modify this in any way.

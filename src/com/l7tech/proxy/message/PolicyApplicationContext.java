@@ -97,6 +97,7 @@ public class PolicyApplicationContext extends ProcessingContext {
                                     URL origUrl)
     {
         super(request, response);
+        request.setEnableOriginalDocument();
         if (ssg == null) throw new NullPointerException("ssg is null");
         if (requestInterceptor == null)
             requestInterceptor = NullRequestInterceptor.INSTANCE;
