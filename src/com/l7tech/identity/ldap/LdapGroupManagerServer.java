@@ -3,16 +3,14 @@ package com.l7tech.identity.ldap;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.logging.LogManager;
 
 import javax.naming.directory.*;
 import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.HashSet;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -51,18 +49,26 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             // create a header for all "memberUid" attributes
             Attribute valuesWereLookingFor = attributes.get(GROUPOBJ_MEMBER_ATTR);
             if (valuesWereLookingFor != null) {
-                HashSet membersSet = new HashSet();
+                Set memberHeaders = new HashSet();
+                Set members = new HashSet();
+                User u;
                 for (int i = 0; i < valuesWereLookingFor.size(); i++) {
                     Object val = valuesWereLookingFor.get(i);
                     if (val != null) {
                         String memberUid = val.toString();
                         EntityHeader userHeader = getUserHeaderFromUid(memberUid);
                         if (userHeader != null) {
-                            membersSet.add(userHeader);
+                            memberHeaders.add(userHeader);
+                            u = new User();
+                            u.setProviderId( config.getOid() );
+                            u.setName( userHeader.getStrId() );
+                            u.setLogin( memberUid );
+                            members.add( u );
                         }
                     }
                 }
-                out.setMemberHeaders(membersSet);
+                out.setMembers( members );
+                out.setMemberHeaders(memberHeaders);
             }
             context.close();
             return out;
@@ -74,7 +80,10 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
 
     public Group findByName(String name) throws FindException {
         // ldap group names are their dn
-        return findByPrimaryKey(name);
+        //StringBuffer dn = new StringBuffer( config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) );
+        //dn.append( ",cn=" );
+        //dn.append( name );
+        return findByPrimaryKey( name );
     }
 
     public void delete(Group group) throws DeleteException {
@@ -123,7 +132,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
                 if (tmp != null) cn = tmp.toString();
 
                 if (cn != null && dn != null) {
-                    EntityHeader header = new EntityHeader(dn, EntityType.GROUP, cn, null);
+                    EntityHeader header = new EntityHeader(dn, EntityType.GROUP, dn, null);
                     output.add(header);
                 }
             }
