@@ -7,7 +7,7 @@ import com.l7tech.policy.assertion.RoutingAssertion;
  * Class SpecificUserAssertionTreeNode.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class RoutingAssertionTreeNode extends LeafAssertionTreeNode {
+public class RoutingAssertionTreeNode extends LeafAssertionTreeNode {
 
     public RoutingAssertionTreeNode(RoutingAssertion assertion) {
         super(assertion);

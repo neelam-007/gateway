@@ -22,20 +22,20 @@ import java.net.MalformedURLException;
 
 
 /**
- * <code>EndpointCredentialsPanel</code> that represent a step in the wizard
+ * <code>ProtectedServiceWizardPanel</code> that represent a step in the wizard
  * <code>WizardStepPanel</code> that collects endpoint access control attributes.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class EndpointCredentialsPanel extends WizardStepPanel {
+public class ProtectedServiceWizardPanel extends WizardStepPanel {
     private PublishedService service = new PublishedService();
     private boolean isValid = true;
     private JCheckBox anonymousAccessCheckBox;
 
 
     /** Creates new form ServicePanel */
-    public EndpointCredentialsPanel() {
+    public ProtectedServiceWizardPanel() {
         initComponents();
     }
 

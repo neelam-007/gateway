@@ -46,9 +46,8 @@ import java.security.Principal;
 
 
 /**
- * <code>PolicyAddIdentitiesDialog</code> that represent a step in the wizard
- * <code>WizardStepPanel</code> that collects the published service identities
- * info.
+ * <code>PolicyAddIdentitiesDialog</code> is the policy identities editor for
+ * existing policies.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0

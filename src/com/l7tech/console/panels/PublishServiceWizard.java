@@ -81,7 +81,7 @@ public class PublishServiceWizard extends JDialog {
     private WizardStepPanel[] panels =
       new WizardStepPanel[]{
           new ServicePanel(),
-          new EndpointCredentialsPanel(),
+          new ProtectedServiceWizardPanel(),
           new IdentityProviderWizardPanel()
       };
 
