@@ -220,7 +220,9 @@ public class NewInternalUserDialog extends JDialog {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(getAdditionalProperties(), constraints);
+        final JCheckBox additionalProperties = getAdditionalProperties();
+        additionalProperties.setBorder(null);
+        panel.add(additionalProperties, constraints);
 
         // button panel
         constraints = new GridBagConstraints();

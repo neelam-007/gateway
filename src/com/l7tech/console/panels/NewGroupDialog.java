@@ -138,11 +138,10 @@ public class NewGroupDialog extends JDialog {
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 0;
-        constraints.weightx = 0.0;
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 16, 0, 0);
+        constraints.insets = new Insets(12, 12, 0, 0);
         panel.add(groupIdLabel, constraints);
 
         // group name text field
@@ -167,7 +166,9 @@ public class NewGroupDialog extends JDialog {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(getAdditionalProperties(), constraints);
+        final JCheckBox additionalProperties = getAdditionalProperties();
+        additionalProperties.setBorder(null);
+        panel.add(additionalProperties, constraints);
 
         // button panel
         constraints = new GridBagConstraints();
@@ -358,8 +359,8 @@ public class NewGroupDialog extends JDialog {
                             insertSuccess = true;
                         } catch (Exception e) {
                             ErrorManager.getDefault().
-                              notify(Level.WARNING, e, "Error encountered while adding a group\n"+
-                                     "The Group has not been created.");
+                              notify(Level.WARNING, e, "Error encountered while adding a group {0}\n"+
+                                     "The Group {0} has not been created.", new Object[] {group.getName()});
                         }
                         NewGroupDialog.this.dispose();
                     }

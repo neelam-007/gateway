@@ -1,11 +1,10 @@
 package com.l7tech.console.logging;
 
-import com.l7tech.common.util.Locator;
-
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.LinkedList;
-import java.util.Iterator;
+import java.text.MessageFormat;
 
 /**
  * Class ErrorManager is the SSM central error handler.<br>
@@ -58,6 +57,21 @@ public class ErrorManager {
      * @param message the message
      */
     public void notify(Level level, Throwable t, String message) {
+        notify(level, t, message, null);
+    }
+
+    /**
+     * Log and notify the user about the problem or error
+     *
+     * @param level the log level
+     * @param t the throwable with the
+     * @param message the message or message pattern
+     * @param args the pattern arguments, may be null
+     */
+    public void notify(Level level, Throwable t, String message, Object[] args) {
+        if (message !=null && (args !=null && args.length > 0)) {
+            message = MessageFormat.format(message, args);
+        }
         ErrorHandler[] defHandlers = Handlers.defaultHandlers();
         ErrorHandler[] eh = new ErrorHandler[handlers.size()+defHandlers.length];
         int index = 0;
