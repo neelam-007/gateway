@@ -70,7 +70,7 @@ public class TrustCertificateDialog extends JDialog {
                                      GridBagConstraints.EAST,
                                      GridBagConstraints.NONE,
                                      new Insets(5, 5, 5, 5), 0, 0));
-        this.setSize(550, 320);
+        this.setSize(550, 360);
         Utilities.centerOnScreen(this);
     }
 
