@@ -804,11 +804,11 @@ public class MainWindow extends JFrame {
      * @return JTree
      */
     private JTree getAssertionPaletteTree() {
-        JTree tree =
-          (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
         if (tree != null)
             return tree;
         tree = new AssertionsTree();
+        tree.setShowsRootHandles(true);
         ComponentRegistry.getInstance().registerComponent(AssertionsTree.NAME, tree);
         return tree;
     }
@@ -818,12 +818,12 @@ public class MainWindow extends JFrame {
      * @return JTree
      */
     private JTree getServicesTree() {
-        JTree tree =
-          (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
+        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
         if (tree != null)
             return tree;
 
         tree = new ServicesTree();
+        tree.setShowsRootHandles(true);
         ComponentRegistry.getInstance().registerComponent(ServicesTree.NAME, tree);
         return tree;
     }
