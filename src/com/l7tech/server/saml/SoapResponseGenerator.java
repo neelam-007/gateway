@@ -2,6 +2,7 @@ package com.l7tech.server.saml;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import org.apache.xmlbeans.XmlException;
@@ -100,15 +101,9 @@ class SoapResponseGenerator {
     void streamFault(String faultString, Exception e, OutputStream os) {
         logger.log(Level.WARNING, "Returning SOAP fault " + faultString, e);
         try {
-            SOAPMessage msg = msgFactory.createMessage();
-            SoapUtil.addFaultTo(msg, SoapUtil.FC_SERVER, faultString, null);
-            final SOAPEnvelope envelope = msg.getSOAPPart().getEnvelope();
-            SOAPFault fault = envelope.getBody().getFault();
-            Detail detail = fault.addDetail();
-            DetailEntry de = detail.addDetailEntry(envelope.createName("FaultDetails"));
-            de.addTextNode(e.toString());
-            msg.writeTo(os);
-        } catch (Exception se) {
+            String fault = SoapFaultUtils.generateRawSoapFault(SoapFaultUtils.FC_SERVER, faultString, e.getMessage(), "");
+            os.write(fault.getBytes());
+        } catch (IOException se) {
             se.printStackTrace();
             throw new RuntimeException(se);
         }
