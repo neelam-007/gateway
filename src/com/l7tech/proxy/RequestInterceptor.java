@@ -8,10 +8,10 @@ import org.w3c.dom.Document;
 
 /**
  * Interface implemented by someone who wants to trace progress of each client proxy request.
+ *
  * User: mike
  * Date: May 22, 2003
  * Time: 3:55:39 PM
- * To change this template use Options | File Templates.
  */
 public interface RequestInterceptor {
     /**
