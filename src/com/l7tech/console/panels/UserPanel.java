@@ -616,12 +616,11 @@ public class UserPanel extends EntityEditorPanel {
             String id;
             if (userHeader.getStrId() != null) {
                 id = user.getUniqueIdentifier();
-                getUserManager().update(user);
+                getUserManager().update(user, userGroups );
             } else {
-                id = getUserManager().save(user);
+                id = getUserManager().save(user, userGroups );
                 userHeader.setStrId(id);
             }
-            getGroupManager().setGroupHeaders(id, userGroups);
 
             // Cleanup
             formModified = false;

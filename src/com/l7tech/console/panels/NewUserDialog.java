@@ -475,7 +475,7 @@ public class NewUserDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.USER);
                             header.setName(user.getName());
-                            header.setStrId(Registry.getDefault().getInternalUserManager().save(user));
+                            header.setStrId(Registry.getDefault().getInternalUserManager().save(user, null));
                             fireEventUserAdded(header);
                             insertSuccess = true;
                         } catch (Exception e) {

@@ -460,14 +460,12 @@ public class GroupPanel extends EntityEditorPanel {
             GroupManager gman = getGroupManager();
             String id;
             if (groupHeader.getStrId() != null) {
-                gman.update(group);
+                gman.update(group, groupMembers );
                 id = group.getUniqueIdentifier();
             } else {
-                id = gman.save(group);
+                id = gman.save(group, groupMembers );
                 groupHeader.setStrId(id);
             }
-            gman.setUserHeaders( id, groupMembers );
-
             // Cleanup
         } catch (Exception e) {
             StringBuffer msg = new StringBuffer();

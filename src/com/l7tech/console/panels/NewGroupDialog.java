@@ -1,15 +1,14 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -329,7 +328,7 @@ public class NewGroupDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.GROUP);
                             header.setName(group.getName());
-                            header.setStrId(Registry.getDefault().getInternalGroupManager().save(group));
+                            header.setStrId(Registry.getDefault().getInternalGroupManager().save(group, null ));
                             NewGroupDialog.this.fireEventGroupAdded(header);
                             insertSuccess = true;
                         } catch (Exception e) {
