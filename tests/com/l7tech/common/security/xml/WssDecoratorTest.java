@@ -260,4 +260,20 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[] { c.body },
                                 new Element[] { c.body });
     }
+
+    public void testNonsensicalSignedBodyEncryptedEnvelope() throws Exception {
+        runTest(getNonsensicalSignedBodyEncryptedEnvelope());
+    }
+
+    public TestDocument getNonsensicalSignedBodyEncryptedEnvelope() throws Exception {
+        Context c = new Context();
+        return new TestDocument(c,
+                                TestDocuments.getDotNetServerCertificate(), // reversed, so skiless IBM key is recip
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                true,
+                                new Element[] { c.message.getDocumentElement() },
+                                new Element[] { c.body });
+    }
 }
