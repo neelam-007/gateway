@@ -12,6 +12,7 @@ import java.awt.event.*;
  * User: mike
  * Date: May 22, 2003
  * Time: 1:47:04 PM
+ * Revision: $ Revision $
  */
 public class Gui {
     private static final Category log = Category.getInstance(Gui.class.getName());
@@ -190,6 +191,6 @@ public class Gui {
      * @param msg the error message to display
      */
     public static void errorMessage(final String msg) {
-        JOptionPane.showMessageDialog(getInstance().getFrame(), msg, "Unable to proceed", JOptionPane.ERROR_MESSAGE);;
+        JOptionPane.showMessageDialog(getInstance().getFrame(), msg, "Unable to proceed", JOptionPane.ERROR_MESSAGE);
     }
 }
