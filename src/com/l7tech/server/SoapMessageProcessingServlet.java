@@ -12,6 +12,7 @@ import com.l7tech.util.SoapUtil;
 import com.l7tech.service.PublishedService;
 import com.l7tech.objectmodel.PersistenceManager;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.logging.LogManager;
 
 import javax.servlet.http.*;
@@ -84,7 +85,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
         } finally {
             try {
-                PersistenceManager.getContext().close();
+                PersistenceContext.getCurrent().close();
             } catch ( ObjectModelException ome ) {
                 LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, ome);
                 throw new ServletException( ome );
