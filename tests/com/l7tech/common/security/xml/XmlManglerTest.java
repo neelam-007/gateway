@@ -7,6 +7,7 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathEvaluator;
 import junit.framework.Test;
@@ -29,9 +30,7 @@ import java.io.StringWriter;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -206,19 +205,29 @@ public class XmlManglerTest extends TestCase {
 
         // log.info("Document after encryption :\n" + documentToString(soapDocument));
 
-        NodeList nl = soapDocument.getElementsByTagNameNS(xmlencNS, "CipherValue");
+        NodeList nl = soapDocument.getElementsByTagNameNS(xmlencNS, "EncryptedData");
         assertTrue(nl != null);
         assertTrue(nl.getLength() == 2);
 
+        // Avoid invalidating nodelist while we are iterating it
+        List nll = new ArrayList();
         final int length = nl.getLength();
-        for (int i = 0; i < length; i++) {
-            element = (Element)nl.item(i);
-            XmlMangler.decryptDocument(soapDocument, encryptionKey);
+        for (int i = 0; i < length; i++)
+            nll.add(nl.item(i));
+
+        System.out.println("Encrypted document: " + XmlUtil.documentToString(soapDocument));
+        for (Iterator i = nll.iterator(); i.hasNext();) {
+            element = (Element)i.next();
+            element = (Element)element.getParentNode();
+            System.out.println("Decrypting element: " + XmlUtil.elementToString(element));
+            XmlMangler.decryptElement((Element) element, encryptionKey);
             // log.info("Document after decryption "+i+" :\n" + documentToString(soapDocument));
         }
         nl = soapDocument.getElementsByTagNameNS(xmlencNS, "CipherValue");
         assertTrue(nl != null);
         assertTrue(nl.getLength() == 0);
+
+        System.out.println("Document after decryption: " + XmlUtil.documentToString(soapDocument));        
     }
 
     /**
@@ -238,14 +247,14 @@ public class XmlManglerTest extends TestCase {
         XmlMangler.encryptXml((Element)nodes.get(0), encryptionKey.getEncoded(), "MyKeyName", "ref1");
         // log.info("Document after encryption: \n" + documentToString(doc));
 
-        NodeList nl = doc.getElementsByTagNameNS(xmlencNS, "CipherValue");
+        NodeList nl = doc.getElementsByTagNameNS(xmlencNS, "EncryptedData");
         assertTrue(nl != null);
         assertTrue(nl.getLength() == 1);
 
         final int length = nl.getLength();
         for (int i = 0; i < length; i++) {
             Element element = (Element)nl.item(i);
-            XmlMangler.decryptDocument(doc, encryptionKey);
+            XmlMangler.decryptElement((Element) element.getParentNode(), encryptionKey);
             //log.info("Document after decryption "+i+" :\n" + documentToString(doc));
         }
         nl = doc.getElementsByTagNameNS(xmlencNS, "CipherValue");

@@ -14,6 +14,7 @@ import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CommonLogger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -27,6 +28,7 @@ import java.security.Key;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Class that encrypts and decrypts XML documents.
@@ -241,8 +243,10 @@ public class XmlMangler {
             Element referenceList = (Element)i.next();
 
             List dataRefEls = XmlUtil.findChildElementsByName(referenceList, SoapUtil.XMLENC_NS, "DataReference");
-            if ( dataRefEls == null || dataRefEls.isEmpty() )
-                throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there are no DataReference tags in the message");
+            if ( dataRefEls == null || dataRefEls.isEmpty() ) {
+                logger.warning("EncryptedData is present, but contains at least one empty ReferenceList");
+                continue;
+            }
 
             for (Iterator j = dataRefEls.iterator(); j.hasNext();) {
                 Element dataRefEl = (Element)j.next();
@@ -269,6 +273,8 @@ public class XmlMangler {
                     }
 
                     referenceList.removeChild(dataRefEl);
+                    if (!referenceList.hasChildNodes())
+                        referenceList.getParentNode().removeChild(referenceList);
                     return;
                 }
             }
@@ -372,4 +378,7 @@ public class XmlMangler {
     {
         decryptElement(soapMsg.getDocumentElement(), key);
     }
+
+    // Use a logger that will work inside either the Agent or the Gateway.
+    private static final Logger logger = CommonLogger.getSystemLogger();
 }

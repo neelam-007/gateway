@@ -4,6 +4,7 @@ import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CommonLogger;
 import org.w3c.dom.*;
 
 import java.lang.reflect.Method;
@@ -379,28 +380,6 @@ public final class SoapMsgSigner {
         return false;
     }
 
-    // todo this really really smells, but it is only way to get log manager on server and agent
-    private static final Logger logger = LogHolder.getInstance().getSystemLogger();
-
-    private static class LogHolder {
-        public static LogHolder getInstance() {
-            return _instance;
-        }
-
-        public Logger getSystemLogger() {
-            try {
-                Class logManagerClass = Class.forName("com.l7tech.logging.LogManager");
-                Method logManager_getInstance = logManagerClass.getMethod( "getInstance", new Class[0] );
-                Object logManager = logManager_getInstance.invoke( null, new Object[0] );
-                Method logManager_getSystemLogger = logManagerClass.getMethod( "getSystemLogger" , new Class[0] );
-                Logger logger = (Logger) logManager_getSystemLogger.invoke( logManager, new Object[0] );
-                return logger;
-            } catch ( Exception e ) {
-                // look for Client logger
-                return Logger.getLogger( SoapMsgSigner.class.getName() );
-            }
-        }
-
-        private static final LogHolder _instance = new LogHolder();
-    }
+    // Use a logger that will work inside either the Agent or the Gateway.
+    private static final Logger logger = CommonLogger.getSystemLogger();
 }
