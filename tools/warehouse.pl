@@ -44,7 +44,7 @@ function doSubmit() {
       xmlhttp.open("POST", loc, true);
     } catch (blah) {
       document.xmlform.outputxml.value = "Exception: " + blah + "\\n\\n";
-      document.xmlform.outputxml.value += 'Shut down all browser windows; then, add:\\n\\n  user_pref("signed.applets.codebase_principal_support", true);\\n\\nto C:/Documents and Settings/YOUR_USERNAME/Application Data/Mozilla/Firefox/Profiles/default.3cu/prefs.js';
+      document.xmlform.outputxml.value += 'If using Mozilla or FireFox, go to about:config and set signed.applets.codebase_principal_support to true';
       throw blah;
     }
   }
