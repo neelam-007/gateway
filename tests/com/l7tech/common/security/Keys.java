@@ -34,7 +34,7 @@ public class Keys {
     private boolean debug = false;
 
     /**
-     * Instantiate <code>Keys</code> (privcate and public key pair) with
+     * Instantiate <code>Keys</code> (private and public key pair) with
      * default key size of 512.
      *
      * @throws NoSuchAlgorithmException when algorithm requested is not
