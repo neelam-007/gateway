@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.NonSoapServicePanel;
 import com.l7tech.console.util.TopComponents;
@@ -13,6 +14,7 @@ import com.l7tech.objectmodel.VersionException;
 import com.l7tech.objectmodel.SaveException;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
@@ -61,6 +63,13 @@ public class EditServiceRoutingURIAction extends NodeAction {
                         new URL(mw.ssgURL() + NonSoapServicePanel.DEF_PREFIX + res);
                         svc.setRoutingUri(NonSoapServicePanel.DEF_PREFIX + res);
                         Registry.getDefault().getServiceManager().savePublishedService(svc);
+
+                        JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
+                        if (tree != null) {
+                            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                            model.nodeChanged(node);
+                        }
+                        
                     } catch (MalformedURLException e) {
                         JOptionPane.showMessageDialog(mw, "Invalid URL " + mw.ssgURL() + prefix + res);
                     }
