@@ -239,8 +239,6 @@ public class Gui {
                     showMessages.setSelected(messageViewer.isShowing());
                 }
             });
-            messageViewer.pack();
-            Utilities.centerOnScreen(messageViewer);
         }
         return messageViewer;
     }
