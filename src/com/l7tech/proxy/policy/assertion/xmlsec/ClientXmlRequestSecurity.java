@@ -79,7 +79,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             long seqNr = session.nextSequenceNumber();
             SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(soapmsg, sessId, seqNr);
             ElementSecurity[] elements = xmlRequestSecurity.getElements();
-            SecurityProcessor signer = SecurityProcessor.createSenderSecurityProcessor(si, elements);
+            SecurityProcessor signer = SecurityProcessor.createSenderSecurityProcessor(si, ssgCert, elements);
             signer.processInPlace(soapmsg);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);

@@ -37,12 +37,15 @@ public abstract class SecurityProcessor {
      * Factory method that creates the <code>SenderXmlSecurityProcessor</code> security processor.
      *
      * @param si       the signer info (private key, certificate) to user for decorating messages
+     * @param recipientCertificate  the certificate of the recipient.  may be null if no encryption will be done.
      * @param elementsToDecorate the array of security elements describing the processing
      *                           rules that will be performed upon outgoing requests.
      * @return the Sender's XML security processor
      */
-    public static SecurityProcessor createSenderSecurityProcessor(SignerInfo si, ElementSecurity[] elementsToDecorate) {
-        return new SenderXmlSecurityProcessor(si, elementsToDecorate);
+    public static SecurityProcessor createSenderSecurityProcessor(SignerInfo si,
+                                                                  X509Certificate recipientCertificate,
+                                                                  ElementSecurity[] elementsToDecorate) {
+        return new SenderXmlSecurityProcessor(si, recipientCertificate, elementsToDecorate);
     }
 
     /**

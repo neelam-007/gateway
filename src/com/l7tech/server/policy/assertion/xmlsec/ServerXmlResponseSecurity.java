@@ -1,7 +1,5 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -11,7 +9,6 @@ import com.l7tech.message.XmlResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
-import com.l7tech.server.SessionManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.ServerSoapUtil;
 import org.w3c.dom.Document;
@@ -19,7 +16,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.Key;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,6 +60,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             return AssertionStatus.SERVER_ERROR;
         }
 
+        // TODO replace response nonce with more standard mechanism when doing replay protection in Milestone 2
         String nonceValue = (String)request.getParameter(Request.PARAM_HTTP_XML_NONCE);
 
         // (this is optional)
@@ -77,38 +75,12 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             logger.finest("request did not include a nonce value to use for response's signature");
         }
 
-        Session xmlsession = null;
-        Key encryptionKey = null;
-        Object sessionObj = request.getParameter(Request.PARAM_HTTP_XML_SESSID);
-        if (sessionObj != null) {
-            // construct Session object based on the type of the context's object
-            if (sessionObj instanceof Session) {
-                xmlsession = (Session)sessionObj;
-            } else if (sessionObj instanceof String) {
-                String sessionIDHeaderValue = (String)sessionObj;
-                // retrieve the session
-                try {
-                    xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
-                    encryptionKey = xmlsession.getKeyRes() != null ? new AesKey(xmlsession.getKeyRes(), 128) : null;
-                } catch (SessionNotFoundException e) {
-                    String msg = "Exception finding session with id=" + sessionIDHeaderValue;
-                    response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, SecureSpanConstants.INVALID);
-                    response.setPolicyViolated(true);
-                    logger.log(Level.WARNING, msg, e);
-                    return AssertionStatus.FAILED;
-                } catch (NumberFormatException e) {
-                    String msg = "Session id is not long value : " + sessionIDHeaderValue;
-                    response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, SecureSpanConstants.INVALID);
-                    logger.log(Level.WARNING, msg, e);
-                    return AssertionStatus.FAILED;
-                }
-            }
-        }
         SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
         ElementSecurity[] elements = xmlResponseSecurity.getElements();
 
         // TODO verify TROGDOR integration
-        SecurityProcessor signer = SecurityProcessor.createSenderSecurityProcessor(si, elements);
+        X509Certificate clientCert = null; // TODO SSG needs to remember client cert from request, or load from DB
+        SecurityProcessor signer = SecurityProcessor.createSenderSecurityProcessor(si, clientCert, elements);
         try {
             signer.processInPlace(soapmsg);
         } catch (SecurityProcessorException e) {
