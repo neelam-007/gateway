@@ -29,17 +29,9 @@ public class UnsynchronizedNamingProperties extends Properties {
         locked = true;
     }
 
-    /** Gets one of a small number of expected properties */
     public String getProperty( String key ) {
         checkAccess();
-        if(key.equals("jndi.syntax.direction"))
-            return "left_to_right";
-        else if (key.equals("jndi.syntax.ignorecase"))
-            return "false";
-        else if (key.equals("jndi.syntax.separator"))
-            return "/";
-        else
-            return (String)properties.get(key);
+        return (String)properties.get(key);
     }
 
     public String getProperty( String key, String defaultValue ) {
