@@ -10,12 +10,12 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 
 /**
- * AdminWS for consulting the server system log.
+ * AdminWS for retrieving the server system log.
  * <p/>
  * <br/><br/>
  * Layer 7 technologies, inc.<br/>
- * User: flascell<br/>
- * Date: Jul 3, 2003<br/>
+ * @author flascell<br/>
+ * @version $Id
  */
 public class LogAdminImpl implements LogAdmin {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/loggingAdmin";

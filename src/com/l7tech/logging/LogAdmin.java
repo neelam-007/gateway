@@ -3,7 +3,7 @@ package com.l7tech.logging;
 
 
 /**
- * Insert comments here.
+ * Provides a remote interface for retrieving server system log.
  *
  * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version $Revision$, $Date$

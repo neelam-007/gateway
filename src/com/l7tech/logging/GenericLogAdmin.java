@@ -10,7 +10,10 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /**
+ * Provides a remote interface for retrieving server system log.
+ *
  * @author mike
+ * @version $Id$
  */
 public interface GenericLogAdmin extends Remote {
     /**

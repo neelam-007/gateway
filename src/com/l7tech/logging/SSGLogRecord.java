@@ -13,9 +13,8 @@ import java.util.logging.LogRecord;
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Jan 13, 2004<br/>
- * $Id$<br/>
+ * @author flascell<br/>
+ * @version $Id$<br/>
  *
  */
 public class SSGLogRecord extends LogRecord implements Serializable {
@@ -24,6 +23,11 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         super(Level.FINEST, null);
     }
 
+    /**
+     * Constructs a <CODE>SSGLogRecord</CODE> given the log record.
+     *
+     * @param record  the <CODE>LogRecord</CODE> containing the log information.
+     */
     public SSGLogRecord(LogRecord record) {
         super(record.getLevel(), record.getMessage());
         setLoggerName(record.getLoggerName());
@@ -33,6 +37,13 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         setSourceMethodName(record.getSourceMethodName());
     }
 
+    /**
+     * Constructs a <CODE>SSGLogRecord</CODE> given the log record, request Id, and the node Id.
+     *
+     * @param record  the <CODE>LogRecord</CODE> containing the log information.
+     * @param reqId   the request id associated with the log.
+     * @param nodeId  the id of the node generating the log.
+     */
     public SSGLogRecord(LogRecord record, RequestId reqId, String nodeId) {
         super(record.getLevel(), record.getMessage());
         setLoggerName(record.getLoggerName());
@@ -44,6 +55,13 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         setNodeId(nodeId);
     }
 
+    /**
+     * Constructs a <CODE>SSGLogRecord</CODE> given the log message, node Id, and the log level.
+     *
+     * @param level   the level of the log.
+     * @param nodeId  the id of the node generating the log.
+     * @param msg     the content of the log message.
+     */
     public SSGLogRecord(Level level, String nodeId, String msg) {
         super(level, msg);
         this.nodeId = nodeId;
@@ -107,6 +125,12 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         this.requestId = requestId;
     }
 
+    /**
+     * Check if the two <CODE>SSGLogRecord</CODE> objects are the same.
+     *
+     * @param obj the object to be compared with.
+     * @return TRUE if the two objects are the same. FALSE otherwise.
+     */
     public boolean equals(Object obj) {
         SSGLogRecord theOtherOne = null;
         if (obj instanceof SSGLogRecord) theOtherOne = (SSGLogRecord)obj;
@@ -121,10 +145,20 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         return true;
     }
 
+    /**
+     * Get the oid of the log record.
+     *
+     * @return long the oid of the log record.
+     */
     public long getOid() {
         return oid;
     }
 
+    /**
+     * Set the oid of the log record.
+     *
+     * @param oid the oid of the log record.
+     */
     public void setOid( long oid ) {
         this.oid = oid;
     }
