@@ -12,6 +12,7 @@ import org.syntax.jedit.SyntaxDocument;
 import org.syntax.jedit.tokenmarker.XMLTokenMarker;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -96,19 +97,23 @@ public class ViewServiceWsdlAction extends NodeAction {
             wsdlTextArea.setCaretPosition(0);
             JPanel panel = new JPanel(new BorderLayout());
             JPanel wsdlPanel = new JPanel();
-            wsdlPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+            wsdlPanel.setLayout(new BoxLayout(wsdlPanel, BoxLayout.X_AXIS));
             panel.add(wsdlPanel, BorderLayout.NORTH);
 
             final JLabel l = new JLabel("WSDL URL: ");
             l.setFont(l.getFont().deriveFont(Font.BOLD));
             wsdlPanel.add(l);
 
-            final JTextField tf = new ContextMenuTextField(ps.getWsdlUrl());
+            final String wsdlUrl = ps.getWsdlUrl();
+            final JTextField tf = new ContextMenuTextField(wsdlUrl);
             tf.setBorder(BorderFactory.createEmptyBorder());
             tf.setEditable(false);
             wsdlPanel.add(tf);
 
-            wsdlPanel.setBorder(BorderFactory.createEtchedBorder());
+            final CompoundBorder border =
+              BorderFactory.createCompoundBorder(
+                BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(5,5,5,5));
+            wsdlPanel.setBorder(border);
             panel.add(wsdlTextArea, BorderLayout.CENTER);
 
             getContentPane().add(panel, BorderLayout.CENTER);
