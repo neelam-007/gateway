@@ -7,8 +7,11 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.common.security.JceProvider;
 
 import java.io.FileInputStream;
+import java.io.File;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
@@ -19,6 +22,21 @@ public class AgentPerfClient {
     private static class Logger { void info(String msg) { System.out.println(msg); } }
     private static Logger logger = new Logger();
 
+    /**
+     * Initialize logging.  Attempts to mkdir ClientProxy.PROXY_CONFIG first, so the log file
+     * will have somewhere to go.  Also calls JceProvider.init().
+     */
+    protected static void initLogging() {
+        // apache logging layer to use the jdk logger
+        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+
+        // Prepare .l7tech directory before initializing logging (Bug #1288)
+        new File(ClientProxy.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
+
+        JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties");
+        JceProvider.init();
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length < 6)
             throw new IllegalArgumentException("Usage: AgentPerfClient gatewayHostname username password soapAction postFile iterationCount");
@@ -28,6 +46,8 @@ public class AgentPerfClient {
         String soapAction = args[3];
         String postfile = args[4];
         int iterationCount = Integer.parseInt(args[5]);
+
+        initLogging();
 
         String postXml = new String(HexUtils.slurpStream(new FileInputStream(postfile)));
 
