@@ -1,7 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.identity.internal.imp.InternalIdentityProviderImp;
+import com.l7tech.identity.internal.InternalIdentityProviderServer;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
     public IdProvConfManagerServer() {
         super();
         // construct the internal id provider
-        internalProvider = new InternalIdentityProviderImp();
+        internalProvider = new InternalIdentityProviderServer();
         IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
         cfg.setOid(INTERNALPROVIDER_SPECIAL_OID);
         internalProvider.initialize(cfg);
@@ -129,6 +129,6 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         out.setType(EntityType.ID_PROVIDER_CONFIG);
         return out;
     }
-    protected InternalIdentityProviderImp internalProvider;
+    protected InternalIdentityProviderServer internalProvider;
 
 }
