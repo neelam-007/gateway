@@ -103,6 +103,12 @@ public class SecureSpanConstants {
          * to the session server; both client and server then keep a copy of the session fields, and
          * the session exists as long as both sides agree to recognize it.
          *
+         * <p>This should not be confused with HEADER_SESSION_ID, which is the header used by the
+         * session manager servlet to return the new session ID.
+         *
+         * <p>This session is used for XML message security and is <i>not</i> the same as the SSL-level
+         * session, if any.
+         *
          * <h3>Usages:<ul>
          * <li>Sent by the Agent to the Gateway along with every request that is either encrypted or that
          * is expecting a signed response.
