@@ -16,7 +16,6 @@ import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.IdentityAssertionException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.util.logging.Level;
@@ -44,9 +43,8 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
      * @param request
      * @param response
      * @return
-     * @throws IdentityAssertionException
      */
-    public AssertionStatus checkRequest( Request request, Response response ) throws IdentityAssertionException {
+    public AssertionStatus checkRequest( Request request, Response response ) {
         LoginCredentials pc = request.getPrincipalCredentials();
         if ( pc == null ) {
             // No credentials have been found yet
