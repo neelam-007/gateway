@@ -18,13 +18,6 @@ import java.util.*;
  */
 public class User extends NamedEntityImp implements Principal {
 
-    public User() {}
-
-    public User(String login, long providerId) {
-        this._login = login;
-        this.providerId = providerId;
-    }
-
     public String getLogin() {
         return _login;
     }
