@@ -4,6 +4,7 @@ import com.l7tech.console.action.DeleteServiceAction;
 import com.l7tech.console.action.ServicePolicyPropertiesAction;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
@@ -13,6 +14,7 @@ import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
 import java.io.StringReader;
 import java.util.Enumeration;
+import java.util.logging.Level;
 
 
 /**
@@ -22,7 +24,7 @@ import java.util.Enumeration;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ServiceNode extends AbstractTreeNode {
+public class ServiceNode extends EntityHeaderNode {
     private PublishedService svc;
 
     /**
@@ -40,7 +42,7 @@ public class ServiceNode extends AbstractTreeNode {
 
     public PublishedService getPublishedService() throws FindException {
         if (svc == null) {
-            EntityHeader eh = (EntityHeader) getUserObject();
+            EntityHeader eh = getEntityHeader();
             svc = Registry.getDefault().
               getServiceManager().findByPrimaryKey(eh.getOid());
         }
@@ -111,7 +113,7 @@ public class ServiceNode extends AbstractTreeNode {
         try {
             return getPublishedService().getName();
         } catch (FindException e) {
-            // todo: log here, error manager or something
+            ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to find the service "+getEntityHeader().getOid());
         }
         return "Error Retreiving the service";
     }

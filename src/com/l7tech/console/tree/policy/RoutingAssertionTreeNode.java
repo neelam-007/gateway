@@ -44,6 +44,15 @@ public class RoutingAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
     /**
+     *Test if the node can be deleted. Default is <code>true</code>
+     *
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return true;
+    }
+
+    /**
      * subclasses override this method specifying the resource name
      *
      * @param open for nodes that can be opened, can have children
