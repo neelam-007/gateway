@@ -124,7 +124,9 @@ public abstract class SamlStatementValidate {
             return;
         } else {
             if (!assertion.isSigned()) {
-                      // TODO what do we do if assertion isn't signed?
+                validationResults.add(new Error("Unsigned SAML assertion found in security Header", soapMessageDoc, null, null));
+                return;
+
             }
             if (statementAssertionConstraints.isRequireProofOfPosession()) {
                 if (!assertion.isPossessionProved()) {
