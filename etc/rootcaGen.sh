@@ -37,6 +37,19 @@ KEYSTORE_FILE_OSPATH="$KEYSTORE_DIR_OSPATH/ca.ks"
 CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ca.cer"
 CERTIFICATE_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ca.cer"
 
+# RESOLVE THE DIRECTORY WHERE THESE SCRIPTS RESIDE
+PRG="$0"
+while [ -h "$PRG" ]; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '.*/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`/"$link"
+  fi
+done
+PRGDIR=`dirname "$PRG"`
+
 # VERIFY THAT THE TOMCAT_HOME VARIABLE IS SET
 if [ ! "$TOMCAT_HOME" ]; then
         echo "ERROR: TOMCAT_HOME not set"
@@ -62,7 +75,7 @@ fi
 mkdir "$KEYSTORE_DIR"
 
 # GET A KEYSTORE PASSWORD FROM CALLER
-echo "Please provide a keystore password"
+echo "Please provide a root CA keystore password"
 read -s KEYSTORE_PASSWORD
 echo "Please repeat"
 read -s KEYSTORE_PASSWORD_REPEAT
@@ -70,14 +83,14 @@ read -s KEYSTORE_PASSWORD_REPEAT
 # VERIFY THAT PASSWORDS ARE EQUAL
 if [ ! "$KEYSTORE_PASSWORD" = "$KEYSTORE_PASSWORD_REPEAT" ]; then
 	echo "ERROR : passwords do not match"
-	exit -1
+	exit
 fi
 
 # VERIFY THAT THE PASSWORD IS LONG ENOUGH
 PASSWORD_LENGTH=${#KEYSTORE_PASSWORD}
 if [ "$PASSWORD_LENGTH" -lt 6 ]; then
 	echo "ERROR : the admin password must be at least 6 characters long"
-	exit -1
+	exit
 fi
 
 # ASK FOR THE HOST NAME
@@ -97,7 +110,7 @@ else
 # INFORM THE USER OF THE FAILURE
         echo "ERROR: The keystore file was not generated"
         echo
-        exit 255
+        exit
 fi
 
 # REMEMBER THE KEYSTORE PASSWORD IN THE KEYSTORE.PROPERTIES FILE
@@ -121,4 +134,10 @@ else
         echo "ERROR"
         echo "The root keystore password was not recorded because the properties file was not found."
         echo "This should be done manually"
+        exit
 fi
+
+# WHEN YOU GEN THE ROOT CA, THE SSL KEYSTORE MUST BE REGEN
+echo
+echo "ROOT CA Keys generated successfully. Starting the generation of a new SSL store."
+. $PRGDIR/sslGen.sh $KEYSTORE_PASSWORD
