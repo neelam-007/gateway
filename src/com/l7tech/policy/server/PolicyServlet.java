@@ -12,6 +12,7 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.util.Locator;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.server.SoapMessageProcessingServlet;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -72,10 +73,36 @@ public class PolicyServlet extends HttpServlet {
             return;
         }
 
-        // RESOLVE THE SERVICE
+        // RESOLVE THE PUBLISHED SERVICE
         PublishedService targetService = null;
         if (str_oid != null && str_oid.length() > 0)
             targetService = resolveService(Long.parseLong(str_oid));
+
+        // BEFORE SENDING BACK THIS POLICY, WE NEED TO DECIDE IF THE REQUESTOR IS ALLOWED TO SEE IT
+        // if policy does not allow anonymous access, then it should not be accessible through http
+        boolean anonymousok = policyAllowAnonymous(targetService);
+        if (!anonymousok && !httpServletRequest.isSecure()) {
+            // send error back axing to come back through ssl
+            String newUrl = "https://"  + httpServletRequest.getServerName();
+            if (httpServletRequest.getServerPort() == 8080) newUrl += ":8443";
+            newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
+            httpServletResponse.setHeader(SoapMessageProcessingServlet.POLICYURL_HEADER, newUrl);
+            httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Request must come through SSL. " + newUrl);
+            return;
+        }
+        // get credentials and check that they are valid for this policy
+        User user = null;
+        if (!anonymousok) {
+            user = authenticateRequest(httpServletRequest);
+            if (user == null) {
+                // send error back with a hint that credentials should be provided
+                // todo
+            }
+        }
+
+        // THE POLICY SHOULD BE STIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
+        targetService = reducePolicyToNeedToKnowBasicForUser(user, targetService);
+
         // OUTPUT THE POLICY
         outputPublishedServicePolicy(targetService, httpServletResponse);
     }
@@ -215,6 +242,27 @@ public class PolicyServlet extends HttpServlet {
     private synchronized void initialiseServiceManager() throws ClassCastException, RuntimeException {
         serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class);
         if (serviceManagerInstance == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
+    }
+
+    private boolean policyAllowAnonymous(PublishedService policy) {
+        // todo
+        return false;
+    }
+
+    private User authenticateRequest(HttpServletRequest req) {
+        // todo
+        return null;
+    }
+
+    /**
+     * Go through assertion tree and remove the assertions that are not relevent to this particular user.
+     *
+     * @param requestor can be null if the request was anonymous
+     * @return
+     */
+    private PublishedService reducePolicyToNeedToKnowBasicForUser(User requestor, PublishedService fullpolicy) {
+        // todo
+        return fullpolicy;
     }
 
     private ServiceManager serviceManagerInstance = null;
