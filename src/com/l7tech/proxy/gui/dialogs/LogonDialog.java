@@ -8,18 +8,16 @@ package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
-import java.util.logging.Logger;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.net.PasswordAuthentication;
+import java.util.logging.Logger;
 
 /**
  * Small dialog box that propts for a username and password.
@@ -28,7 +26,6 @@ import java.net.PasswordAuthentication;
  */
 public class LogonDialog extends JDialog {
     static final Logger log = Logger.getLogger(LogonDialog.class.getName());
-    private static final String DFG = "defaultForeground";
 
     /* the PasswordAuthentication instance with user supplied credentials */
     private PasswordAuthentication authentication = null;
@@ -97,8 +94,6 @@ public class LogonDialog extends JDialog {
                 return focusComponent;
             }
         });
-
-        updateOkButton();
     }
 
     /**
@@ -148,11 +143,6 @@ public class LogonDialog extends JDialog {
 
         userNameTextField = new ContextMenuTextField(); //needed below
         Utilities.enableSelectAllOnFocus(userNameTextField);
-        userNameTextField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { updateOkButton(); }
-            public void removeUpdate(DocumentEvent e) { updateOkButton(); }
-            public void changedUpdate(DocumentEvent e) { updateOkButton(); }
-        });
         userNameTextField.setEditable(!lockUsername);
 
         // ssg name label
@@ -251,7 +241,6 @@ public class LogonDialog extends JDialog {
 
         // login button (global variable)
         loginButton = new JButton();
-        initDfg(loginButton);
         loginButton.setText("OK");
         loginButton.setActionCommand(CMD_LOGIN);
         loginButton.addActionListener(new ActionListener() {
@@ -300,28 +289,11 @@ public class LogonDialog extends JDialog {
         } else if (actionCommand.equals(CMD_CANCEL)) {
             // no action required
         } else if (actionCommand.equals(CMD_LOGIN)) {
-            if (!validateInput()) {
-                // This shouldn't be possible -- ok button should have been greyed -- but just in case
-                JOptionPane.
-                        showMessageDialog(this,
-                                          "Please enter your user name to connect to the Web service.",
-                                          "User name is required",
-                                          JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
             authentication =
               new PasswordAuthentication(userNameTextField.getText(),
                 passwordField.getPassword());
         }
         hide();
-    }
-
-    /**
-     * Update the state of the Ok button.
-     */
-    private void updateOkButton() {
-        setEnabled(loginButton, validateInput());
     }
 
     /**
@@ -379,25 +351,5 @@ public class LogonDialog extends JDialog {
         Utilities.centerOnScreen(this);
         show();
         return authentication;
-    }
-
-
-    /**
-     * validate the username field
-     *
-     * @return true validated, false othwerwise
-     */
-    private boolean validateInput() {
-        String userName = userNameTextField.getText();
-        return userName != null && userName.length() > 0;
-    }
-
-    private static void initDfg(JComponent component) {
-        component.putClientProperty(DFG, component.getForeground());
-    }
-
-    private static void setEnabled(JComponent component, boolean enabled) {
-        component.setEnabled(enabled);
-        component.setForeground(enabled ? (Color)component.getClientProperty(DFG) : Color.GRAY);
     }
 }
