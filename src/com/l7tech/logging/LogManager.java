@@ -45,6 +45,9 @@ public abstract class LogManager {
             try {
                 // dont call the locator because it itself logs shit!
                 singleton = new ServerLogManager();
+                //todo: consider shrinking this catch. Catching 'Throwable' will
+                // catch things such as ThreadDeath and all the java.lang.Error
+                // flavors. em21102003
             } catch (Throwable e) {
                 // this cannot fail !
                 System.err.println("Critical error Locating LogManager");
