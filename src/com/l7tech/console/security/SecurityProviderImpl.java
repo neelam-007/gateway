@@ -56,7 +56,7 @@ public class SecurityProviderImpl extends SecurityProvider
     }
 
     /**
-     * Logoff the session, default implementation, does nothin
+     * Logoff the session, explicitely
      */
     public void logoff() {
         LogonEvent le = new LogonEvent(this, LogonEvent.LOGOFF);
