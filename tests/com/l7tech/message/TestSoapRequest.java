@@ -9,9 +9,7 @@ package com.l7tech.message;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-import java.io.Reader;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 
 import com.l7tech.common.util.XmlUtil;
 
@@ -26,8 +24,8 @@ public class TestSoapRequest extends SoapRequest {
         this.requestMessage = requestMessage;
     }
 
-    protected Reader doGetRequestReader() throws IOException {
-        return new StringReader(XmlUtil.nodeToString(requestMessage));
+    protected InputStream doGetRequestInputStream() throws IOException {
+        return new ByteArrayInputStream((XmlUtil.nodeToString(requestMessage).getBytes()));
     }
 
     public boolean isReplyExpected() {

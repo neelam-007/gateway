@@ -28,12 +28,12 @@ public class JmsSoapRequest extends SoapRequest {
         _jms = mt;
     }
 
-    protected Reader doGetRequestReader() throws IOException {
+    protected InputStream doGetRequestInputStream() throws IOException {
         Message request = _jms.getRequest();
         if ( request instanceof TextMessage ) {
             TextMessage treq = (TextMessage)request;
             try {
-                return new StringReader( treq.getText() );
+                return new ByteArrayInputStream( treq.getText().getBytes() );
             } catch (JMSException e) {
                 throw new IOException( e.toString() );
             }
@@ -42,11 +42,12 @@ public class JmsSoapRequest extends SoapRequest {
 
             final BytesMessage breq = (BytesMessage)request;
 
-            InputStream is = new BytesMessageInputStream( breq );
-            return new InputStreamReader( is, JmsUtil.DEFAULT_ENCODING );     // todo sane encoding
+            return new BytesMessageInputStream( breq );
+            //return new InputStreamReader( is, JmsUtil.DEFAULT_ENCODING );     // todo sane encoding
         } else {
             _logger.warning( "Can't get a reader for a non-text message! Returning a reader on an empty String!" );
-            return new StringReader("");
+            return new ByteArrayInputStream( new String("").getBytes() );
+            //return new StringReader("");
         }
     }
 
