@@ -337,7 +337,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
     }
 
-
     /**
      * Return the ToolBarForTable instance for a given node or null.
      * 
@@ -688,6 +687,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         serviceNode = null;
         policyTree.setPolicyEditor(null);
         policyTree.setModel(null);
+        final PolicyToolBar pt = componentRegistry.getMainWindow().getPolicyToolBar();
+        if (pt !=null) {
+            pt.unregisterPolicyTree(policyTree);
+        }
     }
 
     /**
@@ -719,8 +722,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                   "Save Service policy",
                   JOptionPane.YES_NO_CANCEL_OPTION));
                 if (answer == JOptionPane.YES_OPTION) {
-                    policyEditorToolbar.
-                      buttonSave.getAction().actionPerformed(null);
+                    policyEditorToolbar.buttonSave.getAction().actionPerformed(null);
                 } else if ((answer == JOptionPane.CANCEL_OPTION)) {
                     throw new ContainerVetoException(e, "User aborted");
                 }

@@ -36,6 +36,11 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
     private AddAssertionAction addAssertionAction;
     private DeleteAssertionAction deleteAssertionAction;
 
+    private AbstractTreeNode lastPaletteNode;
+    private AssertionTreeNode lastAssertionNode;
+    private AssertionTreeNode rootAssertionNode;
+
+
     public PolicyToolBar() {
         initialize();
         disableAll();
@@ -73,6 +78,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
         if (model != null) {
             model.removeTreeModelListener(policyTreeModelListener);
         }
+        lastAssertionNode = null;
     }
 
 
@@ -202,7 +208,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
         if (validPNode) {
             validPNode = validPNode && (lastAssertionNode == null || lastAssertionNode.accept(lastPaletteNode));
         }
-        getAddAssertionAction().setEnabled(validPNode);
+        getAddAssertionAction().setEnabled(validPNode && validPolicyAssertionNode);
     }
 
     private boolean validPolicyAssertionNode() {
@@ -270,13 +276,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
               updateActions();
           }
       };
-
-
-    private AbstractTreeNode lastPaletteNode;
-    private AssertionTreeNode lastAssertionNode;
-    private AssertionTreeNode rootAssertionNode;
-
-    /**
+  /**
      * Invoked on connection event
      * 
      * @param e describing the connection event
