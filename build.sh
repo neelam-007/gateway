@@ -34,7 +34,7 @@ fi
 
 PATH="$JAVA_HOME/bin:$PATH"; export PATH
 JDK_CLASSES="$JAVA_HOME/lib/rt.jar:$JAVA_HOME/lib/tools.jar"
-if [ ! -e $TOMCAT_HOME/bin/tomcat.sh ]; then
+if [ ! -e $TOMCAT_HOME/bin/startup.sh ]; then
     echo ""
     echo "The Tomcat Server wasn't found in directory ${TOMCAT_HOME}."
     echo "Please set your environment so that the TOMCAT_HOME variable "
