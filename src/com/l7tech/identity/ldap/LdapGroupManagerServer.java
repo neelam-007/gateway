@@ -181,22 +181,6 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
     // PRIVATES
     // ************************************************
 
-    public static void main(String[] args) throws Exception {
-        LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
-        // use this url when ssh forwarding locally
-        config.setLdapHostURL("ldap://localhost:3899");
-        // use this url when in the office
-        //config.setLdapHostURL("ldap://spock:389");
-        config.setSearchBase("dc=layer7-tech,dc=com");
-        LdapGroupManagerServer me = new LdapGroupManagerServer(config);
-        Collection res = me.findAll();
-        Iterator i = res.iterator();
-        while (i.hasNext()) {
-            LdapGroup group = (LdapGroup)i.next();
-            System.out.println(group);
-        }
-    }
-
     private EntityHeader getUserHeaderFromUid(String uid) throws NamingException {
         NamingEnumeration answer = null;
         String filter = "(&(objectclass=" + USER_OBJCLASS + ")(" + LOGIN_ATTR_NAME + "=" + uid + "))";
