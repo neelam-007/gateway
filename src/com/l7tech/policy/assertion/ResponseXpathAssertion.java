@@ -47,9 +47,7 @@ public class ResponseXpathAssertion extends XpathBasedAssertion {
     }
 
     private void initDefaultXpath() {
-        Map nsmap = new HashMap();
-        nsmap.put(NamespaceConstants.NSPREFIX_SOAP_ENVELOPE, SOAPConstants.URI_NS_SOAP_ENVELOPE);
-        setXpathExpression(new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, nsmap));
+        setXpathExpression(new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, createDefaultNamespaceMap()));
     }
 
     /** Shortcut to get xpath pattern.  Name doesn't use get, to hide it from policy serializer. */
