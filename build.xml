@@ -400,6 +400,7 @@
 
             <fileset dir="${src.root}/src">
                 <include name="com/l7tech/console/**/*.properties"/>
+ 		        <include name="com/l7tech/console/resources/helpset/**/*"/>
             </fileset>
 
             <fileset dir="${src.root}/tests">
