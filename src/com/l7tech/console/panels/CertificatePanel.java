@@ -37,7 +37,6 @@ import java.util.logging.Logger;
 class CertificatePanel extends JPanel {
     static Logger log = Logger.getLogger(CertificatePanel.class.getName());
     private X509Certificate cert;
-    private AbstractTableModel certificateTableModel;
     private UserPanel userPanel;
     private JTable certificateTable;
     private JScrollPane tableScrollPane;
@@ -98,10 +97,8 @@ class CertificatePanel extends JPanel {
      */
     public AbstractTableModel getCertificateTableModel()
       throws NoSuchAlgorithmException, CertificateEncodingException {
-        if (certificateTableModel != null) {
-            return certificateTableModel;
-        }
 
+        final AbstractTableModel certificateTableModel;
         certificateTableModel = new AbstractTableModel() {
             String[] cols = {"Certificate Field", "Value"};
             ArrayList data = getCertProperties();
@@ -205,7 +202,6 @@ class CertificatePanel extends JPanel {
                         }
                         // reset values and redisplay
                         cert = null;
-                        certificateTableModel = null;
                         loadCertificateInfo();
                     }
                 }
