@@ -787,10 +787,12 @@ public class MainWindow extends JFrame {
 
             // here is the sequece of commands adding buttons to specific folders
             // Folder "Internet"
-            outlook.addIcon("SSG", "Users", "", l);
-            outlook.addIcon("SSG", "Groups", "", l);
-            outlook.addIcon("SSG", "Policies", "", l);
-            outlook.addIcon("SSG", "Services", "", l);
+            outlook.addIcon("Shortcut Bar", "Services", RESOURCE_PATH + "/services32.gif", l);
+            outlook.addIcon("Shortcut Bar", "Policies", RESOURCE_PATH + "/policy32.gif", l);
+            outlook.addIcon("Shortcut Bar", "Providers", RESOURCE_PATH + "/providers32.gif", l);
+
+
+
 //      // Folder "Business"
 //      outlook.addIcon("Business", "Contacts", "view.gif", l);
 //      outlook.addIcon("Business", "Reminder", "view.gif", l);

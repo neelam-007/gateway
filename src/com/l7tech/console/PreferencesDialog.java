@@ -378,7 +378,7 @@ public class PreferencesDialog extends JDialog {
       URL url = new URL(sUrl);
 
       /** Make sure if they really want to change the service URL */
-      if(!serviceUrl.equals(sUrl) && !connected) {
+      if(sUrl.equals(serviceUrl) && !connected) {
         if ((JOptionPane.showConfirmDialog(null,
                                        "You have changed the Server URL. Changing the URL can cause the console to not connect\n" +
                                            " to the Policy Manager. Do you want to continue and save this URL?",
@@ -386,7 +386,7 @@ public class PreferencesDialog extends JDialog {
                                        JOptionPane.YES_NO_OPTION)) == 1) {
           return false;
         }
-      } else if(!serviceUrl.equals(sUrl) && connected) {
+      } else if(sUrl.equals(serviceUrl) && connected) {
 
         JOptionPane.showMessageDialog(null,
                                       "You cannot change the server URL while connected to console. In order to change the Server URL, \n" +
@@ -463,7 +463,7 @@ public class PreferencesDialog extends JDialog {
       if (serviceUrl == null) {
         serviceUrl = getPreferences().getProperty(Preferences.SERVICE_URL);
       }
-      String hostPart = "https://pmi.beta.l7tech.com:3821"; // default
+      String hostPart = ""; // default
       try {
         URL url = new URL(serviceUrl);
         String sPort =

@@ -53,6 +53,7 @@ public class JOutlookBar extends JPanel implements ActionListener {
 
         JButton button = new JButton(btnText, ikona);
         button.setMargin(new Insets(0, 0, 0, 0));
+        button.setBorderPainted(false);
         button.setVerticalTextPosition(SwingConstants.BOTTOM);
         button.setHorizontalTextPosition(SwingConstants.CENTER);
 
