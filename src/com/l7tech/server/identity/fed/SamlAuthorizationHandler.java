@@ -20,7 +20,6 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Set;
@@ -138,7 +137,8 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
                 u = (FederatedUser)getUserManager().findByEmail(niValue);
             } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat) ||
-                    SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat)) {
+                       SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat) ||
+                       niFormat == null) {
                 u = (FederatedUser)getUserManager().findByLogin(niValue);
             }
             if (u == null) {

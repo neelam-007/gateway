@@ -214,7 +214,7 @@ public class SamlAssertionValidate {
             logger.finer("Can't validate conditions, no Conditions have been found");
             StringWriter sw = new StringWriter();
             assertionType.save(sw);
-            validationResults.add(new Error("Can't validate conditiions, no Conditions have been found", sw.toString(), null, null));
+            validationResults.add(new Error("Can't validate conditions, no Conditions have been found", sw.toString(), null, null));
             return;
         }
         Calendar notBefore = conditionsType.getNotBefore();

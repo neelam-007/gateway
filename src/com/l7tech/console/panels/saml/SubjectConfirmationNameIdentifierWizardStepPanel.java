@@ -68,7 +68,10 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
         RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
-        requestWssSaml.setNameQualifier(textFieldNameQualifier.getText());
+        final String nameQualifier = requestWssSaml.getNameQualifier();
+        if (nameQualifier !=null) {
+            textFieldNameQualifier.setText(nameQualifier);
+        }
         for (Iterator iterator = nameFormatsMap.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();
             JCheckBox jc = (JCheckBox)entry.getValue();

@@ -11,6 +11,7 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
@@ -154,13 +155,7 @@ public class NewFederatedUserDialog extends JDialog {
         emailTextField.getDocument().addDocumentListener(documentListener);
 
         loginTextField.setToolTipText(resources.getString("loginTextField.tooltip"));
-        loginTextField.setDocument(new FilterDocument(32,
-                        new FilterDocument.Filter() {
-                            public boolean accept(String str) {
-                                if (str == null) return false;
-                                return true;
-                            }
-                        }));
+        loginTextField.setDocument( new MaxLengthDocument(255));
         loginTextField.getDocument().putProperty("name", "login");
         loginTextField.getDocument().addDocumentListener(documentListener);
 
