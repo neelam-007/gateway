@@ -10,8 +10,8 @@ import cirrus.hibernate.HibernateException;
 import cirrus.hibernate.Session;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.service.resolution.ResolutionManager;
 
-import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
@@ -64,27 +64,30 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     }
 
     public long save(PublishedService service) throws SaveException {
+        // 1. record the service
         try {
-            ServiceCache.getInstance().validate(service);
+            // ServiceCache.getInstance().validate(service);
             long oid = _manager.save( getContext(), service );
             logger.info( "Saved service #" + oid );
-            return oid;
+            service.setOid(oid);
         } catch ( SQLException se ) {
             logger.log( Level.SEVERE, se.toString(), se );
             throw new SaveException( se.toString(), se );
-        } catch ( WSDLException we ) {
-            SaveException se = new SaveException( "Missing or invalid WSDL", we );
-            logger.log( Level.SEVERE, se.toString(), se );
-            throw se;
-        } catch ( DuplicateObjectException doe ) {
-            SaveException se = new SaveException( "Duplicate service resolution parameters", doe );
-            logger.log( Level.SEVERE, se.toString(), se );
-            throw se;
-        } catch (InterruptedException e) {
-            String msg = "cache exception";
-            logger.log(Level.SEVERE, msg, e);
+        }
+        // 2. record resolution parameters
+        ResolutionManager resolutionManager = new ResolutionManager();
+        try {
+            resolutionManager.recordResolutionParameters(service);
+        } catch (DuplicateObjectException e) {
+            String msg = "cannot save service. duplicate resolution parameters";
+            logger.log(Level.WARNING, msg, e);
+            throw new SaveException(msg, e);
+        } catch (UpdateException e) {
+            String msg = "cannot save service's resolution parameters.";
+            logger.log(Level.WARNING, msg, e);
             throw new SaveException(msg, e);
         }
+        return service.getOid();
     }
 
     public int getCurrentPolicyVersion(long policyId) throws FindException {
@@ -108,54 +111,49 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public void update(PublishedService service) throws UpdateException, VersionException {
         PublishedService original = null;
+        // check for original service
         try {
             original = findByPrimaryKey(service.getOid());
         } catch (FindException e) {
             throw new UpdateException("could not get original service", e);
         }
 
+        // check version
+        if (original.getVersion() != service.getVersion()) {
+            logger.severe("db service has version: " + original.getVersion() + ". requestor service has version: " + service.getVersion());
+            throw new VersionException("the published service you are trying to update is no longer valid.");
+        }
+
+        // try recording resolution parameters
+        ResolutionManager resolutionManager = new ResolutionManager();
         try {
-            // check if it's valid
-            ServiceCache.getInstance().validate(service);
+            resolutionManager.recordResolutionParameters(service);
+        } catch (DuplicateObjectException e) {
+            String msg = "cannot update service. duplicate resolution parameters";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        }
 
-            // check version
-            if (original.getVersion() != service.getVersion()) {
-                logger.severe("db service has version: " + original.getVersion() + ". requestor service has version: " + service.getVersion());
-                throw new VersionException("the published service you are trying to update is no longer valid.");
-            }
-
-            // copy back into hibernate object
+        // update
+        try {
             try {
                 original.copyFrom(service);
             } catch (IOException e) {
                 throw new UpdateException("could not copy published service", e);
             }
-
-            // update
             _manager.update(getContext(), original);
-
             logger.info( "Updated service #" + service.getOid() );
         } catch ( SQLException se ) {
             logger.log( Level.SEVERE, se.toString(), se );
             throw new UpdateException( se.toString(), se );
-        } catch ( WSDLException we ) {
-            UpdateException ue = new UpdateException( "Missing or invalid WSDL", we );
-            logger.log( Level.SEVERE, ue.toString(), ue );
-            throw ue;
-        } catch ( DuplicateObjectException doe ) {
-            UpdateException ue = new UpdateException( "Duplicate service resolution parameters" );
-            logger.log( Level.SEVERE, ue.toString(), ue );
-            throw ue;
-        } catch (InterruptedException e) {
-            String msg = "cache exception";
-            logger.log(Level.SEVERE, msg, e);
-            throw new UpdateException(msg, e);
         }
     }
 
     public void delete( PublishedService service ) throws DeleteException {
+        ResolutionManager resolutionManager = new ResolutionManager();
         try {
             _manager.delete( getContext(), service );
+            resolutionManager.deleteResolutionParameters(service.getOid());
             logger.info( "Deleted service " + service.getOid() );
         } catch ( SQLException se ) {
             throw new DeleteException( se.toString(), se );
