@@ -20,7 +20,7 @@ public class SessionManager {
     public static final long SESSION_LIFESPAN = 60*60*1000;
     public static final long MAX_SESSION_USES = 5000;
 
-    public SessionManager getInstance() { return SingletonHolder.singleton; }
+    public static SessionManager getInstance() { return SingletonHolder.singleton; }
 
     /**
      * looks up the session store for a session with the id mentioned
