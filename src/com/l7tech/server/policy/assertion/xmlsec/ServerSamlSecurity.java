@@ -8,12 +8,19 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import x0Assertion.oasisNamesTcSAML1.AssertionDocument;
+import x0Assertion.oasisNamesTcSAML1.AssertionType;
+import x0Assertion.oasisNamesTcSAML1.ConditionsType;
 
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,11 +33,8 @@ import java.util.logging.Logger;
  */
 public class ServerSamlSecurity implements ServerAssertion {
     private SamlSecurity assertion;
-    public static final String HEADER_EL_NAME = "Header";
-    public static final String SECURITY_EL_NAME = "Security";
-    public static final String SECURITY_NAMESPACE_PREFIX = "wsse";
-    public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
-    public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
+    private static final String ASSERTION_EL_NAME = "Assertion";
+    private static final String SAML_NS = "urn:oasis:names:tc:SAML:1.0:assertion";
 
     /**
      * Create the server side saml security policy element
@@ -58,15 +62,46 @@ public class ServerSamlSecurity implements ServerAssertion {
         try {
             SoapRequest sr = (SoapRequest)request;
             Document document = sr.getDocument();
-            Element securityElement = getSecurityElement(document);
+            Element assertionElement = getAssertionElement(document);
+            XmlOptions xo = new XmlOptions();
+            xo.setLoadLineNumbers();
+            AssertionDocument doc = AssertionDocument.Factory.parse(assertionElement, xo);
+
+//            xo = new XmlOptions();
+//            Collection errors = new ArrayList();
+//            xo.setErrorListener(errors);
+//            System.out.println("The document is " + (doc.validate(xo) ? "valid" : "invalid"));
+//            for (Iterator iterator = errors.iterator(); iterator.hasNext();) {
+//                XmlError xerr = (XmlError)iterator.next();
+//                System.out.println(xerr);
+//            }
+
+            AssertionType at = doc.getAssertion();
+            if (assertion.isValidateValidityPeriod()) {
+                if (!validateIntervalConditions(at)) {
+                    return AssertionStatus.FALSIFIED;
+                }
+            }
+
+            return AssertionStatus.NONE;
         } catch (NoSuchElementException e) {
-            logger.log(Level.SEVERE, "Security header missing", e);
+            logger.log(Level.SEVERE, "SAML Assertion element missing", e);
             return AssertionStatus.FALSIFIED;
         } catch (SAXException e) {
             logger.log(Level.SEVERE, "error getting the xml document", e);
             return AssertionStatus.FALSIFIED;
+        } catch (XmlException e) {
+            logger.log(Level.SEVERE, "error pasrsing the SAML assertion", e);
+            return AssertionStatus.FALSIFIED;
         }
-        return AssertionStatus.NONE;
+    }
+
+    private boolean validateIntervalConditions(AssertionType at) {
+        Date now = new Date();
+        ConditionsType type = at.getConditions();
+        Calendar notBefore = type.getNotBefore();
+        Calendar notAfter = type.getNotOnOrAfter();
+        return (notBefore.before(now) && notAfter.after(now));
     }
 
     /**
@@ -76,18 +111,15 @@ public class ServerSamlSecurity implements ServerAssertion {
      * @param document DOM document containing the soap message
      * @return the security element (never null)
      */
-    private Element getSecurityElement(Document document)
+    private Element getAssertionElement(Document document)
       throws NoSuchElementException {
-        NodeList listSecurityElements = document.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
+        NodeList listSecurityElements = document.getElementsByTagNameNS(SAML_NS, ASSERTION_EL_NAME);
         if (listSecurityElements.getLength() > 0) {
             return (Element)listSecurityElements.item(0);
         }
-        listSecurityElements = document.getElementsByTagNameNS(SECURITY_NAMESPACE2, SECURITY_EL_NAME);
 
-        if (listSecurityElements.getLength() > 0) {
-            return (Element)listSecurityElements.item(0);
-        }
-        throw new NoSuchElementException("Could not find security header in "+document);
+        throw new NoSuchElementException("Could not find security header in " + document);
     }
+
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }
