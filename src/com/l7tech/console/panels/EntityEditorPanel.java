@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.tree.EntityListener;
-import com.l7tech.console.tree.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityEvent;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;

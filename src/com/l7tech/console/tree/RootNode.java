@@ -78,7 +78,7 @@ public class RootNode extends AbstractTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/root.gif";
+        return "com/l7tech/console/resources/policy16.gif";
     }
 
     private String label;

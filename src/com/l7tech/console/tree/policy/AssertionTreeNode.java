@@ -38,14 +38,15 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
    public Action[] getActions() {
        java.util.List list = new ArrayList();
        list.addAll(Arrays.asList(super.getActions()));
-        if (canDelete())  list.add(new DeleteAssertionAction(this));
+       if (canDelete())  list.add(new DeleteAssertionAction(this));
        return (Action[]) list.toArray(new Action[]{});
    }
 
-
 }
 
-
+/**
+ * Leaf policy nodes extend this node
+ */
 abstract class LeafAssertionTreeNode extends AssertionTreeNode {
     public LeafAssertionTreeNode(Assertion assertion) {
         super(assertion);
@@ -58,6 +59,9 @@ abstract class LeafAssertionTreeNode extends AssertionTreeNode {
     }
 }
 
+/**
+ * Composite policy nodes extend this node
+ */
 class CompositeAssertionTreeNode extends AssertionTreeNode {
     public CompositeAssertionTreeNode(CompositeAssertion assertion) {
         super(assertion);

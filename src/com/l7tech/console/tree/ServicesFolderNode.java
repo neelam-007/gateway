@@ -87,10 +87,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        if (open)
-            return "com/l7tech/console/resources/folderOpen.gif";
-
-        return "com/l7tech/console/resources/folder.gif";
+        return "com/l7tech/console/resources/ServerRegistry.gif";
     }
 
 }

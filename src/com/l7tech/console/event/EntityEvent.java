@@ -1,4 +1,4 @@
-package com.l7tech.console.tree;
+package com.l7tech.console.event;
 
 import java.util.EventObject;
 

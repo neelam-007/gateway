@@ -28,7 +28,7 @@ class AnonymousAssertionTreeNode extends LeafAssertionTreeNode {
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
-        return true;
+        return false;
     }
 
     /**

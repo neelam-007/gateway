@@ -41,6 +41,10 @@ public class AuthMethodFolderNode extends AbstractTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
+        int index = 0;
+        insert(new HttpBasicAuthNode(), index++);
+        insert(new HttpDigestAuthNode(), index++);
+
     }
 
     /**

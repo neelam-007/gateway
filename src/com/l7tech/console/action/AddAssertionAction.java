@@ -14,7 +14,7 @@ public class AddAssertionAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Add asserion";
+        return "Add assertion";
     }
 
     /**
@@ -38,6 +38,5 @@ public class AddAssertionAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-
     }
 }

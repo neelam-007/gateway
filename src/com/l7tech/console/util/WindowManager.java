@@ -2,11 +2,14 @@ package com.l7tech.console.util;
 
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.MainWindow;
 
 import javax.swing.*;
 import java.util.Map;
 import java.util.HashMap;
 import java.lang.ref.WeakReference;
+import java.awt.*;
+import java.io.IOException;
 
 /**
  * Central manager of windows in the Policy editor.
@@ -31,8 +34,8 @@ public class WindowManager {
         return instance;
     }
 
-    /** Get the Main Window of the applicaiton.
-     * This should ONLY be used for:
+    /** Get the Main Window of the application.
+     * This should be used for:
      * <UL>
      *   <LI>using the Main Window as the parent for dialogs</LI>
      *   <LI>using the Main Window's position for preplacement of windows</LI>
@@ -40,7 +43,17 @@ public class WindowManager {
      * @return the applicaiton Main Window
      */
     public JFrame getMainWindow() {
-        return null;
+          synchronized (componentsRegistry) {
+            JFrame main = (JFrame)getComponent(MainWindow.NAME);
+            if (main != null) return main;
+              try {
+                  MainWindow m = new MainWindow();
+                  registerComponent(MainWindow.NAME, m);
+                  return m;
+              } catch (IOException e) {
+                  throw new RuntimeException("Faile to initialize main window", e);
+              }
+        }
     }
 
     /**
@@ -67,13 +80,13 @@ public class WindowManager {
      * Returns the component with the given name or <b>null</b> if none
      * found.
      */
-    public JComponent getComponent(String name) {
+    public Component getComponent(String name) {
         synchronized (componentsRegistry) {
             WeakReference wr = (WeakReference)componentsRegistry.get(name);
             if (wr == null) return null;
-            JComponent jc = (JComponent)wr.get();
-            if (jc == null) componentsRegistry.remove(name);
-            return jc;
+            Component c = (Component)wr.get();
+            if (c == null) componentsRegistry.remove(name);
+            return c;
         }
     }
 
@@ -81,10 +94,10 @@ public class WindowManager {
      * Registers the component with the given name
      * @param name the component name
      */
-    public void registerComponent(String name, JComponent component) {
+    public void registerComponent(String name, Component component) {
         synchronized (componentsRegistry) {
-            JComponent jc = getComponent(name);
-            if (jc != null)
+            Component c = getComponent(name);
+            if (c != null)
                 throw new RuntimeException("There is an active component by name '" + name + "'");
             componentsRegistry.put(name, new WeakReference(component));
         }
@@ -94,13 +107,13 @@ public class WindowManager {
      * Returns the component with the given name or <b>null</b> if none
      * found.
      */
-    public JComponent unregisterComponent(String name) {
+    public Component unregisterComponent(String name) {
         synchronized (componentsRegistry) {
             WeakReference wr = (WeakReference)componentsRegistry.get(name);
             if (wr == null) return null;
-            JComponent jc = (JComponent)wr.get();
-            if (jc == null) componentsRegistry.remove(name);
-            return jc;
+            Component c = (Component)wr.get();
+            if (c == null) componentsRegistry.remove(name);
+            return c;
         }
     }
 

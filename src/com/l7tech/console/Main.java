@@ -2,8 +2,10 @@ package com.l7tech.console;
 
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.Registry;
 
 import javax.servlet.GenericServlet;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -30,7 +32,7 @@ public class Main {
      */
     public void run(String[] args) {
         try {
-            final MainWindow main;
+            final JFrame main;
 
             /* invoke the splash screen */
             showSplashScreen();
@@ -44,7 +46,7 @@ public class Main {
             System.setProperty("com.l7tech.util.locator.properties",
                     "/com/l7tech/console/resources/services.properties");
 
-            main = new MainWindow();
+            main = Registry.getDefault().getWindowManager().getMainWindow();
             // Window listener
             main.addWindowListener(
                     new WindowAdapter() {
@@ -70,10 +72,6 @@ public class Main {
             e.printStackTrace();  //To change body of catch statement use Options | File Templates.
         } finally {
         }
-    }
-
-    void initializeLogging() {
-
     }
 
     /**

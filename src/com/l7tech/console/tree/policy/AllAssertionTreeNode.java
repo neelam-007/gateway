@@ -2,6 +2,11 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.console.action.AddIdentityAssertionAction;
+
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Class AllAssertionTreeNode
@@ -21,6 +26,20 @@ class AllAssertionTreeNode extends CompositeAssertionTreeNode {
             throw new IllegalArgumentException();
         }
     }
+
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        java.util.List list = new ArrayList();
+        list.addAll(Arrays.asList(super.getActions()));
+        if (canDelete())  list.add(new AddIdentityAssertionAction());
+        return (Action[]) list.toArray(new Action[]{});
+    }
+
 
     /**
      * specify this node image resource

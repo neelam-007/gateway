@@ -403,6 +403,7 @@ public class MainWindow extends JFrame {
                   }
               }
           };
+        refreshAction.setEnabled(false);
         refreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return refreshAction;
     }
@@ -470,7 +471,8 @@ public class MainWindow extends JFrame {
 //                  d.show();
               }
           };
-        refreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        findAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        findAction.setEnabled(false);
         return findAction;
     }
 
@@ -686,11 +688,37 @@ public class MainWindow extends JFrame {
 
         mainJSplitPane =
           new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        //mainJSplitPane.setDividerLocation(200);
-        getMainJSplitPane().add(getMainSplitPaneRight(), "right");
 
-        getMainJSplitPane().add(getMainLeftJPanel(), "left");
+        mainJSplitPane.add(getMainSplitPaneRight(), "right");
+        mainJSplitPane.add(getMainLeftJPanel(), "left");
         mainJSplitPane.setDividerSize(2);
+        addWindowListener(new WindowAdapter() {
+                                /** Invoked when a window has been opened. */
+                                public void windowOpened(WindowEvent e) {
+                                    try {
+                                        Preferences prefs = Preferences.getPreferences();
+                                        String s = prefs.getString("main.split.divider.location");
+                                        if (s !=null) {
+                                           int l = Integer.parseInt(s);
+                                           mainJSplitPane.setDividerLocation(l);
+                                        }
+                                    } catch (IOException e1) {
+
+                                    } catch (NumberFormatException e1) {
+                                    }
+                                }
+                                /** Invoked when a window has been closed. */
+                                public void windowClosed(WindowEvent e) {
+                                    try {
+                                        Preferences prefs = Preferences.getPreferences();
+                                        int l = mainJSplitPane.getDividerLocation();
+                                        prefs.putProperty("main.split.divider.location", Integer.toString(l));
+                                    } catch (IOException e1) {
+                                    } catch (NullPointerException e1) {
+                                    }
+                                }
+                            });
+
         return mainJSplitPane;
     }
 
@@ -928,7 +956,35 @@ public class MainWindow extends JFrame {
         int hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
         js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
 
-        JSplitPane sections = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        final JSplitPane sections = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        addWindowListener(new WindowAdapter() {
+                                      /** Invoked when a window has been opened. */
+                                      public void windowOpened(WindowEvent e) {
+                                          try {
+                                              Preferences prefs = Preferences.getPreferences();
+                                              String s = prefs.getString("tree.split.divider.location");
+                                              if (s !=null) {
+                                                 int l = Integer.parseInt(s);
+                                                 sections.setDividerLocation(l);
+                                              }
+                                          } catch (IOException e1) {
+
+                                          } catch (NumberFormatException e1) {
+                                          }
+                                      }
+                                      /** Invoked when a window has been closed. */
+                                      public void windowClosed(WindowEvent e) {
+                                          try {
+                                              Preferences prefs = Preferences.getPreferences();
+                                              int l = sections.getDividerLocation();
+                                              prefs.putProperty("tree.split.divider.location", Integer.toString(l));
+                                          } catch (IOException e1) {
+                                          } catch (NullPointerException e1) {
+                                          }
+                                      }
+                                  });
+
+
         sections.setTopComponent(js);
 
         treePanel = new JTabbedPane();
@@ -946,15 +1002,16 @@ public class MainWindow extends JFrame {
         hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
         js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
         sections.setBottomComponent(js);
-
         sections.setDividerSize(10);
-        sections.setDividerLocation(0.5);
+
 
         mainLeftJPanel = new JPanel(new BorderLayout());
         mainLeftJPanel.add(sections, BorderLayout.CENTER);
         mainLeftJPanel.add(getPolicyToolBar(), BorderLayout.EAST);
         return mainLeftJPanel;
     }
+
+
 
 
     /**
