@@ -1,13 +1,12 @@
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.TestDocuments;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.framework.TestCase;
 
 import java.security.cert.X509Certificate;
 
@@ -36,6 +35,9 @@ public class DotNetInteropTest extends TestCase {
         Document signedDoc = getSignedRequest();
         Element bodyEl = SoapUtil.getBody(signedDoc);
         X509Certificate[] clientCert = SoapMsgSigner.validateSignature(signedDoc, bodyEl);
+        assertTrue(clientCert.length > 0);
+        assertTrue(clientCert[0].getSubjectDN().toString().equals("CN=WSE2QuickStartClient"));
+        System.out.println("Signature verified successfully for subject: " + clientCert[0].getSubjectDN() + ".");
     }
 
     private Document getSignedRequest() throws Exception {
