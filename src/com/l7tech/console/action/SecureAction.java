@@ -29,13 +29,25 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
      *
      * @return true if the current subject is authorized, false otheriwse
      */
-    public boolean isAuthorized() {
+    public final boolean isAuthorized() {
+        return isInRole(requiredRoles());
+    }
+
+    /**
+     * Determines whether the current subject belongs to the specified Role (group).
+     *
+     * @param roles   the string array of role names
+     * @return true if the subject, belongs to one of the the specified roles,
+     *         false, otherwise.
+     */
+
+    public final boolean isInRole(String[] roles) {
         final Subject subject = Subject.getSubject(AccessController.getContext());
         if (subject == null || subject.getPrincipals().isEmpty()) { // if no subject or no principal
             return false;
         }
         try {
-            return getSecurityProvider().isSubjectInRole(subject, requiredRoles());
+            return getSecurityProvider().isSubjectInRole(subject, roles);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error in authorization check for subject "+subject, e);
         }

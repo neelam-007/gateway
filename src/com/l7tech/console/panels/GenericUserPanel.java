@@ -8,9 +8,11 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -27,7 +29,7 @@ import java.util.logging.Logger;
 
 /**
  * GenericUserPanel - edits the <CODE>Generic User/CODE> instances. This includes internal users, LDAP users.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
@@ -59,7 +61,6 @@ public class GenericUserPanel extends UserPanel {
     private static final String MEMBERSHIP_LABEL = "Membership";
     private static final String CERTIFICATE_LABEL = "Certificate";
 
-    private static final String OK_BUTTON = "OK";
     private static final String CANCEL_BUTTON = "Cancel";
     private final static String CHANGE_PASSWORD_LABEL = "Change Password";
     private JLabel emailLabel;
@@ -67,12 +68,6 @@ public class GenericUserPanel extends UserPanel {
     private JButton changePassButton;
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 
-
-    private final ActionListener closeDlgListener = new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-            SwingUtilities.windowForComponent(GenericUserPanel.this).dispose();
-        }
-    };
 
     public void initialize() {
         try {
@@ -100,16 +95,16 @@ public class GenericUserPanel extends UserPanel {
             // Here is where we would use the node context to retrieve Panel content
             if (!(object instanceof EntityHeader)) {
                 throw new IllegalArgumentException("Invalid argument type: "
-                        + "\nExpected: EntityHeader"
-                        + "\nReceived: " + object.getClass().getName());
+                  + "\nExpected: EntityHeader"
+                  + "\nReceived: " + object.getClass().getName());
             }
 
-            userHeader = (EntityHeader) object;
+            userHeader = (EntityHeader)object;
 
             if (!EntityType.USER.equals(userHeader.getType())) {
                 throw new IllegalArgumentException("Invalid argument type: "
-                        + "\nExpected: User "
-                        + "\nReceived: " + userHeader.getType());
+                  + "\nExpected: User "
+                  + "\nReceived: " + userHeader.getType());
             }
 
             if (config == null) {
@@ -155,10 +150,10 @@ public class GenericUserPanel extends UserPanel {
 
         // Add the main panel
         add(getMainPanel(),
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(8, 8, 8, 8), 0, 0));
+          new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(8, 8, 8, 8), 0, 0));
     }
 
     /**
@@ -174,17 +169,17 @@ public class GenericUserPanel extends UserPanel {
 
         // Add GroupTabbedPane
         mainPanel.add(getTabbedPane(),
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(0, 0, 0, 0), 0, 0));
 
         // Add buttonPanel
         mainPanel.add(getButtonPanel(),
-                new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(0, 0, 0, 0), 0, 0));
 
         // Return panel
         return mainPanel;
@@ -220,78 +215,78 @@ public class GenericUserPanel extends UserPanel {
         detailsPanel.setLayout(new GridBagLayout());
 
         detailsPanel.add(new JLabel(new ImageIcon(ImageCache.getInstance().getIcon(USER_ICON_RESOURCE))),
-                new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(5, 10, 0, 0), 0, 0));
+          new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(5, 10, 0, 0), 0, 0));
 
         detailsPanel.add(getNameLabel(),
-                new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(10, 15, 0, 0), 0, 0));
+          new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(10, 15, 0, 0), 0, 0));
 
         detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-                new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.BOTH,
-                        new Insets(10, 10, 0, 10), 0, 0));
+          new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.BOTH,
+            new Insets(10, 10, 0, 10), 0, 0));
 
         detailsPanel.add(getFirstNameLabel(),
-                new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(10, 10, 0, 0), 0, 0));
+          new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(10, 10, 0, 0), 0, 0));
 
         detailsPanel.add(getFirstNameTextField(),
-                new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.HORIZONTAL,
-                        new Insets(10, 15, 0, 10), 0, 0));
+          new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(10, 15, 0, 10), 0, 0));
 
         detailsPanel.add(getLastNameLabel(),
-                new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(10, 10, 0, 0), 0, 0));
+          new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(10, 10, 0, 0), 0, 0));
 
         detailsPanel.add(getLastNameTextField(),
-                new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.HORIZONTAL,
-                        new Insets(10, 15, 0, 10), 0, 0));
+          new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(10, 15, 0, 10), 0, 0));
 
         detailsPanel.add(getEmailLabel(),
-                new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(10, 10, 0, 0), 0, 0));
+          new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(10, 10, 0, 0), 0, 0));
 
         detailsPanel.add(getEmailTextField(),
-                new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.HORIZONTAL,
-                        new Insets(10, 15, 0, 10), 0, 0));
+          new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(10, 15, 0, 10), 0, 0));
 
         detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-                new GridBagConstraints(0, 11, 2, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.BOTH,
-                        new Insets(15, 10, 0, 10), 0, 0));
+          new GridBagConstraints(0, 11, 2, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.BOTH,
+            new Insets(15, 10, 0, 10), 0, 0));
 
         detailsPanel.add(getChangePassButton(),
-                new GridBagConstraints(1, 12, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.EAST,
-                        GridBagConstraints.NONE,
-                        new Insets(15, 10, 0, 10), 0, 0));
+          new GridBagConstraints(1, 12, 1, 1, 0.0, 0.0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(15, 10, 0, 10), 0, 0));
 
         Component strut = Box.createVerticalStrut(8);
 
         detailsPanel.add(strut,
-                new GridBagConstraints(0, 13, 2, 1, 1.0, 1.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(10, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 13, 2, 1, 1.0, 1.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(10, 0, 0, 0), 0, 0));
 
         Utilities.equalizeLabelSizes(new JLabel[]{
             getLastNameLabel(),
@@ -438,22 +433,22 @@ public class GenericUserPanel extends UserPanel {
             Component hStrut = Box.createHorizontalStrut(8);
             // add components
             buttonPanel.add(hStrut,
-                    new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.BOTH,
-                            new Insets(0, 0, 0, 0), 0, 0));
+              new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.BOTH,
+                new Insets(0, 0, 0, 0), 0, 0));
 
             buttonPanel.add(getOKButton(),
-                    new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(5, 5, 5, 5), 0, 0));
+              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.NONE,
+                new Insets(5, 5, 5, 5), 0, 0));
 
             buttonPanel.add(getCancelButton(),
-                    new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(5, 5, 5, 5), 0, 0));
+              new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.NONE,
+                new Insets(5, 5, 5, 5), 0, 0));
 
             JButton buttons[] = new JButton[]
             {
@@ -472,25 +467,7 @@ public class GenericUserPanel extends UserPanel {
 // If button not already created
         if (null == okButton) {
             // Create button
-            okButton = new JButton(OK_BUTTON);
-
-            // Register listener
-            if (config.isWritable()) {
-                okButton.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        // Apply changes if possible
-                        if (!collectAndSaveChanges()) {
-                            // Error - just return
-                            return;
-                        }
-                        Window dlg = SwingUtilities.windowForComponent(GenericUserPanel.this);
-                        dlg.setVisible(false);
-                        dlg.dispose();
-                    }
-                });
-            } else {
-                okButton.addActionListener(closeDlgListener);
-            }
+            okButton = new JButton(new OkAction());
         }
         return okButton;
     }
@@ -523,13 +500,13 @@ public class GenericUserPanel extends UserPanel {
             changePassButton = new JButton(CHANGE_PASSWORD_LABEL);
 
             changePassButton.
-                    addActionListener(new ActionListener() {
-                        public void actionPerformed(ActionEvent e) {
-                            new PasswordDialog(mainWindow, userPanel,
-                                    user, passwordChangeListener).show();
-                            // Refresh the panel (since the agent's cert might have been revoked)
-                        }
-                    });
+              addActionListener(new ActionListener() {
+                  public void actionPerformed(ActionEvent e) {
+                      new PasswordDialog(mainWindow, userPanel,
+                        user, passwordChangeListener).show();
+                      // Refresh the panel (since the agent's cert might have been revoked)
+                  }
+              });
 
         }
         changePassButton.setEnabled(config.isWritable());
@@ -537,26 +514,26 @@ public class GenericUserPanel extends UserPanel {
     }
 
     private EntityListener
-            passwordChangeListener = new EntityListenerAdapter() {
-                /**
-                 * Fired when an set of children is updated.
-                 *
-                 * @param ev event describing the action
-                 */
-                public void entityUpdated(EntityEvent ev) {
-                    try {
-                        user =
-                                getIdentityAdmin().findUserByPrimaryKey(config.getOid(), userHeader.getStrId()).getUserBean();
-                        user = collectChanges();
-                        boolean b = formModified;
-                        setData(user);
-                        setModified(b);
-                    } catch (Exception ex) {
-                        ErrorManager.getDefault().notify(Level.WARNING, ex, "Error retrieving the user " + userHeader.getStrId());
-                    }
+      passwordChangeListener = new EntityListenerAdapter() {
+          /**
+           * Fired when an set of children is updated.
+           *
+           * @param ev event describing the action
+           */
+          public void entityUpdated(EntityEvent ev) {
+              try {
+                  user =
+                    getIdentityAdmin().findUserByPrimaryKey(config.getOid(), userHeader.getStrId()).getUserBean();
+                  user = collectChanges();
+                  boolean b = formModified;
+                  setData(user);
+                  setModified(b);
+              } catch (Exception ex) {
+                  ErrorManager.getDefault().notify(Level.WARNING, ex, "Error retrieving the user " + userHeader.getStrId());
+              }
 
-                }
-            };
+          }
+      };
 
     public boolean certExist() {
         return certPanel.certExist();
@@ -564,8 +541,8 @@ public class GenericUserPanel extends UserPanel {
 
     /**
      * Populates the form from the user bean
-     * 
-     * @param user 
+     *
+     * @param user
      */
     private void setData(UserBean user) {
         // Set tabbed panels (add/remove extranet tab)
@@ -579,7 +556,7 @@ public class GenericUserPanel extends UserPanel {
 
     /**
      * Collect changes from the form into the user instance.
-     * 
+     *
      * @return User   the instance with changes applied
      */
     private UserBean collectChanges() {
@@ -594,7 +571,7 @@ public class GenericUserPanel extends UserPanel {
     /**
      * Applies the changes on the form to the user bean and update the database;
      * Returns indication if the changes were applied successfully.
-     * 
+     *
      * @return boolean - the indication if the changes were applied successfully
      */
     private boolean collectAndSaveChanges() {
@@ -637,17 +614,71 @@ public class GenericUserPanel extends UserPanel {
     }
 
 
+    private final ActionListener closeDlgListener = new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            SwingUtilities.windowForComponent(GenericUserPanel.this).dispose();
+        }
+    };
+
+    class OkAction extends SecureAction {
+        /**
+         * Actually perform the action.
+         */
+        protected void performAction() {
+            if (config.isWritable() && isInRole(new String[] {Group.ADMIN_GROUP_NAME})) {
+                // Apply changes if possible
+                if (!collectAndSaveChanges()) {
+                    // Error - just return
+                    return;
+                }
+            }
+            Window dlg = SwingUtilities.windowForComponent(GenericUserPanel.this);
+            dlg.setVisible(false);
+            dlg.dispose();
+        }
+
+        /**
+         * Return the required roles for this action, one of the roles.
+         *
+         * @return the list of roles that are allowed to carry out the action
+         */
+        protected String[] requiredRoles() {
+            return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
+        }
+
+        /**
+         * @return the action name
+         */
+        public String getName() {
+            return "OK";
+        }
+
+        /**
+         * subclasses override this method specifying the resource name
+         */
+        protected String iconResource() {
+            return null;
+        }
+
+        /**
+         * @return the aciton description
+         */
+        public String getDescription() {
+            return null;
+        }
+    }
+
     /**
      * Validates form data and returns if user Id and description form fields
      * are valid or not.
-     * 
+     *
      * @return boolean indicating if the form fields are valid or not.
      */
     private boolean validateForm() {
         return true;
     }
 
-    // debug
+// debug
     public static void main(String[] args) {
 
         GenericUserPanel panel = new GenericUserPanel();
@@ -664,28 +695,28 @@ public class GenericUserPanel extends UserPanel {
     }
 
 
-    // hierarchy listener
+// hierarchy listener
     private final
     HierarchyListener hierarchyListener =
-            new HierarchyListener() {
-                /**
-                 * Called when the hierarchy has been changed.
-                 */
-                public void hierarchyChanged(HierarchyEvent e) {
-                    int eID = e.getID();
-                    long flags = e.getChangeFlags();
+      new HierarchyListener() {
+          /**
+           * Called when the hierarchy has been changed.
+           */
+          public void hierarchyChanged(HierarchyEvent e) {
+              int eID = e.getID();
+              long flags = e.getChangeFlags();
 
-                    if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
-                            ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
-                        if (GenericUserPanel.this.isDisplayable()) {
-                            JDialog d = (JDialog) SwingUtilities.windowForComponent(GenericUserPanel.this);
-                            if (d != null) {
-                                d.setTitle(userHeader.getName() + " Properties");
-                            }
-                        }
-                    }
-                }
-            };
+              if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
+                ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
+                  if (GenericUserPanel.this.isDisplayable()) {
+                      JDialog d = (JDialog)SwingUtilities.windowForComponent(GenericUserPanel.this);
+                      if (d != null) {
+                          d.setTitle(userHeader.getName() + " Properties");
+                      }
+                  }
+              }
+          }
+      };
 
 
 }

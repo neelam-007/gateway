@@ -147,7 +147,9 @@ public abstract class BaseAction extends AbstractAction {
      * @return the <code>ImageIcon</code> or null if not found
      */
     public final Image getIcon() {
-        return ImageCache.getInstance().getIcon(iconResource());
+        final String name = iconResource();
+        if (name == null) return null;
+        return ImageCache.getInstance().getIcon(name);
 
     }
 

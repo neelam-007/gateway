@@ -10,6 +10,7 @@ import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -90,6 +91,15 @@ public class UserPropertiesAction extends NodeAction {
 
     public void setIdProviderConfig(IdentityProviderConfig config) {
         this.config = config;
+    }
+
+    /**
+     * Return the required roles for this action
+     *
+     * @return the list of roles that are allowed to carry out the action
+     */
+    protected String[] requiredRoles() {
+        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
     }
 
     private void removeUserFromTree(EntityHeader header) {
