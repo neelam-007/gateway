@@ -191,19 +191,19 @@ public class Service {
             endTransaction();
         }
     }
-    public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
+    public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
         try {
-            return retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findByPrimaryKey(Long.toString(groupId));
+            return retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findByPrimaryKey(groupId);
         } catch (FindException e) {
             throw new RemoteException("FindException in findGroupByPrimaryKey", e);
         } finally {
             endTransaction();
         }
     }
-    public void deleteGroup(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
+    public void deleteGroup(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
         GroupManager groupManager = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId);
         try {
-            com.l7tech.identity.Group grp = groupManager.findByPrimaryKey(Long.toString(groupId));
+            com.l7tech.identity.Group grp = groupManager.findByPrimaryKey(groupId);
             if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
             groupManager.delete(grp);
         } catch (ObjectModelException e) {

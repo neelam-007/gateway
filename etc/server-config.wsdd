@@ -77,11 +77,11 @@
   </operation>
   <operation name="findGroupByPrimaryKey" qname="ns14:findGroupByPrimaryKey" returnQName="findGroupByPrimaryKeyReturn" returnType="ns14:Group" xmlns:ns14="http://www.layer7-tech.com/identity">
    <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-   <parameter name="groupId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+   <parameter name="groupId" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   </operation>
   <operation name="deleteGroup" qname="ns15:deleteGroup" xmlns:ns15="http://www.layer7-tech.com/identity">
    <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-   <parameter name="groupId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+   <parameter name="groupId" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   </operation>
   <operation name="saveGroup" qname="ns16:saveGroup" returnQName="saveGroupReturn" returnType="xsd:long" xmlns:ns16="http://www.layer7-tech.com/identity" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
    <parameter name="identityProviderConfigId" type="xsd:long"/>

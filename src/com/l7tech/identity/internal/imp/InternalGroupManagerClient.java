@@ -24,7 +24,7 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
 
     public Group findByPrimaryKey(String oid) throws FindException {
         try {
-            return getStub().findGroupByPrimaryKey(identityProviderConfigId, Long.parseLong(oid));
+            return getStub().findGroupByPrimaryKey(identityProviderConfigId, oid);
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findByPrimaryKey", e);
         }
@@ -32,7 +32,8 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
 
     public void delete(Group group) throws DeleteException {
         try {
-            getStub().deleteGroup(identityProviderConfigId, group.getOid());
+            String grpId = Long.toString(group.getOid());
+            getStub().deleteGroup(identityProviderConfigId, grpId);
         } catch (java.rmi.RemoteException e) {
             throw new DeleteException("RemoteException in delete", e);
         }
