@@ -85,7 +85,7 @@ public class WspReader {
                 Class thawedType = thawedReference.type;
 
                 try {
-                    System.out.println("Thawing: " + name + ".set" + parm + "((" + thawedType.getName() + ") " + thawed + ")");
+                    //System.out.println("Thawing: " + name + ".set" + parm + "((" + thawedType.getName() + ") " + thawed + ")");
                     Method setter = assertion.getClass().getMethod("set" + parm, new Class[] { thawedType });
                     setter.invoke(assertion, new Object[] { thawed });
                 } catch (NoSuchMethodException e) {

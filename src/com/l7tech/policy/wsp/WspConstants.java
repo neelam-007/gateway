@@ -188,7 +188,7 @@ class WspConstants {
             Node attr = attrs.item(0);
             String typeName = attr.getLocalName();
             String value = attr.getNodeValue();
-            System.out.println("Thawing element " + source.getLocalName() + " " + typeName + "=" + value);
+            //System.out.println("Thawing element " + source.getLocalName() + " " + typeName + "=" + value);
 
             // Check for Nulls
             if (typeName.endsWith("Null") && value.equals("null") && typeName.length() > 4) {
@@ -270,14 +270,14 @@ class WspConstants {
                 if (valueElement == null || valueElement.getNodeType() != Node.ELEMENT_NODE || !"value".equals(valueElement.getLocalName()))
                     throw new InvalidPolicyStreamException("Map entry last child element is not a value element");
 
-                TypedReference ktr = TypeMapping.thawElement((Element) keyElement);
+                TypedReference ktr = TypeMapping.thawElement(keyElement);
                 if (!String.class.equals(ktr.type))
                     throw new InvalidPolicyStreamException("Maps with non-string keys are not currently permitted within a policy");
                 if (ktr.target == null)
                     throw new InvalidPolicyStreamException("Maps with null keys are not currently permitted within a policy");
                 String key = (String) ktr.target;
 
-                TypedReference vtr = TypeMapping.thawElement((Element) valueElement);
+                TypedReference vtr = TypeMapping.thawElement(valueElement);
                 if (!String.class.equals(vtr.type))
                     throw new InvalidPolicyStreamException("Maps with non-string values are not currently permitted within a policy");
                 String value = (String) vtr.target;
