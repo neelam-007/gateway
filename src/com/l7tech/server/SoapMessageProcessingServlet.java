@@ -7,6 +7,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.message.*;
@@ -21,7 +22,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.soap.*;
 import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -89,7 +89,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     sendChallenge(sreq, sresp, hrequest, hresponse);
                 } else if (sresp.getFaultDetail() != null) {
                     logger.fine("returning special soap fault");
-                    sendFault(sresp.getFaultDetail(), hresponse);
+                    sendFault(sreq, sresp, sresp.getFaultDetail(), hrequest, hresponse);
                 } else {
                     logger.fine("servlet transport returning 500");
                     sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
@@ -105,20 +105,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
                           SoapUtil.FC_CLIENT, msg);
             }
-        } catch (SOAPException se) {
-            logger.log(Level.SEVERE, se.getMessage(), se);
-            try {
-                sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, se.getMessage());
-            } catch (SOAPException se2) {
-                logger.log(Level.SEVERE, "Second SOAPException while trying to send fault: " + se2.getMessage(), se2);
-            }
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
-            try {
-                sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, e.getMessage());
-            } catch (SOAPException se2) {
-                logger.log(Level.SEVERE, "SOAPException while trying to send fault: " + se2.getMessage(), se2);
-            }
+            sendFault(sreq,
+                      sresp,
+                      hrequest,
+                      hresponse,
+                      HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                      SoapUtil.FC_SERVER,
+                      e.getMessage());
         } finally {
             PersistenceContext pc = PersistenceContext.peek();
             if (pc != null) pc.close();
@@ -130,19 +125,21 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
-    private void sendFault(SoapFaultDetail faultDetail, HttpServletResponse res) throws SOAPException, IOException{
+    private void sendFault(SoapRequest sreq, SoapResponse sresp, SoapFaultDetail faultDetail, HttpServletRequest req, HttpServletResponse res) throws IOException{
         OutputStream responseStream = null;
         try {
+            responseStream = res.getOutputStream();
+            String actor = req.getRequestURL().toString();
             res.setContentType(DEFAULT_CONTENT_TYPE);
             res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
-            SOAPMessage msg = SoapUtil.makeMessage();
-            SoapUtil.addFaultTo(msg,
-                                faultDetail.getFaultCode(),
-                                faultDetail.getFaultString(),
-                                null);  // TODO use SSG url as faultactor
-            responseStream = res.getOutputStream();
-            msg.writeTo(responseStream);
+            PublishedService pserv = (PublishedService)sreq.getParameter(Request.PARAM_SERVICE);
+            if (pserv != null && sresp.isPolicyViolated()) {
+                String purl = makePolicyUrl(req, pserv.getOid());
+                res.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
+            }
+
+            responseStream.write(SoapFaultUtils.generateRawSoapFault(faultDetail, actor).getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
@@ -165,37 +162,28 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         return policyUrl.toString();
     }
 
-    private void sendFault(SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp, int httpStatus, String faultCode, String faultString) throws SOAPException, IOException {
+    private void sendFault(SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp, int httpStatus, String faultCode, String faultString) throws IOException {
         OutputStream responseStream = null;
-
         try {
+            responseStream = hresp.getOutputStream();
+            String actor = hreq.getRequestURL().toString();
             hresp.setContentType(DEFAULT_CONTENT_TYPE);
             hresp.setStatus(httpStatus);
 
-            SOAPMessage msg = SoapUtil.makeMessage();
-            SOAPPart spart = msg.getSOAPPart();
-            SOAPEnvelope senv = spart.getEnvelope();
-            SOAPFault fault = SoapUtil.addFaultTo(msg, faultCode, faultString, null); // TODO use SSG url as faultactor
-
             PublishedService pserv = (PublishedService)sreq.getParameter(Request.PARAM_SERVICE);
+            String purl = "";
             if (pserv != null && sresp.isPolicyViolated()) {
-                String purl = makePolicyUrl(hreq, pserv.getOid());
-
+                purl = makePolicyUrl(hreq, pserv.getOid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
-
-                Detail detail = fault.addDetail();
-                DetailEntry entry = detail.addDetailEntry(senv.createName(POLICYURL_TAG));
-                entry.addTextNode(purl);
             }
 
-            responseStream = hresp.getOutputStream();
-            msg.writeTo(responseStream);
+            responseStream.write(SoapFaultUtils.generateRawSoapFault(faultCode, faultString, purl, actor).getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
     }
 
-    private void sendChallenge(SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp) throws SOAPException, IOException {
+    private void sendChallenge(SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp) throws IOException {
         sendFault(sreq, sresp, hreq, hresp, HttpServletResponse.SC_UNAUTHORIZED, SoapUtil.FC_CLIENT, "Authentication Required");
     }
 
