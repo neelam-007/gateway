@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.event.Event;
 import com.l7tech.objectmodel.event.GenericListener;
 import com.l7tech.server.event.lifecycle.LifecycleEvent;
 import com.l7tech.server.event.lifecycle.Started;
+import com.l7tech.server.event.lifecycle.Stopped;
 
 import java.util.logging.Level;
 
@@ -28,7 +29,7 @@ public class SystemAuditListener implements GenericListener {
             LifecycleEvent le = (LifecycleEvent)event;
             Level level = Level.INFO;
             if (le.getComponent() == Component.GW_SERVER) {
-                level = event instanceof Started ? Level.INFO : Level.FINE;
+                level = (event instanceof Started || event instanceof Stopped) ? Level.INFO : Level.FINE;
             }
             AuditContext.getCurrent().add(new SystemAuditRecord(level, nodeId, le.getComponent(), le.getAction(), le.getIpAddress()));
             AuditContext.getCurrent().close();
