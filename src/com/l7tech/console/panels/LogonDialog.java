@@ -561,7 +561,7 @@ public class LogonDialog extends JDialog {
                                                              userNameTextField.getText(),
                                                              passwordField.getPassword());
         if (cd.downloadCertificate()) {
-            ImportCertificateAction.importSsgCertificate(cd.getCertificate());
+            ImportCertificateAction.importSsgCertificate(cd.getCertificate(), url.getHost());
             showUpdatedSsgCertificateMessage();
             System.exit(0);
         } else {

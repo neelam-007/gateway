@@ -104,7 +104,7 @@ public class ImportCertificateAction extends BaseAction {
     /**
      * Import a certificate into our trust store.
      */
-    public static void importSsgCertificate(Certificate cert)
+    public static void importSsgCertificate(Certificate cert, String hostName)
             throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException
     {
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -123,7 +123,7 @@ public class ImportCertificateAction extends BaseAction {
         }
 
         log.info("Adding certificate: " + cert);
-        ks.setCertificateEntry("tomcat", cert);
+        ks.setCertificateEntry(hostName, cert);
 
         FileOutputStream ksfos = null;
         try {
@@ -150,7 +150,7 @@ public class ImportCertificateAction extends BaseAction {
         Iterator i = c.iterator();
         if (i.hasNext()) {
             Certificate cert = (Certificate)i.next();
-            importSsgCertificate(cert);
+            importSsgCertificate(cert, "ssg");
         }
 
         JOptionPane.showMessageDialog(getFrame(),
