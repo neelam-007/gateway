@@ -187,6 +187,21 @@ public class AssertionPath {
     }
 
     /**
+     * Returns true if this set contains the specified <code>Assertion</code>.
+     * <p>
+     * @param a the assertion to test the presence of
+     * @return true if this path contains the assertion, false otheriwse
+     */
+    public boolean contains(Assertion a) {
+        Assertion[] path = getPath();
+        for (int i = 0; i < path.length; i++) {
+           Assertion assertion = path[i];
+           if (a.equals(assertion)) return true;
+       }
+        return false;
+    }
+
+    /**
      * Tests two AssertionPaths for equality by checking each element of
      * the paths for equality. Two paths are considered equal if they are
      * of the same length, and contain the same elements (<code>.equals</code>).
