@@ -31,6 +31,34 @@ import java.util.Map;
 /**
  * Downloads a certificate from the SSG, check it for validity, and import it.
  *
+ * Typical usage:
+ * <code>
+ * CertificateDownloader cd = new CertificateDownloader();
+ * cd.setSsgUrl("http://wherever:8080");
+ * cd.setUsername("alice");
+ * cd.setPassword("sekrit".toCharArray());
+ * try {
+ *   boolean result = cd.downloadCertificate();
+ *   Certificate cert = cd.getCertificate();
+ *   if (result) {
+ *     // Certificate signature was validated with the given username and password
+ *   } else {
+ *     // A certificate was obtained, but it could not be validated
+ *   }
+ *   if (cd.isUserUnknown()) { }
+ * } catch (Exception e) {
+ *   // certificate download was unsuccessful.  cd.getCertificate() will probably return null.
+ * }
+ *
+ * if (!cd.isValidCert()) {
+ *   cd.setPassword("otherPass");  // You can try other passwords on the downloaded cert.
+ *                                 // To try a different username though you'll need to downloadCertificate() again.
+ *   if (!cd.isValidCert()) {
+ *     // oh well
+ *   }
+ * }
+ * </code>
+ *
  * User: mike
  * Date: Jul 15, 2003
  * Time: 1:40:08 PM
