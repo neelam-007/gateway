@@ -92,7 +92,7 @@ public class RequestHandler extends AbstractHttpHandler {
             pr.setSoapAction(sa);
 
         pr.setUri(SoapUtil.getNamespaceUri(requestEnvelope));
-        log.info("Request SOAPAction=" + pr.getSoapAction() + "   BodyURI=" + pr.getUri());
+        log.finer("Request SOAPAction=" + pr.getSoapAction() + "   BodyURI=" + pr.getUri());
         return pr;
     }
 
@@ -151,7 +151,7 @@ public class RequestHandler extends AbstractHttpHandler {
         }
 
         final Ssg ssg = getDesiredSsg(endpoint);
-        log.info("Mapped to Gateway: " + ssg);
+        log.fine("Mapped to Gateway: " + ssg);
         CurrentRequest.setCurrentSsg(ssg);
 
         if (isWsdl) {
@@ -288,7 +288,7 @@ public class RequestHandler extends AbstractHttpHandler {
         try {
             try {
                 String[] splitted = endpoint.split("/", 2);
-                log.info("Looking for " + splitted[0]);
+                log.finest("Looking for " + splitted[0]);
                 return ssgFinder.getSsgByEndpoint(splitted[0]);
             } catch (SsgNotFoundException e) {
                 return ssgFinder.getDefaultSsg();
@@ -309,15 +309,15 @@ public class RequestHandler extends AbstractHttpHandler {
     private SsgResponse getServerResponse(PendingRequest request)
             throws HttpChallengeRequiredException
     {
-        log.info("Processing message to Gateway " + request.getSsg());
+        log.fine("Processing message to Gateway " + request.getSsg());
 
         try {
             SsgResponse reply = messageProcessor.processMessage(request);
             interceptor.onReceiveReply(reply);
-            log.info("Returning result");
+            log.fine("Returning result");
             return reply;
         } catch (HttpChallengeRequiredException e) {
-            log.info("Returning challenge");
+            log.fine("Returning challenge");
             throw e;
         } catch (Exception e) {
             log.log(Level.SEVERE, e.getMessage(), e);
