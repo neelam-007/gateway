@@ -8,6 +8,7 @@ package com.l7tech.service;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -130,7 +131,7 @@ public class PublishedService extends NamedEntityImp {
             if ( url == null ) {
                 String err = "WSDL " + getWsdlUrl() + " did not contain a valid URL";
                 logger.severe( err );
-                throw new WSDLException( SoapUtil.FC_SERVER, err );
+                throw new WSDLException( SoapFaultUtils.FC_SERVER, err );
             }
 
             _serviceUrl = url;

@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.SoapFaultUtils;
 
 /**
  * Typesafe enum with values for lots of conceivable error conditions (including NONE)
@@ -54,9 +55,9 @@ public class AssertionStatus {
 
     public String getSoapFaultCode() {
         if ( _numeric >= CLIENT && _numeric < SERVER )
-            return SoapUtil.FC_CLIENT;
+            return SoapFaultUtils.FC_CLIENT;
         else
-            return SoapUtil.FC_SERVER;
+            return SoapFaultUtils.FC_SERVER;
     }
 
     private static AssertionStatus make( int numeric, String message, boolean auth ) {

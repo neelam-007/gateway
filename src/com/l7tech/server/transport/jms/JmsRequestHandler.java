@@ -7,6 +7,7 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -73,7 +74,7 @@ class JmsRequestHandler {
                 String msg = "Request referred to an outdated version of policy";
                 _logger.log( Level.INFO, msg );
                 faultMessage = msg;
-                faultCode = SoapUtil.FC_CLIENT;
+                faultCode = SoapFaultUtils.FC_CLIENT;
             } catch ( Throwable t ) {
                 _logger.log( Level.WARNING, "Exception while processing JMS message", t );
                 faultMessage = t.getMessage();
@@ -83,7 +84,7 @@ class JmsRequestHandler {
             String responseXml = soapResponse.getResponseXml();
             if ( responseXml == null || responseXml.length() == 0 ) {
                 if ( faultMessage == null ) faultMessage = status.getMessage();
-                SOAPMessage msg = SoapUtil.makeFaultMessage( faultCode == null ? SoapUtil.FC_SERVER : faultCode,
+                SOAPMessage msg = SoapUtil.makeFaultMessage( faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
                                                              faultMessage, null ); // TODO use SSG URL as faultActor
                 responseXml = SoapUtil.soapMessageToString( msg, JmsUtil.DEFAULT_ENCODING ); // TODO ENCODING @)$(*)!!
             }

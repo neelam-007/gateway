@@ -8,7 +8,6 @@ package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.SoapFaultUtils;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.PersistenceContext;
@@ -98,12 +97,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             } catch (PolicyAssertionException pae) {
                 logger.log(Level.SEVERE, pae.getMessage(), pae);
                 sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                          SoapUtil.FC_SERVER, pae.toString());
+                          SoapFaultUtils.FC_SERVER, pae.toString());
             } catch (PolicyVersionException pve) {
                 String msg = "Request referred to an outdated version of policy";
                 logger.log(Level.INFO, msg );
                 sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
-                          SoapUtil.FC_CLIENT, msg);
+                          SoapFaultUtils.FC_CLIENT, msg);
             }
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -112,7 +111,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                       hrequest,
                       hresponse,
                       HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                      SoapUtil.FC_SERVER,
+                      SoapFaultUtils.FC_SERVER,
                       e.getMessage());
         } finally {
             PersistenceContext pc = PersistenceContext.peek();
@@ -184,7 +183,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     private void sendChallenge(SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp) throws IOException {
-        sendFault(sreq, sresp, hreq, hresp, HttpServletResponse.SC_UNAUTHORIZED, SoapUtil.FC_CLIENT, "Authentication Required");
+        sendFault(sreq, sresp, hreq, hresp, HttpServletResponse.SC_UNAUTHORIZED, SoapFaultUtils.FC_CLIENT, "Authentication Required");
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
