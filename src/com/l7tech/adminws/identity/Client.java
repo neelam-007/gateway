@@ -200,15 +200,11 @@ public class Client {
         qn = new QName(IDENTITY_URN, "EntityType");
         call.registerTypeMapping(com.l7tech.objectmodel.EntityType.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.objectmodel.EntityType.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.objectmodel.EntityType.class, qn));
         qn = new QName(IDENTITY_URN, "IdentityProviderConfig");
-        call.registerTypeMapping(com.l7tech.identity.imp.IdentityProviderConfigImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.imp.IdentityProviderConfigImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.imp.IdentityProviderConfigImp.class, qn));
-        qn = new QName(IDENTITY_URN, "InternalIdentityProviderConfig");
-        call.registerTypeMapping(com.l7tech.identity.internal.InternalIDProviderConfig.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.internal.InternalIDProviderConfig.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.internal.InternalIDProviderConfig.class, qn));
+        call.registerTypeMapping(com.l7tech.identity.IdentityProviderConfig.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.IdentityProviderConfig.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.IdentityProviderConfig.class, qn));
         qn = new QName(IDENTITY_URN, "User");
         call.registerTypeMapping(com.l7tech.identity.internal.imp.UserImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.internal.imp.UserImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.internal.imp.UserImp.class, qn));
         qn = new QName(IDENTITY_URN, "Group");
         call.registerTypeMapping(com.l7tech.identity.internal.imp.GroupImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.internal.imp.GroupImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.internal.imp.GroupImp.class, qn));
-        qn = new QName(IDENTITY_URN, "LdapIdentityProviderConfig");
-        call.registerTypeMapping(com.l7tech.identity.ldap.LdapIdentityProviderConfig.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.ldap.LdapIdentityProviderConfig.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.ldap.LdapIdentityProviderConfig.class, qn));
         qn = new QName(IDENTITY_URN, "LdapUser");
         call.registerTypeMapping(com.l7tech.identity.ldap.LdapUser.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.ldap.LdapUser.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.ldap.LdapUser.class, qn));
         qn = new QName(IDENTITY_URN, "LdapGroup");
