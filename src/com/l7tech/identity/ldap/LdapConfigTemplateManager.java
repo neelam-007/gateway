@@ -52,7 +52,9 @@ public class LdapConfigTemplateManager {
      */
     public LdapIdentityProviderConfig getTemplate(String templateName) throws IOException {
         // clone the template, so it's not affected by whatever the user is doing with it
-        return new LdapIdentityProviderConfig((LdapIdentityProviderConfig)templates.get(templateName));
+        LdapIdentityProviderConfig cfg = (LdapIdentityProviderConfig)templates.get(templateName);
+        if (cfg == null) return null;
+        return new LdapIdentityProviderConfig(cfg);
     }
 
     private void populateTemplatesFromFile() {
