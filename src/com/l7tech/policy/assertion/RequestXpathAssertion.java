@@ -6,14 +6,11 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
-import javax.xml.soap.SOAPConstants;
-import javax.xml.rpc.NamespaceConstants;
 import java.util.Map;
-import java.util.HashMap;
 
 /**
  * Data for an assertion that verifies whether a request matches a specified
