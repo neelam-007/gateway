@@ -16,6 +16,7 @@ import com.l7tech.common.util.XmlUtil;
  */
 public final class TestDocuments {
     private static final String DIR = "com/l7tech/service/resources/";
+    private static final String PDIR = "com/l7tech/policy/resources/";
     public static final String TEST_SOAP_XML = DIR + "GetLastTradePriceSoapRequest.xml";
     public static final String WSDL2PORTS = DIR + "xmltoday-delayed-quotes-2ports.wsdl";
     public static final String WSDL = DIR + "StockQuoteService.wsdl";
@@ -26,7 +27,8 @@ public final class TestDocuments {
     public static final String PLACEORDER_CLEARTEXT = DIR + "PlaceOrder_cleartext.xml";
     public static final String PLACEORDER_WITH_MAJESTY = DIR + "PlaceOrder_with_XmlRequestSecurity.xml";
     public static final String PLACEORDER_KEYS = DIR + "PlaceOrder_with_XmlRequestSecurity_keys.properties";
-    
+    public static final String BUG_763_MONSTER_POLICY = PDIR + "bug763MonsterPolicy.xml";
+
     private TestDocuments() { }
 
     public static Document getTestDocument(String resourcetoread)

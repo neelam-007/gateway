@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Policy xmlns="http://www.layer7tech.com/ws/policy">
+    <All>
+        <SslAssertion>
+            <Option optionValue="Required"/>
+        </SslAssertion>
+        <OneOrMore>
+            <All>
+                <HttpBasic>
+                    <Realm stringValueNull="null"/>
+                </HttpBasic>
+                <RequestXpathAssertion>
+                    <NamespaceMap mapValue="included">
+                        <entry>
+                            <key stringValue="s0"/>
+                            <value stringValue="http://warehouse.acme.com/ws"/>
+                        </entry>
+                        <entry>
+                            <key stringValue="soapenv"/>
+                            <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                        </entry>
+                    </NamespaceMap>
+                    <Pattern stringValue="//"/>
+                </RequestXpathAssertion>
+                <OneOrMore>
+                    <SpecificUser>
+                        <UserLogin stringValue="alice"/>
+                        <IdentityProviderOid longValue="-2"/>
+                    </SpecificUser>
+                    <SpecificUser>
+                        <UserLogin stringValue="charlie"/>
+                        <IdentityProviderOid longValue="-2"/>
+                    </SpecificUser>
+                </OneOrMore>
+            </All>
+            <All>
+                <SchemaValidation>
+                    <Schema stringValue="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt; &lt;s:schema elementFormDefault=&quot;qualified&quot;     targetNamespace=&quot;http://warehouse.acme.com/ws&quot;     xmlns:http=&quot;http://schemas.xmlsoap.org/wsdl/http/&quot;     xmlns:mime=&quot;http://schemas.xmlsoap.org/wsdl/mime/&quot;     xmlns:s=&quot;http://www.w3.org/2001/XMLSchema&quot;     xmlns:s0=&quot;http://warehouse.acme.com/ws&quot;     xmlns:soap=&quot;http://schemas.xmlsoap.org/wsdl/soap/&quot;     xmlns:soapenc=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; xmlns:tm=&quot;http://microsoft.com/wsdl/mime/textMatching/&quot;&gt;     &lt;s:element name=&quot;listProducts&quot;&gt;         &lt;s:complexType/&gt;     &lt;/s:element&gt;     &lt;s:element name=&quot;listProductsResponse&quot;&gt;         &lt;s:complexType&gt;             &lt;s:sequence&gt;                 &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;0&quot;                     name=&quot;listProductsResult&quot; type=&quot;s0:ArrayOfProductListHeader&quot;/&gt;             &lt;/s:sequence&gt;         &lt;/s:complexType&gt;     &lt;/s:element&gt;     &lt;s:complexType name=&quot;ArrayOfProductListHeader&quot;&gt;         &lt;s:sequence&gt;             &lt;s:element maxOccurs=&quot;unbounded&quot; minOccurs=&quot;0&quot;                 name=&quot;ProductListHeader&quot; nillable=&quot;true&quot; type=&quot;s0:ProductListHeader&quot;/&gt;         &lt;/s:sequence&gt;     &lt;/s:complexType&gt;     &lt;s:complexType name=&quot;ProductListHeader&quot;&gt;         &lt;s:sequence&gt;             &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;0&quot; name=&quot;productName&quot; type=&quot;s:string&quot;/&gt;             &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;productId&quot; type=&quot;s:long&quot;/&gt;         &lt;/s:sequence&gt;     &lt;/s:complexType&gt;     &lt;s:element name=&quot;getProductDetails&quot;&gt;         &lt;s:complexType&gt;             &lt;s:sequence&gt;                 &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;productid&quot; type=&quot;s:long&quot;/&gt;             &lt;/s:sequence&gt;         &lt;/s:complexType&gt;     &lt;/s:element&gt;     &lt;s:element name=&quot;getProductDetailsResponse&quot;&gt;         &lt;s:complexType&gt;             &lt;s:sequence&gt;                 &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;0&quot;                     name=&quot;getProductDetailsResult&quot; type=&quot;s0:ProductDetails&quot;/&gt;             &lt;/s:sequence&gt;         &lt;/s:complexType&gt;     &lt;/s:element&gt;     &lt;s:complexType name=&quot;ProductDetails&quot;&gt;         &lt;s:complexContent mixed=&quot;false&quot;&gt;             &lt;s:extension base=&quot;s0:ProductListHeader&quot;&gt;                 &lt;s:sequence&gt;                     &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;0&quot;                         name=&quot;description&quot; type=&quot;s:string&quot;/&gt;                     &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;price&quot; type=&quot;s:float&quot;/&gt;                     &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot;                         name=&quot;inStock&quot; type=&quot;s:boolean&quot;/&gt;                 &lt;/s:sequence&gt;             &lt;/s:extension&gt;         &lt;/s:complexContent&gt;     &lt;/s:complexType&gt;     &lt;s:element name=&quot;placeOrder&quot;&gt;         &lt;s:complexType&gt;             &lt;s:sequence&gt;                 &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;productid&quot; type=&quot;s:long&quot;/&gt;                 &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;amount&quot; type=&quot;s:long&quot;/&gt;                 &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;price&quot; type=&quot;s:float&quot;/&gt;                 &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;accountid&quot; type=&quot;s:long&quot;/&gt;             &lt;/s:sequence&gt;         &lt;/s:complexType&gt;     &lt;/s:element&gt;     &lt;s:element name=&quot;placeOrderResponse&quot;&gt;         &lt;s:complexType&gt;             &lt;s:sequence&gt;                 &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot;                     name=&quot;placeOrderResult&quot; type=&quot;s:long&quot;/&gt;             &lt;/s:sequence&gt;         &lt;/s:complexType&gt;     &lt;/s:element&gt;     &lt;s:element name=&quot;currentOrders&quot;&gt;         &lt;s:complexType&gt;             &lt;s:sequence&gt;                 &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;accountid&quot; type=&quot;s:long&quot;/&gt;             &lt;/s:sequence&gt;         &lt;/s:complexType&gt;     &lt;/s:element&gt;     &lt;s:element name=&quot;currentOrdersResponse&quot;&gt;         &lt;s:complexType&gt;             &lt;s:sequence&gt;                 &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;0&quot;                     name=&quot;currentOrdersResult&quot; type=&quot;s0:ArrayOfOrder&quot;/&gt;             &lt;/s:sequence&gt;         &lt;/s:complexType&gt;     &lt;/s:element&gt;     &lt;s:complexType name=&quot;ArrayOfOrder&quot;&gt;         &lt;s:sequence&gt;             &lt;s:element maxOccurs=&quot;unbounded&quot; minOccurs=&quot;0&quot; name=&quot;Order&quot;                 nillable=&quot;true&quot; type=&quot;s0:Order&quot;/&gt;         &lt;/s:sequence&gt;     &lt;/s:complexType&gt;     &lt;s:complexType name=&quot;Order&quot;&gt;         &lt;s:sequence&gt;             &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;date&quot; type=&quot;s:dateTime&quot;/&gt;             &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;accountId&quot; type=&quot;s:long&quot;/&gt;             &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;productId&quot; type=&quot;s:long&quot;/&gt;             &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;amount&quot; type=&quot;s:long&quot;/&gt;             &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;price&quot; type=&quot;s:float&quot;/&gt;             &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;confirmationId&quot; type=&quot;s:long&quot;/&gt;         &lt;/s:sequence&gt;     &lt;/s:complexType&gt; &lt;/s:schema&gt; "/>
+                </SchemaValidation>
+                <HttpClientCert>
+                    <Realm stringValueNull="null"/>
+                </HttpClientCert>
+                <MemberOfGroup>
+                    <GroupId stringValue="3178497"/>
+                    <GroupName stringValue="Sales"/>
+                    <IdentityProviderOid longValue="-2"/>
+                </MemberOfGroup>
+            </All>
+            <All>
+                <XmlRequestSecurity>
+                    <Elements elementSecurityArrayValue="included">
+                        <item elementSecurityValue="included">
+                            <Cipher stringValue="AES"/>
+                            <KeyLength intValue="128"/>
+                            <Encryption booleanValue="false"/>
+                            <xPath xpathExpressionValue="included">
+                                <Expression stringValue="/soapenv:Envelope"/>
+                                <Namespaces mapValue="included">
+                                    <entry>
+                                    <key stringValue="xsi"/>
+                                    <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                                    </entry>
+                                    <entry>
+                                    <key stringValue="s0"/>
+                                    <value stringValue="http://warehouse.acme.com/ws"/>
+                                    </entry>
+                                    <entry>
+                                    <key stringValue="xsd"/>
+                                    <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                                    </entry>
+                                    <entry>
+                                    <key stringValue="soapenv"/>
+                                    <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                                    </entry>
+                                </Namespaces>
+                            </xPath>
+                            <PreconditionXPath xpathExpressionValueNull="null"/>
+                        </item>
+                    </Elements>
+                </XmlRequestSecurity>
+                <SpecificUser>
+                    <UserLogin stringValue="bob"/>
+                    <IdentityProviderOid longValue="-2"/>
+                </SpecificUser>
+                <TimeRange>
+                    <StartDayOfWeek intValue="2"/>
+                    <EndDayOfWeek intValue="6"/>
+                    <ControlTime booleanValue="true"/>
+                    <ControlDay booleanValue="true"/>
+                    <TimeRange timeOfDayRange="included">
+                        <From timeOfDay="included">
+                            <Minute intValue="0"/>
+                            <Hour intValue="16"/>
+                            <Second intValue="0"/>
+                        </From>
+                        <To timeOfDay="included">
+                            <Minute intValue="0"/>
+                            <Hour intValue="4"/>
+                            <Second intValue="0"/>
+                        </To>
+                    </TimeRange>
+                </TimeRange>
+            </All>
+            <All>
+                <WssBasic/>
+                <SpecificUser>
+                    <UserLogin stringValue="david"/>
+                    <IdentityProviderOid longValue="-2"/>
+                </SpecificUser>
+                <RemoteIpAddressRange>
+                    <AllowRange booleanValue="true"/>
+                    <StartIp stringValue="192.168.1.0"/>
+                    <NetworkMask intValue="24"/>
+                </RemoteIpAddressRange>
+            </All>
+        </OneOrMore>
+        <HttpRoutingAssertion>
+            <AttachSamlSenderVouches booleanValue="false"/>
+            <UserAgent stringValueNull="null"/>
+            <ProtectedServiceUrl stringValue="http://data.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
+            <Login stringValue=""/>
+            <GroupMembershipStatement booleanValue="false"/>
+            <Password stringValue=""/>
+            <Realm stringValue=""/>
+            <MaxConnections intValue="100"/>
+            <SamlAssertionExpiry intValue="5"/>
+        </HttpRoutingAssertion>
+    </All>
+</Policy>

@@ -6,17 +6,21 @@
 
 package com.l7tech.policy;
 
+import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.wsp.WspReader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.Iterator;
 
 /**
  * Test the default policy assertion path builder/analyzer class
@@ -124,5 +128,22 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         int count = builder.generate(oom).getPathCount();
         assertTrue("The value received is "+count,  count == 7);
 
+    }
+
+    public void testBug763MonsterPolicy() throws Exception {
+        Assertion policy = WspReader.parse(TestDocuments.getInputStream(TestDocuments.BUG_763_MONSTER_POLICY));
+        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+
+        PolicyPathResult result = builder.generate(policy);
+        int count = result.getPathCount();
+        assertTrue(count == 5);
+
+        Set paths = result.paths();
+
+        // TODO -- check for duplicated path subcomponents
+        for (Iterator i = paths.iterator(); i.hasNext();) {
+            Object o = (Object)i.next();
+            System.out.println(o);
+        }
     }
 }
