@@ -9,6 +9,9 @@ package com.l7tech.message;
 import org.xml.sax.SAXException;
 
 /**
+ * Thrown by {@link XmlMessage#getDocument()} implementors to indicate that the message
+ * contains no content that could be parsed
+ *  
  * @author alex
  * @version $Revision$
  */
