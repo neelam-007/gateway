@@ -7,6 +7,7 @@ import com.l7tech.common.security.xml.WssDecoratorImpl;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -30,6 +31,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Calendar;
 
 /**
  * Handles WS Trust RequestSecurityToken requests as well as SAML token requests.
@@ -145,12 +147,16 @@ public class TokenService {
         }
         // xml newSession
         Document response = null;
+        Calendar exp = Calendar.getInstance();
+        exp.setTimeInMillis(newSession.getExpiration());
         try {
             String xmlStr = "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
                                 "<soap:Body>" +
-                                  "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\">" +
+                                  "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\"" +
+                                                                    "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
                                     "<wst:RequestedSecurityToken>" +
-                                        // todo, add wsc:Identifier here
+                                        "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
+                                        "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
                                        // todo, add wsu:Expires here
                                     "</wst:RequestedSecurityToken>" +
                                     "<wst:RequestedProofToken>" +
