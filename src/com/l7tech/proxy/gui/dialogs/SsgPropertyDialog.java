@@ -649,6 +649,22 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 identityPane.getFederatedSSGRadioButton().setSelected(true);
                 identityPane.setTrustedSSGFormEnabled(false);
                 identityPane.setFederatedSSGFormEnabled(true);
+            } else {
+                identityPane.getUsernameTextField().setText(ssg.getUsername());
+                char[] pass = ssg.cmPassword();
+                boolean hasPassword = pass != null;
+                identityPane.getUserPasswordField().setText(new String(hasPassword ? pass : "".toCharArray()));
+                boolean customPorts = isPortsCustom(ssg);
+                radioStandardPorts.setSelected(!customPorts);
+                radioNonstandardPorts.setSelected(customPorts);
+                identityPane.getSavePasswordCheckBox().setSelected(ssg.isSavePasswordToDisk());
+                identityPane.getUseClientCredentialCheckBox().setSelected(ssg.isChainCredentialsFromClient());
+                String clientCertUsername = lookupClientCertUsername(ssg);
+                if (clientCertUsername != null) {
+                    identityPane.getUsernameTextField().setText(clientCertUsername);
+                    identityPane.getUsernameTextField().setEditable(false);
+                }
+                updateIdentityEnableState();
             }
 
             fieldLocalEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
@@ -656,28 +672,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldWsdlEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
                                       ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
             fieldServerAddress.setText(ssg.getSsgAddress());
-            identityPane.getUsernameTextField().setText(ssg.getUsername());
-            char[] pass = ssg.cmPassword();
-            boolean hasPassword = pass != null;
-            identityPane.getUserPasswordField().setText(new String(hasPassword ? pass : "".toCharArray()));
+
             policyFlushRequested = false;
             fieldSsgPort.setText(Integer.toString(ssg.getSsgPort()));
             fieldSslPort.setText(Integer.toString(ssg.getSslPort()));
-            boolean customPorts = isPortsCustom(ssg);
-            radioStandardPorts.setSelected(!customPorts);
-            radioNonstandardPorts.setSelected(customPorts);
-            identityPane.getSavePasswordCheckBox().setSelected(ssg.isSavePasswordToDisk());
-            identityPane.getUseClientCredentialCheckBox().setSelected(ssg.isChainCredentialsFromClient());
             cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
             updateCustomPortsEnableState();
-            updateIdentityEnableState();
-
-            String clientCertUsername = lookupClientCertUsername(ssg);
-            if (clientCertUsername != null) {
-                    identityPane.getUsernameTextField().setText(clientCertUsername);
-                    identityPane.getUsernameTextField().setEditable(false);
-            }
-
             updatePolicyPanel();
         }
         checkOk();
