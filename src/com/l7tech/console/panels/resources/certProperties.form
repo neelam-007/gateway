@@ -82,7 +82,7 @@
               </component>
               <component id="b7c6a" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="10" y="104" width="63" height="15"/>
+                  <xy x="10" y="104" width="69" height="15"/>
                   <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
@@ -223,7 +223,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                         </constraints>
                         <properties>
-                          <text value="The certificate is intended for:"/>
+                          <text value="Certificate usage options:"/>
                         </properties>
                       </component>
                     </children>

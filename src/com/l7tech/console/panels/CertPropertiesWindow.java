@@ -169,50 +169,7 @@ public class CertPropertiesWindow extends JDialog {
             }
         });
 
-        signingClientCertCheckBox.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { setClientDesc(); }
-        });
-        signingClientCertCheckBox.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) { setClientDesc(); }
-        });
-
-        signingServerCertCheckBox.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { setServerDesc(); }
-        });
-        signingServerCertCheckBox.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) { setServerDesc(); }
-        });
-
-        signingSAMLTokenCheckBox.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { setSamlDesc(); }
-        });
-        signingSAMLTokenCheckBox.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) { setSamlDesc(); }
-        });
-
-        outboundSSLConnCheckBox.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { setSslDesc(); }
-        });
-        outboundSSLConnCheckBox.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) { setSslDesc(); }
-        });
-
-    }
-
-    private void setSslDesc() {
-        descriptionText.setText(resources.getString("usage.desc.ssl"));
-    }
-
-    private void setSamlDesc() {
-        descriptionText.setText(resources.getString("usage.desc.saml"));
-    }
-
-    private void setServerDesc() {
-        descriptionText.setText(resources.getString("usage.desc.server"));
-    }
-
-    private void setClientDesc() {
-        descriptionText.setText(resources.getString("usage.desc.client"));
+        descriptionText.setText(resources.getString("usage.desc"));
     }
 
     /**
