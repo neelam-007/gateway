@@ -420,7 +420,7 @@ public class Utilities {
     /**
      * Configure the specified component to change its foreground color to Gray whenever it is disabled.
      *
-     * @param component  the component whose behaviour will be altered
+     * @param component the component whose behaviour will be altered
      */
     public static void enableGrayOnDisabled(JComponent component) {
         final Color defaultForeground = component.getForeground();
@@ -428,8 +428,8 @@ public class Utilities {
         component.addPropertyChangeListener("enabled", new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 if (evt.getSource() instanceof JComponent && "enabled".equals(evt.getPropertyName())) {
-                    JComponent component = (JComponent) evt.getSource();
-                    boolean enabled = ((Boolean) evt.getNewValue()).booleanValue();
+                    JComponent component = (JComponent)evt.getSource();
+                    boolean enabled = ((Boolean)evt.getNewValue()).booleanValue();
                     component.setForeground(enabled ? defaultForeground : DISABLED_FOREGROUND_COLOR);
                     component.setBackground(enabled ? defaultBackground : DISABLED_BACKGROUND_COLOR);
                 }
@@ -437,5 +437,23 @@ public class Utilities {
         });
         component.setForeground(component.isEnabled() ? defaultForeground : DISABLED_FOREGROUND_COLOR);
         component.setBackground(component.isEnabled() ? defaultBackground : DISABLED_BACKGROUND_COLOR);
+    }
+
+    /**
+     * Returns the bounds of the specified <code>String</code> in the
+     * <code>Graphics</code> context of the specified <code>Component</code>.
+     *
+     * @param c    the component that is used to determine the
+     *             <code>Graphics</code> context
+     * @param f    - the font for which font metrics is to be obtained
+     * @param str the specified <code>String</code> to render
+     * @return a {@link Rectangle2D} that is the bounding box of the
+     *         specified <code>String</code> in the specified
+     *         component's <code>Graphics</code> context.
+     */
+    public static Rectangle2D getStringBounds(Component c, Font f, String str) {
+        FontMetrics metrics = c.getFontMetrics(f);
+        Graphics g = c.getGraphics();
+        return metrics.getStringBounds(str, g);
     }
 }
