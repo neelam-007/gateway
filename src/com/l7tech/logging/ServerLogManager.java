@@ -56,7 +56,7 @@ public class ServerLogManager extends LogManager {
     private synchronized void initialize() {
         if (systemLogger == null) {
             systemLogger = Logger.getLogger(SYSTEM_LOGGER_NAME);
-            // create system Logger
+
             try {
                 systemLogger.setLevel(getLevel());
             } catch (RuntimeException e) {
@@ -64,19 +64,30 @@ public class ServerLogManager extends LogManager {
                 // continue without those special log handlers
                 return;
             }
-            // add custom memory handler
+
+            setLogHandlers(systemLogger);
+        }
+    }
+
+    private void setLogHandlers(Logger logger) {
+        // add custom memory handler
+        if (systemLogMemHandler == null) {
             systemLogMemHandler = new MemHandler();
-            systemLogger.addHandler(systemLogMemHandler);
-            // add a file handler
-            try {
-                String pattern = getLogFilesPath() + File.separator + "ssg_%g_%u.log";
-                FileHandler fileHandler = new FileHandler(pattern, getLogFilesSizeLimit(), getLogFileNr());
-                fileHandler.setFormatter(new SimpleFormatter());
-                systemLogger.addHandler(fileHandler);
-            } catch (IOException e) {
-                // dont use normal logger here
-                throw new RuntimeException(e);
+        }
+        logger.addHandler(systemLogMemHandler);
+
+        // add a file handler
+        try {
+            String pattern = getLogFilesPath();
+            if (pattern.charAt(pattern.length()-1) != File.separatorChar) {
+                pattern += File.separator;
             }
+            pattern += "ssg_%g_%u.log";
+            FileHandler fileHandler = new FileHandler(pattern, getLogFilesSizeLimit(), getLogFileNr());
+            fileHandler.setFormatter(new SimpleFormatter());
+            logger.addHandler(fileHandler);
+        } catch (Throwable e) {
+            System.err.println("can't set special handlers " + e.getMessage());
         }
     }
 
@@ -85,6 +96,7 @@ public class ServerLogManager extends LogManager {
             String strval = getProps().getProperty(LEVEL_PROP_NAME);
             return Level.parse(strval);
         } catch (Throwable e) {
+            System.err.println("can't read props " + e.getMessage());
             // if cant' read from props file, default to all
             return Level.ALL;
         }
@@ -94,7 +106,7 @@ public class ServerLogManager extends LogManager {
         try {
             return getProps().getProperty(FILEPATH_PROP_NAME);
         } catch (Throwable e) {
-            System.err.println("can't read props " + e);
+            System.err.println("can't read props " + e.getMessage());
             // if cant' read from props file, default to home dir
             return System.getProperties().getProperty("user.home");
         }
@@ -104,7 +116,7 @@ public class ServerLogManager extends LogManager {
         try {
             return Integer.parseInt(getProps().getProperty(SIZELIMIT_PROP_NAME));
         } catch (Throwable e) {
-            System.err.println("can't read props " + e);
+            System.err.println("can't read props " + e.getMessage());
             // if cant' read from props file, default to 500000
             return 500000;
         }
@@ -114,7 +126,7 @@ public class ServerLogManager extends LogManager {
         try {
             return Integer.parseInt(getProps().getProperty(NRFILES_PROP_NAME));
         } catch (Throwable e) {
-            System.err.println("can't read props " + e);
+            System.err.println("can't read props " + e.getMessage());
             // if cant' read from props file, default to 4
             return 4;
         }
@@ -125,14 +137,15 @@ public class ServerLogManager extends LogManager {
             try {
                 InputStream inputStream = null;
 
-                String path = System.getProperty( PROP_LOGPROPERTIES );
-                if ( path == null || path.length() == 0 ) path = DEFAULT_LOGPROPERTIES_PATH;
-                File f = new File( path );
-                if ( f.exists() ) {
+                String path = System.getProperty(PROP_LOGPROPERTIES);
+                if (path == null || path.length() == 0) path = DEFAULT_LOGPROPERTIES_PATH;
+                File f = new File(path);
+                if (f.exists()) {
                     try {
-                        inputStream = new FileInputStream( f );
-                    } catch ( IOException ioe ) {
+                        inputStream = new FileInputStream(f);
+                    } catch (IOException e) {
                         // inputStream stays null
+                        System.err.println("Can't open prop file " + f.getName() + " " + e.getMessage());
                     }
                 }
 
