@@ -117,81 +117,6 @@
         </antcall>
     </target>
 
-    <target name="build-component" depends="init-dev">
-        <property name="buildnumber.file" value="${src.root}/buildnumber.${component}"/>
-
-        <echo>(not) running cvs update ${buildnumber.file}</echo>
-        <!--
-        <cvs command="update ${buildnumber.file}"/>
-        -->
-
-        <antcall target="clean"/>
-        <antcall target="compile"/>
-        <antcall target="compile-tests"/>
-        <antcall target="test"/>
-        <antcall target="deploy"/>
-
-        <buildnumber file="${buildnumber.file}"/>
-
-        <echo>(not) running cvs commit ${buildnumber.file}</echo>
-        <!--
-        <cvs command="commit ${buildnumber.file}"/>
-        -->
-
-        <property name="tag" value="${component}-build${build.number}"/>
-
-        <echo>(not) running cvs tag -R ${tag} ${dirs}</echo>
-
-        <!--
-        <cvs command="tag -R ${tag} ${dirs}"/>
-        -->
-    </target>
-
-    <!-- Directories that should be tagged in an SSG build -->
-    <path id="ssg.tag.path">
-        <dirset dir="${src.root}">
-            <include name="etc"/>
-            <include name="web"/>
-            <include name="src/com/l7tech/credential"/>
-            <include name="src/com/l7tech/identity"/>
-            <include name="src/com/l7tech/message"/>
-            <include name="src/com/l7tech/policy"/>
-            <include name="src/com/l7tech/objectmodel"/>
-            <include name="src/com/l7tech/service"/>
-            <include name="src/com/l7tech/util"/>
-        </dirset>
-    </path>
-
-    <target name="build-ssg">
-        <pathconvert refid="ssg.tag.path" property="ssg.tag.dirs" pathSep=" "/>
-
-        <antcall target="build-component">
-            <param name="component" value="ssg"/>
-            <param name="dirs" value="${ssg.tag.dirs}"/>
-        </antcall>
-    </target>
-
-    <!-- Directories that should be tagged in a console build -->
-    <path id="console.tag.path">
-        <dirset dir="${src.root}">
-            <include name="etc"/>
-            <include name="src/com/l7tech/console"/>
-            <include name="src/com/l7tech/identity"/>
-            <include name="src/com/l7tech/objectmodel"/>
-            <include name="src/com/l7tech/policy"/>
-            <include name="src/com/l7tech/service"/>
-        </dirset>
-    </path>
-
-    <target name="build-console">
-        <pathconvert refid="console.tag.path" property="console.tag.dirs" pathSep=" "/>
-
-        <antcall target="build-component">
-            <param name="component" value="console"/>
-            <param name="dirs" value="${console.tag.dirs}"/>
-        </antcall>
-    </target>
-
     <!--
       ** configure and invoke developer's build for source files
       ** that match the pattern passed as -Dcompile.pattern
@@ -516,4 +441,35 @@
         </java>
     </target>
 
+    <target name="OFFICIAL-build" depends="init-dev">
+        <property name="buildnumber.file" value="build.number"/>
+        <property name="buildnumber.path" value="${src.root}/${buildnumber}.file"/>
+
+        <input message="This will increment the OFFICIAL build count in CVS.  Are you sure you want to do this?" validargs="Y,y,N,n" addproperty="sure"/>
+
+        <condition property="die">
+            <not>
+                <or>
+                    <equals arg1="${sure}" arg2="y"/>
+                    <equals arg1="${sure}" arg2="Y"/>
+                </or>
+            </not>
+        </condition>
+
+        <fail if="die" message="Aborted at user request."/>
+
+        <echo>Running cvs update ${buildnumber.file}</echo>
+        <cvs command="update -r HEAD ${buildnumber.path}"/>
+
+        <antcall target="clean"/>
+        <antcall target="compile"/>
+        <antcall target="compile-tests"/>
+        <antcall target="test"/>
+        <antcall target="deploy"/>
+
+        <buildnumber/>
+
+        <echo message="commit -m 'Incremented build number to ${build.number}' ${buildnumber.file}"/>
+        <cvs command="commit -m 'Incremented build number to ${build.number}' ${buildnumber.file}"/>
+    </target>
 </project>
