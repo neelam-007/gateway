@@ -77,8 +77,8 @@ class PathValidator {
             processRouting((RoutingAssertion)a);
         } else if (isCustom(a)) {
             processCustom(a);
-        } else {
-            processUnknown();
+        } else if (a instanceof UnknownAssertion){
+            processUnknown((UnknownAssertion)a);
         }
     }
 
@@ -401,7 +401,9 @@ class PathValidator {
         return a instanceof CustomAssertionHolder;
     }
 
-    private void processUnknown() {
+    private void processUnknown(UnknownAssertion a) {
+        result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+              "This assertion is of type unknown and sould be removed from the policy.", null));
     }
 
     private boolean isRouting(Assertion a) {
