@@ -34,6 +34,7 @@ import java.io.ByteArrayInputStream;
  * User: flascell<br/>
  * Date: Aug 6, 2004<br/>
  * $Id$<br/>
+ * @deprecated needs to be removed
  */
 public class SecureConversationTokenService {
 
