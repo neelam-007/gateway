@@ -68,7 +68,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private XpathBasedAssertion xmlSecAssertion;
     private ServiceNode serviceNode;
     private Wsdl serviceWsdl;
-    private JScrollPane tableScrollPane;
     private JScrollPane treeScrollPane;
     private Message[] soapMessages;
     private String blankMessage = "<empty />";
@@ -505,8 +504,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         final JLabel _5;
         _5 = new JLabel();
         operationsLabel = _5;
-        _5.setText("Web Service Operations");
         _5.setHorizontalTextPosition(0);
+        _5.setText("Web Service Operations");
         _4.add(_5, new GridConstraints(0, 0, 1, 1, 0, 3, 7, 0, null, null, null));
         final JScrollPane _6;
         _6 = new JScrollPane();
@@ -516,8 +515,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         final JTree _7;
         _7 = new JTree();
         operationsTree = _7;
-        _7.setRootVisible(false);
         _7.setShowsRootHandles(false);
+        _7.setRootVisible(false);
         _6.setViewportView(_7);
         final JPanel _8;
         _8 = new JPanel();
