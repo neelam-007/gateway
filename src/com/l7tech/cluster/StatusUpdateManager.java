@@ -14,19 +14,8 @@ import com.l7tech.objectmodel.UpdateException;
  */
 public interface StatusUpdateManager {
     /**
-     * The coarse update method, that performs all the necessary updates
+     * The update method, that performs all the necessary updates
      * @throws UpdateException
      */
     void update() throws UpdateException;
-
-    /**
-     * Update the node status only
-     * @throws UpdateException
-     */
-    void updateNodeStatus() throws UpdateException;
-
-    /**
-     * Update the service usage only
-     */
-    void updateServiceUsage();
 }

@@ -75,7 +75,6 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
             }
 
             final ApplicationContext springContext = serverConfig.getSpringContext();
-            StatusUpdater.initialize((StatusUpdateManager)springContext.getBean("statusUpdateManager"));
 
             logger.info("Initializing DistributedMessageIdManager");
             distributedMessageIdManager.initialize(multicastAddress, PORT);
@@ -102,8 +101,6 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
     }
 
     public void close() throws LifecycleException {
-        // if we were updating cluster status, stop doing it
-        StatusUpdater.stopUpdater();
     }
 
     public static final String CHANNEL_NAME = "com.l7tech.cluster.jgroupsChannel";

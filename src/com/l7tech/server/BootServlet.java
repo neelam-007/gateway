@@ -27,7 +27,6 @@ public class BootServlet extends HttpServlet {
     private ServerComponentLifecycle _boot;
 
     public void init() throws ServletException {
-        boolean failure = false;
         try {
             System.getProperties().remove("java.protocol.handler.pkgs");
             //hack: remove what catalina added as java.protocol.handler.pkgs and let the default
@@ -41,10 +40,7 @@ public class BootServlet extends HttpServlet {
             logger.fine("Boot process completed");
         } catch ( Throwable e ) {
             logger.log(Level.SEVERE, "ERROR IN BOOT SERVLET", e);
-            failure = true;
             throw new ServletException(e);
-        } finally {
-            if (failure) destroy();
         }
     }
 
@@ -52,26 +48,4 @@ public class BootServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         out.println( "<b>The server has already been initialized!</b>" );
     }
-
-    /**
-     * Called by the servlet container to indicate to a
-     * servlet that the servlet is being taken out of service.
-     *
-     */
-    public void destroy() {
-        super.destroy();
-        try {
-            if ( _boot != null ) {
-                try {
-                    _boot.stop();
-                } finally {
-                    _boot.close();
-                }
-            }
-        } catch ( LifecycleException e ) {
-            logger.warning( "Caught exception during server shutdown" );
-        }
-    }
-
-
 }

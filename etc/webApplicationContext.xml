@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
-
 <!--
     The Application Context contains the definitions that describe the SSG server side components.
     Things such as identitiy managers, trust components, policy services token services etc. are defined
@@ -13,21 +12,20 @@
 <beans>
     <!-- SSG boot process -->
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess">
+        <constructor-arg>
+            <ref bean="eventManager"/>
+        </constructor-arg>
         <property name="serverConfig">
             <ref local="serverConfig"/>
         </property>
     </bean>
-
     <!--
     * singleton using the factory method. This is transitional, as it is referencef from
     * too many places.
     -->
     <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance"/>
-
     <!-- server side identity provider factory -->
-    <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
-    </bean>
-
+    <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory"></bean>
     <!-- server side identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer">
         <property name="identityProviderFactory">
@@ -37,7 +35,6 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-
     <!--
         Internal Identity Provider
 
@@ -45,16 +42,15 @@
         programatically with the required runtime construction arguments (IdentityProviderConfig)
         See IdentityProviderFactory implementation.
     -->
-     <bean id="internalIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-         class="com.l7tech.server.identity.internal.InternalIdentityProvider" singleton="false">
-         <property name="clientCertManager">
-             <ref bean="clientCertManager"/>
-         </property>
-         <property name="sessionFactory">
-             <ref bean="sessionFactory"/>
-         </property>
-     </bean>
-
+    <bean id="internalIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
+        class="com.l7tech.server.identity.internal.InternalIdentityProvider" singleton="false">
+        <property name="clientCertManager">
+            <ref bean="clientCertManager"/>
+        </property>
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
     <!-- Internal UserManager -->
     <bean id="internalUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
         class="com.l7tech.server.identity.internal.InternalUserManager" singleton="false">
@@ -65,25 +61,23 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-
     <!-- Internal GroupManager -->
-  <bean id="internalGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-      class="com.l7tech.server.identity.internal.InternalGroupManager" singleton="false">
-      <property name="sessionFactory">
-          <ref bean="sessionFactory"/>
-      </property>
-  </bean>
-
+    <bean id="internalGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
+        class="com.l7tech.server.identity.internal.InternalGroupManager" singleton="false">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
     <!-- Federated Identity Provider -->
- <bean id="federatedIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-     class="com.l7tech.server.identity.fed.FederatedIdentityProvider" singleton="false">
-     <property name="clientCertManager">
-         <ref local="clientCertManager"/>
-     </property>
-     <property name="sessionFactory">
-         <ref bean="sessionFactory"/>
-     </property>
- </bean>
+    <bean id="federatedIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
+        class="com.l7tech.server.identity.fed.FederatedIdentityProvider" singleton="false">
+        <property name="clientCertManager">
+            <ref local="clientCertManager"/>
+        </property>
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
 
     <bean id="federatedUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
         class="com.l7tech.server.identity.fed.FederatedUserManager" singleton="false">
@@ -104,28 +98,22 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-
     <!-- LDAP Identity Provider -->
- <bean id="ldapIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-     class="com.l7tech.server.identity.ldap.LdapIdentityProvider" singleton="false">
-     <property name="clientCertManager">
-         <ref local="clientCertManager"/>
-     </property>
-     <property name="serverConfig">
-         <ref local="serverConfig"/>
-     </property>
- </bean>
-
+    <bean id="ldapIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
+        class="com.l7tech.server.identity.ldap.LdapIdentityProvider" singleton="false">
+        <property name="clientCertManager">
+            <ref local="clientCertManager"/>
+        </property>
+        <property name="serverConfig">
+            <ref local="serverConfig"/>
+        </property>
+    </bean>
     <!-- LDAP UserManager -->
- <bean id="ldapUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-     class="com.l7tech.server.identity.ldap.LdapUserManager" singleton="false">
- </bean>
-
+    <bean id="ldapUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
+        class="com.l7tech.server.identity.ldap.LdapUserManager" singleton="false"></bean>
     <!-- LDAP GroupManager -->
     <bean id="ldapGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-        class="com.l7tech.server.identity.ldap.LdapGroupManager" singleton="false">
-    </bean>
-
+        class="com.l7tech.server.identity.ldap.LdapGroupManager" singleton="false"></bean>
     <!-- server side log manager -->
     <bean id="serverLogManager" class="com.l7tech.logging.ServerLogManager">
         <property name="sessionFactory">
@@ -135,64 +123,38 @@
             <ref bean="clusterInfoManager"/>
         </property>
     </bean>
-
     <!-- server side Cluster Info manager -->
     <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-
-    <!-- server side Status Update Manager -->
-    <bean id="statusUpdateManager" class="com.l7tech.cluster.StatusUpdateManagerImpl">
-        <constructor-arg>
-            <ref bean="clusterInfoManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="serviceManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="serviceUsageManager"/>
-        </constructor-arg>
-
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
-        </property>
-    </bean>
-
     <!-- server side Service Usage  manager -->
     <bean id="serviceUsageManager" class="com.l7tech.cluster.ServiceUsageManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-
     <!-- server side Service Usage  manager -->
     <bean id="distributedMessageIdManager" class="com.l7tech.cluster.DistributedMessageIdManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-
-
     <!-- server side policy factory -->
-    <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
-    </bean>
-
+    <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory"></bean>
     <!-- server side service manager -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
         <constructor-arg>
             <ref bean="policyFactory"/>
         </constructor-arg>
     </bean>
-
     <!-- server side HTTP routing client trust manager -->
- <bean id="httpRoutingAssertionTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
-     <property name="trustedCertManager">
-         <ref bean="trustedCertManager"/>
-     </property>
- </bean>
-
+    <bean id="httpRoutingAssertionTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+        <property name="trustedCertManager">
+            <ref bean="trustedCertManager"/>
+        </property>
+    </bean>
     <!-- server side service manager -->
     <bean id="serviceManagerTarget" class="com.l7tech.server.service.ServiceManagerImp">
         <property name="serviceCache">
@@ -208,15 +170,12 @@
             <ref bean="transactionManager"/>
         </property>
     </bean>
-
     <!-- server side resolution manager -->
     <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ResolutionManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-
-
     <!-- server side trusted cert manager -->
     <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TrustedCertManagerImp">
         <property name="sessionFactory">
@@ -226,38 +185,33 @@
             <ref bean="transactionManager"/>
         </property>
     </bean>
-
     <!-- server side custom assertions registrar -->
     <bean id="customAssertionRegistrar" class="com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarImpl">
         <property name="serviceManager">
             <ref bean="serviceManager"/>
         </property>
     </bean>
-
     <!-- jms connection manager -->
- <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManager">
-     <property name="jmsEndpointManager">
-         <ref bean="jmsEndpointManager"/>
-     </property>
-     <property name="sessionFactory">
-         <ref bean="sessionFactory"/>
-     </property>
- </bean>
-
+    <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManager">
+        <property name="jmsEndpointManager">
+            <ref bean="jmsEndpointManager"/>
+        </property>
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
     <!-- jms connection manager -->
- <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManager">
-     <property name="sessionFactory">
-         <ref bean="sessionFactory"/>
-     </property>
- </bean>
-
+    <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManager">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
     <!-- server side policy validator -->
     <bean id="policyValidator" class="com.l7tech.server.policy.validator.ServerPolicyValidator">
         <property name="jmsEndpointManager">
             <ref bean="jmsEndpointManager"/>
         </property>
     </bean>
-
     <!-- server side policy filter manager  -->
     <bean id="policyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
         <constructor-arg>
@@ -270,14 +224,12 @@
             </list>
         </constructor-arg>
     </bean>
-
     <!-- server side client cert manager -->
- <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
-     <property name="sessionFactory">
-         <ref bean="sessionFactory"/>
-     </property>
- </bean>
-
+    <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
     <!-- server side audit record manager -->
     <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl">
         <property name="sessionFactory">
@@ -287,25 +239,20 @@
             <ref bean="eventManager"/>
         </property>
     </bean>
-
     <!-- server side audit exporter -->
     <bean id="auditExporter" class="com.l7tech.server.audit.AuditExporter" singleton="false">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-
     <!-- server side Event Manager target -->
-    <bean id="eventManagerTarget" class="com.l7tech.server.event.EventManager">
-    </bean>
-
+    <bean id="eventManagerTarget" class="com.l7tech.server.event.EventManager"></bean>
     <!-- server side audit message factory -->
     <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
         <constructor-arg>
             <ref bean="clusterInfoManager"/>
         </constructor-arg>
     </bean>
-
     <!-- ssl config  -->
     <bean id="sslKeystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance"/>
 
@@ -353,11 +300,8 @@
             <value>getSSLPrivateKey</value>
         </property>
     </bean>
-
     <!-- server Wss Decorator -->
-    <bean id="wssDecorator" class="com.l7tech.common.security.xml.decorator.WssDecoratorImpl">
-    </bean>
-
+    <bean id="wssDecorator" class="com.l7tech.common.security.xml.decorator.WssDecoratorImpl"></bean>
     <!-- server Message Processor -->
     <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
         <constructor-arg>
@@ -376,33 +320,79 @@
             <ref bean="eventManager"/>
         </constructor-arg>
     </bean>
-
     <!-- server side policy service -->
- <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
-     <constructor-arg>
-         <ref bean="sslKeystorePrivateKey"/>
-     </constructor-arg>
-     <constructor-arg>
-         <ref bean="sslKeystoreCertificate"/>
-     </constructor-arg>
-     <constructor-arg>
-         <ref bean="policyFactory"/>
-     </constructor-arg>
-     <constructor-arg>
-         <ref bean="policyFilterManager"/>
-     </constructor-arg>
- </bean>
-
+    <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
+        <constructor-arg>
+            <ref bean="sslKeystorePrivateKey"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="sslKeystoreCertificate"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="policyFactory"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="policyFilterManager"/>
+        </constructor-arg>
+    </bean>
     <!-- server side token service -->
- <bean id="tokenService" class="com.l7tech.server.TokenServiceImpl">
-     <constructor-arg>
-         <ref bean="sslKeystorePrivateKey"/>
-     </constructor-arg>
-     <constructor-arg>
-         <ref bean="sslKeystoreCertificate"/>
-     </constructor-arg>
-     <constructor-arg>
-         <ref bean="policyFactory"/>
-     </constructor-arg>
- </bean>
+    <bean id="tokenService" class="com.l7tech.server.TokenServiceImpl">
+        <constructor-arg>
+            <ref bean="sslKeystorePrivateKey"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="sslKeystoreCertificate"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="policyFactory"/>
+        </constructor-arg>
+    </bean>
+    <!-- server side Status Update Manager -->
+    <bean id="statusUpdateManager" class="com.l7tech.cluster.StatusUpdateManagerImpl">
+        <constructor-arg>
+            <ref bean="clusterInfoManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="serviceManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="serviceUsageManager"/>
+        </constructor-arg>
+
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
+
+    <!-- Status Update Manager Task Scheduler -->
+    <bean id="statusUpdateManagerSchedulerTask" class="org.springframework.scheduling.timer.ScheduledTimerTask">
+        <!-- wait 10 seconds before starting repeated execution -->
+        <property name="delay">
+            <!-- 8 seconds -->
+            <value>8000</value>
+        </property>
+        <property name="period">
+            <!-- repeat every 4 seconds -->
+            <value>4000</value>
+        </property>
+        <property name="timerTask">
+            <!-- server side Status Update Manager Scheduled Task -->
+            <bean class="org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean">
+                <property name="targetObject">
+                    <ref bean="statusUpdateManager"/>
+                </property>
+                <property name="targetMethod">
+                    <value>update</value>
+                </property>
+            </bean>
+        </property>
+    </bean>
+    <!-- server side Task Scheduler -->
+    <bean class="org.springframework.scheduling.timer.TimerFactoryBean">
+        <property name="scheduledTimerTasks">
+            <list>
+                <ref local="statusUpdateManagerSchedulerTask"/>
+            </list>
+        </property>
+    </bean>
 </beans>

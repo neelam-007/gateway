@@ -162,9 +162,10 @@ public class JmsBootProcess implements ServerComponentLifecycle {
             _logger.info("Stopping JMS receiver '" + receiver.toString() + "'");
             stop(receiver);
         }
-
-        _versionTimer.cancel();
-        _versionTimer = null;
+        if (_versionTimer !=null) {
+            _versionTimer.cancel();
+            _versionTimer = null;
+        }
         connectionChecker = null;
         endpointChecker = null;
     }
@@ -174,8 +175,10 @@ public class JmsBootProcess implements ServerComponentLifecycle {
      */
     public synchronized void close() {
         // todo call stop() after it's been made idempotent?
-        _versionTimer.cancel();
-        _versionTimer = null;
+        if (_versionTimer !=null) {
+            _versionTimer.cancel();
+            _versionTimer = null;
+        }
         connectionChecker = null;
         endpointChecker = null;
 

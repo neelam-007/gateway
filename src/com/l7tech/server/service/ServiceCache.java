@@ -11,6 +11,7 @@ import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.beans.factory.DisposableBean;
 
 import java.io.IOException;
 import java.util.*;
@@ -32,7 +33,7 @@ import java.util.logging.Logger;
  * Date: Nov 26, 2003<br/>
  * $Id$
  */
-public class ServiceCache extends ApplicationObjectSupport {
+public class ServiceCache extends ApplicationObjectSupport implements DisposableBean {
 
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
     private ServerPolicyFactory policyFactory;
@@ -332,7 +333,11 @@ public class ServiceCache extends ApplicationObjectSupport {
         }
     }
 
-    public void destroy() {
+    /**
+     * {@see DisaposableBean}
+     * @throws Exception
+     */
+    public void destroy() throws Exception {
         checker.cancel();
     }
 

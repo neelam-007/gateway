@@ -21,8 +21,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * Ther class that performs the status update activities. This bean is executed
- * on the {@link StatusUpdater}  thread.
+ * Ther class that performs the status update activities.
  *
  * @author emil
  * @version Jan 3, 2005
@@ -41,7 +40,7 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
     }
 
     /**
-     * Coarse method to
+     * Update node status and service usage
      * @throws UpdateException
      */
     public void update() throws UpdateException {
@@ -49,7 +48,7 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
         updateServiceUsage();
     }
 
-    public void updateNodeStatus() throws UpdateException {
+    private void updateNodeStatus() throws UpdateException {
         double load = 0.0;
         UptimeMetrics metrics = null;
         try {
@@ -65,7 +64,7 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
         clusterInfoManager.updateSelfStatus(load);
     }
 
-    public void updateServiceUsage() {
+    private void updateServiceUsage() {
         // get service usage from local cache
         String ourid = clusterInfoManager.thisNodeId();
         Collection stats = null;

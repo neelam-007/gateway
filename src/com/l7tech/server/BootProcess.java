@@ -17,9 +17,8 @@ import com.l7tech.logging.ServerLogManager;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.system.*;
-import com.l7tech.server.service.ServiceManager;
-import com.l7tech.server.service.ServiceManagerImp;
 import com.tarari.xml.xpath.XPathCompilerException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -34,7 +33,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class BootProcess extends ApplicationObjectSupport implements ServerComponentLifecycle {
+public class BootProcess extends ApplicationObjectSupport implements ServerComponentLifecycle, DisposableBean {
     public static final String DEFAULT_LOGPROPERTIES_PATH = "/ssg/etc/conf/ssglog.properties";
 
     static {
@@ -47,6 +46,13 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
     private List _components = new ArrayList();
     private ServerConfig serverConfig;
     private EventManager eventManager;
+
+    /**
+     * Constructor for bean usage via subclassing.
+     */
+    public BootProcess(EventManager eventManager) {
+        this.eventManager = eventManager;
+    }
 
     private void deleteOldAttachments(File attachmentDir) {
         File[] goners = attachmentDir.listFiles(new FileFilter() {
@@ -83,7 +89,6 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
             logger.log(Level.SEVERE, "Couldn't get local IP address. Will use 127.0.0.1 in audit records.", e);
             ipAddress = LOCALHOST_IP;
         }
-        eventManager = (EventManager)config.getSpringContext().getBean("eventManager");
 
         deleteOldAttachments(config.getAttachmentDirectory());
         try {
@@ -149,15 +154,12 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
         eventManager.fireInNewTransaction(new Starting(this, Component.GW_SERVER, ipAddress));
         logger.info("Starting server");
 
-        // make sure the ServiceManager is available. this will also build the service cache
-        serverConfig.getSpringContext().getBean("serviceManager");
-
 
         logger.info("Starting server components...");
         for (Iterator i = _components.iterator(); i.hasNext();) {
             ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
             logger.info("Starting component " + component);
-                component.start();
+            component.start();
         }
 
         logger.info(BuildInfo.getLongBuildString());
@@ -198,15 +200,24 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
             logger.info("Closing component " + component);
             component.close();
         }
-
-        // stop cache integrity process if necessary
-        ServiceManager serviceManager = (ServiceManager)serverConfig.getSpringContext().getBean("serviceManager");
-        if (serviceManager != null && serviceManager instanceof ServiceManagerImp) {
-            ((ServiceManagerImp)serviceManager).destroy();
-        }
         eventManager.fire(new Closed(this, Component.GW_SERVER, ipAddress));
         eventManager.removeListener(systemAuditListener);
         logger.info("Closed.");
+    }
+
+    /**
+     * Invoked by a BeanFactory on destruction of a singleton.
+     *
+     * @throws Exception in case of shutdown errors.
+     *                   Exceptions will get logged but not rethrown to allow
+     *                   other beans to release their resources too.
+     */
+    public void destroy() throws Exception {
+        try {
+            stop();
+        } finally {
+            close();
+        }
     }
 
     private void setSystemProperties(ServerConfig config) throws IOException {
@@ -242,4 +253,5 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
     private SystemAuditListener systemAuditListener;
     private String ipAddress;
     public static final String LOCALHOST_IP = "127.0.0.1";
+
 }

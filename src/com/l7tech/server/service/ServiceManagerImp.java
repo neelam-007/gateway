@@ -19,6 +19,7 @@ import net.sf.hibernate.Session;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.*;
+import org.springframework.beans.factory.DisposableBean;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -256,10 +257,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public String getTableName() {
         return "published_service";
-    }
-
-    public void destroy() {
-        serviceCache.destroy();
     }
 
     public void setServiceCache(ServiceCache serviceCache) {
