@@ -313,7 +313,7 @@ public class StatisticsPanel extends JPanel {
                         - ((Long) lastMinuteCounts.get(lastMinuteCounts.size() - 2)).longValue() < 0) {
 
                     // this could happen when a node is removed from the cluster
-                    logger.warning("New total completed count is less than the previous count. Service Name: " + serviceName);
+                    logger.info("New total completed count is less than the previous count. Service Name: " + serviceName);
 
                     // should clean up the cache
                     lastMinuteCounts.removeAllElements();
