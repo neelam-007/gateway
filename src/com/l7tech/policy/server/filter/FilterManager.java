@@ -27,6 +27,41 @@ public class FilterManager {
         return singleton;
     }
 
+    /**
+     * Takes an assertion tree and passes it through the registered filters.
+     * @param policyRequestor
+     * @param rootAssertion
+     * @return
+     * @throws FilteringException
+     */
+    public Assertion applyAllFilters(User policyRequestor, Assertion rootAssertion) throws FilteringException {
+        for (int i = 0; i < filterTypes.length; i++) {
+            Filter filter = null;
+            try {
+                filter = (Filter)filterTypes[i].newInstance();
+                rootAssertion = filter.filter(policyRequestor, rootAssertion);
+                if (rootAssertion == null) {
+                    logger.log(Level.WARNING, "filter returned null root assertion " + filterTypes[i].getName());
+                    return null;
+                }
+            } catch (InstantiationException e) {
+                throw new FilteringException("could not instantiate filter ", e);
+            } catch (IllegalAccessException e) {
+                throw new FilteringException("could not instantiate filter ", e);
+            } catch (FilteringException e) {
+                throw new FilteringException("error while applying filter ", e);
+            }
+        }
+        return rootAssertion;
+    }
+
+    /**
+     * This takes the passed policy and sends back a filtered version
+     * @param policyRequestor
+     * @param policyToFilter this is not affected
+     * @return the policy filtered by all registered filters
+     * @throws FilteringException
+     */
     public PublishedService applyAllFilters(User policyRequestor, PublishedService policyToFilter) throws FilteringException {
         // make local copy. dont touch original!
         PublishedService localCopyOfService = new PublishedService();
@@ -44,25 +79,8 @@ public class FilterManager {
         } catch (IOException e) {
             throw new FilteringException(e);
         }
-        for (int i = 0; i < filterTypes.length; i++) {
-            Filter filter = null;
-            try {
-                filter = (Filter)filterTypes[i].newInstance();
-                rootassertion = filter.filter(policyRequestor, rootassertion);
-                if (rootassertion == null) {
-                    logger.log(Level.WARNING, "filter returned null root assertion " + filterTypes[i].getName());
-                    return null;
-                }
-            } catch (InstantiationException e) {
-                throw new FilteringException("could not instantiate filter ", e);
-            } catch (IllegalAccessException e) {
-                throw new FilteringException("could not instantiate filter ", e);
-            } catch (FilteringException e) {
-                throw new FilteringException("error while applying filter ", e);
-            }
-        }
+        applyAllFilters(policyRequestor, rootassertion);
         localCopyOfService.setPolicyXml(WspWriter.getPolicyXml(rootassertion));
-
         return localCopyOfService;
     }
 
