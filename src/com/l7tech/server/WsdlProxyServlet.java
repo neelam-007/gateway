@@ -3,7 +3,6 @@ package com.l7tech.server;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
@@ -14,17 +13,20 @@ import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.service.PublishedService;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
@@ -184,14 +186,27 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
+    private void substituteSoapAddressURL(Document wsdl, URL newURL) {
+        // get http://schemas.xmlsoap.org/wsdl/ 'port' element
+        NodeList portlist = wsdl.getElementsByTagNameNS("http://schemas.xmlsoap.org/wsdl/", "port");
+        for (int i = 0; i < portlist.getLength(); i++) {
+            Element portel = (Element)portlist.item(i);
+            // get child http://schemas.xmlsoap.org/wsdl/soap/ 'address'
+            List addresses = XmlUtil.findChildElementsByName(portel, "http://schemas.xmlsoap.org/wsdl/soap/", "address");
+            // change the location attribute with new URL
+            for (Iterator iterator = addresses.iterator(); iterator.hasNext();) {
+                Element address = (Element) iterator.next();
+                address.setAttribute("location", newURL.toString());
+            }
+        }
+    }
+
     private void outputServiceDescription(HttpServletRequest req, HttpServletResponse res, PublishedService svc) throws IOException {
-        // first, apply the necessary modifications to the wsdl before sending it back
-        Wsdl output = null;
+        Document wsdlDoc = null;
         try {
-            output = svc.parsedWsdl();
-        } catch (WSDLException e) {
-            logger.log(Level.SEVERE, "error getting wsdl from published service", e);
-            throw new IOException(e.getMessage());
+            wsdlDoc = XmlUtil.stringToDocument(svc.getWsdlXml());
+        } catch (SAXException e) {
+            logger.log(Level.WARNING, "cannot parse wsdl", e);
         }
 
         // change url of the wsdl
@@ -201,15 +216,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             port = 8080;
         else if (port == 443) port = 80;
         URL ssgurl = new URL("http" + "://" + req.getServerName() + ":" + port + SOAP_PROCESSING_SERVLET_URI + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));
-        output.setPortUrl(output.getSoapPort(), ssgurl);
+        substituteSoapAddressURL(wsdlDoc, ssgurl);
 
         // output the wsdl
         res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
         try {
-            output.toOutputStream(res.getOutputStream());
-        } catch (WSDLException e) {
-            logger.log(Level.SEVERE, "error outputing wsdl", e);
-            throw new IOException(e.getMessage());
+            XmlUtil.nodeToOutputStream(wsdlDoc, res.getOutputStream());
         } catch (IOException e) {
             logger.log(Level.SEVERE, "error outputing wsdl", e);
             throw new IOException(e.getMessage());
@@ -290,7 +302,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
             return false;
         } else if (assertion instanceof CompositeAssertion) {
-            boolean res = false;
             CompositeAssertion root = (CompositeAssertion)assertion;
             Iterator i = root.getChildren().iterator();
             while (i.hasNext()) {

@@ -64,6 +64,8 @@ public final class TestDocuments {
     public static final String SSL_KS = DIR + "rikerssl.ks";
     public static final String SSL_CER = DIR + "rikerssl.cer";
 
+    public static final String WEBLOGIC_WSDL = DIR + "weblogic_wsdl.xml";
+
     private TestDocuments() { }
 
     public static Document getTestDocument(String resourcetoread)

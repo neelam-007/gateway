@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions  xmlns:tns="http://examples/security"
+  xmlns:wsr="http://www.openuri.org/2002/10/soap/reliability/"
+  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+  xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+  xmlns:soap12enc="http://www.w3.org/2003/05/soap-encoding"
+  xmlns:conv="http://www.openuri.org/2002/04/wsdl/conversation/"
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:s="http://www.w3.org/2001/XMLSchema"
+  xmlns="http://schemas.xmlsoap.org/wsdl/"
+  targetNamespace="http://examples/security">
+ <types   xmlns:tns="http://examples/security"
+   xmlns:wsr="http://www.openuri.org/2002/10/soap/reliability/"
+   xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+   xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+   xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+   xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+   xmlns:soap12enc="http://www.w3.org/2003/05/soap-encoding"
+   xmlns:conv="http://www.openuri.org/2002/04/wsdl/conversation/"
+   xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+   xmlns:s="http://www.w3.org/2001/XMLSchema"
+   xmlns="http://schemas.xmlsoap.org/wsdl/">
+  <xsd:schema    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:stns="java:examples.webservices.encrypt"
+    elementFormDefault="qualified"
+    attributeFormDefault="qualified"
+    targetNamespace="java:examples.webservices.encrypt">
+   <xsd:complexType     name="ServiceData">
+    <xsd:sequence>
+     <xsd:element       type="xsd:int"
+       name="id"
+       minOccurs="1"
+       maxOccurs="1">
+     </xsd:element>
+     <xsd:element       type="xsd:string"
+       name="name"
+       minOccurs="1"
+       nillable="true"
+       maxOccurs="1">
+     </xsd:element>
+    </xsd:sequence>
+   </xsd:complexType>
+  </xsd:schema>
+ </types>
+ <message   name="echo">
+  <part    xmlns:partns="http://www.w3.org/2001/XMLSchema"
+    type="partns:string"
+    name="string">
+  </part>
+  <part    xmlns:partns="http://www.w3.org/2001/XMLSchema"
+    type="partns:int"
+    name="intVal">
+  </part>
+ </message>
+ <message   name="echoResponse">
+  <part    xmlns:partns="java:examples.webservices.encrypt"
+    type="partns:ServiceData"
+    name="result">
+  </part>
+ </message>
+ <portType   name="SecurityPort">
+  <operation    name="echo">
+   <input     message="tns:echo">
+   </input>
+   <output     message="tns:echoResponse">
+   </output>
+  </operation>
+ </portType>
+ <binding   type="tns:SecurityPort"
+   name="SecurityPort">
+  <soap:binding    style="rpc"
+    transport="http://schemas.xmlsoap.org/soap/http">
+  </soap:binding>
+  <spec:SecuritySpec    xmlns:spec="http://www.openuri.org/2002/11/wsse/spec"
+    Namespace="http://schemas.xmlsoap.org/ws/2002/07/secext"
+    Id="default-spec">
+   <spec:UsernameTokenSpec     xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/07/secext"
+     PasswordType="wsse:PasswordText">
+   </spec:UsernameTokenSpec>
+   <spec:BinarySecurityTokenSpec     xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/07/secext"
+     EncodingType="wsse:Base64Binary"
+     ValueType="wsse:X509v3">
+   </spec:BinarySecurityTokenSpec>
+   <spec:SignatureSpec     SignatureMethod="http://www.w3.org/2000/09/xmldsig#rsa-sha1"
+     SignBody="true"
+     CanonicalizationMethod="http://www.w3.org/2001/10/xml-exc-c14n#">
+    <spec:ElementIdentifier      Namespace="http://schemas.xmlsoap.org/ws/2002/07/utility"
+      LocalPart="Expires">
+    </spec:ElementIdentifier>
+    <spec:ElementIdentifier      Namespace="http://schemas.xmlsoap.org/ws/2002/07/utility"
+      LocalPart="Created">
+    </spec:ElementIdentifier>
+   </spec:SignatureSpec>
+   <spec:EncryptionSpec     EncryptBody="true"
+     EncryptionMethod="http://www.w3.org/2001/04/xmlenc#tripledes-cbc"
+     KeyWrappingMethod="http://www.w3.org/2001/04/xmlenc#rsa-1_5">
+    <wsse:BinarySecurityToken      xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/07/secext"
+      xmlns:wsu="http://schemas.xmlsoap.org/ws/2002/07/utility"
+      wsu:Id="Id-iFDbankhVqxNAweGoZicroJa"
+      EncodingType="wsse:Base64Binary"
+      ValueType="wsse:X509v3">MIIB9DCCAV0CBECzy+UwDQYJKoZIhvcNAQEEBQAwQTELMAkGA1UEBhMCVVMxDDAKBgNVBAoTA0JFQTELMAkGA1UECxMCV1MxFzAVBgNVBAMTDmV4YW1wbGVzU2VydmVyMB4XDTA0MDUyNTIyNDI0NVoXDTA0MDgyMzIyNDI0NVowQTELMAkGA1UEBhMCVVMxDDAKBgNVBAoTA0JFQTELMAkGA1UECxMCV1MxFzAVBgNVBAMTDmV4YW1wbGVzU2VydmVyMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsDBvfjzc9Ed+OF3ZIVdDpVDCRHwhYjOZSDRAhy6wt3nhvcjh6Cfbo7SGV7lT9tPMZDnX23z095c4Kiu97/NuezIiDYTiNxfhAfvFXNs6li52LNUPSc+XR+EgE62BIJqyN1/wKJ8w1k+tGUzO/TsUFOvcBY6C/qwwiuCFXwcfQaQIDAQABMA0GCSqGSIb3DQEBBAUAA4GBAOVrvGaO3F3nfG/VvP/lq083RHbm7Z2CL9GdXDDtNPjG2Vk9q65Rg1IP+fNcdxnQquJA/PIMmQjA+JYj6v//ZhclvUjktyY+Ahs32YQKh8wQHsMmknJ52agydrN8PRnGrERZf+b9d0rLTPvKisleQzhwsRkasxPesIWO2XaAZAas</wsse:BinarySecurityToken>
+   </spec:EncryptionSpec>
+  </spec:SecuritySpec>
+  <operation    name="echo">
+   <soap:operation     style="rpc"
+     soapAction="">
+   </soap:operation>
+   <wsr:reliability     persistDuration="60000">
+   </wsr:reliability>
+   <input>
+    <spec:SecuritySpecRef      xmlns:spec="http://www.openuri.org/2002/11/wsse/spec"
+      RefId="default-spec">
+    </spec:SecuritySpecRef>
+    <soap:body      namespace="http://examples/security"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      use="encoded">
+    </soap:body>
+   </input>
+   <output>
+    <spec:SecuritySpecRef      xmlns:spec="http://www.openuri.org/2002/11/wsse/spec"
+      RefId="default-spec">
+    </spec:SecuritySpecRef>
+    <soap:body      namespace="http://examples/security"
+      encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      use="encoded">
+    </soap:body>
+   </output>
+  </operation>
+ </binding>
+ <service   name="Security">
+  <port    name="SecurityPort"
+    binding="tns:SecurityPort">
+   <soap:address     location="http://data.l7tech.com:7001/security/SecureService">
+   </soap:address>
+  </port>
+ </service>
+</definitions>
