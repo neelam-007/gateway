@@ -37,7 +37,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                 logger.fine("findByPrimaryKey called with null arg.");
                 return null;
             }
-            InternalUser out = (InternalUser)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
+            InternalUser out = (InternalUser)PersistenceManager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
             if (out == null) return null;
             out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             return out;
@@ -52,7 +52,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
 
     public User findByLogin( String login ) throws FindException {
         try {
-            List users = _manager.find( getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".login = ?", login, String.class );
+            List users = PersistenceManager.find( getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".login = ?", login, String.class );
             switch ( users.size() ) {
             case 0:
                 return null;
@@ -117,15 +117,20 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
 
         try {
             InternalUser originalUser = (InternalUser)findByPrimaryKey( imp.getUniqueIdentifier() );
+
             if (originalUser == null) {
                 throw new ObjectNotFoundException("User "+user.getName());
             }
+
             if (isLastAdmin(originalUser)) {
                 String msg = "An attempt was made to nuke the last standing adminstrator";
                 logger.severe(msg);
                 throw new DeleteException(msg);
             }
-            _manager.delete( getContext(), imp );
+
+            PersistenceManager.delete( getContext(), imp );
+
+            revokeCert( imp );
         } catch ( SQLException se ) {
             logger.log(Level.SEVERE, null, se);
             throw new DeleteException( se.toString(), se );
@@ -161,7 +166,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                                         + user.getLogin() + "\' present.");
             }
 
-            String oid = Long.toString( _manager.save( getContext(), imp ) );
+            String oid = Long.toString( PersistenceManager.save( getContext(), imp ) );
 
             if ( groupHeaders != null ) {
                 try {
@@ -227,13 +232,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                 logger.info("Revoking cert for user " + originalUser.getLogin() + " because he is changing his passwd.");
                 // must revoke the cert
 
-                ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
-                try {
-                    man.revokeUserCert(originalUser);
-                } catch (UpdateException e) {
-                    logger.log(Level.FINE, "could not revoke cert for user " + originalUser.getLogin() +
-                            " perhaps this user had no existing cert", e);
-                }
+                revokeCert( originalUser );
             }
 
             if ( groupHeaders != null )
@@ -242,13 +241,23 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             // update user
             originalUser.copyFrom(imp);
             // update from existing user
-            _manager.update( getContext(), originalUser );
+            PersistenceManager.update( getContext(), originalUser );
         } catch ( SQLException se ) {
             logger.log(Level.SEVERE, null, se);
             throw new UpdateException( se.toString(), se );
         } catch ( FindException e ) {
             logger.log(Level.SEVERE, null, e);
             throw new UpdateException( e.toString(), e );
+        }
+    }
+
+    private void revokeCert( InternalUser originalUser ) throws ObjectNotFoundException {
+        ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+        try {
+            man.revokeUserCert(originalUser);
+        } catch (UpdateException e) {
+            logger.log(Level.FINE, "could not revoke cert for user " + originalUser.getLogin() +
+                    " perhaps this user had no existing cert", e);
         }
     }
 
