@@ -9,6 +9,7 @@ package com.l7tech.server;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.PersistenceContext;
@@ -84,7 +85,32 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                         }
 
                         respWriter = new BufferedWriter(new OutputStreamWriter(hresponse.getOutputStream(), ENCODING));
-                        respWriter.write(protRespXml);
+
+                        if(sresp.isMultipart()) {
+                            StringBuffer sb = new StringBuffer();
+
+                            // add modified SOAP part
+                            MultipartUtil.addModifiedSoapPart(sb,
+                                    protRespXml,
+                                    sresp.getSoapPart(),
+                                    sresp.getMultipartBoundary());
+
+                            // add all Attachments
+                            PushbackInputStream pbis = sresp.getMultipartReader().getPushbackInputStream();
+
+                            // push the modified SOAP part back to the input stream
+                            pbis.unread(sb.toString().getBytes());
+
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(pbis, ENCODING));
+                            char[] buf = new char[1024];
+                            int read = reader.read(buf);
+                            while (read > 0) {
+                                respWriter.write(buf, 0, read);
+                            }
+
+                        } else {
+                            respWriter.write(protRespXml);
+                        }
                     }
                 } else if (sresp.isAuthenticationMissing() || status.isAuthProblem()) {
                     logger.fine("servlet transport returning challenge");

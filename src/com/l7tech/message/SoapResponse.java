@@ -50,13 +50,14 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
             // TODO: Encoding?
             InputStream protectedResponseStream = getProtectedResponseStream();
             if ( protectedResponseStream != null ) {
-                BufferedReader br = new BufferedReader( new InputStreamReader( protectedResponseStream, ENCODING ) );
+                /*BufferedReader br = new BufferedReader( new InputStreamReader( protectedResponseStream, ENCODING ) );
                 StringBuffer result = new StringBuffer();
                  String line;
                  while ( ( line = br.readLine() ) != null ) {
                      result.append( line );
                 }
-                _responseXml = result.toString();
+                _responseXml = result.toString();*/
+                _responseXml = getMessageXml(protectedResponseStream);
             }
         }
         return _responseXml;
