@@ -102,6 +102,7 @@ public class WspWriter {
     }
 
     private void emitNode(Assertion assertion, Node container) throws IOException {
+        if (assertion == null) return; // allow empty policies
         if (assertion instanceof CompositeAssertion) {
             emitCompositeAssertion((CompositeAssertion) assertion, container);
             return;
