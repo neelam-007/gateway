@@ -13,10 +13,11 @@ import javax.swing.text.html.HTMLDocument;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.io.IOException;
 import java.net.URL;
+import java.awt.*;
 
 /**
  * The <code>HomeAction</code> displays the dds the new user.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -52,9 +53,10 @@ public class HomeAction extends BaseAction {
         return "com/l7tech/console/resources/server16.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
@@ -70,7 +72,16 @@ public class HomeAction extends BaseAction {
     private JComponent getHomePageComponent() {
         final String home = MainWindow.RESOURCE_PATH + "/home.html";
         HTMLDocument doc = new HTMLDocument();
-        JTextPane htmlPane = new JTextPane(doc);
+        JTextPane htmlPane = new JTextPane(doc) {
+            public void paint(Graphics g) {
+                try {
+                    super.paint(g);
+                } catch (NullPointerException e) {
+                    log.info("Workaround for Bugzilla 267 (Java bugparade 4829437)");
+                    repaint();
+                }
+            }
+        };
 
         URL url = cl.getResource(home);
         htmlPane.setName("Home");
