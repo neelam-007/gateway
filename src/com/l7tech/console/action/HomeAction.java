@@ -4,6 +4,7 @@ import com.l7tech.console.MainWindow;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.FindIdentitiesDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 
@@ -104,6 +105,11 @@ public class HomeAction extends BaseAction {
                         new NewInternalUserAction(null).actionPerformed(null);
                     } else if (ADD_GROUP.equals(url)) {
                         new NewGroupAction(null).actionPerformed(null);
+                    }  else if (SEARCH_ID_PROVIDER.equals(url)) {
+                        FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+                        options.enableDeleteAction();
+                        options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                        new FindIdentityAction(options).actionPerformed(null);
                     } else if (ADD_LDAP_ID_PROVIDER.equals(url)) {
                         final DefaultMutableTreeNode root =
                                 (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
@@ -142,4 +148,5 @@ public class HomeAction extends BaseAction {
     private static final String ADD_GROUP = "file://add.group";
     private static final String ADD_LDAP_ID_PROVIDER = "file://add.ldap.identity.provider";
     private static final String ADD_FEDERATED_ID_PROVIDER = "file://add.federated.identity.provider";
+    private static final String SEARCH_ID_PROVIDER = "file://search.identity.provider";
 }
