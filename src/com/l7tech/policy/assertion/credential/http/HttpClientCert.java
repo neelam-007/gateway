@@ -6,11 +6,11 @@
 
 package com.l7tech.policy.assertion.credential.http;
 
-import com.l7tech.credential.http.HttpClientCertCredentialFinder;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.credential.http.HttpClientCertCredentialFinder;
 import org.apache.log4j.Category;
 
 /**
