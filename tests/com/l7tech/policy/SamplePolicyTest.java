@@ -9,19 +9,22 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
 /**
@@ -138,4 +141,42 @@ public class SamplePolicyTest extends TestCase {
         // Display this policy for Jay
         log.info(WspWriter.getPolicyXml(perUserRoutingPolicy));
     }
+
+    static public class OneBean implements Serializable {
+        Object value;
+
+        public Object getValue() {
+            return value;
+        }
+
+        public void setValue(Object value) {
+            this.value = value;
+        }
+    }
+
+    public void disabledtestCustomAssertion() throws Exception {
+        CustomAssertion customAssertion = new CustomAssertion();
+        OneBean oneBean = new OneBean();
+        oneBean.setValue("aaaaaaaa");
+        customAssertion.setCustomAssertionBean(oneBean);
+        Assertion testin = new AllAssertion(Arrays.asList(new Assertion[] {
+            new HttpBasic(),
+            customAssertion
+        }));
+
+        String sxml = WspWriter.getPolicyXml(testin);
+        Assertion testout = WspReader.parse(sxml);
+
+        Iterator it = testout.preorderIterator();
+        while (it.hasNext()) {
+            Assertion a = (Assertion)it.next();
+            if (a instanceof CustomAssertion) {
+                CustomAssertion ca = (CustomAssertion)a;
+                final OneBean cb = (OneBean)ca.getCustomAssertionBean();
+                assertTrue(cb.getValue().equals(oneBean.getValue()));
+            }
+        }
+
+    }
+
 }
