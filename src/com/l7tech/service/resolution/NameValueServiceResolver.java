@@ -68,6 +68,22 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
     protected abstract Object[] getTargetValues( PublishedService service );
     protected abstract Object getRequestValue( Request request ) throws ServiceResolutionException;
 
+    protected boolean matches( PublishedService matchService ) {
+        // Get the match values for this service
+        Object[] matchValues = getTargetValues( matchService );
+        Object matchValue;
+        Map serviceMap;
+        for ( int i = 0; i < matchValues.length; i++ ) {
+            // For each matching value...
+            matchValue = matchValues[i];
+            // Find out which service(s) match this value
+            serviceMap = getServiceMap( matchValue );
+            // If there are any, this value matches
+            if ( !serviceMap.keySet().isEmpty() ) return true;
+        }
+        return false;
+    }
+
     protected synchronized Map getServiceMap( Object value ) {
         Map serviceMap = (Map)_valueToServiceMapMap.get(value);
         if ( serviceMap == null ) {
