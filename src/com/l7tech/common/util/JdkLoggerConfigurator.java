@@ -29,8 +29,9 @@ public class JdkLoggerConfigurator {
     /**
      * initialize logging, try different strategies. First look for the system
      * property <code>java.util.logging.config.file</code>, then look for
-     * <code>logging.properties</code>. If that fails fall back to the
-     * <code>com/l7tech/console/resources/logging.properties</code>.
+     * <code>logging.properties</code>. If that fails fall back to the 
+     * application-specified config file (ie,
+     * <code>com/l7tech/console/resources/logging.properties</code>).
      *
      * @param classname the classname to use for logging info about which logging.properties was found
      * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found,
