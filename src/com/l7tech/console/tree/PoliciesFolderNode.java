@@ -1,13 +1,16 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.exporter.PolicyExporter;
 
 import javax.swing.tree.MutableTreeNode;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.*;
 import java.util.Comparator;
 import java.util.logging.Level;
+
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 
 /**
@@ -120,8 +123,33 @@ public class PoliciesFolderNode extends AbstractTreeNode {
              */
             public boolean accept(File dir, String name) {
                 File f = new File(dir.getPath()+File.separator+name);
-                if (f.isFile()) return true;
-
+                if (f.isFile()) {
+                    // check if it's an xml file
+                    try {
+                        FileInputStream fis = new FileInputStream(f);
+                        Document doc = XmlUtil.parse(fis);
+                        if (doc == null) {
+                            logger.fine("File " + name + " is in templates folder but is not an exported policy");
+                            return false;
+                        }
+                        // check if it's an exported policy
+                        if (!PolicyExporter.isExportedPolicy(doc)) {
+                            logger.fine("document name is xml but is not an exported document");
+                            return false;
+                        }
+                        return true;
+                    } catch (FileNotFoundException e) {
+                        logger.log(Level.FINE, "Document " + name + " is in templates folder but is " +
+                                               "not an exported policy", e);
+                    } catch (IOException e) {
+                        logger.log(Level.FINE, "Document " + name + " is in templates folder but is " +
+                                               "not an exported policy", e);
+                    } catch (SAXException e) {
+                        logger.log(Level.FINE, "Document " + name + " is in templates folder but is " +
+                                               "not an exported policy", e);
+                    }
+                    return false;
+                }
                 return false;
             }
         });
