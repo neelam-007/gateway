@@ -50,7 +50,7 @@ public class SsgFakerTest extends TestCase {
         }
     }
 
-    protected void setUp() throws IOException {
+    protected void setUp() throws Exception {
         destroyFaker();
         ssgFaker = new SsgFaker();
         ssgUrl = ssgFaker.start();
