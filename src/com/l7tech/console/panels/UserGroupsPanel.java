@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.identity.IdentityProviderConfig;
 
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
@@ -49,6 +50,7 @@ class UserGroupsPanel extends JPanel {
     private boolean isLoading = false;
 
     private final static String USER_GROUP_MEMBER_LABEL = "User Groups:";
+    private IdentityProviderConfig ipc;
 
 
     /**
@@ -56,8 +58,9 @@ class UserGroupsPanel extends JPanel {
      *
      * @param panel the parent userPanel
      */
-    public UserGroupsPanel(UserPanel panel) {
+    public UserGroupsPanel(UserPanel panel, IdentityProviderConfig ipc) {
         super();
+        this.ipc = ipc;
         try {
             this.userPanel = panel;
             layoutComponents();
@@ -350,7 +353,7 @@ class UserGroupsPanel extends JPanel {
                 public void actionPerformed(ActionEvent e) {
                     JDialog d = (JDialog) SwingUtilities.windowForComponent(UserGroupsPanel.this);
 
-                    JDialog dialog = new NewGroupForUserDialog(d, UserGroupsPanel.this);
+                    JDialog dialog = new NewGroupForUserDialog(d, UserGroupsPanel.this, ipc);
                     dialog.setResizable(false);
                     dialog.show();
 

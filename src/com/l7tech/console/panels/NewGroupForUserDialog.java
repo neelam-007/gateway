@@ -5,6 +5,7 @@ import com.l7tech.console.util.FilterListModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -23,6 +24,7 @@ import java.util.*;
 public class NewGroupForUserDialog extends JDialog {
     private FilterListModel listOutModel;
     private JList nonGroupMemberList;
+    private IdentityProviderConfig ipc;
     private final Comparator entityNameComparator = new Comparator() {
                         /**
                          * Compares group users by login alphabetically.
@@ -47,10 +49,11 @@ public class NewGroupForUserDialog extends JDialog {
      *
      * @param parent the GroupPanel parent.
      */
-    public NewGroupForUserDialog(JDialog owner, UserGroupsPanel parent) {
+    public NewGroupForUserDialog(JDialog owner, UserGroupsPanel parent, IdentityProviderConfig ipc) {
         // Init UI
         super(owner, true);
         this.parent = parent;
+        this.ipc = ipc;
         initResources();
         initComponents();
         pack();
@@ -204,7 +207,7 @@ public class NewGroupForUserDialog extends JDialog {
                     Set set = parent.getCurrentGroups();
                     if (set !=null) currentGroups.addAll(set);
 
-                    EntityHeader[] headers = Registry.getDefault().getIdentityAdmin().findAllGroups(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+                    EntityHeader[] headers = Registry.getDefault().getIdentityAdmin().findAllGroups(ipc.getOid());
 
                     for ( int i = 0; i < headers.length; i++ ) {
                         EntityHeader header = headers[i];

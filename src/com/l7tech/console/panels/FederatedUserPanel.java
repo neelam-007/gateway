@@ -93,7 +93,7 @@ public class FederatedUserPanel extends UserPanel {
     public void initialize() {
         try {
             // Initialize form components
-            groupPanel = new UserGroupsPanel(this);
+            groupPanel = new UserGroupsPanel(this, config);
 
             //todo:  need to have a different cert panel
             //certPanel = new CertificatePanel(this, passwordChangeListener);

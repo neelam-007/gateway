@@ -77,7 +77,7 @@ public class GenericUserPanel extends UserPanel {
     public void initialize() {
         try {
             // Initialize form components
-            groupPanel = new UserGroupsPanel(this);
+            groupPanel = new UserGroupsPanel(this, config);
             certPanel = new CertificatePanel(this, passwordChangeListener);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
