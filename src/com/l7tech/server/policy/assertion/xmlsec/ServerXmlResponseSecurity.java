@@ -96,10 +96,12 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
                 xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
             } catch (SessionNotFoundException e) {
                 String msg = "Exception finding session with id=" + sessionIDHeaderValue;
+                response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
                 logger.log(Level.SEVERE, msg, e);
                 return AssertionStatus.FALSIFIED;
             } catch (NumberFormatException e) {
                 String msg = "Session id is not long value : " + sessionIDHeaderValue;
+                response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
                 logger.log(Level.SEVERE, msg, e);
                 return AssertionStatus.FALSIFIED;
             }
