@@ -45,7 +45,6 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     }
 
     public boolean onNextButton() {
-        System.out.println("blah");
         // collect actions details and store in the reference for resolution
         if (manualResolvRadio.isSelected()) {
             // todo, set the right provider id here.
