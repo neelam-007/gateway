@@ -19,6 +19,8 @@ import java.awt.event.HierarchyEvent;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Enumeration;
+import java.util.ResourceBundle;
+import java.util.Locale;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.Certificate;
@@ -48,6 +50,7 @@ public class UserCertPanel extends JPanel {
             GridBagConstraints.NORTHWEST,
             GridBagConstraints.BOTH,
             new Insets(15, 15, 0, 15), 0, 0);
+    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
 
     /**
      * Create a new CertificatePanel
@@ -64,10 +67,6 @@ public class UserCertPanel extends JPanel {
      */
     private void initComponents() {
         setLayout(new GridBagLayout());
-        // setTitle("Certificate Information");
-
-        //certificateTable = new JTable();
-        //certificateTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         certStatusLabel = new JLabel();
         Font f = certStatusLabel.getFont();
@@ -114,7 +113,7 @@ public class UserCertPanel extends JPanel {
             removeCertButton.setText("Remove");
             removeCertButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-                    String msg = null;
+                    String msg = "Are you sure you want to remove the user certificate?";
 
                     int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getMainWindow(),
                             msg, "Remove User Certificate",
@@ -196,14 +195,23 @@ public class UserCertPanel extends JPanel {
                     view = new JLabel();
                 certificateView = new JScrollPane(view);
             } catch (CertificateEncodingException e) {
-                log.log(Level.SEVERE, "Unable to decode this user's certificate", e);
+                log.log(Level.WARNING, "Unable to decode this user's certificate", e);
+                JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.decode.error"),
+                                        resources.getString("load.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
             } catch (NoSuchAlgorithmException e) {
-                log.log(Level.SEVERE, "Unable to process this user's certificate", e);
+                log.log(Level.WARNING, "Unable to process this user's certificate", e);
+                JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.decode.error"),
+                                        resources.getString("load.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
             }
             add(certificateView, CERTIFICATE_VIEW_CONSTRAINTS);
             getRootPane().getContentPane().invalidate();
         } catch (Exception e) {
-            log.log(Level.WARNING, "There was an error loading the certificate", e);
+            log.log(Level.SEVERE, "There was an error loading the certificate", e);
+            JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
+                                        resources.getString("load.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -272,17 +280,10 @@ public class UserCertPanel extends JPanel {
         }
     }
 
-    private void saveUserCert(TrustedCert tc) {
+    private void saveUserCert(TrustedCert tc) throws IOException, CertificateException, UpdateException {
         ClientCertManager man = (ClientCertManager) Locator.getDefault().lookup(ClientCertManager.class);
-        try {
-             man.recordNewUserCert(user, tc.getCertificate());
-        } catch (UpdateException e) {
-            log.log(Level.WARNING, "There was an error saving the certificate", e);
-        } catch (IOException e) {
-            //todo:
-        } catch (CertificateException e) {
-            //todo:
-        }
+
+        man.recordNewUserCert(user, tc.getCertificate());
     }
 
     /**
@@ -310,12 +311,33 @@ public class UserCertPanel extends JPanel {
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
 
-                            saveUserCert(tc);
+                            try {
+                                saveUserCert(tc);
 
-                            // reset values and redisplay
-                            cert = null;
+                                // reset values and redisplay
+                                cert = null;
 
-                            loadCertificateInfo();
+                                getUserCert();
+                                
+                                loadCertificateInfo();
+
+                            } catch (UpdateException e) {
+                                log.log(Level.WARNING, "There was an error saving the certificate", e);
+                                JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
+                                        resources.getString("save.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
+                            } catch (IOException e) {
+                                log.log(Level.WARNING, "There was an error saving the certificate", e);
+                                JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
+                                        resources.getString("save.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
+                            } catch (CertificateException e) {
+                                log.log(Level.WARNING, "There was an error saving the certificate", e);
+                                JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
+                                        resources.getString("save.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
+                            }
+
                         }
                     });
                 }
