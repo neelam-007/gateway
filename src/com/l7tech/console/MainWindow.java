@@ -8,7 +8,6 @@ import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.panels.LogonDialog;
-import com.l7tech.console.panels.MonitorPanel;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.security.ClientCredentialManager;
@@ -67,7 +66,6 @@ public class MainWindow extends JFrame {
     private JMenu editMenu = null;
     private JMenu viewMenu = null;
     private JMenu helpMenu = null;
-    private JMenu windowMenu = null;
 
     private JMenuItem connectMenuItem = null;
     private JMenuItem disconnectMenuItem = null;
@@ -99,13 +97,10 @@ public class MainWindow extends JFrame {
 
     private JToolBar toolBarPane = null;
     private PolicyToolBar policyToolBar = null;
-
-    private JSplitPane mainJSplitPane = null;
     private JSplitPane mainJSplitPaneTop = null;
     private JPanel mainLeftJPanel = null;
-
     private JPanel mainSplitPaneRight = null;
-    private MonitorPanel mainBottomTabbedPane = null;
+    private JDesktopPane desktopPane = null;
 
     /* progress bar indicator */
     private ProgressBar progressBar = null;
@@ -762,8 +757,6 @@ public class MainWindow extends JFrame {
         getFindAction().setEnabled(connected);
         getDisconnectAction().setEnabled(connected);
         getConnectAction().setEnabled(!connected);
-        getMainBottomTabbedPane().getShowLogToggleAction().setEnabled(connected);
-        getMainBottomTabbedPane().getShowStatToggleAction().setEnabled(connected);
         homeAction.setEnabled(connected);
 
     }
@@ -773,14 +766,15 @@ public class MainWindow extends JFrame {
      * Return the JFrameContentPane property value.
      * @return JPanel
      */
-    private JPanel getJFrameContentPane() {
+    private JPanel getFrameContentPane() {
         if (frameContentPane == null) {
             frameContentPane = new JPanel();
+            frameContentPane.setBorder(null);
             frameContentPane.setPreferredSize(new Dimension(700, 600));
             frameContentPane.setLayout(new BorderLayout());
-            getJFrameContentPane().add(getToolBarPane(), "North");
+            getFrameContentPane().add(getToolBarPane(), "North");
             // getJFrameContentPane().add(getStatusBarPane(), "South");
-            getJFrameContentPane().add(getMainPane(), "Center");
+            getFrameContentPane().add(getMainPane(), "Center");
         }
         return frameContentPane;
     }
@@ -796,6 +790,7 @@ public class MainWindow extends JFrame {
 
         mainSplitPaneRight = new JPanel();
         mainSplitPaneRight.setLayout(new GridBagLayout());
+        mainSplitPaneRight.setBorder(null);
         return mainSplitPaneRight;
     }
 
@@ -813,6 +808,7 @@ public class MainWindow extends JFrame {
             return tree;
         tree = new AssertionsTree();
         tree.setShowsRootHandles(true);
+        tree.setBorder(null);
         ComponentRegistry.getInstance().registerComponent(AssertionsTree.NAME, tree);
         return tree;
     }
@@ -1035,6 +1031,7 @@ public class MainWindow extends JFrame {
         mainJSplitPaneTop.add(getMainSplitPaneRight(), "right");
         mainJSplitPaneTop.add(getMainLeftJPanel(), "left");
         mainJSplitPaneTop.setDividerSize(2);
+        mainJSplitPaneTop.setBorder(null);
         addWindowListener(new WindowAdapter() {
             /** Invoked when a window has been opened. */
             public void windowOpened(WindowEvent e) {
@@ -1070,61 +1067,11 @@ public class MainWindow extends JFrame {
     private JPanel getMainPane() {
         if (mainPane == null) {
             mainPane = new JPanel();
+            mainPane.setBorder(null);
             mainPane.setLayout(new BorderLayout());
-            getMainPane().add(getMainJSplitPane(), "Center");
+            getMainPane().add(getMainJSplitPaneTop(), "Center");
         }
         return mainPane;
-    }
-
-    // Francis
-    private JSplitPane getMainJSplitPane() {
-        if (mainJSplitPane == null) {
-            mainJSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-            mainJSplitPane.setResizeWeight(0.5);
-
-            mainJSplitPane.setTopComponent(getMainJSplitPaneTop());
-            mainJSplitPane.setBottomComponent(getMainBottomTabbedPane());
-
-            updateMainSplitPaneDividerLocation();
-            mainJSplitPane.setDividerSize(0);
-
-        }
-        return mainJSplitPane;
-    }
-
-    private MonitorPanel getMainBottomTabbedPane() {
-
-        if (mainBottomTabbedPane != null) return mainBottomTabbedPane;
-
-        mainBottomTabbedPane = new MonitorPanel();
-
-        monitorAction =
-                new AbstractAction("Monitor") {
-                    /**
-                     * Invoked when an action occurs.
-                     *
-                     * @param event  the event that occured
-                     * @see Action#removePropertyChangeListener
-                     */
-                    public void actionPerformed(ActionEvent event) {
-                        //do nothing
-                    }
-
-                    ConnectionListener listener = new ConnectionListener() {
-                        public void onConnect(ConnectionEvent e) {
-                            mainBottomTabbedPane.connectHandler(e);
-                        }
-
-                        public void onDisconnect(ConnectionEvent e) {
-                            mainBottomTabbedPane.disconnectHandler(e);
-                        }
-                    };
-
-                    {
-                        MainWindow.this.addConnectionListener(listener);
-                    }
-                };
-        return mainBottomTabbedPane;
     }
 
     /**
@@ -1269,10 +1216,12 @@ public class MainWindow extends JFrame {
 
         JTabbedPane treePanel = new JTabbedPane();
         treePanel.setTabPlacement(JTabbedPane.BOTTOM);
+        treePanel.setBorder(null);
         //treePanel.setLayout(new BorderLayout());
         treePanel.addTab("Assertions", getAssertionPaletteTree());
 
         JScrollPane js = new JScrollPane(treePanel);
+        js.setBorder(null);
         int mInc = js.getVerticalScrollBar().getUnitIncrement();
         // some arbitrary text to set the unit increment to the
         // height of one line instead of default value
@@ -1309,14 +1258,16 @@ public class MainWindow extends JFrame {
 
 
         sections.setTopComponent(js);
-
+        sections.setBorder(null);
         treePanel = new JTabbedPane();
         // treePanel.setLayout(new BorderLayout());
         treePanel.addTab("Services", getServicesTree());
         treePanel.setTabPlacement(JTabbedPane.BOTTOM);
+        treePanel.setBorder(null);
 
 
         js = new JScrollPane(treePanel);
+        js.setBorder(null);
         mInc = js.getVerticalScrollBar().getUnitIncrement();
         // some arbitrary text to set the unit increment to the
         // height of one line instead of default value
@@ -1331,6 +1282,7 @@ public class MainWindow extends JFrame {
         mainLeftJPanel = new JPanel(new BorderLayout());
         mainLeftJPanel.add(sections, BorderLayout.CENTER);
         mainLeftJPanel.add(getPolicyToolBar(), BorderLayout.EAST);
+        mainLeftJPanel.setBorder(null);
         return mainLeftJPanel;
     }
 
@@ -1457,6 +1409,7 @@ public class MainWindow extends JFrame {
      * Initialize the class.
      */
     private void initialize() {
+        desktopPane = new JDesktopPane();
 
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -1472,7 +1425,7 @@ public class MainWindow extends JFrame {
                 new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
         getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
+        getContentPane().add(getFrameContentPane(), BorderLayout.CENTER);
         getContentPane().add(getStatusBarPane(), BorderLayout.SOUTH);
 
 
@@ -1714,57 +1667,17 @@ public class MainWindow extends JFrame {
         return getDisconnectMenuItem().isEnabled();
     }
 
-    public void updateMainSplitPaneDividerLocation() {
-
-        // set the divider size to zero only when there is nothihng in the pane
-        if (getMainBottomTabbedPane().getTabCount() <= 0) {
-            getMainJSplitPane().setDividerSize(0);
-        } else {
-
-            getMainJSplitPane().setDividerSize(MAIN_SPLIT_PANE_DIVIDER_SIZE);
-
-            // No need to change the divider location if there is one tab being diplayed
-            if (getMainBottomTabbedPane().getTabCount() < 2) {
-                try {
-                    Preferences prefs = Preferences.getPreferences();
-                    String s = prefs.getString("main.split.pane.divider.location");
-                    if (s != null) {
-                        int l = Integer.parseInt(s);
-                        mainJSplitPane.setDividerLocation(l);
-                    } else {
-                        mainJSplitPane.setDividerLocation(0.7);
-                    }
-                } catch (NumberFormatException e1) {
-                }
-            }
-        }
-    }
-
-    public void storeMainSplitPaneDividerLocation() {
-        // store the current divider location
-        try {
-            Preferences prefs = Preferences.getPreferences();
-            int l = getMainJSplitPane().getDividerLocation();
-            prefs.putProperty("main.split.pane.divider.location", Integer.toString(l));
-        } catch (NullPointerException e1) {
-        }
-    }
 
     public JCheckBoxMenuItem getLogMenuItem() {
-
         if (logMenuItem != null) return logMenuItem;
-
         logMenuItem = new JCheckBoxMenuItem(getGatewayLogWindowAction());
-
         return logMenuItem;
     }
 
     public JCheckBoxMenuItem getStatMenuItem() {
 
         if (statMenuItem != null) return statMenuItem;
-
         statMenuItem = new JCheckBoxMenuItem(getClusterStatusWindowAction());
-
         return statMenuItem;
     }
 

@@ -5,17 +5,13 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.RoutingAssertionDialog;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.RoutingAssertionTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
-import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

@@ -87,7 +87,7 @@ public class PublishServiceAction extends BaseAction implements ConnectionListen
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
-                            new EditServicePolicyAction((ServiceNode)sn, true).performAction();
+                            new EditServicePolicyAction((ServiceNode)sn).performAction();
                         }
                     });
                 }

@@ -24,7 +24,7 @@ public class ValidatePolicyAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Validate policy";
+        return "Validate";
     }
 
     /**

@@ -126,9 +126,11 @@ public class WorkSpacePanel extends JPanel {
      * layout components on this panel
      */
     private void layoutComponents() {
+        setBorder(null);
         addHierarchyListener(hierarchyListener);
         setLayout(new BorderLayout());
         Font f = tabbedPane.getFont();
+        tabbedPane.setBorder(null);
         tabbedPane.setFont(new Font(f.getName(), Font.BOLD, 12));
         add(tabbedPane, BorderLayout.CENTER);
     }

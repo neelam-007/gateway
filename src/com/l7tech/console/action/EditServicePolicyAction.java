@@ -82,14 +82,7 @@ public class EditServicePolicyAction extends NodeAction {
             wpanel.clearWorkspace();
 
             serviceNode.clearServiceHolder();
-            final PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode);
-            if (validate) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        pep.validatePolicy();
-                    }
-                });
-            }
+            final PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode, validate);
             wpanel.setComponent(pep);
             wpanel.addWorkspaceContainerListener(pep);
         } catch (ActionVetoException e) {

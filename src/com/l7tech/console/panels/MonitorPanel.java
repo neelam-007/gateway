@@ -98,12 +98,12 @@ public class MonitorPanel extends JTabbedPane {
                             //validate();
                             //repaint();
                         } else {
-                            componentRegistry.getMainWindow().storeMainSplitPaneDividerLocation();
+                            //componentRegistry.getMainWindow().storeMainSplitPaneDividerLocation();
 
                             getLogPane().stopRefreshTimer();
                             removeComponent(getLogPane());
                             updateDisplay();
-                            componentRegistry.getMainWindow().updateMainSplitPaneDividerLocation();
+                            //componentRegistry.getMainWindow().updateMainSplitPaneDividerLocation();
                         }
                     }
 
@@ -135,11 +135,13 @@ public class MonitorPanel extends JTabbedPane {
                         } else {
 
                             // store the current divider location
-                            componentRegistry.getMainWindow().storeMainSplitPaneDividerLocation();
+                            // todo: implement the fuunctionality in thi class EM
+                            // componentRegistry.getMainWindow().storeMainSplitPaneDividerLocation();
                             getStatisticsPane().stopRefreshTimer();
                             removeComponent(getStatisticsPane());
                             updateDisplay();
-                            componentRegistry.getMainWindow().updateMainSplitPaneDividerLocation();
+                            // todo: implement the fuunctionality in thi class EM
+                            // componentRegistry.getMainWindow().updateMainSplitPaneDividerLocation();
                         }
                     }
 
@@ -178,8 +180,8 @@ public class MonitorPanel extends JTabbedPane {
         getLogPane().setVisible(true);
         updateDisplay();
         setSelectedComponent(getLogPane());
-
-        componentRegistry.getMainWindow().updateMainSplitPaneDividerLocation();
+        // todo: implement the fuunctionality in thi class EM
+        //componentRegistry.getMainWindow().updateMainSplitPaneDividerLocation();
     }
 
     private void restoreStatPane() {
@@ -191,7 +193,8 @@ public class MonitorPanel extends JTabbedPane {
         updateDisplay();
         setSelectedComponent(getStatisticsPane());
 
-        componentRegistry.getMainWindow().updateMainSplitPaneDividerLocation();
+        // todo: implement the fuunctionality in thi class EM
+        // componentRegistry.getMainWindow().updateMainSplitPaneDividerLocation();
     }
 
     public void setActionEnabled(boolean enable) {

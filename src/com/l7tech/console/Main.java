@@ -6,6 +6,14 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
+import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
+import com.jgoodies.plaf.plastic.PlasticLookAndFeel;
+import com.jgoodies.plaf.plastic.Plastic3DLookAndFeel;
+import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
+import com.jgoodies.plaf.plastic.theme.DesertBlue;
+import com.jgoodies.plaf.plastic.theme.SkyBluerTahoma;
+import com.jgoodies.clearlook.ClearLookMode;
+import com.jgoodies.clearlook.ClearLookManager;
 import net.jini.security.policy.DynamicPolicyProvider;
 import net.jini.security.policy.PolicyInitializationException;
 
@@ -174,6 +182,17 @@ public class Main {
         // register L&F
         new KunststoffLookAndFeel();
         KunststoffLookAndFeel.setCurrentTheme(new KunststoffDesktopTheme());
+        LookAndFeel addlf = new ExtWindowsLookAndFeel();
+        UIManager.installLookAndFeel(addlf.getName(), addlf.getClass().getName());
+        addlf = new PlasticLookAndFeel();
+        UIManager.installLookAndFeel(addlf.getName(), addlf.getClass().getName());
+        PlasticLookAndFeel.setMyCurrentTheme(new SkyBluerTahoma());
+        addlf = new Plastic3DLookAndFeel();
+        UIManager.installLookAndFeel(addlf.getName(), addlf.getClass().getName());
+        addlf = new PlasticXPLookAndFeel();
+        UIManager.installLookAndFeel(addlf.getName(), addlf.getClass().getName());
+
+        ClearLookManager.setMode(ClearLookMode.DEBUG);
 
         String lfName = null;
         Preferences prefs = Preferences.getPreferences();

@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
@@ -11,8 +10,8 @@ import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.PopUpMouseListener;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -32,14 +31,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ContainerEvent;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.StringReader;
 import java.net.URI;
 import java.rmi.RemoteException;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * The class represents the policy editor
@@ -55,17 +57,36 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private PolicyTree policyTree;
     private PolicyEditToolBar policyEditorToolbar;
     private JSplitPane splitPane;
-    private final ComponentRegistry componentRegistry =
-      Registry.getDefault().getComponentRegistry();
+    private final ComponentRegistry componentRegistry = Registry.getDefault().getComponentRegistry();
     private JScrollPane policyTreePane;
-
     private ServiceNode serviceNode;
+    private boolean initialValidate = false;
 
-    public PolicyEditorPanel(ServiceNode sn) throws FindException, RemoteException {
+    /**
+     * Instantiate the policy editor, optionally validating the policy.
+     *
+     * @param sn the service node
+     * @param validateOnOpen true, the service will be validated, false otherwise
+     * @throws FindException if the service cannot be found
+     * @throws RemoteException on error invoking the remote service
+     */
+    public PolicyEditorPanel(ServiceNode sn, boolean validateOnOpen) throws FindException, RemoteException {
         layoutComponents();
         this.serviceNode = sn;
         renderPolicy(false);
         setEditorListeners();
+        if (validateOnOpen) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        try {
+                          initialValidate = true;
+                            validatePolicy();
+                        } finally {
+                          initialValidate = true;
+                        }
+                    }
+                });
+            }
     }
 
     /**
@@ -106,6 +127,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     private void layoutComponents() {
+        setBorder(null);
         setLayout(new BorderLayout());
         add(getToolBar(), BorderLayout.NORTH);
         add(getSplitPane(), BorderLayout.CENTER);
@@ -114,11 +136,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private JSplitPane getSplitPane() {
         if (splitPane != null) return splitPane;
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.setBorder(null);
         splitPane.add(getPolicyTreePane(), "top");
         JComponent messagePane = getMessagePane();
         splitPane.add(messagePane, "bottom");
 
-        splitPane.setDividerSize(2);
+        splitPane.setDividerSize(10);
         splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
           new PropertyChangeListener() {
               public void propertyChange(PropertyChangeEvent evt) {
@@ -151,6 +174,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         policyTree.setShowsRootHandles(true);
         policyTree.setRowHeight((int)(policyTree.getRowHeight() * 1.3));
         policyTreePane = new JScrollPane(policyTree);
+        policyTreePane.setBorder(null);
         return policyTreePane;
     }
 
@@ -234,8 +258,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         messagesTextPane.addHyperlinkListener(hlinkListener);
         messagesTextPane.setEditable(false);
         JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setBorder(null);
         JScrollPane scrollPane = new JScrollPane(messagesTextPane);
+        scrollPane.setBorder(null);
         tabbedPane.addTab("Messages", scrollPane);
+        tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
         messagesTextPane.addMouseListener(new PopUpMouseListener() {
             protected void popUpMenuHandler(MouseEvent mouseEvent) {
                 JPopupMenu menu = new JPopupMenu();
@@ -273,6 +300,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (policyEditorToolbar != null) return policyEditorToolbar;
         policyEditorToolbar = new PolicyEditToolBar();
         policyEditorToolbar.setFloatable(false);
+        policyEditorToolbar.setBorder(null);
         return policyEditorToolbar;
     }
 
@@ -363,12 +391,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             });
             this.add(identityViewButton);
-
-            Utilities.
-              equalizeComponentSizes(
-                new JComponent[]{
-                    buttonSave, buttonValidate, buttonSaveTemplate, identityViewButton
-                });
+            this.add(Box.createHorizontalGlue());
         }
     }
 
@@ -460,7 +483,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     // listener for policy tree changes
     TreeModelListener policyTreeModellistener = new TreeModelListener() {
         public void treeNodesChanged(TreeModelEvent e) {
-            enableButtonSave();
+            if (!initialValidate) {
+                enableButtonSave();
+            }
         }
 
         public void treeNodesInserted(final TreeModelEvent e) {
@@ -646,8 +671,5 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         }
         return pr;
-
-
     }
-
 }
