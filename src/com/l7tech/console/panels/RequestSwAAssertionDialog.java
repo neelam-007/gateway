@@ -11,12 +11,15 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.util.SortedSingleColumnTableModel;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 
 import javax.swing.*;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.event.EventListenerList;
 import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
@@ -53,6 +56,8 @@ public class RequestSwAAssertionDialog extends JDialog {
     private ServiceNode serviceNode;
     private EventListenerList listenerList = new EventListenerList();
     private Map bindings = new HashMap();
+    private SortedSingleColumnTableModel bindingOperationsTableModel = null;
+    private JTable bindingOperationsTable = null;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestSwAPropertiesDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(RequestSwAAssertionDialog.class.getName());
@@ -73,6 +78,16 @@ public class RequestSwAAssertionDialog extends JDialog {
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
+
+        bindingOperationsTable = getBindingOperationsTable();
+        bindingOperationsTable.setModel(getBindingOperationsTableModel());
+        bindingOperationsTable.setShowHorizontalLines(false);
+        bindingOperationsTable.setShowVerticalLines(false);
+        bindingOperationsTable.setDefaultRenderer(Object.class, bindingOperationsTableRenderer);
+        operationsScrollPane.getViewport().setBackground(bindingOperationsTable.getBackground());
+        operationsScrollPane.setViewportView(bindingOperationsTable);
+
+        bindingsListComboxBox.setRenderer(bindingListRender);
 
         okButton.addActionListener(new ActionListener() {
 
@@ -113,11 +128,46 @@ public class RequestSwAAssertionDialog extends JDialog {
     }
 
     private void populateDataFromAssertion() {
+       bindings = assertion.getBindings();
+
+        // populate the binding operation table
+        if(bindings != null) {
+            Iterator bindingsItr = bindings.keySet().iterator();
+            while (bindingsItr.hasNext()) {
+                String bindingName = (String) bindingsItr.next();
+                BindingInfo binding = (BindingInfo) bindings.get(bindingName);
+
+                // add the entry the the binding list
+                bindingsList.add(binding);
+                bindingsListComboxBox.addItem(binding);
+
+                Iterator bindingOperationsItr = binding.getBindingOperations().keySet().iterator();
+                while(bindingOperationsItr.hasNext()) {
+                    String bindingOperationName = (String) bindingOperationsItr.next();
+                    // add the entry to the binding operation table
+                    getBindingOperationsTableModel().addRow(binding.getBindingOperations().get(bindingOperationName));
+                }
+            }
+        }
+
+        getBindingOperationsTableModel().fireTableDataChanged();
 
     }
 
     private void populateDataFromWSDL() {
+        //todo: the following line must be removed
         assertion.setBindings(bindings);
+
+        // populate the binding operation table
+        if(bindings != null) {
+            Iterator bindingsItr = bindings.keySet().iterator();
+            while (bindingsItr.hasNext()) {
+                String bindingOperationName = (String) bindingsItr.next();
+
+                getBindingOperationsTableModel().addRow(bindings.get(bindingOperationName));
+            }
+        }
+        getBindingOperationsTableModel().fireTableDataChanged();
     }
 
     private void loadMIMEPartsInfoFromWSDL() {
@@ -231,6 +281,104 @@ public class RequestSwAAssertionDialog extends JDialog {
         });
     }
 
+    private JTable getBindingOperationsTable() {
+        if(bindingOperationsTable != null) {
+            return bindingOperationsTable;
+        }
+
+        bindingOperationsTable = new JTable();
+        return bindingOperationsTable;
+    }
+
+    /**
+     * @return the table model representing the binding operations specified in WSDL
+     */
+    private SortedSingleColumnTableModel getBindingOperationsTableModel() {
+        if (bindingOperationsTableModel != null)
+            return bindingOperationsTableModel;
+
+        bindingOperationsTableModel = new SortedSingleColumnTableModel(new Comparator() {
+            public int compare(Object o1, Object o2) {
+                BindingOperationInfo e1 = (BindingOperationInfo)o1;
+                BindingOperationInfo e2 = (BindingOperationInfo)o2;
+
+                return e1.getName().compareToIgnoreCase(e2.getName());
+            }
+        }) {
+
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
+        };
+
+        // add a new column without a column title
+        bindingOperationsTableModel.addColumn("");
+        return bindingOperationsTableModel;
+    }
+
+    private final ListCellRenderer bindingListRender = new DefaultListCellRenderer() {
+        public Component getListCellRendererComponent(
+                JList list,
+                Object value,
+                int index,
+                boolean isSelected,
+                boolean cellHasFocus) {
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+            }
+            else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+            }
+
+            BindingInfo p = (BindingInfo)value;
+            setText(p.getBindingName());
+            setToolTipText(null);
+
+            return this;
+        }
+    };
+
+    private final TableCellRenderer bindingOperationsTableRenderer = new DefaultTableCellRenderer() {
+        /* This is the only method defined by ListCellRenderer.  We just
+        * reconfigure the Jlabel each time we're called.
+        */
+        public Component
+                getTableCellRendererComponent(JTable table,
+                                              Object value,
+                                              boolean iss,
+                                              boolean hasFocus,
+                                              int row, int column) {
+            if (!table.isEnabled()) {
+                this.setEnabled(false);
+            } else {
+                this.setEnabled(true);
+                if (iss) {
+                    this.setBackground(table.getSelectionBackground());
+                    this.setForeground(table.getSelectionForeground());
+                } else {
+                    this.setBackground(table.getBackground());
+                    this.setForeground(table.getForeground());
+                }
+            }
+
+            this.setFont(new Font("Dialog", Font.PLAIN, 12));
+            BindingOperationInfo p = (BindingOperationInfo)value;
+            setText(p.getName());
+            setToolTipText(null);
+            return this;
+        }
+    };
+
+    private Set bindingsList = new TreeSet(new Comparator() {
+        public int compare(Object o1, Object o2) {
+            BindingInfo p1 = (BindingInfo)o1;
+            BindingInfo p2 = (BindingInfo)o2;
+            return p1.getBindingName().compareToIgnoreCase(p2.getBindingName());
+        }
+    });
+
     {
 // GUI initializer generated by IntelliJ IDEA GUI Designer
 // !!! IMPORTANT !!!
@@ -264,7 +412,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         panel4.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel2.add(panel4, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
         final JLabel label2 = new JLabel();
-        label2.setText("Attachments:");
+        label2.setText("Input parameters (only those referring to an attachment are shown):");
         panel4.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         multipartScrollPane = new JScrollPane();
         panel4.add(multipartScrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, new Dimension(400, -1), new Dimension(400, 200), null));
