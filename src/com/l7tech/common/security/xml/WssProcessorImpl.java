@@ -152,6 +152,8 @@ public class WssProcessorImpl implements WssProcessor {
                         throw new InvalidDocumentFormatException("SecurityContextToken element found, " +
                                                                  "but its identifier was not extracted.");
                     } else {
+                        if (securityContextFinder == null)
+                            throw new ProcessorException("SecurityContextToken element found in message, but caller did not provide a SecurityContextFinder");                            
                         final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
                         SecurityContextToken secConTok = new SecurityContextToken() {
                             public SecurityContext getSecurityContext() {

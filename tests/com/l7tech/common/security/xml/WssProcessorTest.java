@@ -8,6 +8,7 @@ package com.l7tech.common.security.xml;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.server.secureconversation.SecureConversationSession;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -49,7 +50,7 @@ public class WssProcessorTest extends TestCase {
             WssProcessor.ProcessorResult result = wssProcessor.undecorateMessage(request,
                                                                                  recipientCertificate,
                                                                                  recipientPrivateKey,
-                                                                                 null);
+                                                                                 testDocument.securityContextFinder);
             assertTrue(result != null);
 
             Element[] encrypted = result.getElementsThatWereEncrypted();
@@ -104,11 +105,15 @@ public class WssProcessorTest extends TestCase {
         Document document;
         PrivateKey recipientPrivateKey;
         X509Certificate recipientCertificate;
-        TestDocument(String n, Document d, PrivateKey rpk, X509Certificate rc) {
+        WssProcessor.SecurityContextFinder securityContextFinder = null;
+        TestDocument(String n, Document d, PrivateKey rpk, X509Certificate rc,
+                     WssProcessor.SecurityContextFinder securityContextFinder)
+        {
             this.name = n;
             this.document = d;
             this.recipientPrivateKey = rpk;
             this.recipientCertificate = rc;
+            this.securityContextFinder = securityContextFinder;
         }
     }
 
@@ -121,7 +126,10 @@ public class WssProcessorTest extends TestCase {
         makeEttkTestDocument("ettk signed encrypted request", TestDocuments.ETTK_SIGNED_ENCRYPTED_REQUEST),
 
         makeDotNetTestDocument("request wrapped l7 actor", TestDocuments.WRAPED_L7ACTOR),
-        makeDotNetTestDocument("request multiple wrapped l7 actor", TestDocuments.MULTIPLE_WRAPED_L7ACTOR)
+        makeDotNetTestDocument("request multiple wrapped l7 actor", TestDocuments.MULTIPLE_WRAPED_L7ACTOR),
+
+        makeDotNetTestDocument("dotnet signed encrypted SecureConversation request", TestDocuments.DOTNET_ENCRYPTED_USING_DERIVED_KEY_TOKEN),
+        makeDotNetTestDocument("dotnet signed SecureConversation request", TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN),
     };
 
     private TestDocument makeEttkTestDocument(String testname, String docname) {
@@ -129,7 +137,8 @@ public class WssProcessorTest extends TestCase {
             Document d = TestDocuments.getTestDocument(docname);
             return new TestDocument(testname, d,
                                     TestDocuments.getEttkServerPrivateKey(),
-                                    TestDocuments.getEttkServerCertificate());
+                                    TestDocuments.getEttkServerCertificate(),
+                                    null);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -138,9 +147,20 @@ public class WssProcessorTest extends TestCase {
     private static TestDocument makeDotNetTestDocument(String testname, String docname) {
         try {
             Document d = TestDocuments.getTestDocument(docname);
+            final SecureConversationSession session = new SecureConversationSession();
+
+            // Set up a fake ws-sc session, in case this example will be needing it
+            session.setSharedSecret(TestDocuments.getDotNetSecureConversationSharedSecret());
+            WssProcessor.SecurityContextFinder dotNetSecurityContextFinder = new WssProcessor.SecurityContextFinder() {
+                public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
+                    return session;
+                }
+            };
+
             return new TestDocument(testname, d,
                                     TestDocuments.getDotNetServerPrivateKey(),
-                                    TestDocuments.getDotNetServerCertificate());
+                                    TestDocuments.getDotNetServerCertificate(),
+                                    dotNetSecurityContextFinder);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -176,7 +176,8 @@ public final class TestDocuments {
                                                     generateCertificate(new ByteArrayInputStream(certbytes)));
     }
 
-    public SecretKey getDotNetSecureConversationSharedSecret() {
+    /** @return the SecretKey used in the .NET WS-SC derived key token examples. */
+    public static SecretKey getDotNetSecureConversationSharedSecret() {
         return new SecretKey() {
             public String getAlgorithm() { return "ANY"; }
             public String getFormat() { return "RAW"; }
