@@ -14,5 +14,6 @@ package com.l7tech.policy.assertion.xmlsec;
  * Whether XML encryption is used depends on the property encryption
  */
 public class XmlResponseSecurity extends XmlSecurityAssertion {
-    public static final String XML_ENC_HEADER_NAME = "ssg_xml_encryption_session_id";
+    public static final String XML_SESSID_HEADER_NAME = "L7_Session_Id";
+    public static final String XML_NONCE_HEADER_NAME = "L7_Session_Nonce";
 }
