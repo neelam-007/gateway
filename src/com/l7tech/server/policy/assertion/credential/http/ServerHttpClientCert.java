@@ -6,37 +6,40 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.identity.User;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.identity.User;
-
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.util.logging.Level;
-import java.util.Map;
-import java.util.Collections;
-import java.io.IOException;
-
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
 import sun.security.x509.X500Name;
 
+import java.io.IOException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+
 /**
+ * The server-side processing for HTTPS with client certificates.  Note that this
+ * class is not a subclass of <code>ServerHttpCredentialSource</code> because it
+ * works at a lower level without stuff like <code>WWW-Authenticate</code> and
+ * <code>Authorization</code> headers.
+ *
  * @author alex
  * @version $Revision$
  */
-public class ServerHttpClientCert extends ServerHttpCredentialSource implements ServerAssertion {
+public class ServerHttpClientCert extends ServerCredentialSourceAssertion implements ServerAssertion {
     public ServerHttpClientCert( HttpClientCert data ) {
         super( data );
         _data = data;
     }
 
-    public PrincipalCredentials doFindCredentials( Request request, Response response ) throws CredentialFinderException {
+    public PrincipalCredentials findCredentials( Request request, Response response ) throws CredentialFinderException {
         Object param = request.getParameter( Request.PARAM_HTTP_X509CERT );
         X509Certificate clientCert = null;
 
@@ -88,19 +91,14 @@ public class ServerHttpClientCert extends ServerHttpCredentialSource implements 
         return new PrincipalCredentials( u, null, CredentialFormat.CLIENTCERT, null, clientCert );
     }
 
-    protected AssertionStatus doCheckCredentials(Request request, Response response) {
+    protected AssertionStatus checkCredentials(Request request, Response response) {
         // TODO: Do we care?
         return AssertionStatus.NONE;
     }
 
-    protected Map challengeParams(Request request, Response response) {
-        return Collections.EMPTY_MAP;
-    }
-
-    protected String scheme() {
-        return SCHEME;
+    protected void challenge(Request request, Response response) {
+        // TODO
     }
 
     protected HttpClientCert _data;
-    protected static final String SCHEME = "ClientCert";
 }
