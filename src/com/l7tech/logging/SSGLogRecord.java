@@ -112,7 +112,8 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         if (requestId != null) {
             if (!requestId.equals(theOtherOne.getStrRequestId())) return false;
         }
-        return super.equals(obj);
+        //return super.equals(obj);
+        return true;
     }
 
     public String requestId;
