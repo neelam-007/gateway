@@ -261,7 +261,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
     }
 
-    protected ServiceManager getServiceManagerAndBeginTransaction()
+    protected synchronized ServiceManager getServiceManagerAndBeginTransaction()
       throws SQLException, TransactionException {
         if (serviceManagerInstance == null) {
             initialiseServiceManager();
