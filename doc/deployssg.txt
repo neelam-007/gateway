@@ -23,7 +23,7 @@ Hostname command with the above name to set it on a running system
 Create user gateway, set the password for this user from the install kit.
 
 adduser gateway
-passwd gateway
+passwd gateway (note fla: jay, i dont think we need a passwd for that user)
 
 Check /etc/hosts. make sure first line reads 127.0.0.1 localhost localhost.localdomain
 
@@ -51,6 +51,10 @@ if not,
 Consult the reconfig documents for a post install
 
 Database:
+
+as Postgres:
+    initdb --pgdata=/var/lib/pgsql/data
+
 
 As root:
 
@@ -80,7 +84,6 @@ hibernate_unique_key, identity_provider, internal_group, internal_user, internal
 
 as Postgres:
 
-    initdb --pgdata=/var/lib/pgsql/data
 	createdb ssg
 	psql ssg -f /ssg/etc/db/postgres/ssg.sql
     psql ssg;
