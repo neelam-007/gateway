@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
@@ -82,9 +83,72 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     }
 
     private JComponent getLdapHostListPanel() {
-        JScrollPane panel = new JScrollPane(getLdapHostList());
-        panel.setMinimumSize(new Dimension(217, 40));
-        return panel;
+        JPanel output = new JPanel();
+        output.setLayout(new BorderLayout());
+        JScrollPane listpanel = new JScrollPane(getLdapHostList());
+        listpanel.setMinimumSize(new Dimension(217, 40));
+        output.add(listpanel, BorderLayout.CENTER);
+        JPanel buttonPanel = new JPanel();
+        GridLayout btlyt = new GridLayout(2, 1);
+        buttonPanel.setLayout(btlyt);
+        buttonPanel.add(getUpButton());
+        buttonPanel.add(getDownButton());
+        output.add(buttonPanel, BorderLayout.EAST);
+        return output;
+    }
+
+    private JButton getUpButton() {
+        if (upbutton == null) {
+            upbutton = new JButton(new ArrowIcon(ArrowIcon.UP)) {
+                int fixedsize = ArrowIcon.DEFAULT_SIZE+6;
+                public Dimension getSize() {
+                    return new Dimension(fixedsize, fixedsize);
+                }
+                public void setSize(Dimension d) {
+                    super.setSize(new Dimension(fixedsize, fixedsize));
+                }
+                public void setBounds(int x, int y, int width, int height) {
+                    if (height > fixedsize && y > height) {
+                        y += height - fixedsize;
+                    }
+                    super.setBounds(x, y, fixedsize, fixedsize);
+                }
+            };
+            upbutton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    // todo
+                    System.out.println("TODO UP");
+                }
+            });
+        }
+        return upbutton;
+    }
+
+    private JButton getDownButton() {
+        if (downbutton == null) {
+            downbutton = new JButton(new ArrowIcon(ArrowIcon.DOWN)) {
+                int fixedsize = ArrowIcon.DEFAULT_SIZE+6;
+                public Dimension getSize() {
+                    return new Dimension(fixedsize, fixedsize);
+                }
+                public void setSize(Dimension d) {
+                    super.setSize(new Dimension(fixedsize, fixedsize));
+                }
+                public void setBounds(int x, int y, int width, int height) {
+                    if (height > fixedsize && y > 0) {
+                        y += height - fixedsize;
+                    }
+                    super.setBounds(x, y, fixedsize, fixedsize);
+                }
+            };
+            downbutton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    // todo
+                    System.out.println("TODO DOWN");
+                }
+            });
+        }
+        return downbutton;
     }
 
     private JButton getAddButton() {
@@ -226,6 +290,13 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         return typePanel;
     }
 
+    private JPanel getAddRemoveButtons() {
+        JPanel output = new JPanel(new BorderLayout());
+        output.add(getAddButton(), BorderLayout.WEST);
+        output.add(getRemoveButton(), BorderLayout.EAST);
+        return output;
+    }
+
     private JPanel getConfigPanel() {
         if( configPanel != null)  return configPanel;
 
@@ -278,7 +349,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.insets = new Insets(12, 12, 0, 0);
         configPanel.add(ldapHostLabel, constraints);
 
-        /*// ldap host text field
+        // ldap host text field
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = rowIndex++;
@@ -287,42 +358,18 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 7, 0, 11);
-        configPanel.add(getLdapHostTextField(), constraints);*/
-
-        // ldap host text field
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = rowIndex;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 7, 0, 11);
         configPanel.add(getLdapHostListPanel(), constraints);
 
-        // add button
+        // add, remove buttons
         constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = rowIndex;
+        constraints.gridx = 1;
+        constraints.gridy = rowIndex++;
         constraints.weightx = 0.0;
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.SOUTHWEST;
-        constraints.insets = new Insets(12, 7, 0, 0);
-        configPanel.add(getAddButton(), constraints);
-
-        // remove button
-        constraints = new GridBagConstraints();
-        constraints.gridx = 3;
-        constraints.gridy = rowIndex;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.SOUTHWEST;
-        constraints.insets = new Insets(12, 7, 0, 0);
-        configPanel.add(getRemoveButton(), constraints);
-
-        rowIndex++;
+        constraints.insets = new Insets(0, 7, 0, 0);
+        configPanel.add(getAddRemoveButtons(), constraints);
 
         // search base label
         JLabel ldapSearchBaseLabel = new JLabel();
@@ -661,4 +708,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JList ldapUrlList = null;
     private JButton addButt;
     private JButton removeButt;
+    private JButton upbutton;
+    private JButton downbutton;
 }

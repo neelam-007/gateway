@@ -15,7 +15,7 @@ public class ArrowIcon implements Icon {
     public static final int UP = 0;         // direction
     public static final int DOWN = 1;
 
-    private static final int DEFAULT_SIZE = 11;
+    public static final int DEFAULT_SIZE = 11;
 
     private Color edge1;
     private Color edge2;
