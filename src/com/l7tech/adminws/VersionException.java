@@ -15,6 +15,10 @@ public class VersionException extends Exception {
         this(message, null, null);
     }
 
+    public VersionException(Throwable cause) {
+        super(cause);
+    }
+
     /**
      * Constructor using a message and a the expected version.
      */
