@@ -9,6 +9,7 @@ package com.l7tech.policy.wsp;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -682,6 +683,7 @@ class WspConstants {
         new AssertionMapping(new SamlSecurity(), "SamlSecurity"),
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
+        new AssertionMapping(new XslTransformation(), "XslTransformation"),
 
         // Special types
         new BeanTypeMapping(ElementSecurity.class, "elementSecurityValue"),
