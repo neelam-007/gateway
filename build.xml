@@ -47,9 +47,11 @@
                 * classes  do not like xerces so excluded it from project
                 * classpath.
                 * It is not throughly tested to see if this breaks other things.
-              -->
+
+            fla note: xercesImpl.jar and xml-apis.jar are required by xss4j for xml-enc features.
             <exclude name="*xerces*"/>
             <exclude name="*xml-api*"/>
+            -->
         </fileset>
         <fileset dir="lib">
             <include name="*.zip"/>
