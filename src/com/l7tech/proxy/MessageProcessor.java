@@ -139,8 +139,7 @@ public class MessageProcessor {
                     return processMessage(pendingRequest);
                 }
                 if (policyUrlHeader == null)
-                    throw new ConfigurationException("SSG "); // TODO: show "invalid logon" dialog if gui
-
+                    Managers.getCredentialManager().notifyInvalidCredentials(ssg);
             }
 
             SOAPEnvelope response = new SOAPEnvelope(postMethod.getResponseBodyAsStream());
