@@ -6,26 +6,21 @@
 
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
-import com.l7tech.service.ServiceManagerImp;
-import com.l7tech.service.ServiceManager;
-import com.l7tech.common.util.Locator;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.HibernatePersistenceContext;
+import com.l7tech.objectmodel.PersistenceContext;
+import net.sf.hibernate.Session;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-import java.sql.SQLException;
-import java.io.Writer;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.logging.Logger;
+import java.io.Writer;
 import java.util.logging.Level;
-
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -70,7 +65,12 @@ public class PingServlet extends HttpServlet {
         out.write( title );
         out.write( "</title></head>\n<body>\n<h1>" );
         out.write( message );
-        out.write( "</h1>\n</body>\n</html>\n" );
+        out.write( "</h1>\n");
+        out.write( "<hr/>\n" );
+        out.write( "<i><font size=\"-2\">" );
+        out.write( BuildInfo.getLongBuildString() );
+        out.write( "</font></i>\n</body>\n" );
+        out.write("</html>\n" );
     }
 
     public static final String OK_TITLE = "OK";
