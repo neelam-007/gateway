@@ -34,33 +34,43 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
      * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      */
     public AssertionStatus checkUser(User requestingUser) {
-        if (specificUser == null || requiredLogin == null || requiredUid == null ) {
-            String msg = "null assertion or SpecificUser has null login and uid.";
+
+        // The login and the uid can't both be null
+        if (requiredLogin == null && requiredUid == null) {
+            String msg = "This assertion is not configured properly. The login and uid can't both be null.";
             logger.warning(msg);
             return AssertionStatus.SERVER_ERROR;
         }
 
-        // check provider id and user login (start with provider as it's cheaper)
         long requestProvider = requestingUser.getProviderId();
         String requestUid = requestingUser.getUniqueIdentifier();
         String requestLogin = requestingUser.getLogin();
 
-        if (requestProvider == requiredProvider) {
-            // Check uid first if present
-            if ( requiredUid == null || requiredUid.equals(requestUid) ) {
-                // They can't both be null (already checked) so this is safe
-                if ( requiredLogin == null || requiredLogin.equals(requestLogin) ) {
-                    logger.finest("Match successful");
-                    return AssertionStatus.NONE;
-                } else logger.fine("Authentication failed because login did not match " +
-                                   "(" + requestLogin + " instead of " + requiredLogin + ").");
-            } else logger.fine("Authentication failed because object id did not match " +
-                               "(" + requestUid + " instead of " + requiredUid + ").");
-        } else {
+        // provider must always match
+        if (requestProvider != requiredProvider) {
             logger.fine("Authentication failed because providers id did not " +
                         "match (" + requestProvider + " instead of " + requiredProvider + ").");
+            return AssertionStatus.AUTH_FAILED;
         }
-        return AssertionStatus.AUTH_FAILED;
+
+        // uid only needs to match if it's set as part of the assertion
+        if (requiredUid != null) {
+            if (!requiredUid.equals(requestUid)) {
+                logger.fine("Authentication failed because the uid does not match.");
+                return AssertionStatus.AUTH_FAILED;
+            }
+        }
+
+        // login only needs to match if it's set as part of the assertion
+        if (requiredLogin != null) {
+            if (!requiredLogin.equals(requestLogin)) {
+                logger.fine("Authentication failed because the login does not match.");
+                return AssertionStatus.AUTH_FAILED;
+            }
+        }
+
+        logger.fine("Match successful");
+        return AssertionStatus.NONE;
     }
 
     protected SpecificUser specificUser;
