@@ -165,16 +165,26 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         int port = req.getServerPort();
         if (port == 8443) port = 8080;
         else if (port == 443) port = 80;
-        URL ssgurl = new URL("http" + "://" + req.getServerName() + ":" + port + SOAP_PROCESSING_SERVLET_URI + "?" + PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));        
+        URL ssgurl = new URL("http" + "://" + req.getServerName() + ":" + port + SOAP_PROCESSING_SERVLET_URI + "?" + PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));
         output.setPortUrl(output.getSoapPort(), ssgurl);
 
         // output the wsdl
         res.setContentType("text/xml; charset=utf-8");
-        res.getOutputStream().println(output.toString());
+        try {
+            output.toOutputStream(res.getOutputStream());
+        } catch (WSDLException e) {
+            logger.log(Level.SEVERE, "error outputing wsdl", e);
+            throw new IOException(e.getMessage());
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "error outputing wsdl", e);
+            throw new IOException(e.getMessage());
+        }
     }
 
-    private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection services) {
-        String output = createWSILDoc(services, req.getServerName(), req.getProtocol(), Integer.toString(req.getServerPort()), req.getRequestURI());
+    private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection services) throws IOException {
+        String output = createWSILDoc(services, req.getServerName(), Integer.toString(req.getServerPort()), req.getRequestURI());
+        res.setContentType("text/xml; charset=utf-8");
+        res.getOutputStream().println(output);
     }
 
     private Collection listAnonymouslyViewableServices() throws TransactionException, IOException, FindException {
@@ -266,7 +276,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
 
-    private String createWSILDoc(Collection services, String host, String protocol, String port, String uri) {
+    private String createWSILDoc(Collection services, String host, String port, String uri) {
         /*  Format of document:
             <?xml version="1.0"?>
             <inspection xmlns="http://schemas.xmlsoap.org/ws/2001/10/inspection/">
@@ -276,6 +286,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
               </service>
             </inspection>
         */
+        String protocol = "http";
+        if (port.equals("8443") || port.equals("443")) protocol = "https";
         StringBuffer outDoc = new StringBuffer("<?xml version=\"1.0\"?>\n" +
                         "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\">\n");
         // for each service
