@@ -74,7 +74,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
             request.setPrincipalCredentials(new LoginCredentials(certCN,
                                                                  null,
                                                                  CredentialFormat.CLIENTCERT,
-                                                                 getClass(),
+                                                                 subject.getClass(),
                                                                  null,
                                                                  gotACertAlready));
             logger.fine("Cert loaded as principal credential for CN:" + certCN);

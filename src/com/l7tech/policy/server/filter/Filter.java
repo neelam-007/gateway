@@ -80,5 +80,5 @@ public abstract class Filter {
         parent.setChildren(new LinkedList());
     }
 
-    protected final Logger logger = Logger.getLogger(getClass().getName());
+    protected static final Logger logger = Logger.getLogger(Filter.class.getName());
 }

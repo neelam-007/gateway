@@ -70,7 +70,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
     }
 
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
-        if ( pc.getFormat() == CredentialFormat.CLIENTCERT_X509_ASN1_DER ) {
+        if ( pc.getFormat() == CredentialFormat.CLIENTCERT ) {
             if ( !config.isX509Supported() ) throw new AuthenticationException("This identity provider is not configured to support X.509 credentials");
             final X509Config x509Config = config.getX509Config();
 

@@ -10,11 +10,11 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.server.identity.IdentityProviderFactory;
 
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * If there is at least one identity assertion, and the user does not "pass" any of them, the result will be null
@@ -100,8 +100,20 @@ public class IdentityRule extends Filter {
     }
 
     public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user) throws FilteringException {
+        try {
+            IdentityProvider provider = IdentityProviderFactory.getProvider(idassertion.getIdentityProviderOid());
+            if (provider == null) {
+                logger.log(Level.WARNING, MISSING_PROVIDER_MESSAGE);
+                return false;
+            }
+            // TODO support federated credentials in policy servlet
+            if (provider.getConfig().type() == IdentityProviderType.FEDERATED) return true;
+        } catch ( FindException e ) {
+            logger.log( Level.WARNING, MISSING_PROVIDER_MESSAGE, e );
+            return false;
+        }
+
         if (user == null) return false;
-        Logger logger = Logger.getLogger(IdentityRule.class.getName());
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
             SpecificUser userass = (SpecificUser)idassertion;
@@ -152,4 +164,5 @@ public class IdentityRule extends Filter {
     private User requestor = null;
     private boolean anIdentityAssertionWasFound = false;
     private boolean userPassedAtLeastOneIdentityAssertion = false;
+    private static final String MISSING_PROVIDER_MESSAGE = "Identity assertion refers to a nonexistent identity provider";
 }

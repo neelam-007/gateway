@@ -15,8 +15,10 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.identity.IdProvConfManagerServer;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.service.PublishedService;
@@ -279,6 +281,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         Assertion rootassertion = WspReader.parse(policy.getPolicyXml());
 
         Iterator it = rootassertion.preorderIterator();
+        boolean allIdentitiesAreFederated = true;
         while (it.hasNext()) {
             Assertion a = (Assertion)it.next();
             if (a instanceof CustomAssertionHolder) {
@@ -286,8 +289,29 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 if (Category.ACCESS_CONTROL.equals(ca.getCategory())) {
                     return true;
                 }
+            } else if (a instanceof IdentityAssertion) {
+                IdentityAssertion ia = (IdentityAssertion)a;
+                final String msg = "Policy refers to a nonexistent identity provider";
+                try {
+                    IdentityProvider provider = IdentityProviderFactory.getProvider(ia.getIdentityProviderOid());
+                    if ( provider == null ) {
+                        logger.warning(msg);
+                        return false;
+                    }
+                    if ( provider.getConfig().type() != IdentityProviderType.FEDERATED ) allIdentitiesAreFederated = false;
+                } catch ( FindException e ) {
+                    logger.warning(msg);
+                    return false;
+                }
             }
         }
+
+        if ( allIdentitiesAreFederated ) {
+            // TODO support federated credentials in PolicyServlet
+            logger.info("All IdentityAssertions point to a Federated IDP. Treating as anonymous");
+            return true;
+        }
+
         if (findCredentialAssertion(rootassertion) != null) {
             logger.info("Policy does not allow anonymous requests.");
             return false;

@@ -32,7 +32,6 @@ public class CredentialFormat {
      * The credentials are a client's certificate
      */
     public static final CredentialFormat CLIENTCERT = new CredentialFormat( "Client Certificate", true );
-    public static final CredentialFormat CLIENTCERT_X509_ASN1_DER = new CredentialFormat( "ASN.1 DER-encoded X.509 Client Certificate", true );
 
     /**
      * Credentials are a SAML token.  It might have a reference to an X.509 cert as well.

@@ -88,5 +88,6 @@ public class FederatedUserManager extends PersistentUserManager {
     }
 
     private final String FIND_BY_DN = "FROM " + getTableName() + " IN CLASS " + getImpClass() +
-                                      " WHERE providerOid = ? AND subjectDn = ?";
+                                      " WHERE " + getTableName() + ".providerId = ? " +
+                                      "AND " + getTableName() + ".subjectDn = ?";
 }

@@ -102,7 +102,8 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
             return null;
 
         try {
-            return new LoginCredentials( userName, digestResponse.getBytes( ENCODING ), CredentialFormat.DIGEST, getClass(), realmName, authParams );
+            return new LoginCredentials( userName, digestResponse.getBytes( ENCODING ),
+                                         CredentialFormat.DIGEST, _data.getClass(), realmName, authParams );
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException( e );
         }
