@@ -1,9 +1,8 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.console.action.IdentityPolicyAction;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 import java.util.ArrayList;
