@@ -15,10 +15,10 @@ package com.l7tech.proxy.datamodel;
  * Time: 4:34:22 PM
  */
 public class ClientSidePolicy {
-    public static final String PROPERTY_ALLOWPLAINTEXT = "com.l7tech.proxy.allowPlaintextPassword";
+    public static final String PROPERTY_DISALLOWPLAINTEXT = "com.l7tech.proxy.disallowPlaintextPassword";
 
     private static class Defaults {
-        private static boolean plaintextAuthAllowed = Boolean.getBoolean(PROPERTY_ALLOWPLAINTEXT);
+        private static boolean plaintextAuthDisallowed = Boolean.getBoolean(PROPERTY_DISALLOWPLAINTEXT);
     }
 
     private ClientSidePolicy() {
@@ -29,6 +29,6 @@ public class ClientSidePolicy {
     }
 
     public boolean isPlaintextAuthAllowed() {
-        return Defaults.plaintextAuthAllowed;
+        return !Defaults.plaintextAuthDisallowed;
     }
 }
