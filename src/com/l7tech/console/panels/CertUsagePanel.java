@@ -167,7 +167,27 @@ public class CertUsagePanel extends WizardStepPanel {
      * @return  String  The descritpion of the step.
      */
     public String getDescription() {
-        return currentDescription;
+        //return currentDescription;
+        return "Select one or more certificate usage options:\n" +
+                "\n" +
+                "Outbound SSL Connections: Using HTTPS, the SecureSpan Gateway can connect to \n" +
+                "protected Web services hosted on SSL servers that use this certificate. If a \n" +
+                "Web service's SSL uses a self-signed certificate, then that certificate must \n" +
+                "be imported with this option.\n" +
+                "\n" +
+                "Signing Certificates for Outbound SSL Connections: Using HTTPS, the \n" +
+                "SecureSpan Gateway can connect to protected Web services hosted on SSL servers \n" +
+                "whose certificates were signed by this certificate authority. If several \n" +
+                "protected Web services' SSL server certificates are signed using an in-house \n" +
+                "certificate authority, then the SecureSpan Gateway can connect to all of them \n" +
+                "if the certificate authority's certificate is imported with this option.\n" +
+                "\n" +
+                "Signing Client Certificates: A Federated Identity Provider can be configured \n" +
+                "to authorize identities whose X.509 certificates were signed by this \n" +
+                "certificate authority certificate.\n" +
+                "\n" +
+                "Signing SAML Tokens: A Federated Identity Provider can be configured to \n" +
+                "authorize identities whose SAML Tokens were signed by this certificate.";
     }
 
      /**
