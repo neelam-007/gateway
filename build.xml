@@ -514,6 +514,7 @@
                 <include name="com/l7tech/service/ServiceAdmin.class"/>
                 <include name="com/l7tech/service/PublishedService.class"/>
                 <include name="com/l7tech/service/ServiceStatistics.class"/>
+                <include name="com/l7tech/service/ResolutionParameterTooLongException.class"/>
             </fileset>
         </jar>
     </target>
