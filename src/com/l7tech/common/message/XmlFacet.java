@@ -58,6 +58,7 @@ class XmlFacet extends MessageFacet {
         return super.getKnob(c);
     }
 
+    /** Wraps the existing MimeKnob to add the abilitiy to keep the first part in sync with the XML Document. */
     private class MimeKnobWrapper implements MimeKnob {
         private final MimeKnob mk;
 
