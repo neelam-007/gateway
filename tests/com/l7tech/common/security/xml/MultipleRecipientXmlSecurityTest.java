@@ -16,6 +16,7 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
@@ -48,13 +49,31 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
 
     public void testBodySignedForTwoRecipients() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        Element body = SoapUtil.getBodyElement(doc);
         logger.info("Original document:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
         DecorationRequirements req = defaultDecorationRequirements(doc);
         WssDecorator decorator = new WssDecoratorImpl();
         decorator.decorateMessage(doc, req);
         req = otherDecorationRequirements(doc, "downstream");
         decorator.decorateMessage(doc, req);
-        logger.info("Original document:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+        logger.info("Document signed for two recipients:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+        WssProcessor processor = new WssProcessorImpl();
+        ProcessorResult res = processor.undecorateMessage(doc,
+                                                          TestDocuments.getDotNetServerCertificate(),
+                                                          TestDocuments.getDotNetServerPrivateKey(),
+                                                          null);
+
+        SignedElement[] signed = res.getElementsThatWereSigned();
+        boolean recognizedbody = false;
+        for (int i = 0; i < signed.length; i++) {
+            SignedElement signedElement = signed[i];
+            if (signedElement.asElement().getLocalName().equals(body.getLocalName())) {
+                recognizedbody = true;
+                break;
+            }
+        }
+        assertTrue("The body was signed", recognizedbody);
+        logger.info("Document once processed:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
     }
 
     private DecorationRequirements defaultDecorationRequirements(Document doc) throws Exception {

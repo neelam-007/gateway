@@ -234,6 +234,11 @@ public class WssProcessorImpl implements WssProcessor {
         Element soapHeader = (Element) cntx.releventSecurityHeader.getParentNode();
         soapHeader.removeChild(cntx.releventSecurityHeader);
 
+        /*
+        This is no longer done, if a security header needs to be promoted, it needs to be described in the routing
+        assertion
+
+        
         // if there were other security headers and one with a special actor set by the Bridge, we
         // want to change the actor here to set it back to default value
         // in the case of multiple wrapped actors, the one with the higest value must be stripped
@@ -263,7 +268,7 @@ public class WssProcessorImpl implements WssProcessor {
         if (secHeaderDeservingPromotion != null) {
             logger.finer("Unwraping wrapped security header");
             secHeaderDeservingPromotion.removeAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
-        }
+        }*/
 
         // If our work has left behind an empty SOAP Header, remove it too
         if (XmlUtil.elementIsEmpty(soapHeader))
