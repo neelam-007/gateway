@@ -185,8 +185,17 @@ public class SsgFinderImpl implements SsgFinder {
      */
     public Ssg getSsgByHostname(String hostname) throws SsgNotFoundException {
         Ssg ssg = (Ssg) hostCache.get(hostname);
-        if (ssg == null)
+        if (ssg == null) {
+            // on cache miss, do complete search before giving up
+            for (Iterator i = ssgs.iterator(); i.hasNext();) {
+                ssg = (Ssg) i.next();
+                if (hostname == ssg.getSsgAddress() || (hostname != null && hostname.equals(ssg.getSsgAddress()))) {
+                    hostCache.put(ssg.getSsgAddress(), ssg);
+                    return ssg;
+                }
+            }
             throw new SsgNotFoundException("No SSG was found with the specified hostname.");
+        }
         return ssg;
     }
 
