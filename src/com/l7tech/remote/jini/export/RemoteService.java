@@ -1,8 +1,8 @@
 package com.l7tech.remote.jini.export;
 
-import com.sun.jini.start.LifeCycle;
 import com.l7tech.identity.Group;
-import com.l7tech.common.util.UnauthorizedAdminOperation;
+import com.l7tech.server.Authorizer;
+import com.sun.jini.start.LifeCycle;
 import net.jini.config.Configuration;
 import net.jini.config.ConfigurationException;
 import net.jini.config.ConfigurationProvider;
@@ -15,15 +15,17 @@ import net.jini.export.ProxyAccessor;
 import net.jini.export.ServerContext;
 import net.jini.id.Uuid;
 import net.jini.id.UuidFactory;
+import net.jini.io.context.ClientSubject;
 import net.jini.jeri.BasicILFactory;
 import net.jini.jeri.BasicJeriExporter;
 import net.jini.jeri.tcp.TcpServerEndpoint;
 import net.jini.lookup.JoinManager;
-import net.jini.io.context.ClientSubject;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.rmi.Remote;
 import java.rmi.server.ServerNotActiveException;
+import java.security.AccessControlException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -185,12 +187,15 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
      */
     protected boolean isUserInRole(String[] roles) {
         try {
-            //todo: finish implementation
-            ClientSubject subject = (ClientSubject)ServerContext.getServerContextElement(ClientSubject.class);
-//            if (subject == null) {
-//                return false;
-//            }
-            return true;
+            ClientSubject clientSubject = (ClientSubject)ServerContext.getServerContextElement(ClientSubject.class);
+            if (clientSubject == null) {
+                return false;
+            }
+            Subject subject = clientSubject.getClientSubject();
+            if (subject == null) {
+                return false;
+            }
+            return Authorizer.getAuthorizer().isSubjectInRole(subject, roles);
         } catch (ServerNotActiveException e) {
             throw new RuntimeException(e);
         }
@@ -198,12 +203,13 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
 
     /**
      * Makes sure that current subject has full write admin role.
-     * @throws UnauthorizedAdminOperation if not the case
+     *
+     * @throws AccessControlException if not the case
      */
-    protected void enforceAdminRole() throws UnauthorizedAdminOperation{
+    protected void enforceAdminRole() throws AccessControlException {
         if (!isUserInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
-            throw new UnauthorizedAdminOperation("Must be member of " + Group.ADMIN_GROUP_NAME +
-                                                 " to perform this operation.");
+            throw new AccessControlException("Must be member of " + Group.ADMIN_GROUP_NAME +
+              " to perform this operation.");
         }
     }
 }

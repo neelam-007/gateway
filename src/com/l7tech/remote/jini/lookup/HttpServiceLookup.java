@@ -1,6 +1,7 @@
 package com.l7tech.remote.jini.lookup;
 
 import com.l7tech.console.util.Preferences;
+import com.l7tech.identity.User;
 import net.jini.config.ConfigurationException;
 import net.jini.core.lookup.ServiceMatches;
 import net.jini.core.lookup.ServiceRegistrar;
@@ -18,7 +19,6 @@ import java.io.ObjectInputStream;
 import java.rmi.ServerException;
 import java.security.AccessController;
 import java.security.GeneralSecurityException;
-import java.security.Principal;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -128,11 +128,11 @@ public class HttpServiceLookup extends ServiceLookup {
                     if (oi != null) oi.close();
                 }
             case 401:
-                throw new FailedLoginException("Invoke '"+registrarUrl+"' returned remote error ("+status+")");
+                throw new FailedLoginException("Invoke '" + registrarUrl + "' returned remote error (" + status + ")");
             case 500:
-                throw new ServerException("Invoke '"+registrarUrl+"' returned remote error ("+status+")");
+                throw new ServerException("Invoke '" + registrarUrl + "' returned remote error (" + status + ")");
             default:
-                throw new IOException("Invoke '"+registrarUrl+"' returned remote error ("+status+")");
+                throw new IOException("Invoke '" + registrarUrl + "' returned remote error (" + status + ")");
         }
     }
 
@@ -148,9 +148,9 @@ public class HttpServiceLookup extends ServiceLookup {
             return;
         }
 
-        Iterator i = subject.getPrincipals().iterator();
+        Iterator i = subject.getPrincipals(User.class).iterator();
 
-        String login = i.hasNext() ? ((Principal)i.next()).getName() : "";
+        String login = i.hasNext() ? ((User)i.next()).getLogin() : "";
         i = subject.getPrivateCredentials().iterator();
         String password = (i.hasNext() ? (new String((char[])i.next())) : "");
 

@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 
 /**
  * For SSM-side admin session management.
- *
+ * <p/>
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
@@ -31,7 +31,7 @@ public abstract class ClientCredentialManager implements ConnectionListener {
      * @see com.l7tech.console.security.ClientCredentialManagerImpl
      */
     public abstract void login(PasswordAuthentication creds)
-            throws LoginException, VersionException, RemoteException;
+      throws LoginException, VersionException, RemoteException;
 
 
     /**
@@ -52,6 +52,7 @@ public abstract class ClientCredentialManager implements ConnectionListener {
 
     /**
      * Subclasses update the credentials using this method.
+     *
      * @param pa the username/password instance
      */
     protected final void setCredentials(PasswordAuthentication pa) {
@@ -63,7 +64,7 @@ public abstract class ClientCredentialManager implements ConnectionListener {
             }
             subject.getPrincipals().clear();
             final UserBean u = new UserBean();
-            u.setName(pa.getUserName());
+            u.setLogin(pa.getUserName());
             subject.getPrincipals().add(u);
             subject.getPrivateCredentials().clear();
             subject.getPrivateCredentials().add(pa.getPassword());
@@ -72,12 +73,14 @@ public abstract class ClientCredentialManager implements ConnectionListener {
 
     /**
      * Invoked on connection event (empty implementation)
+     *
      * @param e describing the connection event
      */
     public void onConnect(ConnectionEvent e) {}
 
     /**
      * Invoked on disconnect (empty implementation)
+     *
      * @param e describing the dosconnect event
      */
     public void onDisconnect(ConnectionEvent e) {}
