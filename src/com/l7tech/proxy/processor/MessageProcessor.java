@@ -326,8 +326,7 @@ public class MessageProcessor {
                 } catch (MalformedURLException e) {
                     throw new ConfigurationException("The Ssg sent us an invalid Policy URL.");
                 }
-                postMethod.releaseConnection(); // free up our thread's HTTP client
-                postMethod = null;
+
                 policyManager.updatePolicy(req, policyUrl);
                 req.setPolicyUpdated(true);
                 if (status != 200) {
