@@ -39,13 +39,15 @@ fi
 KEYTOOL="$JAVA_HOME/bin/keytool"
 KEYSTORE_DIR="$TOMCAT_HOME/kstores"
 KEYSTORE_DIR_OSPATH="$TOMCAT_HOME_OSPATH/kstores"
-KEYSTORE_FILE="$KEYSTORE_DIR/tomcatSsl"
-KEYSTORE_FILE_OSPATH="$KEYSTORE_DIR_OSPATH/tomcatSsl"
-CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssg.cer"
-CERTIFICATE_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ssg.cer"
-CSR_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/tomcatSsl.csr"
+KEYSTORE_FILE="$KEYSTORE_DIR/ssl.ks"
+KEYSTORE_FILE_OSPATH="$KEYSTORE_DIR_OSPATH/ssl.ks"
+CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssl_self.cer"
+CERTIFICATE_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ssl_self.cer"
+CSR_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ssl.csr"
 SERVER_XML_FILE="$TOMCAT_HOME/conf/server.xml"
-
+WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
+WEBAPPS_PATH="$TOMCAT_HOME/webapps"
+KEYSTORE_PROPERTIES_FILE="$TOMCAT_HOME/webapps/ROOT/WEB-INF/classes/keystore.properties"
 
 # VERIFY THAT THE TOMCAT_HOME VARIABLE IS SET
 if [ ! "$TOMCAT_HOME" ]; then
@@ -110,12 +112,32 @@ then
         # GENERATE A LOCAL CERTIFICATE SIGNING REQUEST
         $KEYTOOL -certreq -keyalg RSA -alias tomcat -file "$CSR_FILE_OSPATH" -keystore "$KEYSTORE_FILE_OSPATH" -storepass "$KEYSTORE_PASSWORD"
 
-        # SIGN THE SSL CERT WITH ROOT KEY
-        # TODO
-
         # EDIT THE server.xml file so that the magic value "__FunkySsgMojo__" is replaced by the actual password
+        echo "recording the password in tomcat's server.xml"
         perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ "$SERVER_XML_FILE"
 
+        # RECORD THE PASSWORD IN KEYSTORE.PROPERTIES
+        echo "recording the password in properties file"
+        # IF THE WAR FILE IS PRESENT BUT NOT YET EXPANDED, EXPAND IT
+        if [ -e "$KEYSTORE_PROPERTIES_FILE" ]; then
+                echo
+        else
+                echo "expanding the war file so that properties can be updated with kstore password"
+                unzip $WAR_FILE -d $WEBAPPS_PATH/ROOT
+        fi
+
+        if [ -e "$KEYSTORE_PROPERTIES_FILE" ]; then
+                echo "Recording the keystore password"
+                SUBSTITUTE_FROM=sslkspasswd=.*
+                SUBSTITUTE_TO=sslkspasswd=${KEYSTORE_PASSWORD}
+                perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$KEYSTORE_PROPERTIES_FILE"
+                echo "Recording the location of the root cert"
+        else
+        # INFORM THE USER OF THE FAILURE
+                echo "ERROR"
+                echo "The keystore password was not recorded because the properties file was not found."
+                echo "This should be done manually"
+        fi
 else
         # INFORM THE USER OF THE FAILURE
         echo "ERROR: The keystore file was not generated"
