@@ -64,15 +64,25 @@ public class SavePolicyAction extends SecureAction {
             throw new IllegalStateException("no node specified");
         }
         try {
+            Assertion rootAssertion = ((AssertionTreeNode)node.getRoot()).asAssertion();
+            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            WspWriter.writePolicy(rootAssertion, bo);
+            performAction(bo.toString());
+        } catch (Exception e) {
+            throw new RuntimeException("Error saving service and policy",e);
+        }
+    }
+
+    protected void performAction(String xml) {
+        if (node == null) {
+            throw new IllegalStateException("no node specified");
+        }
+        try {
             ServiceNode sn = getServiceNodeCookie();
             if (sn == null)
                 throw new IllegalArgumentException("No edited service specified");
             PublishedService svc = sn.getPublishedService();
-
-            Assertion rootAssertion = ((AssertionTreeNode)node.getRoot()).asAssertion();
-            ByteArrayOutputStream bo = new ByteArrayOutputStream();
-            WspWriter.writePolicy(rootAssertion, bo);
-            svc.setPolicyXml(bo.toString());
+            svc.setPolicyXml(xml);
             Registry.getDefault().getServiceManager().savePublishedService(svc);
             sn.clearServiceHolder();
         } catch (Exception e) {

@@ -395,15 +395,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             });
 
-            ba.addActionListener(new ActionListener() {
-                /**
-                 * Invoked when an action occurs.
-                 */
-                public void actionPerformed(ActionEvent e) {
-                    validatePolicy();
-                }
-            });
-
             buttonValidate = new JButton(getServerValidateAction());
             this.add(buttonValidate);
 
@@ -463,30 +454,47 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return validateAction;
     }
 
+    /**
+
+     * @return the policy xml that was validated
+     */
+    private String fullValidate() {
+        PolicyValidatorResult result = PolicyValidator.getDefault().
+                                            validate(rootAssertion.asAssertion());
+        String policyXml = null;
+        try {
+            policyXml = WspWriter.getPolicyXml(rootAssertion.asAssertion());
+            PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
+                                                validatePolicy(policyXml);
+            if (result2.getErrorCount() > 0) {
+                for (Iterator i = result2.getErrors().iterator(); i.hasNext();) {
+                    result.addError((com.l7tech.policy.PolicyValidatorResult.Error)i.next());
+                }
+            }
+            if (result2.getWarningCount() > 0) {
+                for (Iterator i = result2.getWarnings().iterator(); i.hasNext();) {
+                    result.addWarning((com.l7tech.policy.PolicyValidatorResult.Warning)i.next());
+                }
+            }
+        } catch (RemoteException e) {
+            log.log(Level.WARNING, "Problem running server side validation", e);
+        }
+        displayPolicyValidateResult(pruneDuplicates(result));
+        return policyXml;
+    }
+
     public Action getServerValidateAction() {
         if (serverValidateAction == null) {
             serverValidateAction = new ValidatePolicyAction() {
                 protected void performAction() {
-                    PolicyValidatorResult result = PolicyValidator.getDefault().
-                                                        validate(rootAssertion.asAssertion());
-                    try {
-                        String policyXml = WspWriter.getPolicyXml(rootAssertion.asAssertion());
-                        PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
-                                                            validatePolicy(policyXml);
-                        if (result2.getErrorCount() > 0) {
-                            for (Iterator i = result2.getErrors().iterator(); i.hasNext();) {
-                                result.addError((com.l7tech.policy.PolicyValidatorResult.Error)i.next());
-                            }
+                    if (!validating) {
+                        try {
+                            validating = true;
+                            fullValidate();
+                        } finally {
+                            validating = false;
                         }
-                        if (result2.getWarningCount() > 0) {
-                            for (Iterator i = result2.getWarnings().iterator(); i.hasNext();) {
-                                result.addWarning((com.l7tech.policy.PolicyValidatorResult.Warning)i.next());
-                            }
-                        }
-                    } catch (RemoteException e) {
-                        log.log(Level.WARNING, "Problem running server side validation", e);
                     }
-                    displayPolicyValidateResult(pruneDuplicates(result));
                 }
             };
         }
@@ -798,8 +806,17 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (saveAction == null) {
             saveAction = new SavePolicyAction() {
                 protected void performAction() {
-                    this.node = rootAssertion;
-                    super.performAction();
+                    // fla, bugzilla 1094. all saves are now preceeded by a validation action
+                    if (!validating) {
+                        try {
+                            validating = true;
+                            String xml = fullValidate();
+                            this.node = rootAssertion;
+                            super.performAction(xml);
+                        } finally {
+                            validating = false;
+                        }
+                    }
                 }
             };
         }
