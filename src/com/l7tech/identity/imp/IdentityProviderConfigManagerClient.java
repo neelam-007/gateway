@@ -8,8 +8,12 @@ import com.l7tech.adminws.identity.IdentityServiceLocator;
 import com.l7tech.adminws.translation.TypeTranslator;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.DeleteException;
 
 import java.util.Collection;
+import java.rmi.RemoteException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -21,87 +25,74 @@ import java.util.Collection;
  * through the admin web service.
  */
 public class IdentityProviderConfigManagerClient implements IdentityProviderConfigManager {
-    public IdentityProviderConfig findByPrimaryKey(long oid) {
+    public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
         com.l7tech.adminws.identity.IdentityProviderConfig ipcStubFormat = null;
         try {
             ipcStubFormat = getStub().findIdentityProviderConfigByPrimaryKey(oid);
+        } catch (RemoteException e) {
+            throw new FindException(e.getMessage(), e);
         }
-        catch (Exception e) {
-            // todo, show nice user message?
-            System.err.println(e.getMessage());
-        }
-        if (ipcStubFormat != null) {
-            return TypeTranslator.serviceIdentityProviderConfigToGenericOne(ipcStubFormat);
-        }
-        else return null;
+        if (ipcStubFormat == null) return null;
+        return TypeTranslator.serviceIdentityProviderConfigToGenericOne(ipcStubFormat);
     }
 
-    public long save(IdentityProviderConfig identityProviderConfig) {
+    public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
         try {
             return getStub().saveIdentityProviderConfig(TypeTranslator.genericToServiceIdProviderConfig(identityProviderConfig));
+        } catch (RemoteException e) {
+            throw new SaveException(e.getMessage(), e);
         }
-        catch (Exception e) {
-            // todo, show nice user message?
-            System.err.println(e.getMessage());
-        }
-        return 0;
     }
 
-    public void delete(IdentityProviderConfig identityProviderConfig) {
+    public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {
         try {
             getStub().deleteIdentityProviderConfig(identityProviderConfig.getOid());
-        }
-        catch (Exception e) {
-            // todo, show nice user message?
-            System.err.println(e.getMessage());
+        } catch (RemoteException e) {
+            throw new DeleteException(e.getMessage(), e);
         }
     }
 
-    public Collection findAllHeaders() {
+    public Collection findAllHeaders() throws FindException {
         com.l7tech.adminws.identity.Header[] array = null;
         try {
             array = getStub().findAlllIdentityProviderConfig();
-        } catch (Exception e) {
-            // todo, show nice user message?
-            System.err.println(e.getMessage());
+        } catch (RemoteException e) {
+            throw new FindException(e.getMessage(), e);
         }
         return TypeTranslator.headerArrayToCollection(array);
     }
 
-    public Collection findAllHeaders(int offset, int windowSize) {
+    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         com.l7tech.adminws.identity.Header[] array = null;
         try {
             array = getStub().findAllIdentityProviderConfigByOffset(offset, windowSize);
-        } catch (Exception e) {
-            // todo, show nice user message?
-            System.err.println(e.getMessage());
+        } catch (RemoteException e) {
+            throw new FindException(e.getMessage(), e);
         }
         return TypeTranslator.headerArrayToCollection(array);
     }
 
-    public Collection findAll() {
-        // todo, throw exception instead ?
-        return findAllHeaders();
+    public Collection findAll() throws FindException {
+        throw new FindException("Operation not supported in this manager implementation");
     }
 
-    public Collection findAll(int offset, int windowSize) {
-        // todo, throw exception instead ?
-        return findAllHeaders(offset, windowSize);
+    public Collection findAll(int offset, int windowSize) throws FindException {
+        throw new FindException("Operation not supported in this manager implementation");
     }
 
     // ************************************************
     // PRIVATES
     // ************************************************
-    private Identity getStub() {
+    private Identity getStub() throws java.rmi.RemoteException {
         if (localStub == null) {
             IdentityService service = new IdentityServiceLocator();
             try {
                 localStub = service.getidentities(new java.net.URL(getServiceURL()));
             }
             catch (Exception e) {
-                // todo, show nice user message?
-                System.err.println(e.getMessage());
+                throw new java.rmi.RemoteException("Exception getting admin ws stub", e);
             }
+            if (localStub == null) throw new java.rmi.RemoteException("Exception getting admin ws stub");
         }
         return localStub;
     }
