@@ -2,9 +2,12 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -64,13 +67,41 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
             final XmlKnob xmlKnob = context.getRequest().getXmlKnob();
             if (!context.getRequest().isSoap()) {
                 logger.finest("Request not SOAP; cannot validate Saml Statement");
-                return AssertionStatus.BAD_REQUEST;
+                return AssertionStatus.NOT_APPLICABLE;
             }
 
             ProcessorResult wssResults = xmlKnob.getProcessorResult();
             if (wssResults == null) {
                 logger.finest("Request does not contain SOAP; cannot validate Saml Statement");
-                return AssertionStatus.BAD_REQUEST;
+                return AssertionStatus.FALSIFIED;
+            }
+
+            SecurityToken[] tokens = wssResults.getSecurityTokens();
+            if (tokens == null) {
+                logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
+                context.setAuthenticationMissing();
+                return AssertionStatus.AUTH_REQUIRED;
+            }
+            SamlAssertion samlAssertion = null;
+            for (int i = 0; i < tokens.length; i++) {
+                SecurityToken tok = tokens[i];
+                if (tok instanceof SamlSecurityToken) {
+                    SamlSecurityToken samlToken = (SamlSecurityToken)tok;
+                    if (samlToken.isPossessionProved()) {
+                        SamlAssertion gotAss = samlToken.asSamlAssertion();
+                        if (samlAssertion != null) {
+                            logger.severe("We got a request that presented more than one valid signature from more " +
+                                          "than one SAML assertion.  This is not currently supported.");
+                            return AssertionStatus.BAD_REQUEST;
+                        }
+                        samlAssertion = gotAss;
+                    }
+                }
+            }
+            if (samlAssertion == null) {
+                logger.info("This assertion did not find a proven SAML assertion to use as credentials. Returning AUTH_REQUIRED.");
+                context.setAuthenticationMissing();
+                return AssertionStatus.AUTH_REQUIRED;
             }
             Collection validateResults = new ArrayList();
             statementValidate.validate(xmlKnob.getDocumentReadOnly(), wssResults, validateResults);
