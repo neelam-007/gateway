@@ -24,6 +24,9 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     private JmsReplyType _replyType;
     private String _username;
     private String _password;
+    private int _maxConcurrentRequests;
+    private boolean _messageSource;
+
     /** Optional, set only if {@link #_replyType} is {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_OTHER} */
     private JmsEndpoint _replyEndpoint;
 
@@ -44,6 +47,26 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
 
     public void setPassword( String password ) {
         _password = password;
+    }
+
+    public int getMaxConcurrentRequests() {
+        return _maxConcurrentRequests;
+    }
+
+    public boolean isMessageSource() {
+        return _messageSource;
+    }
+
+    public void setMessageSource( boolean messageSource ) {
+        _messageSource = messageSource;
+    }
+
+    /**
+     * Sets the maximum number of concurrent requests
+     * @param maxConcurrentRequests
+     */
+    public void setMaxConcurrentRequests( int maxConcurrentRequests ) {
+        _maxConcurrentRequests = maxConcurrentRequests;
     }
 
     public String toString() {
