@@ -11,22 +11,21 @@ import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
-import com.l7tech.identity.User;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
-import java.io.UnsupportedEncodingException;
-import java.io.IOException;
 
 /**
  * @author alex
@@ -87,7 +86,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         }
     }
 
-    protected PrincipalCredentials doFindCredentials( Request request, Response response ) throws CredentialFinderException {
+    protected LoginCredentials doFindCredentials( Request request, Response response ) throws CredentialFinderException {
         Map authParams = (Map)request.getParameter( Request.PARAM_HTTP_AUTH_PARAMS );
 
         if ( authParams == null ) return null;
@@ -102,11 +101,8 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         if ( (userName == null) || (realmName == null) || ( digestResponse == null) )
             return null;
 
-        User u = new User();
-        u.setLogin( userName );
-
         try {
-            return new PrincipalCredentials( u, digestResponse.getBytes( ENCODING ), CredentialFormat.DIGEST, realmName, authParams );
+            return new LoginCredentials( userName, digestResponse.getBytes( ENCODING ), CredentialFormat.DIGEST, realmName, authParams );
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException( e );
         }
@@ -152,7 +148,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         return HttpDigest.SCHEME;
     }
 
-    protected PrincipalCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
+    protected LoginCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
         String authorization = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
 
         if ( authorization == null || authorization.length() == 0 ) {

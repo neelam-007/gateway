@@ -11,7 +11,7 @@ import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
@@ -32,7 +32,7 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     }
 
     public AssertionStatus checkCredentials( Request request, Response response ) throws CredentialFinderException {
-        PrincipalCredentials pc = request.getPrincipalCredentials();
+        LoginCredentials pc = request.getPrincipalCredentials();
         if ( pc == null ) return AssertionStatus.AUTH_REQUIRED;
         String requestRealm = pc.getRealm();
         String assertRealm = realm( request );

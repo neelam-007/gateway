@@ -3,7 +3,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -12,7 +11,7 @@ import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.server.SessionManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -116,9 +115,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             return AssertionStatus.FALSIFIED;
         }
         logger.finest("cert extracted from digital signature for user " + certCN);
-        User u = new User();
-        u.setLogin(certCN);
-        request.setPrincipalCredentials(new PrincipalCredentials(u, null, CredentialFormat.CLIENTCERT, null, cert));
+        request.setPrincipalCredentials(new LoginCredentials( certCN, null, CredentialFormat.CLIENTCERT, null, cert));
 
         // if we must also do xml-encryption,
         if (data.isEncryption()) {

@@ -6,13 +6,12 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.identity.User;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
@@ -39,7 +38,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
         _data = data;
     }
 
-    public PrincipalCredentials findCredentials( Request request, Response response ) throws CredentialFinderException {
+    public LoginCredentials findCredentials( Request request, Response response ) throws CredentialFinderException {
         Object param = request.getParameter( Request.PARAM_HTTP_X509CERT );
         X509Certificate clientCert = null;
 
@@ -86,9 +85,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
 
         logger.info("cert found for user " + certCN);
 
-        User u = new User();
-        u.setLogin(certCN);
-        return new PrincipalCredentials( u, null, CredentialFormat.CLIENTCERT, null, clientCert );
+        return new LoginCredentials( certCN, null, CredentialFormat.CLIENTCERT, null, clientCert );
     }
 
     protected AssertionStatus checkCredentials(Request request, Response response) {

@@ -7,7 +7,7 @@
 package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -43,7 +43,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
      */
     public AssertionStatus checkRequest( Request request, Response response ) throws IOException, PolicyAssertionException {
         try {
-            PrincipalCredentials pc = request.getPrincipalCredentials();
+            LoginCredentials pc = request.getPrincipalCredentials();
             if ( pc == null ) {
                 // No finder has been run yet!
                 pc = findCredentials( request, response );
@@ -77,7 +77,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
         }
     }
 
-    protected abstract PrincipalCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException;
+    protected abstract LoginCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException;
     protected abstract AssertionStatus checkCredentials( Request request, Response response ) throws CredentialFinderException;
     protected abstract void challenge( Request request, Response response );
 

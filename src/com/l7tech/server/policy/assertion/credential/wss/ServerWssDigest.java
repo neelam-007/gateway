@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ public class ServerWssDigest extends ServerWssCredentialSource implements Server
         _data = data;
     }
 
-    protected PrincipalCredentials findCredentials(Request request, Response response) throws IOException, CredentialFinderException {
+    protected LoginCredentials findCredentials(Request request, Response response) throws IOException, CredentialFinderException {
         // FIXME: Implement
         return null;
     }

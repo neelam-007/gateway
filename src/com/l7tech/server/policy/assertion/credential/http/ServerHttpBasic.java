@@ -6,14 +6,13 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.apache.axis.encoding.Base64;
@@ -32,7 +31,7 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
     public static final String SCHEME = "Basic";
     public static final String REALM = "L7SSGBasicRealm";
 
-    public PrincipalCredentials doFindCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
+    public LoginCredentials doFindCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
         String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
         return findCredentials(wwwAuthorize);
     }
@@ -45,12 +44,12 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
         return SCHEME;
     }
 
-    public PrincipalCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
+    public LoginCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
         String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
         return findCredentials( wwwAuthorize );
     }
 
-    public PrincipalCredentials findCredentials( String wwwAuthorize ) throws IOException, CredentialFinderException {
+    public LoginCredentials findCredentials( String wwwAuthorize ) throws IOException, CredentialFinderException {
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) return null;
 
         int spos = wwwAuthorize.indexOf(" ");
@@ -74,12 +73,9 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
 
             pass = userPassRealm.substring( cpos1 + 1, cpos2 );
 
-            User u = new User();
-            u.setLogin( login );
-
             logger.fine( "Found HTTP Basic credentials for user " + login );
 
-            return new PrincipalCredentials( u, pass.getBytes(ENCODING), CredentialFormat.CLEARTEXT, realm );
+            return new LoginCredentials( login, pass.getBytes(ENCODING), CredentialFormat.CLEARTEXT, realm );
         } else {
             // No colons
             String err = "Invalid HTTP Basic format!";

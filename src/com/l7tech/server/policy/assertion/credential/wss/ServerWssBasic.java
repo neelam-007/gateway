@@ -6,7 +6,7 @@
 
 package com.l7tech.server.policy.assertion.credential.wss;
 
-import com.l7tech.identity.User;
+import com.l7tech.common.util.SAXParsingCompleteException;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -15,10 +15,9 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.common.util.SAXParsingCompleteException;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -40,7 +39,7 @@ public class ServerWssBasic implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        PrincipalCredentials creds = null;
+        LoginCredentials creds = null;
         try {
             creds = findCredentials(request, response);
         } catch (IOException e) {
@@ -58,7 +57,7 @@ public class ServerWssBasic implements ServerAssertion {
         return AssertionStatus.NONE;
     }
 
-    public PrincipalCredentials findCredentials( Request grequest, Response gresponse ) throws IOException, CredentialFinderException {
+    public LoginCredentials findCredentials( Request grequest, Response gresponse ) throws IOException, CredentialFinderException {
         XmlRequest request;
         if ( grequest instanceof XmlRequest )
             request = (XmlRequest)grequest;
@@ -110,10 +109,8 @@ public class ServerWssBasic implements ServerAssertion {
 
             // return the whole thing
             // this is good, we got what we needed
-            User u = new User();
-            u.setLogin(handler.getParsedUsername());
             logger.fine("Found credentials for user " + handler.getParsedUsername());
-            return new PrincipalCredentials(u, passwd.getBytes(), CredentialFormat.CLEARTEXT);
+            return new LoginCredentials( handler.getParsedUsername(), passwd.getBytes(), CredentialFormat.CLEARTEXT);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Exception parsing xml request " + e.getMessage(), e);
             throw new CredentialFinderException("Exception parsing xml request " + e.getMessage(), e);
@@ -135,7 +132,7 @@ public class ServerWssBasic implements ServerAssertion {
         // the WssBasicCredentialFinder would not have returned credentials
 
         // (just to make sure)
-        PrincipalCredentials pc = request.getPrincipalCredentials();
+        LoginCredentials pc = request.getPrincipalCredentials();
         // yes, we're good
         if (pc != null) return AssertionStatus.NONE;
         else return AssertionStatus.AUTH_REQUIRED;

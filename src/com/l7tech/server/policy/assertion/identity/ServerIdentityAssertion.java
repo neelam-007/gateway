@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.logging.LogManager;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.Entity;
@@ -36,7 +36,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
     }
 
     /**
-     * Attempts to authenticate the request using the <code>PrincipalCredentials</code>
+     * Attempts to authenticate the request using the <code>LoginCredentials</code>
      * previously found with a <code>ServerCredentialSourceAssertion</code>, and if
      * successful calls checkUser() to verify that the authenticated user is
      * authorized to make the request.
@@ -47,11 +47,11 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
      * @throws IdentityAssertionException
      */
     public AssertionStatus checkRequest( Request request, Response response ) throws IdentityAssertionException {
-        PrincipalCredentials pc = request.getPrincipalCredentials();
+        LoginCredentials pc = request.getPrincipalCredentials();
         if ( pc == null ) {
             // No credentials have been found yet
             if ( request.isAuthenticated() ) {
-                String err = "Request is authenticated but request has no PrincipalCredentials!";
+                String err = "Request is authenticated but request has no LoginCredentials!";
                 logger.log(Level.SEVERE, err);
                 throw new IllegalStateException( err );
             } else {
@@ -63,9 +63,9 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             }
         } else {
             // A CredentialFinder has already run.
-            User user = pc.getUser();
 
            if ( request.isAuthenticated() ) {
+               User user = request.getUser();
                 // The user was authenticated by a previous IdentityAssertion.
                 logger.log(Level.FINEST, "Request already authenticated");
                 return checkUser( user );
@@ -78,31 +78,32 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
 
                 try {
                     IdentityProvider provider = getIdentityProvider();
-                    provider.authenticate( pc );
+                    User user = provider.authenticate( pc );
 
                     // Authentication succeeded
                     request.setAuthenticated(true);
+                    request.setUser( user );
                     logger.log(Level.FINEST, "Authenticated " + user.getLogin() );
                     // Make sure this guy matches our criteria
                     return checkUser( user );
                 } catch ( BadCredentialsException bce ) {
                     // Authentication failure
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, bce.getMessage(), bce ));
-                    logger.info("Authentication failed for " + user.getLogin() );
+                    logger.info("Authentication failed for " + pc.getLogin() );
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( InvalidClientCertificateException icce ) {
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, icce.getMessage(), icce ));
-                    logger.info("Invalid client cert for " + user.getLogin() );
+                    logger.info("Invalid client cert for " + pc.getLogin() );
                     // set some response header so that the CP is made aware of this situation
                     response.setParameter(Response.PARAM_HTTP_CERT_STATUS, "invalid");
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( MissingCredentialsException mce ) {
                     response.setAuthenticationMissing(true);
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_REQUIRED, mce.getMessage(), mce ));
-                    logger.info("Authentication failed for " + user.getLogin() );
+                    logger.info("Authentication failed for " + pc.getLogin() );
                     return AssertionStatus.AUTH_REQUIRED;
                 } catch ( AuthenticationException ae ) {
-                    logger.info("Authentication failed for " + user.getLogin() );
+                    logger.info("Authentication failed for " + pc.getLogin() );
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, ae.getMessage(), ae ));
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( FindException fe ) {
