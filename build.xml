@@ -114,6 +114,7 @@
         <cvs command="update ${buildnumber.file}"/>
         -->
 
+        <antcall target="clean"/>
         <antcall target="compile"/>
         <antcall target="compile-tests"/>
         <antcall target="test"/>
