@@ -511,7 +511,7 @@ public class LogonDialog extends JDialog {
             }
         } catch (SSLHandshakeException e) {
             serviceAvailable = false;
-            log.log(Level.INFO, "LogonDialog: Attempting to update SSG certificate");
+            log.log(Level.INFO, "LogonDialog: Attempting to update Gateway certificate");
             log.log(Level.INFO, "LogonDialog", e);
             try {
                 importCertificate(url);
