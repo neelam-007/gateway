@@ -369,7 +369,9 @@ class PathValidator {
                     RelativeURINamespaceProblemFeedback fb = (RelativeURINamespaceProblemFeedback)iterator.next();
                     msg.append("<br>Namespace: " + fb.ns);
                     msg.append(", Operation Name: " + fb.operationName);
-                    msg.append(", Message Name: " + fb.msgname);
+                    if (fb.msgname != null) {
+                        msg.append(", Message Name: " + fb.msgname);
+                    }
                 }
                 result.addError(new PolicyValidatorResult.Error(a,
                                 assertionPath,
