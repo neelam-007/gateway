@@ -892,7 +892,10 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <antcall target="compile"/>
         <antcall target="compile-tests"/>
         <antcall target="test"/>
+        <antcall target="clean" />
+        <antcall target="package" />
         <antcall target="deploy"/>
+        <antcall target="testpackage" />
 
         <echo message="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>
         <cvs command="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>
