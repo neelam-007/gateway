@@ -90,15 +90,12 @@ public class SessionManager {
         return rand;
     }
 
-    protected long genUniqueId() {
-        synchronized (this) {
-            for (;;) {
-                long maybeId = getRand().nextLong();
-                if (sessions.get(new Long(maybeId)) == null)
-                    return maybeId;
-            }
+    private synchronized long genUniqueId() {
+        for (;;) {
+            long maybeId = getRand().nextLong();
+            if (sessions.get(new Long(maybeId)) == null)
+                return maybeId;
         }
-
     }
 
     protected SessionManager() {
