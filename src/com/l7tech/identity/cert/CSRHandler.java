@@ -48,7 +48,7 @@ public class CSRHandler extends HttpServlet {
         }
 
         // Process the Auth stuff in the headers
-        /*String tmp = request.getHeader(HTTPConstants.HEADER_AUTHORIZATION);
+        String tmp = request.getHeader(HTTPConstants.HEADER_AUTHORIZATION);
         if (tmp != null ) tmp = tmp.trim();
         User authenticatedUser = null;
         // TRY BASIC AUTHENTICATION
@@ -67,7 +67,8 @@ public class CSRHandler extends HttpServlet {
         if (authenticatedUser == null) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "failed authorization " + tmp);
-        }*/
+        }
+        LogManager.getInstance().getSystemLogger().log(Level.INFO, "User " + authenticatedUser.getLogin() + " has authenticated for CSR");
 
         // check if user is allowed to generate a new cert
         // todo
