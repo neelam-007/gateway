@@ -3,7 +3,6 @@ package com.l7tech.common.security.saml;
 import com.ibm.xml.dsig.*;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -22,10 +21,8 @@ import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
 import java.net.InetAddress;
-import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
@@ -52,30 +49,12 @@ public class SignedSamlTest extends TestCase {
     }
 
     public void setUp() throws Exception {
-        KeystoreUtils ku = KeystoreUtils.getInstance();
+        caPrivateKey = TestDocuments.getEttkServerPrivateKey();
+        caCertChain = new X509Certificate[] { TestDocuments.getEttkServerCertificate() };
+        caPublicKey = caCertChain[0].getPublicKey();
 
-        final char[] caPassChars = ku.getRootKeystorePasswd().toCharArray();
-        KeyStore caKeyStore = KeystoreUtils.getKeyStore(ku.getRootKeystorePath(), caPassChars, ku.getKeyStoreType());
-        caPrivateKey = (PrivateKey)caKeyStore.getKey(CA_ALIAS, caPassChars);
-        Certificate[] certs = caKeyStore.getCertificateChain(CA_ALIAS);
-        X509Certificate[] caCerts = new X509Certificate[certs.length];
-        for ( int i = 0; i < certs.length; i++ ) {
-            Certificate cert = certs[i];
-            caCerts[i] = (X509Certificate)cert;
-        }
-        caCertChain = caCerts;
-        caPublicKey = caCerts[0].getPublicKey();
-
-        final char[] clientPassChars = CLIENT_PASS.toCharArray();
-        KeyStore clientKeystore = KeystoreUtils.getKeyStore(CLIENT_KEYSTORE, clientPassChars, "PKCS12");
-        clientPrivateKey = (PrivateKey)clientKeystore.getKey(CLIENT_ALIAS, clientPassChars);
-        certs = clientKeystore.getCertificateChain(CLIENT_ALIAS);
-        final X509Certificate[] clientCerts = new X509Certificate[certs.length];
-        for ( int i = 0; i < certs.length; i++ ) {
-            Certificate cert = certs[i];
-            clientCerts[i] = (X509Certificate)cert;
-        }
-        clientCertChain = clientCerts;
+        clientPrivateKey = TestDocuments.getEttkClientPrivateKey();
+        clientCertChain = new X509Certificate[] { TestDocuments.getEttkClientCertificate() };
         clientPublicKey = clientCertChain[0].getPublicKey();
     }
 

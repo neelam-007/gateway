@@ -63,9 +63,9 @@ public class HolderOfKeyHelper extends SamlAssertionHelper {
         AssertionType assertion = getGenericAssertion( now );
         AuthenticationStatementType at = attachAuthenticationStatement(assertion, now);
 
-        SubjectConfirmationType st = at.getSubject().addNewSubjectConfirmation();
-        st.addConfirmationMethod(Constants.CONFIRMATION_HOLDER_OF_KEY);
+        SubjectConfirmationType sc = at.getSubject().getSubjectConfirmation();
+        sc.addConfirmationMethod(Constants.CONFIRMATION_HOLDER_OF_KEY);
 
-        return getAssertionDocument( assertion );
+        return assertionToDocument( assertion );
     }
 }

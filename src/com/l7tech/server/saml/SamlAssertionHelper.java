@@ -13,7 +13,6 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
@@ -237,7 +236,7 @@ public abstract class SamlAssertionHelper {
         return assertion;
     }
 
-    protected static Document getAssertionDocument( AssertionType assertion ) throws IOException, SAXException {
+    protected static Document assertionToDocument( AssertionType assertion ) throws IOException, SAXException {
         AssertionDocument assertionDocument = AssertionDocument.Factory.newInstance();
         StringWriter sw = new StringWriter();
         assertionDocument.setAssertion(assertion);
@@ -262,17 +261,20 @@ public abstract class SamlAssertionHelper {
         if (authInstant == 0) authInstant = System.currentTimeMillis();
         now.setTimeInMillis(authInstant);
 
-        AuthenticationStatementType at = assertion.addNewAuthenticationStatement();
-        at.setAuthenticationInstant(now);
+        AuthenticationStatementType authStatement = assertion.addNewAuthenticationStatement();
+        authStatement.setAuthenticationInstant(now);
 
-        SubjectType subject = at.addNewSubject();
+        SubjectType subject = authStatement.addNewSubject();
         NameIdentifierType ni = subject.addNewNameIdentifier();
-        if (credentials.getFormat() == CredentialFormat.CLIENTCERT) {
+        if (credentials.getFormat().isClientCert()) {
             X509Certificate cert = (X509Certificate)credentials.getPayload();
             ni.setFormat(Constants.NAMEIDENTIFIER_X509_SUBJECT);
-            KeyInfoType keyInfo = KeyInfoType.Factory.newInstance();
+            final String dn = cert.getSubjectDN().getName();
+            ni.setStringValue(dn);
+            SubjectConfirmationType sc = subject.addNewSubjectConfirmation();
+            KeyInfoType keyInfo = sc.addNewKeyInfo();
             X509DataType x509 = keyInfo.addNewX509Data();
-            x509.addX509SubjectName(cert.getSubjectDN().getName());
+            x509.addX509SubjectName(dn);
             x509.addX509Certificate(cert.getEncoded());
         } else {
             ni.setFormat(Constants.NAMEIDENTIFIER_UNSPECIFIED);
@@ -281,7 +283,7 @@ public abstract class SamlAssertionHelper {
             ni.setStringValue(credentials.getLogin());
         InetAddress clientAddress = options.getClientAddress();
         if (clientAddress != null) {
-            final SubjectLocalityType subjectLocality = at.addNewSubjectLocality();
+            final SubjectLocalityType subjectLocality = authStatement.addNewSubjectLocality();
             subjectLocality.setIPAddress(HolderOfKeyHelper.addressToString(clientAddress));
             subjectLocality.setDNSAddress(clientAddress.getCanonicalHostName());
         }
@@ -298,14 +300,15 @@ public abstract class SamlAssertionHelper {
             authMethod = Constants.UNSPECIFIED_AUTHENTICATION;
         }
 
-        at.setAuthenticationMethod(authMethod);
+        authStatement.setAuthenticationMethod(authMethod);
 
-        return at;
+        return authStatement;
     }
+
+    static final int DEFAULT_EXPIRY_MINUTES = 5;
 
     protected SignerInfo signerInfo;
     protected Document soapMessage;
-    static final int DEFAULT_EXPIRY_MINUTES = 5;
-    private SamlAssertionGenerator.Options options;
-    private LoginCredentials credentials;
+    protected SamlAssertionGenerator.Options options;
+    protected LoginCredentials credentials;
 }

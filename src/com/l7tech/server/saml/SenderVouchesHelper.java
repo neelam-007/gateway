@@ -49,6 +49,6 @@ class SenderVouchesHelper extends SamlAssertionHelper {
 
         SubjectConfirmationType st = at.getSubject().addNewSubjectConfirmation();
         st.addConfirmationMethod(Constants.CONFIRMATION_SENDER_VOUCHES);
-        return getAssertionDocument( assertion );
+        return assertionToDocument( assertion );
     }
 }
