@@ -4,6 +4,8 @@ import org.apache.axis.client.Call;
 import javax.xml.namespace.QName;
 import com.l7tech.adminws.AdminWSClientStub;
 
+import java.io.IOException;
+
 /**
  * Layer 7 Technologies, inc.
  * User: flascelles
@@ -12,8 +14,8 @@ import com.l7tech.adminws.AdminWSClientStub;
  */
 public class Client extends AdminWSClientStub {
 
-    public Client(String targetURL) {
-        super(targetURL);
+    public Client() {
+        super();
     }
     public String echoVersion() throws java.rmi.RemoteException {
         Call call = createStubCall();
@@ -161,6 +163,10 @@ public class Client extends AdminWSClientStub {
         call.registerTypeMapping(com.l7tech.identity.User.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.User.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.User.class, qn));
         qn = new QName(IDENTITY_URN, "Group");
         call.registerTypeMapping(com.l7tech.identity.Group.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.Group.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.Group.class, qn));
+    }
+
+    protected String getFullServiceTarget() throws IOException {
+        return getServiceBaseURL() + Service.SERVICE_DEPENDENT_URL_PORTION;
     }
 
     public static final String IDENTITY_URN = "http://www.layer7-tech.com/identity";

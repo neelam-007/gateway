@@ -1,15 +1,11 @@
 package com.l7tech.adminws.service;
 
 import org.apache.axis.client.Call;
-
-import javax.xml.rpc.ServiceException;
 import javax.xml.namespace.QName;
-import java.net.MalformedURLException;
+import java.io.IOException;
 
 import com.l7tech.service.PublishedService;
-import com.l7tech.adminws.ClientCredentialManager;
 import com.l7tech.adminws.AdminWSClientStub;
-import com.l7tech.util.Locator;
 
 /**
  * Layer 7 Technologies, inc.
@@ -19,8 +15,8 @@ import com.l7tech.util.Locator;
  * This is the admin ws client for the service ws. It is used by the ServiceManagerClientImp class.
  */
 public class Client extends AdminWSClientStub {
-    public Client(String targetURL) {
-        super(targetURL);
+    public Client() {
+        super();
     }
 
     public String resolveWsdlTarget(String url) throws java.rmi.RemoteException {
@@ -97,6 +93,10 @@ public class Client extends AdminWSClientStub {
         call.registerTypeMapping(com.l7tech.objectmodel.EntityHeader[].class, qn, new org.apache.axis.encoding.ser.ArraySerializerFactory(), new org.apache.axis.encoding.ser.ArrayDeserializerFactory());
         qn = new QName(SERVICE_URN, "EntityType");
         call.registerTypeMapping(com.l7tech.objectmodel.EntityType.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.objectmodel.EntityType.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.objectmodel.EntityType.class, qn));
+    }
+
+    protected String getFullServiceTarget() throws IOException {
+        return getServiceBaseURL() + Service.SERVICE_DEPENDENT_URL_PORTION;
     }
 
     private static final String SERVICE_URN = "http://www.layer7-tech.com/service";

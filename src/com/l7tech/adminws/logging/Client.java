@@ -3,6 +3,7 @@ package com.l7tech.adminws.logging;
 import org.apache.axis.client.Call;
 import javax.xml.namespace.QName;
 import java.rmi.RemoteException;
+import java.io.IOException;
 import com.l7tech.adminws.AdminWSClientStub;
 
 /**
@@ -14,8 +15,8 @@ import com.l7tech.adminws.AdminWSClientStub;
  */
 public class Client extends AdminWSClientStub {
 
-    public Client(String targetURL) {
-        super(targetURL);
+    public Client() {
+        super();
     }
 
     public String[] getSystemLog(int offset, int size) throws RemoteException {
@@ -33,6 +34,10 @@ public class Client extends AdminWSClientStub {
     protected void registerTypeMappings(Call call) {
         QName qn = new QName(LOGGING_URN, "ArrayOfStrings");
         call.registerTypeMapping(String[].class, qn, new org.apache.axis.encoding.ser.ArraySerializerFactory(), new org.apache.axis.encoding.ser.ArrayDeserializerFactory());
+    }
+
+    protected String getFullServiceTarget() throws IOException {
+        return getServiceBaseURL() + Service.SERVICE_DEPENDENT_URL_PORTION;
     }
 
 
