@@ -13,6 +13,7 @@ import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.AuthenticatableHttpServlet;
+import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.service.PublishedService;
 
 import javax.servlet.ServletConfig;
@@ -139,8 +140,11 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     }
                     newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
                     httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
-                    httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Must provide valid credentials.");
-                    logger.fine("sent back message to the effect that valid credentials are required for this download");
+                    httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    logger.fine("sending back authentication challenge");
+                    // in this case, send an authentication challenge
+                    httpServletResponse.setHeader("WWW-Authenticate", "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
+                    httpServletResponse.getOutputStream().close();
                     return;
                 }
             }
