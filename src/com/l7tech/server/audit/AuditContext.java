@@ -18,6 +18,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Holds the transient state of the audit system for the current thread.
+ * <p>
+ * Call {@link #getCurrent} to get this thread's audit context, then call {@link #add} to add any nubmer of
+ * {@link AuditRecord}s to the context.
+ * <p>
+ * Records that are added to the context will be persisted to the database later, when {@link #flush} or {#link #close}
+ * is called, if their level meets or exceeds the corresponding threshold.  Call {@link ServerConfig#getProperty(String)},
+ * specifying {@link ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD} or {@link ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD}
+ * as the parameter, to determine the current threshold for {@link MessageSummaryAuditRecord} and {@link AdminAuditRecord}
+ * records, respectively.
+ * <p> 
+ * By contrast, {@link com.l7tech.common.audit.SystemAuditRecord} records are persisted in {@link #flush} or
+ * {@link #close} regardless of their level.
+ *
  * @author alex
  * @version $Revision$
  */
