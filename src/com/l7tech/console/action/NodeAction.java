@@ -77,20 +77,18 @@ public abstract class NodeAction extends BaseAction {
      * @return the identity provider or null if not found
      */
     public IdentityProviderConfig getIdentityProviderConfig(EntityHeaderNode node) {
-        TreeNode parentNode = node.getParent();
-        while (parentNode != null) {
-            if (parentNode instanceof EntityHeaderNode) {
-                EntityHeader header = ((EntityHeaderNode) parentNode).getEntityHeader();
-                if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
-                    try {
-                        return Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(header.getOid());
-                    } catch (Exception e ) {
-                        log.log( Level.WARNING, "Couldn't find Identity Provider " + header.getOid(), e );
-                    }
+
+        if (node instanceof EntityHeaderNode) {
+            EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
+            if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
+                try {
+                    return Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(header.getOid());
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Couldn't find Identity Provider " + header.getOid(), e);
                 }
             }
-            parentNode = parentNode.getParent();
         }
+
         return null;
     }
 }
