@@ -23,6 +23,27 @@ public class WspReader {
     }
 
     /**
+     * Reads an XML-encoded policy document from the given element and
+     * returns the corresponding policy tree.
+     * @param policyElement an element of type WspConstants.POLICY_NS:WspConstants.POLICY_ELNAME
+     * @return the policy tree it contained.  A null return means a valid &lt;Policy/&gt; tag was present, but
+     *         it was empty.
+     * @throws InvalidPolicyStreamException if the stream did not contain a valid policy
+     */
+    public static Assertion parse(Element policyElement) throws InvalidPolicyStreamException {
+        List childElements = WspConstants.getChildElements(policyElement);
+        if (childElements.isEmpty())
+            return null; // Empty Policy tag explicitly means a null policy
+
+        if (childElements.size() != 1)
+            throw new InvalidPolicyStreamException("Policy does not have exactly zero or one immediate child");
+        Object target = WspConstants.thawElement((Element) childElements.get(0)).target;
+        if (!(target instanceof Assertion))
+            throw new InvalidPolicyStreamException("Policy does not have an assertion as its immediate child");
+        return (Assertion) target;
+    }
+
+    /**
      * Reads an XML-encoded policy document from the given input stream and
      * returns the corresponding policy tree.
      * @param wspStream the stream to read
@@ -32,24 +53,14 @@ public class WspReader {
     public static Assertion parse(InputStream wspStream) throws IOException {
         try {
             Document doc = XmlUtil.parse(wspStream);
-            NodeList policyTags = doc.getElementsByTagNameNS(WspConstants.POLICY_NS,  "Policy");
+            NodeList policyTags = doc.getElementsByTagNameNS(WspConstants.POLICY_NS,  WspConstants.POLICY_ELNAME);
             if (policyTags.getLength() > 1)
                 throw new InvalidPolicyStreamException("More than one Policy tag was found");
             Node policy = policyTags.item(0);
             if (policy == null)
                 throw new InvalidPolicyStreamException("No enclosing Policy tag was found (using namespace " +
                                                        WspConstants.POLICY_NS + ")");
-            List childElements = WspConstants.getChildElements(policy);
-
-            if (childElements.isEmpty())
-                return null; // Empty Policy tag explicitly means a null policy
-
-            if (childElements.size() != 1)
-                throw new InvalidPolicyStreamException("Policy does not have exactly zero or one immediate child");
-            Object target = WspConstants.thawElement((Element) childElements.get(0)).target;
-            if (!(target instanceof Assertion))
-                throw new InvalidPolicyStreamException("Policy does not have an assertion as its immediate child");
-            return (Assertion) target;
+            return parse((Element)policy);
         } catch (Exception e) {
             throw new InvalidPolicyStreamException("Unable to parse policy", e);
         }
