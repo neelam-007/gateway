@@ -194,7 +194,7 @@ public class Wizard extends JDialog {
         wizardStepPanel.setLayout(new BorderLayout());
         wizardStepPanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
 
-        JScrollPane descScrollPane = new JScrollPane();
+        descScrollPane = new JScrollPane();
         descScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
         JEditorPane da = getStepDescriptionTextPane();
@@ -332,6 +332,12 @@ public class Wizard extends JDialog {
             next.readSettings(wizardInput);
         }
         wizardStepPanel.add(next, BorderLayout.CENTER);
+        if(next instanceof WsdlCreateOverviewPanel){
+            descScrollPane.setVisible(false);
+        }
+        else{
+            descScrollPane.setVisible(true);
+        }
         updateWizardControls(next);
         fireSelectionChanged(next);
     }
@@ -604,6 +610,7 @@ public class Wizard extends JDialog {
     private JPanel mainPanel;
     private JPanel stepLabelsPanel;
     private JPanel wizardStepPanel;
+    private JScrollPane descScrollPane;
 
     private JTextPane stepDescriptionTextPane;
     private JButton buttonFinish;
