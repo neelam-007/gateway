@@ -92,13 +92,13 @@ public class Client {
         if (output == null) return new com.l7tech.objectmodel.EntityHeader[0];
         return output;
     }
-    public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, long userId) throws java.rmi.RemoteException {
+    public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "findUserByPrimaryKey"));
         call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        call.addParameter(new javax.xml.namespace.QName("", "userId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
+        call.addParameter(new javax.xml.namespace.QName("", "userId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
         call.setReturnClass(com.l7tech.identity.internal.imp.UserImp.class);
-        return (com.l7tech.identity.internal.imp.UserImp)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), new java.lang.Long(userId)});
+        return (com.l7tech.identity.internal.imp.UserImp)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), userId});
     }
     public void deleteUser(long identityProviderConfigId, long userId) throws java.rmi.RemoteException {
         Call call = createStubCall();
@@ -161,54 +161,6 @@ public class Client {
         call.setReturnClass(Long.class);
         Long res = (Long)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), group});
         return res.longValue();
-    }
-
-    public static void main(String[] args) throws Exception {
-
-        Client me = new Client("http://localhost:8181/ssg/services/identityAdmin", "ssgadmin", "ssgadminpasswd");
-
-        // test echo
-        System.out.println(me.echoVersion());
-
-        // test findAllIdentityProviderConfig
-        com.l7tech.objectmodel.EntityHeader[] res = me.findAllIdentityProviderConfig();
-
-        // com.l7tech.objectmodel.EntityHeader[] res = me.findAllIdentityProviderConfigByOffset(0, 10);
-
-        for (int i = 0; i < res.length; i++) {
-            System.out.println(res[i].toString());
-            com.l7tech.identity.IdentityProviderConfig ipc = me.findIdentityProviderConfigByPrimaryKey(res[i].getOid());
-            System.out.println(ipc.toString());
-
-            System.out.println("fetching groups");
-            com.l7tech.objectmodel.EntityHeader[] res2 = me.findAllGroups(ipc.getOid());
-            for (int j = 0; j < res2.length; j++) {
-                System.out.println(res2[j].toString());
-                System.out.println("group " + res2[j].getOid());
-                com.l7tech.identity.Group group = me.findGroupByPrimaryKey(ipc.getOid(), res2[j].getOid());
-                System.out.println("group found" + group.toString());
-                // System.out.println("save group" + me.saveGroup(ipc.getOid(), group));
-                // System.out.println("delete group");
-                // me.deleteGroup(ipc.getOid(), group.getOid());
-            }
-
-            System.out.println("fetching users");
-            res2 = me.findAllUsers(ipc.getOid());
-            for (int j = 0; j < res2.length; j++) {
-                System.out.println(res2[j].toString());
-                com.l7tech.identity.User user = me.findUserByPrimaryKey(ipc.getOid(), res2[j].getOid());
-                System.out.println("user found" + user.toString());
-                // System.out.println("save user" + me.saveUser(ipc.getOid(), user));
-                // System.out.println("delete user");
-                // me.deleteUser(ipc.getOid(), user.getOid());
-            }
-            // System.out.println("re-saved" + me.saveIdentityProviderConfig(ipc));
-            // me.deleteIdentityProviderConfig(ipc.getOid());
-            // System.out.println("deleted");
-
-
-        }
-
     }
 
     // ************************************************
