@@ -22,10 +22,7 @@ import net.jini.io.context.ClientSubject;
 
 import java.rmi.server.ServerNotActiveException;
 import java.security.Principal;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -120,8 +117,11 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
             action = AdminAuditRecord.ACTION_UPDATED;
             msg.append(" updated");
             EntityChangeSet changes = ((Updated)event).getChangeSet();
+
+            List changeDescs = new ArrayList();
             for (Iterator i = changes.getProperties(); i.hasNext();) {
                 String property = (String)i.next();
+                if ("version".equals(property) || "disabled".equals(property)) continue;
                 Object ovalue = changes.getOldValue(property);
                 Object nvalue = changes.getNewValue(property);
                 String verbed = null;
@@ -136,12 +136,17 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
                 } else if (!ovalue.equals(nvalue)) {
                     verbed = "changed";
                 }
-                if (verbed != null) {
-                    msg.append(" ").append(verbed).append(" ");
-                    msg.append(property);
-                    if (i.hasNext()) msg.append(",");
-                }
+
+                if (verbed != null) changeDescs.add(verbed + " " + property);
             }
+
+            if (!changeDescs.isEmpty()) msg.append(" (");
+            for (Iterator i = changeDescs.iterator(); i.hasNext();) {
+                String desc = (String)i.next();
+                msg.append(desc);
+                if (i.hasNext()) msg.append(", ");
+            }
+            if (!changeDescs.isEmpty()) msg.append(")");
         } else {
             action = 'X'; // Shouldn't happen
         }
