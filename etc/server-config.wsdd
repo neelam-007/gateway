@@ -106,7 +106,7 @@
 
 
  <service name="serviceAdmin" provider="java:RPC">
-  <parameter name="allowedMethods" value="resolveWsdlTarget findServiceByPrimaryKey"/>
+  <parameter name="allowedMethods" value="resolveWsdlTarget findServiceByPrimaryKey findAllPublishedServices findAllPublishedServicesByOffset"/>
   <parameter name="wsdlPortType" value="servicePortType"/>
   <parameter name="scope" value="Application"/>
   <parameter name="className" value="com.l7tech.adminws.service.Service"/>
@@ -122,7 +122,17 @@
     <parameter name="oid" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   </operation>
 
+  <operation name="findAllPublishedServices" qname="ns2:findAllPublishedServices" returnQName="findAllPublishedServicesReturn" returnType="ns2:ArrayOfHeaders" xmlns:ns2="http://www.layer7-tech.com/service"/>
+
+  <operation name="findAllPublishedServicesByOffset" qname="ns3:findAllPublishedServicesByOffset" returnQName="findAllPublishedServicesByOffsetReturn" returnType="ns3:ArrayOfHeaders" xmlns:ns3="http://www.layer7-tech.com/service">
+   <parameter name="offset" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+   <parameter name="windowSize" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+  </operation>
+
   <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns17:PublishedService" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.service.PublishedService" xmlns:ns17="http://www.layer7-tech.com/service"/>
+  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns22:EntityType" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.objectmodel.EntityType" xmlns:ns22="http://www.layer7-tech.com/service"/>
+  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns21:EntityHeader" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.objectmodel.EntityHeader" xmlns:ns21="http://www.layer7-tech.com/service"/>
+  <typeMapping deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns23:ArrayOfHeaders" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" type="java:com.l7tech.objectmodel.EntityHeader[]" xmlns:ns23="http://www.layer7-tech.com/service"/>
 
  </service>
 
