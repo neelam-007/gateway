@@ -1,6 +1,8 @@
 package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.*;
+import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.credential.CredentialFormat;
 
 /**
  * Layer 7 Technologies, inc.
@@ -28,9 +30,13 @@ public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityP
         return groupManager;
     }
 
-    public boolean authenticate( User user, byte[] credentials) {
-        // basic authentication
-        return userManager.authenticateBasic(user.getName(), new String(credentials));
+    public boolean authenticate( PrincipalCredentials pc ) {
+        if ( pc.getFormat() == CredentialFormat.CLEARTEXT ) {
+            // basic authentication
+            return userManager.authenticateBasic( pc.getUser().getName(), new String( pc.getCredentials() ));
+        } else {
+            throw new IllegalArgumentException( "Only cleartext credentials are currently supported!" );
+        }
     }
 
     public boolean isReadOnly() { return true; }

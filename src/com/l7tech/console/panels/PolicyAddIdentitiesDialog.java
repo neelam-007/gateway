@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.credential.wss.WssClientCert;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.credential.PrincipalCredentials;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -414,7 +415,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
               return null;
           }
 
-          public boolean authenticate( User user, byte[] credentials) {
+          public boolean authenticate( PrincipalCredentials pc ) {
               return false;
           }
 

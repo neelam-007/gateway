@@ -62,7 +62,7 @@ public abstract class IdentityAssertion extends Assertion {
                 }
 
                 try {
-                    if ( getIdentityProvider().authenticate( user, credentials ) ) {
+                    if ( getIdentityProvider().authenticate( pc ) ) {
                         // Authentication succeeded
                         request.setAuthenticated(true);
                         // Make sure this guy matches our criteria

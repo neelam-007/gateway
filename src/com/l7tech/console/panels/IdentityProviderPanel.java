@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
+import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -10,13 +11,13 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.wss.WssDigest;
-import com.l7tech.policy.assertion.credential.wss.WssClientCert;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.WssClientCert;
+import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
@@ -30,7 +31,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
-import java.security.Principal;
 
 
 /**
@@ -531,7 +531,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
           public GroupManager getGroupManager() { return null; }
 
-          public boolean authenticate( User user, byte[] credentials) { return false; }
+          public boolean authenticate( PrincipalCredentials pc ) { return false; }
 
           public boolean isReadOnly() { return true; }
 
