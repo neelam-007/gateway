@@ -8,7 +8,6 @@
 !define MUI_PRODUCT "Layer7 Client Proxy" ;Define your own software name here
 
 ; Edit this to set the version number in the build
-;!define MUI_VERSION "0.97b"
 ;!define MUI_VERSION "HEAD-2003-Aug-26"
 !define MUI_VERSION "HEAD"
 
@@ -77,6 +76,7 @@ Section "Client Proxy" SecCopyUI
   ;ADD YOUR OWN STUFF HERE!
 
   SetOutPath "$INSTDIR"
+  File "${BUILD_DIR}\..\native\win32\systray4j.dll"
   File "Layer7 Client Proxy.exe"
   File "Layer7 Client Proxy.ini"
   File "Layer7 Client Proxy.bat"
