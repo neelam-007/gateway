@@ -29,8 +29,6 @@ public class XmlResponseSecurity extends Assertion implements XmlSecurityAsserti
     public void setElements(ElementSecurity[] elements) {
         if (elements != null) {
             this.elements = elements;
-        } else {
-            elements = new ElementSecurity[]{};
         }
     }
 

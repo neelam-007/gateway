@@ -26,8 +26,6 @@ public class XmlRequestSecurity extends CredentialSourceAssertion implements Xml
     public void setElements(ElementSecurity[] elements) {
         if (elements != null) {
             this.elements = elements;
-        } else {
-            elements = new ElementSecurity[]{};
         }
     }
 
