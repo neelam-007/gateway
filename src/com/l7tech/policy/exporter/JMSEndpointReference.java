@@ -174,7 +174,7 @@ public class JMSEndpointReference extends ExternalReference {
             if (jmsRoutingAssertion.getEndpointOid() != null &&
                 jmsRoutingAssertion.getEndpointOid().longValue() == oid) {
                 jmsRoutingAssertion.setEndpointOid(new Long(localEndpointId));
-                logger.fine("Endpoint id was replaced from " + oid + " to localEndpointId");
+                logger.fine("Endpoint id was replaced from " + oid + " to " + localEndpointId);
             }
         }
     }
