@@ -234,6 +234,9 @@
             <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.RequestXpathAssertionTest" fork="yes" haltonfailure="no"/>
             <test name="com.l7tech.common.util.XmlUtilTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.xml.WssDecoratorTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.xml.WssProcessorTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.xml.WssRoundTripTest" haltonfailure="no"/>
 
             <!--
              ** add policy tests into the com.l7tech.policy.AllTests class
