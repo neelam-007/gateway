@@ -25,8 +25,6 @@ import java.util.NoSuchElementException;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class XpathEvaluatorTest extends TestCase {
-    TestDocuments testDocuments = new TestDocuments();
-
     public XpathEvaluatorTest(String name) {
         super(name);
     }
@@ -36,7 +34,7 @@ public class XpathEvaluatorTest extends TestCase {
     }
 
     public void testBasicXmlMessage() throws Exception {
-        Document doc = testDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, (Map)null);
         List nodes = xe.select("//");
         assertTrue("Size should have been >0", nodes.size() > 0);
@@ -48,7 +46,7 @@ public class XpathEvaluatorTest extends TestCase {
      * @throws Exception
      */
     public void testSoapMessage() throws Exception {
-        Document doc = testDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
         Map namespaces = XpathEvaluator.getNamespaces(sm);
 
@@ -66,7 +64,7 @@ public class XpathEvaluatorTest extends TestCase {
      * @throws Exception
      */
     public void testNamespaceSoapMessage() throws Exception {
-        Document doc = testDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
         final Map namespaces = XpathEvaluator.getNamespaces(sm);
 
@@ -90,7 +88,7 @@ public class XpathEvaluatorTest extends TestCase {
      * @throws Exception
      */
     public void testNamespaceNonExistSoapMessage() throws Exception {
-        Document doc = testDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
         final Map namespaces = XpathEvaluator.getNamespaces(sm);
 
@@ -117,7 +115,7 @@ public class XpathEvaluatorTest extends TestCase {
      * @throws Exception
      */
     public void testMethodElementEnvelopeAcestor() throws Exception {
-        Document doc = testDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
         final Map namespaces = XpathEvaluator.getNamespaces(sm);
 

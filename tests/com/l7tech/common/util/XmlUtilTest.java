@@ -47,7 +47,7 @@ public class XmlUtilTest extends TestCase {
     }
 
     private static Document getTestDocument() throws Exception {
-        return new TestDocuments().getTestDocument( TestDocuments.PLACEORDER_WITH_MAJESTY );
+        return TestDocuments.getTestDocument( TestDocuments.PLACEORDER_WITH_MAJESTY );
 
     }
 

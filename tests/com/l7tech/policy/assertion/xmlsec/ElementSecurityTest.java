@@ -4,6 +4,8 @@ import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.Keys;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.ElementSecurity;
+import com.l7tech.common.security.xml.SecurityProcessor;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.TestDocuments;

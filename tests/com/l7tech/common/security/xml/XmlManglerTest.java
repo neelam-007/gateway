@@ -45,8 +45,6 @@ public class XmlManglerTest extends TestCase {
     private static final String xmlencNS = "http://www.w3.org/2001/04/xmlenc#";
     static final String SOAP_METHOD_NS = "http://www.l7tech.com/tests/quoter3333";
 
-    TestDocuments testDocuments = new TestDocuments();
-
     public XmlManglerTest(String name) {
         super(name);
     }
@@ -227,7 +225,7 @@ public class XmlManglerTest extends TestCase {
      * @throws Exception
      */
     public void testXpathSelectedNodeFromSoapMessage() throws Exception {
-        Document doc = testDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
         Map namespaces = XpathEvaluator.getNamespaces(sm);
 
