@@ -9,10 +9,15 @@ package com.l7tech.objectmodel;
 import cirrus.hibernate.*;
 import cirrus.hibernate.type.Type;
 import com.l7tech.logging.LogManager;
+import com.l7tech.server.ServerConfig;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Logger;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 /**
  * @author alex
@@ -20,25 +25,36 @@ import java.util.logging.Logger;
  */
 public class HibernatePersistenceManager extends PersistenceManager {
     public static final String DEFAULT_HIBERNATE_RESOURCEPATH = "SSG.hbm.xml";
-    public static final String HIBERNATE_RESOURCEPATH_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.hibernateconfigxml";
 
-    public static void initialize() throws SQLException {
+    public static void initialize() throws IOException, SQLException {
         HibernatePersistenceManager me = new HibernatePersistenceManager();
         PersistenceManager.setInstance( me );
     }
 
-    private HibernatePersistenceManager() throws SQLException {
-        String hibernateXmlResourcePath = System.getProperty( HIBERNATE_RESOURCEPATH_PROPERTY );
-        if ( hibernateXmlResourcePath == null || hibernateXmlResourcePath.length() == 0 )
-            hibernateXmlResourcePath = DEFAULT_HIBERNATE_RESOURCEPATH;
-
+    private HibernatePersistenceManager() throws IOException, SQLException {
+        FileInputStream fis = null;
         try {
             Datastore ds = Hibernate.createDatastore();
-            ds.storeResource( hibernateXmlResourcePath, getClass().getClassLoader() );
-            _sessionFactory = ds.buildSessionFactory();
+            ds.storeResource( DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader() );
+
+            String propsPath = ServerConfig.getInstance().getHibernatePropertiesPath();
+
+            if ( new File( propsPath ).exists() ) {
+                logger.info( "Loading database configuration from " + propsPath );
+                Properties props = new Properties();
+                fis = new FileInputStream( propsPath );
+                props.load( fis );
+                _sessionFactory = ds.buildSessionFactory( props );
+            } else {
+                logger.info( "Loading database configuration from system classpath" );
+                _sessionFactory = ds.buildSessionFactory();
+            }
+
         } catch ( HibernateException he ) {
             logger.throwing( getClass().getName(), "<init>", he );
             throw new SQLException( he.toString() );
+        } finally {
+            if ( fis != null ) fis.close();
         }
     }
 
