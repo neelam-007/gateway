@@ -38,24 +38,25 @@ public class SslClientTrustManager implements X509TrustManager {
     }
 
     public void checkServerTrusted(X509Certificate[] certs, String authType) throws CertificateException {
+        final X509Certificate serverCert = certs[0];
         try {
             // Try cartel first
             delegate.checkServerTrusted(certs, authType);
-            logger.fine("SSL server cert was issued to '" + certs[0].getSubjectDN().getName() + "' by a recognized CA" );
+            logger.fine("SSL server cert was issued to '" + serverCert.getSubjectDN().getName() + "' by a recognized CA" );
             return;
         } catch ( CertificateException unused ) {
             // Not trusted by cartel, consult SSG trust store
             TrustedCertManager manager = (TrustedCertManager)Locator.getDefault().lookup(TrustedCertManager.class);
 
-            String subjectDn = certs[0].getSubjectDN().getName();
-            String issuerDn = certs[0].getIssuerDN().getName();
+            String subjectDn = serverCert.getSubjectDN().getName();
+            String issuerDn = serverCert.getIssuerDN().getName();
             if ( subjectDn.equals(issuerDn) ) {
                 // Check if self-signed cert is trusted
                 try {
                     TrustedCert selfTrust = manager.findBySubjectDn(subjectDn);
                     if ( selfTrust == null ) throw new CertificateException("Couldn't find self-signed cert with DN '" + subjectDn + "'");
                     if ( !selfTrust.isTrustedForSsl() ) throw new CertificateException("Self-signed cert with DN '" + subjectDn + "' present but not trusted for SSL" );
-                    if ( !selfTrust.getCertificate().equals(certs[0]) ) throw new CertificateException("Self-signed cert with DN '" + subjectDn + "' present but doesn't match" );
+                    if ( !selfTrust.getCertificate().equals(serverCert) ) throw new CertificateException("Self-signed cert with DN '" + subjectDn + "' present but doesn't match" );
                     return; // OK
                 } catch (FindException e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
@@ -80,6 +81,8 @@ public class SslClientTrustManager implements X509TrustManager {
                     if ( certs.length < 2 ) {
                         // TODO this might conceivably be normal
                         throw new CertificateException("Couldn't find CA Cert in chain");
+                    } else if ( certs.length > 2 ) {
+                        throw new CertificateException("Certificate chains with more than two levels are not supported");
                     }
 
                     X509Certificate caCert = certs[1];
@@ -88,7 +91,7 @@ public class SslClientTrustManager implements X509TrustManager {
                     if ( !caCert.equals(caTrustCert) )
                         throw new CertificateException("CA cert from server didn't match stored version");
 
-                    certs[0].verify(caTrustCert.getPublicKey());
+                    serverCert.verify(caTrustCert.getPublicKey());
 
                 } catch (IOException e) {
                     final String msg = "Couldn't decode stored CA certificate with DN '" + issuerDn + "'";
