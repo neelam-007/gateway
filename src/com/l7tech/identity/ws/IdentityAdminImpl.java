@@ -8,6 +8,7 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.logging.LogManager;
+import com.l7tech.server.SessionManager;
 
 import java.rmi.RemoteException;
 import java.util.logging.Level;
@@ -346,6 +347,34 @@ public class IdentityAdminImpl implements IdentityAdmin {
         // revoke the cert in internal CA
         ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
         manager.revokeUserCert(user);
+        // internal users should have their password "revoked" along with their cert
+        try {
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().
+                                                findByPrimaryKey(user.getProviderId());
+            if (cfg.type().equals(IdentityProviderType.INTERNAL)) {
+                logger.finest("Cert revoked - invalidating user's password.");
+                // must change the password now
+                IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+                UserManager userManager = provider.getUserManager();
+                User dbuser = userManager.findByLogin(user.getLogin());
+                // maybe a new password is already provided?
+                String newPasswd = null;
+                if (!dbuser.getPassword().equals(user.getPassword())) {
+                    newPasswd = user.getPassword();
+                } else {
+                    byte[] randomPasswd = new byte[32];
+                    SessionManager.getInstance().getRand().nextBytes(randomPasswd);
+                    newPasswd = new String(randomPasswd);
+                }
+                dbuser.setPassword(newPasswd);
+                userManager.update(dbuser);
+            }
+        } catch (FindException e) {
+            throw new UpdateException("error resetting user's password", e);
+        } finally {
+            endTransaction();
+        }
+
     }
 
     public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)
