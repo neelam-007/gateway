@@ -10,10 +10,6 @@ import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -30,7 +26,7 @@ import org.xml.sax.SAXException;
 /**
  * Action for editing XML security assertion properties
  */
-public class XpathBasedAssertionPropertiesAction extends NodeAction {
+public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(XpathBasedAssertionPropertiesAction.class.getName());
     private XpathEvaluator testEvaluator;
 
@@ -47,7 +43,14 @@ public class XpathBasedAssertionPropertiesAction extends NodeAction {
         } else if (node instanceof ResponseWssIntegrityTreeNode) {
             ResponseWssIntegrityTreeNode n = (ResponseWssIntegrityTreeNode)node;
             return new ResponseIntegrityPropertiesAction(n);
-        } else return new XpathBasedAssertionPropertiesAction(node);
+        } else if (node instanceof RequestXpathPolicyTreeNode) {
+            RequestXpathPolicyTreeNode n = (RequestXpathPolicyTreeNode)node;
+            return new RequestXpathPropertiesAction(n);
+        } else if (node instanceof ResponseXpathPolicyTreeNode) {
+            ResponseXpathPolicyTreeNode n = (ResponseXpathPolicyTreeNode)node;
+            return new ResponseXpathPropertiesAction(n);
+        }
+        throw new RuntimeException("Type not supported " + node.getClass().getName());
     }
 
     protected XpathBasedAssertionPropertiesAction(XpathBasedAssertionTreeNode node) {
@@ -60,13 +63,6 @@ public class XpathBasedAssertionPropertiesAction extends NodeAction {
         } catch (SAXException e) {
             logger.log(Level.WARNING, "cannot create evaluator", e); // cannot happen
         }
-    }
-
-    /**
-     * @return the action name
-     */
-    public String getName() {
-        return "Edit XPath Properties";
     }
 
     /**

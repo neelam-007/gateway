@@ -17,6 +17,8 @@ import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
 import com.l7tech.console.xmlviewer.util.DocumentUtilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.ResponseXpathAssertion;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
@@ -240,6 +242,12 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         } else if (xmlSecAssertion instanceof ResponseWssIntegrity) {
             description = "Select response element to sign.";
             title = "Sign Response Element Properties";
+        } else if (xmlSecAssertion instanceof ResponseXpathAssertion) {
+            description = "Select the response path to evaluate.";
+            title = "Evaluate Response XPath Properties";
+        } else if (xmlSecAssertion instanceof RequestXpathAssertion) {
+            description = "Select the request path to evaluate.";
+            title = "Evaluate Request XPath Properties";
         }
         descriptionLabel.setText(description);
         setTitle(title);
