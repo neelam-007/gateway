@@ -73,6 +73,16 @@ public class SsgKeyStoreManager {
         return (X509Certificate) getKeyStore(ssg).getCertificate(ALIAS);
     }
 
+    public static void deleteClientCert(Ssg ssg)
+            throws NoSuchAlgorithmException, IOException, KeyStoreException, CertificateException
+    {
+        synchronized (ssg) {
+            getKeyStore(ssg).deleteEntry(ALIAS);
+            saveKeyStore(ssg);
+            ssg.haveClientCert(Boolean.FALSE);
+        }
+    }
+
     public static X509Certificate[] getClientCertificateChain(Ssg ssg)
             throws NoSuchAlgorithmException, CertificateException, KeyStoreException, IOException
     {
