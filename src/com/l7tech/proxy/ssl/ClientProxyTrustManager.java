@@ -6,12 +6,13 @@
 
 package com.l7tech.proxy.ssl;
 
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import org.apache.log4j.Category;
 
 import javax.net.ssl.X509TrustManager;
+import java.security.Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
     }
 
     public X509Certificate[] getAcceptedIssuers() {
-        log.info("Making list of SSG CA certs");
+        log.info("ClientProxyTrustManager: getAcceptedIssuers: Making list of SSG CA certs");
         List ssgs = ssgFinder.getSsgList();
         List certs = new ArrayList();
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
@@ -56,8 +57,50 @@ public class ClientProxyTrustManager implements X509TrustManager {
     }
 
     public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        // TODO: This is currently a little bit _too_ trustworthy.  To be finished on Tuesday when Francois is around!
-        log.info("FIXME: automatically trusting the server certificate chain");
-        return;
+        log.info("ClientProxyTrustManager: checkServerTrusted");
+        if (x509Certificates == null || x509Certificates.length < 1 || s == null)
+            throw new IllegalArgumentException("empty certificate chain, or null auth type");
+
+        // Get the list of trusted SSG CA keys.
+        X509Certificate[] trustedCerts = getAcceptedIssuers();
+
+        for (int i = 0; i < x509Certificates.length; i++) {
+            X509Certificate cert = x509Certificates[i];
+            cert.checkValidity();
+            if (i + 1 < x509Certificates.length) {
+                try {
+                    cert.verify(x509Certificates[i + 1].getPublicKey());
+                } catch (CertificateException e) {
+                    throw e;
+                } catch (Exception e) {
+                    log.error("Unable to verify signature in peer certificate chain", e);
+                    throw new CertificateException("Unable to verify signature in peer certificate chain: " + e);
+                }
+            }
+            for (int j = 0; j < trustedCerts.length; j++) {
+                X509Certificate trustedCert = trustedCerts[j];
+                Principal trustedDN = trustedCert.getSubjectDN();
+                if (cert.getIssuerDN().equals(trustedDN)) {
+                    try {
+                        cert.verify(trustedCert.getPublicKey());
+                        log.info("Peer certificate was signed by a trusted SSG.");
+                        return;
+                    } catch (CertificateException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        log.error("Unable to verify peer certificate with trusted cert", e);
+                        throw new CertificateException("Unable to verify peer certificate with trusted cert: " + e);
+                    }
+                } else if (cert.getSubjectDN().equals(trustedDN)) {
+                    if (cert.equals(trustedCert)) {
+                        log.info("Peer certificate matched that of a trusted SSG.");
+                        return;
+                    }
+                }
+            }
+        }
+
+        log.warn("Couldn't find trusted certificate in peer's certificate chain");
+        throw new CertificateException("Couldn't find trusted certificate in peer's certificate chain");
     }
 }
