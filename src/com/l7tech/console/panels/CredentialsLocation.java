@@ -77,7 +77,7 @@ public class CredentialsLocation {
         if (soap) {
             credentialsLocationMap.put("WS Token Basic", new WssBasic());
             credentialsLocationMap.put("WSS Signature", new RequestWssX509Cert());
-            credentialsLocationMap.put("Secure Conversation", new SecureConversation());
+            credentialsLocationMap.put("WS Secure Conversation", new SecureConversation());
         }
 
         return credentialsLocationMap;
