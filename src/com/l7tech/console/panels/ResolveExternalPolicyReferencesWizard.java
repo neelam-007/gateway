@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.IdProviderReference;
+import com.l7tech.policy.exporter.JMSEndpointReference;
 
 import java.awt.*;
 
@@ -31,8 +32,8 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
             WizardStepPanel panel = null;
             if (refs[i] instanceof IdProviderReference) {
                 panel = new ResolveForeignIdentityProviderPanel(null, (IdProviderReference)(refs[i]));
-            } else {
-                // todo, other types of panels
+            } else if (refs[i] instanceof JMSEndpointReference) {
+                panel = new ResolveForeignJMSEndpointPanel(null, (JMSEndpointReference)(refs[i]));
             }
             if (panel != null) {
                 if (firstPanel == null) {
