@@ -646,28 +646,53 @@ public class SsgKeyStoreManager {
         return;
     }
 
+    /** Exception thrown if the desired alias is not found in a keystore file. */
+    public static class AliasNotFoundException extends Exception {
+        public AliasNotFoundException() {
+        }
+
+        public AliasNotFoundException(String message) {
+            super(message);
+        }
+
+        public AliasNotFoundException(Throwable cause) {
+            super(cause);
+        }
+
+        public AliasNotFoundException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     /** Caller passes an instance of this to importClientCertificate if they wish to present the user with a list of aliases in a file. */
     public interface AliasPicker {
-        /** @return the preferred alias, or null if none look good. */
-        String selectAlias(String[] options);
+        /**
+         * @return the preferred alias.  May not be null.
+         * @throws AliasNotFoundException if none of the available aliases look good.
+         */
+        String selectAlias(String[] options) throws AliasNotFoundException;
     }
     
     /**
      * Import the client certificate for the specified Ssg from the specified file, using the specified pass phrase.
+     * If this method returns, the certificate was imported successfully.
+     *
      * @param ssg  the SSG whose client certificate is to be set or replaced
      * @param certFile the PKCS#12 file from which to read the new cert
      * @param pass the pass phrase to use when reading the file
      * @param aliasPicker optional AliasPicker in case there is more than one certificate in the file.  If not provided,
      *                    will always select the very first cert.
-     * @return true if a certificate was imported successfully; false if operation canceled, but not due to an error.
-     * @throws KeyStoreCorruptException if the Ssg keystore is damaged or could not be writted using ssgPassword.
+     * @throws KeyStoreCorruptException if the Ssg keystore is damaged or could not be writted using ssgPassword
+     * @throws IOException if there is a problem reading the file or the file does not contain any private keys
+     * @throws GeneralSecurityException if the file can't be decrypted or the imported certificate can't be saved
+     * @throws AliasNotFoundException if the specified alias was not found or did not contain both a cert chain and a private key
      */
-    public static boolean importClientCertificate(Ssg ssg,
+    public static void importClientCertificate(Ssg ssg,
                                                   File certFile,
                                                   char[] pass,
                                                   AliasPicker aliasPicker,
                                                   char[] ssgPassword)
-            throws IOException, GeneralSecurityException, KeyStoreCorruptException
+            throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException
     {
         if (ssg.getTrustedGateway() != null)
             throw new IllegalArgumentException("Unable to import client certificate for Federated Gateway.");
@@ -692,22 +717,21 @@ public class SsgKeyStoreManager {
             if (aliases.size() > 1 && aliasPicker != null) {
                 alias = aliasPicker.selectAlias((String[])aliases.toArray(new String[0]));
                 if (alias == null)
-                    return false;
+                    throw new AliasNotFoundException("The AliasPicker did not return an alias.");
             } else if (aliases.size() > 0)
                 alias = (String)aliases.get(0);
             if (alias == null)
                 throw new IOException("The specified file does not contain any client certificates.");
             chainToImport = ks.getCertificateChain(alias);
             if (chainToImport == null || chainToImport.length < 1)
-                throw new IOException("The specified alias does not contain a certificate chain."); // shouldn't happen
+                throw new AliasNotFoundException("The specified file does not contain a certificate chain for alias " + alias);
             key = ks.getKey(alias, pass);
             if (key == null || !(key instanceof PrivateKey))
-                throw new IOException("The specified alias does not contain a private key.");
+                throw new AliasNotFoundException("The specified alias does not contain a private key.");
         } catch (KeyStoreException e) {
             throw new CausedIOException("Unable to read aliases from keystore", e);
         }
 
         saveClientCertificate(ssg, (PrivateKey)key, (X509Certificate)chainToImport[0], ssgPassword);
-        return true;
     }
 }

@@ -9,6 +9,7 @@ package com.l7tech.proxy;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
@@ -116,6 +117,66 @@ public interface SecureSpanBridge {
      * @throws CertificateAlreadyIssuedException if the Gateway has already issued a client certificate to this account
      */
     void ensureCertificatesAreAvailable() throws IOException, BadCredentialsException, GeneralSecurityException, CertificateAlreadyIssuedException;
+
+    /**
+     * Manually import the Gateway SSL certificate for this Gateway.  This may not be needed in some configurations:
+     * the SecureSpan Bridge can safely discover the Gateway SSL automatically in cases where the Gateway has access
+     * to the plaintext password for your account.
+     * <p>
+     * This method will replace the server certificate in the current Cert Store with the specified certificate.
+     * This method does not require the ability to reach the Gateway via the network.
+     *
+     * @param serverCert the X509 certificate to use for this Gateway.  Will be saved to the Bridge's Cert Store, and
+     *                   used for trusting future SSL connections to the Gateway, and for WS-Security encryption of
+     *                   messages bound for the Gateway.
+     * @throws IOException if there is a problem with the specified certificate
+     * @throws IOException if the Cert Store cannot be written
+     * @throws IOException if the Cert Store is corrupt
+     */
+    void importServerCert(X509Certificate serverCert) throws IOException;
+
+    /**
+     * Manually import a client certificate to use with this Gateway.  This may not be needed in some configurations:
+     * if a client certificate is needed and has not been manually imported, the SecureSpan Bridge will automatically
+     * try to apply for one from the Gateway using the currently configured username and password.
+     * <p>
+     * The client certificate and corresponding private key Will be saved to the Bridge Key Store and
+     * the public portion (the certificate) will also be cached in the Cert Store.
+     * <p>
+     * The currently configured password will be used as the encryption password for the Key Store.
+     *
+     * @param clientCert the X509 certificate to use for this account
+     * @param clientKey the private key corresponding to the public key in clientCert
+     * @throws IOException if there is a problem with the specified certificate
+     * @throws IOException if the Key Store or Cert Store cannot be written
+     * @throws IOException if the Key Store or Cert Store is corrupt
+     * @throws IOException if there is an existing Key Store encrypted with a password other than the current password
+     */
+    void importClientCert(X509Certificate clientCert, PrivateKey clientKey) throws IOException;
+
+    /**
+     * Manually import a client certificate from the specified PKCS#12 file.  This may not be needed in some
+     * configurations: if a client certificate is needed and has not been manually imported, the SecureSpan Bridge
+     * will automatically try to apply for one from the Gateway using the currently configured username and password.
+     * <p>
+     * The specified PKCS#12 file will be decrypted with the specified password, and will be searched for an
+     * entry with the specified alias.  This entry will be read, and the X509 certificate and corresponding
+     * private key will be copied into the Bridge Key Store.  The public portion (the certificate) will also
+     * be cached in the Cert Store.
+     * <p>
+     * The currently configured Bridge password will be used as the encryption password for the Bridge Key Store.
+     *
+     * @param pkcs12Path a File identifying a readable PKCS#12 file on disk
+     * @param alias the name of the entry within this file to be imported, or null to import the first entry
+     *              that contains a certificate and private key
+     * @param pkcs12Password the password to use to decrypt the specified PKCS#12 file
+     * @throws IOException if the specified key store file cannot be read
+     * @throws IOException if the specified alias is not present in the file, or does not contain a private key
+     * @throws IOException if the Key Store or Cert Store cannot be written
+     * @throws IOException if the Key Store or Cert Store is corrupt
+     * @throws IOException if there is an existing Key Store encrypted with a password other than the current password
+     */
+    void importClientCert(File pkcs12Path, String alias, char[] pkcs12Password) throws IOException;
 
     /**
      * Delete your client certificate from the keystore, perhaps so that you can apply for a new one.

@@ -19,6 +19,7 @@ import com.l7tech.proxy.processor.MessageProcessor;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -251,6 +252,65 @@ public class SecureSpanBridgeFactory {
                 throw new CausedBadCredentialsException(e);
             } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
                 throw new CausedCertificateAlreadyIssuedException(e);
+            }
+        }
+
+        public void importServerCert(X509Certificate serverCert) throws IOException {
+            try {
+                synchronized (ssg) {
+                    SsgKeyStoreManager.saveSsgCertificate(ssg, serverCert);
+                    ssg.resetSslContext();
+                }
+            } catch (KeyStoreException e) {
+                throw new CausedIOException(e);
+            } catch (IOException e) {
+                throw new CausedIOException(e);
+            } catch (KeyStoreCorruptException e) {
+                throw new CausedIOException(e);
+            } catch (CertificateException e) {
+                throw new CausedIOException(e);
+            }
+
+        }
+
+        public void importClientCert(X509Certificate clientCert, PrivateKey clientKey) throws IOException {
+            try {
+                synchronized (ssg) {
+                    SsgKeyStoreManager.saveClientCertificate(ssg, clientKey, clientCert, pw.getPassword());
+                    ssg.resetSslContext();
+                }
+            } catch (KeyStoreException e) {
+                throw new CausedIOException(e);
+            } catch (IOException e) {
+                throw new CausedIOException(e);
+            } catch (KeyStoreCorruptException e) {
+                throw new CausedIOException(e);
+            } catch (CertificateException e) {
+                throw new CausedIOException(e);
+            }
+        }
+
+        public void importClientCert(File pkcs12Path, final String alias, char[] pkcs12Password) throws IOException {
+            try {
+                synchronized (ssg) {
+                    SsgKeyStoreManager.AliasPicker aliasPicker = new SsgKeyStoreManager.AliasPicker() {
+                        public String selectAlias(String[] options) throws SsgKeyStoreManager.AliasNotFoundException {
+                            if (alias != null)
+                                return alias;
+                            if (options == null || options.length < 1)  // sanity check
+                                return null;
+                            return options[0];
+                        }
+                    };
+                    SsgKeyStoreManager.importClientCertificate(ssg, pkcs12Path, pkcs12Password, aliasPicker, pw.getPassword());
+                    ssg.resetSslContext();
+                }
+            } catch (GeneralSecurityException e) {
+                throw new CausedIOException(e);
+            } catch (SsgKeyStoreManager.AliasNotFoundException e) {
+                throw new CausedIOException(e);
+            } catch (KeyStoreCorruptException e) {
+                throw new CausedIOException(e);
             }
         }
 
