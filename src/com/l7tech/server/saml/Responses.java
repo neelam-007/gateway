@@ -7,21 +7,21 @@ import x0Protocol.oasisNamesTcSAML1.StatusCodeType;
 import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
 
 import javax.xml.namespace.QName;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Package private class that contains precanned responses and utility methods
- * that deal with saml resonses.
+ * that deal with saml responses.
  *
  * @author emil
  */
 class Responses {
-    /** cannot instantiate this class */
-    Responses() {
-    }
 
     /**
+     * Tests if the response document has a success status.
      *
-     * @param rdoc
+     * @param rdoc the response document
      * @return whether the response document has a SAML status code "samlp:Success"
      * @throws IllegalArgumentException if the response is malformed
      */
@@ -47,9 +47,9 @@ class Responses {
     /**
      * Precanned response that indicates not implemented functionality. It
      * is a empty response with the status code 'Responder' (see saml1.1 core 3.4.3.1).
-     * @param detail message - optional message , on <b>null</b> the default
-     *              "Not Implemented is returned"
      *
+     * @param detail message - optional message , on <b>null</b> the default
+     *               "Not Implemented is returned"
      * @return the precanned 'not implemented' <code>ResponseDocument</code>
      */
     static ResponseDocument getNotImplementedResponse(String detail) {
@@ -80,7 +80,7 @@ class Responses {
         StatusType status = empty.addNewStatus();
         StatusCodeType scode = status.addNewStatusCode();
         scode.setValue(new QName(Constants.NS_SAMLP, Constants.STATUS_SUCCESS));
-        if (detail !=null) {
+        if (detail != null) {
             status.setStatusMessage(detail);
         }
         ResponseDocument rdoc = ResponseDocument.Factory.newInstance();
@@ -90,7 +90,18 @@ class Responses {
 
 
     static XmlOptions options() {
-        XmlOptions opts = new XmlOptions();
-        return opts;
+        XmlOptions options = new XmlOptions();
+        Map prefixes = new HashMap();
+        prefixes.put(Constants.NS_SAMLP, Constants.NS_SAMLP_PREFIX);
+        prefixes.put(Constants.NS_SAML, Constants.NS_SAML_PREFIX);
+        options.setSaveSuggestedPrefixes(prefixes);
+
+        return options;
     }
+
+    /** cannot instantiate this class */
+    private Responses() {
+    }
+
+
 }
