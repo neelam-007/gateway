@@ -723,6 +723,10 @@ public class MessageProcessor {
                     // Agent currently stores cookies in the Ssg, and does not pass them on to the client
                     throw new UnsupportedOperationException();
                 }
+
+                public void beginResponse() {
+                    throw new UnsupportedOperationException();
+                }
             });
             response.getHttpResponseKnob().setStatus(status);
             if (status == 401 || status == 402) {
@@ -744,11 +748,6 @@ public class MessageProcessor {
                 } else {
                     context.getSsg().storeSessionCookies(state.getCookies());
                 }
-            }
-            try {
-                client.endSession();
-            } catch (Exception e) {
-                log.log(Level.WARNING, "Error while calling HttpClient.endSession; will ignore it and continue", e);
             }
         }
     }
