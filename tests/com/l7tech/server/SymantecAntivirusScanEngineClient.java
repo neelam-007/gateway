@@ -11,7 +11,6 @@ import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.server.ServerConfig;
 
 import java.net.Socket;
 import java.net.UnknownHostException;
