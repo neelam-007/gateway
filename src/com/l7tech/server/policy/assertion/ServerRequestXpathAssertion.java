@@ -27,6 +27,11 @@ import java.util.Map;
 import java.util.Iterator;
 
 /**
+ * Server-side processing for an assertion that verifies whether a request
+ * matches a specified XPath pattern.
+ *
+ * @see com.l7tech.policy.assertion.RequestXpathAssertion
+ * @see com.l7tech.proxy.policy.assertion.ClientRequestXpathAssertion
  * @author alex
  * @version $Revision$
  */
@@ -70,7 +75,14 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 XmlRequest xreq = (XmlRequest)request;
                 Document doc = xreq.getDocument();
 
-                List result = getDOMXpath().selectNodes(doc);
+                List result = null;
+                DOMXPath xp = getDOMXpath();
+                try {
+                    result = xp.selectNodes(doc);
+                } catch ( RuntimeException rte ) {
+                    _logger.log( Level.WARNING, "XPath processor threw Runtime Exception", rte );
+                    return AssertionStatus.FALSIFIED;
+                }
 
                 if ( result == null || result.size() == 0 ) {
                     _logger.info( "XPath pattern " + pattern  + " didn't match request!" );
