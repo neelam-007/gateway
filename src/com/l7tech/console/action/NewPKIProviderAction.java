@@ -26,7 +26,7 @@ import java.util.logging.Level;
  */
 
 public class NewPKIProviderAction extends NodeAction {
-    static final Logger log = Logger.getLogger(NewUserAction.class.getName());
+    static final Logger log = Logger.getLogger(NewPKIProviderAction.class.getName());
     private EventListenerList listenerList = new EventListenerList();
 
     public NewPKIProviderAction(AbstractTreeNode node) {
