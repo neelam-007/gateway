@@ -61,14 +61,16 @@ if [ "$PASSWORD_LENGTH" -lt 6 ]; then
 	exit -1
 fi
 
-# SEND THIS TO ADMIN ACCOUNT HANDLER
+#
 # TODO
-# encode the password by calling our own encoder in
-# com.l7tech.identity.encodePasswd($ACCOUNT_NAME, $ADMIN_PASSWORD);
-# update internal_user set password=encodedpasswd where oid=3;
-# update internal_user set login=$ACCOUNT_NAME where oid=3;
-echo $ACCOUNT_NAME
-echo $ADMIN_PASSWORD
-
-
-# END
+#
+# 1. encode the password like this :
+#   toEncode=$ACCOUNT_NAME:$ADMIN_PASSWORD
+#   do a md5 digest of that value and hex encode it.
+#   for more details, check out source code of method com.l7tech.identity.User.encodePasswd()
+#
+# 2. update internal_user set password=encodedpasswd where oid=3;
+#   note: this assumes that the ssgadmin oid=3
+#
+# 3. update internal_user set login=$ACCOUNT_NAME where oid=3;
+#
