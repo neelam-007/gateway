@@ -25,6 +25,12 @@ public class UserManagerStub implements UserManager {
     }
 
     public User findByLogin(String login) throws FindException {
+         for (Iterator i = dataStore.getUsers().values().iterator(); i.hasNext();) {
+             User u = (User)i.next();
+             if (login.equals(u.getLogin())) {
+                 return u;
+             }
+        }
         return null;
     }
 
@@ -132,7 +138,7 @@ public class UserManagerStub implements UserManager {
 
     private EntityHeader fromUser(User u) {
         return
-                new EntityHeader(u.getOid(), EntityType.USER, u.getName(), null);
+                new EntityHeader(u.getOid(), EntityType.USER, u.getLogin(), null);
     }
 
     private StubDataStore dataStore;
