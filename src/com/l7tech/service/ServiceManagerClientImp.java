@@ -16,7 +16,11 @@ import java.io.IOException;
  */
 public class ServiceManagerClientImp implements ServiceManager {
     public PublishedService findByPrimaryKey(long oid) throws FindException {
-        return null;
+        try {
+            return getStub().findServiceByPrimaryKey(oid);
+        } catch (java.rmi.RemoteException e) {
+            throw new FindException(e.getMessage(), e);
+        }
     }
 
     public String resolveWsdlTarget(String url) throws java.rmi.RemoteException {
@@ -50,6 +54,7 @@ public class ServiceManagerClientImp implements ServiceManager {
     }
 
     public PublishedService resolveService(Request request) {
+        // not implemented at run time
         return null;
     }
 
@@ -62,6 +67,7 @@ public class ServiceManagerClientImp implements ServiceManager {
         com.l7tech.adminws.ClientCredentialManager.setCachedPasswd("ssgadminpasswd");
         ServiceManagerClientImp me = new ServiceManagerClientImp();
         System.out.println(me.resolveWsdlTarget("tralala"));
+        System.out.println(me.findByPrimaryKey(555));
     }
 
     private Client getStub() throws java.rmi.RemoteException {
