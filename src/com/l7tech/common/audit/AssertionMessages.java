@@ -1,5 +1,7 @@
 package com.l7tech.common.audit;
 
+import com.l7tech.policy.assertion.Regex;
+
 import java.util.logging.Level;
 
 /**
@@ -228,9 +230,44 @@ public class AssertionMessages extends Messages {
     public static final M WSTRUST_RSTR_STATUS_NON_200     = m(6202, Level.WARNING, "WS-Trust response had non-200 status");
     public static final M WSTRUST_NON_XML_MESSAGE         = m(6203, Level.INFO, "Can't replace security token in non-XML message");
     public static final M WSTRUST_DECORATION_FAILED       = m(6204, Level.WARNING, "Unable to replace security token");
-    public static final M WSTRUST_ORIGINAL_TOKEN_NOT_XML  = m(6205, Level.WARNING, "Can't remove original security token; it does not appear to have been an Element");
+    public static final M WSTRUST_ORIGINAL_TOKEN_NOT_XML  = m(6205, Level.INFO, "Original security token was not XML; cannot remove from request");
+    public static final M WSTRUST_MULTI_TOKENS            = m(6206, Level.WARNING, "Multiple Security Tokens found in request");
+
 
     //ServerRegex
-    public static final M REGEX_PATTERN_INVALID                   = m(6300, Level.WARNING, "Regex pattern '{0}' compile error: {1}; assertion therefore fails.");
+    public static final M REGEX_PATTERN_INVALID = m(6300, Level.WARNING, "Regex pattern '{0}' compile error: {1}; assertion therefore fails.");
+    public static final M REGEX_TOO_BIG         = m(6301, Level.WARNING, "Regular expression cannot be evaluated; content is too large (>= " + Regex.MAX_LENGTH + " bytes)");
+    public static final M REGEX_NO_REPLACEMENT  = m(6302, Level.WARNING, "Replace requested, and no replace string specified (null).");
+    public static final M REGEX_NO_SUCH_PART    = m(6303, Level.WARNING, "Cannot search or replace in nonexistent part #{0}");
 
+    // SAML Browser/POST
+    public static final M SAMLBROWSERPOST_LOGINFORM_NON_200           = m(6400, Level.WARNING, "HTTP GET for login form resulted in non-200 status");
+    public static final M SAMLBROWSERPOST_LOGINFORM_NOT_HTML          = m(6401, Level.WARNING, "HTTP GET for login form resulted in non-HTML response");
+    public static final M SAMLBROWSERPOST_LOGINFORM_IOEXCEPTION       = m(6402, Level.WARNING, "Couldn't read login form HTML");
+    public static final M SAMLBROWSERPOST_LOGINFORM_PARSEEXCEPTION    = m(6403, Level.WARNING, "Unable to parse login form HTML");
+    public static final M SAMLBROWSERPOST_LOGINFORM_CANT_FIND_FIELDS  = m(6404, Level.WARNING, "Unable to find login and/or password field(s) in login form HTML");
+    public static final M SAMLBROWSERPOST_LOGINFORM_MULTIPLE_FIELDS   = m(6405, Level.WARNING, "Login form contained multiple username or password fields");
+    public static final M SAMLBROWSERPOST_LOGINFORM_MULTIPLE_FORMS    = m(6406, Level.WARNING, "Multiple login forms found");
+    public static final M SAMLBROWSERPOST_LOGINFORM_NO_FORM           = m(6407, Level.WARNING, "No matching login form found");
+
+    // SAML Browser/Artifact
+    public static final M SAMLBROWSERARTIFACT_RESPONSE_NON_302        = m(6500, Level.WARNING, "HTTP GET for login resulted in non-302 status");
+    public static final M SAMLBROWSERARTIFACT_REDIRECT_NO_QUERY       = m(6501, Level.WARNING, "Redirect from login contained no query string");
+    public static final M SAMLBROWSERARTIFACT_REDIRECT_BAD_QUERY      = m(6502, Level.WARNING, "Redirect query string could not be parsed");
+    public static final M SAMLBROWSERARTIFACT_REDIRECT_NO_ARTIFACT    = m(6503, Level.WARNING, "Couldn't find SAML artifact in redirect query string");
+    public static final M SAMLBROWSERARTIFACT_IOEXCEPTION             = m(6504, Level.WARNING, "Couldn't login");
+
+    // XPath Credential Source
+    public static final M XPATHCREDENTIAL_REQUEST_NOT_XML          = m(6600, Level.WARNING, "Request not valid XML");
+    public static final M XPATHCREDENTIAL_LOGIN_XPATH_FAILED       = m(6601, Level.WARNING, "Login XPath evaluation failed");
+    public static final M XPATHCREDENTIAL_LOGIN_XPATH_NOT_FOUND    = m(6602, Level.WARNING, "Login XPath evaluation failed to find any result");
+    public static final M XPATHCREDENTIAL_LOGIN_FOUND_MULTI        = m(6603, Level.WARNING, "Login XPath evaluation found multiple results");
+    public static final M XPATHCREDENTIAL_LOGIN_XPATH_WRONG_RESULT = m(6604, Level.WARNING, "Login XPath evaluation found content of an unsupported type");
+    public static final M XPATHCREDENTIAL_LOGIN_PARENT_NOT_ELEMENT = m(6605, Level.WARNING, "Can't remove login element; parent is not an Element");
+
+    public static final M XPATHCREDENTIAL_PASS_XPATH_FAILED       = m(6611, Level.WARNING, "Password XPath evaluation failed");
+    public static final M XPATHCREDENTIAL_PASS_XPATH_NOT_FOUND    = m(6612, Level.WARNING, "Password XPath evaluation failed to find any result");
+    public static final M XPATHCREDENTIAL_PASS_FOUND_MULTI        = m(6613, Level.WARNING, "Login XPath evaluation found multiple results");
+    public static final M XPATHCREDENTIAL_PASS_XPATH_WRONG_RESULT = m(6614, Level.WARNING, "Password XPath evaluation found content of an unsupported type");
+    public static final M XPATHCREDENTIAL_PASS_PARENT_NOT_ELEMENT = m(6615, Level.WARNING, "Can't remove password element; parent is not an Element");
 }
