@@ -21,7 +21,7 @@ import java.io.IOException;
 public class UrnResolver extends NameValueServiceResolver {
 
     protected String getParameterName() {
-        return Request.PARAM_URN;
+        return Request.PARAM_SOAP_URN;
     }
 
     protected Object[] getTargetValues( PublishedService service ) {
