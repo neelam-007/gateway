@@ -1,8 +1,6 @@
 package com.l7tech.adminws.identity;
 
-import com.l7tech.identity.UserManager;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
@@ -41,9 +39,12 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
 
     public void delete(User user) throws DeleteException {
         try {
+            if (userIsAdministrator(user)) throw new CannotDeleteAdminAccountException();
             // todo, user must be refactored so that it's id is always a string
             getStub().deleteUser(config.getOid(), Long.toString(user.getOid()));
         } catch (java.rmi.RemoteException e) {
+            throw new DeleteException(e.getMessage(), e);
+        } catch (FindException e) {
             throw new DeleteException(e.getMessage(), e);
         }
     }
@@ -108,5 +109,35 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
             output.add(findByPrimaryKey(header.getStrId()));
         }
         return output;
+    }
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
+    private boolean userIsAdministrator(User user) throws FindException {
+        if (user.getOid() < 1) return false;
+        String compareCriterion = Long.toString(user.getOid());
+
+        // get the group manager
+        GroupManagerClient groupManager = new GroupManagerClient(config);
+        // get the admingroup
+        Collection groupHeaders = groupManager.findAllHeaders();
+        Iterator i = groupHeaders.iterator();
+        while (i.hasNext()) {
+            EntityHeader header = (EntityHeader)i.next();
+            if (header.getName() != null && header.getName().equals(Group.ADMIN_GROUP_NAME)) {
+                Group adminGroup = groupManager.findByPrimaryKey(header.getStrId());
+                // get the member headers
+                Collection adminUsers = adminGroup.getMembers();
+                Iterator i2 = adminUsers.iterator();
+                // see if user is there
+                while (i2.hasNext()) {
+                    User member = (User)i2.next();
+                    String memberId = Long.toString(member.getOid());
+                    if (memberId != null && memberId.equals(compareCriterion)) return true;
+                }
+            }
+        }
+        return false;
     }
 }
