@@ -100,7 +100,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             int res = i.intValue();
 
             LogManager.getInstance().getSystemLogger().log(Level.INFO, "cert_reset_counter value for user " + oid + " = " + res);
-            if (res < 10) return true;
+            if (res < CERTRESETCOUNTER_MAX) return true;
             else {
                 LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "user " + oid + " not authorized to regen cert.");
                 return false;
@@ -122,40 +122,15 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     public void recordNewCert(String oid, Certificate cert) throws UpdateException {
         HibernatePersistenceContext hpc = null;
         try {
+            // todo, we should not have to get entire user here, just update the necessary column
             sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
             String encodedcert = encoder.encode(cert.getEncoded());
-
             hpc = hibernateContext();
             hpc.beginTransaction();
             User u = findByPrimaryKey( oid );
             u.setCert( encodedcert );
             u.setCertResetCounter( u.getCertResetCounter() + 1 );
             hpc.commitTransaction();
-
-            /*
-            // fla note, this will move to a seperate manager once we redesign persistence layer
-            String colname = "cert";
-            Connection connection = ((HibernatePersistenceContext)PersistenceContext.getCurrent()).getSession().connection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE " + getTableName() + " SET " + colname + "=? WHERE oid=?");
-            //statement.setBinaryStream(1, new ByteArrayInputStream(certbytes), certbytes.length);
-            statement.setString(1, encodedcert);
-            statement.setString(2, oid);
-            statement.executeUpdate();
-
-            // get existing counter value from table
-            colname = "cert_reset_counter";
-            Statement statement2 = connection.createStatement();
-            String sqlStr = "SELECT " + colname + " FROM " + getTableName() + " WHERE oid=" + oid;
-            ResultSet rs = statement2.executeQuery(sqlStr);
-            if (!rs.next()) throw new UpdateException("cannot get value for " + colname);
-            int currentValue = rs.getInt(colname);
-
-            // update it
-            statement = connection.prepareStatement("UPDATE " + getTableName() + " SET " + colname + "=? WHERE oid=?");
-            statement.setInt(1, currentValue+1);
-            statement.setString(2, oid);
-            statement.executeUpdate();
-            */
         } catch (SQLException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
             throw new UpdateException(e.toString(), e);
@@ -198,25 +173,45 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     }
 
     /**
-     * removed cert from db and resets counter
+     * records the fact that a user's cert was used successfully. once this is set, a user can no longer
+     * regenerate a cert automatically unless the administrator revokes the existing user's cert
      */
-    public void revokeCert(String oid) throws UpdateException{
+    public void setCertWasUsed(String oid) throws UpdateException {
         PersistenceContext pc = null;
         try {
+            // todo, we should not have to get entire user here, just update the necessary columns
             pc = getContext();
+            pc.beginTransaction();
+            User u = findByPrimaryKey( oid );
+            u.setCertResetCounter(CERTRESETCOUNTER_MAX);
+            pc.commitTransaction();
+        } catch (SQLException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            throw new UpdateException(e.toString(), e);
+        } catch ( FindException e ) {
+            LogManager.getInstance().getSystemLogger().log(Level.WARNING, e.getMessage(), e);
+            throw new UpdateException(e.toString(), e);
+        } catch ( TransactionException e ) {
+            LogManager.getInstance().getSystemLogger().log(Level.WARNING, e.getMessage(), e);
+            throw new UpdateException(e.toString(), e);
+        } finally {
+            if ( pc != null ) pc.close();
+        }
+    }
 
+    /**
+     * removed cert from db and resets counter
+     */
+    public void revokeCert(String oid) throws UpdateException {
+        PersistenceContext pc = null;
+        try {
+            // todo, we should not have to get entire user here, just update the necessary columns
+            pc = getContext();
             pc.beginTransaction();
             User u = findByPrimaryKey( oid );
             u.setCert( null );
             u.setCertResetCounter( 0 );
             pc.commitTransaction();
-
-            /*
-            // fla note, this will move to a seperate manager once we redesign persistence layer
-            Connection connection = ((HibernatePersistenceContext)PersistenceContext.getCurrent()).getSession().connection();
-            Statement statement = connection.createStatement();
-            statement.executeUpdate("UPDATE " + getTableName() + " SET cert=NULL, cert_reset_counter=0 WHERE oid=" + oid);
-            */
         } catch (SQLException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
             throw new UpdateException(e.toString(), e);
@@ -313,6 +308,11 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     }
 
     private static final String F_CERTRESETCOUNTER = "certResetCounter";
+    // this value for the F_CERTRESETCOUNTER column represent the maximum number of retries that
+    // a user can regen his cert until the admin must revoke. once a cert is used in the authentication
+    // code, the F_CERTRESETCOUNTER value is automatically set to that value so that it cannot be regen once
+    // it is used.
+    private static final int CERTRESETCOUNTER_MAX = 10;
     private static final String F_OID = "oid";
     public static final String F_CERT = "cert";
 }
