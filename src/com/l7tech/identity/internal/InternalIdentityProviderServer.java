@@ -60,7 +60,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     Object maybeCert = pc.getPayload();
 
                     if ( maybeCert == null ) {
-                        _log.log( Level.WARNING, "Request does not contain a certificate" );
+                        _log.log( Level.SEVERE, "Request was supposed to contain a certificate, but does not" );
                     } else {
                         dbCert = userManager.retrieveUserCert( login );
                         if ( dbCert == null ) {
