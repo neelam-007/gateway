@@ -8,6 +8,7 @@ package com.l7tech.service;
 
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -15,6 +16,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.identity.StubDataStore;
 
 import java.rmi.RemoteException;
@@ -29,8 +31,17 @@ import java.util.Iterator;
 public class JmsAdminStub implements JmsAdmin {
     private Map connections;
 
+    private static JmsProvider[] providers = new JmsProvider[] {
+        new JmsProvider("IBM MQSeries 5.2.1", "com.ibm.jms.jndi.InitialContextFactory", "JmsQueueConnectionFactory"),
+        new JmsProvider("OpenJMS 0.7.6-rc3", "org.exolab.jms.jndi.InitialContextFactory", "JmsQueueConnectionFactory"),
+    };
+
     public JmsAdminStub() {
         connections = StubDataStore.defaultStore().getJmsConnections();
+    }
+
+    public JmsProvider[] getProviderList() throws RemoteException {
+        return providers;
     }
 
     public EntityHeader[] findAllConnections() throws RemoteException, FindException {
@@ -52,12 +63,13 @@ public class JmsAdminStub implements JmsAdmin {
 
     public long saveConnection(JmsConnection connection) throws RemoteException, UpdateException, SaveException, VersionException {
         long oid = connection.getOid();
-        if (oid == 0) {
+        if (oid == 0 || oid == Entity.DEFAULT_OID) {
             oid = StubDataStore.defaultStore().nextObjectId();
         }
         connection.setOid(oid);
         Long key = new Long(oid);
         connections.put(key, connection);
+        System.out.println("Saved stub JmsConnection oid=" + oid);
         return oid;
     }
 
