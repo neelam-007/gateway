@@ -136,10 +136,19 @@ public class IdentityRule implements Filter {
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
             SpecificUser userass = (SpecificUser)idassertion;
-            if (userass.getIdentityProviderOid() == user.getProviderId())
-                if (userass.getUserLogin().equals(user.getLogin())) {
-                    return true;
+            if (userass.getIdentityProviderOid() == user.getProviderId()) {
+                if (userass.getUserLogin() != null && userass.getUserLogin().length() > 0) {
+                    if (userass.getUserLogin().equals(user.getLogin())) {
+                        return true;
+                    }
+                } else if (userass.getUserName() != null && userass.getUserName().length() > 0) {
+                   if (userass.getUserName().equals(user.getName())) {
+                       return true;
+                   }
+                } else {
+                    logger.warn("The assertion " + userass.toString() + " has no login nor name to compare with");
                 }
+            }
             return false;
         } else if (idassertion instanceof MemberOfGroup) {
             MemberOfGroup grpmemship = (MemberOfGroup)idassertion;
