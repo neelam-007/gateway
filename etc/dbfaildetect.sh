@@ -24,6 +24,14 @@ NETMASK="255.255.255.0"
 DEFAULT_ROUTE=`/sbin/route -n | egrep ^0.0.0.0 | cut -c 17-32 | tr -d [:blank:]`
 BACK_END_ROUTE=""
 
+# Sanity Check:
+if [ -e $IFCONFIG -a -e $GARP -a  -e $NC -a -e $PING ]; then
+	echo -n ""
+else
+	echo "Some dependencies not satisfied, please check for $IFCONFIG, $GARP, $NC, $PING"
+	exit 1
+fi
+
 # If network has routes on secure side
 # Fill in back end router if there is one
 # We test that machine to see if we're the ones cut off from the world
