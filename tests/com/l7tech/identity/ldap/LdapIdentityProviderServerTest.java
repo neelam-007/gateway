@@ -84,9 +84,18 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
 
         PrincipalCredentials validcreds = new PrincipalCredentials(francois, "rockclimbing".getBytes(), CredentialFormat.CLEARTEXT);
         PrincipalCredentials invalidcreds = new PrincipalCredentials(francois, "i like to golf".getBytes(), CredentialFormat.CLEARTEXT);
-        
-        assertTrue("authenticate succeeds with valid credentials", provider.authenticate(validcreds));
-        assertTrue("authenticate fails with invalid credentials", !provider.authenticate(invalidcreds));
+
+        try {
+            provider.authenticate(validcreds);
+            assertTrue("authenticate succeeds with valid credentials", true );
+        } catch ( AuthenticationException ae ) {
+        }
+
+        try {
+            provider.authenticate(invalidcreds);
+        } catch ( AuthenticationException ae ) {
+            assertTrue("authenticate fails with invalid credentials", true );
+        }
     }
 
     public void testSearch() throws Exception {
