@@ -41,6 +41,10 @@ public class CustomAssertionReference extends ExternalReference {
         return output;
     }
 
+    public String getCustomAssertionName() {
+        return customAssertionName;
+    }
+
     private CustomAssertionReference() {
         super();
     }
