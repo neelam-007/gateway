@@ -8,10 +8,10 @@ import java.awt.event.*;
 
 /**
  * Superclass for property dialog boxes.
+ *
  * User: mike
  * Date: May 29, 2003
  * Time: 2:48:03 PM
- * To change this template use Options | File Templates.
  */
 public abstract class PropertyDialog extends JDialog {
     private static final String DFG = "defaultForeground";
@@ -98,7 +98,7 @@ public abstract class PropertyDialog extends JDialog {
     protected JButton getOkButton() {
         if (okButton == null) {
             okButton = new JButton("Ok");
-            okButton.putClientProperty(DFG, okButton.getForeground());
+            initDfg(okButton);
             okButton.addActionListener(new ActionListener() {
                 public void actionPerformed(final ActionEvent e) {
                     commitChanges();
@@ -111,16 +111,23 @@ public abstract class PropertyDialog extends JDialog {
         return okButton;
     }
 
+    protected static void initDfg(JComponent component) {
+        component.putClientProperty(DFG, component.getForeground());
+    }
+
+    protected static void setEnabled(JComponent component, boolean enabled) {
+        component.setEnabled(enabled);
+        component.setForeground(enabled ? (Color)component.getClientProperty(DFG) : Color.GRAY);
+    }
+
     /** Grey out the Ok button. */
     protected void disableOk() {
-        getOkButton().setForeground(Color.GRAY);
-        getOkButton().setEnabled(false);
+        setEnabled(getOkButton(), false);
     }
 
     /** Enable the Ok button. */
     protected void enableOk() {
-        getOkButton().setForeground((Color)getOkButton().getClientProperty(DFG));
-        getOkButton().setEnabled(true);
+        setEnabled(getOkButton(), true);
     }
 
     /**
