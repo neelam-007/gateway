@@ -63,7 +63,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
      */
     public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion a, ServiceNode sn) {
         super(owner, true);
-        setTitle("Edit Routing Assertion");
+        setTitle("HTTP Routing Properties");
         assertion = a;
         this.service = sn;
         initComponents();
@@ -127,10 +127,10 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
 
         credentialsPanel.setLayout(new GridBagLayout());
-        credentialsPanel.setBorder(BorderFactory.createTitledBorder("Protected service authentication"));
+        credentialsPanel.setBorder(BorderFactory.createTitledBorder("Web Service Authentication"));
         ButtonGroup methodGroup = new ButtonGroup();
 
-        passwordMethod = new JRadioButton("Username/Password");
+        passwordMethod = new JRadioButton("Identity Authentication");
         methodGroup.add(passwordMethod);
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -150,7 +150,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         credentialsPanel.add(js, gridBagConstraints);
 
 
-        samlMethod = new JRadioButton("SAML assertion");
+        samlMethod = new JRadioButton("SAML Security");
         methodGroup.add(samlMethod);
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 2;
@@ -241,7 +241,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         serviceUrlPanel.setLayout(new BoxLayout(serviceUrlPanel, BoxLayout.X_AXIS));
 
         JLabel serviceUrlLabel = new JLabel();
-        serviceUrlLabel.setText("Service URL");
+        serviceUrlLabel.setText("Service URL:");
         serviceUrlLabel.setBorder(new EmptyBorder(new Insets(1, 1, 1, 5)));
         serviceUrlPanel.add(serviceUrlLabel);
 
@@ -300,7 +300,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         JPanel identityPanel = new JPanel();
         identityPanel.setLayout(new BoxLayout(identityPanel, BoxLayout.X_AXIS));
         identityLabel = new JLabel();
-        identityLabel.setText("Identity");
+        identityLabel.setText("User Name:");
         identityPanel.add(identityLabel);
         identityPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
@@ -318,7 +318,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         passwordPanel.setLayout(new BoxLayout(passwordPanel, BoxLayout.X_AXIS));
 
         passwordLabel = new JLabel();
-        passwordLabel.setText("Password");
+        passwordLabel.setText("Password:");
         passwordPanel.add(passwordLabel);
 
         passwordPanel.add(Box.createRigidArea(new Dimension(20, 10)));
@@ -334,7 +334,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         JPanel realmPanel = new JPanel();
         realmPanel.setLayout(new BoxLayout(realmPanel, BoxLayout.X_AXIS));
         realmLabel = new JLabel();
-        realmLabel.setText("Realm");
+        realmLabel.setText("Realm:");
         realmPanel.add(realmLabel);
 
         realmPanel.add(Box.createRigidArea(new Dimension(20, 10)));
@@ -379,7 +379,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         Integer step = new Integer(1);
         SpinnerNumberModel spinModel = new SpinnerNumberModel(value, min, max, step);
         expirySpinner.setModel(spinModel);
-        expirySpinLabel = new JLabel("Ticket expiry (in minutes):");
+        expirySpinLabel = new JLabel("Ticket Expiry (in minutes):");
         expirySpinLabel.setLabelFor(expirySpinner);
 
         expiresPanel.add(expirySpinLabel);
@@ -391,7 +391,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         JPanel includeGroupsPanel = new JPanel();
         includeGroupsPanel.setLayout(new BoxLayout(includeGroupsPanel, BoxLayout.X_AXIS));
-        memebershipStatementCheck = new JCheckBox("Group membership statement");
+        memebershipStatementCheck = new JCheckBox("Group Membership Statement");
         includeGroupsPanel.add(memebershipStatementCheck);
         includeGroupsPanel.add(Box.createGlue());
         samlPanel.add(includeGroupsPanel);
