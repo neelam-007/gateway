@@ -1,0 +1,80 @@
+--- ./jakarta-tomcat-connectors/util/java/org/apache/tomcat/util/net/jsse/JSSE14SocketFactory.java	2004-10-29 12:17:00.000000000 -0700
++++ /opt/java/jakarta-tomcat-5.5.4-src/jakarta-tomcat-connectors/util/java/org/apache/tomcat/util/net/jsse/JSSE14SocketFactory.java	2004-12-08 17:46:29.000000000 -0800
+@@ -19,16 +19,12 @@
+ import java.io.IOException;
+ import java.security.KeyStore;
+ import java.security.SecureRandom;
++import java.security.NoSuchAlgorithmException;
++import java.security.cert.X509Certificate;
++import java.security.cert.CertificateException;
+ import java.util.Vector;
+ 
+-import javax.net.ssl.KeyManager;
+-import javax.net.ssl.KeyManagerFactory;
+-import javax.net.ssl.SSLContext;
+-import javax.net.ssl.SSLServerSocket;
+-import javax.net.ssl.SSLSocket;
+-import javax.net.ssl.TrustManager;
+-import javax.net.ssl.TrustManagerFactory;
+-import javax.net.ssl.X509KeyManager;
++import javax.net.ssl.*;
+ 
+ import org.apache.tomcat.util.res.StringManager;
+ 
+@@ -159,6 +155,44 @@
+         return kms;
+     }
+ 
++    private class L7TrustManager implements X509TrustManager {
++        protected TrustManager[] trustManagers = null;
++        protected X509TrustManager delegate = null;
++        private String algorithm;
++
++        private L7TrustManager(String algorithm) {
++            this.algorithm = algorithm;
++        }
++
++        private X509TrustManager getDelegate() {
++            if ( delegate == null ) {
++                try {
++                    if ( trustManagers == null ) trustManagers = TrustManagerFactory.getInstance(algorithm).getTrustManagers();
++                } catch ( NoSuchAlgorithmException nsae ) {
++                    throw new RuntimeException( nsae );
++                }
++
++                for (int i = 0; i < trustManagers.length; i++) {
++                    TrustManager trustManager = trustManagers[i];
++                    if ( trustManager instanceof X509TrustManager ) delegate = (X509TrustManager)trustManager;
++                }
++            }
++            return delegate;
++        }
++
++        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
++        }
++
++        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
++            getDelegate().checkServerTrusted( x509Certificates, s );
++        }
++
++        public X509Certificate[] getAcceptedIssuers() {
++            if ( delegate == null ) return new X509Certificate[0];
++            return getDelegate().getAcceptedIssuers();
++        }
++    }
++
+     /**
+      * Gets the intialized trust managers.
+      */
+@@ -172,7 +206,10 @@
+             truststoreType = keystoreType;
+         }
+         KeyStore trustStore = getTrustStore(truststoreType);
+-        if (trustStore != null) {
++        if (trustStore == null) {
++            TrustManager l7TrustManager = new L7TrustManager(algorithm);
++            return new TrustManager[] { l7TrustManager };
++        } else {
+             TrustManagerFactory tmf = TrustManagerFactory.getInstance(algorithm);
+             tmf.init(trustStore);
+             tms = tmf.getTrustManagers();
