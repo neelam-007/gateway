@@ -125,6 +125,11 @@ public class SecurityContextTokenHandler {
         return URIToSessionId(childText.toString());
     }
 
+    public static long getSequenceNumberFromWSCToken(Document soapMsg) {
+        // todo
+        return -1;
+    }
+
     private static void appendSeqElement(Element securityCtxTokenEl, long seqnumber) {
         // todo, add the sequence number
     }
