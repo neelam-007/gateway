@@ -6,9 +6,7 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.logging.LogManager;
-import com.l7tech.message.HttpTransportMetadata;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -49,7 +47,7 @@ public class MessageProcessor {
                 request.setParameter( Request.PARAM_SERVICE, service );
 
                 // check if requestor provided a version number for published service
-                String requestorVersion = ((HttpTransportMetadata)request.getTransportMetadata()).getRequest().getHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+                String requestorVersion = (String)request.getParameter( Request.PARAM_HTTP_POLICY_VERSION );
                 if (requestorVersion != null && requestorVersion.length() > 0) {
                     // format is policyId|policyVersion (seperated with char '|')
                     long reqPolicyId = Long.parseLong(requestorVersion.substring(0, requestorVersion.indexOf('|')));

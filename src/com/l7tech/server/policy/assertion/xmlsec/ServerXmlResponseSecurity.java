@@ -1,36 +1,35 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.ibm.xml.dsig.SignatureStructureException;
+import com.ibm.xml.dsig.XSignatureException;
+import com.l7tech.logging.LogManager;
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.HttpTransportMetadata;
-import com.l7tech.util.SoapUtil;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.KeystoreUtils;
-import com.l7tech.logging.LogManager;
-import com.l7tech.xmlsig.SoapMsgSigner;
-import com.l7tech.xmlsig.SecureConversationTokenHandler;
-import com.l7tech.xmlenc.SessionManager;
+import com.l7tech.util.SoapUtil;
 import com.l7tech.xmlenc.Session;
+import com.l7tech.xmlenc.SessionManager;
 import com.l7tech.xmlenc.SessionNotFoundException;
 import com.l7tech.xmlenc.XmlMangler;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.ibm.xml.dsig.SignatureStructureException;
-import com.ibm.xml.dsig.XSignatureException;
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.security.PrivateKey;
-import java.security.KeyStoreException;
-import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateException;
+import com.l7tech.xmlsig.SecureConversationTokenHandler;
+import com.l7tech.xmlsig.SoapMsgSigner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -68,10 +67,10 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             logger.severe(msg);
             throw new PolicyAssertionException(msg);
         }
-        HttpTransportMetadata meta = (HttpTransportMetadata)request.getTransportMetadata();
 
         // DECORATE WITH NONCE IN A WSSC TOKEN
-        String nonceValue = meta.getRequest().getHeader(SecureSpanConstants.HttpHeaders.XML_NONCE_HEADER_NAME);
+        String nonceValue = (String)request.getParameter( Request.PARAM_HTTP_XML_NONCE );
+
         // (this is optional)
         if (nonceValue != null && nonceValue.length() > 0) {
             SecureConversationTokenHandler.appendNonceToDocument(soapmsg, Long.parseLong(nonceValue));
@@ -81,7 +80,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         if (data.isEncryption()) {
             // RETREIVE SESSION ID
             // get the header containing the xml session id
-            String sessionIDHeaderValue = meta.getRequest().getHeader(SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME);
+            String sessionIDHeaderValue = (String)request.getParameter( Request.PARAM_HTTP_XML_SESSID );
             if (sessionIDHeaderValue == null || sessionIDHeaderValue.length() < 1) {
                 String msg = "Could not encrypt response because xml session id was not provided by requestor.";
                 logger.severe(msg);
