@@ -6,10 +6,13 @@
 package com.l7tech.common;
 
 import com.l7tech.common.util.Locator;
+import com.l7tech.objectmodel.ObjectPermission;
+import com.l7tech.identity.Group;
 
 import javax.security.auth.Subject;
 import java.util.Collections;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.security.Permission;
 
 /**
@@ -22,6 +25,7 @@ import java.security.Permission;
  */
 public abstract class Authorizer {
     private static Authorizer defaultAuthorizer = newDefaultAdminAuthorizer();
+    protected static Logger logger = Logger.getLogger(Authorizer.class.getName());
 
     public static Authorizer getAuthorizer() {
         Authorizer aa = (Authorizer)Locator.getDefault().lookup(Authorizer.class);
@@ -50,14 +54,28 @@ public abstract class Authorizer {
         return false;
 
     }
+
     /**
-     * Test whether a given subject has a permission on a given target object
-     * @param target the target object
-     * @param permission the permission to test
+     * Test whether a given subject has a permission. Only the <code>ObjectPermission</code>
+     * are supported currently
+     *
+     * @param subject    the subject to test
+     * @param permission the permission to test - <code>ObjectPermission</code> containing the
+     *                   target object and the desired action
      * @return true if the target object allows access described by permission, false otherwise
      */
-    public boolean hasPermission(Object target, Permission permission) {
-        // todo: finish implementation - em
+    public boolean hasPermission(Subject subject, Permission permission) {
+        if (!(permission instanceof ObjectPermission)) {
+            logger.warning("Unknown permission " + permission.getClass());
+            return false;
+        }
+        // simple admin/operator group check for now, may grwo into acl
+        ObjectPermission ep = (ObjectPermission)permission;
+        if (ep.getMask() == ObjectPermission.READ) {
+            return isSubjectInRole(subject, new String[]{Group.OPERATOR_GROUP_NAME, Group.ADMIN_GROUP_NAME});
+        } else if ((ep.getMask() & ObjectPermission.ALL) > ObjectPermission.READ) {
+            return isSubjectInRole(subject, new String[]{Group.ADMIN_GROUP_NAME});
+        }
         return false;
     }
 
