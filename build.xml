@@ -1343,7 +1343,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <antcall target="INTERNAL-ssg-install-optional-2"/>
 
         <!-- Copy misc. stuff -->
-        <copy todir="${install.src.sql}" file="${src.root}/etc/db/${database.type}/ssg.sql"/>
+        <copy todir="${install.src.sql}" file="${src.root}/etc/db/${database.type}/*.sql"/>
         <copy todir="${install.src.bin}">
             <fileset dir="${src.root}/etc">
                 <include name="setkeys.sh"/>
