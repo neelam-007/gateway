@@ -30,11 +30,11 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
     /**
      * For use by the token service. Records and remembers a session for the duration specified.
      */
-    public synchronized void saveSession(SecureConversationSession newSession) {
+    public synchronized void saveSession(SecureConversationSession newSession) throws DuplicateSessionException {
         // Two sessions with same id is not allowed. ever (even if one is expired)
         SecureConversationSession alreadyExistingOne = getSession(newSession.getIdentifier());
         if (alreadyExistingOne != null) {
-            // todo some special exception
+            throw new DuplicateSessionException("Session already exists with id " + newSession.getIdentifier());
         }
         sessions.put(newSession.getIdentifier(), newSession);
     }
