@@ -990,7 +990,7 @@ public class MainWindow extends JFrame {
     private JSplitPane getMainJSplitPane() {
         if (mainJSplitPane == null) {
             mainJSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-            mainJSplitPane.setResizeWeight(0.75);
+            mainJSplitPane.setResizeWeight(0.5);
 
             mainJSplitPane.setTopComponent(getMainJSplitPaneTop());
             mainJSplitPane.setBottomComponent(getLogPane());

@@ -126,7 +126,7 @@ public class LogPanel extends JPanel {
             selectPane = new JPanel();
         }
 
-        selectPane.setMinimumSize(new Dimension(500, 35));
+        selectPane.setMinimumSize(new Dimension((int)selectPane.getSize().getWidth(), 35));
         selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
         selectPane.add(getFilterPane());
         selectPane.add(getControlPane());
@@ -330,7 +330,7 @@ public class LogPanel extends JPanel {
             msgDetailsPane = new JScrollPane();
         }
         msgDetailsPane.setViewportView(getMsgDetails());
-        msgDetailsPane.setMinimumSize(new Dimension(0, 0));
+        //msgDetailsPane.setMinimumSize(new Dimension(0, 0));
 
         return msgDetailsPane;
     }
@@ -346,7 +346,7 @@ public class LogPanel extends JPanel {
         }
 
         msgDetails.setEditable(false);
-        msgDetails.setMinimumSize(new Dimension(0, 0));
+       // msgDetails.setMinimumSize(new Dimension(0, 0));
 
         return msgDetails;
     }
@@ -430,7 +430,7 @@ public class LogPanel extends JPanel {
 
     private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
         if (details.isSelected()) {
-            getLogPaneTop().setDividerLocation(0.7);
+            getLogPaneTop().setDividerLocation(getSize().getWidth() * 0.7);
             getMsgDetails().setVisible(true);
         } else {
             hideMsgDetails();
