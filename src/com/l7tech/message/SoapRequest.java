@@ -21,7 +21,7 @@ import java.io.Reader;
  * @version $Revision$
  */
 public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRequest {
-    public SoapRequest( TransportMetadata metadata ) throws IOException {
+    public SoapRequest( TransportMetadata metadata ) {
         super( metadata );
         _id = RequestIdGenerator.next();
         MessageProcessor.setCurrentRequest(this);
