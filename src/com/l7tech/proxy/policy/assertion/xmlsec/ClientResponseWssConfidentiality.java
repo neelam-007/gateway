@@ -1,10 +1,8 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.*;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -14,13 +12,15 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import com.l7tech.proxy.util.ClientLogger;
+import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.GeneralSecurityException;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * XML Digital signature on the soap response sent from the ssg server to the requestor (probably proxy). May also enforce
@@ -67,7 +67,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
         if (SsgKeyStoreManager.getServerCert(ssg) == null)
             throw new ServerCertificateUntrustedException("Server cert is needed to check signatures, but has not yet been discovered");
 
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+        return AssertionStatus.NONE;
     }
 
     /**
@@ -79,32 +79,42 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
      */
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
       throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException {
-        Document doc = response.getResponseAsDocument();
-
-        // TODO rewrite rewrite rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite rewrite rewrite
-
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
-    }
-
-    private void handleResponseThrowable(Throwable e) throws ResponseValidationException {
-        Throwable cause = ExceptionUtils.unnestToRoot(e);
-        if (cause instanceof SignatureException) {
-            throw new ResponseValidationException("Response from Gateway was signed, but not by the Gateway CA key we expected", e);
-        } else if (cause instanceof CertificateException) {
-            throw new ResponseValidationException("Signature on response from Gateway contained an invalid certificate", e);
-        } else if (cause instanceof NoSuchAlgorithmException) {
-            throw new ResponseValidationException("Signature on response from Gateway required an unsupported algorithm", e);
-        } else if (cause instanceof InvalidKeyException) {
-            throw new ResponseValidationException("Our copy of the Gateway public key is corrupt", e);
-        } else if (cause instanceof NoSuchProviderException) {
-            throw new RuntimeException("VM is misconfigured", e);
+        Document soapmsg = response.getResponseAsDocument();
+        WssProcessor.ProcessorResult wssRes = response.getProcessorResult();
+        // verify the appropriate elements were encrypted
+        XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg, responseWssConfidentiality.getXpathExpression().getNamespaces());
+        List selectedNodes = null;
+        try {
+            selectedNodes = evaluator.select(responseWssConfidentiality.getXpathExpression().getExpression());
+        } catch (JaxenException e) {
+            // this is thrown when there is an error in the expression
+            // this is therefore a bad policy
+            throw new ResponseValidationException(e);
         }
-        throw new ResponseValidationException(e);
+
+        // the element is not there so there is nothing to check
+        if (selectedNodes.isEmpty()) {
+            log.info("The element " + responseWssConfidentiality.getXpathExpression().getExpression() + " is not present in this response. " +
+                        "the assertion therefore succeeds.");
+            return AssertionStatus.NONE;
+        }
+
+        // to assert this, i must make sure that at least one of these nodes is part of the nodes
+        // that were signed as per attesting the wss processor
+        for (Iterator i = selectedNodes.iterator(); i.hasNext();) {
+            Object node = i.next();
+            Element[] toto = wssRes.getElementsThatWereEncrypted();
+            for (int j = 0; j < toto.length; j++) {
+                if (toto[j] == node) {
+                    // we got the bugger!
+                    log.info("The element " + responseWssConfidentiality.getXpathExpression().getExpression() + " was found in this " +
+                            "response. and is part of the elements that were encrypted as per the wss processor.");
+                    return AssertionStatus.NONE;
+                }
+            }
+        }
+        log.info("The element was found in the response but does not appear to be encrypted. Returning FALSIFIED");
+        return AssertionStatus.FALSIFIED;
     }
 
     public String getName() {
