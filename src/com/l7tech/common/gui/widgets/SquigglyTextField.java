@@ -6,12 +6,10 @@
 
 package com.l7tech.common.gui.widgets;
 
-import javax.swing.JTextField;
-import javax.swing.text.Document;
+import javax.swing.*;
 import javax.swing.text.BadLocationException;
-import java.awt.Graphics;
-import java.awt.Color;
-import java.awt.Rectangle;
+import javax.swing.text.Document;
+import java.awt.*;
 
 /**
  * @author alex
@@ -48,16 +46,19 @@ public class SquigglyTextField extends JTextField {
     public synchronized void setRange( int begin, int end ) {
         _begin = begin;
         _end = end;
+        repaint();
     }
 
     public synchronized void setAll() {
         _begin = ALL;
         _end = ALL;
+        repaint();
     }
 
     public synchronized void setNone() {
         _begin = NONE;
         _end = NONE;
+        repaint();
     }
 
     public synchronized Color getColor() {
@@ -66,14 +67,17 @@ public class SquigglyTextField extends JTextField {
 
     public synchronized void setColor(Color color) {
         _color = color;
+        repaint();
     }
 
     public synchronized void setSquiggly() {
         _style = SQUIGGLY;
+        repaint();
     }
 
     public synchronized void setStraight() {
         _style = STRAIGHT;
+        repaint();
     }
 
     public void paintComponent( Graphics g ) {
