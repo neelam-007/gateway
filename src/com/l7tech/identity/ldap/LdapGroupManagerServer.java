@@ -35,9 +35,6 @@ public class LdapGroupManagerServer implements GroupManager {
     public void update(Group group) throws UpdateException {
     }
 
-    public void setIdentityProviderOid(long oid) {
-    }
-
     public Collection findAllHeaders() throws FindException {
         return null;
     }

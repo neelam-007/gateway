@@ -55,10 +55,6 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
         }
     }
 
-    public void setIdentityProviderOid(long oid) {
-        // what should i do with this?
-    }
-
     public Collection findAllHeaders() throws FindException {
         com.l7tech.objectmodel.EntityHeader[] array = null;
         try {

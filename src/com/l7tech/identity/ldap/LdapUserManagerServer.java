@@ -53,10 +53,6 @@ public class LdapUserManagerServer implements UserManager {
         throw new UpdateException("Not supported in LdapUserManagerServer");
     }
 
-    public void setIdentityProviderOid(long oid) {
-        // what is that for?
-    }
-
     public Collection findAllHeaders() throws FindException {
         return null;
     }
