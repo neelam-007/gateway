@@ -165,6 +165,10 @@ public class MultipartUtil {
             contentLength = length;
         }
 
+        public void setContent(String content) {
+            this.content = content;
+        }
+
         public boolean isValidated() {
             return validated;
         }

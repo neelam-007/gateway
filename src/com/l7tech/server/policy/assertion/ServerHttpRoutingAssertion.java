@@ -7,6 +7,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.attachments.MultipartMessageReader;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.*;
 import com.l7tech.identity.User;
@@ -17,6 +18,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.transport.http.SslClientTrustManager;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -134,7 +136,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 // todo: check if we need to support HTTP 1.1.
                 postMethod.setHttp11(false);
 
-                final MultipartMessageReader multipartReader = request.getMultipartReader();
+                final ServerMultipartMessageReader multipartReader = request.getMultipartReader();
                 if(request.isMultipart()) {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
                             "; type=\"" + XmlUtil.TEXT_XML + "\"" +

@@ -6,6 +6,7 @@ import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.proxy.attachments.ClientMultipartMessageReader;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
@@ -196,7 +197,7 @@ public class RequestHandler extends AbstractHttpHandler {
             }
 
             Document envelope = null;
-            MultipartMessageReader  multipartReader = null;
+            ClientMultipartMessageReader  multipartReader = null;
 
             String ctype = request.getField(XmlUtil.CONTENT_TYPE);
             MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
@@ -209,7 +210,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
                 String innerType = MultipartUtil.unquote(((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE)));
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
-                multipartReader = new MultipartMessageReader(request.getInputStream(), multipartBoundary);
+                multipartReader = new ClientMultipartMessageReader(request.getInputStream(), multipartBoundary);
 
                 // get SOAP part
                 MultipartUtil.Part soapPart = multipartReader.getSoapPart();
@@ -297,7 +298,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
             response.setStatus(status);
 
-            MultipartMessageReader multipartReader = null;
+            ClientMultipartMessageReader multipartReader = null;
             if((multipartReader = ssgResponse.getMultipartReader()) != null) {
                 response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
                             "; type=\"" + XmlUtil.TEXT_XML + "\"" +

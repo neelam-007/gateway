@@ -12,7 +12,7 @@ import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.MultipartUtil;
-import com.l7tech.common.util.MultipartMessageReader;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -187,9 +187,9 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                     return AssertionStatus.FALSIFIED;
                                 }
 
-                                MultipartMessageReader mreader = xreq.getMultipartReader();
+                                ServerMultipartMessageReader mreader = xreq.getMultipartReader();
 
-                                if(mreader == null) throw new IllegalStateException("MultipartMessageReader must be created first before use");
+                                if(mreader == null) throw new IllegalStateException("ServerMultipartMessageReader must be created first before use");
                                 MultipartUtil.Part mimepartRequest = mreader.getMessagePart(mimePartCID);
 
                                 if(mimepartRequest != null) {

@@ -1,7 +1,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.RequestId;
-import com.l7tech.common.util.MultipartMessageReader;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -123,7 +123,7 @@ public class RequestXpathAssertionTest extends TestCase {
             public boolean isMultipart() { return false; }
             public String getMultipartBoundary() { return null; }
 
-            public MultipartMessageReader getMultipartReader() {return null;}
+            public ServerMultipartMessageReader getMultipartReader() {return null;}
 
             public TransportMetadata getTransportMetadata() {
                 return null;

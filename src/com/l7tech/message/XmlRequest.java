@@ -6,11 +6,7 @@
 
 package com.l7tech.message;
 
-import com.l7tech.common.util.MultipartMessageReader;
-import com.l7tech.common.util.MultipartUtil;
-
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * @author alex

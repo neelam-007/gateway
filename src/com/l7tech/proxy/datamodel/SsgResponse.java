@@ -7,11 +7,11 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.util.MultipartMessageReader;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.proxy.attachments.ClientMultipartMessageReader;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.w3c.dom.Document;
@@ -35,7 +35,7 @@ public class SsgResponse {
     final private int httpStatus;
     final private ProcessorResult processorResult;
     private String responseString = null;
-    private MultipartMessageReader multipartReader;
+    private ClientMultipartMessageReader multipartReader;
     private PostMethod downstreamPostMethod = null;
 
     private transient Boolean isSoap = null;
@@ -48,7 +48,7 @@ public class SsgResponse {
     private transient String faultactor = null;
 
     public SsgResponse(Document wssProcessedResponse, ProcessorResult wssProcessorResult,
-                       int httpStatus, HttpHeaders headers, MultipartMessageReader multipartReader)
+                       int httpStatus, HttpHeaders headers, ClientMultipartMessageReader multipartReader)
     {
         if (wssProcessedResponse == null) throw new IllegalArgumentException("response document must be non-null");
         this.responseDoc = wssProcessedResponse;
@@ -143,7 +143,7 @@ public class SsgResponse {
         return this.httpStatus;
     }
 
-    public MultipartMessageReader getMultipartReader() {
+    public ClientMultipartMessageReader getMultipartReader() {
         return multipartReader;
     }
 

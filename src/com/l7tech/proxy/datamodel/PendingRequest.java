@@ -7,11 +7,11 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.common.util.MultipartMessageReader;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.attachments.ClientMultipartMessageReader;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
 import org.w3c.dom.Document;
@@ -60,7 +60,7 @@ public class PendingRequest {
     private SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
     private Calendar secureConversationExpiryDate = null;
     private boolean multipart = false;
-    private MultipartMessageReader multipartReader = null;
+    private ClientMultipartMessageReader multipartReader = null;
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
@@ -264,11 +264,11 @@ public class PendingRequest {
         this.multipart = multipart;
     }
 
-    public MultipartMessageReader getMultipartReader() {
+    public ClientMultipartMessageReader getMultipartReader() {
         return multipartReader;
     }
 
-    public void setMultipartReader(MultipartMessageReader multipartReader) {
+    public void setMultipartReader(ClientMultipartMessageReader multipartReader) {
         this.multipartReader = multipartReader;
     }
 

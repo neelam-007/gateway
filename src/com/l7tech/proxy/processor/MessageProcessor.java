@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.attachments.ClientMultipartMessageReader;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -631,7 +632,7 @@ public class MessageProcessor {
                 return new SsgResponse(XmlUtil.stringToDocument(CannedSoapFaults.RESPONSE_NOT_XML), null, 500, null, null);
 
             String responseString = null;
-            MultipartMessageReader multipartReader = null;
+            ClientMultipartMessageReader multipartReader = null;
             if(contentType.getValue().startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
                 MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + contentType.getValue());
 
@@ -642,7 +643,7 @@ public class MessageProcessor {
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
 
                     InputStream is = postMethod.getResponseBodyAsStream();
-                    multipartReader = new MultipartMessageReader(is, multipartBoundary);
+                    multipartReader = new ClientMultipartMessageReader(is, multipartBoundary);
 
                     MultipartUtil.Part part = multipartReader.getSoapPart();
                     if (!part.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");

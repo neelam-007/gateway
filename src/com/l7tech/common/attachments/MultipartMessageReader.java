@@ -1,9 +1,14 @@
-package com.l7tech.common.util;
+package com.l7tech.common.attachments;
 
 import com.l7tech.server.ServerConfig;
+import com.l7tech.common.util.MultipartUtil;
+import com.l7tech.common.util.XmlUtil;
 
 import java.io.*;
-import java.util.*;
+import java.util.Set;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -12,26 +17,21 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class MultipartMessageReader {
-
     public static final int ATTACHMENTS_BUFFER_SIZE = 100000;
     public static final int SOAP_PART_BUFFER_SIZE = 30000;
     private static final int ATTACHMENT_BLOCK_SIZE = 4096;
-    private boolean atLeastOneAttachmentParsed;
-    private String multipartBoundary;
-    private PushbackInputStream pushbackInputStream = null;
-    private Map multipartParts = new HashMap();
-    private final Logger logger = Logger.getLogger(getClass().getName());
-    private byte[] attachmentsRawData = new byte[ATTACHMENTS_BUFFER_SIZE];
-    int writeIndex = 0;
+    protected boolean atLeastOneAttachmentParsed;
+    protected String multipartBoundary;
+    protected PushbackInputStream pushbackInputStream = null;
+    protected Map multipartParts = new HashMap();
+    protected byte[] attachmentsRawData = new byte[ATTACHMENTS_BUFFER_SIZE];
+    protected int writeIndex = 0;
     String fileCacheId = null;
     FileOutputStream fileCache = null;
     String fileCacheName = null;
     boolean bufferFlushed = false;
-
-    public MultipartMessageReader(InputStream inputStream, String multipartBoundary) {
-        pushbackInputStream = new PushbackInputStream(inputStream, SOAP_PART_BUFFER_SIZE);
-        this.multipartBoundary = multipartBoundary;
-    }
+    private final Logger logger = Logger.getLogger(getClass().getName());
+    
 
     public String getMultipartBoundary() {
         return multipartBoundary;
@@ -39,17 +39,6 @@ public class MultipartMessageReader {
 
     public PushbackInputStream getPushbackInputStream() {
         return pushbackInputStream;
-    }
-
-    public boolean isAtLeastOneAttachmentParsed() {
-        return atLeastOneAttachmentParsed;
-    }
-
-    public boolean hasNextMessagePart() throws IOException {
-        if(getMessagePart(multipartParts.size()) == null) {
-            return false;
-        }
-        return true;
     }
 
     public String getFileCacheId() {
@@ -89,80 +78,12 @@ public class MultipartMessageReader {
     }
 
     /**
-     * Get all attachements of the message.
-     *
-     * @return Map a list of attachments.
-     * @throws IOException
-     */
-    public Map getMessageAttachments() throws IOException {
-
-        Map attachments = new HashMap();
-
-        Set parts = multipartParts.keySet();
-        Iterator itr = parts.iterator();
-        while (itr.hasNext()) {
-            Object o = (Object) itr.next();
-            Object val  = (Object) multipartParts.get(o);
-            if(val instanceof MultipartUtil.Part) {
-                MultipartUtil.Part part = (MultipartUtil.Part) val;
-
-                // excluding the SOAP part
-                if(part.getPosition() > 0) {
-                    attachments.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
-                }
-            } else {
-                throw new RuntimeException("The entry retrived from multipartParts object is not the type of com.l7tech.Message.Part");
-            }
-        }
-        return attachments;
-    }
-
-    public byte[] getRawAttachments() {
-        return attachmentsRawData;
-    }
-
-    public int getRawAttachmentsSize() {
-        return writeIndex;
-    }
-
-    /**
-     * This parser only peels the the multipart message up to the part required.
-     *
-     * @param position The position of the part to be parsed
-     * @return Part The part parsed.  Return NULL if not found.
-     * @throws IOException
-     */
-    public MultipartUtil.Part getMessagePart(int position) throws IOException {
-
-        if(multipartParts.size() <= position) {
-            if(position == 0) {
-                 return parseSoapPart();
-            } else {
-                 return parseMultipart(position);
-            }
-        } else {
-            return getMessagePartFromMap(position);
-        }
-    }
-
-    /**
-     * This parser only peels the the multipart message up to the part required.
-     *
-     * @param cid The content Id of the part to be parsed
-     * @return Part The part parsed.  Return NULL if not found.
-     * @throws IOException
-     */
-    public MultipartUtil.Part getMessagePart(String cid) throws IOException {
-        return parseMultipart(cid);
-    }
-
-    /**
      * Get the part from the parsed part list given the position of the part.
      *
      * @param position  The position of the part to be retrieved.
      * @return Part The part parsed.  Return NULL if not found.
      */
-    private MultipartUtil.Part getMessagePartFromMap(int position) {
+    protected MultipartUtil.Part getMessagePartFromMap(int position) {
 
         MultipartUtil.Part part = null;
 
@@ -179,53 +100,13 @@ public class MultipartMessageReader {
         return part;
     }
 
-   /**
-     * Get the part from the parsed part list given the content Id of the part.
-     *
-     * @param cid  The content id of the part to be retrieved.
-     * @return Part The part parsed.  Return NULL if not found.
-     * @throws IOException if there is error reading the input data stream.
-     */
-    private MultipartUtil.Part getMessagePartFromMap(String cid) throws IOException {
-
-        MultipartUtil.Part part = null;
-
-        Set keys = multipartParts.keySet();
-
-        Iterator itr = keys.iterator();
-        while (itr.hasNext()) {
-            String partName = (String) itr.next();
-            if(validateContentId(cid, partName))  {
-                MultipartUtil.Part currentPart = (MultipartUtil.Part) multipartParts.get(partName);
-                part = currentPart;
-                break;
-            }
-        }
-        return part;
-    }
-
-    /**
-     * Validate the content Id specified.
-     * @param cid The content Id to be validated.
-     * @param cidInPartHeader The content Id found in the header of the MIME part.
-     * @return TRUE if the cid equals to the cidInPartHeader or matches the last part of the cidInPartHeader.
-     * @throws IOException if there is error reading the input data stream.
-     */
-    private boolean validateContentId(String cid, String cidInPartHeader) throws IOException {
-        if(cid.equals(cidInPartHeader) ||
-                   cid.endsWith(MultipartUtil.removeConentIdBrackets(cidInPartHeader))) {
-            return true;
-        }
-        return false;
-    }
-
     /**
      * Parse the SOAP part of data in the input data stream.
      *
      * @return The SOAP part found. NULL if not found.
-     * @throws IOException if there is error reading the input data stream.
+     * @throws java.io.IOException if there is error reading the input data stream.
      */
-    private MultipartUtil.Part parseSoapPart() throws IOException {
+    protected MultipartUtil.Part parseSoapPart() throws IOException {
         StringBuffer xml = new StringBuffer();
         MultipartUtil.Part part = null;
 
@@ -258,7 +139,7 @@ public class MultipartMessageReader {
                     continue;
                 }
                 MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
-                part.headers.put(header.getName(), header);
+                part.getHeaders().put(header.getName(), header);
             } else {
                 if (line.startsWith("--" + multipartBoundary)) {
                     // The boundary is on a line by itself so the previous content doesn't actually contain the last \n
@@ -273,7 +154,7 @@ public class MultipartMessageReader {
             }
         }
 
-        part.content = xml.toString();
+        part.setContent(xml.toString());
 
         // MIME part must has at least one header
         if(part.getHeaders().size() > 0) {
@@ -293,9 +174,9 @@ public class MultipartMessageReader {
      *
      * @param lastPartPosition The position of the part to be parsed
      * @return Part The part parsed.  Return NULL if not found.
-     * @throws IOException
+     * @throws java.io.IOException
      */
-    private MultipartUtil.Part parseMultipart(int lastPartPosition) throws IOException {
+    protected MultipartUtil.Part parseMultipart(int lastPartPosition) throws IOException {
 
         MultipartUtil.Part part = null;
 
@@ -323,7 +204,7 @@ public class MultipartMessageReader {
                     }
                     storeRawHeader(line);
                     MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
-                    part.headers.put(header.getName(), header);
+                    part.getHeaders().put(header.getName(), header);
                 }
             } while ((line = readLine()) != null);
 
@@ -340,9 +221,9 @@ public class MultipartMessageReader {
     /**
      * Add line delimiter to the cache.
      *
-     * @throws IOException if there is error reading the input data stream.
+     * @throws java.io.IOException if there is error reading the input data stream.
      */
-    private void addLineDelimiter() throws IOException {
+    protected void addLineDelimiter() throws IOException {
 
         byte[] delimiter = new byte[2];
         delimiter[0] = 0x0d;  // CR
@@ -370,9 +251,9 @@ public class MultipartMessageReader {
      * Store a raw header of attachments.
      *
      * @param line The header to be stored.
-     * @throws IOException if there is error reading the input data stream.
+     * @throws java.io.IOException if there is error reading the input data stream.
      */
-    private void storeRawHeader(String line) throws IOException {
+    protected void storeRawHeader(String line) throws IOException {
 
         if(line == null) {
             throw new IllegalArgumentException("The header line cannot be NULL");
@@ -410,9 +291,9 @@ public class MultipartMessageReader {
      * data to the file cache including those in the memory cache (if any).
      *
      * @return int The length of the attachment in bytes.
-     * @throws IOException if there is error reading the input data stream.
+     * @throws java.io.IOException if there is error reading the input data stream.
      */
-    private int storeRawPartContent() throws IOException {
+    protected int storeRawPartContent() throws IOException {
 
         int d;
         boolean boundaryFound = false;
@@ -493,7 +374,7 @@ public class MultipartMessageReader {
      * @param data The array of data to be stored in the file cache.
      * @param off  The starting position of the data array is off set by the "off" parameter.
      * @param len  The number of bytes to be stored in the file cache.
-     * @throws IOException if there is error reading the input data stream.
+     * @throws java.io.IOException if there is error reading the input data stream.
      */
     private void writeDataToFileCache(byte[] data, int off, int len) throws IOException {
 
@@ -535,7 +416,7 @@ public class MultipartMessageReader {
      * the input data stream.
      * @param data  The array of bytes of data to be stored in the file cache.
      * @return int The length of the attachment in bytes.
-     * @throws IOException if there is error reading the input data stream.
+     * @throws java.io.IOException if there is error reading the input data stream.
      */
     private int storeRawPartContentToFileCache(byte[] data) throws IOException {
        return storeRawPartContentToFileCache(data, 0, data.length);
@@ -549,7 +430,7 @@ public class MultipartMessageReader {
      * @param off  The starting position of the data array is off set by the "off" parameter.
      * @param len  The number of bytes to be stored in the file cache.
      * @return int The length of the attachment in bytes.
-     * @throws IOException if there is error reading the input data stream.
+     * @throws java.io.IOException if there is error reading the input data stream.
      */
     private int storeRawPartContentToFileCache(byte[] data, int off, int len) throws IOException {
          int count;
@@ -567,7 +448,7 @@ public class MultipartMessageReader {
      * Store the raw data of an attachment to the file cache. The data is read from the input data stream.
      *
      * @return int The length of the attachment in bytes.
-     * @throws IOException if there is error reading the input data stream.
+     * @throws java.io.IOException if there is error reading the input data stream.
      */
     private int storeRawPartContentToFileCache() throws IOException {
 
@@ -713,67 +594,11 @@ public class MultipartMessageReader {
     }
 
     /**
-     * This parser only peels the the multipart message up to the part required.
-     *
-     * @param cid The part to be parsed given the content id of the part.
-     * @return Part The part parsed. Return NULL if not found.
-     * @throws IOException if there is error reading the input data stream.
-     */
-    private MultipartUtil.Part parseMultipart(String cid) throws IOException {
-
-        MultipartUtil.Part part = null;
-        boolean partFound = false;
-
-        if( cid == null) throw new IllegalArgumentException("Cannot find the MIME part. The content id cannot NULL");
-
-        // the part to be retrived is already parsed
-        if((part = getMessagePartFromMap(cid)) != null) return part;
-        String line;
-
-        while (!partFound && (line = readLine()) != null)  {
-            part = new MultipartUtil.Part();
-            boolean headers = true;
-            do {
-                if (headers) {
-                    if (line.length() == 0) {
-                        headers = false;
-                        addLineDelimiter();
-                        part.setContentLength(storeRawPartContent());
-                        break;
-                    }
-                    storeRawHeader(line);
-                    MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
-                    part.headers.put(header.getName(), header);
-                }
-            } while ((line = readLine()) != null);
-
-            // MIME part must has at least one header
-            if(part.getHeaders().size() > 0) {
-                part.setPostion(multipartParts.size());
-                String contentId = part.getHeader(XmlUtil.CONTENT_ID).getValue();
-                multipartParts.put(contentId, part);
-                if(validateContentId(cid, contentId)) {
-                    // the requested MIME part is found, stop here.
-                    partFound = true;
-                }
-            }
-        }
-
-        if(multipartParts.size() >= 2 ) atLeastOneAttachmentParsed = true;
-
-        if(partFound) {
-            return part;
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * Read a line from the input data stream
      * @return The line retrieved from the input data stream. -1 if no more data exists in the input stream.
-     * @throws IOException if there is error reading the input data stream.
+     * @throws java.io.IOException if there is error reading the input data stream.
      */
-    private String readLine() throws IOException {
+    protected String readLine() throws IOException {
         boolean newlineFound = false;
         long byteCount = 0;
         byte[] buf = new byte[256];

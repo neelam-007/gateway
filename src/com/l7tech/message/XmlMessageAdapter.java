@@ -6,7 +6,7 @@
 
 package com.l7tech.message;
 
-import com.l7tech.common.util.MultipartMessageReader;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -74,7 +74,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
 
                 String innerType = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE));
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
-                    multipartReader = new MultipartMessageReader(is, multipartBoundary);
+                    multipartReader = new ServerMultipartMessageReader(is, multipartBoundary);
                     multipartReader.setFileCacheId(id);
 
                     MultipartUtil.Part part = multipartReader.getSoapPart();
@@ -129,7 +129,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         return multipartReader.getMultipartBoundary();
     }
 
-     public MultipartMessageReader getMultipartReader() {
+     public ServerMultipartMessageReader getMultipartReader() {
         return multipartReader;
     }
 
@@ -175,7 +175,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
     protected Document _document;
     protected boolean soapPartParsed = false;
     protected boolean multipart = false;
-    protected MultipartMessageReader multipartReader = null;
+    protected ServerMultipartMessageReader multipartReader = null;
     protected Boolean soap = null;
 
 }

@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import com.l7tech.common.util.MultipartUtil;
-import com.l7tech.common.util.MultipartMessageReader;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 
 /**
  * Encapsulates a Message (i.e. a Request or Response) that contains XML.
@@ -34,7 +34,7 @@ public interface XmlMessage extends Message {
 
     public String getMultipartBoundary();
 
-    public MultipartMessageReader getMultipartReader();
+    public ServerMultipartMessageReader getMultipartReader();
 
     public MultipartUtil.Part getSoapPart() throws IOException;
 
