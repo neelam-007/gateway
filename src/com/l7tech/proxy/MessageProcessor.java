@@ -163,6 +163,7 @@ public class MessageProcessor {
             }
 
             Header contentType = postMethod.getResponseHeader("Content-Type");
+            log.info("Response Content-Type: " + contentType);
             if (contentType == null || !"text/xml".equalsIgnoreCase(contentType.getValue()))
                 return CannedSoapFaults.RESPONSE_NOT_XML;
 
