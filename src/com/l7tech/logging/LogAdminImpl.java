@@ -61,7 +61,7 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
      * In this case, the client knows the ending message number of the logs to be retrieved. This number is the
      * greatest message number of the log messages stored in the client's buffer.
      * <br>1. The client specifies startMsgNumber=-1 and
-     *    endMsgNumber=<the greatest message number of the log messages stored in the client's buffer>.</br>
+     *    endMsgNumber=[the greatest message number of the log messages stored in the client's buffer].</br>
      * <br>2. After the retrieval succeeded, the client is able to find the starting point for the next
      *    block of log retrieval from the logs just retrieved. The smallest message number found in the retrieved
      *    logs should be used as the startMsgNumber in the next call. The same endMsgNumber

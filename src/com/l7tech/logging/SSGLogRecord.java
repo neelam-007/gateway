@@ -12,7 +12,6 @@ import java.util.logging.LogRecord;
  *
  *
  * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
  * @author flascell<br/>
  * @version $Id$<br/>
  *
