@@ -138,6 +138,10 @@ public class IdentityRule extends Filter {
             if (idprovider == user.getProviderId()) {
                 try {
                     IdentityProvider prov = getIdentityProviderConfigManager().getIdentityProvider(idprovider);
+                    if (prov == null) {
+                        logger.warning("IdentityProvider #" + idprovider + " no longer exists");
+                        return false;
+                    }
                     GroupManager gman = prov.getGroupManager();
                     Group grp = gman.findByPrimaryKey(grpmemship.getGroupId());
                     if (grp == null) {
