@@ -524,7 +524,7 @@ public class MessageProcessor {
 
                 postMethod.setRequestBody(sb.toString());
             } else {
-                postMethod.addRequestHeader("Content-Type", "text/xml");
+                postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
                 postMethod.setRequestBody(postBody);
             }
 
