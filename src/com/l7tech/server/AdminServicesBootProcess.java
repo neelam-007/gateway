@@ -101,8 +101,7 @@ public class AdminServicesBootProcess implements ServerComponentLifecycle {
     private void deleteIfExists(String store) throws IOException {
         File storeFile = new File(store);
         if (storeFile.exists()) {
-            storeFile.delete();
-           if (storeFile.exists()) {
+           if (!storeFile.delete()) {
                throw new IOException("Unable to delete the file "+storeFile);
            }
         }
