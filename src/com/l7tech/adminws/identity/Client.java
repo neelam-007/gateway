@@ -19,8 +19,10 @@ import java.net.MalformedURLException;
  *
  */
 public class Client {
-    public Client(String targetURL) {
+    public Client(String targetURL, String username, String password) {
         this.url = targetURL;
+        this.username = username;
+        this.password = password;
     }
     public String echoVersion() throws java.rmi.RemoteException {
         Call call = createStubCall();
@@ -162,7 +164,7 @@ public class Client {
     }
 
     public static void main(String[] args) throws Exception {
-        Client me = new Client("http://localhost:8080/ssg/services/identityAdmin");
+        Client me = new Client("http://localhost:8080/ssg/services/identityAdmin", null, null);
 
         // test echo
         System.out.println(me.echoVersion());
@@ -176,8 +178,20 @@ public class Client {
             com.l7tech.identity.IdentityProviderConfig ipc = me.findIdentityProviderConfigByPrimaryKey(res[i].getOid());
             System.out.println(ipc.toString());
 
+            System.out.println("fetching groups");
+            com.l7tech.objectmodel.EntityHeader[] res2 = me.findAllGroups(ipc.getOid());
+            for (int j = 0; j < res2.length; j++) {
+                System.out.println(res2[j].toString());
+                System.out.println("group " + res2[j].getOid());
+                com.l7tech.identity.Group group = me.findGroupByPrimaryKey(ipc.getOid(), res2[j].getOid());
+                System.out.println("group found" + group.toString());
+                // System.out.println("save group" + me.saveGroup(ipc.getOid(), group));
+                // System.out.println("delete group");
+                // me.deleteGroup(ipc.getOid(), group.getOid());
+            }
+
             System.out.println("fetching users");
-            com.l7tech.objectmodel.EntityHeader[] res2 = me.findAllUsers(ipc.getOid());
+            res2 = me.findAllUsers(ipc.getOid());
             for (int j = 0; j < res2.length; j++) {
                 System.out.println(res2[j].toString());
                 com.l7tech.identity.User user = me.findUserByPrimaryKey(ipc.getOid(), res2[j].getOid());
@@ -190,16 +204,7 @@ public class Client {
             // me.deleteIdentityProviderConfig(ipc.getOid());
             // System.out.println("deleted");
 
-            System.out.println("fetching groups");
-            res2 = me.findAllGroups(ipc.getOid());
-            for (int j = 0; j < res2.length; j++) {
-                System.out.println(res2[j].toString());
-                com.l7tech.identity.Group group = me.findGroupByPrimaryKey(ipc.getOid(), res2[j].getOid());
-                System.out.println("group found" + group.toString());
-                // System.out.println("save group" + me.saveGroup(ipc.getOid(), group));
-                // System.out.println("delete group");
-                // me.deleteGroup(ipc.getOid(), group.getOid());
-            }
+
         }
     }
 
@@ -210,8 +215,12 @@ public class Client {
     private Call createStubCall() throws java.rmi.RemoteException {
         // create service, call
         org.apache.axis.client.Service service = new org.apache.axis.client.Service();
-        //
+        // todo, should i reuse this object instead of re-instantiating every call?
         Call call = null;
+        if (username != null && username.length() > 0 && password != null && password.length() > 0) {
+            call.setUsername(username);
+            call.setPassword(password);
+        }
         try {
             call = (Call)service.createCall();
         } catch (ServiceException e) {
@@ -245,4 +254,6 @@ public class Client {
 
     private static final String IDENTITY_URN = "http://www.layer7-tech.com/identity";
     private String url;
+    private String username;
+    private String password;
 }
