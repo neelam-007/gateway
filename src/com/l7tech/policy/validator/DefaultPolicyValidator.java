@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
@@ -242,6 +243,17 @@ public class DefaultPolicyValidator extends PolicyValidator {
                       "HttpClientCert requires to have SSL transport (not forbidden).", null));
                 }
                 processCredentialSource(a);
+            } else if (a instanceof XslTransformation) {
+                // check that the assertion is on the right side of the routing
+                XslTransformation ass = (XslTransformation)a;
+
+                if (ass.getDirection() == XslTransformation.APPLY_TO_REQUEST && seenRouting) {
+                    result.addWarning(new PolicyValidatorResult.Warning(a,
+                      "XSL transformation on the request occurs after request is routed.", null));
+                } else if (ass.getDirection() == XslTransformation.APPLY_TO_RESPONSE && !seenRouting) {
+                    result.addError(new PolicyValidatorResult.Error(a,
+                      "XSL transformation on the response must be positioned after routing.", null));
+                }
             }
             seenPreconditions = true;
         }
@@ -287,7 +299,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         private boolean isPreconditionAssertion(Assertion a) {
             // check preconditions for both SslAssertion and  XmlResponseSecurity assertions - see processPrecondition()
-            if (a instanceof SslAssertion || a instanceof XmlResponseSecurity || a instanceof HttpClientCert)
+            if (a instanceof SslAssertion || a instanceof XmlResponseSecurity || a instanceof HttpClientCert ||
+                a instanceof XslTransformation)
                 return true;
             return false;
         }
