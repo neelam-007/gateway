@@ -71,6 +71,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 String protRespXml = sresp.getResponseXml();
 
                 if (status == AssertionStatus.NONE) {
+                    logger.fine("servlet transport returning 200");
                     if (protRespXml == null) {
                         logger.fine("Sending empty response");
                     } else {
@@ -84,8 +85,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                         respWriter.write(protRespXml);
                     }
                 } else if (sresp.isAuthenticationMissing() || status.isAuthProblem()) {
+                    logger.fine("servlet transport returning challenge");
                     sendChallenge(sreq, sresp, hrequest, hresponse);
                 } else {
+                    logger.fine("servlet transport returning 500");
                     sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                               status.getSoapFaultCode(), status.getMessage());
                 }
