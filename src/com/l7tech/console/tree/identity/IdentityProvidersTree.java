@@ -3,6 +3,7 @@ package com.l7tech.console.tree.identity;
 import com.l7tech.console.action.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Refreshable;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
@@ -231,6 +232,7 @@ public class IdentityProvidersTree extends JTree implements DragGestureListener,
 
                     JPopupMenu menu = node.getPopupMenu(IdentityProvidersTree.this);
                     if (menu != null) {
+                        Utilities.removeToolTipsFromMenuItems(menu);
                         menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
                     }
                 }

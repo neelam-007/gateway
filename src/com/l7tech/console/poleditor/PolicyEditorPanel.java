@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -317,6 +318,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new ClearMessageAreaAction());
                 if (menu != null) {
+                    Utilities.removeToolTipsFromMenuItems(menu);
                     menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
                 }
             }

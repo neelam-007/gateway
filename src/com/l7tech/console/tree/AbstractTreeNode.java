@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.NodeAction;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.WeakPropertyChangeSupport;
@@ -251,6 +252,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
             }
             pm.add(actions[i]);
         }
+        Utilities.removeToolTipsFromMenuItems(pm);
         return pm;
     }
 

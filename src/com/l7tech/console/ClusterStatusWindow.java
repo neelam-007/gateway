@@ -11,6 +11,7 @@ import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.action.Actions;
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.objectmodel.DeleteException;
@@ -259,6 +260,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
                 menu.add(new DeleteNodeEntryAction(canDelete));
                 menu.add(new RenameNodeAction());
                 if (menu != null) {
+                    Utilities.removeToolTipsFromMenuItems(menu);
                     menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
                 }
             }

@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.util.Refreshable;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -162,6 +163,7 @@ public class ServicesTree extends JTree implements Refreshable {
 
                     JPopupMenu menu = node.getPopupMenu(ServicesTree.this);
                     if (menu != null) {
+                        Utilities.removeToolTipsFromMenuItems(menu);
                         menu.setFocusable(false);
                         menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
                     }

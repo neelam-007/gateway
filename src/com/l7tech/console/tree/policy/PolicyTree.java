@@ -12,6 +12,7 @@ import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
@@ -243,6 +244,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         for (int i = 0; i < actions.length; i++) {
             pm.add(actions[i]);
         }
+        Utilities.removeToolTipsFromMenuItems(pm);
         return pm;
     }
 
