@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  * Date: July 14, 2004<br/>
  */
 public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
-    private static final Logger logger = Logger.getLogger(ServerRequestWssConfidentiality.class.getName());
+    private static final Logger logger = Logger.getLogger(ServerRequestWssIntegrity.class.getName());
 
     public ServerRequestWssIntegrity(RequestWssIntegrity data) {
         super(logger, data);
