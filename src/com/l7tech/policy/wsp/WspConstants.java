@@ -6,11 +6,7 @@
 
 package com.l7tech.policy.wsp;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -67,20 +63,21 @@ class WspConstants {
     };
 
     static AssertionMapping[] supportedLeafAssertions = {
-        new AssertionMapping(new HttpBasic(),           "HttpBasic"),
-        new AssertionMapping(new HttpClientCert(),      "HttpClientCert"),
-        new AssertionMapping(new HttpDigest(),          "HttpDigest"),
-        new AssertionMapping(new WssBasic(),            "WssBasic"),
-        new AssertionMapping(new WssDigest(),           "WssDigest"),
-        new AssertionMapping(new FalseAssertion(),      "FalseAssertion"),
-        new AssertionMapping(new SslAssertion(),        "SslAssertion"),
-        new AssertionMapping(new RoutingAssertion(),    "RoutingAssertion"),
-        new AssertionMapping(new TrueAssertion(),       "TrueAssertion"),
-        new AssertionMapping(new MemberOfGroup(),       "MemberOfGroup"),
-        new AssertionMapping(new SpecificUser(),        "SpecificUser"),
-        new AssertionMapping(new XmlResponseSecurity(), "XmlResponseSecurity"),
-        new AssertionMapping(new XmlRequestSecurity(),  "XmlRequestSecurity"),
-        new AssertionMapping(new SamlSecurity(),        "SamlSecurity"),
+        new AssertionMapping(new HttpBasic(),             "HttpBasic"),
+        new AssertionMapping(new HttpClientCert(),        "HttpClientCert"),
+        new AssertionMapping(new HttpDigest(),            "HttpDigest"),
+        new AssertionMapping(new WssBasic(),              "WssBasic"),
+        new AssertionMapping(new WssDigest(),             "WssDigest"),
+        new AssertionMapping(new FalseAssertion(),        "FalseAssertion"),
+        new AssertionMapping(new SslAssertion(),          "SslAssertion"),
+        new AssertionMapping(new RoutingAssertion(),      "RoutingAssertion"),
+        new AssertionMapping(new TrueAssertion(),         "TrueAssertion"),
+        new AssertionMapping(new MemberOfGroup(),         "MemberOfGroup"),
+        new AssertionMapping(new SpecificUser(),          "SpecificUser"),
+        new AssertionMapping(new XmlResponseSecurity(),   "XmlResponseSecurity"),
+        new AssertionMapping(new XmlRequestSecurity(),    "XmlRequestSecurity"),
+        new AssertionMapping(new SamlSecurity(),          "SamlSecurity"),
+        new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
     };
 
     static AssertionMapping findAssertionMappingByAssertion(AssertionMapping[] map, Assertion a) {

@@ -1,18 +1,17 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.action.NewProviderAction;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.action.NewProviderAction;
 
-import javax.swing.tree.MutableTreeNode;
 import javax.swing.*;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.Enumeration;
-import java.util.Collections;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.logging.Level;
 
 /**
  * The class represents an <code>AbstractTreeNode</code> specialization
@@ -74,6 +73,7 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
         nodeList.add(new AuthMethodFolderNode());
         nodeList.add(new TransportLayerSecurityFolderNode());
         nodeList.add(new XmlSecurityFolderNode());
+        nodeList.add(new XmlFolderNode());
         nodeList.add(new RoutingFolderNode());
 
         AbstractTreeNode[] nodes = (AbstractTreeNode[])nodeList.toArray(new AbstractTreeNode[]{});
