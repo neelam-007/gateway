@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
  * Time: 2:31:32 PM
  */
 public class HexUtils {
+    /** @return a thread-local MD5 MessageDigest instance.  Do not use  if a caller might already be using it. */
     public static MessageDigest getMd5() {
         MessageDigest md5 = (MessageDigest)md5s.get();
         if (md5 == null) {
