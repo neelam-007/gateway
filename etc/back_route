@@ -17,7 +17,7 @@ start() {
 	# Add back end routes
 	# 
 	$route add -net $BACK_NET netmask $NET_MASK gw $BACK_ROUTER
-	$route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0	find_tomcat
+	$route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 }
 stop() {
 }
