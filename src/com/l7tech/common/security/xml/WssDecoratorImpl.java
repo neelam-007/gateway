@@ -136,18 +136,6 @@ public class WssDecoratorImpl implements WssDecorator {
 
     }
 
-    // todo: replace use of this method with the effectively-identical XmlUtil.isElementAncestor()
-    private boolean isWrappingOrSame(Element potentialParent, Element element) {
-        if (potentialParent == element) return true;
-        Element parent = (Element)element.getParentNode();
-        while (parent != null) {
-            if (potentialParent == parent) return true;
-            if (!(parent.getParentNode() instanceof Element)) break;
-            else parent = (Element)parent.getParentNode();
-        }
-        return false;
-    }
-
     private Element addSignature(final Context c, PrivateKey senderPrivateKey,
                                  Element[] elementsToSign, Element securityHeader,
                                  Element binarySecurityToken) throws DecoratorException {
@@ -176,9 +164,9 @@ public class WssDecoratorImpl implements WssDecorator {
         template.setPrefix("ds");
         for (int i = 0; i < elementsToSign.length; i++) {
             Reference ref = template.createReference("#" + singedIds[i]);
-            if (isWrappingOrSame(elementsToSign[i], securityHeader)) {
-                logger.info("Per policy request, breaking Basic Security Profile rules with enveloped signature" +
-                            " of element with Id=\"" + singedIds[i] + "\"");
+            if (XmlUtil.isElementAncestor(securityHeader, elementsToSign[i])) {
+                logger.info("Per policy, breaking Basic Security Profile rules with enveloped signature" +
+                            " of element " + elementsToSign[i].getLocalName() + " with Id=\"" + singedIds[i] + "\"");
                 ref.addTransform(Transform.ENVELOPED);
             }
             ref.addTransform(Transform.C14N_EXCLUSIVE);
