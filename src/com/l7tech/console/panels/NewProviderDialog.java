@@ -21,7 +21,8 @@ import java.util.ResourceBundle;
 public class NewProviderDialog extends JDialog {
 
     private PanelListener listener;
-    private IdentityProviderConfig iProvider = new com.l7tech.identity.imp.IdentityProviderConfigImp();
+    // todo, emil, not sure what is going on here. you should now specify the type of provider in constructor
+    private IdentityProviderConfig iProvider = new IdentityProviderConfig();
 
     /**
      * Create a new NewProviderDialog
