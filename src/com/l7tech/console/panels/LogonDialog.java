@@ -390,7 +390,7 @@ public class LogonDialog extends JDialog {
                 dialog.resources.getString("logon.connect.error"),
                 new Object[]{"Invalid service url.\nPlease update your preferences."});
             JOptionPane.
-              showMessageDialog(null, msg, "Error", JOptionPane.ERROR_MESSAGE);
+              showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
             dialog.aborted = true;
         }
 
@@ -409,7 +409,7 @@ public class LogonDialog extends JDialog {
                       dialog.resources.getString("logon.connect.error"),
                       new Object[]{getHostPart(serviceURL)});
                     JOptionPane.
-                      showMessageDialog(null, msg, "Error", JOptionPane.ERROR_MESSAGE);
+                      showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
                     break;
                 }
 
