@@ -157,6 +157,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
         PendingRequest pendingRequest;
         try {
+            // TODO: PERF: this XML parsing is causing a performance bottleneck
             Document envelope = XmlUtil.parse(request.getInputStream());
             pendingRequest = gatherRequest(request, envelope, ssg);
             interceptor.onReceiveMessage(pendingRequest);
