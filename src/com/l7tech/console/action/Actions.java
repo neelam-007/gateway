@@ -279,4 +279,36 @@ public class Actions {
               }
           });
     }
+
+    /**
+     * Update the input map of the JDialog's <code>JLayeredPane</code> so
+     * the ESC keystroke invokes the passed action dispose on the dialog.
+     *
+     * @param d the dialog
+     * @param action the dialog action to invoke on Esc key
+     */
+    public static void setEscAction(final JDialog d, final Action action) {
+        JLayeredPane layeredPane = d.getLayeredPane();
+        final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escKeyStroke, "close-it");
+        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, "close-it");
+        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, "close-it");
+        layeredPane.getActionMap().put("close-it", action);
+    }
+
+    /**
+     * Update the input map of the JFrame's <code>JLayeredPane</code> so
+     * the ESC keystroke invokes the passed action.
+     *
+     * @param f the frame
+     * @param action the frame action to invoke on Esc key
+     */
+    public static void setEscAction(final JFrame f, final Action action) {
+        JLayeredPane layeredPane = f.getLayeredPane();
+        final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, "close-it");
+        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, "close-it");
+        layeredPane.getActionMap().put("close-it", action);
+    }
+
 }
