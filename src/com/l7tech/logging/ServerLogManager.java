@@ -60,6 +60,7 @@ public class ServerLogManager extends LogManager {
             try {
                 systemLogger.setLevel(getLevel());
             } catch (RuntimeException e) {
+                System.err.println("can't read property " + e.getMessage());
                 // continue without those special log handlers
                 return;
             }
@@ -93,6 +94,7 @@ public class ServerLogManager extends LogManager {
         try {
             return getProps().getProperty(FILEPATH_PROP_NAME);
         } catch (Throwable e) {
+            System.err.println("can't read props " + e);
             // if cant' read from props file, default to home dir
             return System.getProperties().getProperty("user.home");
         }
@@ -102,6 +104,7 @@ public class ServerLogManager extends LogManager {
         try {
             return Integer.parseInt(getProps().getProperty(SIZELIMIT_PROP_NAME));
         } catch (Throwable e) {
+            System.err.println("can't read props " + e);
             // if cant' read from props file, default to 500000
             return 500000;
         }
@@ -111,6 +114,7 @@ public class ServerLogManager extends LogManager {
         try {
             return Integer.parseInt(getProps().getProperty(NRFILES_PROP_NAME));
         } catch (Throwable e) {
+            System.err.println("can't read props " + e);
             // if cant' read from props file, default to 4
             return 4;
         }
