@@ -94,7 +94,19 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString() );
             }
         } catch ( SOAPException se ) {
-            logger.log(Level.SEVERE, null, se);
+            logger.log(Level.SEVERE, se.getMessage(), se);
+            try {
+                sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, se.getMessage() );
+            } catch ( SOAPException se2 ) {
+                logger.log(Level.SEVERE, "Second SOAPException while trying to send fault: " + se2.getMessage(), se2 );
+            }
+        } catch ( Exception e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            try {
+                sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, e.getMessage() );
+            } catch ( SOAPException se2 ) {
+                logger.log(Level.SEVERE, "SOAPException while trying to send fault: " + se2.getMessage(), se2 );
+            }
         } finally {
             try {
                 PersistenceContext.getCurrent().close();
