@@ -36,16 +36,25 @@ public class CertEntryRow {
         this.cert = cert;
     }
 
-    public long getResetCounter() {
+    public int getResetCounter() {
         return resetCounter;
     }
 
-    public void setResetCounter(long resetCounter) {
+    public void setResetCounter(int resetCounter) {
         this.resetCounter = resetCounter;
+    }
+
+    public long getOid() {
+        return oid;
+    }
+
+    public void setOid(long oid) {
+        this.oid = oid;
     }
 
     private long providerId;
     private String userLogin;
     private String cert;
-    private long resetCounter;
+    private int resetCounter;
+    private long oid = -1;
 }
