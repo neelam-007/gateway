@@ -26,7 +26,7 @@ public class PolicyViewAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Toggle the policy view";
+        return "View policy assertions by assertion flow";
     }
 
     /**

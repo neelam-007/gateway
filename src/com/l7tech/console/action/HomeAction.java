@@ -38,7 +38,7 @@ public class HomeAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Goto policy editor home page";
+        return "Go to the SecureSpan Manager home page";
     }
 
     /**

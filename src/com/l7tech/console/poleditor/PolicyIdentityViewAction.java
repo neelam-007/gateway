@@ -26,7 +26,7 @@ public class PolicyIdentityViewAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Toggle the policy identity view";
+        return "View policy assertions by identity (read-only)";
     }
 
     /**

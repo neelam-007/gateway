@@ -52,7 +52,7 @@ public class SavePolicyTemplateAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Save a policy template to local storage";
+        return "Save the policy assertions as a template";
     }
 
     /**
