@@ -1,12 +1,17 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.PoliciesFolderNode;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.exporter.ExporterConstants;
+import com.l7tech.policy.exporter.ExternalReference;
+import com.l7tech.policy.exporter.RemoteReferenceResolver;
 import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -122,14 +127,22 @@ public class ImportPolicyFromFileAction extends BaseAction {
             log.log(Level.WARNING, "Could not read xml document from " + name, e);
         }
         // Import policy references first
-        Element references = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
+        Element referencesEl = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
                                                                  ExporterConstants.EXPORTED_POL_NS,
                                                                  ExporterConstants.EXPORTED_REFERENCES_ELNAME);
-        if (references != null) {
-            // TODO
-            System.out.println("\n\n\nBIG TODO HERE!!\n\n\n");
-            // todo, check those references
-            // if not resolveable, interact with administrator to fix the problem
+
+        RemoteReferenceResolver resolver = new RemoteReferenceResolver();
+        if (referencesEl != null) {
+            ExternalReference[] references = null;
+            try {
+                references = ExternalReference.parseReferences(referencesEl);
+            } catch (InvalidDocumentFormatException e) {
+                log.log(Level.WARNING, "cannot parse references from document " + name, e);
+            }
+            if (!resolver.resolveReferences(references)) {
+                log.info("The resolution process failed. This policy will not be imported");
+                return;
+            }
         } else {
             log.warning("The policy document " + name + " did not contain exported references. Maybe this is " +
                         "an old-school style policy export.");
@@ -139,9 +152,12 @@ public class ImportPolicyFromFileAction extends BaseAction {
                                                              WspConstants.POLICY_ELNAME);
         if (policy != null) {
             try {
-                pubService.setPolicyXml(XmlUtil.nodeToString(policy));
+                Assertion newRoot = resolver.localizePolicy(policy);
+                // for some reason, the PublishedService class does not allow to set a policy
+                // directly, it must be set through the XML
+                pubService.setPolicyXml(WspWriter.getPolicyXml(newRoot));
             } catch (IOException e) {
-                log.log(Level.WARNING, "could not read policy from " + name, e);
+                log.log(Level.WARNING, "could not localize or read policy from " + name, e);
             }
         } else {
             log.warning("The document " + name + " did not contain a policy at all.");
