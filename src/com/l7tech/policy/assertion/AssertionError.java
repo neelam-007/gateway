@@ -18,6 +18,7 @@ public class AssertionError {
     public static final AssertionError NOT_FOUND     = make( CLIENT | 4, "Service Not Found" );
 
     public static final AssertionError NOT_YET_IMPLEMENTED = make( MISC | 0, "Not yet implemented!" );
+    public static final AssertionError NOT_APPLICABLE      = make( MISC | 1, "Not applicable in this context" );
 
     public static final AssertionError SERVER_ERROR = make( SERVER | 0, "Internal Server Error" );
 

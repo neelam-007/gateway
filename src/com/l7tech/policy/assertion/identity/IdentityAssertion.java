@@ -12,6 +12,7 @@ import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.AssertionError;
 import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.proxy.datamodel.PendingRequest;
 
 import java.security.Principal;
 
@@ -54,6 +55,11 @@ public abstract class IdentityAssertion extends Assertion {
                 }
             }
         }
+    }
+
+    /** No identity providers on client side. */
+    public AssertionError decorateRequest(PendingRequest requst) throws PolicyAssertionException {
+        return AssertionError.NOT_APPLICABLE;
     }
 
     public void setIdentityProvider( IdentityProvider provider ) {

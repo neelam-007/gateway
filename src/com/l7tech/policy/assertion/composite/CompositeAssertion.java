@@ -7,6 +7,7 @@
 package com.l7tech.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import java.util.*;
 import java.io.Serializable;
@@ -79,6 +80,15 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
             newKids.add(newChild);
         }
         return newKids;
+    }
+
+    /**
+     * Ensure that this CompositeAssertion has at least one child.
+     * @throws PolicyAssertionException if the children list is empty
+     */
+    protected void mustHaveChildren() throws PolicyAssertionException {
+        if (children.isEmpty())
+            throw new PolicyAssertionException("CompositeAssertion has no children: " + this);
     }
 
     public String toString() {

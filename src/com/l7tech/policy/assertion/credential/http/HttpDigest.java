@@ -11,6 +11,8 @@ import com.l7tech.message.Response;
 import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.credential.http.HttpDigestCredentialFinder;
 import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.proxy.datamodel.PendingRequest;
 
 /**
  * @author alex
@@ -24,5 +26,16 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
 
     public Class getCredentialFinderClass() {
         return HttpDigestCredentialFinder.class;
+    }
+
+    /**
+     * ClientProxy client-side processing of the given request.
+     * @param request    The request to decorate.
+     * @return AssertionError.NONE if this Assertion was applied to the request successfully; otherwise, some error code
+     * @throws PolicyAssertionException if processing should not continue due to a serious error
+     */
+    public AssertionError decorateRequest(PendingRequest request) throws PolicyAssertionException {
+        // TODO: client-side support for HTTP Digest auth
+        return AssertionError.NOT_YET_IMPLEMENTED;
     }
 }

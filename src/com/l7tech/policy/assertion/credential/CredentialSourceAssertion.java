@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionError;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.Locator;
+import com.l7tech.proxy.datamodel.PendingRequest;
 
 /**
  * Asserts that the requester's credentials were found, and using a particular authentication mechanism.

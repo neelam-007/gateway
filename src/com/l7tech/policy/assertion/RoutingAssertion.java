@@ -8,6 +8,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.proxy.datamodel.PendingRequest;
 
 import java.io.Serializable;
 
@@ -49,6 +50,11 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
         // TODO
         return AssertionError.NOT_YET_IMPLEMENTED;
+    }
+
+    /** Client-side doesn't know or care about server-side routing. */
+    public AssertionError decorateRequest(PendingRequest requst) throws PolicyAssertionException {
+        return AssertionError.NOT_APPLICABLE;
     }
 
     protected String protectedServiceUrl;

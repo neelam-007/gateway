@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.AssertionError;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.proxy.datamodel.PendingRequest;
 
 import java.util.Iterator;
 import java.util.List;
@@ -39,6 +40,7 @@ public class ExactlyOneAssertion extends CompositeAssertion implements Serializa
     }
 
     public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
+        mustHaveChildren();
         Iterator kids = children();
         Assertion child;
         AssertionError result = null;
@@ -50,5 +52,25 @@ public class ExactlyOneAssertion extends CompositeAssertion implements Serializa
                 ++numSucceeded;
         }
         return numSucceeded == 1 ? AssertionError.NONE : AssertionError.FALSIFIED;
+    }
+
+    /**
+     * Modify the provided PendingRequest to conform to this policy assertion.
+     * For ExactlyOneAssertion, we'll run children until one succeeds or we run out.
+     * @param req
+     * @return AssertionError.NONE, or the rightmost-child's error if all children failed.
+     * @throws PolicyAssertionException
+     */
+    public AssertionError decorateRequest(PendingRequest req) throws PolicyAssertionException {
+        mustHaveChildren();
+        AssertionError result = AssertionError.FALSIFIED;
+        for (Iterator kids = children.iterator(); kids.hasNext();) {
+            Assertion assertion = (Assertion) kids.next();
+            AssertionError thisResult = assertion.decorateRequest(req);
+            if (thisResult == AssertionError.NONE)
+                return thisResult;
+            result = thisResult;
+        }
+        return result;
     }
 }

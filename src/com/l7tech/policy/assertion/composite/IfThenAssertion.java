@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.proxy.datamodel.PendingRequest;
 
 import java.util.Arrays;
 import java.util.List;
@@ -53,5 +54,15 @@ public class IfThenAssertion extends CompositeAssertion {
                 return result;
         }
         return result;
+    }
+
+    /**
+     * ClientProxy client-side processing of the given request.
+     * @param requst    The request to decorate.
+     * @return AssertionError.NONE if this Assertion was applied to the request successfully; otherwise, some error code
+     * @throws PolicyAssertionException if processing should not continue due to a serious error
+     */
+    public AssertionError decorateRequest(PendingRequest requst) throws PolicyAssertionException {
+        return AssertionError.NOT_YET_IMPLEMENTED;
     }
 }

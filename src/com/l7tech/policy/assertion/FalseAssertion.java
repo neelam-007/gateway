@@ -8,6 +8,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.proxy.datamodel.PendingRequest;
 
 /**
  * An assertion that always returns a negative result.
@@ -17,6 +18,10 @@ import com.l7tech.message.Response;
  */
 public class FalseAssertion extends Assertion {
     public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
+        return AssertionError.FALSIFIED;
+    }
+
+    public AssertionError decorateRequest(PendingRequest requst) throws PolicyAssertionException {
         return AssertionError.FALSIFIED;
     }
 }
