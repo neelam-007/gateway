@@ -62,7 +62,7 @@ public class RequestXpathAssertionTest extends TestCase {
         return new ServerRequestXpathAssertion(assertion);
     }
 
-    public XmlRequest getTestRequest(Document doc) {
+    private XmlRequest getTestRequest(Document doc) {
         return new XmlRequest() {
             public Document getDocument() {
                 return testDoc;
