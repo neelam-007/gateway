@@ -6,6 +6,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.internal.InternalUserManagerServer;
 import com.l7tech.logging.LogManager;
 import com.l7tech.util.Locator;
+import com.l7tech.util.KeystoreUtils;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -44,8 +45,8 @@ public class CSRHandler extends HttpServlet {
         super.init(config);
         String tmp = getServletConfig().getInitParameter("RootKeyStore");
         if (tmp == null || tmp.length() < 1) tmp = "../../kstores/ssgroot";
-        rootkstore = config.getServletContext().getRealPath(tmp);
-        rootkstorepasswd = getServletConfig().getInitParameter("RootKeyStorePasswd");
+        rootkstore = KeystoreUtils.getInstance().getRootKeystorePath();
+        rootkstorepasswd = KeystoreUtils.getInstance().getRootKeystorePasswd();
         if (rootkstorepasswd == null || rootkstorepasswd.length() < 1) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Key store password not found (root CA).");
         }
