@@ -142,13 +142,13 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
-     *Test whether the node has properties. Default is <code>true</code>
-     *
-     * @return true if the node has properties, false otherwise
+     * Gets the default action for this node.
+     * @return <code>null</code> indicating there should be none default action
      */
-    public boolean hasProperties() {
-        return true;
-    }
+    public Action getPreferredAction() {
+        return null;
+    };
+
 
     /**
      * loads the icon specified by subclass iconResource()

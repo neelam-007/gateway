@@ -207,4 +207,15 @@ public class Actions {
 
         return true;
     }
+
+   /**
+    * perform the action passed
+    *
+    * @param a the action to invoke
+    */
+    public static void invokeAction(Action a) {
+        if (a instanceof BaseAction) {
+            ((BaseAction)a).performAction();
+        }
+    }
 }

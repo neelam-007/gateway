@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.DeleteServiceAction;
+import com.l7tech.console.action.ServicePolicyPropertiesAction;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -19,6 +20,7 @@ import java.awt.event.MouseEvent;
 public class ServicesTree extends JTree {
     /** component name */
     public final static String NAME = "services.tree";
+
     /**
      * Create the new policy tree with the policy model.
      *
@@ -53,20 +55,37 @@ public class ServicesTree extends JTree {
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
             if (path == null) return;
+            AbstractTreeNode node =
+              (AbstractTreeNode)path.getLastPathComponent();
+            if (node == null) return;
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
-                AbstractTreeNode node =
-                  (AbstractTreeNode)path.getLastPathComponent();
-                if (node == null) return;
                 if (!node.canDelete()) return;
                 if (node instanceof ServiceNode)
                     new DeleteServiceAction((ServiceNode)node).performAction();
-
+            } else if (keyCode == KeyEvent.VK_ENTER) {
+                if (node instanceof ServiceNode)
+                    new ServicePolicyPropertiesAction((ServiceNode)node).performAction();
             }
         }
     }
 
     class TreeMouseListener extends MouseAdapter {
+        /**
+         * Invoked when the mouse has been clicked on a component.
+         */
+        public void mouseClicked(MouseEvent e) {
+            if (e.getClickCount() != 2) return;
+            JTree tree = (JTree)e.getSource();
+            TreePath path = tree.getSelectionPath();
+            if (path == null) return;
+            AbstractTreeNode node =
+              (AbstractTreeNode)path.getLastPathComponent();
+            if (node == null) return;
+            if (node instanceof ServiceNode)
+                new ServicePolicyPropertiesAction((ServiceNode)node).performAction();
+        }
+
         public void mousePressed(MouseEvent e) {
             popUpMenuHandler(e);
         }

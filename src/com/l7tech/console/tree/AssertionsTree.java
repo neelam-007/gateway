@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.DeleteEntityAction;
+import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -19,6 +20,7 @@ import java.awt.event.MouseEvent;
 public class AssertionsTree extends JTree {
     /** component name */
     public final static String NAME = "assertion.palette";
+
     /**
      * Create the new policy tree with the policy model.
      *
@@ -53,20 +55,43 @@ public class AssertionsTree extends JTree {
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
             if (path == null) return;
+            AbstractTreeNode node =
+              (AbstractTreeNode)path.getLastPathComponent();
+            if (node == null) return;
+
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
-                AbstractTreeNode node =
-                  (AbstractTreeNode)path.getLastPathComponent();
-                if (node == null) return;
                 if (!node.canDelete()) return;
                 if (node instanceof EntityHeaderNode)
                     new DeleteEntityAction((EntityHeaderNode)node).performAction();
-
+            } else if (keyCode == KeyEvent.VK_ENTER) {
+                Action a = node.getPreferredAction();
+                if (a != null) {
+                    Actions.invokeAction(a);
+                }
             }
         }
     }
 
     class TreeMouseListener extends MouseAdapter {
+        /**
+         * Invoked when the mouse has been clicked on a component.
+         */
+        public void mouseClicked(MouseEvent e) {
+            if (e.getClickCount() != 2) return;
+            JTree tree = (JTree)e.getSource();
+            TreePath path = tree.getSelectionPath();
+            if (path == null) return;
+            AbstractTreeNode node =
+              (AbstractTreeNode)path.getLastPathComponent();
+            if (node == null) return;
+
+            Action a = node.getPreferredAction();
+            if (a != null) {
+                Actions.invokeAction(a);
+            }
+        }
+
         public void mousePressed(MouseEvent e) {
             popUpMenuHandler(e);
         }

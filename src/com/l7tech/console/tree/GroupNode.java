@@ -61,6 +61,14 @@ public class GroupNode extends EntityHeaderNode {
     }
 
     /**
+     * Gets the default action for this node.
+     * @return <code>null</code> indicating there should be none default action
+     */
+    public Action getPreferredAction() {
+        return new GroupPropertiesAction(this);
+    }
+
+    /**
      * subclasses override this method specifying the resource name
      *
      * @param open for nodes that can be opened, can have children

@@ -46,6 +46,13 @@ public class ProviderNode extends EntityHeaderNode {
         return (Action[]) list.toArray(new Action[]{});
     }
 
+    /**
+     * Gets the default action for this node.
+     * @return <code>null</code> indicating there should be none default action
+     */
+    public Action getPreferredAction() {
+        return new IdentityProviderPropertiesAction(this);
+    }
 
     /**
      * Returns the children of the reciever as an Enumeration.
