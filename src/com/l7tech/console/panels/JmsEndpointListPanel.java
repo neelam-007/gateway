@@ -48,20 +48,20 @@ public class JmsEndpointListPanel extends JPanel {
                                          JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         sp.setMinimumSize(new Dimension(220, 40));
         add(sp,
-            new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+            new GridBagConstraints(0, 0, 1, 8, 1.0, 1.0,
                                    GridBagConstraints.CENTER,
                                    GridBagConstraints.BOTH,
                                    new Insets(12, 12, 5, 11), 0, 0));
         add(getAddButton(),
-            new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+            new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
                                    GridBagConstraints.EAST,
                                    GridBagConstraints.NONE,
-                                   new Insets(0, 12, 11, 11), 0, 0));
+                                   new Insets(12, 0, 5, 11), 0, 0));
     }
 
     private JButton getAddButton() {
         if (addButton == null) {
-            addButton = new JButton("Add connection...");
+            addButton = new JButton("Add...");
             addButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
                     NewJmsEndpointDialog d = owner instanceof Frame

@@ -7,17 +7,16 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.rmi.RemoteException;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Arrays;
 
 /**
@@ -102,6 +101,14 @@ public class MonitoredEndpointsWindow extends JDialog {
     private JButton getRemoveButton() {
         if (removeButton == null) {
             removeButton = new JButton("Remove");
+            removeButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    EntityHeader h = (EntityHeader) getMonitoredEndpointList().getSelectedValue();
+                    getMonitoredEntityHeaders().remove(h);
+                    getMonitoredEndpointList().setModel(createMonitoredEndpointListModel());
+                    getOkButton().setEnabled(true);
+                }
+            });
         }
         return removeButton;
     }
@@ -111,7 +118,8 @@ public class MonitoredEndpointsWindow extends JDialog {
             addButton = new JButton("Add...");
             addButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-                    // todo
+                    AddMonitoredEndpointConnectionWindow amew = new AddMonitoredEndpointConnectionWindow();
+                    amew.show();
                 }
             });
         }
@@ -155,12 +163,162 @@ public class MonitoredEndpointsWindow extends JDialog {
         return cancelButton;
     }
 
+    private class AddMonitoredEndpointWindow extends JDialog {
+        AddMonitoredEndpointWindow(Dialog parent, JmsConnection connection) {
+            super(parent, "Select JMS Endpoint", true);
+
+            final JmsEndpointListPanel jpl = new JmsEndpointListPanel(parent, connection);
+            final JButton okButton = new JButton("Ok");
+            final JButton cancelButton = new JButton("Cancel");
+
+            okButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    JmsEndpoint endpoint = jpl.getSelectedJmsEndpoint();
+                    addModitoredEndpoint(endpoint);
+                    AddMonitoredEndpointWindow.this.hide();
+                    AddMonitoredEndpointWindow.this.dispose();
+                }
+            });
+
+            cancelButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    AddMonitoredEndpointWindow.this.hide();
+                    AddMonitoredEndpointWindow.this.dispose();
+                }
+            });
+
+
+            Container p = getContentPane();
+            p.setLayout(new GridBagLayout());
+            p.add(new JLabel("Please select the endpoint to monitor:"),
+                  new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
+                                         GridBagConstraints.WEST,
+                                         GridBagConstraints.NONE,
+                                         new Insets(15, 15, 0, 15), 0, 0));
+            p.add(jpl,
+                  new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0,
+                                         GridBagConstraints.CENTER,
+                                         GridBagConstraints.BOTH,
+                                         new Insets(0, 0, 0, 0), 0, 0));
+            p.add(Box.createGlue(),
+                  new GridBagConstraints(0, 2, 1, 1, 100.0, 1.0,
+                                         GridBagConstraints.EAST,
+                                         GridBagConstraints.HORIZONTAL,
+                                         new Insets(0, 0, 0, 0), 0, 0));
+            p.add(okButton,
+                  new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
+                                         GridBagConstraints.EAST,
+                                         GridBagConstraints.NONE,
+                                         new Insets(0, 0, 11, 5), 0, 0));
+
+            p.add(cancelButton,
+                  new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+                                         GridBagConstraints.EAST,
+                                         GridBagConstraints.NONE,
+                                         new Insets(0, 0, 11, 11), 0, 0));
+
+            Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
+
+            pack();
+
+        }
+    }
+
+    private class AddMonitoredEndpointConnectionWindow extends JDialog {
+        AddMonitoredEndpointConnectionWindow() {
+            super(MonitoredEndpointsWindow.this, "Select JMS Connection", true);
+
+            final JButton okButton = new JButton("Ok");
+            final JButton cancelButton = new JButton("Cancel");
+            final JmsConnectionListPanel jpl = new JmsConnectionListPanel(MonitoredEndpointsWindow.this);
+
+            jpl.addJmsConnectionListSelectionListener(new JmsConnectionListPanel.JmsConnectionListSelectionListener() {
+                public void onSelected(EntityHeader selected) {
+                    okButton.setEnabled(selected != null);
+                }
+            });
+
+            okButton.setEnabled(false);
+            okButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    EntityHeader connectionHeader = jpl.getSelectedJmsConnection();
+                    if (connectionHeader == null)
+                        return;
+                    try {
+                        JmsConnection connection = Registry.getDefault().getJmsManager().findConnectionByPrimaryKey(connectionHeader.getOid());
+                        AddMonitoredEndpointConnectionWindow.this.hide();
+                        AddMonitoredEndpointConnectionWindow.this.dispose();
+                        AddMonitoredEndpointWindow amew = new AddMonitoredEndpointWindow(MonitoredEndpointsWindow.this, connection);
+                        amew.show();
+                    } catch (Exception e1) {
+                        throw new RuntimeException("Unable to use this JMS connection", e1);
+                    }
+                }
+            });
+
+            cancelButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    AddMonitoredEndpointConnectionWindow.this.hide();
+                    AddMonitoredEndpointConnectionWindow.this.dispose();
+                }
+            });
+
+            Container p = getContentPane();
+            p.setLayout(new GridBagLayout());
+            p.add(new JLabel("Please select the JMS connection:"),
+                  new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
+                                         GridBagConstraints.WEST,
+                                         GridBagConstraints.NONE,
+                                         new Insets(15, 15, 0, 15), 0, 0));
+
+            p.add(jpl,
+                  new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0,
+                                         GridBagConstraints.CENTER,
+                                         GridBagConstraints.BOTH,
+                                         new Insets(0, 0, 0, 0), 0, 0));
+
+            p.add(Box.createGlue(),
+                  new GridBagConstraints(0, 2, 1, 1, 100.0, 1.0,
+                                         GridBagConstraints.EAST,
+                                         GridBagConstraints.HORIZONTAL,
+                                         new Insets(0, 0, 0, 0), 0, 0));
+
+            p.add(okButton,
+                  new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
+                                         GridBagConstraints.EAST,
+                                         GridBagConstraints.NONE,
+                                         new Insets(0, 0, 11, 5), 0, 0));
+
+            p.add(cancelButton,
+                  new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+                                         GridBagConstraints.EAST,
+                                         GridBagConstraints.NONE,
+                                         new Insets(0, 0, 11, 11), 0, 0));
+
+            Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
+
+            pack();
+
+        }
+    }
+
     private JButton getOkButton() {
         if (okButton == null) {
             okButton = new JButton("Ok");
+            okButton.setEnabled(false);
             okButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-
+                    long monitoredOids[] = new long[getMonitoredEntityHeaders().size()];
+                    for (int i = 0; i < monitoredOids.length; i++) {
+                        monitoredOids[i] = ((EntityHeader)getMonitoredEntityHeaders().get(i)).getOid();
+                    }
+                    try {
+                        Registry.getDefault().getJmsManager().saveAllMonitoredEndpoints(monitoredOids);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to update list of monitored JMS endpoints", e);
+                    }
+                    MonitoredEndpointsWindow.this.hide();
+                    MonitoredEndpointsWindow.this.dispose();
                 }
             });
         }
@@ -170,6 +328,18 @@ public class MonitoredEndpointsWindow extends JDialog {
     private JList getMonitoredEndpointList() {
         if (monitoredEndpointList == null) {
             monitoredEndpointList = new JList(getMonitoredEndpointListModel());
+            monitoredEndpointList.setCellRenderer(new DefaultListCellRenderer() {
+                public Component getListCellRendererComponent(JList list,
+                                                              Object value,
+                                                              int index,
+                                                              boolean isSelected,
+                                                              boolean cellHasFocus)
+                {
+                    String string = ((EntityHeader) value).getName();
+                    return super.getListCellRendererComponent(list, string, index, isSelected, cellHasFocus);
+                }
+            });
+
         }
         return monitoredEndpointList;
     }
@@ -179,6 +349,14 @@ public class MonitoredEndpointsWindow extends JDialog {
             monitoredEndpointListModel = createMonitoredEndpointListModel();
         }
         return monitoredEndpointListModel;
+    }
+
+    private void addModitoredEndpoint(JmsEndpoint endpoint) {
+        EntityHeader h = endpoint.toEntityHeader();
+        getMonitoredEntityHeaders().add(h);
+        getMonitoredEndpointList().setModel(createMonitoredEndpointListModel());
+        getMonitoredEndpointList().setSelectedValue(h, true);
+        getOkButton().setEnabled(true);
     }
 
     /** Get the current list of monitored JmsEndpoint EntityHeaders from the server. */

@@ -12,6 +12,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.jms.JmsConnection;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -53,6 +55,27 @@ public class JmsConnectionListPanel extends JPanel {
         return cli == null ? null : cli.getEntityHeader();
     }
 
+    public interface JmsConnectionListSelectionListener {
+        /**
+         * Called when the selection changes.
+         * @param selected the EntityHeader of the newly selected JmsConnection, or null if none is selected.
+         */
+        void onSelected(EntityHeader selected);
+    }
+
+    /**
+     * Subscribe to be notified whenever the selected JMS connection changes.  The provided listener's
+     * onSelected() method will be called each time.  Note that "no selection" is a possibility.
+     * @param listener listener which will be called back when the selection changes
+     */
+    public void addJmsConnectionListSelectionListener(final JmsConnectionListSelectionListener listener) {
+        getConnectionList().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                listener.onSelected(getSelectedJmsConnection());
+            }
+        });
+    }
+
     private void init() {
         setLayout(new GridBagLayout());
 
@@ -61,15 +84,15 @@ public class JmsConnectionListPanel extends JPanel {
                                          JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         sp.setMinimumSize(new Dimension(220, 40));
         add(sp,
-            new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+            new GridBagConstraints(0, 0, 1, 8, 1.0, 1.0,
                                    GridBagConstraints.CENTER,
                                    GridBagConstraints.BOTH,
                                    new Insets(12, 12, 5, 11), 0, 0));
         add(getAddButton(),
-            new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+            new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
                                    GridBagConstraints.EAST,
                                    GridBagConstraints.NONE,
-                                   new Insets(0, 12, 11, 11), 0, 0));
+                                   new Insets(12, 0, 5, 11), 0, 0));
     }
 
     private JList getConnectionList() {
@@ -123,7 +146,7 @@ public class JmsConnectionListPanel extends JPanel {
         if (addButton != null)
             return addButton;
 
-        addButton = new JButton("New connection...");
+        addButton = new JButton("Add...");
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 NewJmsConnectionDialog d = owner instanceof Frame
