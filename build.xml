@@ -29,6 +29,8 @@
     <property name="tar" value="${app.name}.tar"/>
     <property name="tar.gz" value="${app.name}_${app.version}.tar.gz"/>
 
+    <property name="ssb.war" value="ssb.war"/>
+
     <!-- ear not used
       <property name="ear"        value="${app.name}.ear"/>
     -->
@@ -155,6 +157,8 @@
     <target name="undeploy" depends="init-dev">
         <delete dir="${tomcat.home}/webapps/ROOT"/>
         <delete file="${war}"/>
+        <delete dir="${tomcat.home}/webapps/ssb" />
+        <delete file="${ssb.war}" />
     </target>
 
     <!--
@@ -338,8 +342,54 @@
       ** respective archives (war, jar).
       ** This target is invoked by other targets such as deploy and dist.
       -->
-    <target name="package" depends="init-dev, compile, package.gateway, package.bridge, package.manager, package.installclients, package.api"/>
+    <target name="package" depends="init-dev, compile, package.gateway, package.bridge, package.bridgewar, package.manager, package.installclients, package.api"/>
 
+
+    <target name="package.bridgewar">
+        <!-- the ssb war -->
+        <war warfile="${build.dir}/${ssb.war}" webxml="${build.etc}/ssb-web.xml">
+            <lib dir="${build.dir}/lib">
+                <include name="commons-logging-1.0.4.jar"/>
+                <include name="jaxrpc.jar"/>
+                <include name="kunststoff.jar"/>
+                <include name="saaj.jar"/>
+                <include name="wsdl4j.jar"/>
+                <include name="xercesImpl.jar"/>
+                <include name="xml-apis.jar"/>
+                <include name="bcprov-jdk14-124.jar"/>
+                <include name="xss4j.jar"/>
+                <include name="org.mortbay.jetty.jar"/>
+                <include name="commons-httpclient-2.0.2.jar"/>
+                <include name="systray4j.jar"/>
+                <include name="jaxen-1.1-beta-2-l7.jar"/>
+                <include name="saxpath.jar"/>
+                <include name="axis.jar"/>
+                <include name="xbean.jar"/>
+                <include name="xbean-saml.jar"/>
+                <include name="xbean-common.jar"/>
+                <include name="forms_rt.jar"/>
+                <include name="xml4j.jar"/>
+                <include name="are.jar"/>
+                <include name="mailapi-1.3.1.jar"/>
+                <include name="activation.jar"/>
+            </lib>
+            <classes dir="${build.classes}">
+                <exclude name="com/l7tech/server/**/*"/>
+                <exclude name="com/l7tech/console/**/*"/>
+                <exclude name="com/l7tech/identity/**/*"/>
+                <exclude name="com/l7tech/objectmodel/**/*"/>
+                <exclude name="com/l7tech/server/**/*"/>
+                <exclude name="com/l7tech/service/**/*"/>
+                <exclude name="com/l7tech/spring/**/*"/>
+                <exclude name="com/l7tech/test/**/*"/>
+                <exclude name="com/l7tech/cluster/**/*" />
+                <exclude name="com/l7tech/credential/**/*" />
+                <exclude name="com/l7tech/skunkworks/**/*" />
+            </classes>
+
+            <zipfileset dir="${src.root}/src/com/l7tech/common/resources" includes="wsil2xhtml.xml" prefix="ssg"/>
+        </war>
+    </target>
 
     <target name="package.gateway">
         <!-- the ssg war -->
@@ -758,7 +808,10 @@
             <fileset dir="${src.root}/etc">
                 <include name="web.xml"/>
             </fileset>
+
         </copy>
+
+        <copy file="${src.root}/etc/deploy/ssb/webapp/web.xml" tofile="${build.etc}/ssb-web.xml" />
 
         <!-- Resources -->
         <copy todir="${build.classes}">
@@ -781,6 +834,7 @@
 
             <fileset dir="${src.root}/src">
                 <include name="**/resources/*"/>
+                <include name="**/resources/**/*"/>
             </fileset>
 
             <fileset dir="${src.root}/src">
