@@ -29,6 +29,7 @@ import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
+import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -175,12 +176,15 @@ public class MessageProcessor {
                         ((SoapResponse)response).getDecorationRequirements() != null)
                 {
                     SoapResponse soapResponse = (SoapResponse)response;
+                    Document doc = null;
                     try {
-                        getWssDecorator().decorateMessage(soapResponse.getDocument(),
+                        doc = soapResponse.getDocument();
+                        getWssDecorator().decorateMessage(doc,
                                                           soapResponse.getDecorationRequirements());
                     } catch (Exception e) {
                         throw new PolicyAssertionException("Failed to apply WSS decoration to response", e);
                     }
+                    soapResponse.setDocument(doc);
                 }
 
                 RoutingStatus rstat = request.getRoutingStatus();
