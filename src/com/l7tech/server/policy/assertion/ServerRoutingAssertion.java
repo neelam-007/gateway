@@ -6,40 +6,34 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.identity.UserBean;
+import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlRequest;
 import com.l7tech.message.XmlResponse;
-import com.l7tech.service.PublishedService;
-import com.l7tech.logging.LogManager;
-import com.l7tech.common.BuildInfo;
-import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.saml.SamlAssertionGenerator;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.identity.UserBean;
+import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.xml.sax.SAXException;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.wsdl.WSDLException;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 
 /**
  * @author alex
@@ -69,7 +63,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
 
     /**
      * Forwards the request along to a ProtectedService at the configured URL.
-     * 
+     *
      * @param grequest  The request to be forwarded.
      * @param gresponse The response that was received from the ProtectedService.
      * @return an AssertionStatus indicating the success or failure of the request.
