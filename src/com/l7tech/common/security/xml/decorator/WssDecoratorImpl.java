@@ -27,6 +27,9 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.*;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
@@ -388,6 +391,12 @@ public class WssDecoratorImpl implements WssDecorator {
                 if (e != null)
                     c.idToElementCache.put(s, e);
                 return e;
+            }
+        });
+        sigContext.setEntityResolver(new EntityResolver() {
+            public InputSource resolveEntity(String publicId, String systemId) throws SAXException {
+                throw new SAXException("Unsupported external entity reference publicId=" + publicId +
+                                       ", systemId=" + systemId);
             }
         });
         try {
