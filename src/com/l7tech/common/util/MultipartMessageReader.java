@@ -185,9 +185,18 @@ public class MultipartMessageReader {
         // If it is the first time to parse soap part
         if(lastPartPosition == 0) {
 
-            String firstBoundary = readLine();
-            if (!firstBoundary.equals(XmlUtil.MULTIPART_BOUNDARY_PREFIX + multipartBoundary)) throw new IOException("Initial multipart boundary not found");
+            String firstBoundary = null;
+
+            while((firstBoundary = readLine()) != null) {
+                if(firstBoundary.trim().equals("")) continue;
+                if (firstBoundary.equals(XmlUtil.MULTIPART_BOUNDARY_PREFIX + multipartBoundary)) {
+                    break;
+                } else {
+                    throw new IOException("Initial multipart boundary not found");
+                }
+            }
         }
+
 
         String line;
         while((multipartParts.size() <= lastPartPosition) && ((line = readLine()) != null)) {
