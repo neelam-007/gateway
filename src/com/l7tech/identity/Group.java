@@ -86,5 +86,5 @@ public class Group extends NamedEntityImp implements Principal {
     private String _description;
     private Set _members;
     private Set _memberHeaders;
-    private long providerId;
+    private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
 }
