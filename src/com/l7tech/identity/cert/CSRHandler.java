@@ -16,6 +16,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.File;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -222,8 +223,9 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     }
 
     private boolean keystorePresent() {
-        // todo, implement this for cluster configs
-        return true;
+        if (rootkstore == null) return false;
+        // check that the file in rootkstore exists
+        return (new File(rootkstore)).exists();
     }
 
     private void proxyReqToSsgWithRootKStore(HttpServletRequest req, HttpServletResponse res) throws IOException {
