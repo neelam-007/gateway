@@ -9,10 +9,8 @@ import com.l7tech.server.MessageProcessor;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.*;
 
 /**
@@ -63,7 +61,12 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
 
     public synchronized Document getDocument() throws IOException, SAXException {
         if (_document == null) {
-            parse(getResponseXml());
+            String xml = getResponseXml();
+            if (xml == null || xml.length() == 0) {
+                throw new NoDocumentPresentException();
+            } else {
+                parse(getResponseXml());
+            }
         }
         return _document;
     }

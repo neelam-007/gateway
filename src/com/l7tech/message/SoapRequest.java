@@ -3,9 +3,6 @@ package com.l7tech.message;
 import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.util.MultipartMessageReader;
-import com.l7tech.common.util.MultipartUtil;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -14,15 +11,12 @@ import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.util.MessageIdManager;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Encapsulates a SOAP request. Not thread-safe. Don't forget to call close() when you're done!
@@ -69,9 +63,9 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     public synchronized Document getDocument() throws SAXException, IOException {
         if ( _document == null ) {
             String xml = getRequestXml();
-            if ( xml == null )
-                throw new IllegalStateException( "No XML yet!" );
-            else
+            if ( xml == null ) {
+                throw new NoDocumentPresentException();
+            } else
                 parse( xml );
         }
 

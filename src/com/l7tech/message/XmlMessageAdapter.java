@@ -8,8 +8,8 @@ package com.l7tech.message;
 
 import com.l7tech.common.util.MultipartMessageReader;
 import com.l7tech.common.util.MultipartUtil;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.transport.jms.BytesMessageInputStream;
 import com.l7tech.server.transport.jms.JmsUtil;
@@ -23,10 +23,10 @@ import org.xmlpull.v1.XmlPullParserException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
-import java.util.Map;
 import java.util.Iterator;
-import java.util.logging.Logger;
+import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -152,8 +152,13 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
 
             boolean ok;
             try {
-                docEl = getDocument().getDocumentElement();
+                Document doc = getDocument();
+                if (doc == null) return false;
+                docEl = doc.getDocumentElement();
                 ok = true;
+            } catch (NoDocumentPresentException e) {
+                logger.fine("No document present");
+                ok = false;
             } catch ( Exception e ) {
                 logger.log(Level.INFO, "Unable to check if document is SOAP", e);
                 ok = false;
