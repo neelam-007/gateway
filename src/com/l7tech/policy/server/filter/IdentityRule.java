@@ -1,9 +1,6 @@
 package com.l7tech.policy.server.filter;
 
-import com.l7tech.identity.User;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.*;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -12,9 +9,11 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.logging.LogManager;
 
 import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -115,16 +114,20 @@ public class IdentityRule extends Filter {
             long idprovider = grpmemship.getIdentityProviderOid();
             if (idprovider == user.getProviderId()) {
                 // try to match user to group
-                Iterator i = user.getGroups().iterator();
-                while (i.hasNext()) {
-                    Group grp = (Group)i.next();
-                    if (grp.getName().equals(grpmemship.getGroupName())) return true;
-                }
                 // try to match group to user
                 try {
                     IdentityProvider prov = getIdentityProviderConfigManager().getIdentityProvider(idprovider);
-                    Group grp = prov.getGroupManager().findByName(grpmemship.getGroupName());
-                    for (Iterator jj = grp.getMembers().iterator(); jj.hasNext();) {
+                    GroupManager gman = prov.getGroupManager();
+
+                    Iterator i = gman.getGroupHeaders(user).iterator();
+                    while (i.hasNext()) {
+                        EntityHeader grp = (EntityHeader)i.next();
+                        if (grp.getName().equals(grpmemship.getGroupName())) return true;
+                    }
+
+                    Group grp = gman.findByName(grpmemship.getGroupName());
+                    Set members = gman.getUserHeaders( grp );
+                    for (Iterator jj = members.iterator(); jj.hasNext();) {
                         User memberx = (User)jj.next();
                         if (memberx.getLogin().equals(user.getLogin())) {
                             return true;
