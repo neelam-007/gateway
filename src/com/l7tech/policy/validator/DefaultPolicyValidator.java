@@ -65,7 +65,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         PolicyValidatorResult result = new PolicyValidatorResult();
 
         for (Iterator iterator = path.paths().iterator(); iterator.hasNext();) {
-            AssertionPath assertionPath = (AssertionPath)iterator.next();
+            AssertionPath assertionPath = (AssertionPath) iterator.next();
             validatePath(assertionPath, result);
         }
         return result;
@@ -74,19 +74,22 @@ public class DefaultPolicyValidator extends PolicyValidator {
     private void validatePath(AssertionPath ap, PolicyValidatorResult r) {
         Assertion[] ass = ap.getPath();
         PathValidator pv = new PathValidator(r);
-//System.out.println("** Start Validating assertion path");
         for (int i = 0; i < ass.length; i++) {
             pv.validate(ass[i]);
-//System.out.println(ass[i].getClass());
         }
-//System.out.println("** End Validating assertion path");
         if (!pv.seenRouting) { // no routing report that
             r.addWarning(
-              new PolicyValidatorResult.
-              Warning(ap.lastAssertion(), "No route assertion.", null)
+                    new PolicyValidatorResult.
+                    Warning(ap.lastAssertion(), "No route assertion.", null)
             );
         }
-
+        if (!pv.seenCredentials) {
+            r.addWarning(
+                    new PolicyValidatorResult.
+                    Warning(null,
+                            "No authentication assertions are present in the policy. The\n" +
+                            " service may be exposed to public access ", null));
+        }
     }
 
 
@@ -118,13 +121,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
         private void processAccessControl(Assertion a) {
             if (!seenCredentials) {
                 result.addError(
-                  new PolicyValidatorResult.Error(a, "Access control without credentials.", null)
+                        new PolicyValidatorResult.Error(a, "Access control specified without authentication scheme.", null)
                 );
             }
 
             if (seenRouting) {
                 result.addWarning(
-                  new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
+                        new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
                 );
             }
 
@@ -153,19 +156,19 @@ public class DefaultPolicyValidator extends PolicyValidator {
         private void processCredentialSource(Assertion a) {
             if (seenAccessControl) {
                 result.addError(
-                  new PolicyValidatorResult.
-                  Error(a, "Access control already set, this assertion might get ignored.", null));
+                        new PolicyValidatorResult.
+                        Error(a, "Access control already set, this assertion might get ignored.", null));
             }
 
             if (seenRouting) {
                 result.addWarning(
-                  new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
+                        new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
                 );
             }
 
             if (seenCredentials) {
                 result.addWarning(
-                  new PolicyValidatorResult.Warning(a, "You already have a credential assertion.", null)
+                        new PolicyValidatorResult.Warning(a, "You already have a credential assertion.", null)
                 );
             }
 
@@ -181,36 +184,36 @@ public class DefaultPolicyValidator extends PolicyValidator {
             if (a instanceof SslAssertion) {
                 seenSsl = true;
                 // ssl assertion might be there but it could be forbidden...
-                if (((SslAssertion)a).getOption() == SslAssertion.FORBIDDEN) {
+                if (((SslAssertion) a).getOption() == SslAssertion.FORBIDDEN) {
                     sslForbidden = true;
                 }
                 if (seenRouting) {
                     result.addWarning(
-                      new PolicyValidatorResult.Warning(a,
-                        "The assertion might not work as configured." +
-                       "\nThere is a routing assertion before this assertion.", null)
+                            new PolicyValidatorResult.Warning(a,
+                                    "The assertion might not work as configured." +
+                            "\nThere is a routing assertion before this assertion.", null)
                     );
                 }
             } else if (a instanceof XmlResponseSecurity) {
                 if (!seenRouting) {
                     result.addWarning(
-                      new PolicyValidatorResult.Warning(a,
-                        "The assertion might not work as configured." +
-                       "\nXml Response Security must occur after routing.", null)
+                            new PolicyValidatorResult.Warning(a,
+                                    "The assertion might not work as configured." +
+                            "\nXml Response Security must occur after routing.", null)
                     );
                 }
             } else if (a instanceof HttpClientCert) {
                 if (!seenSsl) {
                     result.addWarning(
-                      new PolicyValidatorResult.Warning(a,
-                        "The assertion might not work as configured." +
-                       "\nHttpClientCert requires to have SSL transport.", null)
+                            new PolicyValidatorResult.Warning(a,
+                                    "The assertion might not work as configured." +
+                            "\nHttpClientCert requires to have SSL transport.", null)
                     );
                 } else if (sslForbidden) {
                     result.addWarning(
-                      new PolicyValidatorResult.Warning(a,
-                        "The assertion might not work as configured." +
-                       "\nHttpClientCert requires to have SSL transport but SSL is forbidden.", null)
+                            new PolicyValidatorResult.Warning(a,
+                                    "The assertion might not work as configured." +
+                            "\nHttpClientCert requires to have SSL transport but SSL is forbidden.", null)
                     );
                 }
                 processCredentialSource(a);

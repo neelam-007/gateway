@@ -1,17 +1,17 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.jnlp.JNLPPreferences;
+import com.sun.net.ssl.HostnameVerifier;
+import com.sun.net.ssl.HttpsURLConnection;
 
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeSupport;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLStreamHandler;
-import java.net.URLStreamHandlerFactory;
-import java.security.Security;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -232,10 +232,10 @@ public class Preferences extends PropertyChangeSupport {
 
         try {
             System.setProperty("org.apache.commons.logging.Log",
-                              "org.apache.commons.logging.impl.Jdk14Logger");
+                    "org.apache.commons.logging.impl.Jdk14Logger");
             ClassLoader cl = getClass().getClassLoader();
             in = cl.getResourceAsStream("com/l7tech/console/resources/logging.properties");
-            if (in !=null) {
+            if (in != null) {
                 LogManager.getLogManager().readConfiguration(in);
                 Logger.getLogger("com.l7tech").info("Policy editor logging initialized");
             } else {
@@ -247,65 +247,35 @@ public class Preferences extends PropertyChangeSupport {
             e.printStackTrace(System.err);
         } finally {
             try {
-                if (in !=null) in.close();
-            } catch (IOException e) { /*swallow*/ }
+                if (in != null) in.close();
+            } catch (IOException e) { /*swallow*/
+            }
         }
-
     }
 
     /**
      * initialize ssl
      */
     private void sslIinitialize() {
-        Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
-        System.
-                setProperty("java.protocol.handler.pkgs",
-                        "com.sun.net.ssl.internal.www.protocol");
-        // try to actually load the https URL.
-        // This is how we verify that ssl support was registered.
-        // In JWS additional registration (setURLStreamHandlerFactory) is
-        // required for not known reasons.
-        try {
-            new URL("https://localhost:8443");
-        } catch (MalformedURLException e) {
-            URL
-                    .setURLStreamHandlerFactory(
-                            new URLStreamHandlerFactory() {
-                                public URLStreamHandler
-                                        createURLStreamHandler(final String protocol) {
-                                    if (protocol != null && protocol.compareTo("https") == 0) {
-                                        return new
-                                                com.sun.net.ssl.internal.www.protocol.https.Handler();
-                                    }
-                                    return null;
-                                }
-                            });
-            // JSSE SSLContext initialization on a separate thread,
-            // attempt to improve performance on app startup. The
-            // Sun SSL provider is hardcoded.
-            new Thread(
-                    new Runnable() {
-                        public void run() {
-                            /*
-                            com.sun.net.ssl.TrustManagerFactory
-                              tmf = com.sun.net.ssl.TrustManagerFactory.getInstance("SunX509", "SunJSSE");
-                            com.sun.net.ssl.KeyManagerFactory
-                              kmf = com.sun.net.ssl.KeyManagerFactory.getInstance("SunX509", "SunJSSE");
-                            */
-                            try {
-                                long start = System.currentTimeMillis();
-                                javax.net.ssl.SSLContext ctx =
-                                        javax.net.ssl.SSLContext.getInstance("SSL", "SunJSSE");
-                                // SSL init with defaults
-                                ctx.init(null, null, null);
-                                long end = System.currentTimeMillis();
-                                Preferences.this.log("SSLContext.init() - finished took " + (end - start) + " ms");
-                            } catch (java.security.GeneralSecurityException e) {
-                                Preferences.this.log("SSLContext.init()", e);
-                            }
+        // JSSE SSLContext initialization on a separate thread,
+        // attempt to improve performance on app startup. The
+        // Sun SSL provider is hardcoded.
+        new Thread(
+                new Runnable() {
+                    public void run() {
+                        try {
+                            long start = System.currentTimeMillis();
+                            javax.net.ssl.SSLContext ctx =
+                                    javax.net.ssl.SSLContext.getInstance("SSL", "SunJSSE");
+                            // SSL init with defaults
+                            ctx.init(null, null, null);
+                            long end = System.currentTimeMillis();
+                            Preferences.this.log("SSLContext.init() - finished took " + (end - start) + " ms");
+                        } catch (java.security.GeneralSecurityException e) {
+                            Preferences.this.log("SSLContext.init()", e);
                         }
-                    }).start();
-        }
+                    }
+                }).start();
     }
 
     /**

@@ -78,12 +78,12 @@ public class PolicyValidatorResult {
      * The class represents the policy validation error
      * todo: add warning and info levels
      */
-    private static class Message {
+    public static class Message {
         private Assertion assertion;
         private String message;
         private Throwable throwable;
 
-        public Message(Assertion erroAssertion, String message, Throwable throwable) {
+        Message(Assertion erroAssertion, String message, Throwable throwable) {
             this.assertion = erroAssertion;
             this.message = message;
             this.throwable = throwable;

@@ -125,14 +125,14 @@ public class PolicyEditorPanel extends JPanel {
 
         policyTree.putClientProperty("service.node", sn);
         PolicyTreeModel model = PolicyTreeModel.make(service);
-        rootAssertion = (AssertionTreeNode)model.getRoot();
+        rootAssertion = (AssertionTreeNode) model.getRoot();
 
-        TreeNode root = (TreeNode)model.getRoot();
+        TreeNode root = (TreeNode) model.getRoot();
         FilteredTreeModel filteredTreeModel = new FilteredTreeModel(root);
         policyTree.setModel(filteredTreeModel);
         filteredTreeModel.addTreeModelListener(treeModellistener);
 
-        final TreePath path = new TreePath(((DefaultMutableTreeNode)root).getPath());
+        final TreePath path = new TreePath(((DefaultMutableTreeNode) root).getPath());
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -240,19 +240,19 @@ public class PolicyEditorPanel extends JPanel {
             buttonValidate = new JButton(new ValidatePolicyAction());
             this.add(buttonValidate);
             buttonValidate.addActionListener(
-              new ActionListener() {
-                  /** Invoked when an action occurs.*/
-                  public void actionPerformed(ActionEvent e) {
-                      PolicyValidatorResult result
-                        = PolicyValidator.getDefault().
-                        validate(rootAssertion.asAssertion());
-                      displayPolicyValidateResult(result);
+                    new ActionListener() {
+                        /** Invoked when an action occurs.*/
+                        public void actionPerformed(ActionEvent e) {
+                            PolicyValidatorResult result
+                                    = PolicyValidator.getDefault().
+                                    validate(rootAssertion.asAssertion());
+                            displayPolicyValidateResult(result);
 
-                      if (result.getErrors().isEmpty() && result.getWarnings().isEmpty()) {
-                          appendToMessageArea("<i>Policy validated ok.</i>");
-                      }
-                  }
-              });
+                            if (result.getErrors().isEmpty() && result.getWarnings().isEmpty()) {
+                                appendToMessageArea("<i>Policy validated ok.</i>");
+                            }
+                        }
+                    });
 
             identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
             identityViewButton.addActionListener(new ActionListener() {
@@ -261,14 +261,14 @@ public class PolicyEditorPanel extends JPanel {
                     policyTree.getModel().removeTreeModelListener(treeModellistener);
                     if (selected) {
                         PolicyTreeModel model =
-                          PolicyTreeModel.identitityModel(rootAssertion.asAssertion());
-                        FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
+                                PolicyTreeModel.identitityModel(rootAssertion.asAssertion());
+                        FilteredTreeModel fm = new FilteredTreeModel((TreeNode) model.getRoot());
                         fm.setFilter(new IdentityNodeFilter());
                         policyTree.setModel(fm);
                     } else {
                         PolicyTreeModel model =
-                          new PolicyTreeModel(rootAssertion.asAssertion());
-                        FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
+                                new PolicyTreeModel(rootAssertion.asAssertion());
+                        FilteredTreeModel fm = new FilteredTreeModel((TreeNode) model.getRoot());
                         policyTree.setModel(fm);
                     }
                     policyTree.getModel().addTreeModelListener(treeModellistener);
@@ -276,10 +276,10 @@ public class PolicyEditorPanel extends JPanel {
             });
             this.add(identityViewButton);
             Utilities.
-              equalizeComponentSizes(
-                new JComponent[]{
-                    buttonSave, buttonValidate, identityViewButton
-                });
+                    equalizeComponentSizes(
+                            new JComponent[]{
+                                buttonSave, buttonValidate, identityViewButton
+                            });
         }
     }
 
@@ -304,27 +304,40 @@ public class PolicyEditorPanel extends JPanel {
         for (Iterator iterator = r.getErrors().iterator();
              iterator.hasNext();) {
             PolicyValidatorResult.Error pe =
-              (PolicyValidatorResult.Error)iterator.next();
-            appendToMessageArea(
-              "Assertion : "+
-              "<a href=\"file://assertion#" +
-              pe.getAssertion().hashCode() + "\">" +
-              Descriptions.getDescription(pe.getAssertion()).getShortDescription() +
-              "</a>"+ " Error :" + pe.getMessage() + ""
+                    (PolicyValidatorResult.Error) iterator.next();
+            appendToMessageArea(getValidateMessageIntro(pe)
+                    +
+                    "</a>" + " Error :" + pe.getMessage() + ""
             );
         }
         for (Iterator iterator = r.getWarnings().iterator();
              iterator.hasNext();) {
             PolicyValidatorResult.Warning pe =
-              (PolicyValidatorResult.Warning)iterator.next();
-            appendToMessageArea(
-              "Assertion : "+
-              "<a href=\"file://assertion#" +
-              pe.getAssertion().hashCode() + "\">" +
-              Descriptions.getDescription(pe.getAssertion()).getShortDescription() +
-              "</a>"+ " Error :" + pe.getMessage() + ""
+                    (PolicyValidatorResult.Warning) iterator.next();
+            appendToMessageArea(getValidateMessageIntro(pe)
+                    +
+                    " Warning :" + pe.getMessage() + ""
             );
         }
+    }
+
+    /**
+     * get the validator result message intro
+     *
+     * @param pe
+     * @return the string as a message
+     */
+    private String getValidateMessageIntro(PolicyValidatorResult.Message pe) {
+        String msg = null;
+        if (pe.getAssertion() != null) {
+            msg = "Assertion : " +
+                  "<a href=\"file://assertion#" +
+                  pe.getAssertion().hashCode() + "\">"+
+                 Descriptions.getDescription(pe.getAssertion()).getShortDescription() + "</a>";
+        } else {
+            msg = ""; // supplied message (non single assertion related)
+        }
+        return msg;
     }
 
     private static class IdentityNodeFilter implements NodeFilter {
@@ -334,21 +347,21 @@ public class PolicyEditorPanel extends JPanel {
          */
         public boolean accept(TreeNode node) {
             if (node instanceof SpecificUserAssertionTreeNode ||
-              node instanceof MemberOfGroupAssertionTreeNode)
+                    node instanceof MemberOfGroupAssertionTreeNode)
                 return false;
 
             if (node instanceof CompositeAssertionTreeNode) {
-                if (((CompositeAssertionTreeNode)node).getChildCount(this) == 0)
+                if (((CompositeAssertionTreeNode) node).getChildCount(this) == 0)
                     return false;
             }
 
-            TreeNode[] path = ((DefaultMutableTreeNode)node).getPath();
-            IdentityViewTreeNode in = (IdentityViewTreeNode)path[1];
-            AssertionTreeNode an = (AssertionTreeNode)node;
+            TreeNode[] path = ((DefaultMutableTreeNode) node).getPath();
+            IdentityViewTreeNode in = (IdentityViewTreeNode) path[1];
+            AssertionTreeNode an = (AssertionTreeNode) node;
             IdentityPath ip = in.getIdentityPath();
             Set paths = ip.getPaths();
             for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
-                Assertion[] apath = (Assertion[])iterator.next();
+                Assertion[] apath = (Assertion[]) iterator.next();
                 for (int i = apath.length - 1; i >= 0; i--) {
                     Assertion assertion = apath[i];
                     if (assertion.equals(an.asAssertion())) return true;
@@ -365,7 +378,7 @@ public class PolicyEditorPanel extends JPanel {
         public void treeNodesChanged(TreeModelEvent e) {
             policyEditorToolbar.buttonSave.setEnabled(true);
             TreePath path = e.getTreePath();
-            TreeNode parent = (TreeNode)path.getLastPathComponent();
+            TreeNode parent = (TreeNode) path.getLastPathComponent();
             int[] indices = e.getChildIndices();
             for (int i = 0; i < indices.length; i++) {
                 int indice = indices[i];
@@ -379,35 +392,35 @@ public class PolicyEditorPanel extends JPanel {
             policyEditorToolbar.buttonSave.setEnabled(true);
             //todo: refactor this out
             SwingUtilities.invokeLater(
-              new Runnable() {
-                  public void run() {
-                      try {
-                          TreePath path = e.getTreePath();
-                          TreeNode parent = (TreeNode)path.getLastPathComponent();
-                          TreeNode lastNode = null;
-                          int[] indices = e.getChildIndices();
-                          for (int i = 0; i < indices.length; i++) {
-                              int indice = indices[i];
-                              TreeNode node = parent.getChildAt(indice);
-                              lastNode = node;
-                              if (node instanceof RoutingAssertionTreeNode) {
-                                  RoutingAssertionTreeNode rn = (RoutingAssertionTreeNode)node;
-                                  ((RoutingAssertion)rn.asAssertion()).setProtectedServiceUrl(service.parsedWsdl().getServiceURI());
-                                  ((DefaultTreeModel)policyTree.getModel()).nodeChanged(node);
-                              }
-                          }
-                          if (!policyTree.isExpanded(path)) {
-                              policyTree.expandPath(path);
-                          }
-                          if (lastNode != null)
-                              policyTree.setSelectionPath(path.pathByAddingChild(lastNode));
-                      } catch (WSDLException e1) {
-                          ErrorManager.getDefault().
-                            notify(Level.WARNING, e1,
-                              "Error parsing wsdl- service " + service.getName());
-                      }
-                  }
-              });
+                    new Runnable() {
+                        public void run() {
+                            try {
+                                TreePath path = e.getTreePath();
+                                TreeNode parent = (TreeNode) path.getLastPathComponent();
+                                TreeNode lastNode = null;
+                                int[] indices = e.getChildIndices();
+                                for (int i = 0; i < indices.length; i++) {
+                                    int indice = indices[i];
+                                    TreeNode node = parent.getChildAt(indice);
+                                    lastNode = node;
+                                    if (node instanceof RoutingAssertionTreeNode) {
+                                        RoutingAssertionTreeNode rn = (RoutingAssertionTreeNode) node;
+                                        ((RoutingAssertion) rn.asAssertion()).setProtectedServiceUrl(service.parsedWsdl().getServiceURI());
+                                        ((DefaultTreeModel) policyTree.getModel()).nodeChanged(node);
+                                    }
+                                }
+                                if (!policyTree.isExpanded(path)) {
+                                    policyTree.expandPath(path);
+                                }
+                                if (lastNode != null)
+                                    policyTree.setSelectionPath(path.pathByAddingChild(lastNode));
+                            } catch (WSDLException e1) {
+                                ErrorManager.getDefault().
+                                        notify(Level.WARNING, e1,
+                                                "Error parsing wsdl- service " + service.getName());
+                            }
+                        }
+                    });
         }
 
         public void treeNodesRemoved(TreeModelEvent e) {
@@ -421,55 +434,55 @@ public class PolicyEditorPanel extends JPanel {
     };
 
     private final PropertyChangeListener
-      servicePropertyChangeListener = new PropertyChangeListener() {
-          /**
-           * This method gets called when a bound property is changed.
-           * @param evt A PropertyChangeEvent object describing the event source
-           *   	and the property that has changed.
-           */
-          public void propertyChange(PropertyChangeEvent evt) {
-              log.info(evt.getPropertyName() + "changed");
-              if ("service.name".equals(evt.getPropertyName()) ||
-                "policy".equals(evt.getPropertyName())) {
-                  try {
-                      renderService(serviceNode);
-                      policyEditorToolbar.buttonSave.setEnabled(true);
-                  } catch (Exception e) {
-                      e.printStackTrace();
-                  }
-              }
-          }
-      };
+            servicePropertyChangeListener = new PropertyChangeListener() {
+                /**
+                 * This method gets called when a bound property is changed.
+                 * @param evt A PropertyChangeEvent object describing the event source
+                 *   	and the property that has changed.
+                 */
+                public void propertyChange(PropertyChangeEvent evt) {
+                    log.info(evt.getPropertyName() + "changed");
+                    if ("service.name".equals(evt.getPropertyName()) ||
+                            "policy".equals(evt.getPropertyName())) {
+                        try {
+                            renderService(serviceNode);
+                            policyEditorToolbar.buttonSave.setEnabled(true);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            };
 
     private final HyperlinkListener
-      hlinkListener = new HyperlinkListener() {
-          /**
-           * Called when a hypertext link is updated.
-           *
-           * @param e the event responsible for the update
-           */
-          public void hyperlinkUpdate(HyperlinkEvent e) {
-              if (HyperlinkEvent.EventType.ACTIVATED != e.getEventType())
-                  return;
-              URI uri = URI.create(e.getURL().toString());
-              String f = uri.getFragment();
-              if (f == null) return;
-              try {
-                  int hashcode = Integer.parseInt(f);
-                  for (Enumeration en = rootAssertion.preorderEnumeration();
-                       en.hasMoreElements();) {
-                      AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
-                      if (an.asAssertion().hashCode() == hashcode) {
-                          TreePath p = new TreePath(an.getPath());
-                          if (!policyTree.hasBeenExpanded(p) || !policyTree.isExpanded(p)) {
-                              policyTree.expandPath(p);
-                          }
-                          policyTree.setSelectionPath(p);
-                      }
-                  }
-              } catch (NumberFormatException ex) {
-                  ex.printStackTrace();
-              }
-          }
-      };
+            hlinkListener = new HyperlinkListener() {
+                /**
+                 * Called when a hypertext link is updated.
+                 *
+                 * @param e the event responsible for the update
+                 */
+                public void hyperlinkUpdate(HyperlinkEvent e) {
+                    if (HyperlinkEvent.EventType.ACTIVATED != e.getEventType())
+                        return;
+                    URI uri = URI.create(e.getURL().toString());
+                    String f = uri.getFragment();
+                    if (f == null) return;
+                    try {
+                        int hashcode = Integer.parseInt(f);
+                        for (Enumeration en = rootAssertion.preorderEnumeration();
+                             en.hasMoreElements();) {
+                            AssertionTreeNode an = (AssertionTreeNode) en.nextElement();
+                            if (an.asAssertion().hashCode() == hashcode) {
+                                TreePath p = new TreePath(an.getPath());
+                                if (!policyTree.hasBeenExpanded(p) || !policyTree.isExpanded(p)) {
+                                    policyTree.expandPath(p);
+                                }
+                                policyTree.setSelectionPath(p);
+                            }
+                        }
+                    } catch (NumberFormatException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            };
 }
