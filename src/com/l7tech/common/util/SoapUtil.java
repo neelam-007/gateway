@@ -6,10 +6,8 @@
 
 package com.l7tech.common.util;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.w3c.dom.*;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.xml.soap.*;
 import java.util.ArrayList;
@@ -21,52 +19,53 @@ import java.util.List;
  */
 public class SoapUtil {
     public static final List ENVELOPE_URIS = new ArrayList();
+
     static {
-        ENVELOPE_URIS.add( SOAPConstants.URI_NS_SOAP_ENVELOPE );
-        ENVELOPE_URIS.add( "http://www.w3.org/2001/06/soap-envelope" );
-        ENVELOPE_URIS.add( "http://www.w3.org/2001/09/soap-envelope" );
-        ENVELOPE_URIS.add( "urn:schemas-xmlsoap-org:soap.v1" );
+        ENVELOPE_URIS.add(SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        ENVELOPE_URIS.add("http://www.w3.org/2001/06/soap-envelope");
+        ENVELOPE_URIS.add("http://www.w3.org/2001/09/soap-envelope");
+        ENVELOPE_URIS.add("urn:schemas-xmlsoap-org:soap.v1");
     }
 
     public static final String SOAP_ENV_PREFIX = "soapenv";
 
-    public static final String BODY_EL_NAME   = "Body";
+    public static final String BODY_EL_NAME = "Body";
     public static final String HEADER_EL_NAME = "Header";
     public static final String SECURITY_EL_NAME = "Security";
     public static final String SECURITY_NAMESPACE_PREFIX = "wsse";
     public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
     public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
 
-    public static Element getEnvelope( Document request ) {
+    public static Element getEnvelope(Document request) {
         Element env = request.getDocumentElement();
         return env;
     }
 
-    public static Element getHeaderElement( Document request ) {
-        return getEnvelopePart( request, HEADER_EL_NAME );
+    public static Element getHeaderElement(Document request) {
+        return getEnvelopePart(request, HEADER_EL_NAME);
     }
 
 
-    public static Element getBodyElement( Document request ) {
-        return getEnvelopePart( request, BODY_EL_NAME );
+    public static Element getBodyElement(Document request) {
+        return getEnvelopePart(request, BODY_EL_NAME);
     }
 
-    protected static Element getEnvelopePart( Document request, String elementName ) {
-        Element envelope = getEnvelope( request );
+    protected static Element getEnvelopePart(Document request, String elementName) {
+        Element envelope = getEnvelope(request);
         String env;
         Node node;
         Element element = null;
-        for ( int i = 0; i < ENVELOPE_URIS.size(); i++ ) {
+        for (int i = 0; i < ENVELOPE_URIS.size(); i++) {
             env = (String)ENVELOPE_URIS.get(i);
 
             node = envelope.getFirstChild();
-            while ( node != null ) {
-                if ( node.getNodeType() == Node.ELEMENT_NODE ) {
+            while (node != null) {
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
                     element = (Element)node;
                     String ln = element.getLocalName();
-                    if ( ln.equals( elementName ) ) {
+                    if (ln.equals(elementName)) {
                         String uri = element.getNamespaceURI();
-                        if ( uri.equals( env ) ) return element;
+                        if (uri.equals(env)) return element;
                     }
                 }
                 node = node.getNextSibling();
@@ -81,26 +80,27 @@ public class SoapUtil {
         return smsg;
     }
 
-    public static SOAPFault addFaultTo( SOAPMessage message, String faultCode, String faultString ) throws SOAPException {
+    public static SOAPFault addFaultTo(SOAPMessage message, String faultCode, String faultString) throws SOAPException {
         SOAPPart spart = message.getSOAPPart();
         SOAPEnvelope senv = spart.getEnvelope();
         SOAPBody body = senv.getBody();
         SOAPFault fault = body.addFault();
-        fault.setFaultCode( faultCode );
-        fault.setFaultString( faultString);
+        fault.setFaultCode(faultCode);
+        fault.setFaultString(faultString);
         return fault;
     }
 
     /**
      * Find the Namespace URI of the given document, which is assumed to contain a SOAP Envelope.
-     * @param request  the SOAP envelope to examine
+     * 
+     * @param request the SOAP envelope to examine
      * @return the body's namespace URI, or null if not found.
      */
-    public static String getNamespaceUri( Document request ) {
-        Element body = SoapUtil.getBodyElement( request );
+    public static String getNamespaceUri(Document request) {
+        Element body = SoapUtil.getBodyElement(request);
         Node n = body.getFirstChild();
-        while ( n != null ) {
-            if ( n.getNodeType() == Node.ELEMENT_NODE )
+        while (n != null) {
+            if (n.getNodeType() == Node.ELEMENT_NODE)
                 return n.getNamespaceURI();
             n = n.getNextSibling();
         }
@@ -110,6 +110,7 @@ public class SoapUtil {
     /**
      * Returns the Header element from a soap message. If the message does not have a header yet, it creates one and
      * adds it to the envelope, and returns it back to you. If a body element exists, the header element will be inserted right before the body element.
+     * 
      * @param soapMsg DOM document containing the soap message
      * @return the header element (never null)
      */
@@ -131,8 +132,8 @@ public class SoapUtil {
             else
                 soapMsg.getDocumentElement().appendChild(header);
             return header;
-        }
-        else return (Element)list.item(0);
+        } else
+            return (Element)list.item(0);
     }
 
     public static Element getBody(Document soapMsg) {
@@ -142,13 +143,15 @@ public class SoapUtil {
         NodeList bodylist = soapMsg.getElementsByTagNameNS(soapEnvNS, BODY_EL_NAME);
         if (bodylist.getLength() > 0) {
             return (Element)bodylist.item(0);
-        } else return null;
+        } else
+            return null;
     }
 
     /**
      * Returns the Security element from the header of a soap message. If the message does not have a header yet, it
      * creates one and a child Security element and adds it all to the envelope, and returns back the Security element
      * to you. If a body element exists, the header element will be inserted right before the body element.
+     * 
      * @param soapMsg DOM document containing the soap message
      * @return the security element (never null)
      */
@@ -190,7 +193,8 @@ public class SoapUtil {
         while (secEl != null) {
             if (elHasChildrenElements(secEl)) {
                 return;
-            } else secEl.getParentNode().removeChild(secEl);
+            } else
+                secEl.getParentNode().removeChild(secEl);
             secEl = getSecurityElement(soapMsg);
         }
     }
@@ -209,6 +213,7 @@ public class SoapUtil {
 
     /**
      * checks whether the passed element has any Element type children
+     * 
      * @return true if it does false if not
      */
     public static boolean elHasChildrenElements(Element el) {
@@ -221,6 +226,71 @@ public class SoapUtil {
             }
         }
         return false;
+    }
+
+    /**
+     * There is no built-in provision in jax-rpc for adding a DOM document object (that
+     * represents an XML document) as a SOAP body subelement in a SOAP message. The document
+     * object needs to be 'unmarshalled' into a javax.xml.soap.SOAPElement object. In other
+     * words a SOAPElement object is constructed from the contents of a DOM object. The
+     * following method, domToSOAPElement(javax.xml.soap.SOAPEnvelope, org.w3c.dom.Node)
+     * performs the 'unmarshalling' of the DOM object and creates an equivalent
+     * javax.xml.soap.SOAPElement object. It basically performs a depth first traversal
+     * of the DOM object's tree, and for each node in the tree creates a
+     * javax.xml.soap.SOAPElement object and populates the SOAPElement with the contents
+     * of the node.
+     * 
+     * @param soapElement the soap element where the DOM Node is added
+     * @param domNode     the DOM Node to add
+     * @return the soap element containing the dom element marshalled into it
+     * @throws SOAPException on soap error
+     */
+    static public SOAPElement domToSOAPElement(SOAPElement soapElement, Node domNode)
+      throws SOAPException {
+
+        //Test that domNode is of type org.w3c.dom.Node.ELEMENT_NODE.
+        if ((domNode.getNodeType()) != Node.ELEMENT_NODE)
+            throw new SOAPException("DOM Node must of type ELEMENT_NODE. received " + domNode.getNodeType());
+
+
+        SOAPFactory sf = SOAPFactory.newInstance();
+
+        if (domNode.hasAttributes()) {
+            NamedNodeMap DOMAttributes = domNode.getAttributes();
+            int noOfAttributes = DOMAttributes.getLength();
+            for (int i = 0; i < noOfAttributes; i++) {
+                Node attr = DOMAttributes.item(i);
+                Name name =
+                  sf.createName(attr.getLocalName(), attr.getPrefix(), attr.getNamespaceURI());
+                soapElement.addAttribute(name, attr.getNodeValue());
+            }
+        }
+
+        if (domNode.hasChildNodes()) {
+            NodeList children = domNode.getChildNodes();
+            for (int i = 0; i < children.getLength(); i++) {
+                Node child = children.item(i);
+
+                switch (child.getNodeType()) {
+                    case Node.PROCESSING_INSTRUCTION_NODE:
+                        break;
+                    case Node.DOCUMENT_TYPE_NODE:
+                        break;
+                    case Node.CDATA_SECTION_NODE:
+                    case Node.COMMENT_NODE:
+                    case Node.TEXT_NODE:
+                        {
+                            soapElement.addTextNode(child.getNodeValue());
+                            break;
+                        }
+                    default:
+                        Name name = sf.createName(child.getLocalName(), child.getPrefix(), child.getNamespaceURI());
+                        soapElement.addChildElement(domToSOAPElement(sf.createElement(name), child));
+                }
+
+            }
+        }
+        return soapElement;
     }
 
     public static final String FC_CLIENT = "Client";
