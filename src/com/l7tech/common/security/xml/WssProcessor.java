@@ -51,6 +51,18 @@ public interface WssProcessor {
         SecurityContext getSecurityContext();
     }
 
+    public interface DerivedKeyToken extends SecurityToken {
+        /**
+         * The wsu:Id attribute of this derived key so that it can be referenced from.
+         */
+        String getId();
+
+        /**
+         * The actual symmetric key data to be used to verify signatures or decrypt.
+         */
+        byte[] getComputedDerivedKey();
+    }
+
     public interface SecurityContext {
         SecretKey getSharedSecret();
     }
