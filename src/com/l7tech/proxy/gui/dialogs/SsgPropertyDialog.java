@@ -632,6 +632,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         boolean en = radioNonstandardPorts.isSelected();
         fieldSsgPort.setEnabled(en);
         fieldSslPort.setEnabled(en);
+        if (!en) {
+            fieldSsgPort.setText(String.valueOf(referenceSsg.getSsgPort()));
+            fieldSslPort.setText(String.valueOf(referenceSsg.getSslPort()));
+        }
     }
 
     private class CertDialog extends JDialog {
