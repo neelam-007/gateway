@@ -1,5 +1,9 @@
 package com.l7tech.common.xml;
 
+import com.l7tech.common.util.SoapUtil;
+
+import javax.xml.rpc.NamespaceConstants;
+import javax.xml.soap.SOAPConstants;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +22,18 @@ public class XpathExpression implements Serializable {
      * default constructor for XML serialization support
      */
     public XpathExpression() {}
+
+    /**
+     * @return a standard xpath value that points to the soap body (standard for many xpath based assertions)
+     */
+    public static XpathExpression soapBodyXpathValue() {
+        XpathExpression xpath = new XpathExpression();
+        xpath.setExpression(SoapUtil.SOAP_BODY_XPATH);
+        Map nss = new HashMap();
+        nss.put(NamespaceConstants.NSPREFIX_SOAP_ENVELOPE, SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        xpath.setNamespaces(nss);
+        return xpath;
+    }
 
     /**
      * Construct the XPath expression with no namespaces
