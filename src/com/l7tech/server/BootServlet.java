@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Properties;
 
 /**
  * @author alex
@@ -29,6 +30,9 @@ public class BootServlet extends HttpServlet {
     public void init() throws ServletException {
         boolean failure = false;
         try {
+            System.getProperties().remove("java.protocol.handler.pkgs");
+            //hack: remove what catalina added as java.protocol.handler.pkgs and let the default
+            // jdk protocol handler resolution
             ApplicationContext acx = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
             if (acx == null) {
                 throw new ServletException("Configuration error; could not get application context");
