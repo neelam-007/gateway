@@ -119,8 +119,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     return;
                 }
             } else { // otherwise make sure the requestor is authorized for this policy
-                if (!userCanSeeThisService(requestor, svc)) {
-                    logger.info("user denied access to service description");
+                if (!policyAllowAnonymous(svc) && !userCanSeeThisService(requestor, svc)) {
+                    logger.info("user denied access to service description " + requestor + " " + svc.getPolicyXml());
                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "these credentials do not grant you access to this service description.");
                     return;
                 }
@@ -210,7 +210,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     output.add(svc);
                 }
             } else {
-                if (userCanSeeThisService(requestor, svc)) {
+                if (policyAllowAnonymous(svc)) {
+                    output.add(svc);
+                } else if (userCanSeeThisService(requestor, svc)) {
                     output.add(svc);
                 }
             }
