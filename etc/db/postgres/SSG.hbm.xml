@@ -106,7 +106,7 @@
         <property name="resetCounter" column="reset_counter" type="int"/>
     </class>
 
-    <class name="com.l7tech.server.UrlCacheEntry" table="urlcache">
+    <class name="com.l7tech.server.url.UrlCacheRow" table="urlcache">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo.long"/>
         </id>
