@@ -169,6 +169,7 @@
             <test name="com.l7tech.policy.WspWriterTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.WspReaderTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.CompositeAssertionTest" haltonfailure="no"/>
+            <test name="com.l7tech.policy.AssertionTraversalTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.ClientPolicyTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.SamplePolicyTest" haltonfailure="no"/>
 
