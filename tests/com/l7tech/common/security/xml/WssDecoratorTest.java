@@ -58,15 +58,15 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public static class Context {
-        Document message;
-        String soapNs;
-        Element body;
-        String payloadNs;
-        Element payload;
-        Element price;
-        Element amount;
-        Element productid;
-        Element accountid;
+        public Document message;
+        public String soapNs;
+        public Element body;
+        public String payloadNs;
+        public Element payload;
+        public Element price;
+        public Element amount;
+        public Element productid;
+        public Element accountid;
 
         Context() throws IOException, SAXException {
             message = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
@@ -98,16 +98,16 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public static class TestDocument {
-        Context c;
-        Element senderSamlAssertion; // may be used instead of senderCert
-        X509Certificate senderCert;
-        PrivateKey senderKey;
-        X509Certificate recipientCert;
-        PrivateKey recipientKey;
-        boolean signTimestamp;
-        SecretKey secureConversationKey;   // may be used instead of a sender cert + sender key if using WS-SC
-        Element[] elementsToEncrypt;
-        Element[] elementsToSign;
+        public Context c;
+        public Element senderSamlAssertion; // may be used instead of senderCert
+        public X509Certificate senderCert;
+        public PrivateKey senderKey;
+        public X509Certificate recipientCert;
+        public PrivateKey recipientKey;
+        public boolean signTimestamp;
+        public SecretKey secureConversationKey;   // may be used instead of a sender cert + sender key if using WS-SC
+        public Element[] elementsToEncrypt;
+        public Element[] elementsToSign;
 
         public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,
@@ -142,6 +142,14 @@ public class WssDecoratorTest extends TestCase {
     private void runTest(final TestDocument d) throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
+        DecorationRequirements reqs = makeDecorationRequirements(d);
+
+        decorator.decorateMessage(d.c.message,reqs);
+
+        log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
+    }
+
+    public DecorationRequirements makeDecorationRequirements(final TestDocument d) {
         DecorationRequirements reqs = new DecorationRequirements();
         if (d.senderSamlAssertion != null)
             reqs.setSenderSamlToken(d.senderSamlAssertion);
@@ -164,10 +172,7 @@ public class WssDecoratorTest extends TestCase {
             for (int i = 0; i < d.elementsToSign.length; i++) {
                 reqs.getElementsToSign().add(d.elementsToSign[i]);
             }
-
-        decorator.decorateMessage(d.c.message,reqs);
-
-        log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
+        return reqs;
     }
 
     public void testSimpleDecoration() throws Exception {
