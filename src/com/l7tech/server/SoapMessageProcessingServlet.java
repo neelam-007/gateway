@@ -7,10 +7,7 @@
 package com.l7tech.server;
 
 import com.l7tech.logging.LogManager;
-import com.l7tech.message.HttpTransportMetadata;
-import com.l7tech.message.Request;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.SoapResponse;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -55,8 +52,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     public void doPost( HttpServletRequest hrequest, HttpServletResponse hresponse ) throws ServletException, IOException {
         HttpTransportMetadata htm = new HttpTransportMetadata( hrequest, hresponse );
-        SoapRequest sreq = new SoapRequest( htm );
-        SoapResponse sresp = new SoapResponse( htm );
+        HttpSoapRequest sreq = new HttpSoapRequest( htm );
+        HttpSoapResponse sresp = new HttpSoapResponse( htm );
 
         // TODO: SOAP-with-attachments!
 
@@ -65,6 +62,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         try {
             try {
                 AssertionStatus status = MessageProcessor.getInstance().processMessage( sreq, sresp );
+
+                sresp.setHeadersIn( hresponse );
 
                 if ( status == AssertionStatus.NONE ) {
                     hresponse.setContentType( CONTENT_TYPE );
