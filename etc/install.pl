@@ -23,13 +23,17 @@ my @list=(
 	dbhostname    => "--Non cluster DB Env, DB hostname or IP (must be reach-able by this node) if DB is not on localhost          ",
 	dbuser        => "SSG Database - Username                                                                                      ",
 	dbpass        => "SSG Database - Password for the above user                                                                   ",
-	net_front_ip  => "Network Config - Node Public IP; ifcfg-eth1 IPADDR (eg. 192.168.1.8)                                         ",
-	net_front_mask=> "Network Config - Public Network Mask; ifcfg-eht1 NETMASK (eg. 255.255.255.0)                                 ",
-        net_front_rt  => "Network Config - Public Gateway (Load Balancer IP) SSB/client<->gateway; ifcfg-eth1 GATEWAY (eg. 192.168.1.1)",
-	net_back_ip   => "Network Config - Node Private IP; back_route, ifcfg-eth0 IPADDR (eg. 10.0.0.8)                               ",
-	net_back_mask => "Network Config - Private Network Mask; back_route netmask, ifcfg-eth0 NETMASK (eg. 255.255.255.0)            ",
-	net_back_rt   => "Network Config - Private Gateway; back_route gw (eg. 10.0.0.1)                                               ",
-        net_back_net  => "Network Config - Node private Network; back_route -net                                                       "
+	net_front     => "Public Network Configuration (Front), /etc/sysconfig/network-scripts/ifcfg-eth1 (y/n)                        ",
+        net_front_dhcp=> "Public Network Config - Network is DHCP; ifcfg-eth1 BOOTPROTO (reply 'y' to dhcp , 'n' to static IP) (y/n)   ",
+	net_front_ip  => "--Public Network Config - Node Public IP; ifcfg-eth1 IPADDR (eg. 192.168.1.8)                                ",
+	net_front_mask=> "--Public Network Config - Network Mask; ifcfg-eht1 NETMASK (eg. 255.255.255.0)                               ",
+        net_front_rt  => "--Public Network Config - Gateway Load Balancer IP SSB/client<->gateway; ifcfg-eth1 GATEWAY (eg. 192.168.1.1)",
+        net_back      => "Private Network Configuration (Back), /etc/sysconfig/network-scripts/ifcfg-eth0, /etc/init.d/back_route (y/n)",
+        net_back_dhcp => "--Private Network Config - Network is DHCP; ifcfg-eth0 BOOTPROTO (reply 'y' to dhcp, 'n' to static IP) (y/n) ",
+	net_back_ip   => "--Private Network Config - Node Private IP; back_route, ifcfg-eth0 IPADDR (eg. 10.0.0.8)                     ",
+	net_back_mask => "--Private Network Config - Private Network Mask; back_route netmask, ifcfg-eth0 NETMASK (eg. 255.255.255.0)  ",
+	net_back_rt   => "--Private Network Config - Private Gateway; back_route gw (eg. 10.0.0.1)                                     ",
+        net_back_net  => "--Private Network Config - Node private Network; back_route -net                                             "
 );
 
 my %Conf=();
@@ -98,14 +102,15 @@ sub change_os_config {
 
 	# 1. the front network config - file affected: $front_conf
 	print "INFO: Starting Front End Network Configuration... \n";
-	
-	if ($Conf{net_front_ip} && $Conf{net_front_mask} && $Conf{net_front_rt}) {
-		if ( -e $front_conf ) {
-			print "INFO: $front_conf existed, now renaming $front_conf to $front_conf.bckup_$pid\n";
-			rename( $front_conf, "$front_conf.bckup_$pid");
-		}
-		open (OUT, ">$front_conf");
-		print OUT <<EOF;
+
+	if ($Conf{net_front} eq 'y') {
+		if (($Conf{net_front_dhcp} eq 'n') && $Conf{net_front_ip} && $Conf{net_front_mask} && $Conf{net_front_rt}) {
+			if ( -e $front_conf ) {
+				print "INFO: $front_conf existed, now renaming $front_conf to $front_conf.bckup_$pid\n";
+				rename( $front_conf, "$front_conf.bckup_$pid");
+			}
+			open (OUT, ">$front_conf");
+			print OUT <<EOF;
 DEVICE=eth1
 ONBOOT=yes
 BOOTPROTO=static
@@ -114,23 +119,42 @@ NETMASK=$Conf{"net_front_mask"}
 GATEWAY=$Conf{"net_front_rt"}
 
 EOF
-		close OUT;
-		print "INFO: Front end network configured $front_conf - IPADDR of $Conf{net_front_ip}; NETMASK of $Conf{net_front_mask}; GATEWAY of $Conf{net_front_rt}";	
+			close OUT;
+			print "INFO: Front end network configured $front_conf - IPADDR of $Conf{net_front_ip}; NETMASK of $Conf{net_front_mask}; GATEWAY of $Conf{net_front_rt}";	
+		} else {
+                	open (OUT, ">$front_conf");
+                	print OUT <<EOF;
+DEVICE=eth1
+ONBOOT=yes
+BOOTPROTO=dhcp
+TYPE=Ethernet
+DHCP_HOSTNAME=$host
+
+check_link_down() {
+        return 1;
+}
+
+EOF
+                	close OUT;
+                	print "INFO: Front end network configured $front_conf - BOOTPROTO of dhcp; DHCP_HOSTNAME of $host\n";
+
+		}
 	} else {
-		print "WARNING: No front end network defined, front end network remains $front_conf\n";
+               	print "WARNING: No front end network defined, front end network remains $front_conf\n";
 	}
 
 	# 2. the back network config - file affected: $back_conf
         print "INFO: Starting Back End Network Configuration... \n";
 
-	if ( -e $back_conf ) {
-        	print "INFO: $back_conf existed, now renaming $back_conf to $back_conf.bckup_$pid\n";
-               	rename( $back_conf, "$back_conf.bckup_$pid");
-       	} 
+	if ($Conf{net_back} eq 'y') {
+		if ( -e $back_conf ) {
+        		print "INFO: $back_conf existed, now renaming $back_conf to $back_conf.bckup_$pid\n";
+               		rename( $back_conf, "$back_conf.bckup_$pid");
+       		} 
 
-	if ($Conf{net_back_ip} && $Conf{net_back_mask}) {
-		open (OUT, ">$back_conf");
-		print OUT <<EOF;
+		if (($Conf{net_back_dhcp} eq 'n') && $Conf{net_back_ip} && $Conf{net_back_mask}) {
+			open (OUT, ">$back_conf");
+			print OUT <<EOF;
 DEVICE=eth0
 ONBOOT=yes
 BOOTPROTO=static
@@ -138,11 +162,11 @@ IPADDR=$Conf{"net_back_ip"}
 NETMASK=$Conf{"net_back_mask"}
 
 EOF
-		close OUT;
-                print "INFO: Back end network configured $back_conf - IPADDR of $Conf{net_back_ip}; NETMASK of $Conf{net_back_mask}\n";
-	} else {
-                open (OUT, ">$back_conf");
-                print OUT <<EOF;
+			close OUT;
+                	print "INFO: Back end network configured $back_conf - IPADDR of $Conf{net_back_ip}; NETMASK of $Conf{net_back_mask}\n";
+		} else {
+                	open (OUT, ">$back_conf");
+                	print OUT <<EOF;
 DEVICE=eth0
 ONBOOT=yes
 BOOTPROTO=dhcp
@@ -154,9 +178,12 @@ check_link_down() {
 }
 
 EOF
-		close OUT;
-		print "INFO: Back end network configured $back_conf - BOOTPROTO of dhcp; DHCP_HOSTNAME of $host\n";
-	}	
+			close OUT;
+			print "INFO: Back end network configured $back_conf - BOOTPROTO of dhcp; DHCP_HOSTNAME of $host\n";
+		}	
+       	} else {
+               	print "WARNING: No back end network defined, back end network remains $back_conf\n";
+       	}
 
 	# 3. hostname - file affected:$hosts_file 
 	# 3a. hostname for cluster - file affected: $cluster_hostname_file 
@@ -187,7 +214,7 @@ EOF
 # Modified by /ssg/bin/install.pl
 # Will be replaced if you rerun!
 127.0.0.1	localhost localhost.localdomain
-$Conf{net_back_ip}	$Conf{gc_clusternm} $Conf{hostname}
+$Conf{net_front_ip}	$Conf{gc_clusternm} $Conf{hostname}
 
 EOF
 		close HOST;
@@ -486,11 +513,16 @@ DESCRIPTION
     Configure Secure Span Gateway (SSG) property files after installing with RPM distribution
 
     After this script has been run, the input parameters are saved at $save_file.  
-    If you re-run the script, the $save_file will be readin as default values.  
+    If you re-run the script, the $save_file will be read in as default values.  
     However, if you want to remove the default values, you may like to remove the $save_file before re-running the script. 
     $save_file is also used by "/etc/init.d/back_route" file; therefore, $save_file must contain the proper values in order for "/etc/init.d/back_route" working properly.
 
-    List of property files may subject to be configured base on input paramters:
+    Private network HAS TO BE on eth0, NOT eth1.
+
+    Network Architecture Assumption: 
+    [Load Balancer] <-Public Network (eth1)-> [SSG Cluster] <-Private Network (eth0)-> [Router] <-> [WebServices]
+
+    List of property files may subject to be configured base on input parameters:
     * $front_conf
     * $back_conf
     * $cnf 
@@ -503,7 +535,7 @@ DESCRIPTION
     * GRANT ALL ON ssg.* to <db username>@\'%\' identified by \'<db user password>\';
     * GRANT ALL ON ssg.* to <db_username>@\'localhost\' identified by \'<db user password>\';
     * GRANT REPLICATION SLAVE ON *.* to <db replicator username>@\'%\' identified by \'<db replicator password>\';
-    However, this script will not revoke any access that have been granted. You will need to perform manual revoke access if necessary.
+    However, this script will not revoke any access that has been granted. You will need to perform manual revoke access if necessary.
 
 OPTION
     -apply     Don't ask for config, run OS config using $save_file
