@@ -19,5 +19,6 @@ public class RemoteLogProxyTest {
         RemoteLogProxy proxy = new RemoteLogProxy();
         String[] ssglogs = proxy.getSSGLogs(0, 5000);
         for (int i = 0; i < ssglogs.length; i++) System.out.println(ssglogs[i]);
+        System.exit(0);
     }
 }
