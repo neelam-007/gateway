@@ -94,6 +94,7 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
             svc.setWsdlUrl(response);
             svc.setWsdlXml(newWSDL);
             Registry.getDefault().getServiceManager().savePublishedService(svc);
+            ((ServiceNode)node).clearServiceHolder();
             JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
             if (tree != null) {
                 DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
