@@ -11,20 +11,19 @@ package com.l7tech.policy.assertion.credential.http;
  * @version $Revision$
  */
 public class HttpDigest extends HttpCredentialSourceAssertion {
-    public static final String SCHEME = "Digest";
+    public static final String PARAM_USERNAME = "username";
+    public static final String PARAM_RESPONSE = "response";
+    public static final String PARAM_NONCE = "nonce";
+    public static final String PARAM_CNONCE = "cnonce";
+    public static final String PARAM_QOP = "qop";
+    public static final String PARAM_ALGORITHM = "algorithm";
+    public static final String PARAM_NC = "nc";
+    public static final String PARAM_URI = "uri";
 
-    public static final String USERNAME = "username";
-    public static final String RESPONSE = "response";
-    public static final String REALM = "realm";
-    public static final String NONCE = "nonce";
-    public static final String CNONCE = "cnonce";
-    public static final String QOP = "qop";
+    public static final String SCHEME = "Digest";
     public static final String QOP_AUTH = "auth";
     public static final String QOP_AUTH_INT = "auth-int";
-    public static final String ALGORITHM = "algorithm";
     public static final String ALGORITHM_MD5 = "md5";
-    public static final String NC = "nc";
-    public static final String URI = "uri";
 
     public String scheme() {
         return SCHEME;
