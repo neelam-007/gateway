@@ -7,6 +7,12 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.server.filter.FilteringException;
+import com.l7tech.policy.server.filter.IdentityRule;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -184,9 +190,36 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return output;
     }
 
-    private boolean userCanSeeThisService(User requestor, PublishedService svc) {
-        // todo
-        return true;
+    private boolean userCanSeeThisService(User requestor, PublishedService svc) throws IOException {
+        // start at the top
+        Assertion rootassertion = null;
+        rootassertion = WspReader.parse(svc.getPolicyXml());
+        return checkForIdPotential(rootassertion, requestor);
+    }
+
+    /**
+     * returns true if at least one of the id assertions in this tree can be met by the requestor
+     */
+    private boolean checkForIdPotential(Assertion assertion, User requestor) {
+        if (assertion instanceof IdentityAssertion) {
+            try {
+                if (IdentityRule.canUserPassIDAssertion((IdentityAssertion)assertion, requestor)) {
+                    return true;
+                }
+            } catch (FilteringException e) {
+                logger.log(Level.SEVERE,  "cannot check for id assertion", e);
+            }
+            return false;
+        } else if (assertion instanceof CompositeAssertion) {
+            boolean res = false;
+            CompositeAssertion root = (CompositeAssertion)assertion;
+            Iterator i = root.getChildren().iterator();
+            while (i.hasNext()) {
+                Assertion kid = (Assertion)i.next();
+                if (checkForIdPotential(kid, requestor)) return true;
+            }
+            return false;
+        } else return false;
     }
 
     private ServiceManager getServiceManager() {
