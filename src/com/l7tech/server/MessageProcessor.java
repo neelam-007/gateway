@@ -32,6 +32,7 @@ public class MessageProcessor {
             if ( _serviceManager == null ) throw new IllegalStateException( "ServiceManager is null!" );
 
             PublishedService service = _serviceManager.resolveService( request );
+
             AssertionStatus status;
             if ( service == null ) {
                 _log.info( "Service not found" );
@@ -59,13 +60,15 @@ public class MessageProcessor {
                 }
 
                 // run the policy
+                service.attemptedRequest();
                 ServerAssertion ass = service.rootAssertion();
                 status = ass.checkRequest( request, response );
 
                 if ( status == AssertionStatus.NONE ) {
-                    service.incrementRequestCount();
+                    service.authorizedRequest();
                     if ( request.isRouted() ) {
                         _log.info( "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
+                        service.completedRequest();
                     } else {
                         _log.warning( "Request was not routed!");
                         status = AssertionStatus.FALSIFIED;
