@@ -62,10 +62,10 @@ public class RequestXpathAssertionTest extends TestCase {
         return new ServerRequestXpathAssertion(assertion);
     }
 
-    private XmlRequest getTestRequest(Document doc) {
+    private XmlRequest getTestRequest(final Document doc) {
         return new XmlRequest() {
             public Document getDocument() {
-                return testDoc;
+                return doc;
             }
             protected Reader doGetRequestReader() throws IOException {
                 return null;
