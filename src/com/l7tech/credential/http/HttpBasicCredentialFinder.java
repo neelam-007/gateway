@@ -28,7 +28,10 @@ public class HttpBasicCredentialFinder extends HttpCredentialFinder {
 
     public PrincipalCredentials findCredentials( Request request ) throws IOException, CredentialFinderException {
         String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
+        return findCredentials(wwwAuthorize);
+    }
 
+    public PrincipalCredentials findCredentials( String wwwAuthorize ) throws IOException, CredentialFinderException {
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) return null;
 
         int spos = wwwAuthorize.indexOf(" ");
