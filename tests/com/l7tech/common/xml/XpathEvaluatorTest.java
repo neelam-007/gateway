@@ -6,33 +6,32 @@
 
 package com.l7tech.common.xml;
 
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.jaxen.NamespaceContext;
+import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.MimeHeaders;
 import javax.xml.soap.SOAPMessage;
-import javax.xml.transform.dom.DOMSource;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
 /**
- * Test XpathEvaluator class.
+ * Test <code>XpathEvaluatorTest</code> test the various select/evaluate
+ * operations in <code>XpathEvaluator</code>, namespace resolution etc.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class XpathEvaluatorTest extends TestCase {
-    private static Logger log = Logger.getLogger(XpathEvaluatorTest.class.getName());
     public static final String TEST_SOAP_XML = "com/l7tech/service/resources/GetLastTradePriceSoapRequest.xml";
 
     public XpathEvaluatorTest(String name) {
@@ -50,6 +49,11 @@ public class XpathEvaluatorTest extends TestCase {
         assertTrue("Size should have been >0", nodes.size() > 0);
     }
 
+    /**
+     * Soap messsage test, extract the namespaces and
+     *
+     * @throws Exception
+     */
     public void testSoapMessage() throws Exception {
         Document doc = getTestDocument(TEST_SOAP_XML);
         SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
@@ -63,6 +67,58 @@ public class XpathEvaluatorTest extends TestCase {
         Boolean bool = (Boolean)ret;
         assertTrue("Should have returned true (element exists)", bool.booleanValue());
     }
+
+    /**
+     * Test the namespace resolution.
+     *
+     * @throws Exception
+     */
+    public void testNamespaceSoapMessage() throws Exception {
+        Document doc = getTestDocument(TEST_SOAP_XML);
+        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
+        final Map namespaces = XpathEvaluator.getNamespaces(sm);
+
+        XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, new NamespaceContext() {
+            public String translateNamespacePrefixToUri(String prefix) {
+                String ns = (String)namespaces.get(prefix);
+                if (ns == null) {
+                    fail("The prefix does no exist " + prefix);
+                }
+                return ns;
+            }
+        });
+
+        xe.select("//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/*");
+        xe.evaluate("//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol='DIS'");
+    }
+
+    /**
+     * Test the namespace resolution, the namespace does not exist in the document
+     *
+     * @throws Exception
+     */
+    public void testNamespaceNonExistSoapMessage() throws Exception {
+        Document doc = getTestDocument(TEST_SOAP_XML);
+        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
+        final Map namespaces = XpathEvaluator.getNamespaces(sm);
+
+        try {
+            XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, new NamespaceContext() {
+                public String translateNamespacePrefixToUri(String prefix) {
+                    String ns = (String)namespaces.get(prefix);
+                    if (ns == null) {
+                        throw new NoSuchElementException();
+                    }
+                    return ns;
+                }
+            });
+            xe.select("//SOAP-ENVX:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/*");
+            fail("the NoSuchElementException should have been thrown");
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+    }
+
 
     private Document getTestDocument(String resourcetoread)
       throws IOException, SAXException {
