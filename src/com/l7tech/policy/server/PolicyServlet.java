@@ -65,6 +65,8 @@ public class PolicyServlet extends HttpServlet {
     public static final String PARAM_GETCERT = "getcert";
     public static final String PARAM_USERNAME = "username";
     public static final String PARAM_NONCE = "nonce";
+    // format is policyId|policyVersion (seperated with char '|')
+    public static final String POLICY_VERSION_HEADER_NAME = "l7-policy-version";
 
     public void init( ServletConfig config ) throws ServletException {
         logger = LogManager.getInstance().getSystemLogger();
@@ -209,6 +211,7 @@ public class PolicyServlet extends HttpServlet {
 
     private void outputPublishedServicePolicy(PublishedService service, HttpServletResponse response) throws IOException {
         if (service == null) {
+            response.addHeader(POLICY_VERSION_HEADER_NAME, Long.toString(service.getOid()) + '|' + Long.toString(service.getVersion()));
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "ERROR cannot resolve target service or you are not authorized to consult it");
             return;
         } else {
