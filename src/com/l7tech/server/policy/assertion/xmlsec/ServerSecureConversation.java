@@ -80,6 +80,7 @@ public class ServerSecureConversation implements ServerAssertion {
                     throw new PolicyAssertionException("This type of assertion is only supported with SOAP responses");
                 SoapResponse soapResponse = (SoapResponse)response;
                 WssDecorator.DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
+                wssReq.setSignTimestamp(true);
                 wssReq.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
                     public String getId() {
                         return session.getIdentifier();
