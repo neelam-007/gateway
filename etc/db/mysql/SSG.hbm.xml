@@ -139,4 +139,14 @@
         <property name="lastUpdateTimeStamp" column="statustimestamp" type="long"/>
     </class>
 
+    <class name="com.l7tech.cluster.ServiceUsage" table="service_usage">
+        <composite-id>
+            <key-property name="serviceid" column="serviceid" type="long"/>
+            <key-property name="nodeid" column="nodeid" type="string"/>
+        </composite-id>
+        <property name="requests" column="requestnr" type="long"/>
+        <property name="authorized" column="authorizedreqnr" type="long"/>
+        <property name="completed" column="completedreqnr" type="long"/>
+    </class>
+
 </hibernate-mapping>

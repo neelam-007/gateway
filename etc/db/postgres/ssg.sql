@@ -204,7 +204,7 @@ CREATE TABLE cluster_info (
 DROP TABLE service_usage;
 CREATE TABLE service_usage (
   serviceid bigint NOT NULL default '0',
-  nodeid bigint NOT NULL default '0',
+  nodeid varchar(18) NOT NULL default '',
   requestnr bigint NOT NULL default '0',
   authorizedreqnr bigint NOT NULL default '0',
   completedreqnr bigint NOT NULL default '0',
