@@ -53,7 +53,7 @@
                             <Cipher stringValue="AES"/>
                             <KeyLength intValue="128"/>
                             <Encryption booleanValue="false"/>
-                            <xPath xpathExpressionValue="included">
+                            <ElementXpath xpathExpressionValue="included">
                                 <Expression stringValue="/soapenv:Envelope"/>
                                 <Namespaces mapValue="included">
                                     <entry>
@@ -73,8 +73,8 @@
                                     <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
                                     </entry>
                                 </Namespaces>
-                            </xPath>
-                            <PreconditionXPath xpathExpressionValueNull="null"/>
+                            </ElementXpath>
+                            <PreconditionXpath xpathExpressionValueNull="null"/>
                         </item>
                     </Elements>
                 </XmlRequestSecurity>
