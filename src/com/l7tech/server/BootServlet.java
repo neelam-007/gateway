@@ -9,6 +9,7 @@ package com.l7tech.server;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
+import com.l7tech.logging.ServerLogManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.UpdateException;
@@ -58,6 +59,12 @@ public class BootServlet extends HttpServlet {
             }
 
             PersistenceContext.getCurrent().beginTransaction();
+            // initialize the log dumper
+            LogManager logManager = LogManager.getInstance();
+            if (logManager instanceof ServerLogManager) {
+                ((ServerLogManager)logManager).suscribeDBHandler();
+            }
+            // initialize the process that updates the cluster status info
             initializeClusterStatusUpdate();
             PersistenceContext.getCurrent().commitTransaction();
             PersistenceContext.getCurrent().close();
