@@ -407,7 +407,7 @@ public class MessageProcessor {
         }
     }
 
-    private Policy lookupPolicy(PolicyApplicationContext context) throws IOException {
+    private Policy lookupPolicy(PolicyApplicationContext context) {
         Policy policy = context.getSsg().rootPolicyManager().getPolicy(context.getPolicyAttachmentKey());
         if (policy != null) {
             if (LogFlags.logPolicies)
@@ -658,8 +658,11 @@ public class MessageProcessor {
 
             Header contentType = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE);
             log.info("Response Content-Type: " + contentType);
-            if (contentType == null || contentType.getValue() == null)
+            if (contentType == null || contentType.getValue() == null) {
+                log.warning("Server did not return a Content-Type");
+                checkStatus(status, postMethod, url, ssg);
                 throw new IOException("Response from Gateway did not include a Content-Type");
+            }
             final ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(contentType.getValue());
             if (!(outerContentType.isXml() || outerContentType.isMultipart())) {
                 InputStream rStream = postMethod.getResponseBodyAsStream();
@@ -671,6 +674,7 @@ public class MessageProcessor {
                     log.warning("Server returned unsupported Content-Type (" + outerContentType.getFullValue() +
                                 ") with content\n" + new String(output));
                 }
+                checkStatus(status, postMethod, url, ssg);
                 throw new IOException("Response from Gateway was unsupported Content-Type " + outerContentType.getFullValue());
             }
 
@@ -762,15 +766,7 @@ public class MessageProcessor {
             response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(headers));
             response.getXmlKnob().setProcessorResult(processorResult);
             response.getHttpResponseKnob().setStatus(status);
-            if (status == 401 || status == 402) {
-                Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
-                log.info("Got auth header: " + (authHeader == null ? "<null>" : authHeader.getValue()));
-                if (authHeader == null && "https".equals(url.getProtocol()) && SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                    log.info("Got 401 response from Gateway over https; possible that client cert is no good");
-                }
-
-                throw new BadCredentialsException();
-            }
+            checkStatus(status, postMethod, url, ssg);
 
         } catch (NoSuchPartException e) {
             throw new CausedIOException("Response from Gateway used invalid or unsupported MIME multipart syntax", e);
@@ -782,6 +778,21 @@ public class MessageProcessor {
                     context.getSsg().storeSessionCookies(state.getCookies());
                 }
             }
+        }
+    }
+
+    /** Check for 401 or 402 status codes, and log and throw as appropriate. */
+    private void checkStatus(int status, PostMethod postMethod, URL url, final Ssg ssg)
+            throws KeyStoreCorruptException, BadCredentialsException
+    {
+        if (status == 401 || status == 402) {
+            Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
+            log.info("Got auth header: " + (authHeader == null ? "<null>" : authHeader.getValue()));
+            if (authHeader == null && "https".equals(url.getProtocol()) && SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                log.info("Got 401 response from Gateway over https; possible that client cert is no good");
+            }
+
+            throw new BadCredentialsException();
         }
     }
 
