@@ -19,6 +19,9 @@ import net.sf.hibernate.expression.Expression;
 
 import java.sql.SQLException;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * @author alex
@@ -65,20 +68,30 @@ public class FederatedGroupManager extends PersistentGroupManager {
     public boolean isMember( User user, Group genericGroup ) throws FindException {
         PersistentGroup group = cast(genericGroup);
         if ( group instanceof VirtualGroup ) {
-            if ( providerConfig.isX509Supported() ) {
-                String pattern = ((VirtualGroup)group).getX509SubjectDnPattern();
-                if ( pattern != null ) {
-                    String dn = user.getSubjectDn();
-                    if ( dn != null &&
-                         CertUtils.dnMatchesPattern( user.getSubjectDn(), pattern ) )
+            SamlConfig samlConfig = providerConfig.getSamlConfig();
+            if ( providerConfig.isX509Supported() || (providerConfig.isSamlSupported() && samlConfig.isNameIdX509SubjectName()) ) {
+                String dnPattern = ((VirtualGroup)group).getX509SubjectDnPattern();
+                if ( dnPattern != null ) {
+                    String userDn = user.getSubjectDn();
+                    if ( userDn != null && CertUtils.dnMatchesPattern( user.getSubjectDn(), dnPattern ) )
                         return true;
                 }
             }
 
-            if ( providerConfig.isSamlSupported() ) {
-                SamlConfig config = providerConfig.getSamlConfig();
-                logger.severe("SAML is not yet implemented!"); // TODO
-                return false;
+            if (providerConfig.isSamlSupported() && samlConfig.isNameIdEmail()) {
+                String emailPattern = ((VirtualGroup)group).getSamlEmailPattern();
+                String userEmail = user.getEmail();
+                if (emailPattern != null && emailPattern.length() > 0 &&
+                    userEmail != null && userEmail.length() > 0) {
+                    try {
+                        Pattern emailRegexp = Pattern.compile('^' + emailPattern + '$');
+                        Matcher m = emailRegexp.matcher(userEmail);
+                        return m.matches();
+                    } catch (PatternSyntaxException e) {
+                        logger.warning("Email pattern '" + emailPattern + "' is not a valid regular expression");
+                        return false;
+                    }
+                }
             }
 
             logger.info("User '" + user.getSubjectDn() + "' does not appear to be a member of the selected VirtualGroup");
