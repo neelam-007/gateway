@@ -5,6 +5,7 @@ import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
@@ -14,6 +15,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -28,6 +30,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
@@ -66,12 +69,12 @@ public class TokenServiceServlet extends HttpServlet {
         } catch (ParserConfigurationException e) {
             String msg = "Could not parse payload as xml. " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            sendBackSoapFault(req, res, msg, e);
             return;
         } catch (SAXException e) {
             String msg = "Could not parse payload as xml. " + e.getMessage();
             logger.log(Level.WARNING, msg, e);
-            res.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+            sendBackNonSoapError(res, HttpServletResponse.SC_BAD_REQUEST, msg);
             return;
         }
         TokenService tokenService;
@@ -82,17 +85,17 @@ public class TokenServiceServlet extends HttpServlet {
         } catch (CertificateException e) {
             String msg = "Error getting server cert/private key: " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            sendBackSoapFault(req, res, msg, e);
             return;
         } catch (KeyStoreException e) {
             String msg = "Error getting server cert/private key: " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            sendBackSoapFault(req, res, msg, e);
             return;
         } catch (IOException e){
             String msg = "Error getting server cert/private key: " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            sendBackSoapFault(req, res, msg, e);
             return;
         }
 
@@ -102,30 +105,30 @@ public class TokenServiceServlet extends HttpServlet {
         } catch (InvalidDocumentFormatException e) {
             String msg = "Request is not formatted as expected. " + e.getMessage();
             logger.log(Level.INFO, msg, e);
-            res.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+            sendBackNonSoapError(res, HttpServletResponse.SC_BAD_REQUEST, msg);
             return;
         } catch (TokenService.TokenServiceException e) {
             String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            sendBackSoapFault(req, res, msg, e);
             return;
         } catch (ProcessorException e) {
             String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            sendBackSoapFault(req, res, msg, e);
             return;
         } catch (BadSecurityContextException e) {
             String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            sendBackSoapFault(req, res, msg, e);
             return;
         } catch (GeneralSecurityException e) {
             String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            sendBackSoapFault(req, res, msg, e);
             return;
         } catch (AuthenticationException e) {
-            res.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+            sendBackNonSoapError(res, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
             return;
         }
         // dont let this ioexception fall through, this is a debugging nightmare!
@@ -135,7 +138,7 @@ public class TokenServiceServlet extends HttpServlet {
         } catch (IOException e) {
             String msg = "Error printing result. " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            sendBackSoapFault(req, res, msg, e);
             return;
         }
     }
@@ -206,7 +209,44 @@ public class TokenServiceServlet extends HttpServlet {
         return builder;
     }
 
+
+    private void sendBackNonSoapError(HttpServletResponse resp, int status, String msg) throws IOException {
+        OutputStream responseStream = null;
+        try {
+            responseStream = resp.getOutputStream();
+            resp.setStatus(status);
+            if (msg != null)
+                responseStream.write(msg.getBytes());
+        } finally {
+            if (responseStream != null) responseStream.close();
+        }
+    }
+
+    private void sendBackSoapFault(HttpServletRequest req, HttpServletResponse resp, String msg, Throwable e) throws IOException {
+        OutputStream responseStream = null;
+        try {
+            responseStream = resp.getOutputStream();
+            resp.setContentType(DEFAULT_CONTENT_TYPE);
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            Element exceptiondetails = null;
+            try {
+                if (e != null && e.getMessage() != null && e.getMessage().length() > 0) {
+                    exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("exception", e.getMessage());
+                }
+                responseStream.write(SoapFaultUtils.generateRawSoapFault(SoapFaultUtils.FC_SERVER,
+                                                                         msg,
+                                                                         exceptiondetails,
+                                                                         req.getRequestURL().toString()).getBytes());
+            } catch (SAXException e1) {
+                logger.log(Level.SEVERE, "exception sending back soapfault", e);
+            }
+        } finally {
+            if (responseStream != null) responseStream.close();
+        }
+    }
+
     private final Logger logger = Logger.getLogger(getClass().getName());
     private DocumentBuilderFactory dbf;
+    public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
 
 }
