@@ -23,7 +23,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private String serverUrl = "";
     private int sslPort = 8443;
     private String username = null;
-    private char[] password = null;
+    private transient char[] password = null;
     private HashMap policyMap = new HashMap();
     private boolean promptForUsernameAndPassword = true;
     private boolean defaultSsg = false;
