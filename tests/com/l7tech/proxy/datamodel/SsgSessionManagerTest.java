@@ -41,7 +41,7 @@ import java.util.logging.Logger;
  */
 public class SsgSessionManagerTest extends TestCase {
     private static Logger log = Logger.getLogger(SsgSessionManagerTest.class.getName());
-    private static final String DEFAULT_SSG_BASE_URL = "https://sybok:8443";
+    private static final String DEFAULT_SSG_BASE_URL = "https://sybok:8443";  // *** CONFIGURE ME ***
     private static final String TEST_USERNAME = "mike";
     private static final char[] TEST_PASSWORD = "asdfasdf".toCharArray();
     private static URL ssgBaseUrl = null;
