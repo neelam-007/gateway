@@ -178,6 +178,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             for (Iterator i = checks.iterator(); i.hasNext();) {
                 CheckInfo info = (CheckInfo) i.next();
 
+                if (info == null || info.ha1 == null) continue;
+
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
                 md5.reset();
                 md5.update(info.ha1.getBytes());
