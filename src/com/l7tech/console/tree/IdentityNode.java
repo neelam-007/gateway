@@ -88,11 +88,11 @@ public class IdentityNode extends AbstractTreeNode {
             for (int i = 0; i < result.entityHeaders.length; i++) {
                 EntityHeader header = result.entityHeaders[i];
                 if (header.getType() == EntityType.USER) {
-                    User u = admin.findUserByPrimaryKey(result.providerConfigOid, header.getStrId());
+                    User u = admin.findUserByID(result.providerConfigOid, header.getStrId());
                     if ( u == null ) throw new RuntimeException("Couldn't find user " + header.getStrId() );
                     assertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName()));
                 } else if (header.getType() == EntityType.GROUP) {
-                    Group g = admin.findGroupByPrimaryKey(result.providerConfigOid, header.getStrId());
+                    Group g = admin.findGroupByID(result.providerConfigOid, header.getStrId());
                     if ( g == null ) throw new RuntimeException("Couldn't find group " + header.getStrId() );
                     assertions.add(new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier()));
                 }

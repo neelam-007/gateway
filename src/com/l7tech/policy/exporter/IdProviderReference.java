@@ -47,7 +47,7 @@ public class IdProviderReference extends ExternalReference {
         IdentityProviderConfig config = null;
         if (idAdmin != null) {
             try {
-                config = idAdmin.findIdentityProviderConfigByPrimaryKey(providerId);
+                config = idAdmin.findIdentityProviderConfigByID(providerId);
             } catch (RemoteException e) {
                 logger.log(Level.WARNING, "error finding id provider config", e);
             } catch (FindException e) {
@@ -143,7 +143,7 @@ public class IdProviderReference extends ExternalReference {
         }
         IdentityProviderConfig configOnThisSystem = null;
         try {
-            configOnThisSystem = idAdmin.findIdentityProviderConfigByPrimaryKey(getProviderId());
+            configOnThisSystem = idAdmin.findIdentityProviderConfigByID(getProviderId());
         } catch (FindException e) {
             logger.log(Level.WARNING, "error getting id provider config", e);
         } catch (RemoteException e) {
@@ -170,7 +170,7 @@ public class IdProviderReference extends ExternalReference {
         if (allConfigHeaders != null) {
             for (int i = 0; i < allConfigHeaders.length; i++) {
                 try {
-                    configOnThisSystem = idAdmin.findIdentityProviderConfigByPrimaryKey(allConfigHeaders[i].getOid());
+                    configOnThisSystem = idAdmin.findIdentityProviderConfigByID(allConfigHeaders[i].getOid());
                 } catch (RemoteException e) {
                     logger.log(Level.WARNING, "cannot get id provider config", e);
                     continue;
@@ -296,7 +296,7 @@ public class IdProviderReference extends ExternalReference {
         try {
             if (a instanceof SpecificUser) {
                 SpecificUser su = (SpecificUser)a;
-                User userFromId = idAdmin.findUserByPrimaryKey(providerId, su.getUserUid());
+                User userFromId = idAdmin.findUserByID(providerId, su.getUserUid());
                 if (userFromId != null) {
                     if (userFromId.getLogin() != null && !userFromId.getLogin().equals(su.getUserLogin())) {
                         String oldLogin = su.getUserLogin();
@@ -313,7 +313,7 @@ public class IdProviderReference extends ExternalReference {
                 }
             } else if (a instanceof MemberOfGroup) {
                 MemberOfGroup mog = (MemberOfGroup)a;
-                if (idAdmin.findGroupByPrimaryKey(providerId, mog.getGroupId()) != null) {
+                if (idAdmin.findGroupByID(providerId, mog.getGroupId()) != null) {
                     // nothing?
                 }
             }

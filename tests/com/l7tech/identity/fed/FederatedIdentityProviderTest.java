@@ -73,7 +73,7 @@ public class FederatedIdentityProviderTest extends TestCase {
 
         FederatedIdentityProviderConfig conf = (FederatedIdentityProviderConfig)new SsgAdminSession() {
             protected Object doSomething() throws Exception {
-                return getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(oid);
+                return getIdentityAdmin().findIdentityProviderConfigByID(oid);
             }
         }.doIt();
 
@@ -95,7 +95,7 @@ public class FederatedIdentityProviderTest extends TestCase {
                 for ( int i = 0; i < configs.length; i++ ) {
                     EntityHeader entityHeader = configs[i];
                     if ( entityHeader.getType() == EntityType.ID_PROVIDER_CONFIG ) {
-                        IdentityProviderConfig config = getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(entityHeader.getOid());
+                        IdentityProviderConfig config = getIdentityAdmin().findIdentityProviderConfigByID(entityHeader.getOid());
                         if ( config.type() == IdentityProviderType.FEDERATED ) return config;
                     }
                 }

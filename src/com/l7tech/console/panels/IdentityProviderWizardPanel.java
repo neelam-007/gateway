@@ -378,7 +378,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             EntityHeader[] headers = admin.findAllIdentityProviderConfig();
             for ( int i = 0; i < headers.length; i++ ) {
                 EntityHeader header = headers[i];
-                providersComboBoxModel.addElement(admin.findIdentityProviderConfigByPrimaryKey(header.getOid()));
+                providersComboBoxModel.addElement(admin.findIdentityProviderConfigByID(header.getOid()));
             }
         } catch (Exception e) {
             e.printStackTrace();  //todo: fix this with better, general exception management

@@ -133,7 +133,7 @@ public class GenericUserPanel extends UserPanel {
                 user.setName(userHeader.getName());
                 userGroups = null;
             } else {
-                User u = getIdentityAdmin().findUserByPrimaryKey(config.getOid(), userHeader.getStrId());
+                User u = getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId());
                 if (u == null) {
                     JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
@@ -539,7 +539,7 @@ public class GenericUserPanel extends UserPanel {
           public void entityUpdated(EntityEvent ev) {
               try {
                   user =
-                    getIdentityAdmin().findUserByPrimaryKey(config.getOid(), userHeader.getStrId()).getUserBean();
+                    getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId()).getUserBean();
                   user = collectChanges();
                   boolean b = formModified;
                   setData(user);

@@ -110,7 +110,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
         }
         try {
             long oid = getEntityHeader().getOid();
-            config = getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(oid);
+            config = getIdentityAdmin().findIdentityProviderConfigByID(oid);
             return config;
         } catch (Exception e) {
             throw new RuntimeException("Unable to locate the identity provider " + getEntityHeader().getName(), e);

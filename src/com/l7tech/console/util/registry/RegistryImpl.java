@@ -40,7 +40,7 @@ public class RegistryImpl extends Registry {
             throw new RuntimeException("Could not get " + IdentityAdmin.class);
         }
         try {
-            return admin.findIdentityProviderConfigByPrimaryKey(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+            return admin.findIdentityProviderConfigByID(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         } catch (Exception e ) {
             throw new RuntimeException(e);
         }

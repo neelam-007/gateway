@@ -45,7 +45,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         return findAllIdentityProviderConfig();
     }
 
-    public IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws RemoteException, FindException {
+    public IdentityProviderConfig findIdentityProviderConfigByID(long oid) throws RemoteException, FindException {
         return (IdentityProviderConfig)StubDataStore.defaultStore().getIdentityProviderConfigs().get(new Long(oid));
     }
 
@@ -95,7 +95,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         return (EntityHeader[])results.toArray(new EntityHeader[0]);
     }
 
-    public User findUserByPrimaryKey(long idProvCfgId, String userId) throws RemoteException, FindException {
+    public User findUserByID(long idProvCfgId, String userId) throws RemoteException, FindException {
         return (User)StubDataStore.defaultStore().getUsers().get(userId);
     }
 
@@ -154,7 +154,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         return findAllGroups(idProvCfgId);
     }
 
-    public Group findGroupByPrimaryKey(long idProvCfgId, String groupId) throws RemoteException, FindException {
+    public Group findGroupByID(long idProvCfgId, String groupId) throws RemoteException, FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Map groups = store.getGroups();
         return (Group)groups.get(groupId);

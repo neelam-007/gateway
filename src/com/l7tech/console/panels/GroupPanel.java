@@ -89,7 +89,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) {
         Group g = null;
         try {
-            g = getIdentityAdmin().findGroupByPrimaryKey(config.getOid(), header.getStrId());
+            g = getIdentityAdmin().findGroupByID(config.getOid(), header.getStrId());
 
             if (g instanceof VirtualGroup) {
                 return newVirtualGroupPanel(config);
@@ -167,7 +167,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
                 group = newGroup(groupHeader);
             } else {
                 final IdentityAdmin admin = getIdentityAdmin();
-                Group g = admin.findGroupByPrimaryKey(config.getOid(), groupHeader.getStrId());
+                Group g = admin.findGroupByID(config.getOid(), groupHeader.getStrId());
                 if (g == null) {
                     JOptionPane.showMessageDialog(mainWindow, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + groupHeader.getOid());

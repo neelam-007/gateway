@@ -55,7 +55,7 @@ public class StubDataStoreTest extends TestCase {
         EntityHeader[] headers = admin.findAllUsers(providerConfigOid);
         for ( int i = 0; i < headers.length; i++ ) {
             EntityHeader header = headers[i];
-            User u = admin.findUserByPrimaryKey(providerConfigOid, header.getStrId());
+            User u = admin.findUserByID(providerConfigOid, header.getStrId());
             assertTrue("Expected provider " + providerConfigOid +
               " received " + u.getProviderId(), u.getProviderId() == providerConfigOid);
         }
@@ -63,7 +63,7 @@ public class StubDataStoreTest extends TestCase {
         headers = admin.findAllGroups(providerConfigOid);
         for ( int j = 0; j < headers.length; j++ ) {
             EntityHeader header = headers[j];
-            Group g = admin.findGroupByPrimaryKey(providerConfigOid, header.getStrId());
+            Group g = admin.findGroupByID(providerConfigOid, header.getStrId());
             assertTrue("Expected provider " + providerConfigOid +
               " received " + g.getProviderId(), g.getProviderId() == providerConfigOid);
         }
@@ -79,12 +79,12 @@ public class StubDataStoreTest extends TestCase {
         user.setLastName("Green");
         user.setEmail("mgreen@one.com");
         String uid = admin.saveUser(provider, user, null);
-        User found = admin.findUserByPrimaryKey(provider, uid);
+        User found = admin.findUserByID(provider, uid);
         assertTrue("Expected user could not be found " + uid, found != null);
 
         found.getUserBean().setLastName("Red");
         admin.saveUser(provider, found, null);
-        User updated = admin.findUserByPrimaryKey(provider, uid);
+        User updated = admin.findUserByID(provider, uid);
         assertTrue("Expected user could not be found " + uid, updated != null);
 
         assertTrue("Expected updated user " + uid, "Red".equals(updated.getLastName()));
@@ -101,12 +101,12 @@ public class StubDataStoreTest extends TestCase {
         group.setName("26-floor");
         group.setDescription("people at 26th floor");
         String gid = admin.saveGroup(provider, group, null);
-        Group found = admin.findGroupByPrimaryKey(provider, gid);
+        Group found = admin.findGroupByID(provider, gid);
         assertTrue("Expected group could not be found " + gid, found != null);
 
         found.getGroupBean().setDescription("none");
         admin.saveGroup(provider, found, null);
-        Group updated = admin.findGroupByPrimaryKey(provider, gid);
+        Group updated = admin.findGroupByID(provider, gid);
         assertTrue("Expected group could not be found " + gid, updated != null);
         assertTrue("Expected updated group " + gid, "none".equals(updated.getDescription()));
     }

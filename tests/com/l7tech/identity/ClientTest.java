@@ -63,7 +63,7 @@ public class ClientTest extends TestCase {
 
         for (int i = 0; i < res.length; i++) {
             System.out.println(res[i].toString());
-            com.l7tech.identity.IdentityProviderConfig ipc = me.findIdentityProviderConfigByPrimaryKey(res[i].getOid());
+            com.l7tech.identity.IdentityProviderConfig ipc = me.findIdentityProviderConfigByID(res[i].getOid());
             System.out.println(ipc.toString());
 
             // skip ldap providers
@@ -74,7 +74,7 @@ public class ClientTest extends TestCase {
             for (int j = 0; j < res2.length; j++) {
                 System.out.println(res2[j].toString());
                 System.out.println("group " + res2[j].getOid());
-                com.l7tech.identity.Group group = me.findGroupByPrimaryKey(ipc.getOid(), res2[j].getStrId());
+                com.l7tech.identity.Group group = me.findGroupByID(ipc.getOid(), res2[j].getStrId());
                 System.out.println("group found " + group.toString());
                 // System.out.println("save group" + me.saveGroup(providerConfigOid.getOid(), group));
                 // System.out.println("delete group");
@@ -85,7 +85,7 @@ public class ClientTest extends TestCase {
             res2 = me.findAllUsers(ipc.getOid());
             for (int j = 0; j < res2.length; j++) {
                 System.out.println(res2[j].toString());
-                com.l7tech.identity.User user = me.findUserByPrimaryKey(ipc.getOid(), res2[j].getStrId());
+                com.l7tech.identity.User user = me.findUserByID(ipc.getOid(), res2[j].getStrId());
                 System.out.println("user found " + user.toString());
                 // System.out.println("save user" + me.saveUser(providerConfigOid.getOid(), user));
                 // System.out.println("delete user");

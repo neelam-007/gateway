@@ -62,7 +62,7 @@ public interface IdentityAdmin extends Remote {
      * @throws FindException   if there was a problem accessing the requested information.
      * @throws RemoteException on remote communication error
      */
-    IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws RemoteException, FindException;
+    IdentityProviderConfig findIdentityProviderConfigByID(long oid) throws RemoteException, FindException;
 
     /**
      * Retrieve all available LDAP templates.  An LDAP template is a preconfigured set of LDAP properties for
@@ -154,7 +154,7 @@ public interface IdentityAdmin extends Remote {
      * @throws FindException   if there was a problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
-    User findUserByPrimaryKey(long idProvCfgId, String userId)
+    User findUserByID(long idProvCfgId, String userId)
       throws RemoteException, FindException;
 
     /**
@@ -244,7 +244,7 @@ public interface IdentityAdmin extends Remote {
      * @throws FindException   if there was a problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
-    Group findGroupByPrimaryKey(long idProvCfgId, String groupId)
+    Group findGroupByID(long idProvCfgId, String groupId)
       throws RemoteException, FindException;
 
     /**
@@ -290,7 +290,7 @@ public interface IdentityAdmin extends Remote {
      * Get a user's X.509 certificate as Base64-encoded ASN.1 DER.
      *
      * @param user the {@link User} whose certificate is to be retrieved.  Must not be null.  Must be an
-     *             already-existing {@link User} instance obtained from {@link #findUserByPrimaryKey(long, String)} or
+     *             already-existing {@link User} instance obtained from {@link #findUserByID(long, String)} or
      *             {@link #findUserByLogin(long, String)}.
      * @return the user's X.509 certificate DER encoded and then converted to Base64, or null if the user did not
      *         have one.
@@ -309,7 +309,7 @@ public interface IdentityAdmin extends Remote {
      *
      * @param user  the user whose certificate should be revoked and password locked, if possible.  May not be null.
      *              Must be an already-existing {@link User} instance obtained from
-     *              {@link #findUserByPrimaryKey(long, String)} or {@link #findUserByLogin(long, String)}.
+     *              {@link #findUserByID(long, String)} or {@link #findUserByLogin(long, String)}.
      * @throws ObjectNotFoundException if the specified user does not exist
      * @throws UpdateException if there was a problem updating the database
      * @throws RemoteException on remote communication error
@@ -321,7 +321,7 @@ public interface IdentityAdmin extends Remote {
      *
      * @param user  the {@link User} who is to be assigned a certificate.  Must not be null.
      *              Must be an already-existing {@link User} instance obtained from
-     *              {@link #findUserByPrimaryKey(long, String)} or {@link #findUserByLogin(long, String)}.
+     *              {@link #findUserByID(long, String)} or {@link #findUserByLogin(long, String)}.
      * @param cert  the certificate to save.  Must not be null.
      * @throws UpdateException if user was not in a state that allows the creation of a certificate
      *                         (already has a cert; has tried too many times to create a cert; ID provider is

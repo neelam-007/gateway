@@ -986,7 +986,7 @@ public class FindIdentitiesDialog extends JDialog {
               admin.findAllIdentityProviderConfig();
             for ( int i = 0; i < headers.length; i++ ) {
                 EntityHeader header = headers[i];
-                IdentityProviderConfig config = admin.findIdentityProviderConfigByPrimaryKey(header.getOid());
+                IdentityProviderConfig config = admin.findIdentityProviderConfigByID(header.getOid());
                 providersComboBoxModel.addElement(config);
             }
         } catch (Exception e) {

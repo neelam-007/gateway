@@ -105,7 +105,7 @@ public class FindIdentityAction extends BaseAction {
         if (a == null) return;
         IdentityProviderConfig config = null;
         try {
-            config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(providerId);
+            config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(providerId);
         } catch (Exception e) {
             log.log(Level.WARNING, "Couldn't find Identity Provider " + providerId, e);
             return;

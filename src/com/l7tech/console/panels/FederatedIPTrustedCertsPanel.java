@@ -366,7 +366,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             EntityHeader[] providerHeaders = idadmin.findAllIdentityProviderConfig();
             for (int i = 0; i < providerHeaders.length; i++) {
                 EntityHeader providerHeader = providerHeaders[i];
-                IdentityProviderConfig config = idadmin.findIdentityProviderConfigByPrimaryKey(providerHeader.getOid());
+                IdentityProviderConfig config = idadmin.findIdentityProviderConfigByID(providerHeader.getOid());
                 if (config instanceof FederatedIdentityProviderConfig) {
                     fedIdProvConfigs.add(config);
                 }

@@ -85,7 +85,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
      * @return An identity provider config object
      * @throws RemoteException
      */
-    public IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid)
+    public IdentityProviderConfig findIdentityProviderConfigByID(long oid)
       throws RemoteException, FindException {
         try {
             return getIdProvCfgMan().findByPrimaryKey(oid);
@@ -262,7 +262,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         }
     }
 
-    public User findUserByPrimaryKey(long identityProviderConfigId, String userId)
+    public User findUserByID(long identityProviderConfigId, String userId)
       throws RemoteException, FindException {
         try {
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
@@ -378,7 +378,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         }
     }
 
-    public Group findGroupByPrimaryKey(long cfgid, String groupId) throws RemoteException, FindException {
+    public Group findGroupByID(long cfgid, String groupId) throws RemoteException, FindException {
         try {
             IdentityProvider provider = IdentityProviderFactory.getProvider(cfgid);
             if (provider == null) throw new FindException("IdentityProvider could not be found");

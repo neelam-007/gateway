@@ -74,7 +74,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
                     try {
                         iProvider =
-                          getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(header.getOid());
+                          getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
 
                         WizardStepPanel configPanel = null;
                         Wizard w = null;

@@ -135,7 +135,7 @@ public class FederatedUserPanel extends UserPanel {
                 userGroups = null;
             } else {
                 IdentityAdmin admin = getIdentityAdmin();
-                User u = admin.findUserByPrimaryKey(config.getOid(), userHeader.getStrId());
+                User u = admin.findUserByID(config.getOid(), userHeader.getStrId());
                 if (u == null) {
                     JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());

@@ -39,7 +39,7 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode {
                 if (providerid == IdentityProviderConfig.DEFAULT_OID)
                     provName = NA;
                 else {
-                    cfg = getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(providerid);
+                    cfg = getIdentityAdmin().findIdentityProviderConfigByID(providerid);
                     if (cfg == null)
                         provName = NA;
                     else

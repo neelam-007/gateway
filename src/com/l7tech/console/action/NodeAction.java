@@ -88,7 +88,7 @@ public abstract class NodeAction extends SecureAction {
         }
 
         try {
-            return Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(providerId);
+            return Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(providerId);
         } catch (Exception e) {
             log.log(Level.WARNING, "Couldn't find Identity Provider " + providerId, e);
         }

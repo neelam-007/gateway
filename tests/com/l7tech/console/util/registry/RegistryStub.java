@@ -34,7 +34,7 @@ public class RegistryStub extends Registry {
 
     public IdentityProviderConfig getInternalProviderConfig() {
         try {
-            return identityAdmin.findIdentityProviderConfigByPrimaryKey(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+            return identityAdmin.findIdentityProviderConfigByID(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         } catch ( Exception e ) {
             throw new RuntimeException(e);
         }
