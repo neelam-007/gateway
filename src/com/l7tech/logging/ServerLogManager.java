@@ -11,7 +11,10 @@ import java.util.Properties;
 import java.util.logging.*;
 
 /**
- * Instance of the log manager that is meant to be used on the server-side.<br/><br/>
+ * SSG log manager that sets the right handlers to the root logger and
+ * prepares the hibernate dumper when ready. This must be instantiated when
+ * the server boots and once hibernate is ready, a call to suscribeDBHandler
+ * must be made.
  *
  * Reads properties from ssglog.properties file. Tries to get this file from
  * /ssg/etc/conf/ssglog.properties. If not present, gets is from
@@ -30,14 +33,10 @@ import java.util.logging.*;
  * Date: Jul 3, 2003<br/>
  * Time: 11:42:08 AM<br/><br/>
  */
-public class ServerLogManager extends LogManager {
+public class ServerLogManager {
 
     public static ServerLogManager getInstance() {
         return SingletonHolder.singleton;
-    }
-
-    public Logger getSystemLogger() {
-        return systemLogger;
     }
 
     /**
@@ -75,18 +74,18 @@ public class ServerLogManager extends LogManager {
     }
 
     private synchronized void initialize() {
-        if (systemLogger == null) {
-            systemLogger = Logger.getLogger(SYSTEM_LOGGER_NAME);
+        if (rootLogger == null) {
+            rootLogger = Logger.getLogger(ROOT_LOGGER_NAME);
 
             try {
-                systemLogger.setLevel(getLevel());
+                rootLogger.setLevel(getLevel());
             } catch (RuntimeException e) {
                 System.err.println("can't read property " + e.getMessage());
                 // continue without those special log handlers
                 return;
             }
 
-            setLogHandlers(systemLogger);
+            setLogHandlers(rootLogger);
         }
     }
 
@@ -211,8 +210,8 @@ public class ServerLogManager extends LogManager {
     public static final String START_DBHANDLER_PROP = "com.l7tech.server.log.HibHandler";
     public static final String DEFAULT_LOGPROPERTIES_PATH  = "/ssg/etc/conf/ssglog.properties";
 
-    private Logger systemLogger = null;
-    private static final String SYSTEM_LOGGER_NAME = "com.l7tech";
+    private Logger rootLogger = null;
+    private static final String ROOT_LOGGER_NAME = "com.l7tech";
     private ServerLogHandler dbHandler = null;
     private Properties props = null;
 
