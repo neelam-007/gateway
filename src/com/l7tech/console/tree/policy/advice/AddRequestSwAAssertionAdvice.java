@@ -27,6 +27,11 @@ import javax.xml.soap.SOAPElement;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
+import java.net.MalformedURLException;
+import java.io.IOException;
+
+import org.xml.sax.SAXException;
 
 /**
  * The class <code>AddRequestSwAAssertionAdvice</code> intercepts policy
@@ -67,6 +72,15 @@ public class AddRequestSwAAssertionAdvice implements Advice {
         } catch (WSDLException e) {
             logger.warning("Unable to parse the WSDL of the service " + service.getName());
             throw new RuntimeException(e); // can't happen
+        } catch (MalformedURLException e) {
+            logger.warning("MalformedURLException caught. Unable to parse the WSDL of the service " + service.getName());
+            throw new PolicyException();
+        } catch (IOException e) {
+            logger.warning("IOException caught. Unable to parse the WSDL of the service " + service.getName());
+            throw new PolicyException();
+        } catch (SAXException e) {
+            logger.warning("SAXException caught. Unable to parse the WSDL of the service " + service.getName());
+            throw new PolicyException();
         }
 
         pc.proceed();
@@ -134,7 +148,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
         }
     }
 
-    private void initializeXPath(PublishedService service, RequestSwAAssertion swaAssertion) throws WSDLException {
+    private void initializeXPath(PublishedService service, RequestSwAAssertion swaAssertion) throws WSDLException, RemoteException, MalformedURLException, IOException, SAXException {
 
         final Wsdl wsdl = service.parsedWsdl();
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);

@@ -1,8 +1,14 @@
 package com.l7tech.common.xml;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.console.util.Registry;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
@@ -17,13 +23,12 @@ import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
 import javax.xml.soap.SOAPConstants;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 
 /**
@@ -814,6 +819,57 @@ public class Wsdl {
             }
         }
         return allElements;
+    }
+
+    /**
+     * Get the schema element from the wsdl definiton.
+     *
+     * @param def  the wsdl definition
+     * @return Element the "schema" element in the wsdl
+     * @throws RemoteException  if failed to call the remote object
+     * @throws MalformedURLException  if URL format is invalide
+     * @throws IOException   when error occured in reading the wsdl document
+     * @throws SAXException  when error occured in parsing XML
+     */
+    public static Element getSchemaElement(Definition def)
+            throws RemoteException, MalformedURLException, IOException, SAXException {
+        Element schemaElement = null;
+        Import imp = null;
+        if (def.getImports().size() > 0) {
+            Iterator itr = def.getImports().keySet().iterator();
+            while (itr.hasNext()) {
+                Object importDef = itr.next();
+                Vector importList = (Vector) def.getImports().get(importDef);
+                for (int k = 0; k < importList.size(); k++) {
+                    imp = (Import) importList.elementAt(k);
+                    // check if the schema is inside the file
+                    String url = imp.getLocationURI();
+                    String resolvedXml = null;
+                    resolvedXml =  Registry.getDefault().getServiceManager().resolveWsdlTarget(url);
+
+                    if(resolvedXml != null) {
+                        Document resultDoc = XmlUtil.stringToDocument(resolvedXml);
+                        if(resultDoc != null) {
+                            NodeList nodeList = resultDoc.getElementsByTagName("schema");
+
+                            if(nodeList != null && nodeList.item(0) != null) {
+                                // should only have one
+                                return (Element) nodeList.item(0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // if not found
+        if(schemaElement == null) {
+            if (imp != null && imp.getDefinition() != null) {
+                schemaElement = getSchemaElement(imp.getDefinition());
+            }
+        }
+
+        return schemaElement;
     }
 
     private Definition definition;

@@ -7,6 +7,7 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.traversal.DocumentTraversal;
 import org.w3c.dom.traversal.NodeFilter;
 import org.w3c.dom.traversal.NodeIterator;
+import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
@@ -14,14 +15,13 @@ import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.rmi.RemoteException;
+import java.net.MalformedURLException;
 
 import com.l7tech.common.util.SoapUtil;
 
@@ -65,9 +65,14 @@ public class SoapMessageGenerator {
      * @return the array of <code>SoapRequest</code> instances
      * @throws WSDLException         on error parsing the wsdl
      * @throws FileNotFoundException if wsdl cannot be found
+     * @throws SOAPException
+     * @throws RemoteException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws SAXException
      */
     public Message[] generateRequests(String wsdlResource)
-      throws WSDLException, FileNotFoundException, SOAPException {
+      throws WSDLException, FileNotFoundException, SOAPException, RemoteException, MalformedURLException, IOException, SAXException  {
         if (wsdlResource == null) {
             throw new IllegalArgumentException();
         }
@@ -89,7 +94,7 @@ public class SoapMessageGenerator {
      * @throws FileNotFoundException if wsdl cannot be found
      */
     public Message[] generateResponses(String wsdlResource)
-      throws WSDLException, FileNotFoundException, SOAPException {
+      throws WSDLException, FileNotFoundException, SOAPException, RemoteException, MalformedURLException, IOException, SAXException  {
         if (wsdlResource == null) {
             throw new IllegalArgumentException();
         }
@@ -110,7 +115,7 @@ public class SoapMessageGenerator {
      * @return the array of <code>SoapRequest</code> instances
      * @throws SOAPException on error generating SOAP messages
      */
-    public Message[] generateRequests(Wsdl wsdl) throws SOAPException {
+    public Message[] generateRequests(Wsdl wsdl) throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
         this.wsdl = wsdl;
         List requests = new ArrayList();
         Map bindings = Wsdl.getElements(wsdl.getDefinition(), Wsdl.ELEMENT_TYPE_BINDING);
@@ -127,11 +132,11 @@ public class SoapMessageGenerator {
      * @return the array of <code>SoapRequest</code> instances
      * @throws SOAPException on error generating SOAP messages
      */
-    public Message[] generateResponses(Wsdl wsdl) throws SOAPException {
+    public Message[] generateResponses(Wsdl wsdl) throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
         this.wsdl = wsdl;
         List requests = new ArrayList();
         Map bindings = Wsdl.getElements(wsdl.getDefinition(), Wsdl.ELEMENT_TYPE_BINDING);
-        Iterator it = bindings.values().iterator();        
+        Iterator it = bindings.values().iterator();
         while (it.hasNext()) {
             Binding binding = (Binding)it.next();
             requests.addAll(generateMessages(binding, false));
@@ -139,9 +144,21 @@ public class SoapMessageGenerator {
         return (Message[])requests.toArray(new Message[]{});
     }
 
-
+    /**
+     * Generate SOAP messages based on binding
+     *
+     * @param binding  the binding of the message
+     * @param request  the request message
+     * @return the list of SOAP messages specific to the binding specified.
+     *
+     * @throws SOAPException  when error occurred in parsing SOAP message
+     * @throws RemoteException  if failed to call the remote object
+     * @throws MalformedURLException  if URL format is invalide
+     * @throws IOException   when error occured in reading the wsdl document
+     * @throws SAXException  when error occured in parsing XML
+     */
     private List generateMessages(Binding binding, boolean request)
-      throws SOAPException {
+      throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
         List bindingMessages = new ArrayList();
         List boperations = binding.getBindingOperations();
         for (Iterator iterator = boperations.iterator(); iterator.hasNext();) {
@@ -210,8 +227,18 @@ public class SoapMessageGenerator {
         return new Object[]{soapMessage, targetNameSpace};
     }
 
+    /**
+     * Generate a SOAP request message
+     * @param bindingOperation
+     * @return SOAPMessage  a SOAP message
+     * @throws SOAPException  when error occured in parsing SOAP message
+     * @throws RemoteException  if failed to call the remote object
+     * @throws MalformedURLException  if URL format is invalide
+     * @throws IOException   when error occured in reading the wsdl document
+     * @throws SAXException  when error occured in parsing XML
+     */
     private SOAPMessage generateRequestMessage(BindingOperation bindingOperation)
-      throws SOAPException {
+      throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
         Object[] soapEnvelope = generateEnvelope(bindingOperation);
 
         SOAPMessage soapMessage = (SOAPMessage)soapEnvelope[0];
@@ -299,8 +326,19 @@ public class SoapMessageGenerator {
     }
 
 
+    /**
+     * Generate a SOAP response
+     *
+     * @param bindingOperation
+     * @return SOAPMessage a SOAP message
+     * @throws SOAPException  when error occured in parsing SOAP message
+     * @throws RemoteException  if failed to call the remote object
+     * @throws MalformedURLException  if URL format is invalide
+     * @throws IOException   when error occured in reading the wsdl document
+     * @throws SAXException  when error occured in parsing XML
+     */
     private SOAPMessage generateResponseMessage(BindingOperation bindingOperation)
-      throws SOAPException {
+      throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
         Object[] soapEnvelope = generateEnvelope(bindingOperation);
 
         SOAPMessage soapMessage = (SOAPMessage)soapEnvelope[0];
@@ -384,9 +422,13 @@ public class SoapMessageGenerator {
      * @param bo       the binding operation
      * @param envelope the soap envelope
      * @param message  the operation message (input or output)
+     * @throws RemoteException  if failed to call the remote object
+     * @throws MalformedURLException  if URL format is invalide
+     * @throws IOException   when error occured in reading the wsdl document
+     * @throws SAXException  when error occured in parsing XML
      */
     private void processDocumentStyle(BindingOperation bo, SOAPEnvelope envelope, javax.wsdl.Message message)
-      throws SOAPException {
+      throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException  {
         Operation operation = bo.getOperation();
         List parts = message.getOrderedParts(null);
         if (parts == null || parts.isEmpty()) return;
@@ -440,55 +482,83 @@ public class SoapMessageGenerator {
      * extract the parameter names from schema (wsdl Types section)
      *
      * @param elementName the element name to search for
+     * @throws RemoteException  if failed to call the remote object
+     * @throws MalformedURLException  if URL format is invalide
+     * @throws IOException   when error occured in reading the wsdl document
+     * @throws SAXException  when error occured in parsing XML
      * @return the array of name, type pairs or empty array if not found
      */
-    private NameTypePair[] getSchemaParameterElements(String elementName) {
-        Types types = wsdl.getTypes();
-        if (types == null) return new NameTypePair[]{};
-        List l = types.getExtensibilityElements();
-        if (l == null || l.isEmpty()) return new NameTypePair[]{};
-
-        Iterator iter = l.iterator();
-        Element elem = null;
+    private NameTypePair[] getSchemaParameterElements(String elementName)
+            throws RemoteException, MalformedURLException, IOException, SAXException {
+        List eeList;
         String targetNamespace = wsdl.getDefinition().getTargetNamespace();
-        while (iter.hasNext()) {
-            ExtensibilityElement el = (ExtensibilityElement)iter.next();
-            if (el.getElementType().getLocalPart().equals("schema")) {
-                UnknownExtensibilityElement uee = (UnknownExtensibilityElement)el;
-                elem = uee.getElement();
-                String tns = elem.getAttribute("targetNamespace");
-                if (tns != null) {
-                    targetNamespace = tns;
+        Types types = wsdl.getTypes();
+        if (types == null) {
+            // look for schema from other place
+            Element elem = Wsdl.getSchemaElement(wsdl.getDefinition());
+            if(elem != null) {
+                return getSchemaParameterElements(elem, elementName, targetNamespace);
+            }
+
+        } else {
+            eeList = types.getExtensibilityElements();
+            if (eeList == null || eeList.isEmpty()) return new NameTypePair[]{};
+
+            Iterator iter = eeList.iterator();
+            Element elem = null;
+            while (iter.hasNext()) {
+                ExtensibilityElement el = (ExtensibilityElement)iter.next();
+                if (el.getElementType().getLocalPart().equals("schema")) {
+                    UnknownExtensibilityElement uee = (UnknownExtensibilityElement)el;
+
+                    elem = uee.getElement();
+                    return getSchemaParameterElements(elem, elementName, targetNamespace);
                 }
-                NodeList nl = elem.getChildNodes();
-                final int length = nl.getLength();
-                for (int i = 0; i < length; i++) {
-                    Node child = nl.item(i);
-                    if (!(child instanceof Element)) continue;
-                    Element element = (Element)child;
-                    if ("element".equals(element.getLocalName())) {
-                        if (!elementName.equals(element.getAttribute("name"))) {
-                            continue;
-                        }
-                        Document doc = elem.getOwnerDocument();
-                        DocumentTraversal traversable = (DocumentTraversal)doc; // tragic! em20040204
-                        NodeIterator nodeIterator =
-                          traversable.createNodeIterator(child,
-                            NodeFilter.SHOW_ELEMENT, new LocalNameFilter("element"), true);
-                        List elements = new ArrayList();
-                        Node n = nodeIterator.nextNode();
-                        if (n == null) return new NameTypePair[]{};
-                        n = nodeIterator.nextNode();
-                        for (; n != null; n = nodeIterator.nextNode()) {
-                            Element e = (Element)n;
-                            String nameAttribute = e.getAttribute("name");
-                            if (nameAttribute != null && !"".equals(nameAttribute)) {
-                                elements.add(new NameTypePair(nameAttribute, targetNamespace, e.getAttribute("type")));
-                            }
-                        }
-                        return (NameTypePair[])elements.toArray(new NameTypePair[]{});
+            }
+        }
+        return new NameTypePair[]{};
+    }
+
+    /**
+     * extract the parameter names from an Element
+     *
+     * @param elem the element from which the parameters are retrieved
+     * @param elementName the element name to search for
+     * @param targetNamespace the target name space
+     * @return the array of name, type pairs or empty array if not found
+     */
+    private NameTypePair[] getSchemaParameterElements(Element elem, String elementName, String targetNamespace) {
+        String tns = elem.getAttribute("targetNamespace");
+        if (tns != null) {
+            targetNamespace = tns;
+        }
+        NodeList nl = elem.getChildNodes();
+        final int length = nl.getLength();
+        for (int i = 0; i < length; i++) {
+            Node child = nl.item(i);
+            if (!(child instanceof Element)) continue;
+            Element element = (Element)child;
+            if ("element".equals(element.getLocalName())) {
+                if (!elementName.equals(element.getAttribute("name"))) {
+                    continue;
+                }
+                Document doc = elem.getOwnerDocument();
+                DocumentTraversal traversable = (DocumentTraversal)doc; // tragic! em20040204
+                NodeIterator nodeIterator =
+                        traversable.createNodeIterator(child,
+                                NodeFilter.SHOW_ELEMENT, new LocalNameFilter("element"), true);
+                List elements = new ArrayList();
+                Node n = nodeIterator.nextNode();
+                if (n == null) return new NameTypePair[]{};
+                n = nodeIterator.nextNode();
+                for (; n != null; n = nodeIterator.nextNode()) {
+                    Element e = (Element)n;
+                    String nameAttribute = e.getAttribute("name");
+                    if (nameAttribute != null && !"".equals(nameAttribute)) {
+                        elements.add(new NameTypePair(nameAttribute, targetNamespace, e.getAttribute("type")));
                     }
                 }
+                return (NameTypePair[])elements.toArray(new NameTypePair[]{});
             }
         }
         return new NameTypePair[]{};
