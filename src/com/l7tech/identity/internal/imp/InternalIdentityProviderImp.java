@@ -25,8 +25,6 @@ public class InternalIdentityProviderImp implements InternalIdentityProvider {
         _identityProviderConfig = config;
         _userManager = new UserManagerImp();
         _groupManager = new GroupManagerImp();
-        _userManager.setIdentityProviderOid( config.getOid() );
-        _groupManager.setIdentityProviderOid( config.getOid() );
     }
 
     public UserManager getUserManager() {
