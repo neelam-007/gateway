@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public class BootProcess implements ServerComponentLifecycle {
       public static final String DEFAULT_LOGPROPERTIES_PATH  = "/ssg/etc/conf/ssglog.properties";
     static {
-        JdkLoggerConfigurator.configure("com.l7tech",
+        JdkLoggerConfigurator.configure("com.l7tech.logging",
                                         new File(DEFAULT_LOGPROPERTIES_PATH).exists() ?
                                         DEFAULT_LOGPROPERTIES_PATH : "ssglog.properties", true);
     }

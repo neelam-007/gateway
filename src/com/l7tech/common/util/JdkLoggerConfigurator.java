@@ -51,8 +51,7 @@ public class JdkLoggerConfigurator {
      * initialize logging, try different strategies. First look for the system
      * property <code>java.util.logging.config.file</code>, then look for
      * <code>logging.properties</code>. If that fails fall back to the
-     * application-specified config file (ie,
-     * <code>com/l7tech/console/resources/logging.properties</code>).
+     * <code>shippedLoggingProperties</code>
      *
      * @param classname                the classname to use for logging info about which logging.properties was found
      * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found
@@ -96,15 +95,23 @@ public class JdkLoggerConfigurator {
                     break;
                 }
             }
+            Logger logger = Logger.getLogger(classname);
             if (configFound) {
-                Logger.getLogger(classname).info("Logging initialized from '" + configCandidate + "'");
+                logger.config("Logging initialized from '" + configCandidate + "'");
+            } else {
+                logger.warning("No logging configuration found " + configCandidates);
             }
             if (reloading && probeFile != null) {
                 if (probe != null) { // kill the old probe
                     probe.interrupt();
+                    try {
+                        probe.join();
+                    } catch (InterruptedException e) {
+                        logger.log(Level.FINEST, "Unexpected Probe thread interrupt", e);
+                    }
                     probe = null;
                 }
-                probe = new Probe(probeFile);
+                probe = new Probe(probeFile, getInterval(), classname);
                 probe.start();
             }
         } catch (IOException e) {
@@ -152,20 +159,26 @@ public class JdkLoggerConfigurator {
          */
         private long prevModified;
 
+        /**
+         * The logger where config logs are sent to
+         */
+        private String loggerName;
+
         Probe(File file) {
-            this(file, getInterval());
+            this(file, getInterval(), "com.l7tech.logging");
         }
 
-        Probe(File file, long interval) {
+        Probe(File file, long interval, String loggerName) {
             super("Logging config file probe");
             setDaemon(true);
             this.interval = interval;
             this.file = file;
+            this.loggerName = loggerName;
             prevModified = this.file.lastModified();
         }
 
         public void run() {
-            Logger logger = Logger.getLogger("com.l7tech");
+            Logger logger = Logger.getLogger(loggerName);
             try {
                 while (interval > 0) {
                     Thread.sleep(interval * 1000);
