@@ -51,7 +51,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     private long id = 0;
-    private String localEndpoint = "";
+    private String localEndpoint;
     private String ssgAddress = "";
     private int ssgPort = SSG_PORT;
     private String ssgFile = SecureSpanConstants.SSG_FILE;
