@@ -9,6 +9,7 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.identity.ldap.LdapIdentityProviderServer;
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
+import com.l7tech.identity.msad.MsadIdentityProviderServer;
 
 import java.util.*;
 
@@ -47,8 +48,12 @@ public class IdentityProviderFactory {
             if (providers == null) providers = new HashMap();
             IdentityProvider existingProvider = (IdentityProvider)providers.get(new Long(config.getOid()));
             if (existingProvider == null) {
-                if (config.type() == IdentityProviderType.LDAP) existingProvider = new LdapIdentityProviderServer();
-                else if (config.type() == IdentityProviderType.INTERNAL) existingProvider = new InternalIdentityProviderServer();
+                if (config.type() == IdentityProviderType.LDAP)
+                    existingProvider = new LdapIdentityProviderServer();
+                else if (config.type() == IdentityProviderType.INTERNAL)
+                    existingProvider = new InternalIdentityProviderServer();
+                else if ( config.type() == IdentityProviderType.MSAD)
+                    existingProvider = new MsadIdentityProviderServer();
                 else throw new RuntimeException("no provider type specified.");
                 existingProvider.initialize(config);
                 providers.put(new Long(config.getOid()), existingProvider);

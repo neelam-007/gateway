@@ -35,7 +35,7 @@ public class IdentityProviderDialog extends JDialog {
     static final Logger log = Logger.getLogger(IdentityProviderDialog.class.getName());
 
     private EntityHeader header = new EntityHeader();
-    private IdentityProviderConfig iProvider = new IdentityProviderConfig();
+    private IdentityProviderConfig iProvider;
     private EventListenerList listenerList = new EventListenerList();
     private JPanel providersPanel;
     private ProviderSettingsPanel providerSettingsPanel;
@@ -240,8 +240,8 @@ public class IdentityProviderDialog extends JDialog {
                     providerTypesCombo.getSelectedIndex() != -1;
                   enable = enable &&
                     providerSettingsPanel != null;
-                  enable = enable &&
-                    iProvider.getTypeVal() != IdentityProviderType.INTERNAL.toVal();
+                  //enable = enable &&
+                  //        iProvider != null && iProvider.getTypeVal() != IdentityProviderType.INTERNAL.toVal();
 
                   return enable;
               }
@@ -262,7 +262,8 @@ public class IdentityProviderDialog extends JDialog {
             Object[] items =
               new Object[]{
                   "Select the provider type",
-                  IdentityProviderType.LDAP
+                  IdentityProviderType.LDAP,
+                  IdentityProviderType.MSAD
               };
 
             providerTypesCombo = new JComboBox(items);
@@ -302,7 +303,7 @@ public class IdentityProviderDialog extends JDialog {
         providersPanel.setLayout(new BorderLayout());
         boolean found = false;
         providerSettingsPanel = null;
-        if (ip == IdentityProviderType.LDAP) {
+        if (ip == IdentityProviderType.LDAP || ip == IdentityProviderType.MSAD ) {
             providerSettingsPanel = getLdapPanel(iProvider);
             providersPanel.add(providerSettingsPanel);
             found = true;
@@ -312,7 +313,7 @@ public class IdentityProviderDialog extends JDialog {
           providerSettingsPanel != null && providerNameTextField.getText().length() > 0);
         Dimension size = origDimension;
         // todo: fix the hardcoded multiply
-        setSize((int)size.getWidth(), (int)(size.getHeight() * (found ? 1.5 : 1.0)));
+        setSize((int)size.getWidth(), (int)(size.getHeight() * (found ? 2.0 : 1.0)));
         validate();
         repaint();
 
@@ -410,7 +411,10 @@ public class IdentityProviderDialog extends JDialog {
 
     private void testSettings() {
         IdentityProviderConfig tmp = new IdentityProviderConfig();
+        IdentityProviderType type = (IdentityProviderType)providerTypesCombo.getSelectedItem();
+
         tmp.setName(providerNameTextField.getText());
+        tmp.setTypeVal( type.toVal() );
         providerSettingsPanel.readSettings(tmp);
         String errorMsg = null;
         try {
@@ -434,6 +438,10 @@ public class IdentityProviderDialog extends JDialog {
 
     /** add or pudfate the provider */
     private void addOrUpdateProvider() {
+        if ( iProvider == null ) {
+            IdentityProviderType type = (IdentityProviderType)providerTypesCombo.getSelectedItem();
+            iProvider = new IdentityProviderConfig( type );
+        }
         iProvider.setName(providerNameTextField.getText());
         providerSettingsPanel.readSettings(iProvider);
 
@@ -467,12 +475,17 @@ public class IdentityProviderDialog extends JDialog {
     private ProviderSettingsPanel getLdapPanel(IdentityProviderConfig config) {
         final JTextField ldapHostTextField = new JTextField();
         final JTextField ldapSearchBaseTextField = new JTextField();
+        final JTextField ldapBindDNTextField = new JTextField();
+        final JTextField ldapBindPassTextField = new JTextField();
 
         ProviderSettingsPanel panel = new ProviderSettingsPanel() {
             void readSettings(IdentityProviderConfig config) {
-                config.setTypeVal(IdentityProviderType.LDAP.toVal());
+                IdentityProviderType type = config.type();
+                config.setTypeVal( type.toVal() );
                 config.putProperty(LdapConfigSettings.LDAP_HOST_URL, ldapHostTextField.getText());
                 config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, ldapSearchBaseTextField.getText());
+                config.putProperty(LdapConfigSettings.LDAP_BIND_DN, ldapBindDNTextField.getText());
+                config.putProperty(LdapConfigSettings.LDAP_BIND_PASS, ldapBindPassTextField.getText());
             }
         };
 
@@ -493,13 +506,12 @@ public class IdentityProviderDialog extends JDialog {
         constraints.insets = new Insets(12, 12, 0, 0);
         panel.add(ldapHostLabel, constraints);
 
+        // ldap host text field
         ldapHostTextField.setPreferredSize(new Dimension(217, 20));
         ldapHostTextField.setMinimumSize(new Dimension(217, 20));
         ldapHostTextField.setToolTipText(resources.getString("ldapHostTextField.tooltip"));
-        ldapHostTextField.setText(config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
+        ldapHostTextField.setText( config == null ? "" : config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
 
-
-        // ldap host text field
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 0;
@@ -524,11 +536,11 @@ public class IdentityProviderDialog extends JDialog {
         constraints.insets = new Insets(12, 12, 0, 0);
         panel.add(ldapSearchBaseLabel, constraints);
 
-
+        // search base text field
         ldapSearchBaseTextField.setPreferredSize(new Dimension(217, 20));
         ldapSearchBaseTextField.setMinimumSize(new Dimension(217, 20));
         ldapSearchBaseTextField.setToolTipText(resources.getString("ldapSearchBaseTextField.tooltip"));
-        ldapSearchBaseTextField.setText(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE));
+        ldapSearchBaseTextField.setText( config == null ? "" : config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE));
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 1;
@@ -538,6 +550,64 @@ public class IdentityProviderDialog extends JDialog {
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 7, 0, 0);
         panel.add(ldapSearchBaseTextField, constraints);
+
+        // Binding DN label
+        JLabel ldapBindDNLabel = new JLabel();
+        ldapBindDNLabel.setToolTipText( resources.getString( "ldapBindDNTextField.tooltip" ) );
+        ldapBindDNLabel.setText( resources.getString( "ldapBindDNTextField.label" ) );
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets( 12, 12, 0, 0 );
+        panel.add( ldapBindDNLabel, constraints );
+
+        // Binding DN textfield
+        ldapBindDNTextField.setPreferredSize( new Dimension( 217, 20 ) );
+        ldapBindDNTextField.setMinimumSize( new Dimension( 217, 20 ) );
+        ldapBindDNTextField.setToolTipText( resources.getString( "ldapBindDNTextField.tooltip" ) );
+        ldapBindDNTextField.setText( config == null ? "" : config.getProperty( LdapConfigSettings.LDAP_BIND_DN ) );
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 2;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets( 12, 7, 0, 0 );
+        panel.add( ldapBindDNTextField, constraints );
+
+        // Binding password label
+        JLabel ldapBindPassLabel = new JLabel();
+        ldapBindPassLabel.setToolTipText( resources.getString( "ldapBindPassTextField.tooltip" ) );
+        ldapBindPassLabel.setText( resources.getString( "ldapBindPassTextField.label" ) );
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 3;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets( 12, 12, 0, 0 );
+        panel.add( ldapBindPassLabel, constraints );
+
+        // Binding password textfield
+        ldapBindPassTextField.setPreferredSize( new Dimension( 217, 20 ) );
+        ldapBindPassTextField.setMinimumSize( new Dimension( 217, 20 ) );
+        ldapBindPassTextField.setToolTipText( resources.getString( "ldapBindPassTextField.tooltip" ) );
+        ldapBindPassTextField.setText( config == null ? "" : config.getProperty( LdapConfigSettings.LDAP_BIND_PASS ) );
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 3;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets( 12, 7, 0, 0 );
+        panel.add( ldapBindPassTextField, constraints );
 
         // test ldap
         JButton testButton = new JButton();
@@ -553,7 +623,7 @@ public class IdentityProviderDialog extends JDialog {
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
-        constraints.gridy = 2;
+        constraints.gridy = 4;
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;

@@ -3,6 +3,7 @@ package com.l7tech.identity;
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.identity.ldap.LdapIdentityProviderServer;
 import com.l7tech.identity.ldap.LdapConfigSettings;
+import com.l7tech.identity.msad.MsadIdentityProviderServer;
 import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;
@@ -63,28 +64,36 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
     public void test(IdentityProviderConfig identityProviderConfig)
             throws InvalidIdProviderCfgException {
-        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL ) {
+        IdentityProviderType type = identityProviderConfig.type();
+        if ( type == IdentityProviderType.INTERNAL ) {
             if (identityProviderConfig.getOid() != INTERNALPROVIDER_SPECIAL_OID) {
                 logger.warning("Testing an internal id provider with no good oid. " +
                         "Throwing InvalidIdProviderCfgException");
                 throw new InvalidIdProviderCfgException("This internal ID provider config" +
                         "is not valid.");
             }
-        } else if (identityProviderConfig.type() == IdentityProviderType.LDAP ) {
+        } else if ( type.isLdapLike() ) {
             Collection res = null;
             try {
                 // construct temp provider
-                LdapIdentityProviderServer tmpProvider = new LdapIdentityProviderServer();
+                LdapIdentityProviderServer tmpProvider = null;
+                if ( type == IdentityProviderType.LDAP )
+                    tmpProvider = new LdapIdentityProviderServer();
+                else if ( type == IdentityProviderType.MSAD )
+                    tmpProvider = new MsadIdentityProviderServer();
+                else
+                    throw new InvalidIdProviderCfgException( "Invalid Identity Provider type: " + type.description() );
+
                 tmpProvider.initialize(identityProviderConfig);
                 res = tmpProvider.getUserManager().findAllHeaders();
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Cannot list users from this tmp provider", e);
-                throw new InvalidIdProviderCfgException("This LDAP id provider config is not " +
+                logger.log(Level.SEVERE, "Cannot list users from this Identity Provider", e);
+                throw new InvalidIdProviderCfgException("This Identity Provider configuration is not " +
                         "valid, the directory is not responding or the directory has no entries.", e);
             }
             if (res == null || res.size() < 1) {
-                logger.log(Level.SEVERE, "Listing users from this tmp provider yeilded no results.");
-                throw new InvalidIdProviderCfgException("This LDAP id provider config is not " +
+                logger.log(Level.SEVERE, "Listing users yielded no results.");
+                throw new InvalidIdProviderCfgException("This Identity Provider configuration is not " +
                         "valid, the directory is not responding or the directory has no entries.");
             }
             logger.info("Valid IPC tested.");
