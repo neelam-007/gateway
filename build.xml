@@ -262,6 +262,10 @@
             <fileset dir="${src.root}/src">
                 <include name="com/l7tech/console/resources/*"/>
             </fileset>
+
+            <fileset dir="${src.root}/src">
+                <include name="com/l7tech/proxy/resources/*"/>
+            </fileset>
         </copy>
 
         <!-- html and other static web files -->
