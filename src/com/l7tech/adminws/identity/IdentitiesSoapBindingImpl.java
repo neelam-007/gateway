@@ -65,61 +65,64 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     }
 
     public void deleteUser(long identityProviderConfigId, long userId) throws java.rmi.RemoteException {
+        UserManager userManager = retrieveUserManager(identityProviderConfigId);
+        if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
+        try {
+            com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
+            userManager.delete(user);
+        } catch (DeleteException e) {
+            throw new java.rmi.RemoteException("IdentityProviderConfigManager DeleteException : " + e.getMessage());
+        } catch (FindException e) {
+            throw new java.rmi.RemoteException("IdentityProviderConfigManager FindException : " + e.getMessage());
+        }
+
     }
 
     public long saveUser(long identityProviderConfigId, com.l7tech.adminws.identity.User user) throws java.rmi.RemoteException {
-        return -3;
+        UserManager userManager = retrieveUserManager(identityProviderConfigId);
+        if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
+        try {
+            return userManager.save(TypeTranslator.serviceUserToGenUser(user));
+        } catch (SaveException e) {
+            throw new java.rmi.RemoteException("IdentityProviderConfigManager SaveException : " + e.getMessage());
+        }
     }
 
     public com.l7tech.adminws.identity.Header[] findAllUsers(long identityProviderConfigId) throws java.rmi.RemoteException {
-        // test
-        Header[] res = new Header[3];
-        res[0] = new Header(321, "blahtype1", "blahname1");
-        res[1] = new Header(322, "blahtype2", "blahname2");
-        res[2] = new Header(322, "blahtype3", "blahname3");
-        return res;
-        //
+        UserManager userManager = retrieveUserManager(identityProviderConfigId);
+        return TypeTranslator.collectionToServiceHeaders(userManager.findAllHeaders());
     }
 
     public com.l7tech.adminws.identity.Header[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
-        // test
-        Header[] res = new Header[3];
-        res[0] = new Header(321, "blahtype1", "blahname1");
-        res[1] = new Header(322, "blahtype2", "blahname2");
-        res[2] = new Header(322, "blahtype3", "blahname3");
-        return res;
-        //
+        UserManager userManager = retrieveUserManager(identityProviderConfigId);
+        return TypeTranslator.collectionToServiceHeaders(userManager.findAllHeaders(offset, windowSize));
     }
 
     public com.l7tech.adminws.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
-        return null;
+        GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
+        return TypeTranslator.genGroupToServiceGroup(groupManager.findByPrimaryKey(groupId));
     }
 
     public void deleteGroup(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
+        GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
+        com.l7tech.identity.Group grp = groupManager.findByPrimaryKey(groupId);
+        if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
+        groupManager.delete(grp);
     }
 
     public long saveGroup(long identityProviderConfigId, com.l7tech.adminws.identity.Group group) throws java.rmi.RemoteException {
-        return -3;
+        GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
+        return groupManager.save(TypeTranslator.serviceGroupToGenGroup(group));
     }
 
     public com.l7tech.adminws.identity.Header[] findAllGroups(long identityProviderConfigId) throws java.rmi.RemoteException {
-        // test
-        Header[] res = new Header[3];
-        res[0] = new Header(321, "blahtype1", "blahname1");
-        res[1] = new Header(322, "blahtype2", "blahname2");
-        res[2] = new Header(322, "blahtype3", "blahname3");
-        return res;
-        //
+        GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
+        return TypeTranslator.collectionToServiceHeaders(groupManager.findAllHeaders());
     }
 
     public com.l7tech.adminws.identity.Header[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
-        // test
-        Header[] res = new Header[3];
-        res[0] = new Header(321, "blahtype1", "blahname1");
-        res[1] = new Header(322, "blahtype2", "blahname2");
-        res[2] = new Header(322, "blahtype3", "blahname3");
-        return res;
-        //
+        GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
+        return TypeTranslator.collectionToServiceHeaders(groupManager.findAllHeaders(offset, windowSize));
     }
 
     // ************************************************

@@ -82,4 +82,55 @@ public class TypeTranslator {
         ret.setType(retType);
         return ret;
     }
+
+    public static com.l7tech.adminws.identity.User genUserToServiceUser(com.l7tech.identity.User genUser) {
+        if (genUser == null) return null;
+        com.l7tech.adminws.identity.User ret = new com.l7tech.adminws.identity.User();
+        ret.setEmail(genUser.getEmail());
+        ret.setFirstName(genUser.getFirstName());
+        ret.setGroups(collectionToServiceHeaders(genUser.getGroups()));
+        ret.setLastName(genUser.getLastName());
+        ret.setLogin(genUser.getLogin());
+        ret.setOid(genUser.getOid());
+        ret.setPassword(genUser.getPassword());
+        ret.setTitle(genUser.getTitle());
+        return ret;
+    }
+
+    public static com.l7tech.identity.User serviceUserToGenUser(com.l7tech.adminws.identity.User svcUser) {
+        if (svcUser == null) return null;
+        com.l7tech.identity.User ret = new com.l7tech.identity.internal.imp.UserImp();
+        ret.setEmail(svcUser.getEmail());
+        ret.setFirstName(svcUser.getFirstName());
+        Collection groups = headerArrayToCollection(svcUser.getGroups());
+        ret.getGroups().clear();
+        ret.getGroups().addAll(groups);
+        ret.setLastName(svcUser.getLastName());
+        ret.setLogin(svcUser.getLogin());
+        ret.setOid(svcUser.getOid());
+        ret.setPassword(svcUser.getPassword());
+        ret.setTitle(svcUser.getTitle());
+        return ret;
+    }
+
+    public static com.l7tech.adminws.identity.Group genGroupToServiceGroup(com.l7tech.identity.Group genGroup) {
+        if (genGroup == null) return null;
+        com.l7tech.adminws.identity.Group ret = new com.l7tech.adminws.identity.Group();
+        ret.setDescription(genGroup.getDescription());
+        ret.setMembers(collectionToServiceHeaders(genGroup.getMembers()));
+        ret.setName(genGroup.getName());
+        ret.setOid(genGroup.getOid());
+        return ret;
+    }
+
+    public static com.l7tech.identity.Group serviceGroupToGenGroup(com.l7tech.adminws.identity.Group svcGroup) {
+        if (svcGroup == null) return null;
+        com.l7tech.identity.Group ret = new com.l7tech.identity.internal.imp.GroupImp();
+        ret.setDescription(svcGroup.getDescription());
+        ret.getMembers().clear();
+        ret.getMembers().addAll(headerArrayToCollection(svcGroup.getMembers()));
+        ret.setName(svcGroup.getName());
+        ret.setOid(svcGroup.getOid());
+        return ret;
+    }
 }
