@@ -136,40 +136,47 @@ public class TokenServiceClient {
         return (SamlHolderOfKeyAssertion)result;
     }
 
-    private static Object obtainResponse(X509Certificate clientCertificate, URL url, Ssg ssg, Document requestDoc, PrivateKey clientPrivateKey, X509Certificate serverCertificate) throws IOException, GeneralSecurityException {
-        log.log(Level.INFO, "Applying for new Security Token for " + clientCertificate.getSubjectDN() +
-                            " with token server " + url.toString());
+    private static Object obtainResponse(X509Certificate clientCertificate,
+                                         URL url,
+                                         Ssg ssg,
+                                         Document requestDoc,
+                                         PrivateKey clientPrivateKey,
+                                         X509Certificate serverCertificate)
+            throws IOException, GeneralSecurityException
+    {
+        try {
+            log.log(Level.INFO, "Applying for new Security Token for " + clientCertificate.getSubjectDN() +
+                                " with token server " + url.toString());
 
-        CurrentRequest.setPeerSsg(ssg);
-        URLConnection conn = url.openConnection();
-        CurrentRequest.setPeerSsg(null);
-        conn.setDoOutput(true);
-        conn.setAllowUserInteraction(false);
-        conn.setRequestProperty(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
-        XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
-        int len = conn.getContentLength();
-        log.log(Level.FINEST, "Token server response content length=" + len);
-        String contentType = conn.getContentType();
-        if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
-            throw new IOException("Token server returned unsupported content type " + conn.getContentType());
-        Document response = null;
-        try {
+            CurrentRequest.setPeerSsg(ssg);
+            URLConnection conn = url.openConnection();
+            CurrentRequest.setPeerSsg(null);
+            conn.setDoOutput(true);
+            conn.setAllowUserInteraction(false);
+            conn.setRequestProperty(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+            XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
+            int len = conn.getContentLength();
+            log.log(Level.FINEST, "Token server response content length=" + len);
+            String contentType = conn.getContentType();
+            if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
+                throw new IOException("Token server returned unsupported content type " + conn.getContentType());
+            Document response = null;
             response = XmlUtil.parse(conn.getInputStream());
-        } catch (SAXException e) {
-            throw new CausedIOException("Unable to parse RequestSecurityTokenResponse", e);
-        }
-        Object result = null;
-        try {
+            Object result = null;
             result = parseRequestSecurityTokenResponse(response,
                                                        clientCertificate,
                                                        clientPrivateKey,
                                                        serverCertificate);
+            return result;
+        } catch (SAXException e) {
+            throw new CausedIOException("Unable to parse RequestSecurityTokenResponse from security token service: " + e.getMessage(), e);
         } catch (InvalidDocumentFormatException e) {
-            throw new CausedIOException("Unable to process response from token server", e);
+            throw new CausedIOException("Unable to process response from security token service: " + e.getMessage(), e);
         } catch (ProcessorException e) {
-            throw new CausedIOException("Unable to obtain token from token server", e);
+            throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
         }
-        return result;
     }
 
 
