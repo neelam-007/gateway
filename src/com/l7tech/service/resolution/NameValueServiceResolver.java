@@ -79,7 +79,12 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
             // Find out which service(s) match this value
             serviceMap = getServiceMap( matchValue );
             // If there are any, this value matches
-            if ( !serviceMap.keySet().isEmpty() ) return true;
+            Set keys = serviceMap.keySet();
+            Long oid;
+            for (Iterator it = keys.iterator(); it.hasNext();) {
+                oid = (Long)it.next();
+                if ( oid.longValue() != matchService.getOid() ) return true;
+            }
         }
         return false;
     }

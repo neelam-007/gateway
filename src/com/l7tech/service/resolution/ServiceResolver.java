@@ -48,10 +48,14 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
         for (Iterator i = subset.keySet().iterator(); i.hasNext();) {
             oid = (Long)i.next();
             matchService = (PublishedService)subset.get(oid);
-            if ( matchService != null && ( matchService.getOid() != candidateService.getOid() ) && matches( candidateService ) ) {
-                // This candidateService matches one of "mine"
-                if ( result == null ) result = new HashMap();
-                result.put( oid, matchService );
+            if ( matchService != null ) {
+                if ( candidateService.getOid() != matchService.getOid() ) {
+                    if ( matches( candidateService ) ) {
+                        // This candidateService matches one of "mine"
+                        if ( result == null ) result = new HashMap();
+                        result.put( oid, matchService );
+                    }
+                }
             }
         }
 
