@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.action.Actions;
+
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
@@ -241,7 +243,7 @@ public class NamespaceMapEditor extends JDialog {
     }
 
     private void help() {
-        // todo
+        Actions.invokeHelp(NamespaceMapEditor.this);
     }
 
     public static void main(String[] args) {
