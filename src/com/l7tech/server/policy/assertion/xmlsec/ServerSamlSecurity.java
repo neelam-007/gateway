@@ -8,8 +8,10 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.common.security.saml.InvalidAssertionException;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlError;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -19,9 +21,7 @@ import x0Assertion.oasisNamesTcSAML1.AssertionType;
 import x0Assertion.oasisNamesTcSAML1.ConditionsType;
 
 import java.io.IOException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,18 +63,23 @@ public class ServerSamlSecurity implements ServerAssertion {
             SoapRequest sr = (SoapRequest)request;
             Document document = sr.getDocument();
             Element assertionElement = getAssertionElement(document);
+
+            //the asssertion validation is expensive, we may think
             XmlOptions xo = new XmlOptions();
             xo.setLoadLineNumbers();
             AssertionDocument doc = AssertionDocument.Factory.parse(assertionElement, xo);
 
-//            xo = new XmlOptions();
-//            Collection errors = new ArrayList();
-//            xo.setErrorListener(errors);
-//            System.out.println("The document is " + (doc.validate(xo) ? "valid" : "invalid"));
-//            for (Iterator iterator = errors.iterator(); iterator.hasNext();) {
-//                XmlError xerr = (XmlError)iterator.next();
-//                System.out.println(xerr);
-//            }
+            xo = new XmlOptions();
+            Collection errors = new ArrayList();
+            xo.setErrorListener(errors);
+            if(!doc.validate(xo)) {
+                for (Iterator iterator = errors.iterator(); iterator.hasNext();) {
+                    XmlError xerr = (XmlError)iterator.next();
+                    logger.warning("Error validating SAML assertion" +xerr);
+                }
+                logger.warning("Aborting request (invalid SAML assertion)");
+                return AssertionStatus.FALSIFIED;
+            }
 
             AssertionType at = doc.getAssertion();
             if (assertion.isValidateValidityPeriod()) {
@@ -82,7 +87,6 @@ public class ServerSamlSecurity implements ServerAssertion {
                     return AssertionStatus.FALSIFIED;
                 }
             }
-
             return AssertionStatus.NONE;
         } catch (NoSuchElementException e) {
             logger.log(Level.SEVERE, "SAML Assertion element missing", e);
@@ -91,16 +95,24 @@ public class ServerSamlSecurity implements ServerAssertion {
             logger.log(Level.SEVERE, "error getting the xml document", e);
             return AssertionStatus.FALSIFIED;
         } catch (XmlException e) {
-            logger.log(Level.SEVERE, "error pasrsing the SAML assertion", e);
+            logger.log(Level.SEVERE, "error parsing the SAML assertion", e);
             return AssertionStatus.FALSIFIED;
+        } catch (InvalidAssertionException e) {
+              logger.log(Level.SEVERE, "Invalid saml assertion", e);
+            return AssertionStatus.BAD_REQUEST;
         }
     }
 
-    private boolean validateIntervalConditions(AssertionType at) {
+    private boolean validateIntervalConditions(AssertionType at)
+      throws InvalidAssertionException {
+        checkNonNullAssertionElement("Assertion", at);
         Date now = new Date();
         ConditionsType type = at.getConditions();
+        checkNonNullAssertionElement("Conditions", type);
         Calendar notBefore = type.getNotBefore();
+        checkNonNullAssertionElement("Not Before", notBefore);
         Calendar notAfter = type.getNotOnOrAfter();
+        checkNonNullAssertionElement("Not After", notAfter);
         return (notBefore.before(now) && notAfter.after(now));
     }
 
@@ -119,6 +131,19 @@ public class ServerSamlSecurity implements ServerAssertion {
         }
 
         throw new NoSuchElementException("Could not find security header in " + document);
+    }
+
+    /**
+     * helper that checks assertion elements for <b>null</b>
+     * @param element the element to check
+     * @throws InvalidAssertionException if null
+     */
+    private void checkNonNullAssertionElement(String name, Object element)
+      throws InvalidAssertionException {
+        if (element == null) {
+            name = (name == null) ? "" : name;
+            throw new InvalidAssertionException("The required element '"+name+" ' is null");
+        }
     }
 
     private Logger logger = LogManager.getInstance().getSystemLogger();
