@@ -7,7 +7,6 @@ import com.l7tech.console.event.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.TopComponents;
@@ -45,7 +44,7 @@ public class NewProviderAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Create Identity Provider";
+        return "Create LDAP Identity Provider";
     }
 
     /**
