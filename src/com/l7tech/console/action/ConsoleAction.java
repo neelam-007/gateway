@@ -15,14 +15,14 @@ public class ConsoleAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Application Console";
+        return "Manager log";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Show application console with internal messages";
+        return "Show Manager log with diagniostic messages";
     }
 
     /**
