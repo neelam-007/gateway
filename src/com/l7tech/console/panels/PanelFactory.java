@@ -13,10 +13,9 @@ import com.l7tech.objectmodel.EntityType;
 import javax.swing.*;
 
 /**
- * The Panel Factory class provides panels for entity
- * nodes registered with the directory.
- * The class methods are not not synchronized.
+ * The Panel Factory class provides panels for entities.
  *
+ * todo: extract interface, and move to factory package.
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class PanelFactory {
@@ -40,6 +39,7 @@ public class PanelFactory {
         if (object instanceof EntityHeaderNode) {
             EntityEditorPanel panel =
                     getPanel(((EntityHeaderNode)object).getEntityHeader().getType(), pListener);
+            return panel;
         }
         JOptionPane.showMessageDialog(null,
                         "Could not retrieve panel for given class ("+object.getClass()+")",
