@@ -33,48 +33,19 @@ public class VirtualGroupTest extends TestCase {
     }
 
     public void testDnPatterns() throws Exception {
-        assertTrue(testPattern("O=ACME Inc., OU=Widgets, CN=joe",
+        assertTrue(CertUtils.dnsMatchWithWildcards("O=ACME Inc., OU=Widgets, CN=joe",
                                "O=ACME Inc., OU=Widgets, CN=*"));
 
-        assertFalse(testPattern("O=ACME Inc., OU=Widgets, CN=joe",
+        assertFalse(CertUtils.dnsMatchWithWildcards("O=ACME Inc., OU=Widgets, CN=joe",
                                 "O=ACME Inc., OU=Widgets, CN=bob"));
 
         assertTrue("Multi-valued attributes, case and whitespace are insignificant",
-                   testPattern("dc=layer7-tech,dc=com, uid=acruise",
+                   CertUtils.dnsMatchWithWildcards("dc=layer7-tech,dc=com, uid=acruise",
                                "dc=layer7-tech, DC=com, UID=*"));
 
         assertFalse("Group value wildcards are required",
-                    testPattern("dc=layer7-tech,dc=com, uid=acruise",
+                    CertUtils.dnsMatchWithWildcards("dc=layer7-tech,dc=com, uid=acruise",
                                 "dc=layer7-tech, DC=com, cn=*, UID=*"));
-    }
-
-    private boolean testPattern(String userDn, String groupDn) throws Exception {
-        Map userStuff = CertUtils.dnToAttributeMap(userDn);
-        Map groupStuff = CertUtils.dnToAttributeMap(groupDn);
-
-        boolean matches = true;
-        for ( Iterator i = groupStuff.keySet().iterator(); i.hasNext(); ) {
-            String oid = (String)i.next();
-            List groupValues = (List)groupStuff.get(oid);
-            List userValues = (List)userStuff.get(oid);
-
-            if ( userValues == null ) {
-                matches = false;
-                break;
-            }
-
-            for ( Iterator j = groupValues.iterator(); j.hasNext(); ) {
-                String groupValue = (String) j.next();
-                if ( !userValues.contains(groupValue) ) {
-                    if ( !("*".equals(groupValue)) ) {
-                        matches = false;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return matches;
     }
 
     /**
