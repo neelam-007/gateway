@@ -102,8 +102,28 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             }
         });
 
+        createProviderButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onCreateIdProvider();
+            }
+
+        });
+
         populateIdProviders();
         populatePropsTable();
+    }
+
+    /**
+     * invoked when the user clicks the create id provider button
+     */
+    private void onCreateIdProvider() {
+        // start the process to create the type of id provider based on the saved info
+        if (IdentityProviderType.LDAP.toVal() == unresolvedRef.getIdProviderTypeVal()) {
+            // todo, plug in NewLdapProviderAction
+        } else if (IdentityProviderType.FEDERATED.toVal() == unresolvedRef.getIdProviderTypeVal()) {
+            // todo, plug in a NewFederatedIdentityProviderAction
+        }
+
     }
 
     private void populatePropsTable() {
@@ -174,6 +194,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     private JRadioButton ignoreRadio;
     private JComboBox providerSelector;
     private JTable providerPropsTable;
+    private JButton createProviderButton;
     private ButtonGroup actionRadios;
 
     private IdProviderReference unresolvedRef;
@@ -213,14 +234,14 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         final JTextField _5;
         _5 = new JTextField();
         foreignProviderName = _5;
-        _5.setEditable(false);
         _5.setText("blah name");
+        _5.setEditable(false);
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JTextField _6;
         _6 = new JTextField();
         foreignProviderType = _6;
-        _6.setEditable(false);
         _6.setText("blah provider type");
+        _6.setEditable(false);
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JScrollPane _7;
         _7 = new JScrollPane();
@@ -244,15 +265,15 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         final JRadioButton _11;
         _11 = new JRadioButton();
         removeRadio = _11;
-        _11.setLabel("Remove assertions that refer to the missing identity provider");
         _11.setText("Remove assertions that refer to the missing identity provider");
+        _11.setLabel("Remove assertions that refer to the missing identity provider");
         _9.add(_11, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _12;
         _12 = new JRadioButton();
         ignoreRadio = _12;
-        _12.setRequestFocusEnabled(false);
-        _12.setLabel("Import erroneous assertions as-is");
         _12.setText("Import erroneous assertions as-is");
+        _12.setLabel("Import erroneous assertions as-is");
+        _12.setRequestFocusEnabled(false);
         _12.setFocusPainted(false);
         _9.add(_12, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JComboBox _13;
@@ -262,8 +283,9 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         _9.add(_13, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 2, 0, null, null, null));
         final JButton _14;
         _14 = new JButton();
-        _14.setText("Create new Identity Provider");
+        createProviderButton = _14;
         _14.setToolTipText("Create a new identity provider so you can then associate those assertions with");
+        _14.setText("Create new Identity Provider");
         _9.add(_14, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 8, 0, 1, 0, null, null, null));
         final JLabel _15;
         _15 = new JLabel();
