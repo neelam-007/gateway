@@ -1,18 +1,21 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
+import javax.swing.text.Document;
 import javax.swing.event.EventListenerList;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
@@ -48,11 +51,11 @@ public class NewUserDialog extends JDialog {
     /* the user instance */
     private User user = new User();
 
-    /* new user Password */
-    private char[] newPassword;
-
     private int MIN_PASSWORD_LENGTH = 6;
     private EventListenerList listenerList = new EventListenerList();
+    private boolean UserIdFieldFilled = false;
+    private boolean passwordFieldFilled = false;
+    private boolean passwordConfirmFieldFilled = false;
 
     /**
      * Create a new NewUserDialog fdialog for a given Company
@@ -279,6 +282,9 @@ public class NewUserDialog extends JDialog {
                                         return true;
                                     }
                                 }));
+        idTextField.getDocument().putProperty("name", "userId");
+        idTextField.getDocument().addDocumentListener(documentListener);
+
         return idTextField;
     }
 
@@ -310,6 +316,9 @@ public class NewUserDialog extends JDialog {
                                     }
                                 }));
 
+        passwordField.getDocument().putProperty("name", "password");
+        passwordField.getDocument().addDocumentListener(documentListener);
+
         return passwordField;
     }
 
@@ -330,6 +339,7 @@ public class NewUserDialog extends JDialog {
         Font echoCharFont = new Font("Lucida Sans", Font.PLAIN, 12);
         passwordConfirmField.setFont(echoCharFont);
         passwordConfirmField.setEchoChar('\u2022');
+
         passwordConfirmField.
                 setDocument(
                         new FilterDocument(32,
@@ -340,6 +350,8 @@ public class NewUserDialog extends JDialog {
                                         return true;
                                     }
                                 }));
+        passwordConfirmField.getDocument().putProperty("name", "passwordConfirm");
+        passwordConfirmField.getDocument().addDocumentListener(documentListener);
 
         return passwordConfirmField;
     }
@@ -388,6 +400,7 @@ public class NewUserDialog extends JDialog {
         createButton.setText(resources.getString("createButton.label"));
         createButton.setToolTipText(resources.getString("createButton.tooltip"));
         createButton.setActionCommand(CMD_OK);
+        createButton.setEnabled(false);
         createButton.
                 addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent event) {
@@ -548,5 +561,53 @@ public class NewUserDialog extends JDialog {
         }
         return true;
     }
+
+    public void updateCreateButtonState(DocumentEvent e) {
+        Document field = e.getDocument();
+        if (field.getProperty("name").equals("userId")) {
+            if (field.getLength() > 0) {
+                UserIdFieldFilled = true;
+            } else {
+                UserIdFieldFilled = false;
+            }
+        } else if (field.getProperty("name").equals("password")) {
+            if (field.getLength() > 0) {
+                passwordFieldFilled = true;
+            } else {
+                passwordFieldFilled = false;
+            }
+        } else if (field.getProperty("name").equals("passwordConfirm")) {
+            if (field.getLength() > 0) {
+                passwordConfirmFieldFilled = true;
+            } else {
+                passwordConfirmFieldFilled = false;
+            }
+
+        } else {
+            // do nothing
+        }
+
+        if (UserIdFieldFilled && passwordFieldFilled && passwordConfirmFieldFilled) {
+            // enable the Create button
+            createButton.setEnabled(true);
+        } else {
+            // disbale the button
+            createButton.setEnabled(false);
+        }
+    }
+
+    private final DocumentListener documentListener = new DocumentListener() {
+        public void changedUpdate(DocumentEvent e) {
+            updateCreateButtonState(e);
+        }
+
+        public void insertUpdate(DocumentEvent e) {
+            updateCreateButtonState(e);
+        }
+
+        public void removeUpdate(DocumentEvent e) {
+            updateCreateButtonState(e);
+        }
+    };
 
 }
