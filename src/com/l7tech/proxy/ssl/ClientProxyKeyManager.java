@@ -42,9 +42,12 @@ public class ClientProxyKeyManager implements X509KeyManager {
         try {
             log.info("ClientProxyKeyManager: getPrivateKey for " + s);
             Ssg ssg = ssgFinder.getSsgByHostname(s);
-            return SsgKeyStoreManager.getPrivateKey(ssg);
+            PrivateKey pk = SsgKeyStoreManager.getPrivateKey(ssg);
+            log.info("Returning PrivateKey: " + (pk == null ? "NULL" : "<it's a real key; numbers not shown>"));
+            return pk;
         } catch (SsgNotFoundException e) {
             log.info(e);
+            log.info("*** About to return NULL private key..");
             return null;
         } catch (GeneralSecurityException e) {
             log.error(e);
@@ -60,9 +63,16 @@ public class ClientProxyKeyManager implements X509KeyManager {
             log.info("ClientProxyKeyManager: getCertificateChain for " + s);
             Ssg ssg = ssgFinder.getSsgByHostname(s);
             log.info("Found ssg: " + ssg);
-            return SsgKeyStoreManager.getClientCertificateChain(ssg);
+            X509Certificate[] certs = SsgKeyStoreManager.getClientCertificateChain(ssg);
+            log.info("Returning " + certs.length + " certificates");
+            for (int i = 0; i < certs.length; i++) {
+                X509Certificate cert = certs[i];
+                log.info("Cert #" + i + " subject=" + cert.getSubjectDN());
+            }
+            return certs;
         } catch (SsgNotFoundException e) {
             log.info(e);
+            log.info("*** About to return EMPTY certificate array..");
             return new X509Certificate[0];
         } catch (GeneralSecurityException e) {
             log.error(e);
