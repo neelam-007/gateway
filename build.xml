@@ -290,6 +290,7 @@
             <fileset dir="${build.dir}/classes">
                 <exclude name="com/l7tech/policy/server/**/*" />
                 <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class" />
+                <exclude name="com/l7tech/policy/validator/ValidatorFactory.class" />
 
                 <include name="com/l7tech/proxy/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
@@ -324,12 +325,14 @@
     <target name="testpackage" depends="package">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
             deprecation="on" depend="on" verbose="no" />
-        <exec executable="perl">
+        <exec executable="perl" failonerror="true">
+            <env key="JAVA_HOME" value="${java.home}" />
             <arg line="tools/checkjar.pl" />
             <arg line="build/Manager.jar" />
             <arg line="etc/Manager.mf" />
         </exec>
-        <exec executable="perl">
+        <exec executable="perl" failonerror="true">
+            <env key="JAVA_HOME" value="${java.home}" />
             <arg line="tools/checkjar.pl" />
             <arg line="build/Agent.jar" />
             <arg line="etc/Agent.mf" />

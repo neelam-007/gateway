@@ -27,14 +27,16 @@ public class JarChecker {
         String jar = args[0];
         try {
             checkJar(jar);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             fatalErr(e);
         }
 
+        System.err.println("All classes in " + jar + " are confirmed to be loadable with the current classpath.");
         System.exit(0);
     }
 
     private static void checkJar(String jar) throws IOException {
+        boolean hadErrors = false;
         JarFile jarFile = new JarFile(jar);
         Enumeration entries = jarFile.entries();
         while (entries.hasMoreElements()) {
@@ -49,16 +51,22 @@ public class JarChecker {
                     log("Loading class: " + className);
                     try {
                         Class.forName(className);
-                    } catch (ClassNotFoundException e) {
-                        fatalErr(e);
+                    } catch (Throwable e) {
+                        System.err.println("ERROR: while loading class: " + className + ": " + e);
+                        e.printStackTrace(System.err);
+                        hadErrors = true;
                     }
                 }
             }
         }
+
+        if (hadErrors)
+            throw new RuntimeException("There were errors while loading at least one class.");
     }
 
     private static void log(String s) {
-        System.out.println(s);
+        // Uncomment to log some stuff
+        //System.out.println(s);
     }
 
     private static void fatalErr(Throwable e) {
