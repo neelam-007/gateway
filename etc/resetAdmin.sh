@@ -65,12 +65,12 @@ fi
 # TODO
 #
 # 1. encode the password like this :
-#   toEncode=$ACCOUNT_NAME:$ADMIN_PASSWORD
+#   toEncode=$ACCOUNT_NAME:$ADMIN_PASSWORD (that is $ACCOUNT_NAME + ":" + $ADMIN_PASSWORD)
 #   do a md5 digest of that value and hex encode it.
 #   for more details, check out source code of method com.l7tech.identity.User.encodePasswd()
 #
-# 2. update internal_user set password=encodedpasswd where oid=3;
+# 2. sql update internal_user set password=encodedpasswd where oid=3;
 #   note: this assumes that the ssgadmin oid=3
 #
-# 3. update internal_user set login=$ACCOUNT_NAME where oid=3;
+# 3. sql update internal_user set login=$ACCOUNT_NAME where oid=3;
 #
