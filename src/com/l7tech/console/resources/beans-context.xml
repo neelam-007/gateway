@@ -14,9 +14,9 @@
     <bean id="preferences" class="com.l7tech.console.util.Preferences" factory-method="getPreferences">
     </bean>
 
-    <bean id="rmiClientSocketFactory" class="com.l7tech.remote.rmi.ssl.SslRMIClientSocketFactory"/>
+    <bean id="rmiClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"/>
 
-    <bean id="adminLogin" class="com.l7tech.remote.rmi.ResettableRmiProxyFactoryBean">
+    <bean id="adminLogin" class="com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean">
         <property name="serviceInterface">
             <value>com.l7tech.admin.AdminLogin</value>
         </property>

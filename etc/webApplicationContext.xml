@@ -401,7 +401,7 @@
 
 
     <!-- admin services, Rmi socket factories -->
- <bean id="rmiServerSocketFactory" class="com.l7tech.remote.rmi.ssl.SslRMIServerSocketFactory">
+ <bean id="rmiServerSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory">
      <property name="keyStoreType">
          <ref local='sslKeystoreType'/>
      </property>
@@ -413,9 +413,9 @@
      </property>
  </bean>
 
-    <bean id="rmiClientSocketFactory" class="com.l7tech.remote.rmi.ssl.SslRMIClientSocketFactory"/>
+    <bean id="rmiClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"/>
 
-    <bean id="adminSessionInvocationFactory" class="com.l7tech.remote.rmi.AdminSessionInvocationFactory"/>
+    <bean id="adminSessionInvocationFactory" class="com.l7tech.spring.remoting.rmi.AdminSessionInvocationFactory"/>
 
     <!-- server side admin authorizer -->
  <bean id="authorizer" class="com.l7tech.server.identity.internal.InternalIdentityProviderAuthorizer">
@@ -451,7 +451,7 @@
  </bean>
 
     <!--    admin login exporter -->
- <bean class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
+ <bean class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
      <property name="serviceName">
          <value>AdminLogin</value>
      </property>
@@ -473,7 +473,7 @@
  </bean>
 
     <!--    admin context exporter -->
- <bean id="adminContextRemote" class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
+ <bean id="adminContextRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
      <property name="service">
          <ref bean="adminContext"/>
      </property>
@@ -514,7 +514,7 @@
  </bean>
 
     <!--    identity admin exporter -->
-  <bean id="identityAdminRemote" class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
+  <bean id="identityAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
       <property name="service">
           <ref bean="identityAdmin"/>
       </property>
@@ -542,7 +542,7 @@
  </bean>
 
     <!--    log admin exporter -->
- <bean id="logAdminRemote" class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
+ <bean id="logAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
      <property name="service">
          <ref bean="logAdmin"/>
      </property>
@@ -558,7 +558,7 @@
  </bean>
 
     <!--    audit admin exporter -->
- <bean id="auditAdminRemote" class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
+ <bean id="auditAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
      <property name="service">
          <ref bean="auditAdmin"/>
      </property>
@@ -577,7 +577,7 @@
  </bean>
 
     <!--    service admin exporter -->
- <bean id="serviceAdminRemote" class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
+ <bean id="serviceAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
      <property name="service">
          <ref bean="serviceAdmin"/>
      </property>
@@ -599,7 +599,7 @@
  </bean>
 
     <!--    jms admin exporter -->
- <bean id="jmsAdminRemote" class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
+ <bean id="jmsAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
      <property name="service">
          <ref bean="jmsAdmin"/>
      </property>
@@ -622,7 +622,7 @@
  </bean>
 
     <!--    trusted cert admin exporter -->
-  <bean id="trustedCertAdminRemote" class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
+  <bean id="trustedCertAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
       <property name="service">
           <ref bean="trustedCertAdmin"/>
       </property>
@@ -641,7 +641,7 @@
   </bean>
 
     <!--    trusted cert admin exporter -->
-   <bean id="customAssertionsRegistrarRemote" class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
+   <bean id="customAssertionsRegistrarRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
        <property name="service">
            <ref bean="customAssertionsAdmin"/>
        </property>
@@ -657,7 +657,7 @@
    </bean>
 
     <!--    cluster status cert admin exporter -->
-   <bean id="clusterStatusAdminRemote" class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
+   <bean id="clusterStatusAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
        <property name="service">
            <ref bean="clusterStatusAdmin"/>
        </property>

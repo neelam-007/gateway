@@ -40,7 +40,7 @@
     <!-- class servlet registered frst, in case boot process requires it -->
     <servlet>
         <servlet-name>ClassServerServlet</servlet-name>
-        <servlet-class>com.l7tech.remote.rmi.codebase.ClassServerServlet</servlet-class>
+        <servlet-class>com.l7tech.spring.remoting.rmi.codebase.ClassServerServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
 

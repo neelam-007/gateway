@@ -4,7 +4,7 @@ import com.l7tech.admin.AdminContext;
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.common.VersionException;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.remote.rmi.ResettableRmiProxyFactoryBean;
+import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;

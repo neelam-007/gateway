@@ -530,8 +530,8 @@
                 <include name="com/l7tech/service/PublishedService.class"/>
                 <include name="com/l7tech/service/ServiceStatistics.class"/>
                 <include name="com/l7tech/service/ResolutionParameterTooLongException.class"/>
-                <include name="com/l7tech/remote/rmi/**/*"/>
-                <exclude name="com/l7tech/remote/rmi/codebase/*"/>
+                <include name="com/l7tech/spring/remoting/rmi/**/*"/>
+                <exclude name="com/l7tech/spring/remoting/rmi/codebase/*"/>
             </fileset>
         </jar>
     </target>

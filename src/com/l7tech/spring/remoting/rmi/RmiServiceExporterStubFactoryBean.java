@@ -3,7 +3,7 @@
  *
  * $Id$
  */
-package com.l7tech.remote.rmi;
+package com.l7tech.spring.remoting.rmi;
 
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationFactory;
@@ -20,6 +20,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
+
+import com.l7tech.spring.remoting.rmi.RmiProxyStub;
 
 /**
  * The {@link RmiServiceExporterStubFactoryBean } subclass that allows specifying additional properties

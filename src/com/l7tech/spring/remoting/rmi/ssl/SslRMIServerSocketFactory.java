@@ -1,4 +1,4 @@
-package com.l7tech.remote.rmi.ssl;
+package com.l7tech.spring.remoting.rmi.ssl;
 
 import javax.net.ssl.*;
 import java.io.FileInputStream;
@@ -32,7 +32,7 @@ import java.util.List;
  *
  * @see javax.net.ssl.SSLSocketFactory
  * @see javax.net.ssl.SSLServerSocketFactory
- * @see SslRMIClientSocketFactory
+ * @see com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory
  */
 public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
 

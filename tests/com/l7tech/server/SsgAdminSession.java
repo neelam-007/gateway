@@ -11,8 +11,8 @@ import com.l7tech.admin.AdminLogin;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Preferences;
-import com.l7tech.remote.rmi.ResettableRmiProxyFactoryBean;
-import com.l7tech.remote.rmi.NamingURL;
+import com.l7tech.spring.remoting.rmi.NamingURL;
+import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 

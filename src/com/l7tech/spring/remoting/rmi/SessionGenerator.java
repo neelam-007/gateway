@@ -3,7 +3,7 @@
  *
  * $Id$
  */
-package com.l7tech.remote.rmi;
+package com.l7tech.spring.remoting.rmi;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

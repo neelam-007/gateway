@@ -1,4 +1,4 @@
-package com.l7tech.remote.rmi.ssl;
+package com.l7tech.spring.remoting.rmi.ssl;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.*;

@@ -1,4 +1,4 @@
-package com.l7tech.remote.rmi;
+package com.l7tech.spring.remoting.rmi;
 
 import java.net.MalformedURLException;
 import java.net.URI;

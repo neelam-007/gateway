@@ -3,7 +3,7 @@
  *
  * $Id$
  */
-package com.l7tech.remote.rmi;
+package com.l7tech.spring.remoting.rmi;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;

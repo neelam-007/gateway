@@ -13,9 +13,12 @@ import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
-import com.l7tech.remote.rmi.NamingURL;
-import com.l7tech.remote.rmi.ssl.SSLTrustFailureHandler;
-import com.l7tech.remote.rmi.ssl.SslRMIClientSocketFactory;
+import com.l7tech.spring.remoting.rmi.NamingURL;
+import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
+import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
+import com.l7tech.spring.remoting.rmi.NamingURL;
+import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
+import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;

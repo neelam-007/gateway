@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.remote.rmi.codebase;
+package com.l7tech.spring.remoting.rmi.codebase;
 
 import com.l7tech.common.util.HexUtils;
 
