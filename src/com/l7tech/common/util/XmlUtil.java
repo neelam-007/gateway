@@ -81,7 +81,7 @@ public class XmlUtil {
     }
 
 
-    public static ThreadLocal xmlSerializer = new ThreadLocal() {
+    private static ThreadLocal formattedXMLSerializer = new ThreadLocal() {
         protected synchronized Object initialValue() {
             XMLSerializer xmlSerializer = new XMLSerializer();
             OutputFormat of = new OutputFormat();
@@ -91,26 +91,40 @@ public class XmlUtil {
         }
     };
 
-    public static XMLSerializer getXmlSerializer() {
-        return (XMLSerializer) xmlSerializer.get();
+    private static XMLSerializer getFormattedXmlSerializer() {
+        return (XMLSerializer) formattedXMLSerializer.get();
     }
 
     public static void documentToOutputStream(Document doc, OutputStream os) throws IOException {
-        getXmlSerializer().setOutputCharStream(new OutputStreamWriter(os));
-        getXmlSerializer().serialize(doc);
+        XMLSerializer xmlSerializer = new XMLSerializer();
+        xmlSerializer.setOutputCharStream(new OutputStreamWriter(os));
+        xmlSerializer.serialize(doc);
+    }
+
+    public static void documentToFormattedOutputStream(Document doc, OutputStream os) throws IOException {
+        getFormattedXmlSerializer().setOutputCharStream(new OutputStreamWriter(os));
+        getFormattedXmlSerializer().serialize(doc);
     }
 
     public static String documentToString(Document doc) throws IOException {
         final StringWriter sw = new StringWriter();
-        getXmlSerializer().setOutputCharStream(sw);
-        getXmlSerializer().serialize(doc);
+        XMLSerializer xmlSerializer = new XMLSerializer();
+        xmlSerializer.setOutputCharStream(sw);
+        xmlSerializer.serialize(doc);
+        return sw.toString();
+    }
+
+    public static String documentToFormattedString(Document doc) throws IOException {
+        final StringWriter sw = new StringWriter();
+        getFormattedXmlSerializer().setOutputCharStream(sw);
+        getFormattedXmlSerializer().serialize(doc);
         return sw.toString();
     }
 
     public static String elementToString(Element element) throws IOException {
         final StringWriter sw = new StringWriter();
-        getXmlSerializer().setOutputCharStream(sw);
-        getXmlSerializer().serialize(element);
+        getFormattedXmlSerializer().setOutputCharStream(sw);
+        getFormattedXmlSerializer().serialize(element);
         return sw.toString();
     }
 
