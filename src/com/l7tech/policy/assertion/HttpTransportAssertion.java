@@ -9,6 +9,7 @@ package com.l7tech.policy.assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 /**
+ * Checks that a request was received through the HTTP transport layer.
  * @author alex
  * @version $Revision$
  */
