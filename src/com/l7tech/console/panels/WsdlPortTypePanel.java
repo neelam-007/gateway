@@ -60,11 +60,11 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "<html><b>Port Type</b><br>"+
+        return "<html><b>Port Type</b><br>" +
           "The <i>port type</i> element contains a set of abstract operations and the abstract " +
           "messages involved. " +
           "For RPC-style Web services a <i>portType</i> can be thought as an interface definition " +
-          "in which each method can be defined as an operation."+
+          "in which each method can be defined as an operation." +
           "</html>";
     }
 
@@ -111,16 +111,9 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
-        PortType portType = null;
-        Map portTypes = definition.getPortTypes();
-        if (portTypes.isEmpty()) {
-            portType = definition.createPortType();
-            portType.setQName(new QName(portTypeNameField.getText()));
-            portType.setUndefined(false);
-            definition.addPortType(portType);
-        } else {
-            portType = (PortType)portTypes.values().iterator().next();
-        }
+
+        PortType portType = getOrCreatePortType(definition);
+
         operationsModel = new WsdlOperationsTableModel(definition, portType);
         operationsTable.setModel(operationsModel);
         operationsTable.getTableHeader().setReorderingAllowed(false);
@@ -164,6 +157,12 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * @param settings the object representing wizard panel state
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
+        PortType p = getOrCreatePortType(definition);
+        String ptNameText = portTypeNameField.getText();
+        if (!p.getQName().getLocalPart().equals(ptNameText)) {
+            QName qn = new QName(p.getQName().getNamespaceURI(), ptNameText);
+            p.setQName(qn);
+        }
     }
 
     private ActionListener
@@ -264,6 +263,25 @@ public class WsdlPortTypePanel extends WizardStepPanel {
               setText(text);
           }
       };
+
+    /**
+     * Retrieve the port type. Create the new port type if necessary
+     * @return the port type
+     */
+    private PortType getOrCreatePortType(Definition def) {
+        PortType portType = null;
+        Map portTypes = def.getPortTypes();
+        if (portTypes.isEmpty()) {
+            portType = def.createPortType();
+            portType.setQName(new QName(portTypeNameField.getText()));
+            portType.setUndefined(false);
+            def.addPortType(portType);
+        } else {
+            portType = (PortType)portTypes.values().iterator().next();
+        }
+        return portType;
+    }
+
 
     {
 // do not edit this generated initializer!!! do not add your code here!!!

@@ -99,7 +99,10 @@ public class WsdlServicePanel extends WizardStepPanel {
         if (s == null || "".equals(s)) {
             portAddressField.setText("http://localhost:8080/ws/" + nameField.getText());
         }
-        portNameField.setText(definition.getQName().getLocalPart() + "Port");
+        s = portNameField.getText();
+        if (s == null || "".equals(s)) {
+            portNameField.setText(definition.getQName().getLocalPart() + "Port");
+        }
         bindingLabel.setText(getBinding(definition).getQName().getLocalPart());
     }
 

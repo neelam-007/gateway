@@ -75,6 +75,7 @@ public class WsdlCreateWizard extends Wizard {
                         WSDLFactory fac = WSDLFactory.newInstance();
                         WSDLWriter wsdlWriter = fac.newWSDLWriter();
                         StringWriter writer = new StringWriter();
+                        collect();
                         Definition definition = (Definition)wizardInput;
                         wsdlWriter.writeWSDL(definition, writer);
                         new RawWsdlDialog(writer.toString(), definition.getQName().getLocalPart());

@@ -1,13 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
-import com.l7tech.console.event.WizardAdapter;
-import com.l7tech.common.gui.widgets.WrappingLabel;
 
 import javax.swing.*;
-import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
@@ -15,6 +12,7 @@ import javax.swing.border.MatteBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
+import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -33,6 +31,24 @@ public class Wizard extends JDialog {
     private WizardStepPanel startPanel;
     private Wizard.Iterator wizardIterator;
     protected Object wizardInput;
+
+    /**
+     * is show description enabled for the panel steps
+     * @return true if enabled, false otherwise
+     */
+    public boolean isShowDescription() {
+        return showDescription;
+    }
+
+    /**
+     * set hte description enabled property
+     * @param b the show description property 
+     */
+    public void setShowDescription(boolean b) {
+        this.showDescription = b;
+    }
+
+    private boolean showDescription;
 
     protected EventListenerList listenerList = new EventListenerList();
 
@@ -56,6 +72,19 @@ public class Wizard extends JDialog {
     public final Object getCollectedInformation() {
         return wizardInput;
     }
+
+    /**
+     * instruct wizard to collect the information
+     */
+    public final void collect() {
+        Wizard.Iterator it = new Wizard.Iterator(startPanel);
+        while (it.hasNext()) {
+            WizardStepPanel p = it.next();
+            p.readSettings(wizardInput);
+            p.storeSettings(wizardInput);
+        }
+    }
+
 
     /**
      * Adds the specified wizard listener to receive events from
@@ -334,7 +363,7 @@ public class Wizard extends JDialog {
         stepDescriptionTextPane = new JTextPane();
         stepDescriptionTextPane.setEditorKit(new HTMLEditorKit());
         stepDescriptionTextPane.setEditable(false);
-        addWizardListener( new WizardAdapter() {
+        addWizardListener(new WizardAdapter() {
             /**
              * Invoked when the wizard page has been changed.
              *
@@ -521,6 +550,7 @@ public class Wizard extends JDialog {
         private WizardStepPanel wizardPanel;
         boolean selected;
         Font initialFont;
+
         WizardLabel(String label, WizardStepPanel panel, boolean selected) {
             this.wizardPanel = panel;
             setText(label);
@@ -541,7 +571,7 @@ public class Wizard extends JDialog {
          */
         public void setSelected(boolean b) {
             selected = b;
-            setFont(initialFont.deriveFont( selected ? Font.BOLD : Font.PLAIN, 12));
+            setFont(initialFont.deriveFont(selected ? Font.BOLD : Font.PLAIN, 12));
         }
 
         /**

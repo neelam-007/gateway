@@ -117,7 +117,11 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         }
         PortType portType = getPortType();
         portTypeName.setText(portType.getQName().getLocalPart());
-        portTypeBindingNameField.setText(portTypeName.getText() + "Binding");
+
+        String s = portTypeBindingNameField.getText();
+        if (s == null || "".equals(s)) {
+            portTypeBindingNameField.setText(portTypeName.getText() + "Binding");
+        }
 
         Binding binding = null;
         try {
