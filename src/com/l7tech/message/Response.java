@@ -19,6 +19,7 @@ import java.util.Iterator;
 public interface Response extends Message {
     /** WWW-Authenticate header */
     public static final String PARAM_HTTP_WWWAUTHENTICATE = PREFIX_HTTP_HEADER + ".WWW-Authenticate";
+    public static final String PARAM_HTTP_STATUS = PREFIX_HTTP + ".status";
 
     /**
      * Sets the InputStream pointing to the response from the protected service.
@@ -80,4 +81,5 @@ public interface Response extends Message {
 
     /** Indicates that the response is done and any resources that were opened during the course of the request can now be closed. */
     void close();
+
 }
