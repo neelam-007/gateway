@@ -304,15 +304,15 @@ public class Service {
 
             // transfer member headers into members
             Set memberHeaders = group.getMemberHeaders();
-            if (memberHeaders != null && memberHeaders.size() > 0) {
-                Set members = new HashSet();
-                for (Iterator i = members.iterator(); i.hasNext();) {
+            Set members = new HashSet();
+            if (memberHeaders != null) {
+                for (Iterator i = memberHeaders.iterator(); i.hasNext();) {
                     EntityHeader header = (EntityHeader)i.next();
                     User usr = userManager.headerToUser(header);
                     members.add(usr);
                 }
-                group.setMembers(members);
             }
+            group.setMembers(members);
 
             if (group.getOid() > 0) {
                 Group originalGroup = groupManager.findByPrimaryKey(Long.toString(group.getOid()));
