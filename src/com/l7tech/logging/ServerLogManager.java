@@ -61,8 +61,7 @@ public class ServerLogManager extends LogManager {
                 return Level.parse(level);
 
         } catch (NamingException e) {
-            // note, should not user logger here
-            e.printStackTrace(System.err);
+            System.err.println("could not read log level through naming context, setting default value.");
         }
         return Level.INFO;
     }
