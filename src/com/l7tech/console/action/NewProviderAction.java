@@ -75,16 +75,15 @@ public class NewProviderAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
-                IdentityProviderTypePanel typePanel = (
-                        new IdentityProviderTypePanel (
+                LdapIdentityProviderConfigPanel configPanel = (
                             new LdapIdentityProviderConfigPanel (
                                 new LdapGroupMappingPanel (
                                     new LdapUserMappingPanel(null)
-                ), false)));
+                ), true));
 
 
                 JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-                Wizard w = new CreateIdentityProviderWizard(f, typePanel);
+                Wizard w = new CreateIdentityProviderWizard(f, configPanel);
                 w.addWizardListener(wizardListener);
 
                 // register itself to listen to the addEvent

@@ -9,6 +9,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -24,9 +26,9 @@ import java.util.logging.Logger;
 public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
     /** Creates new form ServicePanel */
-    public LdapIdentityProviderConfigPanel(WizardStepPanel next, boolean showProviderType) {
+    public LdapIdentityProviderConfigPanel(WizardStepPanel next, boolean providerTypeSelectable) {
         super(next);
-        this.showProviderType = showProviderType;
+        this.providerTypeSelectable = providerTypeSelectable;
         initResources();
         initComponents();
     }
@@ -98,9 +100,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         if (ldapBindDNTextField != null) return ldapBindDNTextField;
 
         ldapBindDNTextField = new JTextField();
-        ldapBindDNTextField.setPreferredSize( new Dimension( 217, 20 ) );
-        ldapBindDNTextField.setMinimumSize( new Dimension( 217, 20 ) );
-        ldapBindDNTextField.setToolTipText( resources.getString( "ldapBindDNTextField.tooltip" ) );
+        ldapBindDNTextField.setPreferredSize(new Dimension(217, 20));
+        ldapBindDNTextField.setMinimumSize(new Dimension(217, 20));
+        ldapBindDNTextField.setToolTipText(resources.getString("ldapBindDNTextField.tooltip"));
 
         ldapBindDNTextField.setText("");
         return ldapBindDNTextField;
@@ -110,19 +112,19 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         if (ldapBindPassTextField != null) return ldapBindPassTextField;
 
         ldapBindPassTextField = new JTextField();
-        ldapBindPassTextField.setPreferredSize( new Dimension( 217, 20 ) );
-        ldapBindPassTextField.setMinimumSize( new Dimension( 217, 20 ) );
-        ldapBindPassTextField.setToolTipText( resources.getString( "ldapBindPassTextField.tooltip" ) );
+        ldapBindPassTextField.setPreferredSize(new Dimension(217, 20));
+        ldapBindPassTextField.setMinimumSize(new Dimension(217, 20));
+        ldapBindPassTextField.setToolTipText(resources.getString("ldapBindPassTextField.tooltip"));
 
         ldapBindPassTextField.setText("");
         return ldapBindPassTextField;
     }
 
     private IdentityProviderConfigManager getProviderConfigManager()
-      throws RuntimeException {
+            throws RuntimeException {
         IdentityProviderConfigManager ipc =
-          (IdentityProviderConfigManager)Locator.
-          getDefault().lookup(IdentityProviderConfigManager.class);
+                (IdentityProviderConfigManager) Locator.
+                getDefault().lookup(IdentityProviderConfigManager.class);
         if (ipc == null) {
             throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
         }
@@ -134,9 +136,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
      * This method is called from within the constructor to
      * initialize the dialog.
      */
-
-
-
     private void initComponents() {
 
         JPanel panel = new JPanel();
@@ -146,34 +145,44 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
         int rowIndex = 0;
 
-            // provider types
-            JLabel providerTypesLabel = new JLabel();
-            providerTypesLabel.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
-            providerTypesLabel.setText(resources.getString("providerTypeTextField.label"));
-            constraints = new GridBagConstraints();
-            constraints.gridx = 0;
-            constraints.gridy = rowIndex;
-            constraints.gridwidth = 1;
-            constraints.fill = GridBagConstraints.NONE;
-            constraints.anchor = GridBagConstraints.WEST;
-            constraints.weightx = 0.0;
-            constraints.insets = new Insets(12, 12, 0, 0);
-            panel.add(providerTypesLabel, constraints);
+        // provider types
+        JLabel providerTypesLabel = new JLabel();
+        providerTypesLabel.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
+        providerTypesLabel.setText(resources.getString("providerTypeTextField.label"));
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = rowIndex;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets(12, 0, 0, 0);
+        panel.add(providerTypesLabel, constraints);
 
-            constraints = new GridBagConstraints();
-            constraints.gridx = 1;
-            constraints.gridy = rowIndex++;
-            constraints.gridwidth = 1;
-            constraints.fill = GridBagConstraints.NONE;
-            constraints.anchor = GridBagConstraints.WEST;
-            constraints.weightx = 0.0;
-            constraints.insets = new Insets(12, 7, 0, 0);
-            panel.add(getProviderTypes(), constraints);
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = rowIndex++;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets(12, 30, 0, 0);
+        panel.add(getProviderTypes(), constraints);
+        add(panel);
 
-         if(!showProviderType) {
-             providerTypesLabel.setVisible(false);
-             getProviderTypes().setVisible(false);
-         }
+        getProviderTypes().setEnabled(providerTypeSelectable);
+    }
+
+    private JPanel getConfigPanel() {
+        if( configPanel != null)  return configPanel;
+
+        configPanel = new JPanel();
+
+        configPanel.setLayout(new GridBagLayout());
+
+        GridBagConstraints constraints;
+
+        int rowIndex = 0;
 
         // Provider ID label
         JLabel providerNameLabel = new JLabel();
@@ -188,7 +197,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(providerNameLabel, constraints);
+        configPanel.add(providerNameLabel, constraints);
 
         // Provider ID text field
         constraints = new GridBagConstraints();
@@ -199,7 +208,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 7, 0, 11);
-        panel.add(getProviderNameTextField(), constraints);
+        configPanel.add(getProviderNameTextField(), constraints);
 
         // LDAP host
         JLabel ldapHostLabel = new JLabel();
@@ -213,7 +222,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(ldapHostLabel, constraints);
+        configPanel.add(ldapHostLabel, constraints);
 
         // ldap host text field
         constraints = new GridBagConstraints();
@@ -224,7 +233,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 7, 0, 11);
-        panel.add(getLdapHostTextField(), constraints);
+        configPanel.add(getLdapHostTextField(), constraints);
 
         // search base label
         JLabel ldapSearchBaseLabel = new JLabel();
@@ -238,7 +247,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(ldapSearchBaseLabel, constraints);
+        configPanel.add(ldapSearchBaseLabel, constraints);
 
         // search base text field
         constraints = new GridBagConstraints();
@@ -249,12 +258,12 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 7, 0, 0);
-        panel.add(getLdapSearchBaseTextField(), constraints);
+        configPanel.add(getLdapSearchBaseTextField(), constraints);
 
         // Binding DN label
         JLabel ldapBindDNLabel = new JLabel();
-        ldapBindDNLabel.setToolTipText( resources.getString( "ldapBindDNTextField.tooltip" ) );
-        ldapBindDNLabel.setText( resources.getString( "ldapBindDNTextField.label" ) );
+        ldapBindDNLabel.setToolTipText(resources.getString("ldapBindDNTextField.tooltip"));
+        ldapBindDNLabel.setText(resources.getString("ldapBindDNTextField.label"));
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = rowIndex;
@@ -262,8 +271,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets( 12, 12, 0, 0 );
-        panel.add( ldapBindDNLabel, constraints );
+        constraints.insets = new Insets(12, 12, 0, 0);
+        configPanel.add(ldapBindDNLabel, constraints);
 
         // Binding DN textfield
         constraints = new GridBagConstraints();
@@ -273,13 +282,13 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets( 12, 7, 0, 0 );
-        panel.add( getLdapBindDNTextField(), constraints );
+        constraints.insets = new Insets(12, 7, 0, 0);
+        configPanel.add(getLdapBindDNTextField(), constraints);
 
         // Binding password label
         JLabel ldapBindPassLabel = new JLabel();
-        ldapBindPassLabel.setToolTipText( resources.getString( "ldapBindPassTextField.tooltip" ) );
-        ldapBindPassLabel.setText( resources.getString( "ldapBindPassTextField.label" ) );
+        ldapBindPassLabel.setToolTipText(resources.getString("ldapBindPassTextField.tooltip"));
+        ldapBindPassLabel.setText(resources.getString("ldapBindPassTextField.label"));
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = rowIndex;
@@ -287,8 +296,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets( 12, 12, 0, 0 );
-        panel.add( ldapBindPassLabel, constraints );
+        constraints.insets = new Insets(12, 12, 0, 0);
+        configPanel.add(ldapBindPassLabel, constraints);
 
         // Binding password textfield
         constraints = new GridBagConstraints();
@@ -298,8 +307,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets( 12, 7, 0, 0 );
-        panel.add( getLdapBindPassTextField(), constraints );
+        constraints.insets = new Insets(12, 7, 0, 0);
+        configPanel.add(getLdapBindPassTextField(), constraints);
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
@@ -310,62 +319,27 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 7, 0, 10);
 
-        add(panel);
+        return configPanel;
     }
 
-
-    private ListCellRenderer
-      providerTypeRenderer = new DefaultListCellRenderer() {
-          /**
-           * Return a component that has been configured to display the identity provider
-           * type value.
-           *
-           * @param list The JList we're painting.
-           * @param value The value returned by list.getModel().getElementAt(index).
-           * @param index The cells index.
-           * @param isSelected True if the specified cell was selected.
-           * @param cellHasFocus True if the specified cell has the focus.
-           * @return A component whose paint() method will render the specified value.
-           *
-           * @see JList
-           * @see ListSelectionModel
-           * @see ListModel
-           */
-          public Component getListCellRendererComponent(JList list,
-                                                        Object value,
-                                                        int index,
-                                                        boolean isSelected, boolean cellHasFocus) {
-              super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-              if (!(value instanceof LdapIdentityProviderConfig)) {
-                  setText(value.toString());
-              } else {
-                  LdapIdentityProviderConfig type = (LdapIdentityProviderConfig)value;
-                  setText(type.getName());
-              }
-
-              return this;
-          }
-
-      };
+    /**
+     * Indicate this panel is not the last one. The user must go to the panel.
+     *
+     * @return false
+     */
+    public boolean canFinish() {
+        return finishAllowed;
+    }
 
     /**
-      * Indicate this panel is not the last one. The user must go to the panel.
-      *
-      * @return false
-      */
-     public boolean canFinish() {
-         return finishAllowed;
-     }
-
-     /**
-      * Test whether the step is finished and it is safe to advance to the next one.  This method
-      * should return quickly.
-      *
-      * @return true if the panel is valid, false otherwis
-      */
-     public boolean canAdvance() {
-         return advanceAllowed;
-     }
+     * Test whether the step is finished and it is safe to advance to the next one.  This method
+     * should return quickly.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canAdvance() {
+        return advanceAllowed;
+    }
 
 
     /**
@@ -386,14 +360,41 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 log.log(Level.WARNING, "cannot retrieve templates", e);
                 templates = new LdapIdentityProviderConfig[0];
             }
-            Object[] items = new Object[1+templates.length];
+            Object[] items = new Object[1 + templates.length];
             items[0] = "Select the provider type";
             for (int i = 0; i < templates.length; i++) {
-                items[i+1] = templates[i];
+                items[i + 1] = templates[i];
             }
             providerTypesCombo = new JComboBox(items);
             providerTypesCombo.setRenderer(providerTypeRenderer);
             providerTypesCombo.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
+            providerTypesCombo.setPreferredSize(new Dimension(217, 20));
+            providerTypesCombo.setMinimumSize(new Dimension(217, 20));
+
+            final JPanel thisPanel = this;
+            providerTypesCombo.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    Object o = providerTypesCombo.getSelectedItem();
+
+                    if (o instanceof LdapIdentityProviderConfig) {
+                        if(configPanel == null) {
+                            thisPanel.add(getConfigPanel());
+                        } else {
+                            getConfigPanel().setVisible(true);
+                            updateControlButtonState();
+                        }
+                    } else {
+                        advanceAllowed = false;
+                        finishAllowed = false;
+                        if(configPanel != null) {
+                            getConfigPanel().setVisible(false);
+                        }
+                    }
+
+                    // notify the wizard to update the state of the control buttons
+                    notifyListeners();
+                }
+            });
         }
         return providerTypesCombo;
     }
@@ -442,15 +443,27 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     }
                 }
 
-                providerTypesCombo.setEnabled(false);
                 updateControlButtonState();
             }
         }
     }
 
+    /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
     public void storeSettings(Object settings) {
 
-        if (settings instanceof LdapIdentityProviderConfig) {
+        if (settings != null) {
+            LdapIdentityProviderConfig ldapType = (LdapIdentityProviderConfig) providerTypesCombo.getSelectedItem();
+
+
+            ((LdapIdentityProviderConfig) settings).setTemplateName(ldapType.getTemplateName());
+            ((LdapIdentityProviderConfig) settings).setGroupMappings(ldapType.getGroupMappings());
+            ((LdapIdentityProviderConfig) settings).setUserMappings(ldapType.getUserMappings());
 
             ((LdapIdentityProviderConfig) settings).setLdapUrl(getLdapHostTextField().getText());
             ((LdapIdentityProviderConfig) settings).setName(getProviderNameTextField().getText());
@@ -484,6 +497,40 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         }
     };
 
+    private ListCellRenderer
+            providerTypeRenderer = new DefaultListCellRenderer() {
+                /**
+                 * Return a component that has been configured to display the identity provider
+                 * type value.
+                 *
+                 * @param list The JList we're painting.
+                 * @param value The value returned by list.getModel().getElementAt(index).
+                 * @param index The cells index.
+                 * @param isSelected True if the specified cell was selected.
+                 * @param cellHasFocus True if the specified cell has the focus.
+                 * @return A component whose paint() method will render the specified value.
+                 *
+                 * @see JList
+                 * @see ListSelectionModel
+                 * @see ListModel
+                 */
+                public Component getListCellRendererComponent(JList list,
+                                                              Object value,
+                                                              int index,
+                                                              boolean isSelected, boolean cellHasFocus) {
+                    super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                    if (!(value instanceof LdapIdentityProviderConfig)) {
+                        setText(value.toString());
+                    } else {
+                        LdapIdentityProviderConfig type = (LdapIdentityProviderConfig) value;
+                        setText(type.getName());
+                    }
+
+                    return this;
+                }
+
+            };
+
     private ResourceBundle resources = null;
     private JTextField providerNameTextField = null;
     private JTextField ldapBindPassTextField = null;
@@ -493,8 +540,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JComboBox providerTypesCombo = null;
     private LdapIdentityProviderConfig[] templates = null;
     static final Logger log = Logger.getLogger(LdapIdentityProviderConfigPanel.class.getName());
-    private boolean showProviderType;
+    private boolean providerTypeSelectable;
     private boolean finishAllowed = false;
     private boolean advanceAllowed = false;
+    private JPanel configPanel = null;
 
 }

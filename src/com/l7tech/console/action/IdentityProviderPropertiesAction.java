@@ -88,7 +88,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                             configPanel = new LdapIdentityProviderConfigPanel(
                                               new LdapGroupMappingPanel(
                                                   new LdapUserMappingPanel(null)
-                                            ), true);
+                                            ), false);
                         }
 
                         Wizard w = new EditIdentityProviderWizard(f, configPanel, iProvider);
