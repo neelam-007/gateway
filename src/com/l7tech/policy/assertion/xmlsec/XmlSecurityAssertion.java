@@ -1,6 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.ConfidentialityAssertion;
+
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
