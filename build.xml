@@ -839,6 +839,9 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <regexp pattern="com.l7tech.server.log.FileHandler.path=.*"/>
             <substitution expression="com.l7tech.server.log.FileHandler.path=${install.target.logs}"/>
         </replaceregexp>
+
+        <!-- Copy cluster_hostname -->
+        <copy file="${src.root}/etc/cluser_hostname tofile="${install.src.cluster_hostname}"/>
     </target>
 
     <target name="INTERNAL-ssg-install-properties-upgrade" unless="install.full">
@@ -858,6 +861,9 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <!-- Copy hibernate.properties -->
         <property name="install.src.hibernate.properties.dist" value="${install.src.conf}/hibernate.properties-dist"/>
         <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" tofile="${install.src.hibernate.properties.dist}"/>
+
+        <!-- Copy cluster_hostname -->
+        <copy file="${src.root}/etc/cluser_hostname tofile="${install.src.cluster_hostname}-dist"/>
     </target>
 
     <target name="INTERNAL-ssg-install-keystores" if="install.full" depends="INTERNAL-ssg-install-genpass">
@@ -1019,6 +1025,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
         <property name="install.src.passwords.txt" value="${install.src.base}/passwords.txt"/>
         <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
+        <property name="install.src.cluster_hostname" value="${install.src.conf}/cluster_hostname"/>
         <property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
         <property name="install.src.server.xml" value="${install.src.tomcat}/conf/server.xml"/>
         <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
