@@ -20,7 +20,13 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
 
     protected boolean userIsMemberOfGroup(long userOid, String groupName) {
         com.l7tech.identity.User user = findUserByOid(userOid);
+        if (user == null) return false;
         java.util.Collection groups = user.getGroups();
+        if (groups == null)
+        {
+            System.err.println("InternalIDSecurityAxisHandler.userIsMemberOfGroup user " + userOid + " has no group memberships.");
+            return false;
+        }
         java.util.Iterator i = groups.iterator();
         while (i.hasNext()) {
             com.l7tech.identity.Group group = (com.l7tech.identity.Group)i.next();
@@ -28,6 +34,7 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
                 return true;
             }
         }
+        System.err.println("InternalIDSecurityAxisHandler.userIsMemberOfGroup: user oid " + userOid + "denied membership to group " + groupName);
         return false;
     }
 
@@ -99,21 +106,6 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
             e.printStackTrace(System.err);
         }
     }
-
-
-    /*
-    public static void main (String[] args) throws Exception {
-        // calculate the digest for a specific set of values
-        java.security.MessageDigest md5Helper = java.security.MessageDigest.getInstance("MD5");
-        org.apache.catalina.util.MD5Encoder md5Encoder = new org.apache.catalina.util.MD5Encoder();
-        String digestValue = "ssgadmin::ssgadminpasswd";
-        byte[] digest = md5Helper.digest(digestValue.getBytes());
-        System.out.println(md5Encoder.encode(digest));
-
-        //result: 60189d5f68d564f9cb83e11bc2ae92e9
-
-    }
-    */
 
     /**
      * key used by the com.l7tech.adminws.security handlers to get or set the authenticated
