@@ -165,6 +165,8 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
                 throw new PolicyAssertionException("failure decrypting document", e);
             } catch (SAXException e) {
                 throw new PolicyAssertionException("failure decrypting document", e);
+            } catch (XMLSecurityElementNotFoundException e) {
+                throw new PolicyAssertionException("failure decrypting document", e);
             }
             log.info("message decrypted");
         }
