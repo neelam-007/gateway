@@ -61,11 +61,6 @@ public class ServiceAdminStub implements ServiceAdmin {
         }
     }
 
-    public PolicyValidatorResult validatePolicy(String assertion, boolean issoap) throws RemoteException {
-        // todo
-        return null;
-    }
-
     /**
      * saves a published service along with it's policy assertions
      * @param service
@@ -93,6 +88,11 @@ public class ServiceAdminStub implements ServiceAdmin {
             throw new RemoteException("Could not find service oid= " + id);
         }
 
+    }
+
+    public PolicyValidatorResult validatePolicy(String policyXml, long serviceId) throws RemoteException {
+        // todo
+        return null;
     }
 
     /**

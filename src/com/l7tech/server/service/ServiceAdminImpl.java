@@ -114,11 +114,15 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
         }
     }
 
-    public PolicyValidatorResult validatePolicy(String policyXml, boolean isSoap) throws RemoteException {
+    public PolicyValidatorResult validatePolicy(String policyXml, long serviceid) throws RemoteException {
         try {
+            PublishedService service = getServiceManager().findByPrimaryKey(serviceid);
             Assertion assertion = WspReader.parse(policyXml);
             PolicyValidator validator = new ServerPolicyValidator();
-            return validator.validate(assertion, isSoap);
+            return validator.validate(assertion, service);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "cannot get existing service: " + serviceid, e);
+            throw new RemoteException("cannot get existing service: " + serviceid, e);
         } catch (IOException e) {
             logger.log(Level.WARNING, "cannot parse passed policy xml: " + policyXml, e);
             throw new RemoteException("cannot parse passed policy xml", e);

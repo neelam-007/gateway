@@ -37,14 +37,12 @@ class PathValidator {
     PolicyValidatorResult result;
     List deferredValidators = new ArrayList();
     private AssertionPath assertionPath;
-    private boolean isServiceSoap;
     private PublishedService service;
     private Collection wsdlBindingOperations;
 
-    PathValidator(AssertionPath ap, PolicyValidatorResult r, boolean isSoap, PublishedService service) {
+    PathValidator(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
         result = r;
         assertionPath = ap;
-        isServiceSoap = isSoap;
         this.service = service;
     }
 
@@ -385,7 +383,7 @@ class PathValidator {
 
 
     private void processSoapSpecific(Assertion a) {
-        if (!this.isServiceSoap) {
+        if (!service.isSoap()) {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
               "This assertion only works with soap services.", null));
         }

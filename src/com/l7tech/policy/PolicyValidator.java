@@ -13,7 +13,7 @@ import java.util.Iterator;
  * methods.
  *
  * Once a PolicyValidator object has been created, it can be used to validate
- * policy/assertion trees by calling the {@link #validate(Assertion, boolean)} method
+ * policy/assertion trees by calling validate method
  * and passing it the <code>Asserion</code> to be validated.
  *
  * the result is returned in an object of <code>PolicyValidatorResult</code>
@@ -41,18 +41,8 @@ public abstract class PolicyValidator {
 
     /**
      * Validates the specified assertion tree.
-     *
-     * @param assertion the assertion tree to be validated.
-     * @return the result of the validation
      */
-    public PolicyValidatorResult validate(Assertion assertion, boolean isSoap) {
-        return validate(assertion, isSoap, null);
-    }
-
-    /**
-     * Does all the validation done by other validate method + validations that require access to service wsdl.
-     */
-    public PolicyValidatorResult validate(Assertion assertion, boolean isSoap, PublishedService service) {
+    public PolicyValidatorResult validate(Assertion assertion, PublishedService service) {
         assertion.treeChanged();
         if (assertion == null) {
             throw new IllegalArgumentException();
@@ -64,7 +54,7 @@ public abstract class PolicyValidator {
 
         for (Iterator iterator = path.paths().iterator(); iterator.hasNext();) {
             AssertionPath assertionPath = (AssertionPath)iterator.next();
-            validatePath(assertionPath, result, isSoap, service);
+            validatePath(assertionPath, result, service);
         }
         return result;
     }
@@ -75,5 +65,5 @@ public abstract class PolicyValidator {
      * @param ap the assertion path to validate
      * @param r  the result collect parameter
      */
-    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r, boolean isSoap, PublishedService service);
+    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service);
 }

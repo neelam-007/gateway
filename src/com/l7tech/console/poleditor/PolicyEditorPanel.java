@@ -143,7 +143,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     public void validatePolicy() {
         final PolicyValidatorResult result = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(),
-                                                                                   service.isSoap(),
                                                                                    service);
         displayPolicyValidateResult(pruneDuplicates(result));
     }
@@ -451,7 +450,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 protected void performAction() {
                     PolicyValidatorResult result
                       = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(),
-                                                              service.isSoap(),
                                                               service);
                     displayPolicyValidateResult(pruneDuplicates(result));
 
@@ -466,12 +464,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     private String fullValidate() {
         PolicyValidatorResult result = PolicyValidator.getDefault().
-                                            validate(rootAssertion.asAssertion(), service.isSoap());
+                                            validate(rootAssertion.asAssertion(), service);
         String policyXml = null;
         try {
             policyXml = WspWriter.getPolicyXml(rootAssertion.asAssertion());
             PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
-                                                validatePolicy(policyXml, service.isSoap());
+                                                validatePolicy(policyXml, service.getOid());
             if (result2.getErrorCount() > 0) {
                 for (Iterator i = result2.getErrors().iterator(); i.hasNext();) {
                     result.addError((com.l7tech.policy.PolicyValidatorResult.Error)i.next());
