@@ -62,7 +62,8 @@ public class TokenServiceClient {
      */
     public static Document createRequestSecurityTokenMessage(X509Certificate clientCertificate,
                                                       PrivateKey clientPrivateKey,
-                                                      String desiredTokenType)
+                                                      String desiredTokenType,
+                                                      Date timestampCreatedDate)
             throws CertificateException
     {
         try {
@@ -85,6 +86,7 @@ public class TokenServiceClient {
             req.setSenderCertificate(clientCertificate);
             req.setSenderPrivateKey(clientPrivateKey);
             req.getElementsToSign().add(body);
+            req.setTimestampCreatedDate(timestampCreatedDate);
             wssDecorator.decorateMessage(msg, req);
 
             return msg;
@@ -116,8 +118,9 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
+        Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                TOKENTYPE_SECURITYCONTEXT);
+                                                                TOKENTYPE_SECURITYCONTEXT, timestampCreatedDate);
         Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
 
         if (!(result instanceof SecureConversationSession))
@@ -132,8 +135,9 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
+        Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                "saml:Assertion");
+                                                                "saml:Assertion", timestampCreatedDate);
         requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
 

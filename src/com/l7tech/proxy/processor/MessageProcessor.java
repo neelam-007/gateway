@@ -36,14 +36,12 @@ import org.xml.sax.SAXException;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
 import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
@@ -72,17 +70,6 @@ public class MessageProcessor {
     private WssProcessor wssProcessor = new WssProcessorImpl();
     private WssDecorator wssDecorator = new WssDecoratorImpl();
     public static final String ENCODING = "UTF-8";
-
-    private static final Method METHOD_getTimestamp;
-    static {
-        final Method m;
-        try {
-            m = ProcessorResult.class.getMethod("getTimestamp", new Class[0]);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Unable to find needed methods of ProcessorResult (wrong class version?)", e);
-        }
-        METHOD_getTimestamp = m;
-    }
 
     static {
         // Configure SSL for outgoing connections
@@ -374,6 +361,7 @@ public class MessageProcessor {
 
                     // Do all WSS processing all at once
                     log.info("Running pending request through WS-Security decorator");
+                    req.getWssRequirements().setTimestampCreatedDate(req.getSsg().dateTranslatorToSsg().translate(new Date()));
                     wssDecorator.decorateMessage(req.getDecoratedSoapEnvelope(), req.getWssRequirements());
                 }
 
@@ -479,7 +467,7 @@ public class MessageProcessor {
             InvalidDocumentFormatException, ProcessorException, BadSecurityContextException
     {
         URL url = getUrl(req);
-        Ssg ssg = req.getSsg();
+        final Ssg ssg = req.getSsg();
 
         HttpClient client = new HttpClient();
         HttpState state = client.getState();
@@ -650,24 +638,15 @@ public class MessageProcessor {
                                                    haveKey ? SsgKeyStoreManager.getClientCert(ssg) : null,
                                                    haveKey ? SsgKeyStoreManager.getClientCertPrivateKey(ssg) : null,
                                                    scf);
-            responseDocument = processorResultRaw.getUndecoratedMessage();
-            InvocationHandler handler = new InvocationHandler() {
-
-                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                    if (METHOD_getTimestamp.equals(method)) {
-                        // Override getTimestamp
-
-                    }
-                    return method.invoke(processorResultRaw, args);
+            // Translate timestamp in result from SSG time to local time
+            final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
+            ProcessorResult processorResult = new ProcessorResultWrapper(processorResultRaw) {
+                public WssTimestamp getTimestamp() {
+                    return new WssTimestampWrapper(wssTimestampRaw, ssg.dateTranslatorFromSsg());
                 }
             };
-            ProcessorResult processorResult =
-                    (ProcessorResult) Proxy.newProxyInstance(ProcessorResult.class.getClassLoader(),
-                                                                          new Class[] { ProcessorResult.class },
-                                                                          handler);
 
-
-
+            responseDocument = processorResult.getUndecoratedMessage();
             SsgResponse response = new SsgResponse(responseDocument, processorResult, status, headers);
             if (status == 401 || status == 402) {
                 req.setLastErrorResponse(response);

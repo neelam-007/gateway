@@ -60,24 +60,27 @@ public class PolicyServiceClient {
 
     public static Document createSignedGetPolicyRequest(String serviceId,                                                  
                                                   X509Certificate clientCert,
-                                                  PrivateKey clientKey)
+                                                  PrivateKey clientKey,
+                                                  Date timestampCreatedDate)
             throws GeneralSecurityException
     {
-        return createSignedGetPolicyRequest(serviceId, null, clientCert, clientKey);
+        return createSignedGetPolicyRequest(serviceId, null, clientCert, clientKey, timestampCreatedDate);
     }
 
     public static Document createSignedGetPolicyRequest(String serviceId,                                                  
                                                   SamlHolderOfKeyAssertion samlAss,
-                                                  PrivateKey clientKey)
+                                                  PrivateKey clientKey,
+                                                  Date timestampCreatedDate)
             throws GeneralSecurityException
     {
-        return createSignedGetPolicyRequest(serviceId, samlAss, null, clientKey);
+        return createSignedGetPolicyRequest(serviceId, samlAss, null, clientKey, timestampCreatedDate);
     }
     
     private static Document createSignedGetPolicyRequest(String serviceId,
                                                          SamlHolderOfKeyAssertion samlAss,
                                                          X509Certificate clientCert,
-                                                         PrivateKey clientKey)
+                                                         PrivateKey clientKey,
+                                                         Date timestampCreatedDate)
             throws GeneralSecurityException
     {
         Document msg = createGetPolicyRequest(serviceId);
@@ -101,6 +104,7 @@ public class PolicyServiceClient {
             req.getElementsToSign().add(sid);
             req.getElementsToSign().add(body);
             req.getElementsToSign().add(mid);
+            req.setTimestampCreatedDate(timestampCreatedDate);
             decorator.decorateMessage(msg, req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
@@ -441,7 +445,8 @@ public class PolicyServiceClient {
                           ssg.getSsgAddress(),
                           useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
                           SecureSpanConstants.POLICY_SERVICE_FILE);
-        Document requestDoc = createSignedGetPolicyRequest(serviceId, clientCert, clientKey);
+        Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
+        Document requestDoc = createSignedGetPolicyRequest(serviceId, clientCert, clientKey, timestampCreatedDate);
         return obtainResponse(url, ssg, requestDoc, null, serverCertificate, clientCert, clientKey);
     }
 
@@ -504,7 +509,8 @@ public class PolicyServiceClient {
                           ssg.getSsgAddress(),
                           useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
                           SecureSpanConstants.POLICY_SERVICE_FILE);
-        Document requestDoc = createSignedGetPolicyRequest(serviceId, samlAss, subjectPrivateKey);
+        Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
+        Document requestDoc = createSignedGetPolicyRequest(serviceId, samlAss, subjectPrivateKey, timestampCreatedDate);
         return obtainResponse(url, ssg, requestDoc, null, serverCertificate, samlAss.getSubjectCertificate(), subjectPrivateKey);
     }
 

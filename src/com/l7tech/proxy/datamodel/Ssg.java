@@ -1,6 +1,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.DateTranslator;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.proxy.ClientProxy;
@@ -937,25 +938,49 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.timeOffset = timeOffset;
     }
 
+    private DateTranslator fromSsgDateTranslator = new DateTranslator() {
+        public Date translate(Date source) {
+            if (source == null)
+                return null;
+            final long timeOffset = getTimeOffset();
+            if (timeOffset == 0)
+                return source;
+            final Date result = new Date(source.getTime() - timeOffset);
+            log.log(Level.FINE, "Translating date from SSG clock " + source + " to local clock " + result);
+            return result;
+        }
+    };
+
     /**
      * Translate a date and time from the SSG's clock into our local clock.  Leaves the
      * date unchanged if a TimeOffset is not set for this SSG.  This is used to work around
      * clock-skew between the Agent and this SSG; see getTimeOffset() for details.
-     * @param ssgTime the Date from the SSG's clock
-     * @return the Date translated according to the Agent's local clock setting
+     * @return a DateTranslator that will translate according to the Agent's local clock setting
      */
-    public Date translateDateFromSsg(Date ssgTime) {
-        return new Date(ssgTime.getTime() - getTimeOffset());
+    public DateTranslator dateTranslatorFromSsg() {
+        return fromSsgDateTranslator;
     }
+
+    private DateTranslator toSsgDateTranslator = new DateTranslator() {
+        public Date translate(Date source) {
+            if (source == null)
+                return null;
+            final long timeOffset = getTimeOffset();
+            if (timeOffset == 0)
+                return source;
+            final Date result = new Date(source.getTime() + timeOffset);
+            log.log(Level.FINE, "Translating date from local clock " + source + " to SSG clock " + result);
+            return result;
+        }
+    };
 
     /**
      * Translate a date and time from the Agent's local clock into the SSG's clock.  Leaves
      * the date unchanged if a TimeOffset is not set for this SSG.  This is used to work around
      * clock-skew between the Agent and this SSG; see getTimeOFfset() for details.
-     * @param localTime the Date from our local clock
-     * @return the Date translated according to the SSG's clock setting
+     * @return a DateTranslator that will translate according to the SSG's clock setting
      */
-    public Date translateDateToSsg(Date localTime) {
-        return new Date(localTime.getTime() + getTimeOffset());
+    public DateTranslator dateTranslatorToSsg() {
+        return toSsgDateTranslator;
     }
 }

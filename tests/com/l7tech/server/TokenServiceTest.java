@@ -15,15 +15,14 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.proxy.util.TokenServiceClient;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 
-import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
 import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -46,7 +45,8 @@ public class TokenServiceTest extends TestCase {
     public void testTokenServiceClient() throws Exception {
         Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(TestDocuments.getDotNetServerCertificate(),
                                                                     TestDocuments.getDotNetServerPrivateKey(),
-                                                                    TokenServiceClient.TOKENTYPE_SECURITYCONTEXT);
+                                                                    TokenServiceClient.TOKENTYPE_SECURITYCONTEXT,
+                                                                    null);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
         final TokenService service = new TokenService(TestDocuments.getDotNetServerPrivateKey(),
@@ -85,7 +85,8 @@ public class TokenServiceTest extends TestCase {
         Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(
                 subjectCertificate,
                 subjectPrivateKey,
-                "saml:Assertion");
+                "saml:Assertion",
+                null);
         requestMsg.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 

@@ -7,9 +7,9 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.TestIdentityProvider;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.SoapRequest;
@@ -18,16 +18,16 @@ import com.l7tech.message.TestSoapRequest;
 import com.l7tech.message.TestSoapResponse;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.util.PolicyServiceClient;
@@ -36,9 +36,9 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 
-import java.util.logging.Logger;
-import java.security.GeneralSecurityException;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.logging.Logger;
 
 /**
  * Unit tests for PolicyService.
@@ -76,7 +76,8 @@ public class PolicyServiceTest extends TestCase {
         else {
             request = PolicyServiceClient.createSignedGetPolicyRequest("123",
                                                                  TestDocuments.getEttkClientCertificate(),
-                                                                 TestDocuments.getEttkClientPrivateKey());
+                                                                 TestDocuments.getEttkClientPrivateKey(),
+                                                                 null);
         }
         assertNotNull(request);
         log.info("Request (pretty-printed): " + XmlUtil.nodeToFormattedString(request));

@@ -417,7 +417,7 @@ public class PendingRequest {
             ssg.secureConversationExpiryDate(expiry);
         } else {
             Calendar expiry = Calendar.getInstance(UTC_TIME_ZONE);
-            expiry.setTime(s.getExpiryDate());
+            expiry.setTime(ssg.dateTranslatorFromSsg().translate(s.getExpiryDate()));
             secureConversationExpiryDate = expiry;
             ssg.secureConversationExpiryDate(expiry);
             Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
