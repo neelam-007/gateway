@@ -7,8 +7,10 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.identity.ldap.LdapIdentityProvider;
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
+import com.l7tech.common.util.Locator;
 
 import java.util.*;
 
@@ -20,11 +22,12 @@ import java.util.*;
 public class IdentityProviderFactory {
     public static Collection findAllIdentityProviders(IdentityProviderConfigManager manager) throws FindException {
         List providers = new ArrayList();
-        Iterator i = manager.findAll().iterator();
-        IdentityProviderConfig config;
+        Iterator i = manager.findAllHeaders().iterator();
+        EntityHeader header;
         while (i.hasNext()) {
-            config = (IdentityProviderConfig)i.next();
-            providers.add(makeProvider(config));
+            header = (EntityHeader)i.next();
+            IdentityProvider provider = getProvider(header.getOid());
+            if ( provider != null ) providers.add(provider);
         }
         return Collections.unmodifiableList(providers);
     }
@@ -42,29 +45,53 @@ public class IdentityProviderFactory {
         }
     }
 
-    public synchronized static IdentityProvider makeProvider(IdentityProviderConfig config) {
-        try {
-            if (providers == null) providers = new HashMap();
-            IdentityProvider existingProvider = (IdentityProvider)providers.get(new Long(config.getOid()));
-            if (existingProvider == null) {
-                if (config.type() == IdentityProviderType.LDAP)
-                    existingProvider = new LdapIdentityProvider();
-                else if (config.type() == IdentityProviderType.INTERNAL)
-                    existingProvider = new InternalIdentityProviderServer();
-                /*else if ( config.type() == IdentityProviderType.MSAD)
-                    existingProvider = new MsadIdentityProviderServer();*/
-                else throw new RuntimeException("no provider type specified.");
-                existingProvider.initialize(config);
-                providers.put(new Long(config.getOid()), existingProvider);
+    /**
+     * Returns the {@link IdentityProvider} corresponding to the specified ID.  If possible it will be a cached version,
+     * but in all cases it will be up-to-date with respect to the database.
+     *
+     * @param identityProviderOid the OID of the IdentityProviderConfig record ({@link IdProvConfManagerServer#INTERNALPROVIDER_SPECIAL_OID} for the Internal ID provider)
+     * @return the IdentityProvider, or null if it's not in the database (either it was deleted or never existed)
+     * @throws FindException
+     */
+    public synchronized static IdentityProvider getProvider(long identityProviderOid) throws FindException {
+        IdProvConfManagerServer configManager = (IdProvConfManagerServer)Locator.getDefault().lookup( IdentityProviderConfigManager.class );
+        Long oid = new Long(identityProviderOid);
+
+        IdentityProvider cachedProvider = (IdentityProvider)providers.get(oid);
+        if ( cachedProvider != null && identityProviderOid != IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID ) {
+            Integer dbVersion = configManager.getVersion(identityProviderOid);
+            if ( dbVersion == null ) {
+                // It's been deleted
+                providers.remove(oid);
+                return null;
+            } else if ( dbVersion.longValue() != cachedProvider.getConfig().getVersion() ) {
+                // It's old, force a reload
+                cachedProvider = null;
             }
-            return existingProvider;
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Couldn't locate an implementation for IdentityProviderConfig " + config.getName() + " (#" + config.getOid() + "): " + e.toString());
         }
+
+        if ( cachedProvider == null ) {
+            IdentityProviderConfig config = configManager.findByPrimaryKey(oid.longValue());
+            if ( config == null ) throw new FindException("Couldn't find IdentityProviderConfig with oid=" + oid );
+
+            if ( oid.longValue() == IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID ) {
+                cachedProvider = new InternalIdentityProviderServer();
+            } else {
+                if ( config.type() == IdentityProviderType.LDAP ) {
+                    cachedProvider = new LdapIdentityProvider();
+                } else {
+                    throw new RuntimeException( "Can't initialize an identity cachedProvider with type " + config.type() );
+                }
+            }
+            cachedProvider.initialize(config);
+            providers.put(oid,cachedProvider);
+        }
+
+        return cachedProvider;
     }
 
     // note these need to be singletons so that they can be invalidates in case of deletion
-    private static HashMap providers = null;
+    private static Map providers = new HashMap();
 
     public static final int MAX_AGE = 60 * 1000;
 }
