@@ -77,6 +77,8 @@
         <property name="build.etc" value="${build.dir}/etc"/>
         <!-- javadoc home -->
         <property name="javadoc.home" value="${doc.root}/javadoc"/>
+        <property name="app.name" value="Layer 7 SecureSpan Suite"/>
+        <property name="app.version" value="HEAD"/>
     </target>
 
 
