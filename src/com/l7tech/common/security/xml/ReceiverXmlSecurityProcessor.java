@@ -236,8 +236,8 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
 
                 // Bug 838: Precondition must have matched; make sure these two exceptions get propagated
-                if ( xmlSecurityElementNotFoundException != null ) throw xmlSecurityElementNotFoundException;
                 if ( signatureNotFoundException != null ) throw signatureNotFoundException;
+                if ( xmlSecurityElementNotFoundException != null ) throw xmlSecurityElementNotFoundException;
 
                 logger.fine("response message element decrypted");
             }
