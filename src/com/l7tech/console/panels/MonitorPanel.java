@@ -2,16 +2,10 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.Preferences;
-import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.ConnectionEvent;
-import com.l7tech.console.MainWindow;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.util.ResourceBundle;
 
 /**
