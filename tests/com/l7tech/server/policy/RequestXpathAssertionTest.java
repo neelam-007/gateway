@@ -49,6 +49,7 @@ public class RequestXpathAssertionTest extends TestCase {
     private AssertionStatus getResultForXPath(String expression) throws Exception {
         Map namespaces = new HashMap();
         namespaces.putAll(XpathEvaluator.getNamespaces(SoapUtil.asSOAPMessage(testDoc)));
+        namespaces.put("sesyn", namespaces.get("soapenv"));
         ServerRequestXpathAssertion serverAssertion = getAssertion(new XpathExpression(expression, namespaces));
         Message m = new Message();
         m.initialize(testDoc);
@@ -87,7 +88,8 @@ public class RequestXpathAssertionTest extends TestCase {
         "/soapenv:Envelope/soapenv:Body/ns1:placeOrder/productid='-9206260647417300294'", // works with proper namespaces
         "/*[local-name(.)='Envelope']/*[local-name(.)='Body']/*[local-name(.)='placeOrder']/productid='-9206260647417300294'", // works with no-namespace hack
         "/soapenv:Envelope[@*[local-name()=\"soapenv\"]]",
-        "/soapenv:Envelope[@xmlns:soapenv]",
+        "//*[@sesyn:encodingStyle]",
+        "/soapenv:Envelope[3=3]",
     };
 
     private String[] failingXpaths =
