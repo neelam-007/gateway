@@ -47,7 +47,7 @@ public class SsgKeyStoreManager {
     private static final char[] KEYSTORE_PASSWORD = "lwbnasudg".toCharArray();
 
     /** Keystore type.  JCEKS is more secure than the default JKS format. */
-    private static final String KEYSTORE_TYPE = "JCEKS";
+    private static final String KEYSTORE_TYPE = KeyStore.getDefaultType();
 
     /**
      * Very quickly check if a client certificate is available for the specified SSG.
@@ -307,6 +307,7 @@ public class SsgKeyStoreManager {
     {
         synchronized (ssg) {
             log.info("Saving Gateway server certificate to disk");
+            getKeyStore(ssg).deleteEntry(SSG_ALIAS);
             getKeyStore(ssg).setCertificateEntry(SSG_ALIAS, cert);
             saveKeyStore(ssg);
         }
