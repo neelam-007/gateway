@@ -5,6 +5,9 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
 
 import java.sql.SQLException;
+import java.util.List;
+
+import org.apache.log4j.Category;
 
 /**
  * Layer 7 Technologies, inc.
@@ -28,10 +31,30 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         }
     }
 
+    public User findByLogin( String login ) throws FindException {
+        try {
+            List users = _manager.find( getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".login = ?", login, String.class );
+            switch ( users.size() ) {
+            case 0:
+                return null;
+            case 1:
+                return (User)users.get(0);
+            default:
+                String err = "Found more than one user with the login " + login;
+                _log.warn( err );
+                throw new FindException( err );
+            }
+        } catch ( SQLException se ) {
+            _log.error( se );
+            throw new FindException( se.toString(), se );
+        }
+    }
+
     public void delete(User user) throws DeleteException {
         try {
             _manager.delete( getContext(), user );
         } catch ( SQLException se ) {
+            _log.error( se );
             throw new DeleteException( se.toString(), se );
         }
     }
@@ -40,6 +63,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         try {
             return _manager.save( getContext(), user );
         } catch ( SQLException se ) {
+            _log.error( se );
             throw new SaveException( se.toString(), se );
         }
     }
@@ -48,6 +72,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         try {
             _manager.update( getContext(), user );
         } catch ( SQLException se ) {
+            _log.error( se );
             throw new UpdateException( se.toString(), se );
         }
     }
@@ -63,4 +88,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     public Class getInterfaceClass() {
         return User.class;
     }
+
+    protected Category _log = Category.getInstance( getClass() );
 }
