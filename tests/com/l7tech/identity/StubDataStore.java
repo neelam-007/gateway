@@ -40,7 +40,7 @@ public class StubDataStore {
         try {
             defaultStore = new StubDataStore(StubDataStore.DEFAULT_STORE_PATH);
             return defaultStore;
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -49,9 +49,10 @@ public class StubDataStore {
      * Instantiate path
      * @param storePath
      */
-    protected StubDataStore(String storePath) throws FileNotFoundException {
+    protected StubDataStore(String storePath)
+      throws FileNotFoundException, WSDLException, MalformedURLException {
         if (!new File(storePath).exists()) {
-            StubDataStore.main(new String[]{storePath});
+            initializeSeedData(storePath);
         }
         this.reconstituteFrom(storePath);
 
@@ -244,8 +245,9 @@ public class StubDataStore {
             initialGroups(encoder, providerId);
             initialServices(encoder, providerConfig);
         } finally {
-            if (encoder != null)
+            if (encoder != null) {
                 encoder.close();
+            }
         }
     }
 
@@ -271,7 +273,7 @@ public class StubDataStore {
             if (args.length > 0) {
                 path = args[0];
             }
-            System.out.println("Generating stub data stor in '" + path + "'");
+            System.out.println("Generating stub data store in '" + path + "'");
             new StubDataStore().initializeSeedData(path);
         } catch (Exception e) {
             e.printStackTrace();
