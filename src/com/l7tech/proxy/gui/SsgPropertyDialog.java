@@ -581,7 +581,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (fieldServerAddress == null) {
             fieldServerAddress = new JTextField();
             fieldServerAddress.setPreferredSize(new Dimension(220, 20));
-            fieldServerAddress.setToolTipText("<HTML>Gateway hostname or address, for example<br><address>gateway.your-company.com");
+            fieldServerAddress.setToolTipText("<HTML>Gateway hostname or address, for example<br><address>gateway.example.com");
             fieldServerAddress.getDocument().addDocumentListener(new DocumentListener() {
                 private void checkOk() {
                     if (fieldServerAddress.getText().length() > 1)
