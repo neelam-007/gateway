@@ -283,7 +283,9 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
             if (newRoot != null) {
+                String oldPolicyXml = sn.getPublishedService().getPolicyXml();
                 sn.getPublishedService().setPolicyXml(WspWriter.getPolicyXml(newRoot));
+                sn.firePropertyChange(this, "policy", oldPolicyXml, sn.getPublishedService().getPolicyXml());
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "Could not import the policy", e);
