@@ -48,6 +48,8 @@ public class VirtualGroupPanel extends GroupPanel {
     }
 
     protected void loadedGroup( Group g ) {
+        //todo:
+
     }
 
     protected Group newGroup( EntityHeader groupHeader ) {
@@ -156,9 +158,12 @@ public class VirtualGroupPanel extends GroupPanel {
      *
      * @param group
      */
-    protected void setData(GroupBean group) {
-        super.setData(group);
-        // Get other stuff
+    protected void setData(Group group) {
+        getNameLabel().setText(group.getName());
+        virtualGroupDetailsPanel.getGroupDescTextField().setText(group.getDescription());
+        virtualGroupDetailsPanel.getX509SubjectDNTextField().setText(((VirtualGroup) group).getX509SubjectDnPattern());
+        virtualGroupDetailsPanel.getEmailTextField().setText(((VirtualGroup) group).getSamlEmailPattern());
+        setModified(false);
     }
 
 
@@ -169,6 +174,8 @@ public class VirtualGroupPanel extends GroupPanel {
      */
     protected Group collectChanges() {
         Group g = super.collectChanges();
+
+        //todo:
         return g;
     }
 
