@@ -74,32 +74,16 @@ public class HibernatePersistenceManager extends PersistenceManager {
     Session makeSession() throws HibernateException, SQLException {
         if (_sessionFactory == null) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling makeSession()!");
         Session session = _sessionFactory.openSession();
-        //Connection conn = session.connection();
-        //conn.setAutoCommit(false);
+        // make sure this session is clean
+        session.clear();
         return session;
     }
 
     private SessionFactory _sessionFactory;
 
-    class ContextHolder {
-        HibernatePersistenceContext _context;
-        Session _session;
-    }
-
-    private ContextHolder getContextHolder(PersistenceContext context) throws SQLException, HibernateException {
-        if (context == null || !(context instanceof HibernatePersistenceContext))
-            throw new IllegalArgumentException("Invalid context passed to a HibernatePersistenceManager method!");
-        ContextHolder holder = new ContextHolder();
-        holder._context = (HibernatePersistenceContext)context;
-        holder._session = holder._context.getSession();
-
-        return holder;
-    }
-
     List doFind(PersistenceContext context, String query) throws FindException {
         try {
-            ContextHolder h = getContextHolder(context);
-            Session s = h._session;
+            Session s = contextToSession(context);
             return s.find(query);
         } catch (net.sf.hibernate.ObjectNotFoundException onfe) {
             return EMPTYLIST;
@@ -136,8 +120,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     List doFind(PersistenceContext context, String query, Object param, Class paramClass) throws FindException {
         try {
-            ContextHolder h = getContextHolder(context);
-            Session s = h._session;
+            Session s = contextToSession(context);
             return s.find(query, param, getHibernateType(param));
         } catch (HibernateException he) {
             logger.throwing(getClass().getName(), "doFind", he);
@@ -151,8 +134,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     List doFind(PersistenceContext context, String query, Object[] params, Class[] paramClasses) throws FindException {
         try {
-            ContextHolder h = getContextHolder(context);
-            Session s = h._session;
+            Session s = contextToSession(context);
             Type[] types = new Type[paramClasses.length];
             for (int i = 0; i < paramClasses.length; i++)
                 types[i] = getHibernateType(params[i]);
@@ -173,8 +155,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     Entity doFindByPrimaryKey(PersistenceContext context, Class clazz, long oid, boolean forUpdate) throws FindException {
         try {
-            ContextHolder h = getContextHolder(context);
-            Session s = h._session;
+            Session s = contextToSession(context);
             Object o = s.load(clazz, new Long(oid), forUpdate ? LockMode.WRITE : LockMode.READ);
             return (Entity)o;
         } catch (SQLException se) {
@@ -192,8 +173,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     void doUpdate(PersistenceContext context, Entity obj) throws UpdateException {
         try {
-            ContextHolder h = getContextHolder(context);
-            Session s = h._session;
+            Session s = contextToSession(context);
 
             s.update(obj);
         } catch (HibernateException he) {
@@ -208,8 +188,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     long doSave(PersistenceContext context, Entity obj) throws SaveException {
         try {
-            ContextHolder h = getContextHolder(context);
-            Session s = h._session;
+            Session s = contextToSession(context);
 
             Object key = s.save(obj);
             if (key instanceof Long) {
@@ -229,8 +208,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     void doDelete(PersistenceContext context, Entity obj) throws DeleteException {
         try {
-            ContextHolder h = getContextHolder(context);
-            h._session.delete(obj);
+            contextToSession(context).delete(obj);
         } catch (HibernateException he) {
             throw new DeleteException(he.toString(), he);
         } catch (SQLException se) {
@@ -242,11 +220,10 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     void doDelete( PersistenceContext context, Class entityClass, long oid ) throws DeleteException {
         try {
-            ContextHolder h = getContextHolder(context);
             String deleteQuery = "from temp in class " +
                                  entityClass.getName() +
                                  " where temp.oid = ?";
-            h._session.delete( deleteQuery, new Long( oid ), Hibernate.LONG );
+            contextToSession(context).delete( deleteQuery, new Long( oid ), Hibernate.LONG );
         } catch (HibernateException he) {
             throw new DeleteException(he.toString(), he);
         } catch (SQLException se) {
@@ -254,6 +231,11 @@ public class HibernatePersistenceManager extends PersistenceManager {
             close(context);
             throw new DeleteException(se.toString(), se);
         }
+    }
+
+    private Session contextToSession(PersistenceContext context) throws SQLException, HibernateException {
+        HibernatePersistenceContext hpc = (HibernatePersistenceContext)context;
+        return hpc.getSession();
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
