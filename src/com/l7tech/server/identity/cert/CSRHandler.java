@@ -5,7 +5,6 @@ import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.User;
@@ -115,7 +114,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             User authenticatedUser = null;
             authenticatedUser = (User)users.get(0);
 
-            ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+            ClientCertManager man = (ClientCertManager)getApplicationContext().getBean("clientCertManager");
             if (!man.userCanGenCert(authenticatedUser)) {
                 logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +

@@ -3,20 +3,26 @@
 
 <beans>
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess">
-         <property name="componentConfig">
+         <property name="serverConfig">
             <ref bean="serverConfig"/>
         </property>
     </bean>
-
-    <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer">
-    </bean>
-
 
     <!--
     * singleton using the factory method. This is transitional, as it is referrencef from
     * too many places.
     -->
     <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance" />
+
+    <!-- server side identity provider factory -->
+    <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
+    </bean>
+
+    <!-- server side identity configuration manager -->
+    <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer">
+        <property name="identityProviderFactory"><ref bean='identityProviderFactory'/></property>
+    </bean>
+
 
     <!-- server side audit manager -->
     <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl">
@@ -35,22 +41,29 @@
     </bean>
 
     <!-- server side custom assertions registrar -->
-    <bean id="customAssertionRegistrarDelegate" class="com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarImpl">
+    <bean id="customAssertionRegistrar" class="com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarImpl">
+        <property name="serviceManager"><ref bean="serviceManager"/></property>
     </bean>
 
     <!-- jms connection manager -->
      <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManager">
+         <property name="jmsEndpointManager"><ref bean="jmsEndpointManager"/></property>
      </bean>
 
     <!-- jms connection manager -->
      <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManager">
      </bean>
 
+    <!-- server side policy validator -->
+    <bean id="policyValidator" class="com.l7tech.server.policy.validator.ServerPolicyValidator">
+        <property name="jmsEndpointManager"><ref bean="jmsEndpointManager"/></property>
+    </bean>
+
     <!-- server side client cert manager -->
      <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
      </bean>
 
-    <!-- ssl config for rmi/ssl -->
+    <!-- ssl config  -->
     <bean id="sslKeystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance" />
 
     <bean id="sslKeystoreType" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
@@ -68,6 +81,23 @@
         <property name="targetMethod"><value>getSslKeystorePath</value></property>
     </bean>
 
+    <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject"><ref local='sslKeystore'/></property>
+        <property name="targetMethod"><value>getSslCert</value></property>
+    </bean>
+
+    <bean id="sslKeystorePrivateKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject"><ref local='sslKeystore'/></property>
+        <property name="targetMethod"><value>getSSLPrivateKey</value></property>
+    </bean>
+
+    <!-- server side policy service -->
+     <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
+         <constructor-arg><ref bean="sslKeystorePrivateKey"/></constructor-arg>
+         <constructor-arg><ref bean="sslKeystoreCertificate"/></constructor-arg>
+     </bean>
+
+    <!-- admin services -->
     <bean id="rmiServerSocketFactory" class="com.l7tech.remote.rmi.ssl.SslRMIServerSocketFactory">
         <property name="keyStoreType"><ref local='sslKeystoreType'/></property>
         <property name="keyStoreFile"><ref local='sslKeystoreFile'/></property>
@@ -78,6 +108,12 @@
 
 
     <bean id="adminSessionInvocationFactory" class="com.l7tech.remote.rmi.AdminSessionInvocationFactory"/>
+
+    <!-- server side admin authorizer -->
+    <bean id="authorizer" class="com.l7tech.server.identity.internal.InternalIdentityProviderAuthorizer">
+        <property name="identityProviderConfigManager"><ref bean="identityProviderConfigManager"/></property>
+    </bean>
+
 
     <!--    shared export properties, inherited with parent= -->
     <bean id="sharedExportProperties">
@@ -129,6 +165,8 @@
     <bean id="identityAdmin" class="com.l7tech.server.identity.IdentityAdminImpl">
         <property name="identityProviderConfigManager"><ref bean="identityProviderConfigManager"/></property>
         <property name="clientCertManager"><ref bean="clientCertManager"/></property>
+        <property name="identityProviderFactory"><ref bean='identityProviderFactory'/></property>
+        <property name="authorizer"><ref bean='authorizer'/></property>
     </bean>
 
     <!--    log admin exporter -->
@@ -159,6 +197,7 @@
     <!--    service admin servant -->
     <bean id="serviceAdmin" class="com.l7tech.server.service.ServiceAdminImpl">
         <property name="serviceManager"><ref bean="serviceManager"/></property>
+        <property name="policyValidator"><ref bean="policyValidator"/></property>
     </bean>
 
     <!--    jms admin exporter -->
@@ -185,12 +224,12 @@
 
     <!--    trusted cert admin exporter -->
       <bean id="customAssertionsRegistrarRemote" class="com.l7tech.remote.rmi.RmiServiceExporterStubFactoryBean" parent="sharedExportProperties">
-          <property name="service"><ref bean="customAssertionsRegistrar"/></property>
+          <property name="service"><ref bean="customAssertionsAdmin"/></property>
           <property name="serviceInterface"><value>com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar</value></property>
       </bean>
       <!--    trusted cert admin servant -->
-      <bean id="customAssertionsRegistrar" class="com.l7tech.policy.assertion.ext.rmi.CustomAssertionsRegistrarImpl">
-          <property name="delegate"><ref bean="customAssertionRegistrarDelegate"/></property>
+      <bean id="customAssertionsAdmin" class="com.l7tech.policy.assertion.ext.rmi.CustomAssertionsRegistrarImpl">
+          <property name="delegate"><ref bean="customAssertionRegistrar"/></property>
       </bean>
 
     <!--    cluster status cert admin exporter -->

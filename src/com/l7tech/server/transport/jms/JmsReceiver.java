@@ -9,9 +9,9 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
-import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
+import com.l7tech.server.ServerConfig;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -46,19 +46,21 @@ public class JmsReceiver implements ServerComponentLifecycle {
 
     // Runtime stuff
     private boolean _initialized = false;
+    private ServerConfig serverConfig;
+
 
     /**
      * Complete constructor
      *
      * @param inbound   The {@link com.l7tech.common.transport.jms.JmsEndpoint} from which to receive requests
      * @param replyType A {@link com.l7tech.common.transport.jms.JmsReplyType} value indicating this receiver's
-     *                  reply semantics
      */
-    public JmsReceiver( JmsConnection connection, JmsEndpoint inbound, JmsReplyType replyType ) {
+    public JmsReceiver(JmsConnection connection, JmsEndpoint inbound, JmsReplyType replyType) {
         _connection = connection;
         _inboundRequestEndpoint = inbound;
         if (replyType == null) replyType = JmsReplyType.AUTOMATIC;
         _replyType = replyType;
+        _handler = new JmsRequestHandler(serverConfig.getSpringContext());
     }
 
     /**
@@ -135,7 +137,8 @@ public class JmsReceiver implements ServerComponentLifecycle {
      * @param config
      * @throws LifecycleException
      */
-    public synchronized void setComponentConfig(ComponentConfig config) throws LifecycleException {
+    public synchronized void setServerConfig(ServerConfig config) throws LifecycleException {
+        serverConfig = config;
         _logger.info( "Initializing " + toString() + "..." );
         try {
             _initialized = true;
@@ -334,6 +337,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
         if ( _loop != null ) _loop.close();
     }
 
-    private final JmsRequestHandler _handler = new JmsRequestHandler();
+    private final JmsRequestHandler _handler;
     private MessageLoop _loop;
 }

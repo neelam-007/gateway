@@ -10,6 +10,7 @@ import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -52,7 +53,9 @@ public class CompositeAssertionTest extends TestCase {
     }
 
     public void testSimpleLogic() throws Exception {
-        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message(), null, null);
+        PolicyEnforcementContext context = new
+          PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
+                                   ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message(), null, null, ApplicationContexts.NULL_CONTEXT);
 
         {
             final List kidsTrueFalseTrue = Arrays.asList(new Assertion[] {
@@ -103,7 +106,10 @@ public class CompositeAssertionTest extends TestCase {
     }
 
     public void testCompositeLogic() throws Exception {
-        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message(), null, null);
+        PolicyEnforcementContext context =
+          new PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
+                                       ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
+                                       new Message(), null, null, ApplicationContexts.NULL_CONTEXT);
 
         final List kidsTrueFalseTrue = Arrays.asList(new Assertion[] {
             new TrueAssertion(),

@@ -5,11 +5,14 @@
  */
 package com.l7tech.server.identity.internal;
 
+import com.l7tech.common.Authorizer;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.common.Authorizer;
-import com.l7tech.server.identity.IdProvConfManagerServer;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import javax.security.auth.Subject;
 import java.util.Collections;
@@ -25,29 +28,16 @@ import java.util.logging.Logger;
  * @author emil
  * @version Sep 2, 2004
  */
-public class InternalIdentityProviderAuthorizer extends Authorizer {
+public class InternalIdentityProviderAuthorizer extends Authorizer
+    implements ApplicationContextAware, InitializingBean {
     private static final Logger logger = Logger.getLogger(InternalIdentityProviderAuthorizer.class.getName());
+
+    private ApplicationContext applicationContext;
+    IdentityProviderConfigManager identityProviderConfigManager;
 
     private IdentityProvider identityProvider;
     private UserManager userManager;
     private GroupManager groupManager;
-
-    public InternalIdentityProviderAuthorizer() throws FindException {
-        IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
-        Iterator it = configManager.findAllIdentityProviders().iterator();
-        while (it.hasNext()) {
-            IdentityProvider prov = (IdentityProvider)it.next();
-            if (prov.getConfig().type() == IdentityProviderType.INTERNAL) {
-                identityProvider = prov;
-                break;
-            }
-        }
-        if (identityProvider == null) {
-            throw new IllegalStateException("Could not find the internal identity provider");
-        }
-        userManager = identityProvider.getUserManager();
-        groupManager = identityProvider.getGroupManager();
-    }
 
     /**
      * Determine the roles (groups) for hte given subject
@@ -59,6 +49,7 @@ public class InternalIdentityProviderAuthorizer extends Authorizer {
     public Set getUserRoles(Subject subject) throws RuntimeException {
         Set principals = subject.getPrincipals(User.class);
         if (principals.isEmpty()) {
+            logger.fine("No principal set, returning empty set");
             return Collections.EMPTY_SET;
         }
         try {
@@ -78,5 +69,32 @@ public class InternalIdentityProviderAuthorizer extends Authorizer {
         } catch (FindException e) {
             throw new RuntimeException("Error accessing user roles", e);
         }
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    public void setIdentityProviderConfigManager(IdentityProviderConfigManager identityProviderConfigManager) {
+        this.identityProviderConfigManager = identityProviderConfigManager;
+    }
+
+    public void afterPropertiesSet() throws Exception {
+        if (identityProviderConfigManager == null) {
+            throw new IllegalArgumentException("Identity Provider required");
+        }
+        Iterator it = identityProviderConfigManager.findAllIdentityProviders().iterator();
+        while (it.hasNext()) {
+            IdentityProvider prov = (IdentityProvider)it.next();
+            if (prov.getConfig().type() == IdentityProviderType.INTERNAL) {
+                identityProvider = prov;
+                break;
+            }
+        }
+        if (identityProvider == null) {
+            throw new IllegalStateException("Could not find the internal identity provider");
+        }
+        userManager = identityProvider.getUserManager();
+        groupManager = identityProvider.getGroupManager();
     }
 }

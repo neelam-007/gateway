@@ -13,6 +13,8 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import java.util.Iterator;
 import java.util.logging.Level;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * If there is at least one identity assertion, and the user does not "pass" any of them, the result will be null
  * meaning that this user cannot consume this service and therefore has no business seeing it.
@@ -119,10 +121,10 @@ public class IdentityRule extends Filter {
      * check whether the user validates this assertion
      */
     private boolean validateIdAssertion(IdentityAssertion idassertion) throws FilteringException {
-        return canUserPassIDAssertion(idassertion, requestor);
+        return canUserPassIDAssertion(idassertion, requestor, null);
     }
 
-    public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user) throws FilteringException {
+    public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user, ApplicationContext applicationContext) throws FilteringException {
         if (user == null) return false;
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
@@ -169,4 +171,5 @@ public class IdentityRule extends Filter {
     private User requestor = null;
     private boolean anIdentityAssertionWasFound = false;
     private boolean userPassedAtLeastOneIdentityAssertion = false;
+    private ApplicationContext applicationCOntext = null;
 }

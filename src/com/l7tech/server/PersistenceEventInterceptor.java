@@ -37,6 +37,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * Notices when any persistent {@link Entity} is saved, updated or deleted, and creates and fires
  * corresponding {@link Updated}, {@link Deleted} and {@link Created} events,
@@ -47,7 +49,9 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class PersistenceEventInterceptor implements Interceptor {
-    public PersistenceEventInterceptor() {
+    private ApplicationContext springContext;
+
+    public PersistenceEventInterceptor(ApplicationContext springContext) {
         ignoredClassNames = new HashSet();
         ignoredClassNames.add(SSGLogRecord.class.getName());
         ignoredClassNames.add(ClusterNodeInfo.class.getName());
@@ -55,6 +59,11 @@ public class PersistenceEventInterceptor implements Interceptor {
         ignoredClassNames.add(AdminAuditRecord.class.getName());
         ignoredClassNames.add(SystemAuditRecord.class.getName());
         ignoredClassNames.add(MessageSummaryAuditRecord.class.getName());
+
+        if (springContext == null) {
+            throw new IllegalArgumentException("Spring Context is required");
+        }
+        this.springContext = springContext;
     }
 
     private final Set ignoredClassNames;
@@ -149,7 +158,7 @@ public class PersistenceEventInterceptor implements Interceptor {
         if (obj instanceof Entity) {
             return new Deleted((Entity)obj);
         } else if (obj instanceof GroupMembership) {
-            return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "removed"));
+            return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "removed", springContext));
         } else throw new IllegalStateException("Can't make a Deleted event for a " + obj.getClass().getName());
     }
 
@@ -157,7 +166,7 @@ public class PersistenceEventInterceptor implements Interceptor {
         if (obj instanceof Entity) {
             return new Created((Entity)obj);
         } else if (obj instanceof GroupMembership) {
-            return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "added"));
+            return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "added", springContext));
         } else throw new IllegalStateException("Can't make a Created event for a " + obj.getClass().getName());
     }
 
@@ -165,7 +174,7 @@ public class PersistenceEventInterceptor implements Interceptor {
         if (obj instanceof Entity) {
             return new Updated((Entity)obj, changes);
         } else if (obj instanceof GroupMembership) {
-            return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "updated"));
+            return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "updated", springContext));
         } else throw new IllegalStateException("Can't make an Updated event for a " + obj.getClass().getName());
     }
 

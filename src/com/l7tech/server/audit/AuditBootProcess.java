@@ -6,9 +6,9 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.admin.AdminEvent;
@@ -27,7 +27,7 @@ public class AuditBootProcess implements ServerComponentLifecycle {
         servicePromoter = new ServiceEventPromoter();
     }
 
-    public void setComponentConfig( ComponentConfig config ) throws LifecycleException {
+    public void setServerConfig( ServerConfig config ) throws LifecycleException {
     }
 
     public void start() throws LifecycleException {

@@ -17,6 +17,7 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import org.xml.sax.SAXException;
+import org.springframework.context.ApplicationContext;
 
 import javax.jms.*;
 import java.io.ByteArrayInputStream;
@@ -31,6 +32,14 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 class JmsRequestHandler {
+    final private ApplicationContext springContext;
+
+    public JmsRequestHandler(ApplicationContext springContext) {
+        this.springContext = springContext;
+        if (springContext == null) {
+            throw new IllegalArgumentException("Spring Context is required");
+        }
+    }
 
     /**
      * Handle an incoming JMS SOAP request.  Also takes care of sending the reply if appropriate.
@@ -67,7 +76,8 @@ class JmsRequestHandler {
             });
 
             final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
-                                                                                  new com.l7tech.common.message.Message());
+                                                                                  new com.l7tech.common.message.Message(),
+                                                                                  springContext);
             AssertionStatus status = AssertionStatus.UNDEFINED;
 
             Message jmsResponse = null;

@@ -5,6 +5,10 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -21,17 +25,9 @@ import java.util.logging.Level;
  * User: flascelles<br/>
  * Date: Jun 20, 2003
  */
-public class IdProvConfManagerServer extends HibernateEntityManager implements IdentityProviderConfigManager {
-
-    public IdProvConfManagerServer() {
-        super();
-        // construct the internal id provider
-        IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
-        cfg.setName("Internal Identity Provider");
-        cfg.setDescription("Internal Identity Provider");
-        cfg.setOid(INTERNALPROVIDER_SPECIAL_OID);
-        internalProvider = new InternalIdentityProviderServer(cfg);
-    }
+public class IdProvConfManagerServer
+  extends HibernateEntityManager implements IdentityProviderConfigManager, ApplicationContextAware, InitializingBean {
+    private ApplicationContext applicationContext;
 
     public IdentityProvider getInternalIdentityProvider() {
         return internalProvider;
@@ -54,12 +50,12 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
      * @throws FindException if there was an persistence error
      */
     public IdentityProvider getIdentityProvider(long oid) throws FindException {
-        return IdentityProviderFactory.getProvider(oid);
+        return identityProviderFactory.getProvider(oid);
     }
 
     public void test(IdentityProviderConfig identityProviderConfig)
       throws InvalidIdProviderCfgException {
-        IdentityProvider provider = IdentityProviderFactory.makeProvider(identityProviderConfig);
+        IdentityProvider provider = identityProviderFactory.makeProvider(identityProviderConfig);
         provider.test();
     }
 
@@ -121,7 +117,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
             throw new UpdateException("this type of config cannot be updated");
         }
         try {
-            IdentityProviderFactory.dropProvider(identityProviderConfig);
+            identityProviderFactory.dropProvider(identityProviderConfig);
             PersistenceManager.update(getContext(), identityProviderConfig);
         } catch (SQLException se) {
             throw new UpdateException(se.toString(), se);
@@ -135,7 +131,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
             throw new DeleteException("this type of config cannot be deleted");
         }
         try {
-            IdentityProviderFactory.dropProvider(identityProviderConfig);
+            identityProviderFactory.dropProvider(identityProviderConfig);
             PersistenceManager.delete(getContext(), identityProviderConfig);
         } catch (SQLException se) {
             throw new DeleteException(se.toString(), se);
@@ -143,7 +139,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
     }
 
     public Collection findAllIdentityProviders() throws FindException {
-        return IdentityProviderFactory.findAllIdentityProviders(this);
+        return identityProviderFactory.findAllIdentityProviders(this);
     }
 
     public Collection findAll() throws FindException {
@@ -174,6 +170,14 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         return ldapTemplateManager.getTemplates();
     }
 
+    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
+        applicationContext = ctx;
+    }
+
+    public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
+        this.identityProviderFactory = identityProviderFactory;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -189,4 +193,26 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
     protected InternalIdentityProviderServer internalProvider;
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
+
+    private IdentityProviderFactory identityProviderFactory;
+
+    /**
+     * Invoked by a BeanFactory after it has set all bean properties supplied
+     * (and satisfied BeanFactoryAware and ApplicationContextAware).
+     * <p>This method allows the bean instance to perform initialization only
+     * possible when all bean properties have been set and to throw an
+     * exception in the event of misconfiguration.
+     *
+     * @throws Exception in the event of misconfiguration (such
+     *                   as failure to set an essential property) or if initialization fails.
+     */
+    public void afterPropertiesSet() throws Exception {
+        // construct the internal id provider
+        IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
+        cfg.setName("Internal Identity Provider");
+        cfg.setDescription("Internal Identity Provider");
+        cfg.setOid(INTERNALPROVIDER_SPECIAL_OID);
+        internalProvider = new InternalIdentityProviderServer(cfg, applicationContext);
+
+    }
 }

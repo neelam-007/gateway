@@ -1,7 +1,6 @@
 package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
@@ -302,7 +301,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private boolean checkForIdPotential(Assertion assertion, User requestor) {
         if (assertion instanceof IdentityAssertion) {
             try {
-                if (IdentityRule.canUserPassIDAssertion((IdentityAssertion)assertion, requestor)) {
+                if (IdentityRule.canUserPassIDAssertion((IdentityAssertion)assertion, requestor, getApplicationContext())) {
                     return true;
                 }
             } catch (FilteringException e) {
@@ -328,8 +327,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     private ServiceManager getServiceManager() {
-        ServiceManager output = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
-        if (output == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
+        ServiceManager output = (ServiceManager)getApplicationContext().getBean("serviceManager");
         return output;
     }
 

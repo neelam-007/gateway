@@ -14,7 +14,6 @@ import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -133,7 +132,7 @@ public class MessageProcessor {
         // Policy Verification Step
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
-            ServiceManager manager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+            ServiceManager manager = (ServiceManager)context.getSpringContext().getBean("serviceManager");
             PublishedService service = manager.resolve(context.getRequest());
 
             if ( service == null ) {

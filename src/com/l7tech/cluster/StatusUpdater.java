@@ -1,11 +1,11 @@
 package com.l7tech.cluster;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.UptimeMonitor;
 import com.l7tech.service.ServiceStatistics;
+import org.springframework.context.ApplicationContext;
 
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
@@ -28,14 +28,16 @@ import java.util.logging.Logger;
  *
  */
 public class StatusUpdater extends Thread {
-    public static void initialize() {
-        final Logger logger = Logger.getLogger(StatusUpdater.class.getName());
+    private ApplicationContext springContext;
+
+    public static synchronized void initialize(ApplicationContext springContext) {
         if (updater.isAlive()) {
             logger.warning("updater is already alive.");
         }
         else {
             logger.info("starting status updater");
             // this thread should not prevent the VM from exiting
+            updater.springContext = springContext;
             updater.setDaemon(true);
             updater.start();
         }
@@ -122,7 +124,7 @@ public class StatusUpdater extends Thread {
 
     public void updateServiceUsage(PersistenceContext context) {
         // get service usage from local cache
-        ServiceManager serviceManager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+        ServiceManager serviceManager = (ServiceManager)springContext.getBean("serviceManager");
         String ourid = clusterInfoManager.thisNodeId();
         Collection stats = null;
         try {
@@ -171,7 +173,7 @@ public class StatusUpdater extends Thread {
     private final ServiceUsageManager serviceUsageManager = new ServiceUsageManager();
 
     private static final StatusUpdater updater = new StatusUpdater();
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    private static final Logger logger = Logger.getLogger(StatusUpdater.class.getName());
     public static final long UPDATE_FREQUENCY = 4000;
     //public static final long UPDATE_FREQUENCY = 10;
 }

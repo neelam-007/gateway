@@ -6,13 +6,13 @@
 
 package com.l7tech.server.identity;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -24,8 +24,9 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public class IdentityProviderFactory {
-    public static Collection findAllIdentityProviders(IdentityProviderConfigManager manager) throws FindException {
+public class IdentityProviderFactory extends ApplicationObjectSupport {
+
+    public Collection findAllIdentityProviders(IdentityProviderConfigManager manager) throws FindException {
         List providers = new ArrayList();
         Iterator i = manager.findAllHeaders().iterator();
         EntityHeader header;
@@ -41,7 +42,7 @@ public class IdentityProviderFactory {
      * call this because a config object is being updated or deleted and you want to inform the cache that
      * corresponding id provider should be removed from cache
      */
-    public synchronized static void dropProvider(IdentityProviderConfig config) {
+    public synchronized void dropProvider(IdentityProviderConfig config) {
         if (providers == null) return;
         Long key = new Long(config.getOid());
         IdentityProvider existingProvider = (IdentityProvider)providers.get(key);
@@ -60,8 +61,8 @@ public class IdentityProviderFactory {
      * @return the IdentityProvider, or null if it's not in the database (either it was deleted or never existed)
      * @throws FindException
      */
-    public synchronized static IdentityProvider getProvider(long identityProviderOid) throws FindException {
-        IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)Locator.getDefault().lookup( IdentityProviderConfigManager.class );
+    public synchronized IdentityProvider getProvider(long identityProviderOid) throws FindException {
+        IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)getApplicationContext().getBean("identityProviderConfigManager");
         Long oid = new Long(identityProviderOid);
 
         IdentityProvider cachedProvider = (IdentityProvider)providers.get(oid);
@@ -108,7 +109,7 @@ public class IdentityProviderFactory {
      * @throws InvalidIdProviderCfgException if the specified configuration cannot be used to construct an
      * IdentityProvider. Call {@link Throwable#getCause()} to find out why!
      */
-    public static IdentityProvider makeProvider( IdentityProviderConfig config ) throws InvalidIdProviderCfgException {
+    public IdentityProvider makeProvider( IdentityProviderConfig config ) throws InvalidIdProviderCfgException {
         IdentityProvider cachedProvider;
         String classname = config.type().getClassname();
         try {

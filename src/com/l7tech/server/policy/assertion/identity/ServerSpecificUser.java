@@ -10,6 +10,7 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.util.logging.Logger;
 
@@ -32,8 +33,9 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
      * corresponding to this Assertion's <code>userLogin</code> property.
      * @param requestingUser the <code>User</code> to check
      * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
+     * @param context
      */
-    public AssertionStatus checkUser(User requestingUser) {
+    public AssertionStatus checkUser(User requestingUser, PolicyEnforcementContext context) {
 
         // The login and the uid can't both be null
         if (requiredLogin == null && requiredUid == null) {

@@ -1,6 +1,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.message.Message;
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -93,7 +94,7 @@ public class ServerPolicyFactoryTest extends TestCase {
 
         ServerPolicyFactory pfac = ServerPolicyFactory.getInstance();
 
-        PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message(), null, null);
+        PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message(), ApplicationContexts.NULL_CONTEXT);
 
         ServerAssertion serverAllTrue = pfac.makeServerPolicy(allTrue);
         assertTrue(serverAllTrue.checkRequest(pp) == AssertionStatus.NONE);

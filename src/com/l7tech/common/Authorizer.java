@@ -5,15 +5,13 @@
  */
 package com.l7tech.common;
 
-import com.l7tech.common.util.Locator;
-import com.l7tech.objectmodel.ObjectPermission;
 import com.l7tech.identity.Group;
+import com.l7tech.objectmodel.ObjectPermission;
 
 import javax.security.auth.Subject;
-import java.util.Collections;
+import java.security.Permission;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.security.Permission;
 
 /**
  * The <code>Authorizer</code> abstract class provide authorization methods for
@@ -24,16 +22,8 @@ import java.security.Permission;
  * @version Sep 2, 2004
  */
 public abstract class Authorizer {
-    private static Authorizer defaultAuthorizer = newDefaultAdminAuthorizer();
     protected static Logger logger = Logger.getLogger(Authorizer.class.getName());
 
-    public static Authorizer getAuthorizer() {
-        Authorizer aa = (Authorizer)Locator.getDefault().lookup(Authorizer.class);
-        if (aa == null) {
-            aa = defaultAuthorizer;
-        }
-        return aa;
-    }
 
     /**
      * Determines whether an subject belongs to the specified Role (group).
@@ -87,22 +77,4 @@ public abstract class Authorizer {
      * @throws RuntimeException on error retrieving user roles
      */
     public abstract Set getUserRoles(Subject subject) throws RuntimeException;
-
-
-    /**
-     * @return the default admin authorizer that is used if no authorizer is specified
-     *         by the configuration. This authorizer always returns false.
-     */
-    private static Authorizer newDefaultAdminAuthorizer() {
-        return new Authorizer() {
-
-            public boolean isSubjectInRole(Subject subject, String[] roles) {
-                return false;
-            }
-
-            public Set getUserRoles(Subject subject) throws RuntimeException {
-                return Collections.EMPTY_SET;
-            }
-        };
-    }
 }

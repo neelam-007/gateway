@@ -1,6 +1,5 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.common.Authorizer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeleteAssertionAction;
@@ -14,6 +13,7 @@ import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.util.ArrowImage;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Refreshable;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.ObjectPermission;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -385,7 +385,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
         try {
             ObjectPermission op = new ObjectPermission(serviceNodeCookie.getPublishedService(), ObjectPermission.WRITE);
-            return Authorizer.getAuthorizer().hasPermission(s, op);
+            return Registry.getDefault().getSecurityProvider().hasPermission(s, op);
         } catch (Exception e) {
             log.log(Level.WARNING, "Error performing permisison check", e);
         }

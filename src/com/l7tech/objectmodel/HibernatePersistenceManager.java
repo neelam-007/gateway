@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * @author alex
  * @version $Revision$
@@ -30,43 +32,34 @@ public class HibernatePersistenceManager extends PersistenceManager {
     public static final String DEFAULT_PINGSQL = "select 1";
     public static String pingStatement = DEFAULT_PINGSQL;
 
-    public static void initialize(Properties properties) throws IOException, SQLException {
-        HibernatePersistenceManager me = new HibernatePersistenceManager(properties);
+    private ApplicationContext springContext = null;
+
+    public static void initialize(ApplicationContext springContext) throws IOException, SQLException {
+        HibernatePersistenceManager me = new HibernatePersistenceManager(springContext);
         PersistenceManager.setInstance(me);
     }
 
-    public static void initialize() throws IOException, SQLException {
-        HibernatePersistenceManager me = new HibernatePersistenceManager();
-        PersistenceManager.setInstance(me);
-    }
 
-    private HibernatePersistenceManager() throws IOException, SQLException {
-        this(null);
-    }
-
-    private HibernatePersistenceManager(Properties properties) throws IOException, SQLException {
+    private HibernatePersistenceManager(ApplicationContext springContext) throws IOException, SQLException {
         FileInputStream fis = null;
+        this.springContext = springContext;
+        this.interceptor = new PersistenceEventInterceptor(springContext);
         try {
             Configuration mainConfig = new Configuration();
             Configuration auditConfig = new Configuration();
 
-            if (properties != null) {
-                logger.info("Loading database configuration from presupplied properties");
-                mainConfig.setProperties(properties);
-                auditConfig.setProperties(properties);
-            } else {
-                String propsPath = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_HIBERNATE);
+            ServerConfig serverConfig = (ServerConfig)springContext.getBean("serverConfig");
+            String propsPath = serverConfig.getProperty(ServerConfig.PARAM_HIBERNATE);
 
-                if (new File(propsPath).exists()) {
-                    logger.info("Loading database configuration from " + propsPath);
-                    Properties props = new Properties();
-                    fis = new FileInputStream(propsPath);
-                    props.load(fis);
-                    mainConfig.setProperties(props);
-                    auditConfig.setProperties(props);
-                } else {
-                    logger.info("Loading database configuration from system classpath");
-                }
+            if (new File(propsPath).exists()) {
+                logger.info("Loading database configuration from " + propsPath);
+                Properties props = new Properties();
+                fis = new FileInputStream(propsPath);
+                props.load(fis);
+                mainConfig.setProperties(props);
+                auditConfig.setProperties(props);
+            } else {
+                logger.info("Loading database configuration from system classpath");
             }
             mainConfig.addResource(DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
             _sessionFactory = mainConfig.buildSessionFactory();
@@ -75,7 +68,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
             _auditSessionFactory = auditConfig.buildSessionFactory();
 
             String temp = mainConfig.getProperty("hibernate.dbcp.validationQuery");
-            if ( temp != null && temp.length() > 0 ) pingStatement = temp;
+            if (temp != null && temp.length() > 0) pingStatement = temp;
         } catch (HibernateException he) {
             logger.throwing(getClass().getName(), "<init>", he);
             throw new SQLException(he.toString());
@@ -108,7 +101,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
         return auditSession;
     }
 
-    private PersistenceEventInterceptor interceptor = new PersistenceEventInterceptor();
+    private final PersistenceEventInterceptor interceptor;
     private SessionFactory _sessionFactory;
     private SessionFactory _auditSessionFactory;
 
@@ -247,12 +240,12 @@ public class HibernatePersistenceManager extends PersistenceManager {
         }
     }
 
-    void doDelete( PersistenceContext context, Class entityClass, long oid ) throws DeleteException {
+    void doDelete(PersistenceContext context, Class entityClass, long oid) throws DeleteException {
         try {
             String deleteQuery = "from temp in class " +
-                                 entityClass.getName() +
-                                 " where temp.oid = ?";
-            contextToSession(context).delete( deleteQuery, new Long( oid ), Hibernate.LONG );
+              entityClass.getName() +
+              " where temp.oid = ?";
+            contextToSession(context).delete(deleteQuery, new Long(oid), Hibernate.LONG);
         } catch (HibernateException he) {
             throw new DeleteException(he.toString(), he);
         } catch (SQLException se) {

@@ -8,12 +8,16 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.server.*;
+import com.l7tech.server.LifecycleException;
+import com.l7tech.server.PeriodicVersionCheck;
+import com.l7tech.server.ServerComponentLifecycle;
+import com.l7tech.server.ServerConfig;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -25,25 +29,26 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JmsBootProcess implements ServerComponentLifecycle {
+    private ServerConfig serverConfig;
+
     public JmsBootProcess() {
-        _connectionManager = (JmsConnectionManager)Locator.getDefault().lookup( JmsConnectionManager.class );
-        _endpointManager = (JmsEndpointManager)Locator.getDefault().lookup( JmsEndpointManager.class );
-        if ( _connectionManager == null || _endpointManager == null ) {
-            _logger.severe( "Couldn't find JMS Managers! JMS functionality will be disabled!" );
-            _valid = false;
-        } else {
-            _valid = true;
-        }
     }
 
     public String toString() {
         return "JMS Boot Process";
     }
 
-    public synchronized void setComponentConfig(ComponentConfig config) throws LifecycleException {
-        if ( !_valid ) return;
-        if (_booted) throw new LifecycleException("Can't boot JmsBootProcess twice!");
-        _booted = true;
+    public synchronized void setServerConfig(ServerConfig config) throws LifecycleException {
+        if (initialized) throw new LifecycleException("Can't boot JmsBootProcess twice!");
+        ApplicationContext spx = config.getSpringContext();
+        try {
+            _connectionManager = (JmsConnectionManager)spx.getBean("jmsConnectionManager");
+            _endpointManager = (JmsEndpointManager)spx.getBean("jmsEndpointManager");
+        } catch (NoSuchBeanDefinitionException e) {
+            throw new LifecycleException("Couldn't find JMS Managers! JMS functionality will be disabled!", e);
+        }
+        serverConfig = config;
+        initialized = true;
     }
 
     /**
@@ -92,7 +97,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
      * Any exception that is thrown in a JmsReceiver's start() method will be logged but not propagated.
      */
     public synchronized void start() throws LifecycleException {
-        if ( !_valid ) return;
+        if ( !initialized ) return;
 
         try {
             // Start up receivers for initial configuration
@@ -108,7 +113,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
                     JmsReceiver receiver = makeReceiver( connection, endpoint );
 
                     try {
-                        receiver.setComponentConfig( ServerConfig.getInstance() );
+                        receiver.setServerConfig( ServerConfig.getInstance() );
                         receiver.start();
                         _activeReceivers.add( receiver );
                     } catch ( LifecycleException e ) {
@@ -128,7 +133,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
             }
         } catch ( FindException e ) {
             String msg = "Couldn't start JMS subsystem!  JMS functionality will be disabled.";
-            _valid = false;
+            initialized = false;
             _logger.log( Level.SEVERE, msg, e );
             throw new LifecycleException( msg, e );
         }
@@ -284,7 +289,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
             try {
                 JmsConnection connection = _connectionManager.findConnectionByPrimaryKey( updatedEndpoint.getConnectionOid() );
                 receiver = makeReceiver( connection, updatedEndpoint);
-                receiver.setComponentConfig(ServerConfig.getInstance());
+                receiver.setServerConfig(ServerConfig.getInstance());
                 receiver.start();
                 _activeReceivers.add(receiver);
             } catch (LifecycleException e) {
@@ -307,7 +312,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         JmsReceiver receiver = new JmsReceiver(
                 connection,
                 endpoint,
-                endpoint.getReplyType() );
+                endpoint.getReplyType());
         return receiver;
     }
 
@@ -318,8 +323,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     private Timer _versionTimer = null;
 
     private final Logger _logger = Logger.getLogger(getClass().getName());
-    private boolean _booted = false;
-    private boolean _valid = false;
+    private boolean initialized = false;
     public static final int FREQUENCY = 4 * 1000;
     private ConnectionVersionChecker connectionChecker;
     private EndpointVersionChecker endpointChecker;

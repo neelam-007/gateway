@@ -33,6 +33,7 @@ import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
@@ -59,7 +60,7 @@ import java.util.logging.Logger;
  * Date: Aug 23, 2004<br/>
  * $Id$<br/>
  */
-public class PolicyService {
+public class PolicyService extends ApplicationObjectSupport {
 
     public interface ServiceInfo {
         Assertion getPolicy();
@@ -86,6 +87,8 @@ public class PolicyService {
         this.privateServerKey = privateServerKey;
         this.serverCert = serverCert;
     }
+
+
 
     /**
      * @return the filtered policy or null if the target policy does not exist or the requestor should not see it
@@ -407,7 +410,7 @@ public class PolicyService {
     }
 
     private final List allCredentialAssertions;
-    private PrivateKey privateServerKey = null;
-    private X509Certificate serverCert = null;
+    private final PrivateKey privateServerKey;
+    private final X509Certificate serverCert;
     private final Logger logger = Logger.getLogger(PolicyService.class.getName());
 }

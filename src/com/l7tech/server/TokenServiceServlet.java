@@ -3,7 +3,6 @@ package com.l7tech.server;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -16,6 +15,8 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -55,10 +56,18 @@ import java.util.logging.Logger;
  * $Id$<br/>
  */
 public class TokenServiceServlet extends HttpServlet {
+    private WebApplicationContext applicationContext;
+
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
+
+        applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        if (applicationContext == null) {
+            throw new ServletException("Configuration error; could not get application context");
+        }
+
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -177,13 +186,14 @@ public class TokenServiceServlet extends HttpServlet {
     private final TokenService.CredentialsAuthenticator authenticator() {
         return new TokenService.CredentialsAuthenticator() {
             public User authenticate(LoginCredentials creds) {
-                IdentityProviderConfigManager idpcm = (IdentityProviderConfigManager)Locator.getDefault().
-                                                        lookup(IdentityProviderConfigManager.class);
+                IdentityProviderConfigManager idpcm =
+                  (IdentityProviderConfigManager)applicationContext.getBean("identityProviderConfigManager");
                 User authenticatedUser = null;
                 Collection providers = null;
                 try {
                     // go through providers and try to authenticate the cert
-                    providers = IdentityProviderFactory.findAllIdentityProviders(idpcm);
+                    IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
+                    providers = ipf.findAllIdentityProviders(idpcm);
                     for (Iterator iterator = providers.iterator(); iterator.hasNext();) {
                         IdentityProvider provider = (IdentityProvider) iterator.next();
                         try {

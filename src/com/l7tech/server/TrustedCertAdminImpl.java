@@ -74,7 +74,7 @@ public class TrustedCertAdminImpl extends ApplicationObjectSupport implements Tr
 
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException {
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             Long oid = (Long)doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
                     long oid;
@@ -107,7 +107,7 @@ public class TrustedCertAdminImpl extends ApplicationObjectSupport implements Tr
 
     public void deleteCert(final long oid) throws FindException, DeleteException, RemoteException {
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
                     getManager().delete(oid);

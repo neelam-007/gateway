@@ -8,8 +8,11 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsProvider;
-import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.*;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -18,10 +21,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
-
 /**
  * Hibernate manager for JMS connections and endpoints.  Endpoints cannot be found
  * directly using this class, only by reference from their associated Connection.
@@ -29,7 +28,8 @@ import org.springframework.beans.BeansException;
  * @author alex
  * @version $Revision$
  */
-public class JmsConnectionManager extends HibernateEntityManager implements ApplicationContextAware {
+public class JmsConnectionManager extends HibernateEntityManager
+  implements ApplicationContextAware, InitializingBean {
     private List _allProviders = null;
     private ApplicationContext applicationContext;
 
@@ -110,11 +110,10 @@ public class JmsConnectionManager extends HibernateEntityManager implements Appl
         _logger.info( "Deleting JmsConnection " + connection );
 
         try {
-            JmsEndpointManager endpointManager = getEndpointManager();
-            EntityHeader[] endpoints = endpointManager.findEndpointHeadersForConnection( connection.getOid() );
+            EntityHeader[] endpoints = jmsEndpointManager.findEndpointHeadersForConnection( connection.getOid() );
 
             for ( int i = 0; i < endpoints.length; i++ )
-                endpointManager.delete( endpoints[i].getOid() );
+                jmsEndpointManager.delete( endpoints[i].getOid() );
 
             PersistenceManager.delete( getContext(),  connection );
         } catch ( SQLException e ) {
@@ -132,13 +131,6 @@ public class JmsConnectionManager extends HibernateEntityManager implements Appl
         delete( findConnectionByPrimaryKey( oid ) );
     }
 
-    private JmsEndpointManager getEndpointManager() {
-        if ( _endpointManager == null ) {
-            _endpointManager = (JmsEndpointManager)Locator.getDefault().lookup( JmsEndpointManager.class );
-        }
-        return _endpointManager;
-    }
-
     public Class getImpClass() {
         return JmsConnection.class;
     }
@@ -151,10 +143,19 @@ public class JmsConnectionManager extends HibernateEntityManager implements Appl
         return "jms_connection";
     }
 
-    private final Logger _logger = Logger.getLogger(getClass().getName());
-    private JmsEndpointManager _endpointManager;
+    private JmsEndpointManager jmsEndpointManager;
 
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         applicationContext = ctx;
     }
+    public void setJmsEndpointManager(JmsEndpointManager jmsEndpointManager) {
+        this.jmsEndpointManager = jmsEndpointManager;
+    }
+
+    public void afterPropertiesSet() throws Exception {
+        if (jmsEndpointManager == null) {
+            throw new IllegalArgumentException("Endpoint Manager is required");
+        }
+    }
+    private final Logger _logger = Logger.getLogger(getClass().getName());
 }

@@ -118,7 +118,7 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
 
     public void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException {
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             PersistenceContext.getCurrent().beginTransaction();
             JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
             if (endpoint == null) throw new FindException("No endpoint with OID " + oid + " could be found");
@@ -146,7 +146,7 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
     public long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException {
         HibernatePersistenceContext context = null;
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             context.beginTransaction();
 
@@ -284,7 +284,7 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
     public long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, SaveException, VersionException {
         HibernatePersistenceContext context = null;
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             context.beginTransaction();
 
@@ -311,7 +311,7 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
     public void deleteEndpoint(long endpointOid) throws RemoteException, FindException, DeleteException {
         HibernatePersistenceContext context = null;
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
 
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             context.beginTransaction();
@@ -330,7 +330,7 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
     public void deleteConnection(long connectionOid) throws RemoteException, FindException, DeleteException {
         HibernatePersistenceContext context = null;
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             context.beginTransaction();
 

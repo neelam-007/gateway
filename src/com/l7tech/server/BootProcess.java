@@ -10,7 +10,6 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.common.util.Locator;
 import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
@@ -22,6 +21,7 @@ import com.l7tech.server.event.system.*;
 import com.l7tech.server.policy.DefaultGatewayPolicies;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.*;
@@ -47,6 +47,7 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private List _components = new ArrayList();
+    private ServerConfig serverConfig;
 
     private void deleteOldAttachments(File attachmentDir) {
         File[] goners = attachmentDir.listFiles(new FileFilter() {
@@ -64,7 +65,8 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
         }
     }
 
-    public void setComponentConfig(ComponentConfig config) throws LifecycleException {
+    public void setServerConfig(ServerConfig config) throws LifecycleException {
+        serverConfig = config;
         try {
             ipAddress = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
@@ -76,7 +78,7 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
         HibernatePersistenceContext context = null;
         try {
             // Initialize database stuff
-            HibernatePersistenceManager.initialize();
+            HibernatePersistenceManager.initialize(config.getSpringContext());
 
             // This needs to happen here, early enough that it will notice early events but after the database init
             systemAuditListener = new SystemAuditListener();
@@ -123,7 +125,7 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
                 if (component != null) {
                     try {
                         if (component instanceof TransactionalComponent) context.beginTransaction();
-                        component.setComponentConfig(config);
+                        component.setServerConfig(config);
                         _components.add(component);
                         if (component instanceof TransactionalComponent) context.commitTransaction();
                     } catch (LifecycleException e) {
@@ -164,8 +166,10 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
             // make sure the ServiceManager is available. this will also build the service cache
             try {
                 context.beginTransaction();
-                if (Locator.getDefault().lookup(ServiceManager.class) == null) {
-                    logger.severe("Could not instantiate the ServiceManager");
+                try {
+                    serverConfig.getSpringContext().getBean("serviceManager");
+                } catch (NoSuchBeanDefinitionException e) {
+                    logger.log(Level.SEVERE, "Could not instantiate the ServiceManager", e);
                 }
                 context.rollbackTransaction();
             } catch (TransactionException e) {
@@ -244,7 +248,7 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
         }
 
         // stop cache integrity process if necessary
-        ServiceManager serviceManager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+        ServiceManager serviceManager = (ServiceManager)serverConfig.getSpringContext().getBean("serviceManager");
         if (serviceManager != null && serviceManager instanceof ServiceManagerImp) {
             ((ServiceManagerImp)serviceManager).destroy();
         }
@@ -253,7 +257,7 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
         logger.info("Closed.");
     }
 
-    private void setSystemProperties(ComponentConfig config) throws IOException {
+    private void setSystemProperties(ServerConfig config) throws IOException {
         // Set system properties
         String sysPropsPath = config.getProperty(ServerConfig.PARAM_SYSTEMPROPS);
         File propsFile = new File(sysPropsPath);

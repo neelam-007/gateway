@@ -6,7 +6,6 @@ import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.policy.validator.ServerPolicyValidator;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceAdmin;
@@ -40,6 +39,7 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
 
     private ServiceManager serviceManager;
+    private PolicyValidator policyValidator;
 
     public String resolveWsdlTarget(String url) throws IOException, MalformedURLException {
         try {
@@ -115,8 +115,7 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceid);
             Assertion assertion = WspReader.parse(policyXml);
-            PolicyValidator validator = new ServerPolicyValidator();
-            return validator.validate(assertion, service);
+            return policyValidator.validate(assertion, service);
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get existing service: " + serviceid, e);
             throw new RemoteException("cannot get existing service: " + serviceid, e);
@@ -148,7 +147,7 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
         }
 
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             long oid = PublishedService.DEFAULT_OID;
             pc.beginTransaction();
 
@@ -182,7 +181,7 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
         PublishedService service = null;
         try {
             long oid = toLong(serviceID);
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             beginTransaction();
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
@@ -201,6 +200,10 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
 
     public void setServiceManager(ServiceManager serviceManager) {
         this.serviceManager = serviceManager;
+    }
+
+    public void setPolicyValidator(PolicyValidator policyValidator) {
+        this.policyValidator = policyValidator;
     }
     // ************************************************
     // PRIVATES
@@ -274,6 +277,9 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
     public void afterPropertiesSet() throws Exception {
         if  (serviceManager == null) {
             throw new IllegalArgumentException("service manager is required");
+        }
+        if  (policyValidator == null) {
+            throw new IllegalArgumentException("Policy Validator is required");
         }
     }
 }

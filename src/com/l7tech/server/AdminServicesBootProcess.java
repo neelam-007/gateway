@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  */
 public class AdminServicesBootProcess implements ServerComponentLifecycle {
 
-    public void setComponentConfig(ComponentConfig config) throws LifecycleException {
+    public void setServerConfig(ServerConfig config) throws LifecycleException {
         try {
             initializeSslEnvironment();
         } catch (Exception e) {

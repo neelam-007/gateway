@@ -66,7 +66,7 @@ public class AuditPersistenceTest extends TestCase {
     }
 
     public void setUp() throws Exception {
-        HibernatePersistenceManager.initialize();
+        HibernatePersistenceManager.initialize(null);
     }
 
     public void tearDown() throws Exception {

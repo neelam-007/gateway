@@ -9,6 +9,7 @@ package com.l7tech.server.policy.assertion.identity;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.PermissiveIdentityAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 /**
  * Server implementation of {@link PermissiveIdentityAssertion}, which authorizes
@@ -28,7 +29,7 @@ public class ServerPermissiveIdentityAssertion extends ServerIdentityAssertion {
     /**
      * @return {@link AssertionStatus#NONE} always. Must not be used in a real policy.
      */
-    protected AssertionStatus checkUser( User u ) {
+    protected AssertionStatus checkUser(User u, PolicyEnforcementContext context) {
         return AssertionStatus.NONE;
     }
 }

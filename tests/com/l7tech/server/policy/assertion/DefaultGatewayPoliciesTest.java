@@ -17,7 +17,7 @@ public class DefaultGatewayPoliciesTest extends TestCase {
      */
     public DefaultGatewayPoliciesTest( String name ) throws Exception {
         super( name );
-        HibernatePersistenceManager.initialize();
+        HibernatePersistenceManager.initialize(null);
     }
 
     /**

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<!-- test bean definitions -->
+<beans>
+    <!-- server side identity provider factory (same as the prod)-->
+     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
+     </bean>
+
+    <!-- server side identity configuration manager -->
+    <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.TestIdentityProviderConfigManager">
+    </bean>
+</beans>

@@ -68,7 +68,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                User user = context.getAuthenticatedUser();
                 // The user was authenticated by a previous IdentityAssertion.
                 logger.log(Level.FINEST, "Request already authenticated");
-                return checkUser( user );
+                return checkUser( user, context );
             } else {
                 if ( _data.getIdentityProviderOid() == Entity.DEFAULT_OID ) {
                     String err = "Can't call checkRequest() when no valid identityProviderOid has been set!";
@@ -78,7 +78,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
 
                 String name = null;
                 try {
-                    IdentityProvider provider = getIdentityProvider();
+                    IdentityProvider provider = getIdentityProvider(context);
                     User user = provider.authenticate( pc );
                     if (user == null) return authFailed(context, pc, null);
 
@@ -92,7 +92,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     context.setAuthenticatedUser( user );
                     logger.log(Level.FINEST, "Authenticated " + name );
                     // Make sure this guy matches our criteria
-                    return checkUser( user );
+                    return checkUser( user, context);
                 } catch ( InvalidClientCertificateException icce ) {
                     logger.info("Invalid client cert for " + name );
                     // set some response header so that the CP is made aware of this situation
@@ -143,9 +143,11 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
      * <code>identityProviderOid</code> property, using a cache if possible.
      * @return
      * @throws FindException
+     * @param context
      */
-    protected IdentityProvider getIdentityProvider() throws FindException {
-        IdentityProvider provider = IdentityProviderFactory.getProvider(_data.getIdentityProviderOid());
+    protected IdentityProvider getIdentityProvider(PolicyEnforcementContext context) throws FindException {
+        IdentityProviderFactory ipf = (IdentityProviderFactory)context.getSpringContext().getBean("identityProviderFactory");
+        IdentityProvider provider = ipf.getProvider(_data.getIdentityProviderOid());
         if (provider == null) {
             String msg = "id assertion refers to an id provider which does not exist anymore";
             logger.warning(msg);
@@ -155,7 +157,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         }
     }
 
-    protected abstract AssertionStatus checkUser( User u );
+    protected abstract AssertionStatus checkUser(User u, PolicyEnforcementContext context);
 
     protected final transient Logger logger = Logger.getLogger(getClass().getName());
 

@@ -3,7 +3,6 @@ package com.l7tech.server.identity.internal;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -14,6 +13,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.PersistentIdentityProvider;
+import org.springframework.context.ApplicationContext;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -38,11 +38,16 @@ import java.util.logging.Logger;
  */
 public class InternalIdentityProviderServer extends PersistentIdentityProvider {
     public static final String ENCODING = "UTF-8";
+    private ApplicationContext applicationContext;
 
-    public InternalIdentityProviderServer(IdentityProviderConfig config) {
+    public InternalIdentityProviderServer(IdentityProviderConfig config, ApplicationContext applicationContext) {
         this.config = config;
-        this.userManager = new InternalUserManagerServer( this );
-        this.groupManager = new InternalGroupManagerServer( this );
+        this.applicationContext = applicationContext;
+        if (config == null || applicationContext == null) {
+            throw new IllegalArgumentException();
+        }
+        this.userManager = new InternalUserManagerServer( this);
+        this.groupManager = new InternalGroupManagerServer(this);
     }
 
     public UserManager getUserManager() {
@@ -123,7 +128,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                     logger.finest("Verification OK - client cert is valid.");
                     // End of Check
 
-                    ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+                    ClientCertManager man = (ClientCertManager)applicationContext.getBean("clientCertManager");
                     try {
                         dbCert = (X509Certificate)man.getUserCert(dbUser);
                     } catch (FindException e) {

@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.validator;
 
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
@@ -25,6 +24,10 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.service.PublishedService;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -49,7 +52,11 @@ import java.util.logging.Logger;
  * Date: Sep 1, 2004<br/>
  * $Id$<br/>
  */
-public class ServerPolicyValidator extends PolicyValidator {
+public class ServerPolicyValidator extends PolicyValidator
+    implements ApplicationContextAware, InitializingBean {
+    private ApplicationContext applicationContext;
+    private JmsEndpointManager jmsEndpointManager;
+
     public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
         Assertion[] ass = ap.getPath();
         PathContext pathContext = new PathContext();
@@ -144,10 +151,9 @@ public class ServerPolicyValidator extends PolicyValidator {
             JmsRoutingAssertion jmsass = (JmsRoutingAssertion)a;
             if (jmsass.getEndpointOid() != null) {
                 long endpointid = jmsass.getEndpointOid().longValue();
-                JmsEndpointManager mgr = (JmsEndpointManager)Locator.getDefault().lookup(JmsEndpointManager.class);
                 boolean jmsEndpointDefinedOk = false;
                 try {
-                    JmsEndpoint routedRequestEndpoint = mgr.findByPrimaryKey(endpointid);
+                    JmsEndpoint routedRequestEndpoint = jmsEndpointManager.findByPrimaryKey(endpointid);
                     if (routedRequestEndpoint != null) jmsEndpointDefinedOk = true;
                 } catch (FindException e) {
                     logger.log(Level.FINE, "Error fetching endpoint " + endpointid, e);
@@ -176,7 +182,8 @@ public class ServerPolicyValidator extends PolicyValidator {
         if (output == null) {
             try {
 // get provider
-                IdentityProvider prov = IdentityProviderFactory.getProvider(identityAssertion.getIdentityProviderOid());
+                IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
+                IdentityProvider prov = ipf.getProvider(identityAssertion.getIdentityProviderOid());
                 if (prov == null) {
                     idAssertionStatusCache.put(identityAssertion, new Integer(PROVIDER_NOT_EXIST));
                     return PROVIDER_NOT_EXIST;
@@ -256,6 +263,20 @@ public class ServerPolicyValidator extends PolicyValidator {
     private Map idAssertionStatusCache = new HashMap();
 
     private final Logger logger = Logger.getLogger(ServerPolicyValidator.class.getName());
+
+    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
+        applicationContext = ctx;
+    }
+
+    public void setJmsEndpointManager(JmsEndpointManager jmsEndpointManager) {
+        this.jmsEndpointManager = jmsEndpointManager;
+    }
+
+    public void afterPropertiesSet() throws Exception {
+        if (jmsEndpointManager == null) {
+            throw new IllegalArgumentException("JMS Endpoint manager is required");
+        }
+    }
 
     class PathContext {
         Collection credentialSources = new ArrayList();

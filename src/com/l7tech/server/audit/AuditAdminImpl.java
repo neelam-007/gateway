@@ -91,7 +91,7 @@ public class AuditAdminImpl extends ApplicationObjectSupport implements AuditAdm
     }
 
     public void deleteOldAuditRecords() throws RemoteException {
-        RoleUtils.enforceAdminRole();
+        RoleUtils.enforceAdminRole(getApplicationContext());
         try {
             doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
@@ -219,7 +219,7 @@ public class AuditAdminImpl extends ApplicationObjectSupport implements AuditAdm
     }
 
     public OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException {
-        RoleUtils.enforceAdminRole();
+        RoleUtils.enforceAdminRole(getApplicationContext());
         try {
             final DownloadContext downloadContext;
             downloadContext = new DownloadContext(0);

@@ -9,6 +9,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import sun.misc.BASE64Decoder;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -32,6 +33,10 @@ import java.util.logging.Level;
  * $Id$<br/>
  */
 public class PasswdServlet extends AuthenticatableHttpServlet {
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
+    }
+
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         if (!req.isSecure()) {
             logger.warning("Request came over insecure channel (not https). Returning 403.");
@@ -110,9 +115,8 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
                 newInternalUser.copyFrom(internalUser);
                 newInternalUser.setVersion(internalUser.getVersion());
                 newInternalUser.setPassword(str_newpasswd);
-
-                IdentityProvider provider = IdentityProviderFactory.getProvider(
-                                                IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
+                IdentityProviderFactory ipf = (IdentityProviderFactory)getApplicationContext().getBean("identityProviderFactory");
+                IdentityProvider provider = ipf.getProvider(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
                 UserManager userManager = provider.getUserManager();
                 userManager.update(newInternalUser);
                 logger.fine("Password changed for user " + internalUser.getLogin());

@@ -1,8 +1,7 @@
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
 

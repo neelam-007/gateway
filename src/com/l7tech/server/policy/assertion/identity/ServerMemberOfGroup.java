@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,9 +33,10 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
      * <code>groupName</code> properties, in that order.
      * @return
      * @throws com.l7tech.objectmodel.FindException
+     * @param context
      */
-    protected Group getGroup() throws FindException {
-        GroupManager gman = getIdentityProvider().getGroupManager();
+    protected Group getGroup(PolicyEnforcementContext context) throws FindException {
+        GroupManager gman = getIdentityProvider(context).getGroupManager();
         if (_data.getGroupId() != null) {
             return gman.findByPrimaryKey(_data.getGroupId());
         }
@@ -52,16 +54,17 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
      * is a member of the <code>Group</code> with which this assertion was initialized.
      * @param user
      * @return
+     * @param context
      */
-    public AssertionStatus checkUser(User user) {
+    public AssertionStatus checkUser(User user, PolicyEnforcementContext context) {
         try {
-            Group targetGroup = getGroup();
+            Group targetGroup = getGroup(context);
             if (targetGroup == null) {
                 logger.severe("This assertion refers to a group that does not exist." +
                                      "Policy might be corrupted");
                 return AssertionStatus.UNAUTHORIZED;
             }
-            GroupManager gman = getIdentityProvider().getGroupManager();
+            GroupManager gman = getIdentityProvider(context).getGroupManager();
             if ( gman.isMember(user, targetGroup) ) {
                 logger.finest("membership established");
                 return AssertionStatus.NONE;

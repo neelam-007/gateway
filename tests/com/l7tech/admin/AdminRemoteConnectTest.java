@@ -11,10 +11,8 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import com.l7tech.common.audit.AuditAdmin;
 
 import java.net.URL;
-import java.net.URI;
 
 /**
  * @author emil

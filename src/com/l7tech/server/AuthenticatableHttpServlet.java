@@ -1,6 +1,5 @@
 package com.l7tech.server;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
@@ -15,11 +14,13 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.service.PublishedService;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -51,10 +52,17 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     public static final String PARAM_HTTP_X509CERT = "javax.servlet.request.X509Certificate";
     protected ServiceManager serviceManagerInstance = null;
     protected final Logger logger = Logger.getLogger(getClass().getName());
+    private WebApplicationContext applicationContext;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+        applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+
+        if (applicationContext == null) {
+            throw new ServletException("Configuration error; could not get application context");
+        }
     }
+
 
     /**
      * Look for basic creds in the request and authenticate them against id providers available in this ssg.
@@ -80,13 +88,13 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     /**
      * @return false if the user has valid cert in our db and failed to present
-     * it to the ssl handshake. true otherwise
+     *         it to the ssl handshake. true otherwise
      */
     private boolean checkRequestForCert(User user, HttpServletRequest req) {
         // this check only makes sense if the request comes over SSL
         if (!req.isSecure()) return true;
         // check if the user currently has a valid cert
-        ClientCertManager certman = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+        ClientCertManager certman = (ClientCertManager)applicationContext.getBean("clientCertManager");
         Certificate certindb = null;
         try {
             certindb = certman.getUserCert(user);
@@ -127,7 +135,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                     }
                 }
                 logger.warning("the authenticated user has a valid cert but he presented a different" +
-                               "cert to the servlet");
+                  "cert to the servlet");
                 return false;
             }
 
@@ -139,7 +147,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     private List getUsers(HttpServletRequest req) throws FindException, IssuedCertNotPresentedException {
         List users = new ArrayList();
-        IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
+        IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)applicationContext.getBean("identityProviderConfigManager");
         Collection providers;
         providers = configManager.findAllIdentityProviders();
         LoginCredentials creds = findCredentialsBasic(req);
@@ -172,7 +180,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
         if (users.isEmpty() && userAuthenticatedButDidNotPresentHisCert) {
             String msg = "Basic credentials are valid but the client did not present " +
-                         "his client cert as part of the ssl handshake";
+              "his client cert as part of the ssl handshake";
             logger.warning(msg);
             throw new IssuedCertNotPresentedException(msg);
         }
@@ -292,20 +300,21 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 IdentityAssertion ia = (IdentityAssertion)a;
                 final String msg = "Policy refers to a nonexistent identity provider";
                 try {
-                    IdentityProvider provider = IdentityProviderFactory.getProvider(ia.getIdentityProviderOid());
-                    if ( provider == null ) {
+                    IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
+                    IdentityProvider provider = ipf.getProvider(ia.getIdentityProviderOid());
+                    if (provider == null) {
                         logger.warning(msg);
                         return false;
                     }
-                    if ( provider.getConfig().type() != IdentityProviderType.FEDERATED ) allIdentitiesAreFederated = false;
-                } catch ( FindException e ) {
+                    if (provider.getConfig().type() != IdentityProviderType.FEDERATED) allIdentitiesAreFederated = false;
+                } catch (FindException e) {
                     logger.warning(msg);
                     return false;
                 }
             }
         }
 
-        if ( allIdentitiesAreFederated ) {
+        if (allIdentitiesAreFederated) {
             // TODO support federated credentials in PolicyServlet
             logger.info("All IdentityAssertions point to a Federated IDP. Treating as anonymous");
             return true;
@@ -354,8 +363,12 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
     }
 
+    protected ApplicationContext getApplicationContext() {
+        return applicationContext;
+    }
+
     protected synchronized void initialiseServiceManager() throws ClassCastException, RuntimeException {
-        serviceManagerInstance = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+        serviceManagerInstance = (ServiceManager)applicationContext.getBean("serviceManager");
         if (serviceManagerInstance == null) {
             throw new RuntimeException("Cannot instantiate the ServiceManager");
         }

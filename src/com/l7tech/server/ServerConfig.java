@@ -18,12 +18,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class ServerConfig extends ApplicationObjectSupport implements ComponentConfig {
+public class ServerConfig extends ApplicationObjectSupport {
     public static final String PARAM_SERVICE_RESOLVERS = "serviceResolvers";
     public static final String PARAM_SERVER_ID = "serverId";
     public static final String PARAM_KEYSTORE = "keystorePropertiesPath";
@@ -381,6 +382,13 @@ public class ServerConfig extends ApplicationObjectSupport implements ComponentC
         }
 
         return attachmentsDir;
+    }
+
+    /**
+     * shortcut
+     */
+    public final ApplicationContext getSpringContext() {
+        return super.getApplicationContext();
     }
 
     private int _serverId;

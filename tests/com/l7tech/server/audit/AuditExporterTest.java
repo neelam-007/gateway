@@ -44,7 +44,7 @@ public class AuditExporterTest extends TestCase {
     }
 
     public void testAuditExport() throws Exception {
-        HibernatePersistenceManager.initialize();
+        HibernatePersistenceManager.initialize(null);
         FileOutputStream fileOut = null;
         try {
             fileOut = new FileOutputStream("AuditExporterTest.zip");

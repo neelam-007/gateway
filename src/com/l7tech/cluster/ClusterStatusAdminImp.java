@@ -75,7 +75,7 @@ public class ClusterStatusAdminImp extends ApplicationObjectSupport implements C
             throw new UpdateException("internal error", e);
         }
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             try {
                 context.beginTransaction();
                 ciman.renameNode(nodeid, newName);
@@ -106,7 +106,7 @@ public class ClusterStatusAdminImp extends ApplicationObjectSupport implements C
             throw new DeleteException("internal error", e);
         }
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             try {
                 logger.info("removing stale node: " + nodeid);
                 context.beginTransaction();

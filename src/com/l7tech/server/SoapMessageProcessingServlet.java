@@ -28,6 +28,8 @@ import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -44,7 +46,7 @@ import java.util.logging.Logger;
 /**
  * Receives SOAP requests via HTTP POST, passes them into the <code>MessageProcessor</code>
  * and formats the response as a reasonable approximation of an HTTP response.
- * 
+ *
  * @author alex
  * @version $Revision$
  */
@@ -52,13 +54,18 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
     public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco.modulator?serviceoid=";
+    private WebApplicationContext applicationContext;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+        applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        if (applicationContext == null) {
+            throw new ServletException("Configuration error; could not get application context");
+        }
     }
 
     public void doGet(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
-        throwBadMethod( hresponse, "GET" );
+        throwBadMethod(hresponse, "GET");
     }
 
     private void throwBadMethod(HttpServletResponse hresponse, String method) throws IOException {
@@ -97,16 +104,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     public void doPost(final HttpServletRequest hrequest,
                        final HttpServletResponse hresponse)
-            throws ServletException, IOException
-    {
+      throws ServletException, IOException {
         // Initialize processing context
         final Message response = new Message();
         final Message request = new Message();
 
         final String rawct = hrequest.getContentType();
         ContentTypeHeader ctype = rawct != null && rawct.length() > 0
-                ? ContentTypeHeader.parseValue(rawct)
-                : ContentTypeHeader.XML_DEFAULT;
+          ? ContentTypeHeader.parseValue(rawct)
+          : ContentTypeHeader.XML_DEFAULT;
 
         final HttpRequestKnob reqKnob = new HttpServletRequestKnob(hrequest);
         request.attachHttpRequestKnob(reqKnob);
@@ -114,7 +120,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(hresponse);
         response.attachHttpResponseKnob(respKnob);
 
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, hrequest, hresponse);
+        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, 
+                                                                              hrequest, hresponse,
+                                                                              applicationContext);
 
         // TODO refactor the stash manager creation code into a home of its own
         final StashManager stashManager = StashManagerFactory.createStashManager();
@@ -131,7 +139,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
                 int routeStat = respKnob.getStatus();
                 if (routeStat < 1) {
-                    if ( status == AssertionStatus.NONE ) {
+                    if (status == AssertionStatus.NONE) {
                         routeStat = HttpServletResponse.SC_OK;
                     } else {
                         // Request wasn't routed
@@ -144,7 +152,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     // Transmit the response and return
                     hresponse.setContentType(response.getMimeKnob().getFirstPart().getContentType().getFullValue());
                     HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(),
-                                        hresponse.getOutputStream());
+                      hresponse.getOutputStream());
                     return;
                 } else if (context.isAuthenticationMissing() || status.isAuthProblem()) {
                     logger.fine("servlet transport returning challenge");
@@ -157,24 +165,24 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 } else {
                     logger.fine("servlet transport returning 500");
                     sendFault(context, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                              status.getSoapFaultCode(), status.getMessage());
+                      status.getSoapFaultCode(), status.getMessage());
                     return;
                 }
             } catch (PolicyAssertionException pae) {
                 logger.log(Level.SEVERE, pae.getMessage(), pae);
                 sendFault(context, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                          SoapFaultUtils.FC_SERVER, pae.toString());
+                  SoapFaultUtils.FC_SERVER, pae.toString());
                 return;
             } catch (PolicyVersionException pve) {
                 String msg = "Request referred to an outdated version of policy";
-                logger.log(Level.INFO, msg );
+                logger.log(Level.INFO, msg);
                 sendFault(context, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
-                          SoapFaultUtils.FC_CLIENT, msg);
+                  SoapFaultUtils.FC_CLIENT, msg);
                 return;
             } catch (NoSuchPartException e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 sendFault(context, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
-                          SoapFaultUtils.FC_CLIENT, e.toString());
+                  SoapFaultUtils.FC_CLIENT, e.toString());
                 return;
             }
         } catch (Throwable e) {
@@ -182,11 +190,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if (e instanceof Error) throw (Error)e;
             try {
                 sendFault(context,
-                          hrequest,
-                          hresponse,
-                          HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                          SoapFaultUtils.FC_SERVER,
-                          e.getMessage());
+                  hrequest,
+                  hresponse,
+                  HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                  SoapFaultUtils.FC_SERVER,
+                  e.getMessage());
             } catch (SAXException e1) {
                 throw new ServletException(e);
             }
@@ -224,9 +232,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
 
             responseStream.write(SoapFaultUtils.generateSoapFaultXml(faultDetail.getFaultCode(),
-                                                            faultDetail.getFaultString(),
-                                                            faultDetail.getFaultDetail(),
-                                                            actor).getBytes());
+              faultDetail.getFaultString(),
+              faultDetail.getFaultDetail(),
+              actor).getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
@@ -268,15 +276,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
             Element exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("policyURL", purl);
             responseStream.write(SoapFaultUtils.generateSoapFaultXml(faultCode, faultString,
-                                                                     exceptiondetails, actor).getBytes());
+              exceptiondetails, actor).getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
     }
 
     private void sendChallenge(PolicyEnforcementContext context,
-                               HttpServletRequest hreq, HttpServletResponse hresp) throws IOException
-    {
+                               HttpServletRequest hreq, HttpServletResponse hresp) throws IOException {
         ServletOutputStream sos = null;
         try {
             // the challenge http header is supposed to already been appended at that point-ah

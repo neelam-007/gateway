@@ -1,6 +1,5 @@
 package com.l7tech.policy.assertion.ext;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -8,10 +7,11 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.service.PublishedService;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -29,14 +29,11 @@ import java.util.logging.Logger;
  * @author emil
  * @version 16-Feb-2004
  */
-public class CustomAssertionsRegistrarImpl implements CustomAssertionsRegistrar {
+public class CustomAssertionsRegistrarImpl
+  extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean {
     static Logger logger = Logger.getLogger(CustomAssertionsRegistrar.class.getName());
     protected static boolean initialized = false;
-
-    public CustomAssertionsRegistrarImpl() {
-        // todo: find a way to invert dependency here
-        init(ServerConfig.getInstance());
-    }
+    private ServiceManager serviceManager;
 
     /**
      * @return the list of all assertions known to the runtime
@@ -73,12 +70,8 @@ public class CustomAssertionsRegistrarImpl implements CustomAssertionsRegistrar 
         if (!EntityType.SERVICE.equals(eh.getType())) {
             throw new IllegalArgumentException("type " + eh.getType());
         }
-        ServiceManager sm = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
-        if (sm == null) {
-            throw new IllegalStateException("Cannot get service manager");
-        }
         try {
-            PublishedService svc = sm.findByPrimaryKey(eh.getOid());
+            PublishedService svc = serviceManager.findByPrimaryKey(eh.getOid());
             if (svc == null) {
                 throw new ObjectNotFoundException("service not found, " + eh);
             }
@@ -126,8 +119,12 @@ public class CustomAssertionsRegistrarImpl implements CustomAssertionsRegistrar 
         return result;
     }
 
+    public void setServiceManager(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
+    }
+
     //-------------- custom assertion loading stuff -------------------------
-    private synchronized void init(ComponentConfig config) {
+    private synchronized void init(ServerConfig config) {
         if (initialized) return;
         fileName = config.getProperty(KEY_CONFIG_FILE);
         if (fileName == null) {
@@ -238,4 +235,12 @@ public class CustomAssertionsRegistrarImpl implements CustomAssertionsRegistrar 
 
     private String fileName;
     final static String KEY_CONFIG_FILE = "custom.assertions.file";
+
+    public void afterPropertiesSet() throws Exception {
+        init((ServerConfig)getApplicationContext().getBean("serverConfig"));
+
+        if (serviceManager == null) {
+            throw new IllegalArgumentException("Service Manager is required");
+        }
+    }
 }

@@ -33,6 +33,9 @@ public class BootServlet extends HttpServlet {
         boolean failure = false;
         try {
             ApplicationContext acx = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+            if (acx == null) {
+                throw new ServletException("Configuration error; could not get application context");
+            }
             _boot = (ServerComponentLifecycle)acx.getBean("ssgBoot");
             _boot.start();
             logger.fine("Boot process completed");

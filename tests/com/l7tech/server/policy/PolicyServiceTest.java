@@ -11,6 +11,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.identity.TestIdentityProvider;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.Assertion;
@@ -32,7 +33,10 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import junit.extensions.TestSetup;
 import org.w3c.dom.Document;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -43,13 +47,29 @@ import java.util.logging.Logger;
  */
 public class PolicyServiceTest extends TestCase {
     private static Logger log = Logger.getLogger(PolicyServiceTest.class.getName());
+    static ApplicationContext applicationContext = null;
 
     public PolicyServiceTest(String name) {
         super(name);
     }
 
     public static Test suite() {
-        return new TestSuite(PolicyServiceTest.class);
+         final TestSuite suite = new TestSuite(PolicyServiceTest.class);
+         TestSetup wrapper = new TestSetup(suite) {
+
+             protected void setUp() throws Exception {
+                 applicationContext = createApplicationContext();
+             }
+
+             protected void tearDown() throws Exception {
+                 ;
+             }
+
+             private ApplicationContext createApplicationContext() {
+                 return ApplicationContexts.getTestApplicationContext();
+             }
+         };
+         return wrapper;
     }
 
     protected void setUp() throws Exception {
@@ -70,7 +90,7 @@ public class PolicyServiceTest extends TestCase {
         Document requestDoc = null;
         Message request = new Message();
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, applicationContext);
         context.setCredentials(loginCredentials);
         if (loginCredentials != null) {
             requestDoc = PolicyServiceClient.createGetPolicyRequest("123");

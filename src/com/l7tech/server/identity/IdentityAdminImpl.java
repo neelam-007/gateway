@@ -96,7 +96,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
       throws RemoteException, SaveException, UpdateException {
         beginTransaction();
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             if (identityProviderConfig.getOid() > 0) {
                 IdentityProviderConfigManager manager = getIdProvCfgMan();
                 IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
@@ -187,7 +187,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
     public void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException {
         beginTransaction();
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             IdentityProviderConfigManager manager = getIdProvCfgMan();
 
             final IdentityProviderConfig ipc = manager.findByPrimaryKey(oid);
@@ -243,7 +243,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
     public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
       throws RemoteException, FindException {
         try {
-            IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
+            IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             if (types != null) {
                 // TODO is this necessary?   EntityType already has a readResolve()
@@ -262,7 +262,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
     public User findUserByID(long identityProviderConfigId, String userId)
       throws RemoteException, FindException {
         try {
-            IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
+            IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
 
@@ -275,7 +275,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
 
     public User findUserByLogin(long idProvCfgId, String login) throws RemoteException, FindException {
         try {
-            IdentityProvider provider = IdentityProviderFactory.getProvider(idProvCfgId);
+            IdentityProvider provider = identityProviderFactory.getProvider(idProvCfgId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
 
@@ -289,7 +289,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
       throws RemoteException, DeleteException, ObjectNotFoundException {
         beginTransaction();
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             UserManager userManager = retrieveUserManager(cfgid);
             if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
             User user = userManager.findByPrimaryKey(userId);
@@ -320,8 +320,8 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
-            RoleUtils.enforceAdminRole();
-            IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
+            RoleUtils.enforceAdminRole(getApplicationContext());
+            IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
             user.setProviderId(identityProviderConfigId);
@@ -377,7 +377,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
 
     public Group findGroupByID(long cfgid, String groupId) throws RemoteException, FindException {
         try {
-            IdentityProvider provider = IdentityProviderFactory.getProvider(cfgid);
+            IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
 
@@ -391,7 +391,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
       throws RemoteException, DeleteException, ObjectNotFoundException {
         beginTransaction();
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             GroupManager groupManager = retrieveGroupManager(cfgid);
             Group grp = groupManager.findByPrimaryKey(groupId);
             if (grp == null) throw new ObjectNotFoundException("Group does not exist");
@@ -418,8 +418,8 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
-            RoleUtils.enforceAdminRole();
-            IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
+            RoleUtils.enforceAdminRole(getApplicationContext());
+            IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
             group.setProviderId(identityProviderConfigId);
@@ -468,12 +468,12 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
     public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             // revoke the cert in internal CA
             clientCertManager.revokeUserCert(user);
             // internal users should have their password "revoked" along with their cert
 
-            IdentityProvider provider = IdentityProviderFactory.getProvider(user.getProviderId());
+            IdentityProvider provider = identityProviderFactory.getProvider(user.getProviderId());
             if (provider == null) throw new FindException("IdentityProvider could not be found");
 
             if (IdentityProviderType.INTERNAL.equals(provider.getConfig().type())) {
@@ -510,7 +510,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
     public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
         beginTransaction();
         try {
-            RoleUtils.enforceAdminRole();
+            RoleUtils.enforceAdminRole(getApplicationContext());
             // revoke the cert in internal CA
             clientCertManager.recordNewUserCert(user, cert);
         } finally {
@@ -584,7 +584,6 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         if (currentSubject == null) {
             return Collections.EMPTY_SET;
         }
-        final Authorizer authorizer = Authorizer.getAuthorizer();
         if (authorizer.isSubjectInRole(currentSubject, new String[]{Group.ADMIN_GROUP_NAME})) {  //admin can ask everything
             return authorizer.getUserRoles(subject);
         } else if (authorizer.isSubjectInRole(currentSubject, new String[]{Group.OPERATOR_GROUP_NAME})) { // operator only self
@@ -606,9 +605,19 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         this.clientCertManager = clientCertManager;
     }
 
+    public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
+        this.identityProviderFactory = identityProviderFactory;
+    }
+
+    public void setAuthorizer(Authorizer authorizer) {
+        this.authorizer = authorizer;
+    }
+
     public void afterPropertiesSet() throws Exception {
+        checkidentityProviderFactory();
         checkidentityProviderConfigManager();
         checkClientCertManager();
+        checkAuthorizer();
     }
 
 
@@ -617,17 +626,29 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
     // PRIVATES
     // ************************************************
 
+    private void checkidentityProviderFactory() {
+        if (identityProviderFactory == null) {
+            throw new IllegalArgumentException("identity provider factory is required");
+        }
+    }
+
     private void checkidentityProviderConfigManager() {
         if (identityProviderConfigManager == null) {
             throw new IllegalArgumentException("identity provider config is required");
         }
     }
+
     private void checkClientCertManager() {
         if (clientCertManager == null) {
             throw new IllegalArgumentException("client certificate manager required");
         }
     }
 
+    private void checkAuthorizer() {
+         if (authorizer == null) {
+             throw new IllegalArgumentException("Authorizer is required");
+         }
+     }
 
     private IdentityProviderConfigManager getIdProvCfgMan() {
         return identityProviderConfigManager;
@@ -687,7 +708,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
       throws RemoteException {
         UserManager ret = null;
         try {
-            IdentityProvider provider = IdentityProviderFactory.getProvider(cfgid);
+            IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             ret = provider.getUserManager();
         } catch (FindException e) {
@@ -701,7 +722,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
       throws RemoteException {
         GroupManager ret = null;
         try {
-            IdentityProvider provider = IdentityProviderFactory.getProvider(cfgid);
+            IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             ret = provider.getGroupManager();
         } catch (FindException e) {
@@ -728,7 +749,9 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         return Long.parseLong(ID);
     }
 
-    IdentityProviderConfigManager identityProviderConfigManager = null;
+    private IdentityProviderConfigManager identityProviderConfigManager = null;
+    private IdentityProviderFactory identityProviderFactory = null;
+    private Authorizer authorizer = null;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
 }

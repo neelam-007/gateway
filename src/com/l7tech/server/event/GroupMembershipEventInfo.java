@@ -18,13 +18,14 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class GroupMembershipEventInfo {
-    public GroupMembershipEventInfo(final GroupMembership gm, String verb) {
+    public GroupMembershipEventInfo(final GroupMembership gm, String verb, ApplicationContext springContext) {
         long providerOid;
         Class userClass, groupClass;
         if ((gm instanceof FederatedGroupMembership)) {
@@ -40,7 +41,8 @@ public class GroupMembershipEventInfo {
         try {
             NamedEntity g = null;
             NamedEntity u = null;
-            IdentityProvider provider = IdentityProviderFactory.getProvider(providerOid);
+            IdentityProviderFactory ipf = (IdentityProviderFactory)springContext.getBean("identityProviderFactory");
+            IdentityProvider provider = ipf.getProvider(providerOid);
             if (provider != null) {
                 g = (PersistentGroup)provider.getGroupManager().findByPrimaryKey(Long.toString(gm.getGroupOid()));
                 u = (PersistentUser)provider.getUserManager().findByPrimaryKey(Long.toString(gm.getUserOid()));

@@ -8,7 +8,6 @@ package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.TransactionalComponent;
@@ -23,6 +22,8 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class ClusterBootProcess implements TransactionalComponent {
+    private ServerConfig serverConfig;
+
     public static class AddressAlreadyInUseException extends Exception {
         public AddressAlreadyInUseException(String address) {
             this.address = address;
@@ -35,7 +36,8 @@ public class ClusterBootProcess implements TransactionalComponent {
         private String address;
     }
 
-    public void setComponentConfig( ComponentConfig config ) throws LifecycleException {
+    public void setServerConfig( ServerConfig config ) throws LifecycleException {
+        this.serverConfig = config;
         clusterInfoManager = ClusterInfoManager.getInstance();
         multicastAddress = config.getProperty(ServerConfig.PARAM_MULTICAST_ADDRESS);
         if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
@@ -69,7 +71,7 @@ public class ClusterBootProcess implements TransactionalComponent {
                 }
             }
 
-            StatusUpdater.initialize();
+            StatusUpdater.initialize(serverConfig.getSpringContext());
 
             logger.info("Initializing DistributedMessageIdManager");
             DistributedMessageIdManager.initialize(multicastAddress, PORT);

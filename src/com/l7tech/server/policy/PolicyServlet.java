@@ -36,11 +36,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
-import java.security.KeyStoreException;
 import java.security.MessageDigest;
-import java.security.PrivateKey;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -100,21 +96,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             Message response = new Message();
             response.attachHttpResponseKnob(new HttpServletResponseKnob(servletResponse));
 
-            PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, servletRequest, servletResponse);
+            PolicyEnforcementContext context = new PolicyEnforcementContext(request, response,
+                                                                            servletRequest, servletResponse, getApplicationContext());
 
             // pass over to the service
             PolicyService service = null;
-            try {
-                service = getPolicyService();
-            } catch (CertificateException e) {
-                logger.log(Level.SEVERE, "configuration exception, cannot get server cert.", e);
-                generateFaultAndSendAsResponse(servletResponse, "Internal error", e.getMessage());
-                return;
-            } catch (KeyStoreException e) {
-                logger.log(Level.SEVERE, "configuration exception, cannot get server key.", e);
-                generateFaultAndSendAsResponse(servletResponse, "Internal error", e.getMessage());
-                return;
-            }
+            service = getPolicyService();
 
             service.respondToPolicyDownloadRequest(context, signResponse, normalPolicyGetter());
 
@@ -153,12 +140,13 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    protected PolicyService getPolicyService() throws CertificateException, KeyStoreException, IOException {
-        X509Certificate cert = null;
-        PrivateKey key = null;
-        cert = KeystoreUtils.getInstance().getSslCert();
-        key = KeystoreUtils.getInstance().getSSLPrivateKey();
-        return new PolicyService(key, cert);
+    protected PolicyService getPolicyService()  {
+        return (PolicyService)getApplicationContext().getBean("policyService");
+//        X509Certificate cert = null;
+//        PrivateKey key = null;
+//        cert = KeystoreUtils.getInstance().getSslCert();
+//        key = KeystoreUtils.getInstance().getSSLPrivateKey();
+//        return new PolicyService(key, cert);
     }
 
     protected PolicyService.PolicyGetter normalPolicyGetter() {
@@ -219,17 +207,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
             // pass over to the service
             PolicyService service = null;
-            try {
-                service = getPolicyService();
-            } catch (CertificateException e) {
-                logger.log(Level.SEVERE, "configuration exception, cannot get server cert.", e);
-                generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
-                return;
-            } catch (KeyStoreException e) {
-                logger.log(Level.SEVERE, "configuration exception, cannot get server key.", e);
-                generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
-                return;
-            }
+            service = getPolicyService();
             Document response = null;
             try {
                 switch (users.size()) {
@@ -433,7 +411,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             endTransaction();
         }
         // we smelt something (maybe netegrity?)
-        CustomAssertionsRegistrar car = (CustomAssertionsRegistrar)Locator.getDefault().lookup(CustomAssertionsRegistrar.class);
+        CustomAssertionsRegistrar car = (CustomAssertionsRegistrar)getApplicationContext().getBean("customAssertionRegistrar");
         try {
             if (car != null && !car.getAssertions(Category.ACCESS_CONTROL).isEmpty()) {
                 checkInfos.add(new CheckInfo(Long.MAX_VALUE, null, null));
