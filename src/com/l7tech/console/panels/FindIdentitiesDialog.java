@@ -585,7 +585,7 @@ public class FindIdentitiesDialog extends JDialog {
      */
     private JPanel getSearchResultPanel() {
         searchResultPanel.setLayout(new BorderLayout());
-        searchResultPanel.add(new JLabel("Search results"), BorderLayout.NORTH);
+        searchResultPanel.add(new JLabel("Search Results:"), BorderLayout.NORTH);
         JScrollPane scrollPane = new JScrollPane(searchResultTable);
         scrollPane.getViewport().setBackground(searchResultTable.getBackground());
 
