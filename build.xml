@@ -781,6 +781,7 @@
 
             <fileset dir="${src.root}/src">
                 <include name="**/resources/*"/>
+                <include name="**/resources/**/*"/>
             </fileset>
 
             <fileset dir="${src.root}/src">
