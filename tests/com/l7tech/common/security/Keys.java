@@ -31,8 +31,8 @@ public class Keys {
     }
 
     /** the algorithms supported are fixed * */
-    private static final String KEY_ALGORITHM = "DSA";
-    private static final String SIGNATURE_ALGORITHM = "SHA1WITHDSA";
+    private static final String KEY_ALGORITHM = "RSA";
+    private static final String SIGNATURE_ALGORITHM = "SHA1WITHRSA";
 
     private KeyPair keyPair;
     private SecureRandom secureRandom;
