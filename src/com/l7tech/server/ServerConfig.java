@@ -40,6 +40,8 @@ public class ServerConfig implements ComponentConfig {
     public static final String PARAM_SYSTEMPROPS = "systemPropertiesPath";
     public static final String PARAM_SERVERCOMPONENTS = "serverComponents";
     public static final String PARAM_JMS_THREAD_POOL_SIZE = "jmsThreadPoolSize";
+    public static final String PARAM_CONFIG_DIRECTORY = "configDirectory";
+
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
 
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
