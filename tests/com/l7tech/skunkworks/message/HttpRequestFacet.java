@@ -13,11 +13,11 @@ public class HttpRequestFacet extends MessageFacet {
     private final HttpRequestKnob httpRequestKnob;
 
     /**
-     * Create an HttpRequestFacet that will expose the specified HttpRequestKnob.
+     * Create an HttpRequestFacet that will expose the specified HttpRequestKnob (which also exposes a TcpKnob).
      * 
      * @param message  the Message that owns this aspect
      * @param delegate the delegate to chain to or null if there isn't one.  Can't be changed after creation.
-     * @param httpRequestKnob the Knob that provides HTTP-level information about this request Message.
+     * @param httpRequestKnob the MessageKnob that provides HTTP-level information about this request Message.
      */
     public HttpRequestFacet(Message message, MessageFacet delegate, HttpRequestKnob httpRequestKnob) {
         super(message, delegate);
@@ -25,8 +25,8 @@ public class HttpRequestFacet extends MessageFacet {
         this.httpRequestKnob = httpRequestKnob;
     }
 
-    public Knob getKnob(Class c) {
-        if (c == HttpRequestKnob.class)
+    public MessageKnob getKnob(Class c) {
+        if (c == HttpRequestKnob.class || c == TcpKnob.class)
             return httpRequestKnob;
         return super.getKnob(c);
     }

@@ -16,7 +16,7 @@ import java.text.ParseException;
  *
  * Note that in keeping with the Java Servlet API, requests allow headers to be read but not set.
  */
-public interface HttpRequestKnob extends Knob {
+public interface HttpRequestKnob extends TcpKnob {
     /**
      * @return the array of {@link Cookie}s that were found in this request. Never null, but may be empty.
      */
@@ -49,7 +49,7 @@ public interface HttpRequestKnob extends Knob {
      * @return the first value of the specified header, or null if the requested header was not present.
      * @throws IOException if the header is multivalued
      */
-    String getSingleValuedHeader(String name) throws IOException;
+    String getHeaderSingleValue(String name) throws IOException;
 
     /**
      * @return an array of the names of all the headers in the request, or an empty array if there are none. Never null.

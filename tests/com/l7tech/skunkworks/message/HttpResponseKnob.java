@@ -11,7 +11,7 @@ import org.apache.commons.httpclient.Cookie;
 /**
  * Information about a response to be sent via HTTP.
  */
-public interface HttpResponseKnob extends Knob {
+public interface HttpResponseKnob extends MessageKnob {
     /**
      * Adds the specified {@link Cookie} to the response
      * @param cookie the {@link Cookie} to be added. Must not be null.
@@ -58,4 +58,10 @@ public interface HttpResponseKnob extends Knob {
      * @param code the HTTP status code for the response, e.g. {@link javax.servlet.http.HttpServletResponse#SC_FORBIDDEN}.
      */
     void setStatus(int code);
+
+    /**
+     * Gets the response's HTTP status code. A value of zero indicates that the status has not yet been set.
+     * @return the HTTP status code for the response, e.g. {@link javax.servlet.http.HttpServletResponse#SC_FORBIDDEN}, or zero if it has not yet been set.
+     */
+    int getStatus();
 }

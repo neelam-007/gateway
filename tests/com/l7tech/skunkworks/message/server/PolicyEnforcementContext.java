@@ -11,34 +11,28 @@ import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.service.PublishedService;
 import com.l7tech.skunkworks.message.Message;
+import com.l7tech.skunkworks.message.ProcessingContext;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The thing that follows every request through the message processing system
+ * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
  */
-public class MessageContext {
-    private static final Logger logger = Logger.getLogger(MessageContext.class.getName());
-
-    private final Message request;
-    private final Message response;
+public class PolicyEnforcementContext extends ProcessingContext {
+    private static final Logger logger = Logger.getLogger(PolicyEnforcementContext.class.getName());
 
     private final RequestId requestId;
-
-    private final List runOnClose = new ArrayList();
     private final Map deferredAssertions = new LinkedHashMap();
     private boolean replyExpected;
     private RoutingStatus routingStatus;
-    private LoginCredentials credentials;
     private User authenticatedUser;
     private boolean authenticated;
-
     private Level auditLevel;
     private boolean auditSaveRequest;
     private boolean auditSaveResponse;
@@ -46,12 +40,12 @@ public class MessageContext {
     private SoapFaultDetail faultDetail = null;
     private boolean isAuthenticationMissing = false;
     private boolean isPolicyViolated = false;
+    private final List runOnClose = new ArrayList();
+    private PublishedService service;
 
-    public MessageContext(Message request, Message response) {
+    public PolicyEnforcementContext(Message request, Message response) {
+        super(request, response);
         this.requestId = RequestIdGenerator.next();
-        if (request == null || response == null) throw new NullPointerException();
-        this.request = request;
-        this.response = response;
     }
 
     public boolean isAuthenticated() {
@@ -68,14 +62,6 @@ public class MessageContext {
 
     public void setAuthenticatedUser(User authenticatedUser) {
         this.authenticatedUser = authenticatedUser;
-    }
-
-    public LoginCredentials getCredentials() {
-        return credentials;
-    }
-
-    public void setCredentials(LoginCredentials credentials) {
-        this.credentials = credentials;
     }
 
     public RoutingStatus getRoutingStatus() {
@@ -134,47 +120,6 @@ public class MessageContext {
         deferredAssertions.remove(owner);
     }
 
-    public synchronized void runOnClose( Runnable runMe ) {
-        runOnClose.add( runMe );
-    }
-
-    public Message getRequest() {
-        return request;
-    }
-
-    public Message getResponse() {
-        return response;
-    }
-
-    public void close() {
-        Runnable runMe;
-        Iterator i = runOnClose.iterator();
-        try {
-            while ( i.hasNext() ) {
-                runMe = (Runnable)i.next();
-                try {
-                    runMe.run();
-                } catch (Throwable t) {
-                    logger.log(Level.WARNING, "Cleanup runnable threw exception", t);
-                }
-                i.remove();
-            }
-        } finally {
-            try {
-                response.close();
-            } catch (Exception e) {
-                logger.log(Level.INFO, "Caught exception closing response", e);
-            } finally {
-                try {
-                    request.close();
-                } catch (Exception e) {
-                    logger.log(Level.INFO, "Caught exception closing request", e);
-                }
-            }
-        }
-
-    }
-
     public void addResult(AssertionResult result) {
         if (assertionResults == Collections.EMPTY_LIST)
             assertionResults = new ArrayList();
@@ -207,6 +152,7 @@ public class MessageContext {
 
     public void setAuthenticationMissing(boolean authenticationMissing) {
         isAuthenticationMissing = authenticationMissing;
+        if ( isAuthenticationMissing ) isPolicyViolated = true;
     }
 
     public boolean isPolicyViolated() {
@@ -215,5 +161,36 @@ public class MessageContext {
 
     public void setPolicyViolated(boolean policyViolated) {
         isPolicyViolated = policyViolated;
+    }
+
+    public synchronized void runOnClose( Runnable runMe ) {
+        runOnClose.add( runMe );
+    }
+
+    /** Runs all {@link runOnClose} {@link Runnable}s. */
+    public void close() {
+        Runnable runMe;
+        Iterator i = runOnClose.iterator();
+        try {
+            while ( i.hasNext() ) {
+                runMe = (Runnable)i.next();
+                try {
+                    runMe.run();
+                } catch (Throwable t) {
+                    logger.log(Level.WARNING, "Cleanup runnable threw exception", t);
+                }
+                i.remove();
+            }
+        } finally {
+            super.close();
+        }
+    }
+
+    public void setService(PublishedService service) {
+        this.service = service;
+    }
+
+    public PublishedService getService() {
+        return service;
     }
 }

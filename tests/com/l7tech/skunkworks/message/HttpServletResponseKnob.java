@@ -7,6 +7,9 @@
 package com.l7tech.skunkworks.message;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Implementation of {@link HttpResponseKnob} that knows how to place the HTTP response transport metadata
@@ -14,6 +17,9 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class HttpServletResponseKnob implements HttpResponseKnob {
     private final HttpServletResponse response;
+    private final List headersToSend = new ArrayList();
+    private final List cookiesToSend = new ArrayList();
+    private int statusToSet;
 
     public HttpServletResponseKnob(HttpServletResponse response) {
         if (response == null) throw new NullPointerException();
@@ -28,30 +34,69 @@ public class HttpServletResponseKnob implements HttpResponseKnob {
         c.setComment(cookie.getComment());
         if (cookie.getExpiryDate() != null)
             c.setMaxAge((int)((cookie.getExpiryDate().getTime() - System.currentTimeMillis()) / 1000));
-        response.addCookie(c);
+        cookiesToSend.add(c);
+    }
+
+    private static final class Pair {
+        Pair(String name, Object value) {
+            this.name = name;
+            this.value = value;
+        }
+        String name;
+        Object value;
     }
 
     public void setDateHeader(String name, long date) {
-        response.setDateHeader(name, date);
+        headersToSend.add(new Pair(name, new Long(date)));
     }
 
     public void addDateHeader(String name, long date) {
-        response.addDateHeader(name, date);
+        headersToSend.add(new Pair(name, new Long(date)));
     }
 
     public void setHeader(String name, String value) {
-        response.setHeader(name, value);
+        // Clear out any previous value
+        for (Iterator i = headersToSend.iterator(); i.hasNext();) {
+            Pair pair = (Pair)i.next();
+            if (name.equals(pair.name)) i.remove();
+        }
+        headersToSend.add(new Pair(name, value));
     }
 
     public void addHeader(String name, String value) {
-        response.addHeader(name, value);
+        headersToSend.add(new Pair(name, value));
     }
 
     public boolean containsHeader(String name) {
-        return response.containsHeader(name);
+        for (Iterator i = headersToSend.iterator(); i.hasNext();) {
+            Pair pair = (Pair)i.next();
+            if (name.equals(pair.name)) return true;
+        }
+
+        return false;
     }
 
     public void setStatus(int code) {
-        response.setStatus(code);
+        statusToSet = code;
+    }
+
+    public int getStatus() {
+        return statusToSet;
+    }
+
+    /**
+     * Begins the process of sending the response to the client by setting a status code and sending headers using the HttpServletResponse.
+     */
+    public void beginResponse() {
+        response.setStatus(statusToSet);
+        for (Iterator i = headersToSend.iterator(); i.hasNext();) {
+            Pair pair = (Pair)i.next();
+            final Object value = pair.value;
+            if (value instanceof Long) {
+                response.addDateHeader(pair.name, ((Long)value).longValue());
+            } else {
+                response.addHeader(pair.name, (String)value);
+            }
+        }
     }
 }

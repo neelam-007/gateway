@@ -24,7 +24,7 @@ public class HttpResponseFacet extends MessageFacet {
         this.httpResponseKnob = httpResponseKnob;
     }
 
-    public Knob getKnob(Class c) {
+    public MessageKnob getKnob(Class c) {
         if (c == HttpResponseKnob.class)
             return httpResponseKnob;
         return super.getKnob(c);

@@ -65,7 +65,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         return request.getDateHeader(name);
     }
 
-    public String getSingleValuedHeader(String name) throws IOException {
+    public String getHeaderSingleValue(String name) throws IOException {
         Enumeration en = request.getHeaders(name);
         while (en.hasMoreElements()) {
             String value = (String)en.nextElement();
@@ -94,5 +94,17 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             out.add(value);
         }
         return (String[])out.toArray(new String[0]);
+    }
+
+    public String getRemoteAddress() {
+        return request.getRemoteAddr();
+    }
+
+    public String getRemoteHost() {
+        return request.getRemoteHost();
+    }
+
+    public int getLocalPort() {
+        return request.getServerPort();
     }
 }

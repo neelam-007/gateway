@@ -8,10 +8,9 @@ package com.l7tech.skunkworks.message;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
-
-import org.xml.sax.SAXException;
 
 /**
  * Provides the SOAP aspect of a Message.
@@ -34,7 +33,7 @@ class SoapFacet extends MessageFacet {
             throw new MessageNotSoapException();
     }
 
-    public Knob getKnob(Class c) {
+    public MessageKnob getKnob(Class c) {
         if (c == SoapKnob.class) {
             return new SoapKnob() {
                 public String getPayloadNamespaceUri() throws IOException, SAXException {

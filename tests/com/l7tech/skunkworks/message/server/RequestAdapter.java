@@ -11,7 +11,6 @@ import com.l7tech.identity.User;
 import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.MessageProcessor;
 
 import java.util.logging.Level;
 
@@ -19,9 +18,8 @@ import java.util.logging.Level;
  * @author mike
  */
 public class RequestAdapter extends XmlMessageAdapterAdapter implements XmlRequest {
-    public RequestAdapter(MessageContext context) {
+    public RequestAdapter(PolicyEnforcementContext context) {
         super(context, context.getRequest());
-        MessageProcessor.setCurrentRequest(this);
     }
 
     public LoginCredentials getPrincipalCredentials() {

@@ -17,7 +17,7 @@ import java.io.InputStream;
 /**
  * Aspect of a Message that contains an outer content type and at least one part's InputStream.
  */
-public interface MimeKnob extends Knob {
+public interface MimeKnob extends MessageKnob {
     /**
      * Check if this is a multipart message or not.  This should almost never be necessary.
      *

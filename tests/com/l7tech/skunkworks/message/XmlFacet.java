@@ -42,7 +42,7 @@ class XmlFacet extends MessageFacet {
             throw new SAXException("Message first part is not text/xml");
     }
 
-    public Knob getKnob(Class c) {
+    public MessageKnob getKnob(Class c) {
         if (c == MimeKnob.class) {
             // Wrap it with one that DTRT
             final MimeKnob mk = (MimeKnob)super.getKnob(MimeKnob.class);

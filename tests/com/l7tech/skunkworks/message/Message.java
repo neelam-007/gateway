@@ -127,7 +127,7 @@ public final class Message {
     }
 
     /**
-     * Configure this Message as an HTTP request.  This attaches a source of HTTP request transport metadata to this
+     * Configure this Message as an HTTP request.  This attaches sources of TCP and HTTP request transport metadata to this
      * Message.  A Message may have at most one HTTP request knob.  An HTTP request knob may cooexist with
      * an HTTP response knob.
      *
@@ -184,13 +184,27 @@ public final class Message {
     }
 
     /**
+     * Obtain the information about the TCP connection this message came over.  This assumes that this Message
+     * has already been configured as having arrived via a TCP connection.
+     *
+     * @return the {@link TcpKnob}.  Never null
+     * @throws IllegalStateException if this message is not configured as having arrived over TCP.
+     */
+    public TcpKnob getTcpKnob() throws IllegalStateException {
+        TcpKnob knob = (TcpKnob)getKnob(TcpKnob.class);
+        if (knob == null)
+            throw new IllegalStateException("This Message is not configured as having arrived over TCP");
+        return knob;
+    }
+
+    /**
      * If this Message has the specified knob, then return it.  Will not attempt to create any facets
      * that haven't yet been installed, even assuming it might be possible to do so.
      *
-     * @param c a Class derived from Knob.  Must be non-null.
-     * @return the requested Knob, if its facet is installed on this Message, or null.
+     * @param c a Class derived from MessageKnob.  Must be non-null.
+     * @return the requested MessageKnob, if its facet is installed on this Message, or null.
      */
-    public Knob getKnob(Class c) {
+    public MessageKnob getKnob(Class c) {
         if (c == null) throw new NullPointerException();
         if (rootFacet == null) return null;
         return rootFacet.getKnob(c);

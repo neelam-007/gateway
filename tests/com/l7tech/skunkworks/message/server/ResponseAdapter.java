@@ -10,7 +10,6 @@ import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.message.XmlResponse;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.server.MessageProcessor;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -20,9 +19,8 @@ import java.util.List;
  * @author mike
  */
 public class ResponseAdapter extends XmlMessageAdapterAdapter implements XmlResponse {
-    public ResponseAdapter(MessageContext context) {
+    public ResponseAdapter(PolicyEnforcementContext context) {
         super(context, context.getResponse());
-        MessageProcessor.setCurrentResponse(this);
     }
 
     public void addResult(AssertionResult result) {

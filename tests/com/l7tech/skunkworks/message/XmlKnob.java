@@ -14,7 +14,7 @@ import java.io.IOException;
 /**
  * Aspect of Message that contains an XML document.
  */
-public interface XmlKnob extends Knob {
+public interface XmlKnob extends MessageKnob {
     /**
      * TODO: Add a version of this that will not invalidate the first part of the message
      * TODO: if the caller sets a flag indicating that it does not intend to modify the Document

@@ -30,7 +30,7 @@ class MimeFacet extends MessageFacet {
         this.mimeBody = new MimeBody(stash, ctype, bodyStream);
     }
 
-    public Knob getKnob(Class c) {
+    public MessageKnob getKnob(Class c) {
         if (c == MimeKnob.class)
             return new MimeMessageKnob();
         return super.getKnob(c);

@@ -6,16 +6,14 @@
 
 package com.l7tech.skunkworks.message;
 
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.util.Iterator;
 import java.io.IOException;
 
 /**
  * Aspect of Message that represents a SOAP envelope.
  */
-public interface SoapKnob extends Knob {
+public interface SoapKnob extends MessageKnob {
     /*
     Element getPayload();
     Iterator getHeaders();

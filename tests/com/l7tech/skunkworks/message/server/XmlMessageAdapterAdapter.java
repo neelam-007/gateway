@@ -9,10 +9,10 @@ package com.l7tech.skunkworks.message.server;
 import com.l7tech.common.mime.*;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CausedIllegalStateException;
-import com.l7tech.message.TransportMetadata;
-import com.l7tech.message.TransportProtocol;
-import com.l7tech.message.XmlMessage;
+import com.l7tech.message.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.service.PublishedService;
+import com.l7tech.skunkworks.message.HttpRequestKnob;
 import com.l7tech.skunkworks.message.Message;
 import com.l7tech.skunkworks.message.MimeKnob;
 import org.w3c.dom.Document;
@@ -24,13 +24,13 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * @author mike
+ * Temporary bridge class to make the new Message instances usable by the old SSG MessageProcessor.
  */
 public abstract class XmlMessageAdapterAdapter implements XmlMessage {
-    protected final MessageContext context;
+    protected final PolicyEnforcementContext context;
     protected final Message message;
 
-    protected XmlMessageAdapterAdapter(MessageContext context, Message message) {
+    protected XmlMessageAdapterAdapter(PolicyEnforcementContext context, Message message) {
         if (context == null || message == null) throw new NullPointerException();
         this.context = context;
         this.message = message;
@@ -128,21 +128,57 @@ public abstract class XmlMessageAdapterAdapter implements XmlMessage {
     }
 
     public void setParameter(String name, Object value) {
-        throw new UnsupportedOperationException();
+        if (name.equals(Request.PARAM_SERVICE)) {
+            context.setService((PublishedService)value);
+            return;
+        } else if (name.startsWith(Request.PREFIX_HTTP_HEADER)) {
+            context.getResponse().getHttpResponseKnob().setHeader(name.substring(Request.PREFIX_HTTP_HEADER.length()+1), (String)value);
+            return;
+        } else if (name.equals(Response.PARAM_HTTP_STATUS)) {
+            context.getResponse().getHttpResponseKnob().setStatus(((Integer)value).intValue());
+            return;
+        }
+
+        throw new UnsupportedOperationException("Can't setParameter(" + name + ", " + value + ")");
     }
 
     public void setParameterIfEmpty(String name, Object value) {
         throw new UnsupportedOperationException();
     }
 
+    private HttpRequestKnob getRequestKnob() {
+        return context.getRequest().getHttpRequestKnob();
+    }
+
     public Object getParameter(String name) {
-        throw new UnsupportedOperationException();
+        try {
+            return doGetParameter(name);
+        } catch (IOException e) {
+            throw new RuntimeException(e); // oops
+        }
+    }
+
+    private Object doGetParameter(String name) throws IOException {
+        if (name.startsWith("header.")) {
+            return getRequestKnob().getHeaderSingleValue(name.substring(7));
+        } else if (name.equals(Request.PARAM_HTTP_REQUEST_URI)) {
+            return getRequestKnob().getRequestUri();
+        } else if (name.equals(Request.PARAM_REMOTE_ADDR)) {
+            return context.getRequest().getTcpKnob().getRemoteAddress();
+        } else if (name.equals(Request.PARAM_SERVICE)) {
+            return context.getService();
+        }
+
+        throw new UnsupportedOperationException("Can't getParameter(" + name + ")");
     }
 
     public Object[] getParameterValues(String name) {
-        throw new UnsupportedOperationException();
-    }
+        if (name.startsWith("header.")) {
+            return getRequestKnob().getHeaderValues(name.substring(7));
+        }
 
+        throw new UnsupportedOperationException("Can't getHeaderValues(" + name + ")");
+    }
 
     public void runOnClose(Runnable runMe) {
         context.runOnClose(runMe);
