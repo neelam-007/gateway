@@ -5,6 +5,9 @@ import com.l7tech.adminws.identity.Identity;
 import com.l7tech.adminws.identity.IdentityService;
 import com.l7tech.adminws.identity.IdentityServiceLocator;
 import com.l7tech.adminws.translation.TypeTranslator;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.DeleteException;
 
 import java.util.Collection;
 
@@ -20,76 +23,69 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
         this.identityProviderConfigId = identityProviderConfigId;
     }
 
-    public Group findByPrimaryKey(long oid) {
+    public Group findByPrimaryKey(long oid) throws FindException {
         try {
             return TypeTranslator.serviceGroupToGenGroup(getStub().findGroupByPrimaryKey(identityProviderConfigId, oid));
         } catch (java.rmi.RemoteException e) {
-            // todo, handle exception
-            e.printStackTrace();
+            throw new FindException("RemoteException in findByPrimaryKey", e);
         }
-        return null;
     }
 
-    public void delete(Group group) {
+    public void delete(Group group) throws DeleteException {
         try {
             getStub().deleteGroup(identityProviderConfigId, group.getOid());
         } catch (java.rmi.RemoteException e) {
-            // todo, handle exception
-            e.printStackTrace();
+            throw new DeleteException("RemoteException in delete", e);
         }
     }
 
-    public long save(Group group) {
+    public long save(Group group) throws SaveException {
         try {
             return getStub().saveGroup(identityProviderConfigId, TypeTranslator.genGroupToServiceGroup(group));
         } catch (java.rmi.RemoteException e) {
-            e.printStackTrace();
+            throw new SaveException("RemoteException in save", e);
         }
-        return 0;
     }
 
     public void setIdentityProviderOid(long oid) {
         // what should i do with this?
     }
 
-    public Collection findAllHeaders() {
+    public Collection findAllHeaders() throws FindException {
         try {
             return TypeTranslator.headerArrayToCollection(getStub().findAllGroups(identityProviderConfigId));
         } catch (java.rmi.RemoteException e) {
-            e.printStackTrace();
+            throw new FindException("RemoteException in findAllHeaders", e);
         }
-        return null;
     }
 
-    public Collection findAllHeaders(int offset, int windowSize) {
+    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         try {
             return TypeTranslator.headerArrayToCollection(getStub().findAllGroupsByOffset(identityProviderConfigId, offset, windowSize));
         } catch (java.rmi.RemoteException e) {
-            e.printStackTrace();
+            throw new FindException("RemoteException in findAllHeaders", e);
         }
-        return null;
     }
 
-    public Collection findAll() {
-        return null;
+    public Collection findAll() throws FindException {
+        throw new FindException("This version of the manager does not support this operation");
     }
 
-    public Collection findAll(int offset, int windowSize) {
-        return null;
+    public Collection findAll(int offset, int windowSize) throws FindException {
+        throw new FindException("This version of the manager does not support this operation");
     }
 
     // ************************************************
     // PRIVATES
     // ************************************************
-    private Identity getStub() {
+    private Identity getStub() throws java.rmi.RemoteException {
         if (localStub == null) {
             IdentityService service = new IdentityServiceLocator();
             try {
                 localStub = service.getidentities(new java.net.URL(getServiceURL()));
             }
             catch (Exception e) {
-                // todo, show nice user message?
-                System.err.println(e.getMessage());
+                throw new java.rmi.RemoteException("cannot instantiate the admin service stub", e);
             }
         }
         return localStub;
