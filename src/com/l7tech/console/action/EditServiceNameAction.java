@@ -40,7 +40,7 @@ public class EditServiceNameAction extends NodeAction {
      * @return the action description
      */
     public String getDescription() {
-        return "Edit the service name";
+        return "Rename the Web service";
     }
 
     /**

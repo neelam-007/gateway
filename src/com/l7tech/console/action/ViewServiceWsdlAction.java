@@ -51,7 +51,7 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
      * @return the aciton description
      */
     public String getDescription() {
-        return "View the service definition (WSDL)";
+        return "View the WSDL defined for the Web service";
     }
 
     /**
@@ -87,7 +87,7 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
         private JEditTextArea wsdlTextArea;
 
         private WsdlViewDialog(PublishedService ps) throws IOException {
-            super(ps.getName());
+            super( "View " + ps.getName() + " WSDL");
             setIconImage(TopComponents.getInstance().getMainWindow().getIconImage());
             wsdlTextArea = new JEditTextArea();
             wsdlTextArea.setDocument(new SyntaxDocument());
@@ -100,7 +100,7 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
             wsdlPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
             panel.add(wsdlPanel, BorderLayout.NORTH);
 
-            final JLabel l = new JLabel("Wsdl Url: ");
+            final JLabel l = new JLabel("WSDL Url: ");
             l.setFont(l.getFont().deriveFont(Font.BOLD));
             wsdlPanel.add(l);
 

@@ -46,14 +46,14 @@ public class EditServicePolicyAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Service policy";
+        return "Policy Assertions";
     }
 
     /**
      * @return the action description
      */
     public String getDescription() {
-        return "View/edit service policy assertions";
+        return "Edit Web service policy assertions";
     }
 
     /**

@@ -45,14 +45,14 @@ public class SavePolicyTemplateAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Save Template";
+        return "Save as Template";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Save as the policy template";
+        return "Save a policy template to local storage";
     }
 
     /**

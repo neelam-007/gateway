@@ -43,7 +43,7 @@ public class DeleteServiceAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Delete";
+        return "Delete the Web service";
     }
 
     /**

@@ -1434,8 +1434,8 @@ public class MainWindow extends JFrame {
         sections.setBorder(null);
         treePanel = new JTabbedPane();
         // treePanel.setLayout(new BorderLayout());
-        treePanel.addTab("Services", getServicesTree());
-        treePanel.setTabPlacement(JTabbedPane.BOTTOM);
+        treePanel.addTab("Web Services", getServicesTree());
+        treePanel.setTabPlacement(JTabbedPane.TOP);
         treePanel.setBorder(null);
 
 

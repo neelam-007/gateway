@@ -42,7 +42,7 @@ public class EnableServiceAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Enable the service";
+        return "Enable the Web service";
     }
 
     /**
