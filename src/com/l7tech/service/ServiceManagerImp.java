@@ -6,6 +6,9 @@
 
 package com.l7tech.service;
 
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
+import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import cirrus.hibernate.HibernateException;
 import cirrus.hibernate.Session;
 import com.l7tech.logging.LogManager;
@@ -72,18 +75,38 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return null;
     }
 
-    synchronized void putService( PublishedService service ) {
+    /**
+     * @param service
+     */
+    private void putCachedService( PublishedService service ) {
         _oidToServiceMap.put( new Long( service.getOid() ), service );
     }
 
-    synchronized void removeService( PublishedService service ) {
+    /**
+     * @param service
+     */
+    private void removeCachedService( PublishedService service ) {
         _oidToServiceMap.remove( new Long( service.getOid() ) );
     }
 
-    synchronized Set clonedServiceSet() {
+    /**
+     * Acquires the read lock.
+     * @return
+     */
+    private Set clonedServiceSet() {
+        Sync read = _rwlock.readLock();
         HashSet set = new HashSet();
-        set.addAll( _oidToServiceMap.values() );
-        return set;
+        try {
+            read.acquire();
+            set.addAll( _oidToServiceMap.values() );
+            return set;
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted acquiring read lock!" );
+            Thread.currentThread().interrupt();
+            return null;
+        } finally {
+            if ( read != null ) read.release();
+        }
     }
 
     public Map serviceMap() {
@@ -115,40 +138,38 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public ServiceManagerImp() throws ObjectModelException {
         super();
+        _resolvers = new TreeSet();
 
-        synchronized( this ) {
-            Collection services = findAll();
+        Collection services = findAll();
 
-            PublishedService service;
-            for (Iterator i = services.iterator(); i.hasNext();) {
-                service = (PublishedService)i.next();
-                putService( service );
-            }
+        PublishedService service;
+        for (Iterator i = services.iterator(); i.hasNext();) {
+            service = (PublishedService)i.next();
+            putCachedService( service );
+        }
 
-            String serviceResolvers = ServerConfig.getInstance().getServiceResolvers();
+        String serviceResolvers = ServerConfig.getInstance().getServiceResolvers();
 
-            _resolvers = new TreeSet();
-            StringTokenizer stok = new StringTokenizer( serviceResolvers );
-            String className;
-            Class resolverClass;
-            ServiceResolver resolver;
+        StringTokenizer stok = new StringTokenizer( serviceResolvers );
+        String className;
+        Class resolverClass;
+        ServiceResolver resolver;
 
-            while ( stok.hasMoreTokens() ) {
-                className = stok.nextToken();
-                try {
-                    resolverClass = Class.forName( className );
-                    resolver = (ServiceResolver)resolverClass.newInstance();
-                    resolver.setServices( clonedServiceSet() );
-                    addServiceListener( resolver );
+        while ( stok.hasMoreTokens() ) {
+            className = stok.nextToken();
+            try {
+                resolverClass = Class.forName( className );
+                resolver = (ServiceResolver)resolverClass.newInstance();
+                resolver.setServices( clonedServiceSet() );
+                addServiceListener( resolver );
 
-                    _resolvers.add( resolver );
-                } catch ( ClassNotFoundException cnfe ) {
-                    logger.log( Level.SEVERE, cnfe.toString(), cnfe );
-                } catch ( InstantiationException ie ) {
-                    logger.log( Level.SEVERE, ie.toString(), ie );
-                } catch ( IllegalAccessException iae ) {
-                    logger.log( Level.SEVERE, iae.toString(), iae );
-                }
+                _resolvers.add( resolver );
+            } catch ( ClassNotFoundException cnfe ) {
+                logger.log( Level.SEVERE, cnfe.toString(), cnfe );
+            } catch ( InstantiationException ie ) {
+                logger.log( Level.SEVERE, ie.toString(), ie );
+            } catch ( IllegalAccessException iae ) {
+                logger.log( Level.SEVERE, iae.toString(), iae );
             }
         }
     }
@@ -165,8 +186,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         try {
             validate( service );
             long oid = _manager.save( getContext(), service );
-            putService( service );
-            fireCreated( service );
             logger.info( "Saved service #" + oid );
             return oid;
         } catch ( SQLException se ) {
@@ -199,7 +218,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
-    public synchronized void update(PublishedService service) throws UpdateException, VersionException {
+    public void update(PublishedService service) throws UpdateException, VersionException {
         PublishedService original = null;
         try {
             original = findByPrimaryKey(service.getOid());
@@ -226,8 +245,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
             // update
             _manager.update(getContext(), original);
-            putService(original);
-            fireUpdated(original);
+
             logger.info( "Updated service #" + service.getOid() );
         } catch ( SQLException se ) {
             logger.log( Level.SEVERE, se.toString(), se );
@@ -246,32 +264,61 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public void delete( PublishedService service ) throws DeleteException {
         try {
             _manager.delete( getContext(), service );
-            removeService( service );
-            fireDeleted( service );
             logger.info( "Deleted service " + service.getOid() );
         } catch ( SQLException se ) {
             throw new DeleteException( se.toString(), se );
         }
     }
 
-    synchronized void fireCreated( PublishedService service ) {
-        for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
-            ServiceListener listener = (ServiceListener) i.next();
-            listener.serviceCreated( service );
+    public void fireCreated( PublishedService service ) {
+        Sync write = _rwlock.writeLock();
+        try {
+            write.acquire();
+            putCachedService( service );
+            for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
+                ServiceListener listener = (ServiceListener) i.next();
+                listener.serviceCreated( service );
+            }
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted acquiring write lock!" );
+            Thread.currentThread().interrupt();
+        } finally {
+            if ( write != null ) write.release();
         }
     }
 
-    synchronized void fireUpdated( PublishedService service ) {
-        for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
-            ServiceListener listener = (ServiceListener)i.next();
-            listener.serviceUpdated( service );
+    public void fireUpdated( PublishedService service ) {
+        Sync write = _rwlock.writeLock();
+        try {
+            write.acquire();
+            removeCachedService( service );
+            putCachedService( service );
+            for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
+                ServiceListener listener = (ServiceListener)i.next();
+                listener.serviceUpdated( service );
+            }
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted acquiring write lock!" );
+            Thread.currentThread().interrupt();
+        } finally {
+            if ( write != null ) write.release();
         }
     }
 
-    synchronized void fireDeleted( PublishedService service ) {
-        for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
-            ServiceListener listener = (ServiceListener) i.next();
-            listener.serviceDeleted( service );
+    public void fireDeleted( PublishedService service ) {
+        Sync write = _rwlock.writeLock();
+        try {
+            write.acquire();
+            removeCachedService( service );
+            for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
+                ServiceListener listener = (ServiceListener) i.next();
+                listener.serviceDeleted( service );
+            }
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted acquiring write lock!" );
+            Thread.currentThread().interrupt();
+        } finally {
+            if ( write != null ) write.release();
         }
     }
 
@@ -287,15 +334,24 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return "published_service";
     }
 
-    public synchronized void addServiceListener( ServiceListener listener ) {
-        _serviceListeners.add( listener );
+    public void addServiceListener( ServiceListener listener ) {
+        Sync write = _rwlock.writeLock();
+        try {
+            write.acquire();
+            _serviceListeners.add( listener );
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted while acquiring write lock!" );
+            Thread.currentThread().interrupt();
+        } finally {
+            if ( write != null ) write.release();
+        }
     }
 
-
+    private ReadWriteLock _rwlock = new WriterPreferenceReadWriteLock();
 
     private static final Logger logger = LogManager.getInstance().getSystemLogger();
 
-    protected SortedSet _resolvers;
+    protected final SortedSet _resolvers;
 
     protected transient Map _oidToServiceMap = new HashMap();
     protected transient List _serviceListeners = new ArrayList();
