@@ -29,7 +29,7 @@ public class SpecificUser extends IdentityAssertion {
         _userLogin = userLogin ;
     }
 
-    public void setUserOid( String userLogin ) {
+    public void setUserLogin( String userLogin ) {
         if ( userLogin != _userLogin ) _user = null;
         _userLogin = userLogin;
     }
