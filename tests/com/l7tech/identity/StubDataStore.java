@@ -182,7 +182,9 @@ public class StubDataStore {
         PublishedService service = new PublishedService();
         service.setName(wsdl.getDefinition().getTargetNamespace());
         service.setUrn(wsdl.getDefinition().getTargetNamespace());
-        service.setWsdlXml(wsdl.toString());
+        StringWriter sw = new StringWriter();
+        wsdl.toWriter(sw);
+        service.setWsdlXml(sw.toString());
         service.setWsdlUrl(file.toURI().toString());
         service.setOid(nextObjectId());
         Group g =
