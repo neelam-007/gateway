@@ -476,6 +476,7 @@ public class NewUserDialog extends JDialog {
                             header.setType(EntityType.USER);
                             header.setName(user.getName());
                             header.setStrId(Registry.getDefault().getInternalUserManager().save(user, null));
+                            user.setUniqueIdentifier(header.getStrId());
                             fireEventUserAdded(header);
                             insertSuccess = true;
                         } catch (Exception e) {
@@ -506,13 +507,13 @@ public class NewUserDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                EntityEditorPanel panel = new UserPanel();
+                                UserPanel panel = new UserPanel();
                                 if (panel == null) return;
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.USER);
                                 header.setName(user.getName());
                                 header.setStrId(user.getUniqueIdentifier());
-                                panel.edit(header);
+                                panel.edit(header, Registry.getDefault().getInternalProvider());
 
                                 EditorDialog dialog = new EditorDialog(parent, panel);
                                 dialog.pack();
