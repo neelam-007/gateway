@@ -9,12 +9,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Calendar;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.FileNotFoundException;
 
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlError;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 import x0Assertion.oasisNamesTcSAML1.AssertionDocument;
 import x0Assertion.oasisNamesTcSAML1.AssertionType;
 import x0Assertion.oasisNamesTcSAML1.ConditionsType;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 
 /**
@@ -61,6 +69,39 @@ public class XmlBeansSamlTest extends TestCase {
         System.out.println("The not after is: "+notAfter);
     }
 
+    public void testParseAssertionFromNode() throws Exception {
+        Document doc = getDocument("com/l7tech/common/security/saml/saml1.xml");
+        XmlOptions xo = new XmlOptions();
+        xo.setLoadLineNumbers();
+        AssertionDocument assertionDoc = AssertionDocument.Factory.parse(doc.getDocumentElement(), xo);
+        xo = new XmlOptions();
+        Collection errors = new ArrayList();
+        xo.setErrorListener(errors);
+        System.out.println("The document is "+(assertionDoc.validate(xo) ? "valid" : "invalid"));
+        for (Iterator iterator = errors.iterator(); iterator.hasNext();) {
+            XmlError xerr = (XmlError) iterator.next();
+            System.out.println(xerr);
+        }
+
+        AssertionType at = assertionDoc.getAssertion();
+        ConditionsType type = at.getConditions();
+        Calendar notBefore  = type.getNotBefore();
+        Calendar notAfter   = type.getNotOnOrAfter();
+        System.out.println("The not before is: "+notBefore);
+        System.out.println("The not after is: "+notAfter);
+    }
+
+    private Document getDocument(String resourceName)
+         throws IOException, ParserConfigurationException, SAXException {
+           ClassLoader cl = getClass().getClassLoader();
+           InputStream is = cl.getResourceAsStream(resourceName);
+           if (is == null) {
+               throw new FileNotFoundException(resourceName);
+           }
+           DocumentBuilderFactory df = DocumentBuilderFactory.newInstance();
+           df.setNamespaceAware(true);
+           return df.newDocumentBuilder().parse(is);
+       }
 
     /**
      * Test <code>KeysTest</code> main.
