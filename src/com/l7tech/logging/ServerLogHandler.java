@@ -66,6 +66,18 @@ public class ServerLogHandler extends Handler implements PropertyChangeListener 
             reqid = req.getId();
         }
         SSGLogRecord newRecord = new SSGLogRecord(record, reqid, serverLogManager.getNodeid());
+        try {
+            String msg;
+            Formatter formatter = getFormatter();
+            if (formatter !=null) {
+                msg = formatter.format(record);
+                newRecord.setMessage(msg);
+            }
+        } catch (Exception ex) {
+            // We don't want to throw an exception here, but we
+            // report the exception to any registered ErrorManager.
+            reportError(null, ex, ErrorManager.FORMAT_FAILURE);
+        }
         add(newRecord);
     }
 
