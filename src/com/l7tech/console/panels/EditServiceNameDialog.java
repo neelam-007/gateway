@@ -1,11 +1,11 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.identity.User;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,20 +13,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * This class is the Password change dialog.
+ * This class is the service name editor.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class PasswordDialog extends JDialog {
-    static final Logger log = Logger.getLogger(PasswordDialog.class.getName());
+public class EditServiceNameDialog extends JDialog {
+    static final Logger log = Logger.getLogger(EditServiceNameDialog.class.getName());
 
     /** Resource bundle with default locale */
     private ResourceBundle resources = null;
@@ -48,25 +47,19 @@ public class PasswordDialog extends JDialog {
     private JButton okButton = null;
 
     /* new password text field */
-    private JPasswordField newPasswordField = null;
-    /* 'retype' password text field */
-    private JPasswordField confirmPasswordField = null;
+    private JTextField newServiceNameField = null;
 
-    /* the user to change the password for */
-    private User user;
-
-    private int MIN_PASSWORD_LENGTH = 6;
-    private int MAX_PASSWORD_LENGTH = 32;
     private EntityListener listener;
+    private PublishedService service;
 
     /**
      * Create a new PasswordDialog
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
-    public PasswordDialog(Frame parent, User user, EntityListener l) {
+    public EditServiceNameDialog(Frame parent, PublishedService svc, EntityListener l) {
         super(parent, true);
-        this.user = user;
+        this.service = svc;
         this.listener = l;
         initResources();
         initComponents();
@@ -79,7 +72,7 @@ public class PasswordDialog extends JDialog {
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-        resources = ResourceBundle.getBundle("com.l7tech.console.resources.PasswordDialog", locale);
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.EditServiceNamedDialog", locale);
     }
 
     /**
@@ -101,13 +94,13 @@ public class PasswordDialog extends JDialog {
             }
         });
 
-        newPasswordField = new JPasswordField(); // needed below
+        newServiceNameField = new JPasswordField(); // needed below
 
         // password label
         JLabel passwordLabel = new JLabel();
-        passwordLabel.setToolTipText(resources.getString("newPasswordField.tooltip"));
-        passwordLabel.setText(resources.getString("newPasswordField.label"));
-        passwordLabel.setLabelFor(newPasswordField);
+        passwordLabel.setToolTipText(resources.getString("newServiceNameField.tooltip"));
+        passwordLabel.setText(resources.getString("newServiceNameField.label"));
+        passwordLabel.setLabelFor(newServiceNameField);
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 0;
@@ -118,10 +111,8 @@ public class PasswordDialog extends JDialog {
         contents.add(passwordLabel, constraints);
 
         // password field
-        newPasswordField.setToolTipText(resources.getString("newPasswordField.tooltip"));
-        Font echoCharFont = new Font("Lucida Sans", Font.PLAIN, 12);
-        newPasswordField.setFont(echoCharFont);
-        newPasswordField.setEchoChar('\u2022');
+        newServiceNameField.setToolTipText(resources.getString("newServiceNameField.tooltip"));
+
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
@@ -130,38 +121,7 @@ public class PasswordDialog extends JDialog {
         constraints.weightx = 1.0;
         constraints.gridwidth = 2;
         constraints.insets = new Insets(11, 7, 0, 11);
-        contents.add(newPasswordField, constraints);
-
-
-        // retype password label
-        JLabel confirmPasswordLabel = new JLabel();
-        confirmPasswordLabel.setToolTipText(resources.getString("confirmPasswordField.tooltip"));
-        confirmPasswordLabel.setText(resources.getString("confirmPasswordField.label"));
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(11, 12, 0, 0);
-        contents.add(confirmPasswordLabel, constraints);
-
-        // retype password field
-        confirmPasswordField = new JPasswordField();
-        confirmPasswordField.setToolTipText(resources.getString("confirmPasswordField.tooltip"));
-        confirmPasswordField.setFont(echoCharFont);
-        confirmPasswordField.setEchoChar('\u2022');
-
-        constraints.gridx = 1;
-        constraints.gridy = 1;
-        constraints.weightx = 1.0;
-        constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(12, 7, 0, 11);
-        contents.add(confirmPasswordField, constraints);
-
-        Utilities.
-          equalizeLabelSizes(
-            new JLabel[]{confirmPasswordLabel, passwordLabel});
+        contents.add(newServiceNameField, constraints);
 
         constraints = new GridBagConstraints();
         constraints.gridx = 2;
@@ -247,9 +207,9 @@ public class PasswordDialog extends JDialog {
             setVisible(false);
         } else if (cmd.equals(CMD_OK)) {
             if (validateInput()) {
-                changePassword(newPasswordField.getPassword());
+                changeServiceName(newServiceNameField.getText());
             } else {
-                newPasswordField.requestFocus();
+                newServiceNameField.requestFocus();
                 return;
             }
         }
@@ -260,67 +220,39 @@ public class PasswordDialog extends JDialog {
      * @return true validated, false othwerwise
      */
     private boolean validateInput() {
-        char[] newPass = newPasswordField.getPassword();
-        char[] cfmPass = confirmPasswordField.getPassword();
-        if (newPass == null) {
+        String newPass = newServiceNameField.getText();
+
+        if (newPass == null || "".equals(newPass)) {
             JOptionPane.
               showMessageDialog(this,
-                resources.getString("newPasswordField.error.empty"),
-                resources.getString("newPasswordField.error.title"),
+                resources.getString("newServiceNameField.error.empty"),
+                resources.getString("newServiceNameField.error.title"),
                 JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
-        if (!Arrays.equals(newPass, cfmPass)) {
-            JOptionPane.
-              showMessageDialog(this,
-                resources.getString("newAndConfirmPasswordField.mismatch"),
-                resources.getString("newAndConfirmPasswordField.title"),
-                JOptionPane.ERROR_MESSAGE);
-            newPasswordField.setText("");
-            confirmPasswordField.setText("");
-            return false;
-        }
-
-        if ((newPass.length < MIN_PASSWORD_LENGTH) || (newPass.length > MAX_PASSWORD_LENGTH)) {
-            JOptionPane.
-              showMessageDialog(this,
-                resources.getString("newPasswordField.error.length"),
-                resources.getString("newPasswordField.error.title"),
-                JOptionPane.ERROR_MESSAGE);
-            newPasswordField.setText("");
-            confirmPasswordField.setText("");
-            return false;
-        }
         return true;
     }
 
     /**
      * change password
      *
-     * @param newPass new password
+     * @param newName new password
      */
-    private void changePassword(char[] newPass) {
+    private void changeServiceName(String newName) {
         try {
-            user.setPassword(new String(newPass));
-            Registry.getDefault().getInternalUserManager().update(user);
+            // Registry.getDefault().getServiceManager().update(service);
             dispose();
             if (listener !=null) {
                 EntityHeader eh = new EntityHeader();
-                eh.setOid(user.getOid());
-                eh.setName(user.getName());
-                eh.setType(EntityType.USER);
+                eh.setOid(service.getOid());
+                eh.setName(service.getName());
+                eh.setType(EntityType.SERVICE);
                 listener.entityUpdated(new EntityEvent(eh));
             }
         } catch (Exception e) {
-            log.log(Level.WARNING, "changePassword()", e);
-            JOptionPane.showMessageDialog(null,
-              "There was an system error saving the password",
-              "Error",
-              JOptionPane.ERROR_MESSAGE);
-            newPasswordField.setText("");
-            confirmPasswordField.setText("");
-            newPasswordField.requestFocus();
+            ErrorManager.getDefault().notify(Level.WARNING, e,"There was an system error saving the service" );
+            newServiceNameField.requestFocus();
         }
     }
 }

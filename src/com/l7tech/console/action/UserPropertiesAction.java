@@ -43,7 +43,7 @@ public class UserPropertiesAction extends NodeAction {
      * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/Edit16.gif";
+        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     /** Actually perform the action.

@@ -1,7 +1,6 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.tree.*;
 
 import javax.swing.*;
 
@@ -46,7 +45,7 @@ public class IconManager {
           = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/RemoveAll16.gif"));
 
         defaultEdit
-          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Edit16.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Properties16.gif"));
         defaultDelete
           = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Delete16.gif"));
         defaultNew
