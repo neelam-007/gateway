@@ -61,6 +61,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
 
     /**
      * Copy children into a new list.  The new copies will each have their parent set to point to us.
+     * @param newParent     What to use for the parent of the new list of children.
      * @param children      The children to copy and reparent.
      * @return              The copied and reparented list.
      */
