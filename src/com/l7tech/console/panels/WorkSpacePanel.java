@@ -1,10 +1,10 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.Preferences;
-import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.event.VetoableContainerListener;
-import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.action.ActionVetoException;
+import com.l7tech.console.event.ContainerVetoException;
+import com.l7tech.console.event.VetoableContainerListener;
+import com.l7tech.console.event.WeakEventListenerList;
+import com.l7tech.console.util.Preferences;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -12,10 +12,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.EventListener;
+import java.util.logging.Logger;
 
 /**
  * <CODE>WorkSpacePanel</CODE> represents the main editing panel
@@ -73,12 +71,13 @@ public class WorkSpacePanel extends JPanel {
     /**
      * get the component that the workspace panel is currently
      * hosting or null.
+     * 
      * @return the workspace panel component or null
      */
     public JComponent getComponent() {
         int tabCount = tabbedPane.getTabCount();
         if (tabCount == 0) return null;
-        return (JComponent)tabbedPane.getComponentAt(tabCount-1);
+        return (JComponent)tabbedPane.getComponentAt(tabCount - 1);
     }
 
 
@@ -157,26 +156,20 @@ public class WorkSpacePanel extends JPanel {
           };
 
         UIManager.addPropertyChangeListener(l);
-        try {
-            Preferences pref = Preferences.getPreferences();
-            l = new PropertyChangeListener() {
-                /**
-                 * This method gets called when a property is changed.
-                 */
-                public void propertyChange(PropertyChangeEvent evt) {
-                    log.info("toolbar view changed to " + evt.getNewValue());
-                }
-            };
+        Preferences pref = Preferences.getPreferences();
+        l = new PropertyChangeListener() {
+            /**
+             * This method gets called when a property is changed.
+             */
+            public void propertyChange(PropertyChangeEvent evt) {
+                log.info("toolbar view changed to " + evt.getNewValue());
+            }
+        };
 
-            // toolbars (icon, text etc)
-            pref.
-              addPropertyChangeListener(Preferences.STATUS_BAR_VISIBLE, l);
+        // toolbars (icon, text etc)
+        pref.
+          addPropertyChangeListener(Preferences.STATUS_BAR_VISIBLE, l);
 
-        } catch (IOException e) {
-            // java.util.Logging does not specify explicit 'level' methods with
-            // throwables as params. why?
-            log.log(Level.WARNING, "error instantiaitng preferences", e);
-        }
 
         tabbedPane.addContainerListener(new ContainerAdapter() {
 

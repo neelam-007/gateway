@@ -85,8 +85,6 @@ public class Main {
             main.setVisible(true);
         } catch (HeadlessException e) {
             log.log(Level.SEVERE, "SSM Error", e);
-        } catch (IOException e) {
-            log.log(Level.SEVERE, "SSM Error", e);
         } catch (PolicyInitializationException e) {
             log.log(Level.SEVERE, "SSM Error", e);
         }
@@ -171,12 +169,8 @@ public class Main {
         KunststoffLookAndFeel.setCurrentTheme(new KunststoffDesktopTheme());
 
         String lfName = null;
-        try {
-            Preferences prefs = Preferences.getPreferences();
-            lfName = prefs.getString(Preferences.LOOK_AND_FEEL);
-        } catch (IOException e) {
-            // swallowed
-        }
+        Preferences prefs = Preferences.getPreferences();
+        lfName = prefs.getString(Preferences.LOOK_AND_FEEL);
         LookAndFeel lf = null;
         if (lfName == null) {
             lf = new KunststoffLookAndFeel();

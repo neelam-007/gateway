@@ -137,8 +137,6 @@ public class LogPanel extends JPanel {
            } else {
                getLogPaneTop().setDividerLocation(0.7);
            }
-       } catch (IOException e1) {
-
        } catch (NumberFormatException e1) {
 
        }
@@ -150,7 +148,6 @@ public class LogPanel extends JPanel {
             Preferences prefs = Preferences.getPreferences();
             int l = getLogPaneTop().getDividerLocation();
             prefs.putProperty("main.log.details.divider.location", Integer.toString(l));
-        } catch (IOException e1) {
         } catch (NullPointerException e1) {
         }
     }

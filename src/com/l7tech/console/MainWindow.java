@@ -325,12 +325,8 @@ public class MainWindow extends JFrame {
           new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                try {
-                    jcm.setSelected(Preferences.getPreferences().isStatusBarBarVisible());
-                    getToggleStatusBarToggleAction().actionPerformed(new ActionEvent(jcm, 0, null));
-                } catch (IOException e) {
-                    // ignore
-                }
+                jcm.setSelected(Preferences.getPreferences().isStatusBarBarVisible());
+                getToggleStatusBarToggleAction().actionPerformed(new ActionEvent(jcm, 0, null));
             }
         });
 
@@ -847,13 +843,8 @@ public class MainWindow extends JFrame {
 
 
         String rootTitle = "Services @ ";
-        try {
-            rootTitle +=
-              Preferences.getPreferences().getString(Preferences.SERVICE_URL);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        rootTitle +=
+          Preferences.getPreferences().getString(Preferences.SERVICE_URL);
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
         final AbstractTreeNode servicesRootNode =
           new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
@@ -957,8 +948,6 @@ public class MainWindow extends JFrame {
                         int l = Integer.parseInt(s);
                         mainJSplitPaneTop.setDividerLocation(l);
                     }
-                } catch (IOException e1) {
-
                 } catch (NumberFormatException e1) {
                 }
             }
@@ -969,7 +958,6 @@ public class MainWindow extends JFrame {
                     Preferences prefs = Preferences.getPreferences();
                     int l = mainJSplitPaneTop.getDividerLocation();
                     prefs.putProperty("main.split.divider.location", Integer.toString(l));
-                } catch (IOException e1) {
                 } catch (NullPointerException e1) {
                 }
             }
@@ -1207,8 +1195,6 @@ public class MainWindow extends JFrame {
                         int l = Integer.parseInt(s);
                         sections.setDividerLocation(l);
                     }
-                } catch (IOException e1) {
-
                 } catch (NumberFormatException e1) {
                 }
             }
@@ -1219,7 +1205,6 @@ public class MainWindow extends JFrame {
                     Preferences prefs = Preferences.getPreferences();
                     int l = sections.getDividerLocation();
                     prefs.putProperty("tree.split.divider.location", Integer.toString(l));
-                } catch (IOException e1) {
                 } catch (NullPointerException e1) {
                 }
             }
@@ -1333,24 +1318,20 @@ public class MainWindow extends JFrame {
      * Initializes listeners for the form
      */
     private void initListeners() {
-        try {
-            final Preferences prefs = Preferences.getPreferences();
-            prefs.addPropertyChangeListener(
-              new PropertyChangeListener() {
-                  /**
-                   * This method gets called when a property is changed.
-                   * @param evt A PropertyChangeEvent object describing the
-                   * event source and the property that has changed.
-                   */
-                  public void propertyChange(PropertyChangeEvent evt) {
-                      MainWindow.log.info("preferences have been updated");
-                      MainWindow.this.setLookAndFeel(prefs.getString(Preferences.LOOK_AND_FEEL));
-                      MainWindow.this.setInactivitiyTimeout(prefs.getInactivityTimeout());
-                  }
-              });
-        } catch (IOException e) {
-            log.log(Level.WARNING, "cannot get preferences", e);
-        }
+        final Preferences prefs = Preferences.getPreferences();
+        prefs.addPropertyChangeListener(
+          new PropertyChangeListener() {
+              /**
+               * This method gets called when a property is changed.
+               * @param evt A PropertyChangeEvent object describing the
+               * event source and the property that has changed.
+               */
+              public void propertyChange(PropertyChangeEvent evt) {
+                  MainWindow.log.info("preferences have been updated");
+                  MainWindow.this.setLookAndFeel(prefs.getString(Preferences.LOOK_AND_FEEL));
+                  MainWindow.this.setInactivitiyTimeout(prefs.getInactivityTimeout());
+              }
+          });
         credentialManager =
           (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
         if (credentialManager == null) {
@@ -1678,10 +1659,7 @@ public class MainWindow extends JFrame {
                     } else {
                         mainJSplitPane.setDividerLocation(0.7);
                     }
-                } catch (IOException e1) {
-
                 } catch (NumberFormatException e1) {
-
                 }
             }
         }
@@ -1693,7 +1671,6 @@ public class MainWindow extends JFrame {
             Preferences prefs = Preferences.getPreferences();
             int l = getMainJSplitPane().getDividerLocation();
             prefs.putProperty("main.split.pane.divider.location", Integer.toString(l));
-        } catch (IOException e1) {
         } catch (NullPointerException e1) {
         }
     }
@@ -1722,8 +1699,6 @@ public class MainWindow extends JFrame {
                     Preferences prefs = Preferences.getPreferences();
                     boolean logSelected = logMenuItem.isSelected();
                     prefs.putProperty("gateway.log.selected", Boolean.toString(logSelected));
-
-                } catch (IOException e1) {
                 } catch (NullPointerException e1) {
                 }
 
@@ -1756,8 +1731,6 @@ public class MainWindow extends JFrame {
 
                     boolean statSelected = statMenuItem.isSelected();
                     prefs.putProperty("gateway.statistics.selected", Boolean.toString(statSelected));
-
-                } catch (IOException e1) {
                 } catch (NullPointerException e1) {
                 }
             }
@@ -1789,11 +1762,8 @@ public class MainWindow extends JFrame {
               getStatusMsgLeft().setText(statusMessage);
               initalizeWorkspace();
               int timeout = 0;
-              try {
-                  timeout = Preferences.getPreferences().getInactivityTimeout();
-              } catch (IOException e) {
-                  log.log(Level.WARNING, "unable to get preferences", e);
-              }
+              timeout = Preferences.getPreferences().getInactivityTimeout();
+
               final int fTimeout = timeout;
               SwingUtilities.invokeLater(
                 new Runnable() {

@@ -1,9 +1,9 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Preferences;
-import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,13 +12,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * PreferencesDialog
@@ -34,7 +32,7 @@ public class PreferencesDialog extends JDialog {
      */
     private ResourceBundle resources = null;
 
-    private JTextField serverUrlTextField = null;
+    //private JTextField serverUrlTextField = null;
     private JComboBox lfComboBox = null;
     private JTextField inactivityTextField = null;
     private JCheckBox rememberLastIdCheckBox = null;
@@ -58,18 +56,12 @@ public class PreferencesDialog extends JDialog {
     /** preferences instance */
     private Properties props = null;
 
-    /** Service Url global Variable **/
-    private String serviceUrl = "";
-
-    /** Boolean for recognizing if PMI is connected or not */
-    private boolean connected;
 
     /**
      * Creates new form Preferences
      */
     public PreferencesDialog(Frame parent, boolean modal, boolean isConnected) {
         super(parent, modal);
-        connected = isConnected;
         initResources();
         initComponents();
         loadPreferences();
@@ -105,38 +97,7 @@ public class PreferencesDialog extends JDialog {
             }
         });
 
-        serverUrlTextField = new JTextField();
 
-        // server URL label
-        JLabel serverUrlLabel = new JLabel();
-        serverUrlLabel.setText(
-          resources.getString("serverUrlTextField.label"));
-        serverUrlLabel.setDisplayedMnemonic(
-          resources.getString("serverUrlTextField.mnemonic").charAt(0));
-        serverUrlLabel.setLabelFor(serverUrlTextField);
-
-        GridBagConstraints constraints;
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.anchor = constraints.WEST;
-        constraints.insets = new Insets(11, 12, 0, 0);
-        contents.add(serverUrlLabel, constraints);
-
-        // serverUrl text field
-        serverUrlTextField.setToolTipText(
-          resources.getString("serverUrlTextField.tooltip"));
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 0;
-        constraints.gridwidth = 3;
-        constraints.weightx = 1.0;
-        constraints.fill = constraints.HORIZONTAL;
-        constraints.insets = new Insets(11, 7, 0, 11);
-        constraints.ipadx = 100;
-        contents.add(serverUrlTextField, constraints);
 
 
         lfComboBox = new JComboBox();
@@ -148,10 +109,11 @@ public class PreferencesDialog extends JDialog {
         // setLabelFor() allows the label's mnemonic to work for the component
         lfLabel.setLabelFor(lfComboBox);
         lfLabel.setText(resources.getString("lookAndFeelComboBox.label"));
+        GridBagConstraints constraints;
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 4;
-        constraints.anchor = constraints.WEST;
+        constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(11, 12, 0, 0);
 
         contents.add(lfLabel, constraints);
@@ -184,8 +146,8 @@ public class PreferencesDialog extends JDialog {
         constraints.gridx = 1;
         constraints.gridy = 4;
         constraints.gridwidth = 2;
-        constraints.anchor = constraints.WEST;
-        constraints.insets = new Insets(11, 7, 0, 0);
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(11, 7, 0, 10);
         contents.add(lfComboBox, constraints);
 
         // inactivity timeout enable/disable
@@ -194,7 +156,7 @@ public class PreferencesDialog extends JDialog {
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 12;
-        constraints.anchor = constraints.WEST;
+        constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(11, 12, 0, 0);
         contents.add(inactivityLabel, constraints);
 
@@ -207,7 +169,7 @@ public class PreferencesDialog extends JDialog {
         constraints.gridy = 12;
         constraints.gridwidth = 1;
         constraints.weightx = 0.0;
-        constraints.fill = constraints.HORIZONTAL;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(11, 7, 0, 11);
         contents.add(inactivityTextField, constraints);
 
@@ -219,7 +181,7 @@ public class PreferencesDialog extends JDialog {
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 14;
-        constraints.anchor = constraints.WEST;
+        constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(11, 12, 0, 0);
         contents.add(rememberLastIdLabel, constraints);
 
@@ -229,7 +191,7 @@ public class PreferencesDialog extends JDialog {
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 14;
-        constraints.fill = constraints.HORIZONTAL;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(11, 7, 0, 11);
         contents.add(rememberLastIdCheckBox, constraints);
         try {
@@ -306,7 +268,7 @@ public class PreferencesDialog extends JDialog {
         constraints.gridx = 0;
         constraints.gridy = 16;
         constraints.gridwidth = 7;
-        constraints.anchor = constraints.EAST;
+        constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(17, 12, 11, 11);
 
         contents.add(buttonPanel, constraints);
@@ -322,7 +284,6 @@ public class PreferencesDialog extends JDialog {
         JLabel[] jLabels =
           new JLabel[]{
               inactivityLabel,
-              serverUrlLabel,
               lfLabel
           };
 
@@ -369,31 +330,6 @@ public class PreferencesDialog extends JDialog {
      */
     private boolean validatePreferences() {
         try {
-            String sUrl = serverUrlTextField.getText();
-            URL url = new URL(sUrl);
-
-            /** Make sure if they really want to change the service URL */
-            if (!sUrl.equals(serviceUrl) && !connected) {
-                if ((JOptionPane.showConfirmDialog(null,
-                  "You have changed the Server URL. Changing the URL can cause the console to be unable to connect\n" +
-                  " to the Gateway. Do you want to continue and save this URL?",
-                  "Policy Editor - Preferences",
-                  JOptionPane.YES_NO_OPTION)) == 1) {
-                    return false;
-                }
-            } else if (!sUrl.equals(serviceUrl) && connected) {
-
-                JOptionPane.showMessageDialog(null,
-                  "You cannot change the server URL while the Manager is connected to the Gateway. In order to change the Server URL, \n" +
-                  "you need to disconnect from the Gateway first.",
-                  "Error Updating Server URL",
-                  JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-
-            getPreferences().
-              setProperty(Preferences.SERVICE_URL, serverUrlTextField.getText());
-
             UIManager.LookAndFeelInfo[]
               lookAndFeels = UIManager.getInstalledLookAndFeels();
             for (int i = 0; lookAndFeels != null && i < lookAndFeels.length; i++) {
@@ -423,12 +359,6 @@ public class PreferencesDialog extends JDialog {
             getPreferences().setProperty(Preferences.INACTIVITY_TIMEOUT, Integer.toString(timeout));
 
             return true;
-        } catch (MalformedURLException e) {
-            // Malformed URL
-            JOptionPane.showMessageDialog(null,
-              "Malformed URL format " + serverUrlTextField.getText(),
-              "Malformed URL",
-              JOptionPane.ERROR_MESSAGE);
         } catch (IOException e) {
             log.log(Level.SEVERE, "preferences", e);
         }
@@ -452,24 +382,6 @@ public class PreferencesDialog extends JDialog {
     /** load preferences into the form fields */
     private void loadPreferences() {
         try {
-            // system property (cmd line has precedence over preferences)
-            serviceUrl =
-              System.getProperties().getProperty(Preferences.SERVICE_URL);
-            if (serviceUrl == null) {
-                serviceUrl = getPreferences().getProperty(Preferences.SERVICE_URL);
-            }
-            String hostPart = ""; // default
-            try {
-                URL url = new URL(serviceUrl);
-                String sPort =
-                  (url.getPort() == -1 ? "" : ":" + Integer.toString(url.getPort()));
-                hostPart = url.getProtocol() + "://" + url.getHost() + sPort;
-            } catch (MalformedURLException e) {
-                ; // swallow; (bad URL)
-            }
-            serverUrlTextField.setText(hostPart);
-
-
             String sTimeout = getPreferences().getProperty(Preferences.INACTIVITY_TIMEOUT);
             int timeout = DEFAULT_INACTIVITY_TIMEOUT;
             try {

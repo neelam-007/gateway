@@ -50,18 +50,22 @@ public class Preferences extends PropertyChangeSupport {
      * get the Preferences instance
      * 
      * @return the Preferences instance
-     * @throws IOException if an Io error occured
      */
-    public static Preferences getPreferences() throws IOException {
-        if (prefs == null) {
-            if (null == System.getProperties().getProperty("javawebstart.version")) {
-                prefs = new Preferences();
-            } else { // app is invoked from JWS
-                prefs = new JNLPPreferences();
-            }
-            prefs.setupDefaults();
-            prefs.initialize();
+    public static Preferences getPreferences() {
+        if (prefs != null) return prefs;
+
+        if (null == System.getProperties().getProperty("javawebstart.version")) {
+            prefs = new Preferences();
+        } else { // app is invoked from JWS
+            prefs = new JNLPPreferences();
         }
+        prefs.setupDefaults();
+        try {
+            prefs.initialize();
+        } catch (IOException e) {
+            prefs.log("initialize", e);
+        }
+
         return prefs;
     }
 
@@ -73,10 +77,8 @@ public class Preferences extends PropertyChangeSupport {
      * @param append true append or replace the property, false
      *               ignore unknown properties, and update the
      *               existing properties
-     * @throws IOException thrown if an io error occurred
      */
-    public void updateFromProperties(Properties p, boolean append)
-      throws IOException {
+    public void updateFromProperties(Properties p, boolean append) {
         Iterator keys = p.keySet().iterator();
         while (keys.hasNext()) {
             String key = (String)keys.next();
@@ -94,10 +96,8 @@ public class Preferences extends PropertyChangeSupport {
      * merge preferences into system properties.
      * Note that this method overrwrites system properties with
      * user preferences.
-     * 
-     * @throws IOException thrown if an io error occurred
      */
-    public void updateSystemProperties() throws IOException {
+    public void updateSystemProperties() {
         System.getProperties().putAll(props);
     }
 
@@ -137,12 +137,10 @@ public class Preferences extends PropertyChangeSupport {
 
     /**
      * setup default application properties
-     * 
-     * @throws IOException thrown on I/O error
      */
-    private void setupDefaults() throws IOException {
+    private void setupDefaults() {
         prepare();
-        copyResources();
+        //copyResources();
         configureProperties();
         sslIinitialize();
         logIinitialize();
@@ -160,8 +158,6 @@ public class Preferences extends PropertyChangeSupport {
     /**
      * copy resources from jar to the local client
      * storage
-     * 
-     * @throws IOException thrown if an I/O error occurs
      */
     private void copyResources() throws IOException {
         InputStream in = null;
@@ -182,7 +178,11 @@ public class Preferences extends PropertyChangeSupport {
             }
         } finally {
             if (in != null) {
-                in.close();
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    log("copyResources", e);
+                }
             }
         }
     }
@@ -292,12 +292,8 @@ public class Preferences extends PropertyChangeSupport {
             while ((len = input.read(bytearray)) != -1) {
                 output.write(bytearray, 0, len);
             }
-        } catch (FileNotFoundException e) {
-            log("copyStreamToFile", e);
-        } catch (SecurityException e) {
-            log("copyStreamToFile", e);
         } finally {
-            output.close();
+            if (output != null) output.close();
         }
     }
 
@@ -334,9 +330,8 @@ public class Preferences extends PropertyChangeSupport {
 
     /**
      * retrieve the history property
-     *
+     * 
      * @param property the property to get the history
-     *
      * @return the <code>History</code> instance
      */
     public History getHistory(String property) {
@@ -538,13 +533,8 @@ public class Preferences extends PropertyChangeSupport {
     /**
      * initialize the properties from the user properties in user's
      * home directory.
-     * 
-     * @throws IOException thrown if an io error occurred
      */
     protected void initialize() throws IOException {
-        if (CONSOLE_CONFIG == null) {
-            throw new IOException("Invalid/null home directory.");
-        }
         File file = new File(CONSOLE_CONFIG + File.separator + STORE);
 
         if (file.exists()) {
@@ -554,7 +544,10 @@ public class Preferences extends PropertyChangeSupport {
                 props.load(fin);
             } finally {
                 if (fin != null) {
-                    fin.close();
+                    try {
+                        fin.close();
+                    } catch (IOException e) {
+                    }
                 }
             }
         }
@@ -597,37 +590,75 @@ public class Preferences extends PropertyChangeSupport {
          * <p/>
          * Implementations may remove the older element of the History if
          * their maximum size is reached.
-         *
+         * 
          * @param o the object to add to the
          */
         public void add(Object o) {
-            List keys = propertyKeys();
-            final int size = keys.size();
-            if (size > maxSize) {
+            LinkedList values = values();
+            Collection remove = new ArrayList();
+            for (Iterator iterator = values.iterator(); iterator.hasNext();) {
+                Object value = (Object)iterator.next();
+                if (value.equals(o)) {
+                    remove.add(value);
+                }
             }
+            values.removeAll(remove);
+            values.addFirst(o);
+            rekeyValues(values);
         }
 
-        private List propertyKeys() {
-            List keys = new ArrayList();
+
+        private LinkedList values() {
+            SortedSet sortedKeys = new TreeSet();
+
             Enumeration enumeration = props.keys();
             while (enumeration.hasMoreElements()) {
                 Object key = (Object)enumeration.nextElement();
                 if (key.toString().startsWith(propertyName)) {
-                    keys.add(key);
+                    sortedKeys.add(key);
                 }
             }
-            return keys;
+
+            LinkedList values = new LinkedList();
+            for (Iterator iterator = sortedKeys.iterator(); iterator.hasNext();) {
+                Object key = (Object)iterator.next();
+                values.add(props.get(key));
+            }
+            return values;
+        }
+
+        private void rekeyValues(List values) {
+            Enumeration enumeration = props.keys();
+            while (enumeration.hasMoreElements()) {
+                Object key = (Object)enumeration.nextElement();
+                if (key.toString().startsWith(propertyName)) {
+                    remove(key.toString());
+                }
+            }
+            int index = 0;
+            for (Iterator iterator = values.iterator(); iterator.hasNext() && index < maxSize;) {
+                Object value = (Object)iterator.next();
+                String pn = null;
+                if (index == 0) {
+                    pn = propertyName;
+                } else {
+                    pn = propertyName + "." + index;
+                }
+                putProperty(pn, value.toString());
+                ++index;
+            }
         }
 
         /**
          * get the array of history entries.
-         *
+         * 
          * @return the array of history entries.
          */
         public Object[] getEntries() {
-            return new Object[0];
+            return values().toArray();
         }
     }
+
     /** look and feel key */
     public static final String LOOK_AND_FEEL = "look.and.feel";
 

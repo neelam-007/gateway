@@ -1,15 +1,18 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.security.ClientCredentialManager;
-import com.l7tech.common.VersionException;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.VersionException;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.ImportCertificateAction;
+import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.History;
+import com.l7tech.console.MainWindow;
 import com.sun.net.ssl.HostnameVerifier;
 import com.sun.net.ssl.HttpsURLConnection;
 
@@ -17,20 +20,15 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.plaf.basic.BasicComboBoxEditor;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
-import java.net.URL;
+import java.net.*;
+import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -40,11 +38,10 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 /**
  * This class is the SSG console Logon dialog.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class LogonDialog extends JDialog {
@@ -60,7 +57,7 @@ public class LogonDialog extends JDialog {
     private boolean rememberUser = false;
 
     /* was the error handled (to avoid double exception messages) */
-    private boolean userNotified = false;
+    private boolean sslHostNameMismatchUserNotified = false;
 
 
     /** Resource bundle with default locale */
@@ -73,31 +70,31 @@ public class LogonDialog extends JDialog {
     /* Command string for a login action (e.g.,a button or menu item). */
     private String CMD_LOGIN = "cmd.login";
 
-    /* the listener for logon events */
-    private LogonListener listener;
 
     private JButton loginButton = null;
 
-    /** the logo above the Login Dialogue **/
+    /** the logo above the Login Dialogue * */
     private JLabel companyLogoJLabel = null;
 
     /** username text field */
     private JTextField userNameTextField = null;
     /** password text field */
     private JPasswordField passwordField = null;
+    /** the server combo box * */
+    private JComboBox serverComboBox = null;
 
-    /**
-     * VM property (-D) that triggers off the server check
-     * */
+    /** VM property (-D) that triggers off the server check */
     private static final String DISABLE_SERVER_CHECK = "disable.server.check";
     private Frame parentFrame;
+    private History serverUrlHistory;
+    private Preferences preferences;
 
     /** context field (company.realm)
      private JTextField contextField = null;*/
 
     /**
      * Create a new LogonDialog
-     *
+     * 
      * @param parent the parent Frame. May be <B>null</B>
      */
     public LogonDialog(Frame parent) {
@@ -141,7 +138,6 @@ public class LogonDialog extends JDialog {
         companyLogoJLabel = new JLabel();
         companyLogoJLabel.setText(resources.getString("dialog.title"));
         companyLogoJLabel.setFont(new Font("Dialog", Font.BOLD, 12));
-        //companyLogoJLabel.setBorder(BorderFactory.createLoweredBevelBorder());
 
         constraints.gridx = 0;
         constraints.gridy = 0;
@@ -149,21 +145,47 @@ public class LogonDialog extends JDialog {
         constraints.insets = new Insets(10, 10, 10, 10);
         contents.add(companyLogoJLabel, constraints);
 
+        Image icon = ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/layer7_logo_small_32x32.png");
+        if (icon != null) {
+            ImageIcon imageIcon = new ImageIcon(icon);
+            constraints = new GridBagConstraints();
+            constraints.gridx = 4;
+            constraints.gridy = 0;
+            constraints.gridwidth = 1;
+            constraints.insets = new Insets(10, 10, 10, 10);
+            contents.add(new JLabel(imageIcon), constraints);
+        }
+
         userNameTextField = new JTextField(); //needed below
 
         // user name label
         JLabel userNameLabel = new JLabel();
         userNameLabel.setToolTipText(resources.getString("userNameTextField.tooltip"));
         userNameTextField.setDocument(new FilterDocument(200,
-                new FilterDocument.Filter() {
-                    public boolean accept(String str) {
-                        if (str == null) return false;
-                        return true;
-                    }
-                }));
+          new FilterDocument.Filter() {
+              public boolean accept(String str) {
+                  if (str == null) return false;
+                  return true;
+              }
+          }));
 
+        DocumentListener inputValidDocumentListener = new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) {
+                loginButton.setEnabled(isInputValid());
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                loginButton.setEnabled(isInputValid());
+            }
+
+            public void changedUpdate(DocumentEvent e) {
+                loginButton.setEnabled(isInputValid());
+            }
+        };
+
+        userNameTextField.getDocument().addDocumentListener(inputValidDocumentListener);
         userNameLabel.setDisplayedMnemonic(
-                resources.getString("userNameTextField.label").charAt(0));
+          resources.getString("userNameTextField.label").charAt(0));
         userNameLabel.setLabelFor(userNameTextField);
         userNameLabel.setText(resources.getString("userNameTextField.label"));
 
@@ -178,45 +200,52 @@ public class LogonDialog extends JDialog {
         constraints.gridx = 1;
         constraints.gridy = 1;
         constraints.weightx = 1.0;
-        constraints.gridwidth = 2;
+        constraints.gridwidth = 3;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(5, 5, 0, 10);
         contents.add(userNameTextField, constraints);
 
+        constraints.gridx = 3;
+        constraints.gridy = 1;
+        constraints.gridwidth = 1;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        contents.add(Box.createHorizontalStrut(100), constraints);
+        
+
 
         // last ID logic
         String lastID = null;
-        try {
-            rememberUser = false;
-            final Preferences prefs = Preferences.getPreferences();
-            lastID = prefs.rememberLoginId() ?
-                    prefs.getString(Preferences.LAST_LOGIN_ID) :
-                    null;
+        rememberUser = false;
+        preferences = Preferences.getPreferences();
+        lastID = preferences.rememberLoginId() ?
+          preferences.getString(Preferences.LAST_LOGIN_ID) :
+          null;
 
-            if (prefs.rememberLoginId()) {
-                userNameTextField.setText(lastID);
-                if (lastID != null)
-                    rememberUser = true;
-            }
-        } catch (IOException e) {
-            ; //swallow, problem loading prefs, continue login attmept
+        if (preferences.rememberLoginId()) {
+            userNameTextField.setText(lastID);
+            if (lastID != null)
+                rememberUser = true;
         }
+
         final String fLastID = lastID; // anon class requires final
         userNameTextField.
-                addFocusListener(new FocusAdapter() {
-                    private boolean hasbeenInvoked = false;
+          addFocusListener(new FocusAdapter() {
+              private boolean hasbeenInvoked = false;
 
-                    /** Invoked when a component gains the keyboard focus.*/
-                    public void focusGained(FocusEvent e) {
-                        if (!hasbeenInvoked) {
-                            if (fLastID != null) {
-                                LogonDialog.this.userNameTextField.transferFocus();
-                            }
-                        }
-                        hasbeenInvoked = true;
-                    }
-                });
+              /**
+               * Invoked when a component gains the keyboard focus.
+               */
+              public void focusGained(FocusEvent e) {
+                  if (!hasbeenInvoked) {
+                      if (fLastID != null) {
+                          LogonDialog.this.userNameTextField.transferFocus();
+                      }
+                  }
+                  hasbeenInvoked = true;
+              }
+          });
 
         passwordField = new JPasswordField(); // needed below
 
@@ -224,7 +253,7 @@ public class LogonDialog extends JDialog {
         JLabel passwordLabel = new JLabel();
         passwordLabel.setToolTipText(resources.getString("passwordField.tooltip"));
         passwordLabel.setDisplayedMnemonic(
-                resources.getString("passwordField.mnemonic").charAt(0));
+          resources.getString("passwordField.mnemonic").charAt(0));
         passwordLabel.setText(resources.getString("passwordField.label"));
         passwordLabel.setLabelFor(passwordField);
         constraints = new GridBagConstraints();
@@ -247,59 +276,92 @@ public class LogonDialog extends JDialog {
         constraints.gridy = 2;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
-        constraints.gridwidth = 2;
+        constraints.gridwidth = 3;
         constraints.insets = new Insets(5, 5, 0, 10);
         contents.add(passwordField, constraints);
 
-
-        /* context label
-        JLabel contextLabel = new JLabel();
-        contextLabel.setDisplayedMnemonic(
-                                          resources.getString("contextField.mnemonic").charAt(0));
-        contextLabel.setToolTipText(resources.getString("contextField.tooltip"));
-        contextLabel.setText(resources.getString("contextField.label"));
-        contextLabel.setLabelFor(passwordField);
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
+        constraints.gridx = 3;
         constraints.gridy = 2;
+        constraints.gridwidth = 1;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(11,12,0,0);
-        contents.add(contextLabel, constraints);
+        contents.add(Box.createHorizontalStrut(100), constraints);
+              
+
+
+        //url label
+        JLabel serverLabel = new JLabel();
+        serverLabel.setDisplayedMnemonic(
+          resources.getString("serverField.mnemonic").charAt(0));
+        serverLabel.setToolTipText(resources.getString("serverField.tooltip"));
+        serverLabel.setText(resources.getString("serverField.label"));
+        serverLabel.setLabelFor(passwordField);
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 3;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(20, 5, 0, 0);
+        contents.add(serverLabel, constraints);
 
         // context field
-        contextField = new JTextField();
-        contextField.setToolTipText(resources.getString("contextField.tooltip"));
-        constraints.gridx=1;
-        constraints.gridy=2;
-        constraints.weightx=1.0;
-        constraints.gridwidth=2;
+        serverComboBox = new JComboBox();
+        DefaultListCellRenderer renderer = new DefaultListCellRenderer();
+        renderer.setPreferredSize(new Dimension(200, 130));
+        serverComboBox.setEditable(true);
+        BasicComboBoxEditor basicComboBoxEditor = new BasicComboBoxEditor();
+        JTextField jtf = (JTextField)basicComboBoxEditor.getEditorComponent();
+        jtf.getDocument().addDocumentListener(inputValidDocumentListener);
+        serverComboBox.setEditor(basicComboBoxEditor);
+        serverComboBox.setToolTipText(resources.getString("serverField.tooltip"));
+        constraints.gridx = 1;
+        constraints.gridy = 3;
+        constraints.weightx = 1.0;
+        constraints.gridwidth = 4;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(12,7,0,11);
-        contents.add(contextField, constraints); */
+        constraints.insets = new Insets(20, 5, 0, 10);
+        contents.add(serverComboBox, constraints);
 
+        serverUrlHistory = preferences.getHistory(Preferences.SERVICE_URL);
+
+        Runnable runnable = new Runnable() {
+            public void run() {
+                Object[] urls = serverUrlHistory.getEntries();
+                for (int i = 0; i < urls.length; i++) {
+                    Object url = urls[i];
+                    serverComboBox.addItem(url);
+                    if (i == 0) {
+                        serverComboBox.setSelectedIndex(0);
+                    }
+                }
+            }
+        };
+        SwingUtilities.invokeLater(runnable);
+        serverComboBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                loginButton.setEnabled(isInputValid());
+            }
+        });
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
-        constraints.gridy = 3;
-        constraints.gridwidth = 2;
+        constraints.gridy = 4;
+        constraints.gridwidth = 3;
         constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.EAST;
+        constraints.anchor = GridBagConstraints.CENTER;
         constraints.insets = new Insets(10, 0, 10, 10);
         JPanel buttonPanel = createButtonPanel(); // sets global loginButton
         contents.add(buttonPanel, constraints);
 
         getRootPane().setDefaultButton(loginButton);
-
-    } // initComponents()
+    }
 
 
     /**
      * Creates the panel of buttons that goes along the bottom
      * of the dialog
-     *
+     * <p/>
      * Sets the variable loginButton
-     *
      */
     private JPanel createButtonPanel() {
 
@@ -332,19 +394,17 @@ public class LogonDialog extends JDialog {
         });
         panel.add(cancelButton);
 
-        Utilities.
-                equalizeButtonSizes(new JButton[]{cancelButton, loginButton});
+        Utilities.equalizeButtonSizes(new JButton[]{cancelButton, loginButton});
         return panel;
-    } // createButtonPanel()
+    }
 
     /**
      * The user has selected an option. Here we close and dispose
      * the dialog.
      * If actionCommand is an ActionEvent, getCommandString() is
      * called, otherwise toString() is used to get the action command.
-     *
-     * @param actionCommand
-     *               may be null
+     * 
+     * @param actionCommand may be null
      */
     private void windowAction(String actionCommand) {
 
@@ -354,27 +414,14 @@ public class LogonDialog extends JDialog {
         } else if (actionCommand.equals(CMD_CANCEL)) {
             aborted = true;
         } else if (actionCommand.equals(CMD_LOGIN)) {
-            if (!validateInput(userNameTextField.getText())) {
-                return;
-            }
-            /*String context = contextField.getText() == null ? "" : contextField.getText();
-
-            if (!"".equals(context)) {
-              if (context.charAt(0) != '.') {
-                context = "."+context;
-              }
-            } */
-
-            authentication =
-                    new PasswordAuthentication(userNameTextField.getText(),
-                            passwordField.getPassword());
+            authentication = new PasswordAuthentication(userNameTextField.getText(),
+              passwordField.getPassword());
             aborted = false;
         }
         setVisible(false);
     }
 
     /**
-     *
      * @return true if the logon was aborted, false otherwise
      */
     public boolean isAborted() {
@@ -383,8 +430,8 @@ public class LogonDialog extends JDialog {
 
     /**
      * invoke logon dialog
-     *
-     * @param frame
+     * 
+     * @param frame 
      */
     public static void logon(JFrame frame, LogonListener listener) {
         final LogonDialog dialog = new LogonDialog(frame);
@@ -394,45 +441,36 @@ public class LogonDialog extends JDialog {
         // service available attempt authenticating
         boolean authenticated = false;
         PasswordAuthentication pw = null;
-        // service URL
-        String serviceURL = null;
-        try {
-            serviceURL = Preferences.getPreferences().getServiceUrl();
-        } catch (IOException e) {
-            ; // swallow
-        }
-
-        if (serviceURL == null || "".equals(serviceURL)) {
-            String msg =
-                    MessageFormat.format(
-                            dialog.resources.getString("logon.connect.error"),
-                            new Object[]{"Invalid service url.\nPlease update your preferences."});
-            JOptionPane.
-                    showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
-            dialog.aborted = true;
-        }
 
 
         while (!dialog.isAborted() && !authenticated) {
+            String serviceURL = null;
             try {
-                dialog.userNotified = false;
+                dialog.sslHostNameMismatchUserNotified = false;
                 frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 pw = dialog.getAuthentication();
+                // service URL
+                String serverURL = (String)dialog.serverComboBox.getSelectedItem();
+                serviceURL = serverURL + Preferences.SERVICE_URL_SUFFIX;
+
                 if (dialog.isAborted()) break;
                 frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 ClientCredentialManager credentialManager = getCredentialManager();
 
                 // if the service is not avail, format the message and show to te client
-                if (!dialog.isServiceAvailable(serviceURL) && !dialog.userNotified) {
+                if (!dialog.isServiceAvailable(serviceURL) && !dialog.sslHostNameMismatchUserNotified) {
                     String msg = MessageFormat.format(
-                            dialog.resources.getString("logon.connect.error"),
-                            new Object[]{getHostPart(serviceURL)});
-                    JOptionPane.
-                            showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+                      dialog.resources.getString("logon.connect.error"),
+                      new Object[]{getHostPart(serviceURL)});
+                    JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
                     break;
                 }
+
+                dialog.serverUrlHistory.add(serverURL);
                 credentialManager.login(pw);
                 authenticated = true;
+                dialog.preferences.store();
+                dialog.preferences.updateSystemProperties();
                 break;
             } catch (Exception e) {
                 handleLogonThrowable(e, dialog, serviceURL);
@@ -454,19 +492,10 @@ public class LogonDialog extends JDialog {
     private void showInvalidCredentialsMessage() {
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         JOptionPane.
-                showMessageDialog(this,
-                        resources.getString("logon.invalid.credentials"),
-                        "Warning",
-                        JOptionPane.WARNING_MESSAGE);
-    }
-
-    private void showUpdatedSsgCertificateMessage() {
-        parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-        JOptionPane.
-                showMessageDialog(this,
-                        resources.getString("logon.updated.ssg.certificate"),
-                        "Warning",
-                        JOptionPane.WARNING_MESSAGE);
+          showMessageDialog(this,
+            resources.getString("logon.invalid.credentials"),
+            "Warning",
+            JOptionPane.WARNING_MESSAGE);
     }
 
     /**
@@ -485,7 +514,7 @@ public class LogonDialog extends JDialog {
 
     private static ClientCredentialManager getCredentialManager() {
         ClientCredentialManager credentialManager =
-                (ClientCredentialManager) Locator.getDefault().lookup(ClientCredentialManager.class);
+          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
         if (credentialManager == null) { // bug
             throw new IllegalStateException("No credential manager configured in services");
         }
@@ -495,8 +524,8 @@ public class LogonDialog extends JDialog {
 
     /**
      * verify that the service is avaialble at the given url
-     *
-     * @param serviceUrl    service url
+     * 
+     * @param serviceUrl service url
      * @return true if service available, false otherwise
      */
     private boolean isServiceAvailable(String serviceUrl) {
@@ -511,7 +540,7 @@ public class LogonDialog extends JDialog {
         URL url = null;
         HttpURLConnection conn = null;
         boolean importedCertificate = false;
-        for (;;) {
+        for (; ;) {
             try {
                 url = new URL(serviceUrl);
                 conn = (HttpURLConnection)url.openConnection();
@@ -565,7 +594,6 @@ public class LogonDialog extends JDialog {
                     conn.disconnect();
                 }
             }
-
             // stop trying now
             break;
         }
@@ -575,32 +603,34 @@ public class LogonDialog extends JDialog {
 
     private void addSslHostNameVerifier(HttpURLConnection conn) {
         if (conn instanceof HttpsURLConnection) {
-            ((HttpsURLConnection) conn).setHostnameVerifier(
-                    new HostnameVerifier() {
-                        public boolean verify(String host, String peerHost) {
-                            if (host.equals(peerHost)) return true;
-                            String msg = MessageFormat.format(
-                                    resources.getString("logon.hostname.mismatch"),
-                                    new Object[]{host, peerHost});
-                            userNotified = true;
-                            JOptionPane.
-                                    showMessageDialog(LogonDialog.this, msg, "Error", JOptionPane.ERROR_MESSAGE);
-                            return false;
-                        }
-                    });
+            ((HttpsURLConnection)conn).setHostnameVerifier(
+              new HostnameVerifier() {
+                  public boolean verify(String host, String peerHost) {
+                      if (host.equals(peerHost)) return true;
+                      String msg = MessageFormat.format(
+                        resources.getString("logon.hostname.mismatch"),
+                        new Object[]{host, peerHost});
+                      sslHostNameMismatchUserNotified = true;
+                      JOptionPane.
+                        showMessageDialog(LogonDialog.this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+                      return false;
+                  }
+              });
         }
     }
 
-    /** Try to download the SSG certificate automatically. */
+    /**
+     * Try to download the SSG certificate automatically.
+     */
     private void importCertificate(URL surl)
-            throws CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException {
+      throws CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException {
         // dont assume 8080
         int port = 80;
         if (surl.getPort() == 8443 || surl.getPort() == 8080) port = 8080;
         URL url = new URL("http", surl.getHost(), port, surl.getPath());
         CertificateDownloader cd = new CertificateDownloader(url,
-                userNameTextField.getText(),
-                passwordField.getPassword());
+          userNameTextField.getText(),
+          passwordField.getPassword());
         if (cd.downloadCertificate()) {
             ImportCertificateAction.importSsgCertificate(cd.getCertificate(), url.getHost());
             //showUpdatedSsgCertificateMessage();
@@ -613,7 +643,7 @@ public class LogonDialog extends JDialog {
 
     /**
      * extract the protocol://host:port part of the URL
-     *
+     * 
      * @param serviceUrl the full service URL
      * @return the protocol://host:port part if parsed successfully or the
      *         passed parameter if parsing was unsuccessful
@@ -622,9 +652,9 @@ public class LogonDialog extends JDialog {
         String hostPart = serviceUrl;
         try {
             URL url =
-                    new URL(serviceUrl);
+              new URL(serviceUrl);
             String sPort =
-                    (url.getPort() == -1 ? "" : ":" + Integer.toString(url.getPort()));
+              (url.getPort() == -1 ? "" : ":" + Integer.toString(url.getPort()));
             hostPart = url.getProtocol() + "://" + url.getHost() + sPort;
 
         } catch (MalformedURLException e) {
@@ -634,7 +664,6 @@ public class LogonDialog extends JDialog {
     }
 
     /**
-     *
      * @return the <CODE>PasswordAuthentication</CODE> collected from
      *         the dialog.
      */
@@ -647,56 +676,57 @@ public class LogonDialog extends JDialog {
 
 
     /**
-     * validate the username and context
-     *
-     * @param userName user name entered
+     * validate the username and the gateway url
+     * 
      * @return true validated, false othwerwise
      */
-    private boolean validateInput(String userName) {
+    private boolean isInputValid() {
+        String userName = userNameTextField.getText();
         if (null == userName || "".equals(userName)) {
-            JOptionPane.
-                    showMessageDialog(this,
-                            resources.getString("userNameTextField.error.empty"),
-                            resources.getString("userNameTextField.error.title"),
-                            JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        return true;
+        try {
+            JTextField editor = (JTextField)serverComboBox.getEditor().getEditorComponent();
+            String surl = editor.getText();
+            if (surl == null || "".equals(surl)) {
+                return false;
+            }
+            URL url = new URL(surl);
+            String host = url.getHost();
+            return host !=null && !"".equals(host);
+        } catch (MalformedURLException e) {
+        }
+        return false;
     }
 
     /**
      * todo: refactor exception handling
      * handle the logon throwable. Unwrap the exception
-     * @param e
+     * 
+     * @param e 
      */
     private static void handleLogonThrowable(Throwable e, LogonDialog dialog, String serviceUrl) {
-        if (dialog.userNotified) return;
+        if (dialog.sslHostNameMismatchUserNotified) return;
         Throwable cause = ExceptionUtils.unnestToRoot(e);
         if (cause instanceof VersionException) {
             log.log(Level.WARNING, "logon()", e);
             String msg =
-                    MessageFormat.format(
-                            dialog.resources.getString("logon.version.mismatch"),
-                            new Object[]{BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
+              MessageFormat.format(
+                dialog.resources.getString("logon.version.mismatch"),
+                new Object[]{BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
             // NOTE: we show the product version number to users, not the ADMIN_PROTOCOL_VERSION number (in the exception msg)
             JOptionPane.
-                    showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
-        } else if (cause instanceof ConnectException) {
+              showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
+        } else if (cause instanceof ConnectException ||
+                   cause instanceof UnknownHostException ||
+                   cause instanceof FileNotFoundException) {
             log.log(Level.WARNING, "logon()", e);
             String msg =
-                    MessageFormat.format(
-                            dialog.resources.getString("logon.connect.error"),
-                            new Object[]{getHostPart(serviceUrl)});
+              MessageFormat.format(
+                dialog.resources.getString("logon.connect.error"),
+                new Object[]{getHostPart(serviceUrl)});
             JOptionPane.
-                    showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (cause instanceof FileNotFoundException) {
-            log.log(Level.WARNING, "logon()", e);
-            String msg =
-                    MessageFormat.format(
-                            dialog.resources.getString("logon.connect.error"),
-                            new Object[]{getHostPart(serviceUrl)});
-            JOptionPane.
-                    showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+              showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof RemoteException) {
             log.log(Level.WARNING, "Could not connect to server", e);
             String hostname = serviceUrl;
@@ -704,13 +734,13 @@ public class LogonDialog extends JDialog {
                 URL url = new URL(serviceUrl);
                 hostname = url.getHost();
             } catch (MalformedURLException e2) {
-                log.log(Level.SEVERE,  "this sould not happen", e);
+                log.log(Level.SEVERE, "this sould not happen", e);
             }
             String msg = MessageFormat.format(
-                            dialog.resources.getString("service.unavailable.error"),
-                            new Object[]{hostname});
+              dialog.resources.getString("service.unavailable.error"),
+              new Object[]{hostname});
             JOptionPane.
-                    showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+              showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof LoginException) {
             log.log(Level.WARNING, "logon()", e);
             dialog.showInvalidCredentialsMessage();
@@ -720,11 +750,11 @@ public class LogonDialog extends JDialog {
         } else {
             log.log(Level.WARNING, "logon()", e);
             String msg =
-                    MessageFormat.format(
-                            dialog.resources.getString("logon.connect.error"),
-                            new Object[]{getHostPart(serviceUrl)});
+              MessageFormat.format(
+                dialog.resources.getString("logon.connect.error"),
+                new Object[]{getHostPart(serviceUrl)});
             JOptionPane.
-                    showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+              showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
 
     }
@@ -736,8 +766,8 @@ public class LogonDialog extends JDialog {
     public static interface LogonListener {
         /**
          * invoked on successful authentication
-         *
-         * @param id     the id of the authenticated user
+         * 
+         * @param id the id of the authenticated user
          */
         void onAuthSuccess(String id);
 

@@ -1,17 +1,14 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.NewProviderAction;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.logging.Level;
 
 /**
  * The class represents an <code>AbstractTreeNode</code> specialization
@@ -54,15 +51,7 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
     protected void loadChildren() {
         Registry r = Registry.getDefault();
         String homePath = null;
-        try {
-            homePath = Preferences.getPreferences().getHomePath();
-        } catch (IOException e) {
-            // something bad happened to the preferences home path
-            ErrorManager.
-              getDefault().
-              notify(Level.WARNING, e, "There was an error in retreiving preferences.");
-            homePath = System.getProperty("user.home");
-        }
+        homePath = Preferences.getPreferences().getHomePath();
         Enumeration e =
           TreeNodeFactory.
           getTreeNodeEnumeration(

@@ -60,9 +60,10 @@ public class EditPolicyTemplateNameAction extends BaseAction {
         return "com/l7tech/console/resources/Edit16.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
@@ -70,64 +71,47 @@ public class EditPolicyTemplateNameAction extends BaseAction {
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
-                      ComponentRegistry wm =
-                        Registry.getDefault().getComponentRegistry();
+                  ComponentRegistry wm =
+                    Registry.getDefault().getComponentRegistry();
 
-                      EditPolicyTemplateNameDialog d =
-                              new EditPolicyTemplateNameDialog(wm.getMainWindow(), nameChangeListener);
-                      d.show();
+                  EditPolicyTemplateNameDialog d =
+                    new EditPolicyTemplateNameDialog(wm.getMainWindow(), nameChangeListener);
+                  d.show();
               }
           });
     }
 
     private ActionListener
-            nameChangeListener = new ActionListener() {
-                /**
-                 * Fired when an set of children is updated.
-                 */
-                public void actionPerformed(final ActionEvent ev) {
-                    SwingUtilities.invokeLater(new Runnable() {
+      nameChangeListener = new ActionListener() {
+          /**
+           * Fired when an set of children is updated.
+           */
+          public void actionPerformed(final ActionEvent ev) {
+              SwingUtilities.invokeLater(new Runnable() {
+                  public void run() {
+                      File templateDir = null;
+                      templateDir = new File(Preferences.getPreferences().getHomePath() +
+                        File.separator + PoliciesFolderNode.TEMPLATES_DIR);
 
-                        public void run() {
-
-                            File templateDir = null;
-
-                            try {
-                                templateDir = new File(Preferences.getPreferences().getHomePath() +
-                                        File.separator + PoliciesFolderNode.TEMPLATES_DIR);
-
-                                final File newName = new File(templateDir.getPath() + File.separator + ev.getActionCommand());
-                                boolean success = node.getFile().renameTo(newName);
-                                if (!success) {
-                                    String error = "The system reported problem in accessing " +
-                                            "the policy template directory " + templateDir.getPath() + "\n" +
-                                            "The policy template is not renamed.";
-                                    ErrorManager.getDefault().
-                                            notify(Level.WARNING, new IOException(error), error);
-                                    return;
-                                }
-                                node.setUserObject(newName);
-                                JTree tree =
-                                        (JTree) ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
-
-                                if (tree != null) {
-                                    DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-                                    model.nodeChanged(node);
-                                }
-
-                            } catch (IOException e) {
-                                ErrorManager.getDefault().
-                                        notify(Level.WARNING, e,
-                                                "The system reported problem in accessing or creating" +
-                                        "the policy template directory " + templateDir.getPath() + "\n" +
-                                        "The policy template is not renamed.");
-                                return;
-                            }
-                        }
-                });
-            }
-}
-
-;
-
+                      final File newName = new File(templateDir.getPath() + File.separator + ev.getActionCommand());
+                      boolean success = node.getFile().renameTo(newName);
+                      if (!success) {
+                          String error = "The system reported problem in accessing " +
+                            "the policy template directory " + templateDir.getPath() + "\n" +
+                            "The policy template is not renamed.";
+                          ErrorManager.getDefault().
+                            notify(Level.WARNING, new IOException(error), error);
+                          return;
+                      }
+                      node.setUserObject(newName);
+                      JTree tree =
+                        (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+                      if (tree != null) {
+                          DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                          model.nodeChanged(node);
+                      }
+                  }
+              });
+          }
+      };
 }
