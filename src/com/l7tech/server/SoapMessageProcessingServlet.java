@@ -93,9 +93,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } finally {
             try {
                 PersistenceContext.getCurrent().close();
-            } catch ( ObjectModelException ome ) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, ome);
-                throw new ServletException( ome );
             } catch ( SQLException se ) {
                 LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
                 throw new ServletException( se );
