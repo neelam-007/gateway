@@ -19,6 +19,7 @@ import com.ibm.xml.enc.type.EncryptionMethod;
 import com.ibm.xml.enc.type.KeyInfo;
 import com.ibm.xml.enc.type.KeyName;
 import com.ibm.xml.enc.util.AdHocIdResolver;
+import com.l7tech.xmlsig.XMLSecurityElementNotFoundException;
 import org.apache.log4j.Category;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.w3c.dom.Document;
@@ -216,10 +217,13 @@ public class XmlMangler {
      * @throws SAXException  if there was a problem parsing the document
      */
     public static void decryptXml(Document soapMsg, Key key)
-            throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException
+            throws GeneralSecurityException, ParserConfigurationException, IOException,
+                   SAXException, XMLSecurityElementNotFoundException
     {
         // Locate EncryptedData element by its reference in the Security header
         Element dataRefEl = (Element) soapMsg.getElementsByTagNameNS(xencNS, "DataReference").item(0);
+        if (dataRefEl == null)
+            throw new XMLSecurityElementNotFoundException("no DataReference tag in the message");
         AdHocIdResolver idResolver = new AdHocIdResolver();
         Element encryptedDataEl = idResolver.resolveID(soapMsg, dataRefEl.getAttribute("URI"));
 
