@@ -9,7 +9,6 @@ objectmodel		server.war, console.jar
 policy			everywhere
 proxy			clientproxy.jar
 server			server.war
-util			everywhere (common/util?)
-xmlenc			server.war, clientproxy.jar
-xmlsig			server.war, clientproxy.jar
+service         server.war
+
 
