@@ -156,17 +156,7 @@ public class WspWriter {
             WspConstants.TypeMapping tm = WspConstants.findTypeMappingByClass(returnType);
             if (tm == null)
                 throw new InvalidPolicyTreeException("Assertion " + assertion.getClass() + " has property \"" + parm + "\" with unsupported type " + returnType);
-            String stype = tm.typeName;
-            String svalue = tm.freezer.freeze(getter.invoke(assertion, new Object[0]));
-            Element parmElement = document.createElement(parm);
-            element.appendChild(parmElement);
-            if (svalue == null) {
-                if (!WspConstants.isNullableType(tm.type))
-                    throw new InvalidPolicyTreeException("Assertion " + assertion.getClass() + " has property \"" + parm + "\" which must't be null yet is");
-                parmElement.setAttribute(stype + "Null", "null");
-            } else {
-                parmElement.setAttribute(stype, svalue);
-            }
+            element.appendChild(tm.freeze(document, parm, getter.invoke(assertion, new Object[0])));
         }
     }
 }

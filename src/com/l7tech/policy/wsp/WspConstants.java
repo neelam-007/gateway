@@ -38,6 +38,11 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.w3c.dom.Element;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+
 /**
  *
  * User: mike
@@ -119,17 +124,89 @@ class WspConstants {
         return findAssertionMappingByTagName(supportedLeafAssertions, name);
     }
 
-    static class TypeFreezer {
-        String freeze(Object in) {
-            return in == null ? null : in.toString();
-        }
+    static class TypedReference {
+        public Class type;
+        public Object target;
+        TypedReference(Class type, Object target) { this.type = type; this.target = target; }
     }
 
-    static class TypeThawer {
+    static class TypeMapping {
+        Class type;
+        String typeName;
+        final boolean isNullable;
+
+        private TypeMapping(Class type, String typeName) {
+            this.type = type;
+            this.typeName = typeName;
+            this.isNullable = isNullableType(type);
+        }
+
+        /**
+         * Convert a simple object to a String.
+         * @param in
+         * @return
+         */
+        protected String freeze(Object in) {
+            return in == null ? null : in.toString();
+        }
+
+        /**
+         * Convert an object into an element in the specified Document with the specified name.
+         *
+         * @param document The document in which to create the new element
+         * @param name The name to use for the new element
+         * @param source The object to be frozen.
+         * @return an Element ready to be inserted into the document in the appropriate place.
+         */
+        Element freeze(Document document, String name, Object source) {
+            Element parmElement = document.createElement(name);
+            String svalue = freeze(source);
+            if (svalue == null) {
+                if (!isNullable)
+                    throw new InvalidPolicyTreeException("Assertion has property \"" + name + "\" which mustn't be null yet is");
+                parmElement.setAttribute(typeName + "Null", "null");
+            } else {
+                parmElement.setAttribute(typeName, svalue);
+            }
+            populateElement(parmElement, document, name, source);
+            return parmElement;
+        }
+
+        protected void populateElement(Element parmElement, Document document, String name, Object source) {
+            // Do nothing; simple types require no additional child elements.
+        }
+
         void thaw(Object target, Method setter, String in)
                 throws InvocationTargetException, IllegalAccessException, InvalidPolicyStreamException
         {
             setter.invoke(target, new Object[] { thawValue(in) });
+        }
+
+        static TypedReference thawElement(Element source) throws InvalidPolicyStreamException {
+            NamedNodeMap attrs = source.getAttributes();
+            if (attrs.getLength() != 1)
+                throw new InvalidPolicyStreamException("Policy contains a " + source.getNodeName() +
+                                                       " element that doesn't have exactly one attribute");
+            Node attr = attrs.item(0);
+            String typeName = attr.getLocalName();
+            String value = attr.getNodeValue();
+
+            // Check for Nulls
+            if (typeName.endsWith("Null") && value.equals("null") && typeName.length() > 4) {
+                typeName = typeName.substring(0, typeName.length() - 4);
+                value = null;
+            }
+
+            TypeMapping tm = WspConstants.findTypeMappingByTypeName(typeName);
+            if (tm == null)
+                throw new InvalidPolicyStreamException("Policy contains unrecognized type name \"" + source.getNodeName() + "\"");
+
+            return new TypedReference(tm.type, tm.thawElementValue(source, value));
+        }
+
+        protected Object thawElementValue(Element source, String value) throws InvalidPolicyStreamException {
+            // This is the default thawer, usable for all types which can be represented as a simple string.
+            return thawValue(value);
         }
 
         protected Object thawValue(String in) throws InvalidPolicyStreamException {
@@ -137,67 +214,53 @@ class WspConstants {
         }
     }
 
-    static class TypeMapping {
-        Class type;
-        String typeName;
-        TypeFreezer freezer;
-        TypeThawer thawer;
-
-        TypeMapping(Class type, String typeName, TypeFreezer freezer, TypeThawer thawer) {
-            this.type = type;
-            this.typeName = typeName;
-            this.freezer = freezer;
-            this.thawer = thawer;
-        }
-    }
-
     static TypeMapping[] typeMappings = new TypeMapping[] {
-        new TypeMapping(String.class, "stringValue", new TypeFreezer(), new TypeThawer()),
-        new TypeMapping(long.class, "longValue", new TypeFreezer(), new TypeThawer() {
+        new TypeMapping(String.class, "stringValue"),
+        new TypeMapping(long.class, "longValue") {
             protected Object thawValue(String in) {
                 return new Long(in);
             }
-        }),
-        new TypeMapping(Long.class, "boxedLongValue", new TypeFreezer(), new TypeThawer() {
+        },
+        new TypeMapping(Long.class, "boxedLongValue") {
             protected Object thawValue(String in) {
                 return new Long(in);
             }
-        }),
-        new TypeMapping(int.class, "intValue", new TypeFreezer(), new TypeThawer() {
+        },
+        new TypeMapping(int.class, "intValue") {
             protected Object thawValue(String in) {
                 return new Integer(in);
             }
-        }),
-        new TypeMapping(Integer.class, "boxedIntegerValue", new TypeFreezer(), new TypeThawer() {
+        },
+        new TypeMapping(Integer.class, "boxedIntegerValue") {
             protected Object thawValue(String in) {
                 return new Integer(in);
             }
-        }),
-        new TypeMapping(boolean.class, "booleanValue", new TypeFreezer(), new TypeThawer() {
+        },
+        new TypeMapping(boolean.class, "booleanValue") {
             protected Object thawValue(String in) {
                 return new Boolean(in);
             }
-        }),
-        new TypeMapping(Boolean.class, "boxedBooleanValue", new TypeFreezer(), new TypeThawer() {
+        },
+        new TypeMapping(Boolean.class, "boxedBooleanValue") {
             protected Object thawValue(String in) {
                 return new Boolean(in);
             }
-        }),
-        new TypeMapping(SslAssertion.Option.class, "optionValue", new TypeFreezer() {
-            String freeze(Object in) {
+        },
+        new TypeMapping(SslAssertion.Option.class, "optionValue") {
+            protected String freeze(Object in) {
                 return in == null ? null : ((SslAssertion.Option)in).getKeyName();
             }
-        }, new TypeThawer() {
+
             protected Object thawValue(String in) {
                 return SslAssertion.Option.forKeyName(in);
             }
-        }),
+        },
 
         //TODO: we can't leave serialized java objects in the policy
-        new TypeMapping(Map.class, "base64SerializedMapValue", new TypeFreezer() {
+        new TypeMapping(Map.class, "base64SerializedMapValue") {
             Pattern nocr = Pattern.compile("\\s+", Pattern.MULTILINE);
 
-            String freeze(Object in) {
+            protected String freeze(Object in) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try {
                     ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -211,7 +274,7 @@ class WspConstants {
                 String encoded = enc.encode(bay);
                 return nocr.matcher(encoded).replaceAll(" ");
             }
-        }, new TypeThawer() {
+
             Pattern yescr = Pattern.compile("\\s+", Pattern.MULTILINE);
 
             protected Object thawValue(String in) throws InvalidPolicyStreamException {
@@ -227,7 +290,7 @@ class WspConstants {
                     throw new InvalidPolicyStreamException("egg error - unsupported serialized Java class", e);
                 }
             }
-        }),
+        },
     };
 
     static TypeMapping findTypeMappingByClass(Class clazz) {

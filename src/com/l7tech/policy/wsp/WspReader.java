@@ -4,7 +4,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -89,30 +89,17 @@ public class WspReader {
             // gather properties
             List properties = getChildElements(node);
             for (Iterator i = properties.iterator(); i.hasNext();) {
-                Node kidNode = (Node) i.next();
-                String parm = kidNode.getLocalName();
-                NamedNodeMap attrs = kidNode.getAttributes();
-                if (attrs.getLength() != 1)
-                    throw new InvalidPolicyStreamException("Policy contains a " + kidNode.getNodeName() +
-                                                           " node that doesn't have exactly one attribute");
-                Node attr = attrs.item(0);
-                String typeName = attr.getLocalName();
-                String value = attr.getNodeValue();
+                Element kid = (Element) i.next();
+                String parm = kid.getLocalName();
 
-                // Check for Nulls
-                if (typeName.endsWith("Null") && value.equals("null") && typeName.length() > 4) {
-                    typeName = typeName.substring(0, typeName.length() - 4);
-                    value = null;
-                }
-
-                WspConstants.TypeMapping tm = WspConstants.findTypeMappingByTypeName(typeName);
-                if (tm == null)
-                    throw new InvalidPolicyStreamException("Policy contains unrecognized type name \"" + kidNode.getNodeName() + "\"");
+                WspConstants.TypedReference thawedReference = WspConstants.TypeMapping.thawElement(kid);
+                Object thawed = thawedReference.target;
+                Class thawedType = thawedReference.type;
 
                 try {
-                    //log.info("Thawing: " + name + ".set" + parm + "((" + tm.type + ") " + value + ")");
-                    Method setter = assertion.getClass().getMethod("set" + parm, new Class[] { tm.type });
-                    tm.thawer.thaw(assertion, setter, value);
+                    System.out.println("Thawing: " + name + ".set" + parm + "((" + thawedType.getName() + ") " + thawed + ")");
+                    Method setter = assertion.getClass().getMethod("set" + parm, new Class[] { thawedType });
+                    setter.invoke(assertion, new Object[] { thawed });
                 } catch (NoSuchMethodException e) {
                     throw new InvalidPolicyStreamException("Policy contains reference to unsupported assertion property " + parm, e);
                 } catch (SecurityException e) {
