@@ -51,6 +51,7 @@ public class TimeRangePropertiesDialog extends JDialog {
      * @param a the assertion
      */
     private void fireEventAssertionChanged(final Assertion a) {
+        wasoked = true;
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
@@ -145,6 +146,10 @@ public class TimeRangePropertiesDialog extends JDialog {
             fireEventAssertionChanged(assertion);
         }
         cancel();
+    }
+
+    public boolean wasOked() {
+        return wasoked;
     }
 
     private void cancel() {
@@ -654,6 +659,8 @@ public class TimeRangePropertiesDialog extends JDialog {
     private final Collection itemsToToggleForDayOfWeek = new ArrayList();
     private int hroffset;
     private int minoffset;
+
+    private boolean wasoked = false;
 
     private ResourceBundle resources;
 

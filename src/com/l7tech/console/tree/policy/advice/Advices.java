@@ -5,6 +5,7 @@ import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RemoteIpRange;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.TimeRange;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
@@ -85,5 +86,6 @@ public class Advices {
         advicesMap.put(SchemaValidation.class, new Class[]{AddSchemaValidationAssertionAdvice.class});
         advicesMap.put(XslTransformation.class, new Class[]{AddXslTransformationAssertionAdvice.class});
         advicesMap.put(RemoteIpRange.class, new Class[]{AddRemoteIpRangeAssertionAdvice.class});
+        advicesMap.put(TimeRange.class, new Class[]{AddTimeRangeAssertionAdvice.class});
     }
 }
