@@ -12,7 +12,9 @@ import java.util.Comparator;
  * It differs from the java.util.logging.MemoryHandler in that you can ask for those
  * records back. It will be used by a WS when the console wants to consult recent log
  * entries from a ssg.
-
+ *
+ * @deprecated this is no longer used. check out ServerLogHandler instead.
+ *
  * <br/><br/>
  * Layer 7 technologies, inc.<br/>
  * User: flascell
