@@ -59,14 +59,14 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
      * @return the action name
      */
     public String getName() {
-        return "Create Service";
+        return "Create WSDL";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Create the new service definition (WSDL)";
+        return "Create WSDL for a new Web service";
     }
 
     /**

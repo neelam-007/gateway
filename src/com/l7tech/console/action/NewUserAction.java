@@ -25,14 +25,14 @@ public class NewUserAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Create new user";
+        return "Create User";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Create new user";
+        return "Create a new Internal Identity Provider user";
     }
 
     /**

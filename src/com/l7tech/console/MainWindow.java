@@ -265,6 +265,7 @@ public class MainWindow extends JFrame {
         if (helpTopicsMenuItem == null) {
             helpTopicsMenuItem = new JMenuItem();
             helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text"));
+            helpTopicsMenuItem.setToolTipText(resapplication.getString("Help_TopicsMenuItem_text_description"));
             int mnemonic = helpTopicsMenuItem.getText().toCharArray()[0];
             helpTopicsMenuItem.setMnemonic(mnemonic);
             helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
@@ -302,12 +303,17 @@ public class MainWindow extends JFrame {
         if (editMenu == null) {
             editMenu = new JMenu();
             editMenu.setText(resapplication.getString("Edit"));
+
+            editMenu.add(getNewProviderAction());
+            editMenu.add(getNewInternalGroupAction());
+            editMenu.add(getNewInternalUserAction());
+
+            editMenu.addSeparator();
+
             editMenu.add(getPublishServiceAction());
             editMenu.add(getCreateServiceAction());
             editMenu.addSeparator();
-            editMenu.add(getNewInternalUserAction());
-            editMenu.add(getNewInternalGroupAction());
-            editMenu.add(getNewProviderAction());
+
             editMenu.add(getManageJmsEndpointsMenuItem());
             int mnemonic = editMenu.getText().toCharArray()[0];
             editMenu.setMnemonic(mnemonic);
@@ -339,18 +345,21 @@ public class MainWindow extends JFrame {
 
         viewMenu.addSeparator();
 
+        viewMenu.add(getStatMenuItem());
+        viewMenu.add(getLogMenuItem());
+        viewMenu.add(new ConsoleAction());
+
+        viewMenu.addSeparator();
+
+        viewMenu.add(getGotoSubmenu());
+
         JMenuItem item = new JMenuItem(getRefreshAction());
         item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
         viewMenu.add(item);
 
         int mnemonic = viewMenu.getText().toCharArray()[0];
         viewMenu.setMnemonic(mnemonic);
-        viewMenu.add(getGotoSubmenu());
 
-        viewMenu.addSeparator();
-
-        viewMenu.add(getStatMenuItem());
-        viewMenu.add(getLogMenuItem());
 
         return viewMenu;
     }
@@ -385,7 +394,6 @@ public class MainWindow extends JFrame {
         helpMenu = new JMenu();
         helpMenu.setText(resapplication.getString("Help"));
         helpMenu.add(getHelpTopicsMenuItem());
-        helpMenu.add(new ConsoleAction());
         helpMenu.add(new AboutAction());
         int mnemonic = helpMenu.getText().toCharArray()[0];
         helpMenu.setMnemonic(mnemonic);
@@ -1058,7 +1066,8 @@ public class MainWindow extends JFrame {
         if (manageJmsEndpointsAction != null)
             return manageJmsEndpointsAction;
 
-        final String atext = resapplication.getString("jms.monitored.endpoints.display");
+        final String atext = resapplication.getString("jms.monitored.endpoints.display.action.name");
+        final String aDesc = resapplication.getString("jms.monitored.endpoints.display.action.desc");
 
         manageJmsEndpointsAction = new BaseAction() {
             public String getName() {
@@ -1081,7 +1090,7 @@ public class MainWindow extends JFrame {
             }
         };
         manageJmsEndpointsAction.putValue(Action.NAME, atext);
-        manageJmsEndpointsAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        manageJmsEndpointsAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         manageJmsEndpointsAction.setEnabled(false);
         enableActionWhileConnected(manageJmsEndpointsAction);
         return manageJmsEndpointsAction;

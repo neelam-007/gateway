@@ -45,7 +45,7 @@ public class NewProviderAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "New provider";
+        return "Create Identity Provider";
     }
 
     /**

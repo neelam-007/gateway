@@ -25,14 +25,14 @@ public class NewGroupAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Create new group";
+        return "Create Group";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Create new group";
+        return "Create a new Internal Identity Provider group";
     }
 
     /**

@@ -34,14 +34,14 @@ public class PublishServiceAction extends BaseAction implements ConnectionListen
      * @return the action name
      */
     public String getName() {
-        return "Publish Service";
+        return "Publish Web Service";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Publish a service specifying access control";
+        return "Publish a Web service";
     }
 
     /**
