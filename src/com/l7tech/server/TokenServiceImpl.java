@@ -263,11 +263,6 @@ public class TokenServiceImpl implements TokenService {
         } catch (DuplicateSessionException e) {
             throw new TokenServiceException(e);
         }
-        // xml newSession
-        Document response = null;
-        Calendar exp = Calendar.getInstance();
-        exp.setTimeInMillis(newSession.getExpiration());
-
 
         ProcessorResult wssOutput = null;
         try {
@@ -293,37 +288,38 @@ public class TokenServiceImpl implements TokenService {
                 }
             }
         }
+
         // different response formats based on whether the request should be encrypted against a requesting cert
         // or whether the response's secret should be in clear and encrypted at transport level.
+        Document response = null;
+        Calendar exp = Calendar.getInstance();
+        exp.setTimeInMillis(newSession.getExpiration());
+        String secretXml = null; // either an encryptedkey element or a binarysecret element
         if (clientCert != null) {
-            String encryptedKeyRawXML = produceEncryptedKeyXml(newSession.getSharedSecret(), clientCert);
-            try {
-                String xmlStr = WST_RST_RESPONSE_PREFIX +
-                                          "<wsc:SecurityContextToken>" +
-                                            "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
-                                          "</wsc:SecurityContextToken>" +
-                                WST_RST_RESPONSE_INFIX +
-                                        "<wst:RequestedProofToken>" +
-                                          encryptedKeyRawXML +
-                                        "</wst:RequestedProofToken>" +
-                                        "<wst:Lifetime>" +
-                                          "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
-                                        "</wst:Lifetime>" +
-                                      WST_RST_RESPONSE_SUFFIX;
-                response = XmlUtil.stringToDocument(xmlStr);
-            } catch (IOException e) {
-                throw new TokenServiceException(e);
-            } catch (SAXException e) {
-                throw new TokenServiceException(e);
-            }
-
-            return prepareSignedResponse( response );
+            secretXml = produceEncryptedKeyXml(newSession.getSharedSecret(), clientCert);
         } else {
-            // todo (remove severe message and implement)
-            logger.severe("Not implemented yet. Todo, add support for BinarySecret responses.");
-            throw new UnsupportedOperationException("BinarySecret responses not yet supported.");
-
+            secretXml = produceBinarySecretXml(newSession.getSharedSecret());
         }
+        try {
+            String xmlStr = WST_RST_RESPONSE_PREFIX +
+                                      "<wsc:SecurityContextToken>" +
+                                        "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
+                                      "</wsc:SecurityContextToken>" +
+                            WST_RST_RESPONSE_INFIX +
+                                    "<wst:RequestedProofToken>" +
+                                      secretXml +
+                                    "</wst:RequestedProofToken>" +
+                                    "<wst:Lifetime>" +
+                                      "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
+                                    "</wst:Lifetime>" +
+                            WST_RST_RESPONSE_SUFFIX;
+            response = XmlUtil.stringToDocument(xmlStr);
+        } catch (IOException e) {
+            throw new TokenServiceException(e);
+        } catch (SAXException e) {
+            throw new TokenServiceException(e);
+        }
+        return prepareSignedResponse(response);
     }
 
     private Document prepareSignedResponse( Document response ) throws TokenServiceException {
@@ -354,6 +350,15 @@ public class TokenServiceImpl implements TokenService {
             throw new TokenServiceException(e);
         }
         return response;
+    }
+
+    private String produceBinarySecretXml(SecretKey sharedSecret) {
+        StringBuffer output = new StringBuffer();
+        output.append("<wst:BinarySecret Type=\"" + SoapUtil.WST_NAMESPACE + "/SymmetricKey" + "\">");
+        byte[] actualkey = sharedSecret.getEncoded();
+        output.append(HexUtils.encodeBase64(actualkey, true));
+        output.append("</wst:BinarySecret>");
+        return output.toString();
     }
 
     private String produceEncryptedKeyXml(SecretKey sharedSecret, X509Certificate requestorCert) throws GeneralSecurityException {
