@@ -6,10 +6,13 @@
 
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 
-import java.util.Set;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * @author alex
@@ -45,14 +48,6 @@ public class GroupManagerAdapter implements GroupManager {
     }
 
     public void update(Group group, Set userHeaders) throws UpdateException {
-        throw new UnsupportedOperationException();
-    }
-
-    public EntityHeader groupToHeader(Group group) {
-        throw new UnsupportedOperationException();
-    }
-
-    public Group headerToGroup(EntityHeader header) throws FindException {
         throw new UnsupportedOperationException();
     }
 

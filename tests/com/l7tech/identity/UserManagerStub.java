@@ -1,9 +1,13 @@
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.*;
+import com.l7tech.common.util.Locator;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Test stub for user  manager. A <code>Map</code> backed user
@@ -21,8 +25,8 @@ public class UserManagerStub implements UserManager {
         this.dataStore = dataStore;
     }
 
-    public User findByPrimaryKey( String oid) throws FindException {
-        return (User)dataStore.getUsers().get(new Long(oid));
+    public User findByPrimaryKey(String oid) throws FindException {
+        return (User)dataStore.getUsers().get(oid);
     }
 
     public User findByLogin(String login) throws FindException {
@@ -37,47 +41,58 @@ public class UserManagerStub implements UserManager {
 
     public void delete(User user) throws DeleteException {
         InternalUser imp = (InternalUser)user;
-        if (dataStore.getUsers().remove(new Long(imp.getOid())) == null) {
+        if (dataStore.getUsers().remove(imp.getUniqueIdentifier()) == null) {
             throw new DeleteException("Could not find user oid= " + imp.getOid());
         }
     }
 
     public void delete(String identifier) throws DeleteException {
         InternalUser imp = new InternalUser();
-        imp.setOid( Long.valueOf( identifier ).longValue() );
+        imp.setOid( Long.valueOf(identifier).longValue() );
         delete( imp );
     }
 
     public String save(User user) throws SaveException {
-        InternalUser imp = (InternalUser)user;
+        InternalUser imp = new InternalUser();
+        imp.copyFrom(user);
         long oid = dataStore.nextObjectId();
         imp.setOid(oid);
-        Long key = new Long(oid);
-        if (dataStore.getUsers().get(key) != null) {
-            throw new SaveException("Record exists, user oid= " + imp.getOid());
+        final String uniqueIdentifier = imp.getUniqueIdentifier();
+        if (dataStore.getUsers().get(uniqueIdentifier) != null) {
+            throw new SaveException("Record exists, user oid= " + uniqueIdentifier);
         }
-        dataStore.getUsers().put(key, user);
-        return new Long( oid ).toString();
+        dataStore.getUsers().put(uniqueIdentifier, imp);
+        return uniqueIdentifier;
 
     }
 
     public void update(User user) throws UpdateException {
-        InternalUser imp = (InternalUser)user;
-        Long key = new Long(imp.getOid());
-        if (dataStore.getUsers().get(key) == null) {
-            throw new UpdateException("Record missing, user oid= " + imp.getOid());
+        String key = user.getUniqueIdentifier();
+        InternalUser iu = (InternalUser)dataStore.getUsers().get(key);
+        if (iu == null) {
+            throw new UpdateException("Record missing, user oid= " + key);
         }
-        dataStore.getUsers().remove(key);
-        dataStore.getUsers().put(key, user);
-
+        iu.copyFrom(user);
     }
 
     public String save(User user, Set groupHeaders) throws SaveException {
-        return save( user, null );
+        GroupManager gman = (GroupManager)Locator.getDefault().lookup(GroupManager.class);
+        if (gman == null) {
+            throw new RuntimeException("Could not obtain the group manager service");
+        }
+        String uid = save(user);
+        try {
+            gman.setGroupHeaders(uid, groupHeaders);
+            return uid;
+        } catch (FindException e) {
+            throw new SaveException("Error saving groups for uid "+uid, e);
+        } catch (UpdateException e) {
+            throw new SaveException("Error saving groups for uid "+uid, e);
+        }
     }
 
     public void update(User user, Set groupHeaders) throws UpdateException {
-        update( user, null );
+        update(user, null);
     }
 
     public EntityHeader userToHeader(User user) {
@@ -88,11 +103,6 @@ public class UserManagerStub implements UserManager {
         return null;
     }
 
-    public void setIdentityProviderOid(long oid) {
-        // not implementes
-    }
-
-
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.
      * @return A <code>Collection</code> of EntityHeader objects.
@@ -101,7 +111,7 @@ public class UserManagerStub implements UserManager {
         Collection list = new ArrayList();
         for (Iterator i =
                 dataStore.getUsers().keySet().iterator(); i.hasNext();) {
-            Long key = (Long) i.next();
+            Object key = i.next();
             list.add(fromUser((User) dataStore.getUsers().get(key)));
         }
         return list;
@@ -117,7 +127,7 @@ public class UserManagerStub implements UserManager {
         int count = 0;
         for (Iterator i =
                 dataStore.getUsers().keySet().iterator(); i.hasNext(); index++) {
-            Long key = (Long) i.next();
+            Object key = i.next();
 
             if (index >= offset && count <= windowSize) {
                 list.add(fromUser((User) dataStore.getUsers().get(key)));
@@ -136,7 +146,7 @@ public class UserManagerStub implements UserManager {
         Collection list = new ArrayList();
         for (Iterator i =
                 dataStore.getUsers().keySet().iterator(); i.hasNext();) {
-            Long key = (Long) i.next();
+            Object key = i.next();
             list.add(dataStore.getUsers().get(key));
         }
         return list;
@@ -152,7 +162,7 @@ public class UserManagerStub implements UserManager {
         int count = 0;
         for (Iterator i =
                 dataStore.getUsers().keySet().iterator(); i.hasNext(); index++) {
-            Long key = (Long) i.next();
+            Object key = i.next();
 
             if (index >= offset && count <= windowSize) {
                 list.add(dataStore.getUsers().get(key));
@@ -164,8 +174,7 @@ public class UserManagerStub implements UserManager {
 
     private EntityHeader fromUser(User u) {
         InternalUser imp = (InternalUser)u;
-        return
-                new EntityHeader(imp.getOid(), EntityType.USER, u.getLogin(), null);
+        return  new EntityHeader(imp.getOid(), EntityType.USER, u.getLogin(), null);
     }
 
     private StubDataStore dataStore;

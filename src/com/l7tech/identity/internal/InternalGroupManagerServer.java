@@ -199,14 +199,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         }
     }
 
-    public EntityHeader groupToHeader(Group group) {
-        return new EntityHeader(group.getUniqueIdentifier(), EntityType.GROUP, group.getName(), group.getDescription());
-    }
-
-    public Group headerToGroup(EntityHeader header) throws FindException {
-        return findByPrimaryKey(header.getStrId());
-    }
-
     public boolean isMember( User user, Group group ) throws FindException {
         HibernatePersistenceContext hpc = null;
         try {

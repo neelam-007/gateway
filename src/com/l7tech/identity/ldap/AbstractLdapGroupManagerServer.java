@@ -411,14 +411,6 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
         return findByPrimaryKey( name );
     }
 
-    public EntityHeader groupToHeader(Group group) {
-        return new EntityHeader(group.getName(), EntityType.GROUP, group.getName(), null);
-    }
-
-    public Group headerToGroup(EntityHeader header) throws FindException {
-        return findByPrimaryKey(header.getStrId());
-    }
-
 
     /**
      * builds a collection of group headers for all self descriptive groups

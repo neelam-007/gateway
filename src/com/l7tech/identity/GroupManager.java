@@ -17,9 +17,6 @@ public interface GroupManager extends EntityManager {
     String save( Group group, Set userHeaders ) throws SaveException;
     void update( Group group, Set userHeaders ) throws UpdateException;
 
-    EntityHeader groupToHeader( Group group );
-    Group headerToGroup( EntityHeader header ) throws FindException;
-
     /**
      * Test whether a given User is a member of the specified Group.
      * @param user

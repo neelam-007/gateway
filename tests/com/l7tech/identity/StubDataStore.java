@@ -1,7 +1,9 @@
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.identity.internal.GroupMembership;
+import com.l7tech.identity.internal.InternalGroup;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -10,10 +12,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.service.WsdlTest;
-import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.identity.internal.InternalGroup;
 
 import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
@@ -26,7 +25,7 @@ import java.util.*;
  * The test in memory datastore with users, groups, providers etc. Used
  * for testing and developing with manager stubs, that is, without the
  * server side component.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
@@ -40,6 +39,7 @@ public class StubDataStore {
 
     /**
      * create the default store
+     * 
      * @return the default data  store
      */
     public synchronized static StubDataStore defaultStore() {
@@ -54,7 +54,8 @@ public class StubDataStore {
 
     /**
      * Instantiate path
-     * @param storePath
+     * 
+     * @param storePath 
      */
     protected StubDataStore(String storePath)
       throws IOException, WSDLException, MalformedURLException {
@@ -69,9 +70,12 @@ public class StubDataStore {
         return users;
     }
 
-
     Map getGroups() {
         return groups;
+    }
+
+    Set getGroupMemberships() {
+        return memberships;
     }
 
     Map getIdentityProviderConfigs() {
@@ -79,9 +83,8 @@ public class StubDataStore {
     }
 
     public Map getPublishedServices() {
-          return pubServices;
+        return pubServices;
     }
-
 
     /**
      * @return the next sequence
@@ -90,6 +93,9 @@ public class StubDataStore {
         return ++objectIdSequence;
     }
 
+    static void recycle() {
+        defaultStore = null;
+    }
 
     private IdentityProviderConfig initialInternalProvider(XMLEncoder encoder) {
         IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
@@ -101,7 +107,7 @@ public class StubDataStore {
         return config;
     }
 
-    private void initialUsers(XMLEncoder encoder, long providerId) {
+    private void initialUsers(XMLEncoder encoder) {
         InternalUser user = new InternalUser();
         user.setOid(nextObjectId());
         user.setLogin("fred");
@@ -133,7 +139,7 @@ public class StubDataStore {
         populate(user);
     }
 
-    private void initialGroups(XMLEncoder encoder, long providerId) {
+    private void initialGroups(XMLEncoder encoder) {
         InternalGroup group = new InternalGroup();
         group.setOid(nextObjectId());
         group.setName("all-staff");
@@ -143,15 +149,7 @@ public class StubDataStore {
         for (Iterator i = users.keySet().iterator(); i.hasNext();) {
             members.add(users.get(i.next()));
         }
-        //group.setMembers(members);
 
-        Set membersHeaders = new HashSet();
-        for (Iterator i = users.keySet().iterator(); i.hasNext();) {
-            membersHeaders.add(fromUser((User)users.get(i.next())));
-        }
-
-
-        //group.setMemberHeaders(membersHeaders);
         encoder.writeObject(group);
         populate(group);
 
@@ -168,6 +166,19 @@ public class StubDataStore {
         group.setDescription("Engineering group");
         encoder.writeObject(group);
         populate(group);
+    }
+
+    private void initialGroupMemberships(XMLEncoder encoder) {
+        Iterator groups = getGroups().values().iterator();
+        for (;groups.hasNext();) {
+            InternalGroup g = (InternalGroup)groups.next();
+            for (Iterator i = users.values().iterator(); i.hasNext();) {
+                InternalUser u = (InternalUser)i.next();
+                GroupMembership gm = new GroupMembership(u.getOid(), g.getOid());
+                encoder.writeObject(gm);
+                populate(gm);
+            }
+        }
     }
 
     private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
@@ -209,7 +220,7 @@ public class StubDataStore {
         OneOrMoreAssertion oom = new OneOrMoreAssertion(identities);
         AllAssertion assertion =
           new AllAssertion(
-            Arrays.asList(new Assertion[] {new HttpBasic(), oom})
+            Arrays.asList(new Assertion[]{new HttpBasic(), oom})
           );
         return assertion;
     }
@@ -243,9 +254,11 @@ public class StubDataStore {
 
     private void populate(Object o) {
         if (o instanceof InternalGroup) {
-            groups.put(new Long(((InternalGroup)o).getOid()), o);
+            groups.put(((InternalGroup)o).getUniqueIdentifier(), o);
         } else if (o instanceof InternalUser) {
-            users.put(new Long(((InternalUser)o).getOid()), o);
+            users.put(((InternalUser)o).getUniqueIdentifier(), o);
+        } else if (o instanceof GroupMembership) {
+            memberships.add(o);
         } else if (o instanceof IdentityProviderConfig) {
             providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), o);
         } else if (o instanceof PublishedService) {
@@ -264,11 +277,10 @@ public class StubDataStore {
             encoder =
               new XMLEncoder(
                 new BufferedOutputStream(new FileOutputStream(storePath)));
-            IdentityProviderConfig providerConfig
-              = initialInternalProvider(encoder);
-            long providerId = providerConfig.getOid();
-            initialUsers(encoder, providerId);
-            initialGroups(encoder, providerId);
+            IdentityProviderConfig providerConfig  = initialInternalProvider(encoder);
+            initialUsers(encoder);
+            initialGroups(encoder);
+            initialGroupMemberships(encoder);
             initialServices(encoder, providerConfig);
         } finally {
             if (encoder != null) {
@@ -277,21 +289,17 @@ public class StubDataStore {
         }
     }
 
-
-    private EntityHeader fromUser(User u) {
-        InternalUser imp = (InternalUser)u;
-        return
-          new EntityHeader(imp.getOid(), EntityType.USER, u.getName(), null);
-    }
-
     private Map providerConfigs = new HashMap();
     private Map users = new HashMap();
     private Map groups = new HashMap();
+    private Set memberships = new HashSet();
+
     private Map pubServices = new HashMap();
     private long objectIdSequence = 100;
 
     /**
      * initial seed data load.
+     * 
      * @param args command lien arguments
      */
     public static void main(String[] args) {
