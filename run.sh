@@ -70,12 +70,15 @@ if $cygwin; then
   CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
 fi
 export CLASSPATH
-echo $CLASSPATH
+#echo $CLASSPATH
 
 foo=$1
 shift
 
 case "$foo" in 
+	-?)
+		echo "Usage: run.sh (ssg|console|proxy|textproxy|<Main class>)"
+		;;
 	ssg)
 		# start tomcat?
 		exec $TOMCAT_HOME/bin/startup.sh run $*
@@ -100,7 +103,7 @@ case "$foo" in
 		#exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
 		;;
 	*)
-		echo "Usage: run.sh (ssg|console|proxy|textproxy)"
+		exec $JAVA_HOME/bin/java $JAVA_OPTS $foo $*
 		;;
 esac 
     
