@@ -39,27 +39,27 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
      */
     public PublishedService resolveService(Request request) throws ServiceResolutionException {
         Set services = new HashSet();
-        Set tempServices = null;
+        Set resolvedServices = null;
         int size;
         services.addAll( serviceSet() );
         Iterator i = _resolvers.iterator();
 
         while ( i.hasNext() ) {
             ServiceResolver resolver = (ServiceResolver)i.next();
-            tempServices = resolver.resolve( request, services );
-            if ( tempServices != null ) {
+            resolvedServices = resolver.resolve( request, services );
+            if ( resolvedServices != null ) {
                 // If for some reason it's null, we'll just pass the same old set to the next one.
-                size = tempServices.size();
+                size = resolvedServices.size();
                 switch ( size ) {
                 case 0:
                     // Didn't find anything... Go around to the next Resolver
                     break;
                 case 1:
                     // Found one service--done!
-                    return (PublishedService)tempServices.iterator().next();
+                    return (PublishedService)resolvedServices.iterator().next();
                 default:
                     // Found more than one Service... Pass the subset to the next Resolver.
-                    services = tempServices;
+                    services = resolvedServices;
                     break;
                 }
             }
