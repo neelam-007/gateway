@@ -1,6 +1,7 @@
 
 package com.l7tech.common.xml.tarari.util;
 
+import antlr.RecognitionException;
 import antlr.TokenStreamException;
 
 import java.io.*;
@@ -101,6 +102,8 @@ public class TarariXpathConverter {
         } catch (TokenStreamException e) {
             throw (ParseException)new ParseException(xpath, 0).initCause(e);
         } catch (UnsupportedEncodingException e) {
+            throw (ParseException)new ParseException(xpath, 0).initCause(e); // can't happen
+        } catch (RecognitionException e) {
             throw (ParseException)new ParseException(xpath, 0).initCause(e); // can't happen
         }
     }

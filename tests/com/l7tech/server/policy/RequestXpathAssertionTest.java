@@ -86,6 +86,8 @@ public class RequestXpathAssertionTest extends TestCase {
         "/soapenv:Envelope/soapenv:Body/ns1:placeOrder/productid", // contains a value
         "/soapenv:Envelope/soapenv:Body/ns1:placeOrder/productid='-9206260647417300294'", // works with proper namespaces
         "/*[local-name(.)='Envelope']/*[local-name(.)='Body']/*[local-name(.)='placeOrder']/productid='-9206260647417300294'", // works with no-namespace hack
+        "/soapenv:Envelope[@*[local-name()=\"soapenv\"]]",
+        "/soapenv:Envelope[@xmlns:soapenv]",
     };
 
     private String[] failingXpaths =

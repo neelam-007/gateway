@@ -74,8 +74,7 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
             logger.log(Level.WARNING, "Assertion will always fail: Invalid Xpath expression: " + expr, e);
             expr = null;
         } catch (ParseException e) {
-            logger.log(Level.WARNING, "Assertion will always fail: Invalid Xpath expression: " + expr, e);
-            expr = null;
+            logger.log(Level.INFO, "Assertion not supported by hardware -- will fallback to software: " + expr, e);
         }
         this.expr = expr;
         auditor = new Auditor(this, applicationContext, logger);
