@@ -52,7 +52,12 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
     }
 
     public void update(Group group) throws UpdateException {
-        // todo (save)?
+        // at other hand, save will check if object exists and call update instead
+        try {
+            save(group);
+        } catch (SaveException e) {
+            throw new UpdateException("SaveException in save", e);
+        }
     }
 
     public void setIdentityProviderOid(long oid) {

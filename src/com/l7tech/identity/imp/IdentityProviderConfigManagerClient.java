@@ -59,7 +59,12 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
     }
 
     public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {
-        // todo (save?)
+        // at other hand, save will check if object exists and call update instead
+        try {
+            save(identityProviderConfig);
+        } catch (SaveException e) {
+            throw new UpdateException("SaveException in save", e);
+        }
     }
 
     public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {

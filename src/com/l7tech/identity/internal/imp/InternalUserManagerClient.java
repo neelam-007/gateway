@@ -52,7 +52,12 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
     }
 
     public void update(User user) throws UpdateException {
-        // todo (save?)
+        // at other hand, save will check if object exists and call update instead
+        try {
+            save(user);
+        } catch (SaveException e) {
+            throw new UpdateException("SaveException in save", e);
+        }
     }
 
     public void setIdentityProviderOid(long oid) {
