@@ -6,10 +6,11 @@
 
 package com.l7tech.policy.assertion.credential.wss;
 
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import javax.xml.soap.SOAPException;
+import org.apache.axis.AxisFault;
+import org.apache.axis.message.SOAPHeaderElement;
 
 /**
  * @author alex
@@ -17,12 +18,24 @@ import com.l7tech.proxy.datamodel.PendingRequest;
  */
 public abstract class WssCredentialSourceAssertion extends CredentialSourceAssertion {
     /**
-     * ClientProxy client-side processing of the given request.
-     * @param requst    The request to decorate.
-     * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
-     * @throws PolicyAssertionException if processing should not continue due to a serious error
+     * gets the security element out of header. creates one if necessary
+     * @param request
+     * @return
      */
-    public AssertionStatus decorateRequest(PendingRequest requst) throws PolicyAssertionException {
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+    protected SOAPHeaderElement getSecurityElement(PendingRequest request) throws SOAPException {
+        SOAPHeaderElement secHeader = null;
+        try {
+            secHeader = request.getSoapEnvelope().getHeaderByName(SECURITY_NAMESPACE, SECURITY_NAME);
+        } catch (AxisFault e) {
+            throw new SOAPException(e);
+        }
+        if (secHeader == null) {
+            secHeader = new SOAPHeaderElement(SECURITY_NAMESPACE, SECURITY_NAME);
+            request.getSoapEnvelope().addHeader(secHeader);
+        }
+        return secHeader;
     }
+
+    protected static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/04/secext";
+    protected static final String SECURITY_NAME = "Security";
 }
