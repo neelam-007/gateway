@@ -8,6 +8,9 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.message.HttpServletRequestKnob;
+import com.l7tech.common.message.HttpResponseKnob;
+import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
@@ -36,6 +39,8 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
@@ -89,7 +94,17 @@ public class PolicyServiceTest extends TestCase {
         Document requestDoc = null;
         Message request = new Message();
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+
+        final MockHttpServletRequest hrequest = new MockHttpServletRequest();
+        final MockHttpServletResponse hresponse = new MockHttpServletResponse();
+        final HttpServletRequestKnob httpRequestKnob = new HttpServletRequestKnob(hrequest);
+        final HttpServletResponseKnob httpResponseKnob = new HttpServletResponseKnob(hresponse);
+        request.attachHttpRequestKnob(httpRequestKnob);
+        request.attachHttpResponseKnob(httpResponseKnob);
+        response.attachHttpRequestKnob(httpRequestKnob);
+        response.attachHttpResponseKnob(httpResponseKnob);
+
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, hrequest, hresponse);
         context.setCredentials(loginCredentials);
         if (loginCredentials != null) {
             requestDoc = PolicyServiceClient.createGetPolicyRequest("123");

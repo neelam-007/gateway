@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpClientCert;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -29,7 +30,12 @@ public class ServerSslAssertion implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-        boolean ssl = context.getHttpServletRequest().isSecure();
+        final HttpServletRequest httpServletRequest = context.getHttpServletRequest();
+        if (httpServletRequest == null) {
+            logger.info("Request not received over HTTP; don't know how to check for SSL");
+            return AssertionStatus.BAD_REQUEST;
+        }
+        boolean ssl = httpServletRequest.isSecure();
         AssertionStatus status;
 
         SslAssertion.Option option = _data.getOption();
@@ -39,12 +45,17 @@ public class ServerSslAssertion implements ServerAssertion {
             if (ssl) {
                 status = AssertionStatus.NONE;
                 auditor.logAndAudit(AssertionMessages.SSL_REQUIRED_PRESENT);
+                if (_data.isCredentialSource()) {
+                    status = processAsCredentialSourceAssertion(context, auditor);
+                }
             } else {
-                status = AssertionStatus.FALSIFIED;
-                auditor.logAndAudit(AssertionMessages.SSL_REQUIRED_ABSENT);
-            }
-            if (_data.isCredentialSource()) {
-                return processAsCredentialSourceAssertion(context, auditor);
+                if (_data.isCredentialSource()) {
+                    status = AssertionStatus.AUTH_REQUIRED;
+                    auditor.logAndAudit(AssertionMessages.AUTH_REQUIRED);
+                } else {
+                    status = AssertionStatus.FALSIFIED;
+                    auditor.logAndAudit(AssertionMessages.SSL_REQUIRED_ABSENT);
+                }
             }
         } else if ( option == SslAssertion.FORBIDDEN) {
             if (ssl) {
