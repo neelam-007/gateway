@@ -10,10 +10,10 @@ import java.util.logging.Logger;
 
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
-import com.l7tech.service.resolution.UrnResolver;
-import com.l7tech.service.resolution.SoapActionResolver;
-import com.l7tech.service.resolution.ServiceResolutionException;
-import com.l7tech.service.resolution.NameValueServiceResolver;
+import com.l7tech.service.resolution.*;
+import com.l7tech.objectmodel.DuplicateObjectException;
+
+import javax.wsdl.WSDLException;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -111,25 +111,29 @@ public class ServiceCache {
      * adds or update a service to the cache. this should be called when the cache is initially populated and
      * when a service is saved or updated locally
      */
-    public void cache(PublishedService service) throws InterruptedException {
+    public void cache(PublishedService service) throws InterruptedException, DuplicateObjectException, WSDLException {
         Sync write = rwlock.writeLock();
         try {
             write.acquire();
             Long key = new Long(service.getOid());
             boolean update = false;
             if (services.get(key) != null) update = true;
-            services.put(key, service);
+
             if (update) {
                 for (int i = 0; i < resolvers.length; i++) {
                     resolvers[i].serviceUpdated(service);
                 }
                 logger.finest("updated service in cache. oid=" + service.getOid());
             } else {
+                // make sure no duplicate exist
+                validate(service);
                 for (int i = 0; i < resolvers.length; i++) {
                     resolvers[i].serviceCreated(service);
                 }
                 logger.finest("added service in cache. oid=" + service.getOid());
             }
+
+            services.put(key, service);
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -222,6 +226,21 @@ public class ServiceCache {
         } finally {
             if (write != null) write.release();
         }
+    }
+
+    private void validate(PublishedService candidateService) throws WSDLException, DuplicateObjectException{
+        // Make sure WSDL is valid
+        candidateService.parsedWsdl();
+        ServiceResolver resolver;
+
+        // Check for duplicate services
+        for (int i = 0; i < resolvers.length; i++) {
+            services = resolvers[i].matchingServices( candidateService, services );
+            if ( services == null || services .size() == 0 ) {
+                return;
+            }
+        }
+        throw new DuplicateObjectException( "Duplicate service resolution parameters!" );
     }
 
     private Map services = new HashMap();
