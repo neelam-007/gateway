@@ -6,16 +6,16 @@
 
 package com.l7tech.proxy.ssl;
 
+import com.l7tech.proxy.datamodel.CurrentRequest;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.util.ClientLogger;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-
-import com.l7tech.proxy.util.ClientLogger;
 
 /**
  * New socket factory for SSL with the Jakarta Commons HTTP client.
@@ -25,28 +25,42 @@ import com.l7tech.proxy.util.ClientLogger;
  */
 public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSocketFactory {
     private static final ClientLogger log = ClientLogger.getInstance(ClientProxySecureProtocolSocketFactory.class);
-    private SSLContext sslContext;
 
-    public ClientProxySecureProtocolSocketFactory(SSLContext ctx) {
-        this.sslContext = ctx;
+    private static class InstanceHolder {
+        private static final ClientProxySecureProtocolSocketFactory INSTANCE = new ClientProxySecureProtocolSocketFactory();
+    }
+
+    private ClientProxySecureProtocolSocketFactory() {}
+
+    public static ClientProxySecureProtocolSocketFactory getInstance() {
+        return InstanceHolder.INSTANCE;
     }
 
     public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
             throws IOException, UnknownHostException
     {
-        final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+        Ssg ssg = CurrentRequest.getCurrentSsg();
+        if (ssg == null)
+            throw new IllegalStateException("Unable to create SSL client socket: No current Gateway is available in this thread");
+        final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(socket, host, port, autoClose);
         return sock;
     }
 
     public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort)
             throws IOException, UnknownHostException
     {
-        final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port, clientHost, clientPort);
+        Ssg ssg = CurrentRequest.getCurrentSsg();
+        if (ssg == null)
+            throw new IllegalStateException("Unable to create SSL client socket: No current Gateway is available in this thread");
+        final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(host, port, clientHost, clientPort);
         return sock;
     }
 
     public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-        final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port);
+        Ssg ssg = CurrentRequest.getCurrentSsg();
+        if (ssg == null)
+            throw new IllegalStateException("Unable to create SSL client socket: No current Gateway is available in this thread");
+        final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(host, port);
         return sock;
     }
 }

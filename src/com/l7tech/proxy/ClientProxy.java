@@ -9,15 +9,13 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.processor.MessageProcessor;
-import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
-import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.util.ClientLogger;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
@@ -27,9 +25,6 @@ import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 import org.mortbay.util.MultiException;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -75,9 +70,6 @@ public class ClientProxy {
     private volatile boolean isDestroyed = false;
     private volatile boolean isInitialized = false;
 
-    private ClientProxyTrustManager trustManager = null;
-    private ClientProxyKeyManager keyManager = null;
-
     /**
      * Create a ClientProxy with the specified settings.
      * @param ssgFinder provides the list of SSGs to which we are proxying.
@@ -93,28 +85,6 @@ public class ClientProxy {
         this.bindPort = bindPort;
         this.minThreads = minThreads;
         this.maxThreads = maxThreads;
-    }
-
-    private ClientProxyTrustManager getTrustManager() {
-        if (trustManager == null)
-            trustManager = new ClientProxyTrustManager();
-        return trustManager;
-    }
-
-    private ClientProxyKeyManager getKeyManager() {
-        if (keyManager == null)
-            keyManager = new ClientProxyKeyManager();
-        return keyManager;
-    }
-
-    /** Used by the tests to configure a "trust-all" trust manager, for simple SSL tests. */
-    void setTrustManager(ClientProxyTrustManager trustManager) {
-        this.trustManager = trustManager;
-    }
-
-    /** Used by the tests to configure a client-cert-less key manager, for simple SSL tests. */
-    void setKeyManager(ClientProxyKeyManager keyManager) {
-        this.keyManager = keyManager;
     }
 
     /**
@@ -137,38 +107,13 @@ public class ClientProxy {
     }
 
     private synchronized void init()
-            throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
     {
         if (isInitialized)
             return;
         System.setProperty("httpclient.useragent", SecureSpanConstants.USER_AGENT);
-        initializeSsl();
-        isInitialized = true;
-    }
-
-    /**
-     * Establish or reestablish the global SSL state.  Must be called after any change to client
-     * or server certificates used during any SSL handshake, otherwise the implementation may cache
-     * undesirable information.  (The cache is seperate from the session cache, too, so you can't just
-     * flush the sessions to fix it.)
-     *
-     * @throws NoSuchAlgorithmException
-     * @throws NoSuchProviderException
-     * @throws KeyManagementException
-     */
-    public synchronized void initializeSsl()
-            throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
-    {
-        // Set up SSL context
-        ClientProxyKeyManager keyManager = getKeyManager();
-        ClientProxyTrustManager trustManager = getTrustManager();
-        SSLContext sslContext = SSLContext.getInstance("SSL", System.getProperty("com.l7tech.proxy.sslProvider",
-                                                                                 "SunJSSE"));
-        sslContext.init(new X509KeyManager[] {keyManager},
-                        new X509TrustManager[] {trustManager},
-                        null);
-        Protocol https = new Protocol("https", new ClientProxySecureProtocolSocketFactory(sslContext), 443);
+        Protocol https = new Protocol("https", ClientProxySecureProtocolSocketFactory.getInstance(), 443);
         Protocol.registerProtocol("https", https);
+        isInitialized = true;
     }
 
     /**
@@ -322,7 +267,7 @@ public class ClientProxy {
                                                                             caCert);
                     // make sure private key is stored on disk encrypted with the password that was used to obtain it
                     SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
-                    initializeSsl(); // reset global SSL state
+                    ssg.resetSslContext(); // reset cached SSL state
                     return;
                 } catch (SslUtils.BadCredentialsException e) {  // note: not the same class BadCredentialsException
                     if (++attempts > 3)

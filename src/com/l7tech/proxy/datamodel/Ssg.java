@@ -3,10 +3,15 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.ssl.ClientProxyKeyManager;
+import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.util.ClientLogger;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
@@ -15,7 +20,10 @@ import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,6 +43,12 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private static final int SSG_SSL_PORT = 8443;
     private static final int SSG_PORT = 8080;
     private static final String KEY_FILE = ClientProxy.PROXY_CONFIG + File.separator + "keyStore";
+
+    // Hack to allow lazy initialization of SSL stuff
+    private static class SslInstanceHolder {
+        private static final ClientProxyKeyManager keyManager = new ClientProxyKeyManager();
+        private static final ClientProxyTrustManager trustManager = new ClientProxyTrustManager();
+    }
 
     private long id = 0;
     private String localEndpoint = null;
@@ -63,6 +77,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient PrivateKey privateKey = null; // cache of private key
     private transient boolean passwordWorkedForPrivateKey = false;
     private transient boolean passwordWorkedWithSsg = false;
+    private transient SSLContext sslContext = null;
+    private transient ClientProxyTrustManager trustManager = null;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -614,5 +630,68 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public void setUseSslByDefault(boolean useSslByDefault) {
         this.useSslByDefault = useSslByDefault;
+    }
+
+    /** Get the trust manager used for SSL connections to this SSG. */
+    public synchronized ClientProxyTrustManager trustManager() {
+        if (trustManager == null) {
+            trustManager = SslInstanceHolder.trustManager;
+        }
+        return trustManager;
+    }
+
+    /** Set the trust manager to use for SSL connections to this SSG. */
+    public synchronized void trustManager(ClientProxyTrustManager tm) {
+        if (tm == null)
+            throw new IllegalArgumentException("TrustManager may not be null");
+        trustManager = tm;
+    }
+
+    /**
+     * Establish or reestablish the global SSL state.  Must be called after any change to client
+     * or server certificates used during any SSL handshake, otherwise the implementation may cache
+     * undesirable information.  (The cache is seperate from the session cache, too, so you can't just
+     * flush the sessions to fix it.)
+     *
+     * @throws java.security.NoSuchAlgorithmException
+     * @throws java.security.NoSuchProviderException
+     * @throws java.security.KeyManagementException
+     */
+    private synchronized SSLContext createSslContext()
+            throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
+    {
+        log.info("Creating new SSL context for SSG " + toString());
+        ClientProxyKeyManager keyManager = SslInstanceHolder.keyManager;
+        ClientProxyTrustManager trustManager = trustManager();
+        SSLContext sslContext = SSLContext.getInstance("SSL", System.getProperty("com.l7tech.proxy.sslProvider",
+                                                                                 "SunJSSE"));
+        sslContext.init(new X509KeyManager[] {keyManager},
+                        new X509TrustManager[] {trustManager},
+                        null);
+        return sslContext;
+    }
+
+    public synchronized SSLContext sslContext() {
+        if (sslContext == null) {
+            try {
+                sslContext = createSslContext();
+            } catch (NoSuchAlgorithmException e) {
+                log.error(e);
+                throw new RuntimeException(e);
+            } catch (NoSuchProviderException e) {
+                log.error(e);
+                throw new RuntimeException(e);
+            } catch (KeyManagementException e) {
+                log.error(e);
+                throw new RuntimeException(e);
+            }
+        }
+        return sslContext;
+    }
+
+    public synchronized void resetSslContext()
+            throws NoSuchProviderException, NoSuchAlgorithmException, KeyManagementException
+    {
+        sslContext = createSslContext();
     }
 }

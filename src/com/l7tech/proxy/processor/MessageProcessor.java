@@ -166,7 +166,7 @@ public class MessageProcessor {
                 Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
                 SsgKeyStoreManager.deleteKeyStore(ssg);
             }
-            req.getClientProxy().initializeSsl(); // reset global SSL state
+            ssg.resetSslContext();
             // FALLTHROUGH -- retry, creating new keystore
         }
 

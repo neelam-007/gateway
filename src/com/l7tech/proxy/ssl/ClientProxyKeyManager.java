@@ -29,7 +29,6 @@ import java.security.cert.X509Certificate;
  */
 public class ClientProxyKeyManager implements X509KeyManager {
     private static final ClientLogger log = ClientLogger.getInstance(ClientProxyKeyManager.class);
-    X509KeyManager defaultKeyManager = null;
 
     public PrivateKey getPrivateKey(String s) {
         try {
