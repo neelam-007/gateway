@@ -42,6 +42,7 @@ public class LdapManager {
         Object temp = config.getProperty( LdapConfigSettings.LDAP_HOST_URL );
         if ( temp != null ) env.put(Context.PROVIDER_URL, temp );
         env.put("com.sun.jndi.ldap.connect.pool", "true");
+        env.put("com.sun.jndi.ldap.connect.timeout", "30000" );
 
         String dn = config.getProperty( LdapConfigSettings.LDAP_BIND_DN );
         if ( dn != null && dn.length() > 0 ) {
