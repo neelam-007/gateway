@@ -60,11 +60,14 @@ fi
 # ENCODE PASSWORD
 ENCODED_ADMIN_PASSWD=`perl perlmd5passwd.pl $ACCOUNT_NAME:$ADMIN_PASSWORD`
 
-#
-# TODO SQL UPDATE OF ADMIN USER
-#
-# 1. sql update internal_user set password=$ENCODED_ADMIN_PASSWD where oid=3;
-#   note: this assumes that the ssgadmin oid=3
-#
-# 2. sql update internal_user set login=$ACCOUNT_NAME where oid=3;
-#
+# VERIFY THAT THE LAST OPERATION SUCCEEDED
+PASSWORD_LENGTH=${#ENCODED_ADMIN_PASSWD}
+if [ "$PASSWORD_LENGTH" -lt 31 ]; then
+	echo "ERROR : the operation failed"
+	exit -1
+fi
+
+# UPDATE DATABASE
+UPDATE_SYNTAX="UPDATE internal_user SET password='$ENCODED_ADMIN_PASSWD', login='$ACCOUNT_NAME', name='$ACCOUNT_NAME' WHERE oid=3"
+RES=`mysql -h localhost -u $1 -p$2 ssg -e "${UPDATE_SYNTAX}"`
+echo $RES
