@@ -4,18 +4,26 @@ package com.l7tech.console.panels;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.MainWindow;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
+import com.l7tech.common.gui.widgets.WrappingLabel;
+import com.l7tech.common.gui.widgets.ContextMenuTextField;
+import com.l7tech.common.gui.util.FontUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.tree.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeCellRenderer;
+import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.StringReader;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.rmi.RemoteException;
 
 /**
@@ -25,8 +33,13 @@ import java.rmi.RemoteException;
  */
 public class ServicePanel extends WizardStepPanel {
 
+    private static final ClassLoader cl = ServicePanel.class.getClassLoader();
+    private static final String SPLASH_PATH = MainWindow.RESOURCE_PATH + "/splash-screen.png";
+    private static final ImageIcon titleImage = new ImageIcon(cl.getResource(SPLASH_PATH));
+
     // local service copy
     private PublishedService service = new PublishedService();
+    private Wsdl wsdl;
 
     /** Creates new form ServicePanel */
     public ServicePanel() {
@@ -40,101 +53,144 @@ public class ServicePanel extends WizardStepPanel {
     private void initComponents() {
         serviceUrljPanel = new JPanel();
         serviceUrljLabel = new JLabel();
-        wsdlUrljTextField = new JTextField();
-        resolvejButton = new JButton();
-        serviceOperationsjPanel = new JPanel();
-        methodsjScrollPane = new JScrollPane();
-        wsdlJTree = new JTree();
-        wsdlJTree.setRootVisible(false);
-        rigidAreatjPanel = new JPanel();
+        wsdlUrljTextField = new ContextMenuTextField();
 
-        setLayout(new BorderLayout());
+        setLayout(new GridBagLayout());
 
-        serviceUrljPanel.setLayout(new BoxLayout(serviceUrljPanel, BoxLayout.X_AXIS));
+        add(new JLabel(titleImage),
+            new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                                   GridBagConstraints.CENTER,
+                                   GridBagConstraints.BOTH,
+                                   new Insets(0, 0, 0, 0), 0, 0));
+
+        WrappingLabel splain = new WrappingLabel("Enter the URL of the WSDL that describes " +
+                                                 "the web service you wish to publish.");
+        add(splain,
+            new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
+                                   GridBagConstraints.CENTER,
+                                   GridBagConstraints.HORIZONTAL,
+                                   new Insets(20, 20, 20, 20), 0, 0));
+
+        serviceUrljPanel.setLayout(new GridBagLayout());
+
+        JLabel exampleUrl = new JLabel("Example: http://services.example.com/warehouse/purchase.wsdl");
+        FontUtil.resizeFont(exampleUrl, 0.84);
+        serviceUrljPanel.add(exampleUrl,
+                             new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                                                    GridBagConstraints.WEST,
+                                                    GridBagConstraints.NONE,
+                                                    new Insets(0, 0, 0, 0), 0, 0));
 
         serviceUrljPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
-        serviceUrljLabel.setText("Service WSDL location");
+        serviceUrljLabel.setText("URL:");
         serviceUrljLabel.setBorder(new EmptyBorder(new Insets(1, 1, 1, 5)));
-        serviceUrljPanel.add(serviceUrljLabel);
-
-        //wsdlUrljTextField.setText("http://www.xmethods.net/sd/StockQuoteService.wsdl");
-        wsdlUrljTextFieldFont = wsdlUrljTextField.getFont();
+        serviceUrljPanel.add(serviceUrljLabel,
+                             new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+                                                    GridBagConstraints.EAST,
+                                                    GridBagConstraints.NONE,
+                                                    new Insets(0, 0, 0, 0), 0, 0));
 
         wsdlUrljTextField.setPreferredSize(new Dimension(150, 20));
-        serviceUrljPanel.add(wsdlUrljTextField);
+        wsdlUrljTextField.getDocument().addDocumentListener(createWsdlUrlDocumentListener());
+        serviceUrljPanel.add(wsdlUrljTextField,
+                             new GridBagConstraints(1, 1, 1, 1, 100.0, 0.0,
+                                                    GridBagConstraints.WEST,
+                                                    GridBagConstraints.HORIZONTAL,
+                                                    new Insets(0, 0, 0, 0), 0, 0));
+        add(serviceUrljPanel,
+            new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0,
+                                   GridBagConstraints.CENTER,
+                                   GridBagConstraints.HORIZONTAL,
+                                   new Insets(0, 0, 0, 0), 0, 0));
 
-        resolvejButton.setText("Resolve");
-        resolvejButton.setMargin(new Insets(0, 14, 0, 14));
-        resolvejButton.setMinimumSize(new Dimension(79, 32));
-        resolvejButton.setPreferredSize(new Dimension(79, 25));
+        // space eats remainder
+        add(new JLabel(""),
+            new GridBagConstraints(0, 99, GridBagConstraints.REMAINDER, GridBagConstraints.REMAINDER, 100.0, 1.8,
+                                   GridBagConstraints.CENTER,
+                                   GridBagConstraints.BOTH,
+                                   new Insets(0, 0, 0, 0), 0, 0));
+    }
 
-        resolvejButton.addActionListener(new ActionListener() {
-            /** Invoked when an action occurs. */
-            public void actionPerformed(ActionEvent e) {
-                isValid = false;
-                notifyListeners();
+    private DocumentListener createWsdlUrlDocumentListener() {
+        return new DocumentListener() {
+            private boolean isUrlOk() {
+                String urlStr = wsdlUrljTextField.getText();
+                URL url;
                 try {
-                    String wsdlXml =
-                      Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrljTextField.getText());
-                    Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
-                    TreeNode node = WsdlTreeNode.newInstance(wsdl);
-                    wsdlJTree.setModel(new DefaultTreeModel(node));
-                    wsdlJTree.setCellRenderer(wsdlTreeRenderer);
-
-                    service.setName(wsdl.getDefinition().getTargetNamespace());
-                    service.setWsdlXml(wsdlXml);
-                    service.setWsdlUrl(wsdlUrljTextField.getText());
-
-                    isValid = true;
-                    notifyListeners();
-                } catch (RemoteException e1) {
-                    e1.printStackTrace();
-                    JOptionPane.showMessageDialog(null,
-                      "Unable to resolve the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
-                      "Error",
-                      JOptionPane.ERROR_MESSAGE);
-                } catch (WSDLException e1) {
-                    e1.printStackTrace();
-                    JOptionPane.showMessageDialog(null,
-                      "Unable to parse the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
-                      "Error",
-                      JOptionPane.ERROR_MESSAGE);
-                } catch (MalformedURLException e1) {
-                    e1.printStackTrace();
-                    JOptionPane.showMessageDialog(null,
-                      "Illegal URL string '" + wsdlUrljTextField.getText() + "'\n",
-                      "Error",
-                      JOptionPane.ERROR_MESSAGE);
+                    url = new URL(urlStr);
+                } catch (MalformedURLException e) {
+                    // snogood
+                    return false;
                 }
+
+                if (url.getProtocol() == null || url.getProtocol().length() < 1)
+                    return false;
+
+                if (url.getHost() == null || url.getHost().length() < 1)
+                    return false;
+
+                return true;
             }
-        });
-        serviceUrljPanel.add(resolvejButton);
-        add(serviceUrljPanel, BorderLayout.NORTH);
-        serviceOperationsjPanel.setLayout(new BoxLayout(serviceOperationsjPanel, BoxLayout.X_AXIS));
-        serviceOperationsjPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
-        methodsjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        methodsjScrollPane.setPreferredSize(new Dimension(200, 150));
-        wsdlJTree.setModel(new DefaultTreeModel(EMPTY_ROOT));
-        methodsjScrollPane.setViewportView(wsdlJTree);
-        serviceOperationsjPanel.add(methodsjScrollPane);
-        rigidAreatjPanel.setLayout(new GridBagLayout());
-        serviceOperationsjPanel.add(rigidAreatjPanel);
-        add(serviceOperationsjPanel, BorderLayout.CENTER);
 
+            private void checkUrl() {
+                isWsdlUrlSyntaxValid = isUrlOk();
+                ServicePanel.this.notifyListeners();
+            }
+
+            public void insertUpdate(DocumentEvent e) { checkUrl(); }
+            public void removeUpdate(DocumentEvent e) { checkUrl(); }
+            public void changedUpdate(DocumentEvent e) { checkUrl(); }
+        };
     }
 
-    public String getDescription() {
-        return
-          "Retrieve the protected service description. Specify the service WSDL URL then " +
-          "click the resolve button. The system will then connect to that url and download " +
-          "the WSDL. If successful, the dialog box will fill in.  Note that the request is" +
-          " performed on SSG (server side). After successfully finding a WSDL, click Next to" +
-          " continue.";
-
+    public boolean canAdvance() {
+        return isWsdlUrlSyntaxValid;
     }
 
-    public boolean isValid() {
-        return isValid;
+    public boolean canFinish() {
+        return isWsdlUrlSyntaxValid;
+    }
+
+    /**
+     * Attempt to resolve the WSDL.  Returns true if we have a valid one, or false otherwise.
+     * Will pester the user with a dialog box if the WSDL could not be fetched.
+     * @return true iff. the WSDL URL in the URL: text field was downloaded successfully.
+     */
+    public boolean onNextButton() {
+        isWsdlDownloaded = false;
+        notifyListeners();
+        try {
+            String wsdlXml =
+              Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrljTextField.getText());
+            wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
+
+            service.setName(wsdl.getDefinition().getTargetNamespace());
+            service.setWsdlXml(wsdlXml);
+            service.setWsdlUrl(wsdlUrljTextField.getText());
+
+            isWsdlDownloaded = true;
+            notifyListeners();
+        } catch (RemoteException e1) {
+            e1.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+              "Unable to resolve the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
+              "Error",
+              JOptionPane.ERROR_MESSAGE);
+        } catch (WSDLException e1) {
+            e1.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+              "Unable to parse the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
+              "Error",
+              JOptionPane.ERROR_MESSAGE);
+        } catch (MalformedURLException e1) {
+            e1.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+              "Illegal URL string '" + wsdlUrljTextField.getText() + "'\n",
+              "Error",
+              JOptionPane.ERROR_MESSAGE);
+        }
+
+        return isWsdlDownloaded;
     }
 
     public void readSettings(Object settings) throws IllegalStateException {
@@ -149,9 +205,17 @@ public class ServicePanel extends WizardStepPanel {
             publishedService.setName(service.getName());
             publishedService.setWsdlXml(service.getWsdlXml());
             publishedService.setWsdlUrl(service.getWsdlUrl());
+
+            Port port = wsdl.getSoapPort();
+            sa.setRoutingAssertion(new RoutingAssertion());
+            if (port != null) {
+                URL url = wsdl.getUrlFromPort(port);
+                if (url != null)
+                    sa.setRoutingAssertion(new RoutingAssertion(url.toString()));
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            isValid = false;
+            isWsdlDownloaded = false;
         }
     }
 
@@ -160,18 +224,7 @@ public class ServicePanel extends WizardStepPanel {
         return "Protected service";
     }
 
-    private static final TreeNode EMPTY_ROOT = new DefaultMutableTreeNode() {
-        /**  @return	false never allows children   */
-        public boolean getAllowsChildren() {
-            return false;
-        }
-
-        /**  @return    zero nodes  */
-        public int getChildCount() {
-            return 0;
-        }
-    };
-
+    /** todo: we'll need a tree renderer like this when we start doing operation-specific policies. */
     private static final
     TreeCellRenderer wsdlTreeRenderer = new DefaultTreeCellRenderer() {
         /**
@@ -198,16 +251,14 @@ public class ServicePanel extends WizardStepPanel {
         }
     };
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private JButton resolvejButton;
     private JLabel serviceUrljLabel;
-    private JPanel rigidAreatjPanel;
-    private JScrollPane methodsjScrollPane;
-    private JTree wsdlJTree;
     private JPanel serviceUrljPanel;
-    private JPanel serviceOperationsjPanel;
     private JTextField wsdlUrljTextField;
-    private Font wsdlUrljTextFieldFont;
-    private boolean isValid;
+    private boolean isWsdlUrlSyntaxValid = false;
+    private boolean isWsdlDownloaded = false;
 
+    // TODO: remove me
+    public void setWsdlUrl(String newUrl) {
+        wsdlUrljTextField.setText(newUrl);
+    }
 }

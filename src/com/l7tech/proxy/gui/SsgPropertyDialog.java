@@ -334,7 +334,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            new Insets(0, 5, 0, 0), 0, 0));
 
             fieldLocalEndpoint = new WrappingLabel("");
-            fieldLocalEndpoint.setCopyMenuEnabled(true);
+            fieldLocalEndpoint.setContextMenuEnabled(true);
             epp.add(new JLabel("Proxy URL:"),
                     new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.EAST,
@@ -353,7 +353,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.HORIZONTAL,
                                            new Insets(10, 5, 0, 0), 0, 0));
             fieldWsdlEndpoint = new WrappingLabel("");
-            fieldWsdlEndpoint.setCopyMenuEnabled(true);
+            fieldWsdlEndpoint.setContextMenuEnabled(true);
             epp.add(new JLabel("WSDL URL:"),
                     new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.EAST,

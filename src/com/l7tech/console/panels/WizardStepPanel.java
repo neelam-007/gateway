@@ -34,23 +34,9 @@ public abstract class WizardStepPanel extends JPanel {
 
 
     /**
-     * @return the wizard step description
-     */
-    public abstract String getDescription();
-
-    /**
-     * Test whether the step is finished and it is safe to proceed to the next
-     * one.
-     * If the step is valid, the "Next" (or "Finish") button will be enabled.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-    public abstract boolean isValid();
-
-
-    /**
-     * Perform any panel-specific last-second checking at the time the user presses the "Next" button
-     * while this panel is showing.  The panel may veto the move by returning false here.
+     * Perform any panel-specific last-second checking at the time the user presses the "Next"
+     * (or "Finish") button
+     * while this panel is showing.  The panel may veto the action by returning false here.
      * Since this method is called in response to user input it may take possibly-lengthy actions
      * such as downloading a remote file.
      *
@@ -94,7 +80,6 @@ public abstract class WizardStepPanel extends JPanel {
      * For multiple listener support override the behaviour.
      *
      * @param l the listener to add
-     * @see #isValid
      */
     public void addChangeListener(ChangeListener l) {
         listenerList.add(ChangeListener.class, l);
@@ -135,6 +120,10 @@ public abstract class WizardStepPanel extends JPanel {
      */
     public void readSettings(Object settings)
       throws IllegalArgumentException {
+    }
+
+    public String getDescription() {
+        return "";
     }
 
     /**

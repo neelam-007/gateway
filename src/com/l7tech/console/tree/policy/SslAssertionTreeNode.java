@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.console.action.SslPropertiesAction;
 
 import javax.swing.*;
@@ -23,7 +24,16 @@ public class SslAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Require SSL transport";
+        String ret = "Require SSL transport";
+        Object uo = getUserObject();
+        if (uo instanceof SslAssertion) {
+            SslAssertion sa = (SslAssertion) getUserObject();
+            if (SslAssertion.FORBIDDEN.equals(sa.getOption()))
+                ret = "Forbid SSL transport";
+            else if (SslAssertion.OPTIONAL.equals(sa.getOption()))
+                ret = "Optional SSL transport";
+        }
+        return ret;
     }
 
     /**

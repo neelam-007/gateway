@@ -35,8 +35,6 @@ import java.util.*;
  */
 
 public abstract class Locator {
-    //private static final Locator deflt = getDefault();
-
     /**
      * A dummy locator that never returns any results.
      */
@@ -55,7 +53,6 @@ public abstract class Locator {
 
         String className =
           System.getProperty("com.l7tech.common.locator");
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
         try {
             if (className != null) {

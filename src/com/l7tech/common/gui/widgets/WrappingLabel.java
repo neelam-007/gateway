@@ -8,11 +8,6 @@ package com.l7tech.common.gui.widgets;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseListener;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 
 /**
  * Sort of like a JLabel, but supports wrapping the text inside it.
@@ -21,11 +16,8 @@ import java.awt.event.ActionEvent;
  * Date: Sep 9, 2003
  * Time: 2:03:08 PM
  */
-public class WrappingLabel extends JTextArea {
+public class WrappingLabel extends ContextMenuTextArea {
     private int setLines = 0;
-    private boolean copyMenuEnabled = false;
-    private MouseAdapter copyMenuMouseListener = null;
-    private JPopupMenu copyMenu = null;
 
     /**
      * Create a new WrappingLabel with no text.
@@ -60,6 +52,8 @@ public class WrappingLabel extends JTextArea {
         setEditable(false);
         setLineWrap(true);
         setWrapStyleWord(true);
+        setContextMenuEnabled(false); // off by default, for labels
+        setContextMenuAutoSelectAll(true); // when it is turned on, people want to select the whole thing
         setBackground((Color)UIManager.get("Label.background"));
         setForeground((Color)UIManager.get("Label.foreground"));
         setFont((Font)UIManager.get("Label.font"));
@@ -74,56 +68,6 @@ public class WrappingLabel extends JTextArea {
         } else {
             setPreferredSize(null);
         }
-    }
-
-    private MouseListener getCopyMenuMouseListener() {
-        if (copyMenuMouseListener == null) {
-            copyMenuMouseListener = new MouseAdapter() {
-                public void mousePressed(final MouseEvent ev) {
-                    checkPopup(ev);
-                }
-
-                public void mouseReleased(final MouseEvent ev) {
-                    checkPopup(ev);
-                }
-
-                private void checkPopup(MouseEvent ev) {
-                    if (ev.isPopupTrigger()) {
-                        WrappingLabel.this.requestFocus();
-                        WrappingLabel.this.selectAll();
-                        getCopyMenu().show((Component) ev.getSource(), ev.getX(), ev.getY());
-                    }
-                }
-            };
-        }
-        return copyMenuMouseListener;
-    }
-
-    private JPopupMenu getCopyMenu() {
-        if (copyMenu == null) {
-            copyMenu = new JPopupMenu();
-            JMenuItem copyItem = new JMenuItem("Copy");
-            copyItem.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    WrappingLabel.this.copy();
-                }
-            });
-            copyMenu.add(copyItem);
-        }
-        return copyMenu;
-    }
-
-    public void setCopyMenuEnabled(boolean copyMenuEnabled) {
-        this.copyMenuEnabled = copyMenuEnabled;
-        if (copyMenuEnabled) {
-            this.addMouseListener(getCopyMenuMouseListener());
-        } else {
-            this.removeMouseListener(getCopyMenuMouseListener());
-        }
-    }
-
-    public boolean isCopyMenuEnabled() {
-        return copyMenuEnabled;
     }
 
     public void setText(String text) {

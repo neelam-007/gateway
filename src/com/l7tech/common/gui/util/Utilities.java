@@ -3,10 +3,14 @@
  */
 package com.l7tech.common.gui.util;
 
-import com.l7tech.common.gui.util.ImageCache;
-
-import java.awt.*;
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.Rectangle2D;
 
 /**
@@ -221,5 +225,84 @@ public class Utilities {
      */
     public static final Image loadImage(String resource) {
         return ImageCache.getInstance().getIcon(resource);
+    }
+
+
+    /**
+     * Create a context menu with appropriate items for the given JTextComponent.
+     * The menu will always include a "Copy" option, but will include "Cut" and "Paste" only
+     * if this.isEditable() is true.
+     *
+     * @return A newly-created context menu, ready to pop up.
+     */
+    public static JPopupMenu createContextMenu(final JTextComponent tc) {
+        JPopupMenu contextMenu = new JPopupMenu();
+
+        if (tc.isEditable()) {
+            JMenuItem cutItem = new JMenuItem("Cut");
+            cutItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    tc.cut();
+                }
+            });
+            contextMenu.add(cutItem);
+        }
+
+        JMenuItem copyItem = new JMenuItem("Copy");
+        copyItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                tc.copy();
+            }
+        });
+        contextMenu.add(copyItem);
+
+        if (tc.isEditable()) {
+            JMenuItem pasteItem = new JMenuItem("Paste");
+            pasteItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    tc.paste();
+                }
+            });
+            contextMenu.add(pasteItem);
+        }
+
+        return contextMenu;
+    }
+
+    /**
+     * If this property is set to "true" in a control with an edit context menu, it's right-click
+     * mouse listener will do an automatic "select all" before popping up the menu.
+     */
+    public static final String PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL = "com.l7tech.common.gui.util.Utilities.contextMenuAutoSelectAll";
+
+    /**
+     * Create a MouseListener that will create an edit context menu when triggered.  If the specified
+     * component has the PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL client property set to "true" when
+     * the listener is triggered, the component will have "select all" called on it first.
+     *
+     * @param tc  The JTextComponent to which this MouseListener will be attached
+     * @return  the newly created MouseListener
+     */
+    public static MouseListener createContextMenuMouseListener(final JTextComponent tc) {
+        return new MouseAdapter() {
+            public void mousePressed(final MouseEvent ev) {
+                checkPopup(ev);
+            }
+
+            public void mouseReleased(final MouseEvent ev) {
+                checkPopup(ev);
+            }
+
+            private void checkPopup(MouseEvent ev) {
+                if (ev.isPopupTrigger()) {
+                    tc.requestFocus();
+                    String selectAll = (String) tc.getClientProperty(PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL);
+                    if (Boolean.valueOf(selectAll).booleanValue())
+                        tc.selectAll();
+                    JPopupMenu menu = Utilities.createContextMenu(tc);
+                    menu.show((Component) ev.getSource(), ev.getX(), ev.getY());
+                }
+            }
+        };
     }
 }

@@ -1,12 +1,11 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -29,7 +28,12 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import javax.wsdl.WSDLException;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EventListener;
@@ -84,7 +88,7 @@ public class PublishServiceWizard extends JDialog {
         }
 
         private boolean sharedPolicy = false;
-        private RoutingAssertion routingAssertion = null;
+        private RoutingAssertion routingAssertion;
         private PublishedService service = new PublishedService();
         private CompositeAssertion assertions = new AllAssertion();
     }
@@ -94,7 +98,7 @@ public class PublishServiceWizard extends JDialog {
     private WizardStepPanel[] panels =
       new WizardStepPanel[]{
           new ServicePanel(),
-          new ProtectedServiceWizardPanel(),
+          //new ProtectedServiceWizardPanel(),
           new IdentityProviderWizardPanel()
       };
 
@@ -148,8 +152,6 @@ public class PublishServiceWizard extends JDialog {
         stepsTitlePanel = new JPanel();
         stepsLabel = new JLabel();
         stepPanel = new JPanel();
-        stepDescriptionScrollPane = new JScrollPane();
-        stepDescriptionTextArea = new WrappingLabel();
 
         setTitle("Publish service wizard");
         addHierarchyListener(new HierarchyListener() {
@@ -180,11 +182,8 @@ public class PublishServiceWizard extends JDialog {
         titleLabel.setFont(new Font("Dialog", 1, 14));
         titlePanel.add(titleLabel);
 
-        mainjPanel.add(titlePanel, BorderLayout.NORTH);
-
         panelButtons.setLayout(new FlowLayout(FlowLayout.RIGHT));
 
-        panelButtons.setBorder(new EtchedBorder());
         buttonBack.setText("Back");
         buttonBack.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
@@ -206,6 +205,9 @@ public class PublishServiceWizard extends JDialog {
         buttonFinish.setText("Finish");
         buttonFinish.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
+                if (!panels[currentPanel].onNextButton())
+                    return;
+
                 try {
                     for (int i = 0; i < panels.length; i++) {
                         panels[i].readSettings(saBundle);
@@ -253,7 +255,7 @@ public class PublishServiceWizard extends JDialog {
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                         JOptionPane.showMessageDialog(null,
                                                       "Unable to save the service '" + saBundle.service.getName() + "'\n" +
-                                                      "because there an existing service already using that namespace URI\n" +
+                                                      "because an existing service is already using that namespace URI\n" +
                                                       "and SOAPAction combination.",
                                                       "Service already exists",
                                                       JOptionPane.ERROR_MESSAGE);
@@ -289,49 +291,48 @@ public class PublishServiceWizard extends JDialog {
         });
         panelButtons.add(buttonHelp);
 
-        mainjPanel.add(panelButtons, BorderLayout.SOUTH);
+        JPanel mainAndButtonsPanel = new JPanel();
+        mainAndButtonsPanel.setLayout(new BorderLayout());
+        mainAndButtonsPanel.add(panelButtons, BorderLayout.SOUTH);
+        //mainjPanel.add(panelButtons, BorderLayout.SOUTH);
 
         stepsjPanel.setLayout(new BoxLayout(stepsjPanel, BoxLayout.Y_AXIS));
-
-        stepsjPanel.setBackground(new Color(213, 222, 222));
-        stepsjPanel.setBorder(new EtchedBorder());
+        stepsjPanel.setBackground(new Color(233, 233, 233));
 
         stepsTitlePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         stepsTitlePanel.setPreferredSize(new Dimension(150, 40));
         stepsTitlePanel.setMaximumSize(new Dimension(150, 40));
 
-        stepsTitlePanel.setBackground(new Color(213, 222, 222));
-        stepsTitlePanel.
-          setBorder(new CompoundBorder(new EmptyBorder(new Insets(5, 5, 5, 5)),
-            new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0))));
+        stepsTitlePanel.setBackground(stepsjPanel.getBackground());
 
         stepsLabel.setFont(new Font("Dialog", 1, 14));
-        stepsLabel.setText("Steps");
+        stepsLabel.setText("<HTML><u>Steps");
         stepsTitlePanel.add(stepsLabel);
 
         stepsjPanel.add(stepsTitlePanel);
 
-        mainjPanel.add(stepsjPanel, BorderLayout.WEST);
+
+        JPanel stepsBorder = new JPanel();
+        stepsBorder.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
+        stepsBorder.setMaximumSize(new Dimension(1, 1));
+        stepsBorder.setMinimumSize(new Dimension(1, 1));
+        stepsBorder.setPreferredSize(new Dimension(1, 1));
+        JPanel stepsHolder = new JPanel(new BorderLayout());
+        stepsHolder.add(stepsjPanel, BorderLayout.CENTER);
+        stepsHolder.add(stepsBorder, BorderLayout.EAST);
+        mainjPanel.add(stepsHolder, BorderLayout.WEST);
 
 
         stepPanel.setLayout(new BorderLayout());
         stepPanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
-        stepDescriptionScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        stepDescriptionTextArea.setEditable(false);
-        stepDescriptionTextArea.setLineWrap(true);
-        stepDescriptionTextArea.setWrapStyleWord(true);
-        stepDescriptionTextArea.setRows(5);
-        stepDescriptionTextArea.setBackground(stepDescriptionScrollPane.getBackground());
-        stepDescriptionScrollPane.setViewportView(stepDescriptionTextArea);
 
-        stepPanel.add(stepDescriptionScrollPane, BorderLayout.SOUTH);
-
-        mainjPanel.add(stepPanel, BorderLayout.CENTER);
+        mainAndButtonsPanel.add(stepPanel, BorderLayout.CENTER);
+        mainjPanel.add(mainAndButtonsPanel, BorderLayout.CENTER);
 
         getContentPane().add(mainjPanel, BorderLayout.CENTER);
 
         pack();
-        setSize(new Dimension(800, 500));
+        setSize(new Dimension(620, 420));
         Utilities.centerOnScreen(this);
     }
 
@@ -383,8 +384,6 @@ public class PublishServiceWizard extends JDialog {
 
                 for (int i = 0; i < panels.length; i++) {
                     stepLabels[i] = new JLabel("" + (i + 1) + ". " + panels[i].getStepLabel());
-                    stepLabels[i].setFont(new java.awt.Font("Dialog", 1, 12));
-                    stepLabels[i].setForeground(Color.WHITE);
                     stepsjPanel.add(stepLabels[i]);
                 }
                 stepsjPanel.add(Box.createGlue());
@@ -413,6 +412,8 @@ public class PublishServiceWizard extends JDialog {
     }
 
     private void buttonNextActionPerformed(ActionEvent evt) {
+        if (!panels[currentPanel].onNextButton())
+            return;
         stepPanel.remove(panels[currentPanel]);
         stepPanel.add(panels[++currentPanel], BorderLayout.CENTER);
         stepPanel.updateUI();
@@ -433,11 +434,9 @@ public class PublishServiceWizard extends JDialog {
     }
 
     private void updateButtonsNavigate() {
-        buttonFinish.setEnabled(currentPanel > 0 && panels[currentPanel].isValid());
+        buttonFinish.setEnabled(currentPanel > 0 && panels[currentPanel].canFinish());
         buttonBack.setEnabled(currentPanel > 0);
-        buttonNext.setEnabled(currentPanel < panels.length - 1 && panels[currentPanel].isValid());
-        if (panels.length > 0)
-            stepDescriptionTextArea.setText(panels[currentPanel].getDescription());
+        buttonNext.setEnabled(currentPanel < panels.length - 1 && panels[currentPanel].canAdvance());
     }
 
     private void updateWizardUiState() {
@@ -448,10 +447,11 @@ public class PublishServiceWizard extends JDialog {
     private void updateWizardStepLabels() {
         for (int i = 0; i < stepLabels.length; i++) {
             if (i == currentPanel) {
-                stepLabels[i].setForeground(Color.BLACK);
+                stepLabels[i].setText("<HTML><b>" + stepLabels[i].getText().replaceAll("<HTML><b>", ""));
                 titleLabel.setText(stepLabels[i].getText());
             } else {
-                stepLabels[i].setForeground(Color.WHITE);
+                stepLabels[i].setText(stepLabels[i].getText().replaceAll("<HTML><b>", ""));
+                titleLabel.setText(stepLabels[i].getText());
             }
 
         }
@@ -472,7 +472,6 @@ public class PublishServiceWizard extends JDialog {
     };
     private JPanel titlePanel;
     private JLabel stepsLabel;
-    private JScrollPane stepDescriptionScrollPane;
     private JPanel mainjPanel;
     private JPanel panelButtons;
     private JLabel titleLabel;
@@ -482,11 +481,14 @@ public class PublishServiceWizard extends JDialog {
     private JPanel stepPanel;
     private JButton cancelButton;
     private JButton buttonNext;
-    private JTextArea stepDescriptionTextArea;
     private JButton buttonBack;
     private JButton buttonHelp;
 
     private JLabel[] stepLabels = new JLabel[0];
 
+    // TODO: remove me
+    public void setWsdlUrl(String newUrl) {
+        ((ServicePanel)panels[0]).setWsdlUrl(newUrl);
+    }
 
 }

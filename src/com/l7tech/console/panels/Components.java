@@ -37,16 +37,28 @@ public class Components {
     }
 
     /**
-     * create the credentials location (http, ws message) locaiton combo model
+     * create the credentials location (http, ws message) combo box model.
      *
      * @return the <code>ComboBoxModel</code> with credentials location list
      */
     static ComboBoxModel getCredentialsLocationComboBoxModel() {
         Object[] values = credentialsLocationMap.keySet().toArray();
         ComboBoxModel cbm = new DefaultComboBoxModel(values);
+        cbm.setSelectedItem("HTTP digest");
         return cbm;
     }
 
+    /**
+     * create the credentials location (http, ws message) combobox model, not including "Anonymous".
+     */
+    static ComboBoxModel getCredentialsLocationComboBoxModelNonAnonymous() {
+        Object[] values = credentialsLocationMap.keySet().toArray();
+        Object[] newValues = new Object[values.length - 1];
+        System.arraycopy(values, 1, newValues, 0, values.length - 1);
+        ComboBoxModel cbm = new DefaultComboBoxModel(newValues);
+        cbm.setSelectedItem("HTTP digest");
+        return cbm;
+    }
 
     /**
      * @return the credentials locaiton map
