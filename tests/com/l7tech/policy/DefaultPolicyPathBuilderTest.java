@@ -23,6 +23,7 @@ import junit.framework.TestSuite;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Iterator;
 
 /**
  * Test the default policy assertion path builder/analyzer class
@@ -195,5 +196,35 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         PolicyPathResult result = builder.generate(top);
         assertTrue(result.getPathCount() == 2);
     }
+
+    public void testBug1334() throws Exception {
+        Assertion firstAll = new AllAssertion(Arrays.asList(new Assertion[]{
+            new RequestWssX509Cert(),
+            new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
+                new SpecificUser(-2, "fred", "fred", "fred")
+            }))
+        }));
+        Assertion secondAll = new AllAssertion(Arrays.asList(new Assertion[]{
+            new HttpBasic(),
+            new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
+                new SpecificUser(-2, "wilma", "wilma", "wilma")
+            }))
+        }));
+
+        Assertion top = new AllAssertion(Arrays.asList(new Assertion[]{
+            new OneOrMoreAssertion(Arrays.asList(new Assertion[]{firstAll, secondAll})),
+            new HttpRoutingAssertion("http://wheel")
+        }));
+
+        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        PolicyPathResult result = builder.generate(top);
+        assertTrue(result.getPathCount() == 2);
+        Iterator it = result.paths().iterator();
+        while (it.hasNext()) {
+            AssertionPath path = (AssertionPath)it.next();
+            System.out.println(DefaultPolicyPathBuilder.pathToString(path));
+        }
+    }
+
 
 }
