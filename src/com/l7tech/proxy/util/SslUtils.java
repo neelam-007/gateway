@@ -14,6 +14,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.BadPasswordFormatException;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
@@ -60,10 +61,11 @@ public class SslUtils {
      *                       bad credentials
      * @throws BadCredentialsException  if the old password is incorrect, or the current client certificate was
      *                                  missing or invalid.
+     * @throws BadPasswordFormatException if the new password was rejected by the server.
      */
     public static void changePasswordAndRevokeClientCertificate(Ssg ssg, String username,
                                                                 char[] oldpassword, char[] newpassword)
-            throws IOException, BadCredentialsException
+            throws IOException, BadCredentialsException, BadPasswordFormatException
     {
         URL url = ssg.getServerPasswordChangeUrl();
         HttpClient hc = new HttpClient();
@@ -82,6 +84,7 @@ public class SslUtils {
             int result = hc.executeMethod(post);
             CurrentRequest.setPeerSsg(null);
             log.info("HTTPS POST to password change service returned HTTP status " + result);
+            if (result == 400) throw new BadPasswordFormatException("Password change service rejected your new password (HTTP status " + result + ")");
             if (result == 401) throw new BadCredentialsException("Password change service indicates invalid current credentials (HTTP status " + result + ")");
             if (result != 200) throw new IOException("HTTPS POST to password change service returned HTTP status " + result);
 

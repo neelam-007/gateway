@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.FontUtil;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.BadPasswordFormatException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.dialogs.PasswordDialog;
@@ -439,6 +440,11 @@ public class SsgListPanel extends JPanel {
                                 Gui.errorMessage("Unable to remove your existing client certificate",
                                                  "There was an error while attempting to remove our local copy of your " +
                                                  "newly-revoked client certificate.", e1);
+                                return;
+                            } catch (BadPasswordFormatException e1) {
+                                log.log(Level.WARNING, e1.getMessage(), e1);
+                                Gui.errorMessage("Unable to change your password -- the Gateway has rejected your " +
+                                                 "new password.");
                                 return;
                             } finally {
                                 CurrentRequest.clearCurrentRequest();
