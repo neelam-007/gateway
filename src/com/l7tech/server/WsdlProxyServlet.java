@@ -192,7 +192,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection services) throws IOException {
-        String output = createWSILDoc(services, req.getServerName(), Integer.toString(req.getServerPort()), req.getRequestURI());
+        String uri = req.getRequestURI();
+        uri = uri.replaceAll("wsil", "wsdl");
+        String output = createWSILDoc(services, req.getServerName(), Integer.toString(req.getServerPort()), uri);
         res.setContentType("text/xml; charset=utf-8");
         res.getOutputStream().println(output);
     }
@@ -309,7 +311,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             outDoc.append("\t\t<abstract>" + svc.getName() + "</abstract>\n");
             outDoc.append("\t\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
             outDoc.append("location=\"");
-            outDoc.append(protocol + "://" + host + ":" + port + uri + "?" + PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));
+            String query = PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
+            outDoc.append(protocol + "://" + host + ":" + port + uri + "?" + query);
             outDoc.append("\"/>\n");
             outDoc.append("\t</service>\n");
         }
