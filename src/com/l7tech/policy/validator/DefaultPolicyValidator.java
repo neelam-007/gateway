@@ -303,6 +303,16 @@ public class DefaultPolicyValidator extends PolicyValidator {
                     result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                       "XSL transformation on the response must be positioned after routing.", null));
                 }
+            } else if (a instanceof XmlRequestSecurity) {
+                XmlRequestSecurity maybepartialsignature = (XmlRequestSecurity)a;
+                if (!maybepartialsignature.hasAuthenticationElement()) {
+                    // check that an identity has been declared
+                    if (!seenSpecificUserAssertion) {
+                        result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                            "Partial signature on the request must be preceeded by an access control assertion " +
+                            "so that the cert used can be compared to a valid user cert.", null));
+                    }
+                }
             }
             seenPreconditions = true;
         }
@@ -394,6 +404,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
             if (a instanceof SslAssertion || a instanceof XmlResponseSecurity || a instanceof HttpClientCert ||
               a instanceof XslTransformation)
                 return true;
+            if (a instanceof XmlRequestSecurity) {
+                XmlRequestSecurity maybepartialrequestsignature = (XmlRequestSecurity)a;
+                // if this is a partial xml signature on the request, we need to have authenticated a user beforehand
+                if (!maybepartialrequestsignature.hasAuthenticationElement()) {
+                    return true;
+                }
+            }
             return false;
         }
 
