@@ -173,6 +173,10 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.FALSIFIED;
+        } catch (CertUtils.CertificateUntrustedException e) {
+            // bad signature !            
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return AssertionStatus.FALSIFIED;
         } catch (GeneralSecurityException e) {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);

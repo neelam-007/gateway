@@ -91,6 +91,9 @@ public class ClientProxyTrustManager implements X509TrustManager {
         try {
             CertUtils.verifyCertificateChain( x509Certificates, trustedCert );
             log.info("Peer certificate was signed by a trusted Gateway.");
+        } catch (CertUtils.CertificateUntrustedException e) {
+            log.warn(e.getMessage());
+            throw new ServerCertificateUntrustedException(e);
         } catch ( CertificateException e ) {
             log.warn(e.getMessage());
             throw e;

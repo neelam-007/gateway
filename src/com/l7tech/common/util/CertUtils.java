@@ -133,18 +133,29 @@ public class CertUtils {
         return o == null ? "N/A" : o.toString();
     }
 
+    public static class CertificateUntrustedException extends Exception {
+        private CertificateUntrustedException(String message) {
+            super(message);
+        }
+    }
+
     /**
      * Verifies that each cert in the specified certificate chain is signed by the next certificate
      * in the chain, and that at least one is <em>signed by or identical to</em> trustedCert.
      * 
      * @param chain An array of one or more {@link X509Certificate}s to check
      * @param trustedCert A trusted {@link X509Certificate} to check the chain against
-     * @throws CertificateException if the chain is invalid or not trusted for any reason
+     * @throws CertUtils.CertificateUntrustedException if the chain could not be validated with the specified
+     *                                                       trusted certificate, but the chain otherwise appears to
+     *                                                       be internally consistent and might validate later if a
+     *                                                       different trusted certificate is used.
      * @throws CertificateExpiredException if one of the certs in the chain has expired
+     * @throws CertificateException if the chain is seriously invalid and cannot be trusted
      */
     public static void verifyCertificateChain( X509Certificate[] chain,
-                                               X509Certificate trustedCert ) throws CertificateException,
-                                                                                    CertificateExpiredException {
+                                               X509Certificate trustedCert )
+            throws CertificateException, CertificateExpiredException, CertificateUntrustedException
+    {
 
         Principal trustedDN = trustedCert.getSubjectDN();
 
@@ -166,7 +177,7 @@ public class CertUtils {
                     return; // success
                 } catch (Exception e) {
                     // Server SSL cert might have changed.  Attempt to reimport it
-                    throw new CertificateException("Unable to verify peer certificate with trusted cert: " + e);
+                    throw new CertificateUntrustedException("Unable to verify peer certificate with trusted cert: " + e);
                 }
             } else if (cert.getSubjectDN().equals(trustedDN)) {
                 if (cert.equals(trustedCert)) {
@@ -176,6 +187,6 @@ public class CertUtils {
         }
 
         // We probably just havne't talked to this Ssg before.  Trigger a reimport of the certificate.
-        throw new CertificateException("Couldn't find trusted certificate in peer's certificate chain");
+        throw new CertificateUntrustedException("Couldn't find trusted certificate in peer's certificate chain");
     }
 }

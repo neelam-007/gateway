@@ -21,4 +21,9 @@ public class ServerCertificateUntrustedException extends CertificateException {
     public ServerCertificateUntrustedException(String msg) {
         super(msg);
     }
+
+    public ServerCertificateUntrustedException(Throwable t) {
+        super(t == null ? "Server certificate untrusted" : t.toString());
+        initCause(t);
+    }
 }
