@@ -51,8 +51,12 @@ public class IconManager {
     }
 
     public static ImageIcon getFederatedSsgWithTokenServiceDiagram() {
-        if (federatedSsgWithTokenServiceDiagram == null)
-            federatedSsgWithTokenServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_federated_ssg_with_tokenservice.png");
+        if (federatedSsgWithTokenServiceDiagram == null) {
+            String path = "/dia_federated_ssg_with_tokenservice.png";
+            if (Boolean.getBoolean("noibm") || Boolean.getBoolean("interoperability") || Boolean.getBoolean("interop"))
+                path = "/dia_federated_ssg_with_tokenservice_noibm.png";
+            federatedSsgWithTokenServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + path);
+        }
         return federatedSsgWithTokenServiceDiagram;
     }
 
