@@ -172,7 +172,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
             if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
             User user = userManager.findByPrimaryKey(userId);
             userManager.delete(user);
-            logger.info("Deleted User: " + user.getName());
+            logger.info("Deleted User: " + user.getLogin());
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
@@ -194,10 +194,10 @@ public class IdentityAdminImpl implements IdentityAdmin {
             String id = user.getUniqueIdentifier();
             if ( id != null ) {
                 userManager.update(user);
-                logger.info("Updated User: " + user.getName() + "[" + id + "]");
+                logger.info("Updated User: " + user.getLogin() + "[" + id + "]");
                 return id;
             }
-            logger.info("Saving User: " + user.getName());
+            logger.info("Saving User: " + user.getLogin());
             return userManager.save(user);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -385,7 +385,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
     private void endTransaction()  {
         try {
             PersistenceContext context = PersistenceContext.getCurrent();
-            context.flush();
+            //context.flush();
+            context.commitTransaction();
             context.close();
         } catch (java.sql.SQLException e) {
             logger.log(Level.SEVERE, "could not end transaction", e);
