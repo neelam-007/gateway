@@ -423,6 +423,7 @@
             </zipfileset>
             <zipfileset dir="${src.root}/web" includes="*" prefix="ssg"/>
             <zipfileset dir="${src.root}/web" includes="*"/>
+            <zipfileset dir="${src.root}/src/com/l7tech/common/resources" includes="wsil2xhtml.xml" prefix="ssg"/>
             <!-- Jini config -->
             <zipfileset dir="${src.root}/etc/jini" includes="start-services.config, services.config, services.policy" prefix="WEB-INF/classes"/>
             <zipfileset dir="${src.root}/etc/jini" includes="PREFERRED.LIST" prefix="WEB-INF/classes/META-INF"/>

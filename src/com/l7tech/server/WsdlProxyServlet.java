@@ -195,12 +195,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
      * this must always resolve to the http port
      */
     private String styleURL(HttpServletRequest req) {
-        String server = req.getServerName();
-        int port = 80;
-        if (req.getServerPort() == 8443 || req.getServerPort() == 8080) {
-            port = 8080;
-        }
-        return "http://" + server + ":" + port + "/ssg/wsil2xhtml.xml";
+        return "/ssg/wsil2xhtml.xml";
     }
 
     private void substituteSoapAddressURL(Document wsdl, URL newURL) {
