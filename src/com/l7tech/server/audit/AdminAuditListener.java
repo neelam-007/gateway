@@ -8,10 +8,8 @@ package com.l7tech.server.audit;
 
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.AdminAuditRecord;
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.event.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
@@ -61,9 +59,6 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
     }
 
     public AdminAuditListener() {
-        auditRecordManager = (AuditRecordManager)Locator.getDefault().lookup(AuditRecordManager.class);
-        if (auditRecordManager == null) throw new IllegalStateException("Couldn't locate AuditRecordManager");
-
         Map levels;
 
         levels = new HashMap();
@@ -93,31 +88,22 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
     public void entityCreated( Created created ) {
         AdminInfo info = getAdminInfo();
         if (info == null) return;
-        try {
-            auditRecordManager.save(new AdminAuditRecord(level(created), nodeId, created, info.login, info.ip));
-        } catch ( SaveException e ) {
-            logger.log( Level.SEVERE, "Couldn't save " + created, e );
-        }
+        AuditContext.getCurrent().add(new AdminAuditRecord(level(created), nodeId, created, info.login, info.ip));
+        AuditContext.getCurrent().flush();
     }
 
     public void entityUpdated( Updated updated ) {
         AdminInfo info = getAdminInfo();
         if (info == null) return;
-        try {
-            auditRecordManager.save(new AdminAuditRecord(level(updated), nodeId, updated, info.login, info.ip));
-        } catch ( SaveException e ) {
-            logger.log( Level.SEVERE, "Couldn't save " + updated, e );
-        }
+        AuditContext.getCurrent().add(new AdminAuditRecord(level(updated), nodeId, updated, info.login, info.ip));
+        AuditContext.getCurrent().flush();
     }
 
     public void entityDeleted( Deleted deleted ) {
         AdminInfo info = getAdminInfo();
         if (info == null) return;
-        try {
-            auditRecordManager.save(new AdminAuditRecord(level(deleted), nodeId, deleted, info.login, info.ip));
-        } catch ( SaveException e ) {
-            logger.log( Level.SEVERE, "Couldn't save " + deleted, e );
-        }
+        AuditContext.getCurrent().add(new AdminAuditRecord(level(deleted), nodeId, deleted, info.login, info.ip));
+        AuditContext.getCurrent().flush();
     }
 
     private AdminInfo getAdminInfo() {
@@ -162,7 +148,6 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
     }
 
     private Map levelMappings = new HashMap();
-    private final AuditRecordManager auditRecordManager;
     private static final Logger logger = Logger.getLogger(AdminAuditListener.class.getName());
     public static final String LOCALHOST_IP = "127.0.0.1";
 }

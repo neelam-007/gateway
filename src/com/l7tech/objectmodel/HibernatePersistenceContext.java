@@ -57,7 +57,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 logger.warning( "Commit called with no transaction active!" );
             } else {
                 mainTransaction.commit();
-                auditTransaction.commit();
             }
             for (Iterator i = txListenerList.iterator(); i.hasNext();) {
                 TransactionListener toto = (TransactionListener)i.next();
@@ -65,7 +64,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
             }
             txListenerList.clear();
             mainSession.flush();
-            auditSession.flush();
         } catch ( HibernateException he ) {
             logger.throwing( getClass().getName(), "commitTransaction", he );
             if(he.getCause() != null && he.getCause().getMessage() != null) {
@@ -79,7 +77,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 //if ( _session != null ) _session.close();
                 //_session = null;
                 mainTransaction = null;
-                auditTransaction = null;
             } catch ( Exception e ) {
                 throw new TransactionException( e.toString(), e );
             }
@@ -90,7 +87,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
         try {
             super.finalize();
         } finally {
-            if ( Debug.isEnabled() && (mainTransaction != null || mainSession != null || auditTransaction != null || auditSession != null) ) {
+            if ( Debug.isEnabled() && (mainTransaction != null || mainSession != null || auditSession != null) ) {
                 logger.log(Level.SEVERE, "HibernatePersistenceContext finalized before being closed!", createdAt);
             }
             close();
@@ -103,9 +100,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 logger.info( "Flush called with active transaction. Committing." );
                 mainTransaction.commit();
                 mainTransaction = null;
-
-                auditTransaction.commit();
-                auditTransaction = null;
             }
 
             if ( mainSession == null )
@@ -125,31 +119,35 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
     public void close() {
         try {
-            if ( mainTransaction != null ) {
-                logger.warning( "Close called with active transaction. Rolling back." );
-                mainTransaction.rollback();
-                mainTransaction = null;
+            try {
+                if ( mainTransaction != null ) {
+                    logger.warning( "Close called with active transaction. Rolling back." );
+                    mainTransaction.rollback();
+                    mainTransaction = null;
+                }
+            } catch (HibernateException e) {
+                logger.log(Level.FINE, "error rolling back main transaction", e);
             }
 
-            if ( auditTransaction != null ) {
-                logger.warning( "Close called with active audit transaction. Rolling back." );
-                auditTransaction.rollback();
-                auditTransaction = null;
+            try {
+                if (mainSession != null && mainSession.isOpen()) {
+                    mainSession.clear();
+                    mainSession.close();
+                }
+                mainSession = null;
+            } catch (HibernateException e) {
+                logger.log(Level.FINE, "error closing main session", e);
             }
 
-            if (mainSession != null && mainSession.isOpen()) {
-                mainSession.clear();
-                mainSession.close();
+            try {
+                if (auditSession != null && auditSession.isOpen()) {
+                    auditSession.clear();
+                    auditSession.close();
+                }
+                auditSession = null;
+            } catch (HibernateException e) {
+                logger.log(Level.FINE, "error closing audit session", e);
             }
-            mainSession = null;
-
-            if (auditSession != null && auditSession.isOpen()) {
-                auditSession.clear();
-                auditSession.close();
-            }
-            auditSession = null;
-        } catch (HibernateException e) {
-            logger.log(Level.FINE, "error closing context", e);
         } finally {
             PersistenceContext.releaseContext();
         }
@@ -283,7 +281,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
     public void beginTransaction() throws TransactionException {
         try {
             mainTransaction = getSession().beginTransaction();
-            auditTransaction = getAuditSession().beginTransaction();
         } catch ( SQLException se ) {
             logger.throwing( getClass().getName(), "beginTransaction", se );
             close();
@@ -297,7 +294,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
     public void rollbackTransaction() throws TransactionException {
         try {
             if ( mainTransaction != null ) mainTransaction.rollback();
-            if ( auditTransaction != null ) auditTransaction.rollback();
             for (Iterator i = txListenerList.iterator(); i.hasNext();) {
                 TransactionListener toto = (TransactionListener)i.next();
                 toto.postRollback();
@@ -308,7 +304,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
             throw new TransactionException( he.toString(), he );
         } finally {
             mainTransaction = null;
-            auditTransaction = null;
         }
     }
 
@@ -342,7 +337,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
     protected Transaction mainTransaction;
 
     protected Session auditSession;
-    protected Transaction auditTransaction;
 
     protected ArrayList txListenerList = new ArrayList();
 
