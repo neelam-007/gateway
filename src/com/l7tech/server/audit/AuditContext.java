@@ -118,8 +118,8 @@ public class AuditContext {
         try {
             if (closed) return;
             if (!flushed) flush();
-            contextLocal.set(null);
         } finally {
+            contextLocal.set(null);
             closed = true;
         }
     }
