@@ -110,10 +110,21 @@ EOF
 	# 3 . hostname
 	print "Cluster Hostname: ";
 	if ($Conf{clusternm} && lc($Conf{cluster}) eq "y") {
-		open (OUT, "/ssg/etc/conf/cluster_hostname");
+		open (OUT, ">/ssg/etc/conf/cluster_hostname") or die "Can't open cluster hostname file";
 		print OUT "$Conf{clusternm}\n";
 		close OUT;
 		print "$Conf{clusternm}\n";
+		open (HOST, ">/etc/hosts") or die "Can't open /etc/hosts!";
+		print HOST <<EOF;
+# Modified by /ssg/bin/install.pl
+# Will be replaced if you rerun!
+127.0.0.1	localhost localhost.localdomain
+$Conf{back_ip}	$Conf{clusternm} $Conf{hostname}
+
+EOF
+		close HOST;
+		chmod 0644, "/etc/hosts";
+		print ".... Cluster Hostname and hosts files replaced\n";
 	} else {
 		print "WARNING: Cluster hostname not set\n";
 	}
