@@ -22,6 +22,10 @@ public class StateManagerImp extends HibernateEntityManager implements StateMana
         super( context );
     }
 
+    public StateManagerImp() {
+        super();
+    }
+
     public State findByPrimaryKey(long oid) throws FindException {
         try {
             return (State)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );

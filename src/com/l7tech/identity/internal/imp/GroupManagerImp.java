@@ -22,6 +22,10 @@ public class GroupManagerImp extends HibernateEntityManager implements GroupMana
         super( context );
     }
 
+    public GroupManagerImp() {
+        super();
+    }
+
     public Group findByPrimaryKey(long oid) throws FindException {
         try {
             return (Group)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );

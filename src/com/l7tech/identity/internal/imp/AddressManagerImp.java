@@ -16,6 +16,10 @@ public class AddressManagerImp extends HibernateEntityManager implements Address
         super( context );
     }
 
+    public AddressManagerImp() {
+        super();
+    }
+
     public Address findByPrimaryKey(long oid) throws FindException {
         try {
             return (Address)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );

@@ -24,6 +24,10 @@ public class CountryManagerImp extends HibernateEntityManager implements Country
         super( context );
     }
 
+    public CountryManagerImp() {
+        super();
+    }
+
     public Country findByPrimaryKey(long oid) throws FindException {
         try {
             return (Country)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );

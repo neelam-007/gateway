@@ -22,6 +22,10 @@ public class OrganizationManagerImp extends HibernateEntityManager implements Or
         super( context );
     }
 
+    public OrganizationManagerImp() {
+        super();
+    }
+
     public Organization findByPrimaryKey(long oid) throws FindException {
         try {
             return (Organization)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );

@@ -16,6 +16,10 @@ public class IdentityProviderConfigManagerImp extends HibernateEntityManager imp
         super( context );
     }
 
+    public IdentityProviderConfigManagerImp() {
+        super();
+    }
+
     public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {
         try {
             _manager.delete( getContext(), identityProviderConfig );

@@ -14,6 +14,10 @@ public class IdentityProviderTypeManagerImp extends HibernateEntityManager imple
         super(context);
     }
 
+    public IdentityProviderTypeManagerImp() {
+        super();
+    }
+
     public void delete(IdentityProviderType identityProviderType) throws DeleteException {
         try {
             _manager.delete( getContext(), identityProviderType );

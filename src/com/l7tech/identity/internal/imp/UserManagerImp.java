@@ -23,6 +23,10 @@ public class UserManagerImp extends HibernateEntityManager implements UserManage
         super( context );
     }
 
+    public UserManagerImp() {
+        super();
+    }
+
     public User findByPrimaryKey(long oid) throws FindException {
         try {
             return (User)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );
