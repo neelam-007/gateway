@@ -4,13 +4,16 @@ import com.l7tech.adminws.ClientCredentialManager;
 import com.l7tech.adminws.VersionException;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.util.Locator;
+import com.l7tech.common.util.CertificateDownloader;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
+import javax.net.ssl.SSLHandshakeException;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
@@ -22,6 +25,9 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.CertificateException;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyStoreException;
 
 /**
  * This class is the SSG console Logon dialog.
@@ -67,6 +73,7 @@ public class LogonDialog extends JDialog {
      * VM property (-D) that triggers off the server check
      * */
     private static final String DISABLE_SERVER_CHECK = "disable.server.check";
+    private Frame parentFrame;
 
     /** context field (company.realm)
      private JTextField contextField = null;*/
@@ -78,6 +85,7 @@ public class LogonDialog extends JDialog {
      */
     public LogonDialog(Frame parent) {
         super(parent, true);
+        this.parentFrame = parent;
         setTitle("");
         initResources();
         initComponents();
@@ -396,7 +404,7 @@ public class LogonDialog extends JDialog {
                 ClientCredentialManager credentialManager = getCredentialManager();
 
                 // if the service is not avail, format the message and show to te client
-                if (!isServiceAvailable(serviceURL)) {
+                if (!dialog.isServiceAvailable(serviceURL)) {
                     String msg = MessageFormat.format(
                       dialog.resources.getString("logon.connect.error"),
                       new Object[]{getHostPart(serviceURL)});
@@ -418,14 +426,8 @@ public class LogonDialog extends JDialog {
                 JOptionPane.
                   showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
             } catch (LoginException e) { // on invalid credentials
-                frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 log.log(Level.WARNING, "logon()", e);
-                JOptionPane.
-                  showMessageDialog(dialog,
-                    dialog.resources.getString("logon.invalid.credentials"),
-                    "Warning",
-                    JOptionPane.WARNING_MESSAGE);
-
+                dialog.showInvalidCredentialsMessage();
             } catch (Exception e) { // everything else, generic error message
                 log.log(Level.WARNING, "logon()", e);
                 frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
@@ -450,6 +452,23 @@ public class LogonDialog extends JDialog {
         dialog.dispose();
     }
 
+    private void showInvalidCredentialsMessage() {
+        parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        JOptionPane.
+          showMessageDialog(this,
+            resources.getString("logon.invalid.credentials"),
+            "Warning",
+            JOptionPane.WARNING_MESSAGE);
+    }
+
+    private void showUpdatedSsgCertificateMessage() {
+        parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        JOptionPane.
+          showMessageDialog(this,
+            resources.getString("logon.updated.ssg.certificate"),
+            "Warning",
+            JOptionPane.WARNING_MESSAGE);
+    }
 
     /**
      * Before displaying dialog, ensure that correct fields are selected.
@@ -481,7 +500,7 @@ public class LogonDialog extends JDialog {
      * @param serviceUrl    service url
      * @return true if service available, false otherwise
      */
-    private static boolean isServiceAvailable(String serviceUrl) {
+    private boolean isServiceAvailable(String serviceUrl) {
         boolean serviceAvailable;
         boolean b = Boolean.getBoolean(DISABLE_SERVER_CHECK);
         if (b) return true;
@@ -492,8 +511,9 @@ public class LogonDialog extends JDialog {
         // be established
         HttpClient client = new HttpClient();
         GetMethod method = null;
+        URL url = null;
         try {
-            URL url = new URL(serviceUrl);
+            url = new URL(serviceUrl);
 
             method = new GetMethod(serviceUrl);
             int code = client.executeMethod(method);
@@ -501,6 +521,21 @@ public class LogonDialog extends JDialog {
                 serviceAvailable = true;
             } else {
                 serviceAvailable = false;
+            }
+        } catch (SSLHandshakeException e) {
+            serviceAvailable = false;
+            log.log(Level.INFO,  "LogonDialog: Attempting to update SSG certificate");
+            log.log(Level.INFO,  "LogonDialog", e);
+            try {
+                importCertificate(url);
+            } catch (CertificateException e1) {
+                log.log(Level.INFO, "LogonDialog", e);
+            } catch (IOException e1) {
+                log.log(Level.INFO, "LogonDialog", e);
+            } catch (NoSuchAlgorithmException e1) {
+                log.log(Level.INFO, "LogonDialog", e);
+            } catch (KeyStoreException e1) {
+                log.log(Level.INFO, "LogonDialog", e);
             }
         } catch (HttpException e) {
             serviceAvailable = false;
@@ -514,6 +549,25 @@ public class LogonDialog extends JDialog {
             }
         }
         return serviceAvailable;
+    }
+
+    /** Try to download the SSG certificate automatically. */
+    private void importCertificate(URL surl)
+            throws CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException
+    {
+        // TODO: Fix hardcoded SSG non-SSL port here
+        URL url = new URL("http", surl.getHost(), 8080, surl.getPath());
+        CertificateDownloader cd = new CertificateDownloader(url,
+                                                             userNameTextField.getText(),
+                                                             passwordField.getPassword());
+        if (cd.downloadCertificate()) {
+            ImportCertificateAction.importSsgCertificate(cd.getCertificate());
+            showUpdatedSsgCertificateMessage();
+            System.exit(0);
+        } else {
+            // auth failure
+            showInvalidCredentialsMessage();
+        }
     }
 
     /**
