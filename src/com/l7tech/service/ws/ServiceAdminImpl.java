@@ -94,7 +94,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
      */
     public long savePublishedService(PublishedService service) throws RemoteException,
                                     UpdateException, SaveException, VersionException {
-        boolean transactionsuccessful = false;
         ServiceManagerImp manager = getServiceManager();
         PersistenceContext pc = null;
         try {
@@ -120,7 +119,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
                 oid = manager.save(service);
             }
             pc.commitTransaction();
-            transactionsuccessful = true;
             return oid;
         } catch (TransactionException e) {
             String msg = "Transaction exception (duplicate resolution parameters?). Rolling back.";
@@ -133,26 +131,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
             throw new UpdateException(msg, e);
         } finally {
             pc.close();
-            // update the cache after successful commit only
-            if (transactionsuccessful) {
-                try {
-                    // get service back because version might have changed
-                    PublishedService newSvc = manager.findByPrimaryKey(service.getOid());
-                    ServiceCache.getInstance().cache(newSvc);
-                } catch (InterruptedException e) {
-                    String msg = "exception caching service";
-                    logger.log(Level.SEVERE,  msg, e);
-                    throw new UpdateException(msg, e);
-                } catch (IOException e) {
-                    String msg = "exception caching service";
-                    logger.log(Level.SEVERE,  msg, e);
-                    throw new UpdateException(msg, e);
-                } catch (FindException e) {
-                    String msg = "exception caching service";
-                    logger.log(Level.SEVERE,  msg, e);
-                    throw new UpdateException(msg, e);
-                }
-            }
         }
     }
 
@@ -160,7 +138,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
         com.l7tech.service.ServiceManagerImp manager = null;
         PublishedService service = null;
 
-        beginTransaction();
         try {
             manager = getServiceManager();
             service = manager.findByPrimaryKey(oid);
@@ -171,21 +148,12 @@ public class ServiceAdminImpl implements ServiceAdmin {
         } finally {
             try {
                 endTransaction();
-
-                ServiceCache.getInstance().removeFromCache(service);
             } catch ( TransactionException te ) {
                 logger.log( Level.WARNING, te.getMessage(), te );
                 throw new RemoteException( te.getMessage(), te );
-            } catch (InterruptedException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-                throw new RemoteException(e.getMessage(), e);
             }
         }
     }
-
-    /*public Map serviceMap() throws RemoteException {
-        return serviceManagerInstance.serviceMap();
-    }*/
 
     // ************************************************
     // PRIVATES
