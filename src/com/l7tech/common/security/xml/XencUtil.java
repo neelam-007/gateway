@@ -84,7 +84,7 @@ public class XencUtil {
      *                                         embedded within the encryptedType.
      */
     public static void checkKeyInfo(Element encryptedType, X509Certificate recipientCert)
-            throws InvalidDocumentFormatException, GeneralSecurityException
+            throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
     {
         Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedType, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME);
         if (kinfo == null) throw new InvalidDocumentFormatException(encryptedType.getLocalName() + " includes no KeyInfo element");
