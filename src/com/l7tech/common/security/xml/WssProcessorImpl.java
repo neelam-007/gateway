@@ -126,6 +126,9 @@ public class WssProcessorImpl implements WssProcessor {
         // remove Security element altogether
         cntx.releventSecurityHeader.getParentNode().removeChild(cntx.releventSecurityHeader);
 
+        // if there were other security headers and one with a special actor set by the agent, we
+        // want to change the actor here to set it back to default value todo
+
         return produceResult(cntx);
     }
 
