@@ -105,6 +105,7 @@ public class WssProcessorTest extends TestCase {
         assertTrue(undecorated != null);
         log.info("Undecorated document:\n" + XmlUtil.nodeToFormattedString(undecorated));
         log.info("Security namespace observed:\n" + result.getSecurityNS());
+        log.info("WSU namespace observed:\n" + result.getWSUNS());
     }
 
     private static class TestDocument {

@@ -96,6 +96,7 @@ public interface WssProcessor {
         SecurityToken[] getSecurityTokens();
         Timestamp getTimestamp();
         String getSecurityNS();
+        String getWSUNS();
     }
 
     public static class BadContextException extends Exception implements SoapFaultDetail {

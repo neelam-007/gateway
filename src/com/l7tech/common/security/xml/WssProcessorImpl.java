@@ -14,10 +14,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -959,6 +956,28 @@ public class WssProcessorImpl implements WssProcessor {
             public String getSecurityNS() {
                 if (cntx.releventSecurityHeader != null) {
                     return cntx.releventSecurityHeader.getNamespaceURI();
+                }
+                return null;
+            }
+
+            public String getWSUNS() {
+                // look for the wsu namespace somewhere
+                if (cntx.timestamp != null && cntx.timestamp.asElement() != null) {
+                    return cntx.timestamp.asElement().getNamespaceURI();
+                } else if (cntx.securityTokens != null && !cntx.securityTokens.isEmpty()) {
+                    for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
+                        WssProcessor.SecurityToken token = (WssProcessor.SecurityToken)i.next();
+                        NamedNodeMap attributes = token.asElement().getAttributes();
+                        for (int ii = 0; ii < attributes.getLength(); ii++) {
+                            Attr n = (Attr)attributes.item(ii);
+                            if (n.getLocalName().equals("Id") &&
+                                n.getNamespaceURI() != null &&
+                                n.getNamespaceURI().length() > 0) {
+                                return n.getNamespaceURI();
+                            }
+                        }
+
+                    }
                 }
                 return null;
             }

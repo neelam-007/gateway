@@ -196,6 +196,9 @@ public class MessageProcessor {
                             if (wssOutput != null && wssOutput.getSecurityNS() != null) {
                                 soapResponse.getDecorationRequirements().setPreferredSecurityNamespace(wssOutput.getSecurityNS());
                             }
+                            if (wssOutput != null && wssOutput.getWSUNS() != null) {
+                                soapResponse.getDecorationRequirements().setPreferredWSUNamespace(wssOutput.getWSUNS());
+                            }
                         }
 
                         getWssDecorator().decorateMessage(doc,
