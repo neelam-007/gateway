@@ -156,6 +156,10 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         // check for original service
         try {
             original = findByPrimaryKey(service.getOid());
+            if (original == null) {
+                throw new UpdateException("Could not retrieve the service "+service.getName()+ ".\n" +
+                  "The service has been removed in the meantime.");
+            }
         } catch (FindException e) {
             throw new UpdateException("could not get original service", e);
         }
