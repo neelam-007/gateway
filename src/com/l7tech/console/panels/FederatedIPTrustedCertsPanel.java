@@ -23,6 +23,8 @@ import java.awt.event.*;
 import java.rmi.RemoteException;
 
 /**
+ * This class provides the step panel for the Federated Identity Provider dialog.
+ *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
@@ -43,11 +45,20 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(FederatedIPTrustedCertsPanel.class.getName());
 
+    /**
+     * Construstor
+     *
+     * @param next  The next step panel
+     */
     public FederatedIPTrustedCertsPanel(WizardStepPanel next) {
         super(next);
         initComponents();
     }
 
+    /**
+     * Get the description of the step
+     * @return String The description of the step
+     */
     public String getDescription() {
         return "Select the certificates that will be trusted by this identity provider from the SecureSpan Gateway's trusted certificate store.";
     }
@@ -148,7 +159,20 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     }
 
-    public boolean onNextButton() {
+    /**
+     * Perform any panel-specific last-second checking at the time the user presses the "Next"
+     * (or "Finish") button
+     * while this panel is showing.  The panel may veto the action by returning false here.
+     * Since this method is called in response to user input it may take possibly-lengthy actions
+     * such as downloading a remote file.
+     *
+     * This differs from canAdvance() in that it is called when the user actually hits the Next button,
+     * whereas canAdvance() is used to determine if the Next button is even enabled.
+     *
+     * @return true if it is safe to advance to the next step; false if not (and the user may have
+     *            been pestered with an error dialog).
+     */
+     public boolean onNextButton() {
         final JDialog owner = getOwner();
         if(trustedCertTable.getModel().getRowCount() == 0) {
 
@@ -163,6 +187,11 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         return limitationsAccepted;
     }
 
+    /**
+     *  Create the Message Panel
+     *
+     * @return  JPanel  The Message Panel
+     */
     private JPanel createMsgPanel() {
         Icon icon = new ImageIcon(getClass().getClassLoader().getResource(RESOURCE_PATH + "/check16.gif"));
 
@@ -192,6 +221,9 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         return panel1;
     }
 
+    /**
+     * Initialize the components of the Panel
+     */
     private void initComponents() {
 
         setLayout(new BorderLayout());
@@ -271,9 +303,20 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         propertiesButton.setEnabled(propsEnabled);
     }
 
+    /**
+     * Listener for handling the event of adding a cert to the FIP
+     */
     private final CertListener certListener = new CertListenerAdapter() {
         public void certSelected(CertEvent e) {
-            trustedCertTable.getTableSorter().addRow(e.getCert());
+
+            if(!trustedCertTable.getTableSorter().contains(e.getCert())) {
+                trustedCertTable.getTableSorter().addRow(e.getCert());
+            } else {
+                // cert alreay exsits
+                JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this, resources.getString("add.cert.duplicated"),
+                        resources.getString("add.cert.error"),
+                        JOptionPane.ERROR_MESSAGE);
+            }
         }
 
     };

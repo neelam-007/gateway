@@ -132,6 +132,33 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     }
 
     /**
+     * Check if the object already exists in the table model
+     * @param tc  The trusted cert
+     * @return  true if the trusted cert already exists in the table model, false otherwise.
+     */
+    public boolean contains(TrustedCert tc) {
+
+        X509Certificate cert2 = null;
+        try {
+            X509Certificate cert1 = tc.getCertificate();
+            for (int i = 0; i < sortedData.length; i++) {
+                cert2 = ((TrustedCert) sortedData[i]).getCertificate();
+                if(cert1.getIssuerDN().equals(cert2.getIssuerDN()) &&
+                        cert1.getSubjectDN().equals(cert2.getSubjectDN())) {
+                     return true;
+                }
+            }
+        } catch (CertificateException e) {
+            logger.warning("Invalid certificate: " + e.getMessage());
+
+        } catch (IOException e) {
+            logger.warning("IO Exception caught when decoding the certificate:" + e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
      * The sorting order.
      *
      * @return boolean  true if the sorting is in ascending order, false otherwise.
@@ -179,9 +206,10 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
         try {
             cert = ((TrustedCert) sortedData[row]).getCertificate();
         } catch (CertificateException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            logger.warning("Invalid certificate: " + e.getMessage());
+
         } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            logger.warning("IO Exception caught when decoding the certificate:" + e.getMessage());
         }
 
         switch (col) {
