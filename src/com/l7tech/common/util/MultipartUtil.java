@@ -1,9 +1,6 @@
 package com.l7tech.common.util;
 
 import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.*;
 
 /**
@@ -178,7 +175,7 @@ public class MultipartUtil {
         }
 
         protected String content;
-        protected Map headers = new HashMap();
+        protected Map headers = new TreeMap(String.CASE_INSENSITIVE_ORDER);
         protected int position;
         protected boolean validated = false;
         int contentLength;
