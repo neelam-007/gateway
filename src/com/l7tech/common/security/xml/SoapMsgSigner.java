@@ -144,9 +144,11 @@ public final class SoapMsgSigner {
         sigContext.sign(signatureElement, privateKey);
     }
 
-    /**
+      /**
        * Verify that a valid signature is included and that the entire envelope is signed.
        * The validity of the signer's cert is NOT verified against the local root authority.
+       *
+       * @deprecated this is now handled by the WssProcessorImpl
        *
        * @param soapMsg the soap message that potentially contains a digital signature
        * @return the cert chain used as part of the message's signature (not checked against any authority) never null
@@ -163,6 +165,8 @@ public final class SoapMsgSigner {
     /**
      * Verify that a valid signature is included and that the bodyElement is signed.
      * The validity of the signer's cert is NOT verified against the local root authority.
+     *
+     * @deprecated this is now handled by the WssProcessorImpl
      *
      * @param soapMsg the soap message that potentially contains a digital signature
      * @param bodyElement the signed bodyElement
@@ -283,6 +287,8 @@ public final class SoapMsgSigner {
      * Verify that a valid signature is included and that the bodyElement is signed.
      * The signature is verified using the shared key. Signature method is HMAC-SHA1.
      *
+     * @deprecated this is now handled by the WssProcessorImpl
+     *
      * @param soapMsg the soap message that potentially contains a digital signature
      * @param bodyElement the signed bodyElement
      * @throws com.l7tech.common.security.xml.SignatureNotFoundException
@@ -307,6 +313,8 @@ public final class SoapMsgSigner {
      * Verify that a valid signature is included and that the bodyElement is signed.
      * The signature is verified using the shared key. Signature method is HMAC-SHA1.
      * Caller is expected to have already called {@link #normalizeDoc(org.w3c.dom.Document)}.
+     *
+     * @deprecated this is now handled by the WssProcessorImpl
      *
      * @param soapMsg the soap message that potentially contains a digital signature
      * @param bodyElement the signed bodyElement
@@ -363,6 +371,8 @@ public final class SoapMsgSigner {
      * Verify that a valid signature is included and that the bodyElement is signed.
      * The validity of the signer's cert is NOT verified against the local root authority.
      * Caller is expected to have already called {@link #normalizeDoc(org.w3c.dom.Document)}.
+     *
+     * @deprecated this is now handled by the WssProcessorImpl
      *
      * @param soapMsg the soap message that potentially contains a digital signature
      * @param bodyElement the signed bodyElement
