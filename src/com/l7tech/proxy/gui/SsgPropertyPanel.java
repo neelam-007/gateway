@@ -1,14 +1,9 @@
 package com.l7tech.proxy.gui;
 
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.proxy.datamodel.Ssg;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -28,6 +23,8 @@ public class SsgPropertyPanel extends JPanel {
     private JButton federatedSSGCertButton;
     private JCheckBox useClientCredentialCheckBox;
     private JCheckBox savePasswordCheckBox;
+    private JLabel trustedGatewayLabel;
+    private JLabel usernameLabel;
 
     public SsgPropertyPanel() {
         initialize();
@@ -63,6 +60,13 @@ public class SsgPropertyPanel extends JPanel {
 
         // select Trusted SSG form by default
         trustedSSGRadioButton.setSelected(true);
+
+        // Equalize leftmost column of each gateway type
+        final char[] chars = trustedGatewayLabel.getText().toCharArray();
+        final FontMetrics trustedGatewayFontMetrics = trustedGatewayLabel.getFontMetrics(trustedGatewayLabel.getFont());
+        final int trustedGatewayLabelWidth = trustedGatewayFontMetrics.charsWidth(chars, 0, chars.length);
+        usernameLabel.setPreferredSize(new Dimension(trustedGatewayLabelWidth, -1));
+
         setFederatedSSGFormEnabled(false);
     }
 
