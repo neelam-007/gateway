@@ -28,7 +28,9 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
         try {
             return TypeTranslator.serviceUserToGenUser(getStub().findUserByPrimaryKey(identityProviderConfigId, oid));
         } catch (java.rmi.RemoteException e) {
-            throw new FindException("RemoteException in findByPrimaryKey", e);
+            throw new FindException("RemoteException in findUserByPrimaryKey", e);
+        } catch (ClassNotFoundException e) {
+            throw new FindException("ClassNotFoundException in TypeTranslator.serviceUserToGenUser", e);
         }
     }
 
@@ -57,6 +59,8 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
             return TypeTranslator.headerArrayToCollection(getStub().findAllUsers(identityProviderConfigId));
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
+        } catch (ClassNotFoundException e) {
+            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
         }
     }
 
@@ -65,6 +69,8 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
             return TypeTranslator.headerArrayToCollection(getStub().findAllUsersByOffset(identityProviderConfigId, offset, windowSize));
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
+        } catch (ClassNotFoundException e) {
+            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
         }
     }
 

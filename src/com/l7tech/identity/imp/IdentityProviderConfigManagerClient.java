@@ -63,7 +63,11 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
         } catch (RemoteException e) {
             throw new FindException(e.getMessage(), e);
         }
-        return TypeTranslator.headerArrayToCollection(array);
+        try {
+            return TypeTranslator.headerArrayToCollection(array);
+        } catch (ClassNotFoundException e) {
+            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
+        }
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
@@ -73,7 +77,11 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
         } catch (RemoteException e) {
             throw new FindException(e.getMessage(), e);
         }
-        return TypeTranslator.headerArrayToCollection(array);
+        try {
+            return TypeTranslator.headerArrayToCollection(array);
+        } catch (ClassNotFoundException e) {
+            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
+        }
     }
 
     public Collection findAll() throws FindException {

@@ -18,29 +18,23 @@ import java.util.Iterator;
  *
  */
 public class TypeTranslator {
-    public static com.l7tech.objectmodel.EntityHeader serviceHeaderToGenHeader(com.l7tech.adminws.identity.Header stubHeader) {
+    public static com.l7tech.objectmodel.EntityHeader serviceHeaderToGenHeader(com.l7tech.adminws.identity.Header stubHeader) throws ClassNotFoundException {
         if (stubHeader == null) return null;
         EntityHeaderImp ret = new EntityHeaderImp();
         ret.setName(stubHeader.getName());
         ret.setOid(stubHeader.getOid());
-        try {
-            ret.setType(Class.forName(stubHeader.getType()));
-        } catch (ClassNotFoundException e) {
-            System.err.println(e.getMessage());
-        }
+        ret.setType(Class.forName(stubHeader.getType()));
         return ret;
     }
 
-    public static Collection headerArrayToCollection(com.l7tech.adminws.identity.Header[] headerArray) {
-        if (headerArray != null && headerArray.length > 0) {
-            Collection ret = new java.util.ArrayList(headerArray.length);
-            for (int i = 0; i < headerArray.length; i++) {
-                // add the header
-                ret.add(TypeTranslator.serviceHeaderToGenHeader(headerArray[i]));
-            }
-            return ret;
+    public static Collection headerArrayToCollection(com.l7tech.adminws.identity.Header[] headerArray) throws ClassNotFoundException {
+        if (headerArray == null) return new java.util.ArrayList();
+        Collection ret = new java.util.ArrayList(headerArray.length);
+        for (int i = 0; i < headerArray.length; i++) {
+            // add the header
+            ret.add(TypeTranslator.serviceHeaderToGenHeader(headerArray[i]));
         }
-        else return new java.util.ArrayList();
+        return ret;
     }
 
     public static com.l7tech.adminws.identity.Header[] collectionToServiceHeaders(Collection collectionOfGenHeaders) {
@@ -48,7 +42,7 @@ public class TypeTranslator {
         com.l7tech.adminws.identity.Header[] ret = new com.l7tech.adminws.identity.Header[collectionOfGenHeaders.size()];
         Iterator iter = collectionOfGenHeaders.iterator();
         int count = 0;
-        while(iter.hasNext()){
+        while (iter.hasNext()) {
             EntityHeader colMember = (EntityHeader)iter.next();
             ret[count] = new com.l7tech.adminws.identity.Header(colMember.getOid(), colMember.getType().toString(), colMember.getName());
             ++count;
@@ -98,7 +92,7 @@ public class TypeTranslator {
         return ret;
     }
 
-    public static com.l7tech.identity.User serviceUserToGenUser(com.l7tech.adminws.identity.User svcUser) {
+    public static com.l7tech.identity.User serviceUserToGenUser(com.l7tech.adminws.identity.User svcUser) throws ClassNotFoundException {
         if (svcUser == null) return null;
         com.l7tech.identity.User ret = new com.l7tech.identity.internal.imp.UserImp();
         ret.setEmail(svcUser.getEmail());
@@ -126,7 +120,7 @@ public class TypeTranslator {
         return ret;
     }
 
-    public static com.l7tech.identity.Group serviceGroupToGenGroup(com.l7tech.adminws.identity.Group svcGroup) {
+    public static com.l7tech.identity.Group serviceGroupToGenGroup(com.l7tech.adminws.identity.Group svcGroup) throws ClassNotFoundException {
         if (svcGroup == null) return null;
         com.l7tech.identity.Group ret = new com.l7tech.identity.internal.imp.GroupImp();
         ret.setDescription(svcGroup.getDescription());

@@ -91,6 +91,8 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
             return userManager.save(TypeTranslator.serviceUserToGenUser(user));
         } catch (SaveException e) {
             throw new java.rmi.RemoteException("SaveException in saveUser", e);
+        } catch (ClassNotFoundException e) {
+            throw new java.rmi.RemoteException("ClassNotFoundException in TypeTranslator.serviceUserToGenUser", e);
         }
     }
 
@@ -139,6 +141,8 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
             return groupManager.save(TypeTranslator.serviceGroupToGenGroup(group));
         } catch (SaveException e) {
             throw new RemoteException("SaveException in saveGroup", e);
+        } catch (ClassNotFoundException e) {
+            throw new java.rmi.RemoteException("ClassNotFoundException in TypeTranslator.serviceGroupToGenGroup", e);
         }
     }
 

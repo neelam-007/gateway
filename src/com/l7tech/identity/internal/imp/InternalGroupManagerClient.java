@@ -29,6 +29,8 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
             return TypeTranslator.serviceGroupToGenGroup(getStub().findGroupByPrimaryKey(identityProviderConfigId, oid));
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findByPrimaryKey", e);
+        } catch (ClassNotFoundException e) {
+            throw new FindException("ClassNotFoundException in TypeTranslator.serviceGroupToGenGroup", e);
         }
     }
 
@@ -57,6 +59,8 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
             return TypeTranslator.headerArrayToCollection(getStub().findAllGroups(identityProviderConfigId));
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
+        } catch (ClassNotFoundException e) {
+            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
         }
     }
 
@@ -65,6 +69,8 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
             return TypeTranslator.headerArrayToCollection(getStub().findAllGroupsByOffset(identityProviderConfigId, offset, windowSize));
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
+        } catch (ClassNotFoundException e) {
+            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
         }
     }
 
