@@ -6,6 +6,7 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.ArrayList;
 import java.rmi.RemoteException;
 
 /**
@@ -68,15 +69,16 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
 
     public Collection findAllIdentityProviders() throws FindException {
         Collection headers = findAllHeaders();
-        Collection output = new java.util.ArrayList(headers.size());
+        Collection output = new ArrayList(headers.size());
         Iterator iter = headers.iterator();
         while (iter.hasNext()) {
             EntityHeader thisHeader = (EntityHeader)iter.next();
             IdentityProviderConfig conf = findByPrimaryKey(thisHeader.getOid());
-            IdentityProvider provider = null;
-            provider = new IdentityProviderClient();
-            provider.initialize(conf);
-            output.add(provider);
+            if (conf != null) {
+                IdentityProvider provider = new IdentityProviderClient();
+                provider.initialize(conf);
+                output.add(provider);
+            }
         }
         return output;
     }
@@ -113,7 +115,7 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
         } catch (RemoteException e) {
             throw new FindException(e.getMessage(), e);
         }
-        Collection output = new java.util.ArrayList();
+        Collection output = new ArrayList();
         for (int i = 0; i < array.length; i++) output.add(array[i]);
         return output;
     }
@@ -125,14 +127,14 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
         } catch (RemoteException e) {
             throw new FindException(e.getMessage(), e);
         }
-        Collection output = new java.util.ArrayList();
+        Collection output = new ArrayList();
         for (int i = 0; i < array.length; i++) output.add(array[i]);
         return output;
     }
 
     public Collection findAll() throws FindException {
         Collection headers = findAllHeaders();
-        Collection output = new java.util.ArrayList(headers.size());
+        Collection output = new ArrayList(headers.size());
         Iterator iter = headers.iterator();
         while (iter.hasNext()) {
             EntityHeader thisHeader = (EntityHeader)iter.next();
@@ -144,7 +146,7 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
 
     public Collection findAll(int offset, int windowSize) throws FindException {
         Collection headers = findAllHeaders(offset, windowSize);
-        Collection output = new java.util.ArrayList(headers.size());
+        Collection output = new ArrayList(headers.size());
         Iterator iter = headers.iterator();
         while (iter.hasNext()) {
             EntityHeader thisHeader = (EntityHeader)iter.next();
