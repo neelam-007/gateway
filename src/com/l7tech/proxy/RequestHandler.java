@@ -62,6 +62,7 @@ public class RequestHandler extends AbstractHttpHandler {
      */
     private PendingRequest gatherRequest(final HttpRequest request,
                                          Document requestEnvelope,
+                                         String endpoint,
                                          Ssg ssg)
     {
         HttpHeaders headers = new HttpHeaders(request.getFieldNames(), new HttpHeaders.ValueProvider() {
@@ -81,7 +82,7 @@ public class RequestHandler extends AbstractHttpHandler {
         });
         String sa = request.getField("SOAPAction");
         String namespaceUri = SoapUtil.getNamespaceUri(requestEnvelope);
-        URL originalUrl = getOriginalUrl(request);
+        URL originalUrl = getOriginalUrl(request, endpoint);
         PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, sa, originalUrl.getFile());
         PendingRequest pr = new PendingRequest(requestEnvelope,
                                                ssg,
@@ -89,16 +90,18 @@ public class RequestHandler extends AbstractHttpHandler {
                                                pak,
                                                originalUrl,
                                                headers);
-        log.finer("Request SOAPAction=" + sa + "   BodyURI=" + namespaceUri + "   isSoapRequest=" + pr.isSoapRequest());
+        log.finer("Request SOAPAction=" + sa + "   BodyURI=" + namespaceUri + "   originalUrl=" + originalUrl.toString() + "   isSoapRequest=" + pr.isSoapRequest());
         return pr;
     }
 
-    private URL getOriginalUrl(HttpRequest request) {
+    private URL getOriginalUrl(HttpRequest request, String endpoint) {
         try {
             int port = request.getPort();
             if (port == 0)
                 port = bindPort;
-            return new URL("http", request.getHost(), port, request.getURI().toString());
+            if (!endpoint.startsWith("/"))
+                endpoint = "/" + endpoint;
+            return new URL("http", request.getHost(), port, endpoint);
         } catch (MalformedURLException e) {
             // can't happen
             log.log(Level.WARNING, "Malformed URL from client", e);
@@ -125,7 +128,7 @@ public class RequestHandler extends AbstractHttpHandler {
         } catch (HttpException e) {
             SsgResponse fault = SsgResponse.makeFaultResponse(e.getCode() == 404 ? "Client" : "Server",
                                                               e.getMessage(),
-                                                              getOriginalUrl(request).toExternalForm());
+                                                              getOriginalUrl(request, request.getURI().toString()).toExternalForm());
             transmitResponse(e.getCode(), response, fault);
         }
     }
@@ -147,7 +150,9 @@ public class RequestHandler extends AbstractHttpHandler {
             isWsdl = true;
         }
 
-        final Ssg ssg = getDesiredSsg(endpoint);
+        String[] endpointIO = new String[] { endpoint };
+        final Ssg ssg = getDesiredSsg(endpointIO);
+        endpoint = endpointIO[0]; // use translated endpoint
         log.fine("Mapped to Gateway: " + ssg);
         CurrentRequest.clearCurrentRequest();
         CurrentRequest.setCurrentSsg(ssg);
@@ -162,7 +167,6 @@ public class RequestHandler extends AbstractHttpHandler {
             return;
         }
 
-        PendingRequest pendingRequest;
         String reqUsername = null;
         String reqPassword = null;
         if (ssg.isChainCredentialsFromClient()) {
@@ -182,6 +186,7 @@ public class RequestHandler extends AbstractHttpHandler {
             }
         }
 
+        PendingRequest pendingRequest;
         try {
             // TODO: PERF: this XML parsing is causing a performance bottleneck
             boolean multipart = false;
@@ -217,7 +222,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 envelope = XmlUtil.parse(request.getInputStream());
             }
 
-            pendingRequest = gatherRequest(request, envelope, ssg);
+            pendingRequest = gatherRequest(request, envelope, endpoint, ssg);
             if(multipart) {
                 pendingRequest.setMultipart(true);
                 pendingRequest.setMultipartReader(multipartReader);
@@ -315,22 +320,25 @@ public class RequestHandler extends AbstractHttpHandler {
     /**
      * Figure out which SSG the client is trying to reach.
      *
-     * @param endpoint   the endpoint string sent by the client (ie, "/ssg3"), with any WSDL suffix stripped
+     * @param endpoint   the endpoint string sent by the client (ie, "/ssg3"), with any WSDL suffix stripped.
+     *                   on return, will be replaced with the modified endpoint.
      * @return          the Ssg to route it to
      */
-    private Ssg getDesiredSsg(String endpoint) throws HttpException {
+    private Ssg getDesiredSsg(String[] endpoint) throws HttpException {
         // Figure out which SSG is being invoked.
         try {
             try {
-                String[] splitted = endpoint.split("/", 2);
+                String[] splitted = endpoint[0].split("/", 2);
                 log.finest("Looking for " + splitted[0]);
-                return ssgFinder.getSsgByEndpoint(splitted[0]);
+                Ssg ssg = ssgFinder.getSsgByEndpoint(splitted[0]);
+                endpoint[0] = endpoint[0].substring(splitted[0].length());
+                return ssg;
             } catch (SsgNotFoundException e) {
                 return ssgFinder.getDefaultSsg();
             }
         } catch (SsgNotFoundException e) {
             HttpException t = new HttpException(404,
-                                                "This Client Proxy has no Gateway mapped to the endpoint " + endpoint);
+                                                "This Client Proxy has no Gateway mapped to the endpoint " + endpoint[0]);
             interceptor.onMessageError(t);
             throw t;
         }
