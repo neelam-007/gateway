@@ -28,7 +28,6 @@ import cirrus.hibernate.HibernateException;
  *
  */
 public class InternalUserManagerServer extends HibernateEntityManager implements UserManager {
-
     public InternalUserManagerServer() {
         super();
     }
