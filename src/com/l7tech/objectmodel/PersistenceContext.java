@@ -22,6 +22,8 @@ public abstract class PersistenceContext {
     public abstract void beginTransaction() throws TransactionException;
     public abstract void commitTransaction() throws TransactionException;
     public abstract void rollbackTransaction() throws TransactionException;
+    public abstract void registerTransactionListener(TransactionListener listener, Object data)
+                                              throws TransactionException;
 
     public static PersistenceContext getCurrent() throws SQLException {
         PersistenceContext context = (PersistenceContext)_contextLocal.get();

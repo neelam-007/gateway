@@ -13,6 +13,8 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.l7tech.logging.LogManager;
 
@@ -42,6 +44,11 @@ public class HibernatePersistenceContext extends PersistenceContext {
             } else {
                 _htxn.commit();
             }
+            for (Iterator i = txListenerList.iterator(); i.hasNext();) {
+                ListenerData toto = (ListenerData)i.next();
+                toto.listener.postRollback(toto.data);
+            }
+            txListenerList.clear();
         } catch ( SQLException se ) {
             logger.throwing( getClass().getName(), "commitTransaction", se );
             close();
@@ -188,6 +195,11 @@ public class HibernatePersistenceContext extends PersistenceContext {
     public void rollbackTransaction() throws TransactionException {
         try {
             if ( _htxn != null ) _htxn.rollback();
+            for (Iterator i = txListenerList.iterator(); i.hasNext();) {
+                ListenerData toto = (ListenerData)i.next();
+                toto.listener.postRollback(toto.data);
+            }
+            txListenerList.clear();
         } catch ( HibernateException he ) {
             logger.throwing( getClass().getName(), "rollbackTransaction", he );
             throw new TransactionException( he.toString(), he );
@@ -196,10 +208,24 @@ public class HibernatePersistenceContext extends PersistenceContext {
         }
     }
 
+    public void registerTransactionListener(TransactionListener listener, Object data)
+                                              throws TransactionException {
+        ListenerData listenermember = new ListenerData();
+        listenermember.listener = listener;
+        listenermember.data = data;
+        txListenerList.add(listenermember);
+    }
+
+    private class ListenerData {
+        public TransactionListener listener;
+        public Object data;
+    }
+
     protected HibernatePersistenceManager _manager;
     protected Session _session;
     protected DataSource _dataSource;
     protected Connection _conn;
     protected cirrus.hibernate.Transaction _htxn;
+    protected ArrayList txListenerList = new ArrayList();
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }
