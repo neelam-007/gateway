@@ -60,19 +60,6 @@ CREATE TABLE ldap_identity_provider (
 ) TYPE=InnoDB;
 
 --
--- Table structure for table 'identity_provider_type'
---
-
-CREATE TABLE identity_provider_type (
-  oid bigint(20) NOT NULL default '0',
-  version int(11) NOT NULL default '0',
-  name varchar(128) NOT NULL default '',
-  description mediumtext,
-  class_name varchar(255) NOT NULL default '',
-  PRIMARY KEY  (oid)
-) TYPE=InnoDB;
-
---
 -- Table structure for table 'internal_group'
 --
 
