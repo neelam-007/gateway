@@ -26,6 +26,35 @@ public class AddressImp extends EntityImp implements Address {
     public void setCountry(Country country) { _country = country; }
     public void setPostalCode(String postalCode) { _postalCode = postalCode; }
 
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AddressImp)) return false;
+
+        final AddressImp addressImp = (AddressImp) o;
+
+        if (_oid != DEFAULT_OID ? !(_oid == addressImp._oid) : addressImp._oid != DEFAULT_OID ) return false;
+        if (_address != null ? !_address.equals(addressImp._address) : addressImp._address != null) return false;
+        if (_address2 != null ? !_address2.equals(addressImp._address2) : addressImp._address2 != null) return false;
+        if (_city != null ? !_city.equals(addressImp._city) : addressImp._city != null) return false;
+        if (_country != null ? !_country.equals(addressImp._country) : addressImp._country != null) return false;
+        if (_postalCode != null ? !_postalCode.equals(addressImp._postalCode) : addressImp._postalCode != null) return false;
+        if (_state != null ? !_state.equals(addressImp._state) : addressImp._state != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (_postalCode != null ? _postalCode.hashCode() : 0);
+        result = 29 * result + (_country != null ? _country.hashCode() : 0);
+        result = 29 * result + (_state != null ? _state.hashCode() : 0);
+        result = 29 * result + (_city != null ? _city.hashCode() : 0);
+        result = 29 * result + (_address2 != null ? _address2.hashCode() : 0);
+        result = 29 * result + (_address != null ? _address.hashCode() : 0);
+        result = 29 * result + (int)_oid;
+        return result;
+    }
+
 	private String _postalCode;
 	private Country _country;
 	private State _state;
