@@ -37,10 +37,11 @@ public class HexUtilsTest extends TestCase {
     public void testEncodeMd5Digest() throws Exception {
         MessageDigest md5 = MessageDigest.getInstance("MD5");
         md5.reset();
+        md5.update("TheseAreSomeCertificateBytes".getBytes());
         md5.update("alice:myrealm:secret".getBytes());
         String result = HexUtils.encodeMd5Digest(md5.digest());
         log.info("result = " + result);
         assertTrue(result != null);
-        assertTrue(result.equals("049fcf3ec19e0d6fd33212b90ce599e4"));
+        assertTrue(result.equals("249d90d691cdd6fdb480c80aeaddbaa3"));
     }
 }
