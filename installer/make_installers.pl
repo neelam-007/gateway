@@ -34,8 +34,8 @@ sub get_jarlist_from_manifest {
 	while (<MANIFEST>) {
 		next unless /^Class-Path: (.*)/i;
 	    my $jarstr = $1;
-		$jarstr =~ s|lib/||g;
-		@jars = split " ", $jarstr;
+		$jarstr =~ s{lib/}{}g;  # filter the dot
+		@jars = grep {!/^\.$/} split " ", $jarstr;
 	}
 	close(MANIFEST);
 	return @jars;
