@@ -93,6 +93,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient Cookie[] sessionCookies = null;
     private transient X509Certificate serverCert = null;
     private transient X509Certificate clientCert = null;
+    private transient byte[] secureConversationSharedSecret = null;
+    private transient String secureConversationId = null;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -542,6 +544,38 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public void setSslPort(int sslPort) {
         this.sslPort = sslPort;
+    }
+
+    /**
+     * Transient record of shared secret for WS-SecureConversation session.
+     * Don't use directly; go through PendingRequest to avoid races.
+     */
+    public byte[] secureConversationSharedSecret() {
+        return secureConversationSharedSecret;
+    }
+
+    /**
+     * Transient record of shared secret for WS-SecureConversation session.
+     * Don't use directly; go through PendingRequest to avoid races.
+     */
+    public void secureConversationSharedSecret(byte[] secureConversationSharedSecret) {
+        this.secureConversationSharedSecret = secureConversationSharedSecret;
+    }
+
+    /**
+     * Transient record of session unique ID URI for WS-SecureConversation session.
+     * Don't use directly; go through PendingRequest to avoid races.
+     */
+    public String secureConversationId() {
+        return secureConversationId;
+    }
+
+    /**
+     * Transient record of session unique ID URI for WS-SecureConversation session.
+     * Don't use directly; go through PendingRequest to avoid races. 
+     */
+    public void secureConversationId(String secureConversationId) {
+        this.secureConversationId = secureConversationId;
     }
 
     public boolean promptForUsernameAndPassword() {

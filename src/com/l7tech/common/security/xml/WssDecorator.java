@@ -10,7 +10,6 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 
-import javax.crypto.SecretKey;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -103,7 +102,7 @@ public interface WssDecorator {
 
         public interface SecureConversationSession {
             String getId();
-            SecretKey getSecretKey();
+            byte[] getSecretKey();
         }
 
         private X509Certificate recipientCertificate = null;

@@ -164,7 +164,7 @@ public class WssRoundTripTest extends TestCase {
         if (td.secureConversationKey != null)
             reqs.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
                 public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
-                public SecretKey getSecretKey() { return td.secureConversationKey; }
+                public byte[] getSecretKey() { return td.secureConversationKey.getEncoded(); }
             });
         if (td.elementsToEncrypt != null)
             for (int i = 0; i < td.elementsToEncrypt.length; i++) {

@@ -48,6 +48,8 @@ public class PendingRequest {
     private HttpHeaders headers = null;
     private PasswordAuthentication pw = null;
     private ClientSidePolicy clientSidePolicy = ClientSidePolicy.getPolicy();
+    private String secureConversationId = null;
+    private byte[] secureConversationSharedSecret = null;
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
@@ -325,6 +327,43 @@ public class PendingRequest {
                 throw new InvalidDocumentFormatException("Request has existing L7a:MessageID field that is empty or contains only whitespace");
 
             setL7aMessageId(id);
+        }
+    }
+
+    private void establishSecureConversationSession() {
+        // TODO establish session
+        ssg.secureConversationId("http://www.l7tech.com/uuid/sessionid/123");
+        ssg.secureConversationSharedSecret(new byte[] {5,2,4,5,
+                                                       8,7,9,6,
+                                                       32,4,1,55,
+                                                       8,7,77,7});
+    }
+
+    /**
+     * Get the secure conversation ID used for this request.
+     * Establishes a new session with the SSG if necessary.
+     */
+    public String getSecureConversationId() {
+        if (secureConversationId != null)
+            return secureConversationId;
+        synchronized (ssg) {
+            if (ssg.secureConversationId() == null)
+                establishSecureConversationSession();
+            return secureConversationId = ssg.secureConversationId();
+        }
+    }
+
+    /**
+     * Get the secure conversation shared secret used for this request.
+     * Establishes a new session with the SSG if necessary.
+     */
+    public byte[] getSecureConversationSharedSecret() {
+        if (secureConversationSharedSecret != null)
+            return secureConversationSharedSecret;
+        synchronized (ssg) {
+            if (ssg.secureConversationSharedSecret() == null)
+                establishSecureConversationSession();
+            return secureConversationSharedSecret = ssg.secureConversationSharedSecret();
         }
     }
 }

@@ -82,8 +82,8 @@ public class ServerSecureConversation implements ServerAssertion {
                     public String getId() {
                         return session.getIdentifier();
                     }
-                    public SecretKey getSecretKey() {
-                        return session.getSharedSecret();
+                    public byte[] getSecretKey() {
+                        return session.getSharedSecret().getEncoded();
                     }
                 });
                 return AssertionStatus.NONE;

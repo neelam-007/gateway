@@ -241,7 +241,7 @@ public class WssDecoratorImpl implements WssDecorator {
         byte[] seed = new byte[label.length() + nonce.length];
         System.arraycopy(label.getBytes(), 0, seed, 0, label.length());
         System.arraycopy(nonce, 0, seed, label.length(), nonce.length);
-        byte[] derivedKey = new SecureConversationKeyDeriver().pSHA1(session.getSecretKey().getEncoded(), seed, length);
+        byte[] derivedKey = new SecureConversationKeyDeriver().pSHA1(session.getSecretKey(), seed, length);
 
         return new DerivedKeyToken(dkt, derivedKey);
     }
