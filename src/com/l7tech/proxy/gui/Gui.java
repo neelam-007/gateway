@@ -2,6 +2,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.console.panels.Utilities;
 import org.apache.log4j.Category;
 
@@ -118,6 +119,7 @@ public class Gui {
     public JFrame getFrame() {
         if (frame == null) {
             frame = new JFrame("Client Proxy");
+            frame.setIconImage(IconManager.getAppImage());
             frame.addWindowListener(new WindowAdapter() {
                 public void windowClosing(final WindowEvent e) {
                     closeFrame();
