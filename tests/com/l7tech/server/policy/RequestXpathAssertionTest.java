@@ -1,47 +1,123 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.Locator;
-import com.l7tech.common.xml.SoapMessageGenerator;
-import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.RequestId;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.identity.User;
+import com.l7tech.message.TransportMetadata;
+import com.l7tech.message.XmlRequest;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.server.MockServletApi;
-import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.service.ServiceManager;
-import com.l7tech.service.PublishedService;
-import com.mockobjects.dynamic.C;
-import com.mockobjects.dynamic.Mock;
+import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.xml.sax.InputSource;
+import org.w3c.dom.Document;
 
-import javax.servlet.ServletOutputStream;
-import javax.wsdl.Definition;
-import javax.xml.soap.SOAPConstants;
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
- * @author alex
+ * Tests the ServerRequestXpathAssertion class.
+ * @author franco
  * @version $Revision$
  */
 public class RequestXpathAssertionTest extends TestCase {
-    private MockServletApi _servletApi = MockServletApi.defaultMessageProcessingServletApi();
-    private PublishedService _service;
-    private SoapMessageProcessingServlet _servlet = new SoapMessageProcessingServlet();
-    private ServiceCache _serviceCache;
-    private MyServletOutputStream _servletOutputStream = new MyServletOutputStream();
 
-    /**
-     * test <code>RequestXpathAssertionTest</code> constructor
-     */
     public RequestXpathAssertionTest(String name) throws Exception {
         super(name);
+    }
+
+    public void testOKExpression() throws Exception {
+        Map namespaces = new HashMap();
+        namespaces.putAll(XpathEvaluator.getNamespaces(SoapUtil.asSOAPMessage(testDoc)));
+        XpathExpression expression = new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, namespaces);
+        ServerRequestXpathAssertion serverAssertion = getAssertion(expression);
+        XmlRequest req = getTestRequest(testDoc);
+        AssertionStatus ret = serverAssertion.checkRequest(req, null);
+        assertTrue(ret == AssertionStatus.NONE);
+    }
+
+    public void testBadExpression() throws Exception {
+        Map namespaces = new HashMap();
+        namespaces.putAll(XpathEvaluator.getNamespaces(SoapUtil.asSOAPMessage(testDoc)));
+        XpathExpression expression = new XpathExpression("/blip:foo", namespaces);
+        ServerRequestXpathAssertion serverAssertion = getAssertion(expression);
+        XmlRequest req = getTestRequest(testDoc);
+        AssertionStatus ret = serverAssertion.checkRequest(req, null);
+        assertTrue(ret == AssertionStatus.FALSIFIED);
+    }
+
+    private ServerRequestXpathAssertion getAssertion(XpathExpression expression) {
+        RequestXpathAssertion assertion = new RequestXpathAssertion(expression);
+        return new ServerRequestXpathAssertion(assertion);
+    }
+
+    public XmlRequest getTestRequest(Document doc) {
+        return new XmlRequest() {
+            public Document getDocument() {
+                return testDoc;
+            }
+            protected Reader doGetRequestReader() throws IOException {
+                return null;
+            }
+            public LoginCredentials getPrincipalCredentials() {
+                return null;
+            }
+            public User getUser() {
+                return null;
+            }
+            public void setUser(User user) {}
+            public void setPrincipalCredentials(LoginCredentials pc) {}
+            public boolean isAuthenticated() {
+                return false;
+            }
+            public boolean isReplyExpected() {
+                return false;
+            }
+            public void setAuthenticated(boolean authenticated) {}
+            public RoutingStatus getRoutingStatus() {
+                return null;
+            }
+            public void setRoutingStatus(RoutingStatus status) {}
+
+            public RequestId getId() {
+                return null;
+            }
+            public void setDocument(Document doc) {}
+            public String getRequestXml() throws IOException {
+                return null;
+            }
+            public void setRequestXml(String xml) {}
+            public TransportMetadata getTransportMetadata() {
+                return null;
+            }
+            public Iterator getParameterNames() {
+                return null;
+            }
+            public void setParameter(String name, Object value) {}
+            public void setParameterIfEmpty(String name, Object value) {}
+            public Object getParameter(String name) {
+                return null;
+            }
+            public Object[] getParameterValues(String name) {
+                return new Object[0];
+            }
+            public Collection getDeferredAssertions() {
+                return null;
+            }
+            public void addDeferredAssertion(ServerAssertion owner, ServerAssertion decoration) {}
+            public void removeDeferredAssertion(ServerAssertion owner) {}
+        };
     }
 
     /**
@@ -54,151 +130,10 @@ public class RequestXpathAssertionTest extends TestCase {
         return suite;
     }
 
-    String newXpathPolicy(String pattern, Map namespaceMap) throws IOException {
-        // Set up policy with only RequestXpathAssertion
-        RequestXpathAssertion rxa = new RequestXpathAssertion();
-        rxa.setXpathExpression(new XpathExpression(pattern, namespaceMap));
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
-        WspWriter.writePolicy(rxa, baos);
-
-        return baos.toString("UTF-8");
-    }
-
-    private class MyServletOutputStream extends ServletOutputStream {
-        public MyServletOutputStream() {
-            reset();
-        }
-
-        public void write(int i) throws IOException {
-            _chain.write(i);
-        }
-
-        public void reset() {
-            _chain = new ByteArrayOutputStream(4096);
-        }
-
-        public String toString(String encoding) throws UnsupportedEncodingException {
-            return _chain.toString(encoding);
-        }
-
-        private ByteArrayOutputStream _chain;
-    }
-
-    public void testXmethods() throws Exception {
-        final String XMETHODS_WSDL_PATH = "com/l7tech/service/resources/xmethods-StockQuoteService.wsdl";
-        final String XMETHODS_URN = "urn:xmethods-delayed-quotes";
-        final String XMETHODS_SOAPACTION = XMETHODS_URN + "#getQuote";
-
-        InputStream xmethodsWsdlStream = getClass().getClassLoader().getResourceAsStream( XMETHODS_WSDL_PATH );
-        byte[] slurpedWsdl = HexUtils.slurpStream( xmethodsWsdlStream, 65536 );
-        String xml = new String(slurpedWsdl, "UTF-8");
-        Wsdl xmethodsWsdl = Wsdl.newInstance("", new InputSource(new ByteArrayInputStream(slurpedWsdl)) );
-        _service.setWsdlXml(xml);
-        _serviceCache.cache(_service);
-
-        SoapMessageGenerator.MessageInputGenerator mig = new SoapMessageGenerator.MessageInputGenerator() {
-            public String generate(String messagePartName, String operationName, Definition definition) {
-                if (operationName.equals("getQuote")) {
-                    if (messagePartName.equals("symbol")) {
-                        return "SUNW";
-                    }
-                }
-                return null;
-            }
-        };
-
-        SoapMessageGenerator srg = new SoapMessageGenerator(mig);
-
-        SoapMessageGenerator.Message[] requests = srg.generateRequests(xmethodsWsdl);
-
-        String[] passingXpaths =
-          {
-              "//", // sanity
-              "/soapenv:Envelope/soapenv:Body/ns1:getQuote/symbol", // contains a value
-              "/soapenv:Envelope/soapenv:Body/ns1:getQuote/symbol='SUNW'", // works with proper namespaces
-              "/*[local-name(.)='Envelope']/*[local-name(.)='Body']/*[local-name(.)='getQuote']/symbol='SUNW'", // works with no-namespace hack
-          };
-
-        // String[] passingXpaths = { "//", "/Envelope/Body/getQuote/c-gensym3=\"SUNW\"" };
-        String[] failingXpaths =
-          {
-              "[", // invalid expression
-              "/Envelope/Body/getQuote/symbol='SUNW'", // fails without namespaces
-              "foo:Envelope/bar:Body/baz:getQuote/symbol='SUNW'", // fails with bogus namespaces
-              "/soapenv:Envelope/soapenv:Body/ns1:getQuote/symbol=\"IBM\"", // wrong value with correct namespaces
-              "/Envelope/Body/getQuote/symbol='IBM'", // wrong value without namespaces
-          };
-
-
-        Map namespaceMap = new HashMap();
-        namespaceMap.put("ns1", XMETHODS_URN);
-        namespaceMap.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
-
-        for (int i = 0; i < requests.length; i++) {
-            SoapMessageGenerator.Message request = requests[i];
-
-            for (int j = 0; j < passingXpaths.length; j++) {
-                newServletApi();
-                String xpath = passingXpaths[j];
-                _service.setPolicyXml(newXpathPolicy(xpath, namespaceMap));
-                _serviceCache.cache(_service);
-
-                _servletApi.setSoapRequest(request.getSOAPMessage(), XMETHODS_SOAPACTION);
-                _servlet.doPost(_servletApi.getServletRequest(), _servletApi.getServletResponse());
-
-                String resp = _servletOutputStream.toString("UTF-8");
-
-                assertTrue("Response contained a fault!", resp.indexOf("Fault") == -1);
-                System.err.println(resp);
-            }
-
-            for (int j = 0; j < failingXpaths.length; j++) {
-                newServletApi();
-                String xpath = failingXpaths[j];
-                _service.setPolicyXml(newXpathPolicy(xpath, namespaceMap));
-                _serviceCache.cache(_service);
-
-                _servletApi.setSoapRequest(request.getSOAPMessage(), XMETHODS_SOAPACTION);
-                _servlet.doPost(_servletApi.getServletRequest(), _servletApi.getServletResponse());
-                String resp = _servletOutputStream.toString("UTF-8");
-
-                assertTrue("Response did not contain an expected fault!", resp.indexOf("Fault") >= 0);
-                System.err.println(resp);
-            }
-
-
-        }
-    }
-
-    public void setUp() throws Exception {
-        System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
-
-        ServiceManager sman = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
-        _service = (PublishedService)sman.findAll().iterator().next();
-        //ServiceCache.initialize(); // need to do this, otherwise is a no go
-        _serviceCache = ServiceCache.getInstance();
-        _servlet.init(_servletApi.getServletConfig());
-
-    }
-
-    private void newServletApi() {
-        _servletApi = MockServletApi.defaultMessageProcessingServletApi();
-        _servletApi.setPublishedService(_service);
-        _servletOutputStream = new MyServletOutputStream();
-        Mock mock = _servletApi.getServletResponseMock();
-        mock.matchAndReturn("getOutputStream", C.NO_ARGS, _servletOutputStream);
-    }
-
-    public void tearDown() throws Exception {
-        // put tear down code here
-    }
-
-    /**
-     * Test <code>RequestXpathAssertionTest</code> main.
-     */
     public static void main(String[] args) throws
       Throwable {
         junit.textui.TestRunner.run(suite());
     }
+
+    public Document testDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
 }
