@@ -241,11 +241,18 @@ class PathValidator {
                   "XSL transformation on the response must be positioned after routing.", null));
             }
         } else if (a instanceof RequestWssIntegrity) {
+            // REASON FOR THIS RULE:
+            // it makes no sense to validate that an element is signed if we dont validate
+            // that the authorized user is the one who signed it.
             if (!seenWssSignature) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by an WSS Signature assertion.", null));
             }
         } else if (a instanceof ResponseWssConfidentiality) {
+            // REASON FOR THIS RULE:
+            // the server needs to encrypt a symmetric key for the recipient
+            // the server needs the client cert for this purpose. this ensures that
+            // the client certis available from the request.
             if (!seenWssSignature) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by a WSS Signature assertion.", null));
