@@ -11,7 +11,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -156,10 +157,8 @@ public class ClusterInfoManager {
             selfCI.setBootTime(newboottimevalue);
             selfCI.setLastUpdateTimeStamp(newboottimevalue);
             try {
-                String add = null;
-                add = InetAddress.getLocalHost().getHostAddress();
-                selfCI.setAddress(add);
-            } catch (UnknownHostException e) {
+                String add = getIPAddress();
+            } catch (SocketException e) {
                 logger.warning("cannot get localhost address: " + e.getMessage());
             }
             try {
@@ -254,8 +253,8 @@ public class ClusterInfoManager {
         ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
         String add = null;
         try {
-            add = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
+            add = getIPAddress();
+        } catch (SocketException e) {
             logger.warning("cannot get localhost address: " + e.getMessage());
         }
         newClusterInfo.setAddress(add);
@@ -471,6 +470,30 @@ public class ClusterInfoManager {
         return Pattern.compile("$+", Pattern.MULTILINE).split(in);
     }
 
+    /**
+     * This method gets this server's ip address by consulting the network interfaces
+     * inet addresses. This information used to be extracted from InetAddress.getLocalHost()
+     * but this does not work under certain linux configurations where the host name is
+     * not dnsed nor has an entry in /etc/hosts
+     */
+    private synchronized String getIPAddress() throws SocketException {
+        if (thisNodeIPAddress == null) {
+            Enumeration enum = NetworkInterface.getNetworkInterfaces();
+            while (enum.hasMoreElements()) {
+                NetworkInterface net = (NetworkInterface)enum.nextElement();
+                Enumeration enum2 = net.getInetAddresses();
+                while (enum2.hasMoreElements()) {
+                    InetAddress add = (InetAddress)enum2.nextElement();
+                    if ((add.getAddress()[0] & 0xff) != 127) {
+                        thisNodeIPAddress = add.getHostAddress();
+                        return thisNodeIPAddress;
+                    }
+                }
+            }
+        }
+        return thisNodeIPAddress;
+    }
+
     public static void main(String[] args) {
         ClusterInfoManager me = new ClusterInfoManager();
         for (Iterator i = me.getMacs().iterator(); i.hasNext();) {
@@ -497,6 +520,7 @@ public class ClusterInfoManager {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private String selfId = null;
     private long rememberedBootTime = -1;
+    private String thisNodeIPAddress = null;
 
 
 }
