@@ -20,6 +20,7 @@ public class SecureSpanAgentOptions {
     private int gatewaySslPort = 8443;
     private int id = 0;
     private String keyStorePath = null;
+    private Boolean useSslByDefault = null;
 
     /**
      * Create an object to hold settings that can be used to customize the SecureSpanAgent delivered
@@ -132,5 +133,27 @@ public class SecureSpanAgentOptions {
      */
     public void setKeyStorePath(String keyStorePath) {
         this.keyStorePath = keyStorePath;
+    }
+
+    /**
+     * Check whether the created Agent will use SSL when sending messages to the Gateway for which
+     * no policy is (yet) known.
+     * @return useSslByDefault If True, Agent will use SSL whenever no policy is known for a request.
+     *                        If False, Agent will not use SSL whenever no policy is known for a request.
+     *                        If null, Agent will use it's default for this setting (currently True).
+     */
+    public Boolean getUseSslByDefault() {
+        return useSslByDefault;
+    }
+
+    /**
+     * Specify whether the created Agent should use SSL when sending messages to the Gateway for which
+     * no policy is (yet) known.
+     * @param useSslByDefault If True, Agent will use SSL whenever no policy is known for a request.
+     *                        If False, Agent will not use SSL whenever no policy is known for a request.
+     *                        If null, Agent will use it's default for this setting (currently True).
+     */
+    public void setUseSslByDefault(Boolean useSslByDefault) {
+        this.useSslByDefault = useSslByDefault;
     }
 }
