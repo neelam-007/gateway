@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soapenv:Body>
+        <ns1:placeOrder
+            soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:ns1="http://warehouse.acme.com/ws">
+            <productid xsi:type="xsd:long">-9206260647417300294</productid>
+            <amount xsi:type="xsd:long">1</amount>
+            <price xsi:type="xsd:float">5.0</price>
+            <accountid xsi:type="xsd:long">228</accountid>
+        </ns1:placeOrder>
+    </soapenv:Body>
+</soapenv:Envelope>
