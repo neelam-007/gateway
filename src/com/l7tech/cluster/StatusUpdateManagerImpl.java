@@ -41,6 +41,10 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
 
     /**
      * Update node status and service usage
+     *
+     * XXX IMPORTANT XXX: This method may appear to be unused according to IDEA but it is called from a Spring timer 
+     * XXX IMPORTANT XXX: defined in webApplicationContext.xml.
+     *
      * @throws UpdateException
      */
     public void update() throws UpdateException {
