@@ -22,6 +22,7 @@ ssguser="gateway"
 prog="SSG"
 tries=3
 count=0
+USER=`whoami`
 # The semantics of these two functions differ from the way apachectl does
 # things -- attempting to start while running is a failure, and shutdown
 # when not running is also a failure.  So we just do it the way init scripts
@@ -37,7 +38,6 @@ start() {
 		exit
 	fi
 
-	USER=`whoami`
         echo -n $"Starting $prog: "
 	if [ "$USER" = "root" ]; then
         	su - $ssguser -c "$ssg start -security" > /dev/null 2>&1
@@ -71,9 +71,6 @@ stop() {
 		exit
 	fi	
 	if [ $RETVAL = 0 ]; then 
-		#	rm -f /var/lock/subsys/ssg /var/run/ssg.pid
-		# We sent a signal Lets make sure we're dead.
-		#
 		sleep 5;
 		find_tomcat;
 		if [ -z "$pid" ] ; then
