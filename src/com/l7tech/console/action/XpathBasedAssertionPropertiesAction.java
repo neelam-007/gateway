@@ -7,12 +7,14 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.XpathBasedAssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 /**
  * Action for editing XML security assertion properties
@@ -54,11 +56,22 @@ public class XpathBasedAssertionPropertiesAction extends NodeAction {
     protected void performAction() {
         XpathBasedAssertionTreeNode n = (XpathBasedAssertionTreeNode)node;
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener);
-        dialog.pack();
-        dialog.setSize(900, 650); //todo: consider some dynamic sizing - em
-        Utilities.centerOnScreen(dialog);
-        dialog.show();
+        try {
+            if (n.getService().isSoap()) {
+                XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener);
+                dialog.pack();
+                dialog.setSize(900, 650); //todo: consider some dynamic sizing - em
+                Utilities.centerOnScreen(dialog);
+                dialog.show();
+            } else {
+                JOptionPane.showMessageDialog(mw, "Cannot edit this assertion because it is not configurable " +
+                                                  "on non-soap services.");
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "cannot get associated service", e);
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "cannot get associated service", e);
+        }
     }
 
 

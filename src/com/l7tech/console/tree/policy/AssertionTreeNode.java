@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.exporter.PolicyImporter;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -298,6 +299,11 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      */
     protected ServiceNode getServiceNodeCookie() {
         return getServiceNode(this);
+    }
+
+    public PublishedService getService() throws RemoteException, FindException {
+        ServiceNode sn = getServiceNodeCookie();
+        return sn.getPublishedService();
     }
 
     /**

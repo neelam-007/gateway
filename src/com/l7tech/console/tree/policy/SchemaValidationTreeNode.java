@@ -41,7 +41,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
         return "com/l7tech/console/resources/xmlsignature.gif";
     }
 
-    protected synchronized PublishedService getService() {
+    /*protected synchronized PublishedService getService() {
         if (service != null) return service;
         try {
             if (getServiceNodeCookie() != null) {
@@ -55,7 +55,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
             log.log(Level.WARNING, "cannot get service", e);
         }
         return service;
-    }
+    }*/
 
     /**
      * Get the set of actions associated with this node.
@@ -64,10 +64,17 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        java.util.List list = new ArrayList();
-        list.add(new SchemaValidationPropertiesAction(this, getService()));
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[])list.toArray(new Action[]{});
+        try {
+            java.util.List list = new ArrayList();
+            list.add(new SchemaValidationPropertiesAction(this, getService()));
+            list.addAll(Arrays.asList(super.getActions()));
+            return (Action[])list.toArray(new Action[]{});
+        } catch (FindException e) {
+            log.log(Level.WARNING, "cannot get service", e);
+        } catch (RemoteException e) {
+            log.log(Level.WARNING, "cannot get service", e);
+        }
+        return null;
     }
 
     /**
@@ -76,7 +83,14 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new SchemaValidationPropertiesAction(this, getService());
+        try {
+            return new SchemaValidationPropertiesAction(this, getService());
+        } catch (FindException e) {
+            log.log(Level.WARNING, "cannot get service", e);
+        } catch (RemoteException e) {
+            log.log(Level.WARNING, "cannot get service", e);
+        }
+        return null;
     }
 
     /**
