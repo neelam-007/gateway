@@ -1,9 +1,12 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -177,6 +180,7 @@ public class SsgPropertyDialog extends PropertyDialog {
             policyTree = new JTree((TreeModel)null);
             policyTree.setBorder(BorderFactory.createLineBorder(Color.BLACK));
             policyTree.setPreferredSize(new Dimension(300, 200));
+            policyTree.setCellRenderer(new EntityTreeCellRenderer());
             JScrollPane policyTreeSp = new JScrollPane(policyTree);
             pane.add(policyTreeSp,
                      new GridBagConstraints(0, y++, 1, 1, 1.0, 1.0,
@@ -323,6 +327,10 @@ public class SsgPropertyDialog extends PropertyDialog {
         Ssg ssg = new Ssg(1, "Test SSG", "ssg", "http://blah.bloof.com");
         log.info("SSG prompt bit: " + ssg.isPromptForUsernameAndPassword());
         ssg.attachPolicy("http://example.com/Quoter", null, new TrueAssertion());
+        ssg.attachPolicy("http://blah", null, new AllAssertion(Arrays.asList(new Assertion[] {
+            new HttpBasic(),
+            new SpecificUser(444, "blahuser"),
+        })));
         ssg.attachPolicy("http://example.com/Other", "http://example.com/soapaction/other",
                          new AllAssertion(Arrays.asList(new Assertion[] {
                              new TrueAssertion(),
