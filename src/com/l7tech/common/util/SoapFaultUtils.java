@@ -52,7 +52,9 @@ public class SoapFaultUtils {
             Element faultactorEl = getChild(bodyEl, "faultactor");
             Element faultdetailEl = getChild(bodyEl, "detail");
             faultcodeEl.appendChild(XmlUtil.createTextNode(tmpDoc, faultCode));
-            faultstringEl.appendChild(XmlUtil.createTextNode(tmpDoc, faultString));
+            if (faultString != null) {
+                faultstringEl.appendChild(XmlUtil.createTextNode(tmpDoc, faultString));
+            }
             faultactorEl.appendChild(XmlUtil.createTextNode(tmpDoc, faultActor));
             faultdetailEl.appendChild(XmlUtil.createTextNode(tmpDoc, faultDetails));
         } catch (InvalidDocumentFormatException e) {
