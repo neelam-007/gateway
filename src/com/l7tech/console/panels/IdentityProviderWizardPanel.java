@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
@@ -395,7 +396,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                 } else if (EntityType.GROUP.equals(eh.getType())) {
                     Group g = new Group();
                     g.setName(eh.getName());
-                    identityAssertions.add(new MemberOfGroup(ip.getConfig().getOid(), g.getName() ));
+                    g.getName();
+                    MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName());
+                    ma.setGroupName(g.getName());
+                    identityAssertions.add(ma);
                 }
             }
             // crenedtials location, safe

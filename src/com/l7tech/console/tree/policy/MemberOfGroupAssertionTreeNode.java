@@ -43,6 +43,6 @@ public class MemberOfGroupAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Group membership "+ ((MemberOfGroup)getUserObject()).getGroupOid();
+        return "Group membership "+ ((MemberOfGroup)getUserObject()).getGroupName();
     }
 }

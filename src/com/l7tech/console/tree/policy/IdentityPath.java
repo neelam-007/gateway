@@ -177,7 +177,7 @@ public class IdentityPath {
         } else if (assertion instanceof MemberOfGroup) {
             MemberOfGroup mog = ((MemberOfGroup)assertion);
             Group g = new Group();
-            g.setName(mog.getGroupOid());
+            g.setName(mog.getGroupName());
             g.setProviderId(mog.getIdentityProviderOid());
             return g;
         }

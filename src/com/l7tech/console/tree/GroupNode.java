@@ -55,7 +55,9 @@ public class GroupNode extends EntityHeaderNode {
     public Assertion asAssertion() {
         GroupFolderNode parent = (GroupFolderNode)getParent();
         EntityHeader e = (EntityHeader)getUserObject();
-        return new MemberOfGroup(parent.getProviderId(), e.getName());
+        MemberOfGroup memberOfGroup = new MemberOfGroup(parent.getProviderId(), e.getName());
+        memberOfGroup.setGroupName(e.getName());
+        return memberOfGroup;
     }
 
     /**
