@@ -44,6 +44,26 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
     }
 
+    public Collection search(String searchString) throws FindException {
+        // replace wildcards to match stuff understood by mysql
+        // replace * with % and ? with _
+        // note. is this portable?
+        searchString = searchString.replace('*', '%');
+        searchString = searchString.replace('?', '_');
+        try {
+            List groups = _manager.find( getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".name like ?", searchString, String.class );
+            Collection output = new ArrayList();
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "search for " + searchString + " returns " + groups.size() + " groups.");
+            for (Iterator i = groups.iterator(); i.hasNext();) {
+                output.add(groupToHeader((Group)i.next()));
+            }
+            return output;
+        } catch (SQLException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception searching groups with pattern " + searchString, e);
+            throw new FindException(e.toString(), e);
+        }
+    }
+
     public Group findByPrimaryKey(String oid) throws FindException {
         try {
             Group out = (Group)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid) );

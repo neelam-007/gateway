@@ -8,6 +8,9 @@ import com.l7tech.logging.LogManager;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.logging.Level;
 
 /**
@@ -54,6 +57,26 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         } catch ( SQLException se ) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
             throw new FindException( se.toString(), se );
+        }
+    }
+
+    public Collection search(String searchString) throws FindException {
+        // replace wildcards to match stuff understood by mysql
+        // replace * with % and ? with _
+        // note. is this portable?
+        searchString = searchString.replace('*', '%');
+        searchString = searchString.replace('?', '_');
+        try {
+            List users = _manager.find(getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".login like ?", searchString, String.class);
+            Collection output = new ArrayList();
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "search for " + searchString + " returns " + users.size() + " users.");
+            for (Iterator i = users.iterator(); i.hasNext();) {
+                output.add(userToHeader((User)i.next()));
+            }
+            return output;
+        } catch (SQLException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "error searching users with pattern " + searchString, e);
+            throw new FindException(e.toString(), e);
         }
     }
 
