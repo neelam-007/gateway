@@ -126,7 +126,9 @@ public class CertManagerWindow extends JDialog {
 
         propertiesButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                //todo:
+
+                CertPropertiesWindow cpw = new CertPropertiesWindow(instance);
+                cpw.show();
             }
         });
 
