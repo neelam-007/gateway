@@ -19,7 +19,6 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
@@ -80,8 +79,12 @@ public class PolicyServlet extends HttpServlet {
 
         // See if it's actually a certificate download request
         if (getCert != null) {
+            if (nonce == null)
+                throw new ServletException("Unable to fulfil cert request: a nonce is required");
+            if (username != null)
+                throw new ServletException("Unable to fulfil cert request: a username is required");
             try {
-                doCertDownload(httpServletRequest, httpServletResponse, username, nonce);
+                doCertDownload(httpServletResponse, username, nonce);
             } catch (Exception e) {
                   throw new ServletException("Unable to fulfil cert request", e);
             }
@@ -159,8 +162,7 @@ public class PolicyServlet extends HttpServlet {
      * MD5(nonce . provId . cert . H(A1)), where H(A1) is the MD5 of "username:realm:password"
      * and provId is the ID of the identity provider that contained a matching username.
      */
-    private void doCertDownload(HttpServletRequest request, HttpServletResponse response,
-                                String username, String nonce)
+    private void doCertDownload(HttpServletResponse response, String username, String nonce)
             throws FindException, IOException, NoSuchAlgorithmException
     {
         // Find our certificate
@@ -175,8 +177,7 @@ public class PolicyServlet extends HttpServlet {
 
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
                 md5.reset();
-                if (nonce != null)
-                    md5.update(nonce.getBytes());
+                md5.update(nonce.getBytes());
                 md5.update(String.valueOf(info.idProvider).getBytes());
                 md5.update(cert);
                 md5.update(info.ha1.getBytes());
