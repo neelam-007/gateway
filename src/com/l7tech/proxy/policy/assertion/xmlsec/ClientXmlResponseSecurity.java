@@ -78,6 +78,9 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         if (SsgKeyStoreManager.getServerCert(ssg) == null)
             throw new ServerCertificateUntrustedException("Server cert is needed to check signatures, but has not yet been discovered");
 
+        log.info("According to policy, we're expecting a signed reply.  Will send nonce.");
+        request.setNonceRequired(true);
+
         // If the response will be encrypted, we'll need to ensure that there's a session open
         if (data.isEncryption()) {
             log.info("According to policy, we're expecting an encrypted reply.  Verifying session.");
@@ -88,7 +91,6 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             }
         }
 
-        request.setNonceRequired(true);
         return AssertionStatus.NONE;
     }
 
