@@ -1,7 +1,5 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.identity.internal.Country;
-
 import java.util.Collection;
 
 /**
