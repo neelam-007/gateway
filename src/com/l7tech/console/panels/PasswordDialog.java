@@ -2,6 +2,10 @@ package com.l7tech.console.panels;
 
 import com.l7tech.identity.User;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -53,15 +57,17 @@ public class PasswordDialog extends JDialog {
 
     private int MIN_PASSWORD_LENGTH = 6;
     private int MAX_PASSWORD_LENGTH = 32;
+    private EntityListener listener;
 
     /**
      * Create a new PasswordDialog
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
-    public PasswordDialog(Frame parent, User user) {
+    public PasswordDialog(Frame parent, User user, EntityListener l) {
         super(parent, true);
         this.user = user;
+        this.listener = l;
         initResources();
         initComponents();
         pack();
@@ -299,6 +305,13 @@ public class PasswordDialog extends JDialog {
             user.setPassword(new String(newPass));
             Registry.getDefault().getInternalUserManager().update(user);
             dispose();
+            if (listener !=null) {
+                EntityHeader eh = new EntityHeader();
+                eh.setOid(user.getOid());
+                eh.setName(user.getName());
+                eh.setType(EntityType.USER);
+                listener.entityUpdated(new EntityEvent(eh));
+            }
         } catch (Exception e) {
             log.log(Level.WARNING, "changePassword()", e);
             JOptionPane.showMessageDialog(null,

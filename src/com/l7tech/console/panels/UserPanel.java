@@ -3,6 +3,10 @@ package com.l7tech.console.panels;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityListenerAdapter;
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -102,16 +106,16 @@ public class UserPanel extends EntityEditorPanel {
             // Here is where we would use the node context to retrieve Panel content
             if (!(object instanceof EntityHeader)) {
                 throw new IllegalArgumentException("Invalid argument type: "
-                        + "\nExpected: EntityHeader"
-                        + "\nReceived: " + object.getClass().getName());
+                  + "\nExpected: EntityHeader"
+                  + "\nReceived: " + object.getClass().getName());
             }
 
             userHeader = (EntityHeader)object;
 
             if (!EntityType.USER.equals(userHeader.getType())) {
                 throw new IllegalArgumentException("Invalid argument type: "
-                        + "\nExpected: User "
-                        + "\nReceived: " + userHeader.getType());
+                  + "\nExpected: User "
+                  + "\nReceived: " + userHeader.getType());
             }
 
             boolean isNew = userHeader.getOid() == 0;
@@ -120,7 +124,7 @@ public class UserPanel extends EntityEditorPanel {
                 user.setName(userHeader.getName());
             } else {
                 user =
-                        Registry.getDefault().getInternalUserManager().findByPrimaryKey(userHeader.getStrId());
+                  Registry.getDefault().getInternalUserManager().findByPrimaryKey(userHeader.getStrId());
                 if (user == null) {
                     throw new RuntimeException("User missing " + userHeader.getOid());
                 }
@@ -152,7 +156,7 @@ public class UserPanel extends EntityEditorPanel {
      */
     private void layoutComponents() {
         // Set layout
-        if (user !=null)
+        if (user != null)
             this.setName(user.getName());
         this.setLayout(new GridBagLayout());
         this.setMaximumSize(new Dimension(380, 450));
@@ -160,10 +164,10 @@ public class UserPanel extends EntityEditorPanel {
 
         // Add the main panel
         add(getMainPanel(),
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(8, 8, 8, 8), 0, 0));
+          new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(8, 8, 8, 8), 0, 0));
     }
 
     /** Returns the mainPanel */
@@ -177,17 +181,17 @@ public class UserPanel extends EntityEditorPanel {
 
         // Add GroupTabbedPane
         mainPanel.add(getTabbedPane(),
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(0, 0, 0, 0), 0, 0));
 
         // Add buttonPanel
         mainPanel.add(getButtonPanel(),
-                new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(0, 0, 0, 0), 0, 0));
 
         // Return panel
         return mainPanel;
@@ -198,12 +202,12 @@ public class UserPanel extends EntityEditorPanel {
         // If tabbed pane not already created
         if (null != tabbedPane) return tabbedPane;
 
-            // Create tabbed pane
-            tabbedPane = new JTabbedPane();
+        // Create tabbed pane
+        tabbedPane = new JTabbedPane();
 
-            // Add all tabs
-            tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
-            tabbedPane.add(groupPanel, MEMBERSHIP_LABEL);
+        // Add all tabs
+        tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
+        tabbedPane.add(groupPanel, MEMBERSHIP_LABEL);
 
 
         // Return tabbed pane
@@ -215,86 +219,86 @@ public class UserPanel extends EntityEditorPanel {
         // If panel not already created
         if (detailsPanel != null) return detailsPanel;
 
-            detailsPanel = new JPanel();
-            detailsPanel.setLayout(new GridBagLayout());
+        detailsPanel = new JPanel();
+        detailsPanel.setLayout(new GridBagLayout());
 
-            detailsPanel.add(new JLabel(new ImageIcon(IconManager2.getInstance().getIcon(USER_ICON_RESOURCE))),
-                    new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.WEST,
-                            GridBagConstraints.NONE,
-                            new Insets(5, 10, 0, 0), 0, 0));
+        detailsPanel.add(new JLabel(new ImageIcon(IconManager2.getInstance().getIcon(USER_ICON_RESOURCE))),
+          new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(5, 10, 0, 0), 0, 0));
 
-            detailsPanel.add(getNameLabel(),
-                    new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.WEST,
-                            GridBagConstraints.NONE,
-                            new Insets(10, 15, 0, 0), 0, 0));
+        detailsPanel.add(getNameLabel(),
+          new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(10, 15, 0, 0), 0, 0));
 
-            detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-                    new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
-                            GridBagConstraints.WEST,
-                            GridBagConstraints.BOTH,
-                            new Insets(10, 10, 0, 10), 0, 0));
+        detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
+          new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.BOTH,
+            new Insets(10, 10, 0, 10), 0, 0));
 
-            detailsPanel.add(getFirstNameLabel(),
-                      new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-                              GridBagConstraints.WEST,
-                              GridBagConstraints.NONE,
-                              new Insets(10, 10, 0, 0), 0, 0));
+        detailsPanel.add(getFirstNameLabel(),
+          new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(10, 10, 0, 0), 0, 0));
 
-              detailsPanel.add(getFirstNameTextField(),
-                      new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-                              GridBagConstraints.WEST,
-                              GridBagConstraints.HORIZONTAL,
-                              new Insets(10, 15, 0, 10), 0, 0));
+        detailsPanel.add(getFirstNameTextField(),
+          new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(10, 15, 0, 10), 0, 0));
 
-            detailsPanel.add(getLastNameLabel(),
-                    new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.WEST,
-                            GridBagConstraints.NONE,
-                            new Insets(10, 10, 0, 0), 0, 0));
+        detailsPanel.add(getLastNameLabel(),
+          new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(10, 10, 0, 0), 0, 0));
 
-            detailsPanel.add(getLastNameTextField(),
-                    new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-                            GridBagConstraints.WEST,
-                            GridBagConstraints.HORIZONTAL,
-                            new Insets(10, 15, 0, 10), 0, 0));
+        detailsPanel.add(getLastNameTextField(),
+          new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(10, 15, 0, 10), 0, 0));
 
-            detailsPanel.add(getEmailLabel(),
-                         new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
-                                 GridBagConstraints.WEST,
-                                 GridBagConstraints.NONE,
-                                 new Insets(10, 10, 0, 0), 0, 0));
+        detailsPanel.add(getEmailLabel(),
+          new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(10, 10, 0, 0), 0, 0));
 
-            detailsPanel.add(getEmailTextField(),
-                         new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
-                                 GridBagConstraints.WEST,
-                                 GridBagConstraints.HORIZONTAL,
-                                 new Insets(10, 15, 0, 10), 0, 0));
+        detailsPanel.add(getEmailTextField(),
+          new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(10, 15, 0, 10), 0, 0));
 
-            detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-                    new GridBagConstraints(0, 11, 2, 1, 0.0, 0.0,
-                            GridBagConstraints.WEST,
-                            GridBagConstraints.BOTH,
-                            new Insets(15, 10, 0, 10), 0, 0));
+        detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
+          new GridBagConstraints(0, 11, 2, 1, 0.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.BOTH,
+            new Insets(15, 10, 0, 10), 0, 0));
 
-            detailsPanel.add(getChangePassButton(),
-                        new GridBagConstraints(1, 12, 1, 1, 0.0, 0.0,
-                                GridBagConstraints.EAST,
-                                GridBagConstraints.NONE,
-                                new Insets(15, 10, 0, 10), 0, 0));
+        detailsPanel.add(getChangePassButton(),
+          new GridBagConstraints(1, 12, 1, 1, 0.0, 0.0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(15, 10, 0, 10), 0, 0));
 
-            Component strut = Box.createVerticalStrut(8);
+        Component strut = Box.createVerticalStrut(8);
 
-            detailsPanel.add(strut,
-                    new GridBagConstraints(0, 13, 2, 1, 1.0, 1.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.BOTH,
-                            new Insets(10, 0, 0, 0), 0, 0));
+        detailsPanel.add(strut,
+          new GridBagConstraints(0, 13, 2, 1, 1.0, 1.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(10, 0, 0, 0), 0, 0));
 
-            Utilities.equalizeLabelSizes(new JLabel[]{
-                getLastNameLabel(),
-            });
+        Utilities.equalizeLabelSizes(new JLabel[]{
+            getLastNameLabel(),
+        });
 
         // Return panel
         return detailsPanel;
@@ -318,7 +322,7 @@ public class UserPanel extends EntityEditorPanel {
         // If label not already created
         if (firstNameLabel != null) return firstNameLabel;
 
-           // Create label
+        // Create label
         firstNameLabel = new JLabel("First Name:");
 
         // Return label
@@ -349,7 +353,7 @@ public class UserPanel extends EntityEditorPanel {
         // If label not already created
         if (lastNameLabel != null) return lastNameLabel;
 
-           // Create label
+        // Create label
         lastNameLabel = new JLabel("Last Name:");
 
 
@@ -381,7 +385,7 @@ public class UserPanel extends EntityEditorPanel {
         // If label not already created
         if (emailLabel != null) return emailLabel;
 
-           // Create label
+        // Create label
         emailLabel = new JLabel("Email:");
 
 
@@ -417,22 +421,22 @@ public class UserPanel extends EntityEditorPanel {
 
             // add components
             buttonPanel.add(hStrut,
-                    new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.BOTH,
-                            new Insets(0, 0, 0, 0), 0, 0));
+              new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.BOTH,
+                new Insets(0, 0, 0, 0), 0, 0));
 
             buttonPanel.add(getOKButton(),
-                    new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(5, 5, 5, 5), 0, 0));
+              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.NONE,
+                new Insets(5, 5, 5, 5), 0, 0));
 
             buttonPanel.add(getCancelButton(),
-                    new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(5, 5, 5, 5), 0, 0));
+              new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.NONE,
+                new Insets(5, 5, 5, 5), 0, 0));
 
             JButton buttons[] = new JButton[]
             {
@@ -444,9 +448,9 @@ public class UserPanel extends EntityEditorPanel {
         return buttonPanel;
     }
 
-            /** Returns okButton */
+    /** Returns okButton */
     private JButton getOKButton() {
-        // If button not already created
+// If button not already created
         if (null == okButton) {
             // Create button
             okButton = new JButton(OK_BUTTON);
@@ -470,7 +474,7 @@ public class UserPanel extends EntityEditorPanel {
             });
         }
 
-        // Return button
+// Return button
         return okButton;
     }
 
@@ -495,28 +499,43 @@ public class UserPanel extends EntityEditorPanel {
     }
 
     /** Create the Change password button */
-      private JButton getChangePassButton() {
+    private JButton getChangePassButton() {
         if (changePassButton == null) {
-          changePassButton = new JButton(CHANGE_PASSWORD_LABEL);
+            changePassButton = new JButton(CHANGE_PASSWORD_LABEL);
 
-          changePassButton.
-          addActionListener(new ActionListener() {
-                             public void actionPerformed(ActionEvent e) {
-                               new PasswordDialog(null, user).show();
-                               // Refresh the panel (since the agent's cert might have been revoked)
-                               try {
-                                   setData(
-                                     Registry.getDefault().getInternalUserManager().findByPrimaryKey(userHeader.getStrId()));
-                               } catch (Exception ex) {
-
-                               }
-                             }
-                           });
+            changePassButton.
+              addActionListener(new ActionListener() {
+                  public void actionPerformed(ActionEvent e) {
+                      new PasswordDialog(null, user, passwordChangeListener).show();
+                      // Refresh the panel (since the agent's cert might have been revoked)
+                  }
+              });
 
         }
         return changePassButton;
-      }
+    }
 
+    private EntityListener
+      passwordChangeListener = new EntityListenerAdapter() {
+          /**
+           * Fired when an set of children is updated.
+           * @param ev event describing the action
+           */
+          public void entityUpdated(EntityEvent ev) {
+              try {
+                  user =
+                    Registry.getDefault().getInternalUserManager().findByPrimaryKey(userHeader.getStrId());
+                  user = collectChanges();
+                  boolean b = formModified;
+                  setData(user);
+                  setModified(b);
+              } catch (Exception ex) {
+                 ErrorManager.getDefault().notify(Level.WARNING, ex, "Error retrieving the user "+userHeader.getStrId());
+              }
+
+          }
+
+      };
 
     /**
      * Populates the form from the user bean
@@ -570,7 +589,7 @@ public class UserPanel extends EntityEditorPanel {
                 Registry.getDefault().getInternalUserManager().update(user);
             } else {
                 long id =
-                        Registry.getDefault().getInternalUserManager().save(user);
+                  Registry.getDefault().getInternalUserManager().save(user);
                 userHeader.setOid(id);
             }
 
@@ -581,9 +600,9 @@ public class UserPanel extends EntityEditorPanel {
             msg.append("There was an error updating ");
             msg.append("User ").append(userHeader.getName()).append(".\n");
             JOptionPane.showMessageDialog(null,
-                    msg.toString(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+              msg.toString(),
+              "Error",
+              JOptionPane.ERROR_MESSAGE);
             log.log(Level.SEVERE, "Error updating User: " + e.toString());
             e.printStackTrace();
             result = false;
@@ -643,24 +662,24 @@ public class UserPanel extends EntityEditorPanel {
 
     // hierarchy listener
     private final
-            HierarchyListener hierarchyListener =
-            new HierarchyListener() {
-                /** Called when the hierarchy has been changed.*/
-                public void hierarchyChanged(HierarchyEvent e) {
-                    int eID = e.getID();
-                    long flags = e.getChangeFlags();
+    HierarchyListener hierarchyListener =
+      new HierarchyListener() {
+          /** Called when the hierarchy has been changed.*/
+          public void hierarchyChanged(HierarchyEvent e) {
+              int eID = e.getID();
+              long flags = e.getChangeFlags();
 
-                    if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
-                            ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
-                        if (UserPanel.this.isDisplayable()) {
-                            JDialog d = (JDialog)SwingUtilities.windowForComponent(UserPanel.this);
-                            if (d != null) {
-                                d.setTitle(userHeader.getName() + " Properties");
-                            }
-                        }
-                    }
-                }
-            };
+              if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
+                ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
+                  if (UserPanel.this.isDisplayable()) {
+                      JDialog d = (JDialog)SwingUtilities.windowForComponent(UserPanel.this);
+                      if (d != null) {
+                          d.setTitle(userHeader.getName() + " Properties");
+                      }
+                  }
+              }
+          }
+      };
 
 
 }
