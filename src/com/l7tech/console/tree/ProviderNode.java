@@ -48,6 +48,10 @@ public class ProviderNode extends EntityHeaderNode {
         FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
         options.enableDeleteAction();
         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        Object obj = getUserObject();
+        if (obj instanceof EntityHeader) {
+            options.setInitialProvider(((EntityHeader)obj).getOid());
+        }
         list.add(new FindIdentityAction(options));
         final NewUserAction newUserAction = new NewUserAction(this);
         final NewGroupAction newGroupAction = new NewGroupAction(this);
