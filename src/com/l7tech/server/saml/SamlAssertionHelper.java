@@ -87,6 +87,12 @@ public abstract class SamlAssertionHelper {
         }
     }
 
+    public Document createSignedAssertion() throws IOException, SAXException, SignatureException, CertificateException {
+        Document doc = createAssertion();
+        signAssertion(doc, signerInfo.getPrivate(), signerInfo.getCertificateChain());
+        return doc;
+    }
+
     /**
      * Appends a soap message with a digital signature of it's entire envelope.
      * <p/>
@@ -302,6 +308,44 @@ public abstract class SamlAssertionHelper {
         authStatement.setAuthenticationMethod(authMethod);
 
         return authStatement;
+    }
+
+    public static void signAssertion(final Document assertionDoc, PrivateKey signingKey,
+                                     X509Certificate[] signingCertChain) throws SignatureException {
+        TemplateGenerator template = new TemplateGenerator( assertionDoc, XSignature.SHA1,
+                                                            Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
+        final String id = assertionDoc.getDocumentElement().getAttribute(Constants.ATTR_ASSERTION_ID);
+        template.setPrefix("ds");
+        Reference ref = template.createReference("#" + id);
+        ref.addTransform(Transform.ENVELOPED);
+        ref.addTransform(Transform.C14N_EXCLUSIVE);
+        template.addReference(ref);
+
+        SignatureContext context = new SignatureContext();
+        context.setIDResolver(new IDResolver() {
+            public Element resolveID( Document document, String s ) {
+                if (id.equals(s))
+                    return assertionDoc.getDocumentElement();
+                else
+                    throw new IllegalArgumentException("I don't know how to find " + s);
+            }
+        });
+
+        final Element signatureElement = template.getSignatureElement();
+        assertionDoc.getDocumentElement().appendChild(signatureElement);
+        KeyInfo keyInfo = new KeyInfo();
+        KeyInfo.X509Data x509 = new KeyInfo.X509Data();
+        x509.setCertificate(signingCertChain[0]);
+        x509.setParameters(signingCertChain[0], false, false, true);
+        keyInfo.setX509Data(new KeyInfo.X509Data[] { x509 });
+
+        signatureElement.appendChild(keyInfo.getKeyInfoElement(assertionDoc));
+
+        try {
+            context.sign(signatureElement, signingKey);
+        } catch ( XSignatureException e ) {
+            throw new SignatureException(e.getMessage());
+        }
     }
 
     protected SignerInfo signerInfo;

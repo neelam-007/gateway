@@ -40,7 +40,6 @@ public class TokenServiceTest extends TestCase {
     }
 
     public void testTokenServiceClient() throws Exception {
-        final TokenServiceClient tsc = new TokenServiceClient();
         Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(TestDocuments.getDotNetServerCertificate(),
                                                                     TestDocuments.getDotNetServerPrivateKey(),
                                                                     TokenServiceClient.TOKENTYPE_SECURITYCONTEXT);
@@ -75,7 +74,6 @@ public class TokenServiceTest extends TestCase {
     }
 
     public void testTokenServiceClientSaml() throws Exception {
-        final TokenServiceClient tsc = new TokenServiceClient();
         Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(
                 TestDocuments.getDotNetServerCertificate(),
                 TestDocuments.getDotNetServerPrivateKey(),

@@ -148,14 +148,14 @@ public class TokenService {
         throws TokenServiceException, GeneralSecurityException
     {
         StringBuffer responseXml = new StringBuffer(WST_RST_RESPONSE_PREFIX);
-        responseXml.append(WST_RST_RESPONSE_INFIX);
         try {
             SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
             if (clientAddress != null) options.setClientAddress(InetAddress.getByName(clientAddress));
             options.setSignAssertion(true);
             HolderOfKeyHelper hok = new HolderOfKeyHelper(null, options, creds, KeystoreUtils.getInstance().getSignerInfo());
-            Element assertionElement = hok.createAssertion().getDocumentElement();
-            responseXml.append(XmlUtil.nodeToString(assertionElement));
+            Document signedAssertionDoc = hok.createSignedAssertion(); // TODO use a better ID!
+            responseXml.append(XmlUtil.nodeToString(signedAssertionDoc));
+            responseXml.append(WST_RST_RESPONSE_INFIX);
             responseXml.append(WST_RST_RESPONSE_SUFFIX);
             Document response = XmlUtil.stringToDocument(responseXml.toString());
             return prepareSignedResponse(response);
@@ -428,8 +428,8 @@ public class TokenService {
                                                                         "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
                                         "<wst:RequestedSecurityToken>";
 
-    private final String WST_RST_RESPONSE_SUFFIX = "</wst:RequestSecurityTokenResponse>" +
+    private static final String WST_RST_RESPONSE_INFIX = "</wst:RequestedSecurityToken>";
+    private static final String WST_RST_RESPONSE_SUFFIX = "</wst:RequestSecurityTokenResponse>" +
                                                 "</soap:Body>" +
                                             "</soap:Envelope>";
-    private static final String WST_RST_RESPONSE_INFIX = "</wst:RequestedSecurityToken>";
 }

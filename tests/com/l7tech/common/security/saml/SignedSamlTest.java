@@ -1,6 +1,5 @@
 package com.l7tech.common.security.saml;
 
-import com.ibm.xml.dsig.*;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -11,13 +10,13 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.server.saml.HolderOfKeyHelper;
 import com.l7tech.server.saml.SamlAssertionGenerator;
+import com.l7tech.server.saml.SamlAssertionHelper;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.xerces.dom.DocumentImpl;
 import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
 import java.net.InetAddress;
@@ -105,35 +104,7 @@ public class SignedSamlTest extends TestCase {
         String s2 = XmlUtil.nodeToFormattedString(assertionDoc);
         System.out.println("Before signing: " + s2);
 
-        TemplateGenerator template = new TemplateGenerator( assertionDoc, XSignature.SHA1,
-                                                            Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
-        template.setPrefix("ds");
-        Reference ref = template.createReference("#" + ASSERTION_ID);
-        ref.addTransform(Transform.ENVELOPED);
-        ref.addTransform(Transform.C14N_EXCLUSIVE);
-        template.addReference(ref);
-
-        SignatureContext context = new SignatureContext();
-        context.setIDResolver(new IDResolver() {
-            public Element resolveID( Document document, String s ) {
-                if (ASSERTION_ID.equals(s))
-                    return assertionDoc.getDocumentElement();
-                else
-                    throw new IllegalArgumentException("I don't know how to find " + s);
-            }
-        });
-
-        final Element signatureElement = template.getSignatureElement();
-        assertionDoc.getDocumentElement().appendChild(signatureElement);
-        KeyInfo keyInfo = new KeyInfo();
-        KeyInfo.X509Data x509 = new KeyInfo.X509Data();
-        x509.setCertificate(caCertChain[0]);
-        x509.setParameters(caCertChain[0], false, false, true);
-        keyInfo.setX509Data(new KeyInfo.X509Data[] { x509 });
-
-        signatureElement.appendChild(keyInfo.getKeyInfoElement(assertionDoc));
-
-        context.sign(signatureElement, caPrivateKey);
+        SamlAssertionHelper.signAssertion(assertionDoc, caPrivateKey, caCertChain);
 
         String s3 = XmlUtil.nodeToFormattedString(assertionDoc);
         System.out.println("After signing: " + s3);
@@ -154,6 +125,4 @@ public class SignedSamlTest extends TestCase {
     private PrivateKey clientPrivateKey;
     private PublicKey clientPublicKey;
     private X509Certificate[] clientCertChain;
-
-    private static final String ASSERTION_ID = "mySamlAssertion";
 }
