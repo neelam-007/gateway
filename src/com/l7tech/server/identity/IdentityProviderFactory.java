@@ -231,6 +231,10 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
      * init-method). The bean will already be populated with property values.
      * The returned bean instance may be a wrapper around the original.
      *
+     * This post processor finishes the construction of the identity povider by creating
+     * and attaching corresponding user and grop managers.
+
+     *
      * @param bean     the new bean instance
      * @param beanName the beanName of the bean
      * @return the bean instance to use, either the original or a wrapped one
@@ -266,8 +270,6 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
      * Apply this BeanPostProcessor to the given new bean instance <i>after</i> any bean
      * initialization callbacks (like InitializingBean's afterPropertiesSet or a custom
      * init-method).
-     * This post processor finishes the construction of the identity povider by creating
-     * and attaching corresponding user and grop managers.
      *
      * @param bean     the new bean instance
      * @param beanName the beanName of the bean
