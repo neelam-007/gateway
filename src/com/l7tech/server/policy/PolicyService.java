@@ -56,6 +56,9 @@ import java.io.IOException;
 public class PolicyService {
 
     interface PolicyGetter {
+        /**
+         * @return the policy or null if service does not exist
+         */
         Assertion getPolicy(String serviceId);
     }
 
