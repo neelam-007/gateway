@@ -109,7 +109,7 @@ public class MultipartUtil {
         return new HeaderValue(name, value, params);
     }
 
-    static private String unquote( String value ) throws IOException {
+    static public String unquote( String value ) throws IOException {
         if (value.startsWith("\"")) {
             if (value.endsWith("\"")) {
                 value = value.substring(1,value.length()-1);
