@@ -12,7 +12,6 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
-import javax.swing.Timer;
 import javax.swing.table.*;
 import java.util.*;
 import java.awt.*;
@@ -30,6 +29,31 @@ import java.text.SimpleDateFormat;
 
 public class ClusterStatusWindow extends JFrame {
 
+    private javax.swing.JLabel serviceStatTitle = null;
+    private javax.swing.JLabel clusterStatusTitle = null;
+    private javax.swing.JLabel updateTimeStamp = null;
+    private javax.swing.JLabel clusterConnectionStatus = null;
+    private javax.swing.JPanel messagePane = null;
+    private javax.swing.JPanel frameContentPane = null;
+    private javax.swing.JPanel mainPane = null;
+    private javax.swing.JPanel serviceStatPane = null;
+    private javax.swing.JPanel clusterStatusPane = null;
+    private javax.swing.JSplitPane mainSplitPane = null;
+    private javax.swing.JScrollPane clusterStatusScrollPane = null;
+    private javax.swing.JTable clusterStatusTable = null;
+    private javax.swing.JMenuBar clusterWindowMenuBar = null;
+    private javax.swing.JMenu fileMenu = null;
+    private javax.swing.JMenu helpMenu = null;
+    private javax.swing.JMenuItem exitMenuItem = null;
+    private javax.swing.JMenuItem helpTopicsMenuItem = null;
+    private ClusterStatusTableSorter clusterStatusTableSorter = null;
+    private StatisticsPanel statisticsPane = null;
+    private javax.swing.Timer statusRefreshTimer = null;
+    private ClusterStatusAdmin clusterStatusAdmin = null;
+    private ServiceAdmin serviceManager = null;
+    private Hashtable currentNodeList = null;
+    private Vector clusterRequestCounterCache = null;
+
     private static final int MAX = 100;
     private static final int MIN = 0;
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
@@ -37,6 +61,11 @@ public class ClusterStatusWindow extends JFrame {
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
 
+    /**
+     * Constructor
+     *
+     * @param title  The window title
+     */
     public ClusterStatusWindow(final String title) {
         super(title);
         ImageIcon imageIcon =
@@ -57,15 +86,18 @@ public class ClusterStatusWindow extends JFrame {
     }
 
     /**
-     * @param event ActionEvent
-     * @see ActionEvent for details
+     * Clean up the resources of the winodw when the user exits the window
      */
-    private void exitMenuEventHandler(ActionEvent event) {
+    private void exitMenuEventHandler() {
         getStatusRefreshTimer().stop();
         this.dispose();
     }
 
-
+    /**
+     * Return the frameContentPane property value
+     *
+     * @return  JPanel
+     */
     private JPanel getJFrameContentPane() {
         if (frameContentPane == null) {
             frameContentPane = new JPanel();
@@ -76,6 +108,11 @@ public class ClusterStatusWindow extends JFrame {
         return frameContentPane;
     }
 
+    /**
+     * Return the clusterWindowMenuBar property value
+     *
+     * @return  JMenubar
+     */
     private JMenuBar getClusterWindowMenuBar() {
         if (clusterWindowMenuBar == null) {
             clusterWindowMenuBar = new JMenuBar();
@@ -85,6 +122,11 @@ public class ClusterStatusWindow extends JFrame {
         return clusterWindowMenuBar;
     }
 
+    /**
+     * Return fileMenu property value
+     *
+     * @return  JMenu
+     */
     private JMenu getFileMenu() {
         if (fileMenu == null) {
             fileMenu = new JMenu();
@@ -96,6 +138,11 @@ public class ClusterStatusWindow extends JFrame {
         return fileMenu;
     }
 
+    /**
+     * Return helpMenu propery value
+     *
+     * @return  JMenu
+     */
     private JMenu getHelpMenu() {
         if (helpMenu != null) return helpMenu;
 
@@ -108,6 +155,11 @@ public class ClusterStatusWindow extends JFrame {
         return helpMenu;
     }
 
+    /**
+     * Return exitMenuItem property value
+     *
+     * @return  JMenuItem
+     */
     private JMenuItem getExitMenuItem() {
         if (exitMenuItem != null) return exitMenuItem;
 
@@ -118,14 +170,18 @@ public class ClusterStatusWindow extends JFrame {
         exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         exitMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                exitMenuEventHandler(e);
+                exitMenuEventHandler();
             }
         });
 
         return exitMenuItem;
     }
 
-
+    /**
+     * Return mainPane property value
+     *
+     * @return  JPanel
+     */
     private JPanel getMainPane() {
         if (mainPane != null) return mainPane;
 
@@ -177,6 +233,11 @@ public class ClusterStatusWindow extends JFrame {
         return mainPane;
     }
 
+    /**
+     * Return messagePane property value
+     *
+     * @return  JPanel
+     */
     private JPanel getMessagePane(){
 
         if(messagePane != null) return messagePane;
@@ -194,6 +255,11 @@ public class ClusterStatusWindow extends JFrame {
         return messagePane;
     }
 
+    /**
+     * Return clusterConnectionStatus property value
+     *
+     * @return  JLabel
+     */
     private JLabel getClusterConnectionStatusLabel(){
         if(clusterConnectionStatus != null) return clusterConnectionStatus;
 
@@ -203,6 +269,11 @@ public class ClusterStatusWindow extends JFrame {
         return clusterConnectionStatus;
     }
 
+    /**
+     * Return updateTimeStamp property value
+     *
+     * @return  JLabel
+     */
     private JLabel getLastUpdateLabel(){
         if(updateTimeStamp != null) return updateTimeStamp;
 
@@ -213,6 +284,11 @@ public class ClusterStatusWindow extends JFrame {
         return updateTimeStamp;
     }
 
+    /**
+     * Return clusterStatusTable property value
+     *
+     * @return  JTable
+     */
     private JTable getClusterStatusTable(){
 
         if(clusterStatusTable != null) return clusterStatusTable;
@@ -296,7 +372,11 @@ public class ClusterStatusWindow extends JFrame {
         return clusterStatusTable;
     }
 
-
+    /**
+     * Return helpTopicsMenuItem property value
+     *
+     * @return  JMenuItem
+     */
     private JMenuItem getHelpTopicsMenuItem() {
         if (helpTopicsMenuItem != null) return helpTopicsMenuItem;
 
@@ -314,6 +394,11 @@ public class ClusterStatusWindow extends JFrame {
         return helpTopicsMenuItem;
     }
 
+    /**
+     * Return statisticsPane property value
+     *
+     * @return  StatisticsPanel
+     */
     private StatisticsPanel getStatisticsPane() {
         if (statisticsPane != null) return statisticsPane;
 
@@ -321,6 +406,11 @@ public class ClusterStatusWindow extends JFrame {
         return statisticsPane;
     }
 
+    /**
+     * Return clusterStatusTableSorter property value
+     *
+     * @return  ClusterStatusTableSorter
+     */
     private ClusterStatusTableSorter getClusterStatusTableModel() {
 
         if (clusterStatusTableSorter != null) {
@@ -339,6 +429,9 @@ public class ClusterStatusWindow extends JFrame {
 
     }
 
+    /**
+     * Initialize the object references of the remote services
+     */
     private void initAdminConnection() {
         serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
         if (serviceManager == null) throw new IllegalStateException("Cannot obtain ServiceManager remote reference");
@@ -348,8 +441,10 @@ public class ClusterStatusWindow extends JFrame {
 
     }
 
-    // Add a mouse listener to the Table to trigger a table sort
-    // when a column heading is clicked in the JTable.
+    /**
+     *  Add a mouse listener to the Table to trigger a table sort
+     *  when a column heading is clicked in the JTable.
+     */
     public void addMouseListenerToHeaderInTable(JTable table) {
 
         final JTable tableView = table;
@@ -371,6 +466,12 @@ public class ClusterStatusWindow extends JFrame {
         th.addMouseListener(listMouseListener);
     }
 
+    /**
+     * Convert the server uptime from milliseconds to String
+     *
+     * @param uptime  Server uptime in milliseconds
+     * @return String  The string representation of the uptime
+     */
     private String convertUptimeToString(long uptime) {
 
         if (uptime == 0) return new String("0 mins");
@@ -400,6 +501,11 @@ public class ClusterStatusWindow extends JFrame {
         return uptimeString;
     }
 
+    /**
+     * Prepare the cluster status data for displaying on the cluster status window
+     *
+     * @return Vector  The list of node status of every gateways in the cluster.
+     */
     private Vector prepareClusterStatusData() {
 
         Vector cs = new Vector();
@@ -438,7 +544,11 @@ public class ClusterStatusWindow extends JFrame {
         return cs;
     }
 
-
+    /**
+     * Update the total request count for the cluster
+     *
+     * @param newCount  The new value of the total request count
+     */
     private void updateClusterRequestCounterCache(long newCount) {
 
         if (clusterRequestCounterCache.size() <= GatewayStatus.NUMBER_OF_SAMPLE_PER_MINUTE) {
@@ -449,6 +559,11 @@ public class ClusterStatusWindow extends JFrame {
         }
     }
 
+    /**
+     * Return the total request count of the cluster
+     *
+     * @return long  The total request count.
+     */
     private long getClusterRequestCount() {
 
         long totalCount = 0;
@@ -463,7 +578,11 @@ public class ClusterStatusWindow extends JFrame {
         return totalCount;
     }
 
-
+    /**
+     * Create a refresh timer for retrieving the cluster status periodically.
+     *
+     * @return  Timer  The refresh timer
+     */
     private javax.swing.Timer getStatusRefreshTimer() {
 
         if (statusRefreshTimer != null) return statusRefreshTimer;
@@ -478,6 +597,9 @@ public class ClusterStatusWindow extends JFrame {
         return statusRefreshTimer;
     }
 
+    /**
+     * This function creates a worker thread to perform the status retrieval from the cluster
+     */
     public void refreshStatus() {
 
         getStatusRefreshTimer().stop();
@@ -517,11 +639,17 @@ public class ClusterStatusWindow extends JFrame {
         statsWorker.start();
     }
 
+    /**
+     *  Clean up the resources of the cluster status window when the window is closed.
+     */
     public void dispose() {
         getStatusRefreshTimer().stop();
         super.dispose();
     }
 
+    /**
+     * Initialize the resources when the connection to the cluster is established.
+     */
     public void onConnect() {
         initAdminConnection();
         initCaches();
@@ -529,6 +657,9 @@ public class ClusterStatusWindow extends JFrame {
         getStatusRefreshTimer().start();
     }
 
+    /**
+     * Clean up the resources when the connection to the cluster went down.
+     */
     public void onDisconnect() {
         getClusterConnectionStatusLabel().setText("      Error: Connection to the gateway cluster is down.");
         getClusterConnectionStatusLabel().setForeground(Color.red);
@@ -539,11 +670,17 @@ public class ClusterStatusWindow extends JFrame {
         clusterStatusAdmin = null;
     }
 
+    /**
+     * Initialize the caches.
+     */
     private void initCaches() {
         currentNodeList = new Hashtable();
         clusterRequestCounterCache = new Vector();
     }
 
+    /**
+     * Set node status to unknown.
+     */
     public void setNodeStatusUnknown(){
         Vector cs = new Vector();
 
@@ -558,7 +695,9 @@ public class ClusterStatusWindow extends JFrame {
         getClusterStatusTableModel().fireTableDataChanged();
     }
 
-    // This customized renderer can render objects of the type TextandIcon
+    /**
+     *  This customized renderer can render objects of the type TextandIcon
+     */
     TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
@@ -591,33 +730,6 @@ public class ClusterStatusWindow extends JFrame {
             return this;
         }
     };
-
-    private javax.swing.JLabel serviceStatTitle;
-    private javax.swing.JLabel clusterStatusTitle;
-    private javax.swing.JLabel updateTimeStamp;
-    private javax.swing.JLabel clusterConnectionStatus;
-    private javax.swing.JPanel messagePane;
-    private javax.swing.JPanel frameContentPane;
-    private javax.swing.JPanel mainPane;
-    private javax.swing.JPanel serviceStatPane;
-    private javax.swing.JPanel clusterStatusPane;
-    private javax.swing.JSplitPane mainSplitPane;
-    private javax.swing.JScrollPane clusterStatusScrollPane;
-    private javax.swing.JTable clusterStatusTable;
-    private javax.swing.JMenuBar clusterWindowMenuBar;
-    private javax.swing.JMenu fileMenu;
-    private javax.swing.JMenu helpMenu;
-    private javax.swing.JMenuItem exitMenuItem;
-    private javax.swing.JMenuItem helpTopicsMenuItem;
-
-    private ClusterStatusTableSorter clusterStatusTableSorter = null;
-    private StatisticsPanel statisticsPane;
-    private Vector clusterRequestCounterCache = new Vector();
-    private javax.swing.Timer statusRefreshTimer;
-    private ClusterStatusAdmin clusterStatusAdmin;
-    private ServiceAdmin serviceManager;
-    private Hashtable currentNodeList;
-
 
 }
 

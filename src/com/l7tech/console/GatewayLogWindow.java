@@ -17,13 +17,29 @@ import java.util.ResourceBundle;
  *
  * $Id$
  */
+
 public class GatewayLogWindow extends JFrame {
+
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
+    private javax.swing.JLabel gatewayLogTitle = null;
+    private javax.swing.JPanel gatewayLogPane = null;
+    private javax.swing.JPanel mainPane = null;
+    private javax.swing.JMenuBar clusterWindowMenuBar = null;
+    private javax.swing.JMenu fileMenu = null;
+    private javax.swing.JMenu helpMenu = null;
+    private javax.swing.JMenuItem exitMenuItem = null;
+    private javax.swing.JMenuItem helpTopicsMenuItem = null;
+    private JPanel frameContentPane = null;
+    private LogPanel logPane = null;
     private static
             ResourceBundle resapplication =
             java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
-   // private final ClassLoader cl = getClass().getClassLoader();
 
+    /**
+     * Constructor
+     *
+     * @param title  The window title
+     */
     public GatewayLogWindow(final String title) {
         super(title);
         ImageIcon imageIcon =
@@ -38,7 +54,7 @@ public class GatewayLogWindow extends JFrame {
         getExitMenuItem().
                 addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        exitMenuEventHandler(e);
+                        exitMenuEventHandler();
                     }
                 });
 
@@ -57,35 +73,46 @@ public class GatewayLogWindow extends JFrame {
     }
 
     /**
-     * @param event ActionEvent
-     * @see ActionEvent for details
+     * Clean up the resources of the window when the user exits the window.
      */
-    private void exitMenuEventHandler(ActionEvent event) {
-
-        this.dispose();
+    private void exitMenuEventHandler() {
+        dispose();
     }
 
+    /**
+     * Return frameContentPane property value
+     *
+     * @return  JPanel
+     */
     private JPanel getJFrameContentPane() {
         if (frameContentPane == null) {
             frameContentPane = new JPanel();
             frameContentPane.setPreferredSize(new Dimension(800, 600));
             frameContentPane.setLayout(new BorderLayout());
-            //getJFrameContentPane().add(getToolBarPane(), "North");
             getJFrameContentPane().add(getMainPane(), "Center");
         }
         return frameContentPane;
     }
 
+    /**
+     * Return clusterWindowMenuBar property value
+     *
+     * @return  JMenuBar
+     */
     private JMenuBar getClusterWindowMenuBar() {
         if (clusterWindowMenuBar == null) {
             clusterWindowMenuBar = new JMenuBar();
             clusterWindowMenuBar.add(getFileMenu());
-           // clusterWindowMenuBar.add(getViewMenu());
             clusterWindowMenuBar.add(getHelpMenu());
         }
         return clusterWindowMenuBar;
     }
 
+    /**
+     * Return fileMenu property value
+     *
+     * @return  JMenu
+     */
     private JMenu getFileMenu() {
         if (fileMenu == null) {
             fileMenu = new JMenu();
@@ -97,6 +124,11 @@ public class GatewayLogWindow extends JFrame {
         return fileMenu;
     }
 
+    /**
+     * Return helpMenu property value
+     *
+     * @return  JMenu
+     */
     private JMenu getHelpMenu() {
         if (helpMenu != null) return helpMenu;
 
@@ -109,17 +141,27 @@ public class GatewayLogWindow extends JFrame {
         return helpMenu;
     }
 
+    /**
+     * Return helpTopicsMenuItem property value
+     *
+     * @return  JMenuItem
+     */
     private JMenuItem getHelpTopicsMenuItem() {
-         if (helpTopicsMenuItem == null) {
-             helpTopicsMenuItem = new JMenuItem();
-             helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text"));
-             int mnemonic = helpTopicsMenuItem.getText().toCharArray()[0];
-             helpTopicsMenuItem.setMnemonic(mnemonic);
-             helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
-         }
-         return helpTopicsMenuItem;
-     }
+        if (helpTopicsMenuItem == null) {
+            helpTopicsMenuItem = new JMenuItem();
+            helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text"));
+            int mnemonic = helpTopicsMenuItem.getText().toCharArray()[0];
+            helpTopicsMenuItem.setMnemonic(mnemonic);
+            helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
+        }
+        return helpTopicsMenuItem;
+    }
 
+    /**
+     * Return exitMenuItem property value
+     *
+     * @return  JMenuItem
+     */
     private JMenuItem getExitMenuItem() {
         if (exitMenuItem == null) {
             exitMenuItem = new JMenuItem();
@@ -131,6 +173,11 @@ public class GatewayLogWindow extends JFrame {
         return exitMenuItem;
     }
 
+    /**
+     * Return mainPane property value
+     *
+     * @return  JPanel
+     */
     private JPanel getMainPane() {
         if (mainPane != null) return mainPane;
 
@@ -155,38 +202,30 @@ public class GatewayLogWindow extends JFrame {
         return mainPane;
     }
 
-
+    /**
+     * Return logPane property value
+     *
+     * @return  LogPanel
+     */
     public LogPanel getLogPane() {
         if (logPane != null) return logPane;
 
         logPane = new LogPanel();
         return logPane;
-
     }
 
-    public void dispose() {
-        super.dispose();
-    }
-
+    /**
+     * Intialization when the connection to the server is established.
+     */
     public void onConnect() {
         getLogPane().onConnect();
     }
 
+    /**
+     * Clean up the resources when the connection to the server went down.
+     */
     public void onDisconnect() {
         getLogPane().onDisconnect();
     }
-
-    private javax.swing.JLabel gatewayLogTitle;
-    private javax.swing.JPanel gatewayLogPane;
-    private javax.swing.JPanel mainPane;
-
-    private javax.swing.JMenuBar clusterWindowMenuBar;
-    private javax.swing.JMenu fileMenu;
-
-    private javax.swing.JMenu helpMenu;
-    private javax.swing.JMenuItem exitMenuItem;
-    private javax.swing.JMenuItem helpTopicsMenuItem;
-    private JPanel frameContentPane;
-    private LogPanel logPane;
 
 }
