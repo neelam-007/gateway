@@ -80,7 +80,7 @@ public class SessionManager {
         }
     }
 
-    protected SecureRandom getRand() {
+    public SecureRandom getRand() {
         if (rand == null)
             rand = new SecureRandom();
         return rand;
