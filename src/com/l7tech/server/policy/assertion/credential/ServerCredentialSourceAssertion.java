@@ -66,7 +66,8 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
             } else {
                 response.addResult( new AssertionResult( _data, request, status, cfe.getMessage() ) );
                 challenge( request, response );
-                _log.log(Level.INFO, cfe.getMessage(), cfe);
+                // Suppress exception trace by omitting exception argument
+                _log.info( cfe.getMessage() );
                 if ( status == AssertionStatus.AUTH_REQUIRED )
                     response.setAuthenticationMissing(true);
                 else
