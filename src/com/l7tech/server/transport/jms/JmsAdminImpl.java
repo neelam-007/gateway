@@ -33,16 +33,16 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
     }
 
     public JmsProvider[] getProviderList() throws RemoteException, FindException {
-        return (JmsProvider[])getJmsManager().findAllProviders().toArray(new JmsProvider[0]);
+        return (JmsProvider[])getConnectionManager().findAllProviders().toArray(new JmsProvider[0]);
     }
 
     public JmsConnection[] findAllConnections() throws RemoteException, FindException {
-        Collection found = getJmsManager().findAll();
+        Collection found = getConnectionManager().findAll();
         if ( found == null || found.size() < 1 ) return new JmsConnection[0];
 
         for (Iterator i = found.iterator(); i.hasNext();) {
             EntityHeader entityHeader = (EntityHeader) i.next();
-            JmsConnection conn = getJmsManager().findConnectionByPrimaryKey( entityHeader.getOid() );
+            JmsConnection conn = getConnectionManager().findConnectionByPrimaryKey( entityHeader.getOid() );
             found.add( conn );
         }
 
@@ -50,11 +50,11 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
     }
 
     public JmsConnection findConnectionByPrimaryKey( long oid ) throws RemoteException, FindException {
-        return getJmsManager().findConnectionByPrimaryKey( oid );
+        return getConnectionManager().findConnectionByPrimaryKey( oid );
     }
 
     public EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException {
-        Collection endpoints = getJmsManager().findMessageSourceEndpoints();
+        Collection endpoints = getEndpointManager().findMessageSourceEndpoints();
         List list = new ArrayList();
         for ( Iterator i = endpoints.iterator(); i.hasNext(); ) {
             JmsEndpoint endpoint = (JmsEndpoint) i.next();
@@ -67,14 +67,14 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         _logger.info( "Saving monitored endpoint list" );
         HibernatePersistenceContext context = null;
         try {
-            final JmsManager manager = getJmsManager();
+            final JmsEndpointManager endManager = getEndpointManager();
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             context.beginTransaction();
 
             // TODO make us smart! This algorithm is slow!
 
             // Stop all endpoints that were previously message sources that are no longer
-            Collection oldSourceEnds = manager.findMessageSourceEndpoints();
+            Collection oldSourceEnds = endManager.findMessageSourceEndpoints();
             for ( Iterator i = oldSourceEnds.iterator(); i.hasNext(); ) {
                 final JmsEndpoint oldSourceEndpoint = (JmsEndpoint) i.next();
                 boolean wasMessageSource = false;
@@ -84,29 +84,15 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
                 }
                 if ( !wasMessageSource ) {
                     oldSourceEndpoint.setMessageSource( false );
-                    context.registerTransactionListener( new TransactionListener() {
-                        public void postCommit() {
-                            manager.fireChanged(oldSourceEndpoint, false);
-                        }
-
-                        public void postRollback() { }
-                    });
                 }
             }
 
             // Start all endpoints that are newly message sources
             for ( int i = 0; i < newSourceOids.length; i++ ) {
                 long oid = newSourceOids[i];
-                final JmsEndpoint oldEndpoint = manager.findEndpointByPrimaryKey( oid );
+                final JmsEndpoint oldEndpoint = endManager.findByPrimaryKey( oid );
                 if ( oldEndpoint != null && !oldEndpoint.isMessageSource() ) {
                     oldEndpoint.setMessageSource(true);
-                    context.registerTransactionListener( new TransactionListener() {
-                        public void postCommit() {
-                            manager.fireChanged(oldEndpoint, false);
-                        }
-
-                        public void postRollback() { }
-                    });
                 }
             }
 
@@ -124,7 +110,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
                                                                   SaveException, VersionException {
         HibernatePersistenceContext context = null;
         try {
-            JmsManager manager = getJmsManager();
+            JmsConnectionManager manager = getConnectionManager();
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             context.beginTransaction();
 
@@ -149,15 +135,15 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
                                                             SaveException, VersionException {
                 HibernatePersistenceContext context = null;
         try {
-            JmsManager manager = getJmsManager();
+            JmsEndpointManager endManager = getEndpointManager();
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             context.beginTransaction();
 
             long oid = endpoint.getOid();
             if ( oid == JmsConnection.DEFAULT_OID )
-                oid = manager.save( endpoint );
+                oid = endManager.save( endpoint );
             else
-                manager.update( endpoint );
+                endManager.update( endpoint );
 
             context.commitTransaction();
             return oid;
@@ -173,12 +159,13 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
     public void deleteEndpoint( long endpointOid ) throws RemoteException, FindException, DeleteException {
         HibernatePersistenceContext context = null;
         try {
-            JmsManager manager = getJmsManager();
+            JmsEndpointManager endManager = getEndpointManager();
+
             context = (HibernatePersistenceContext) PersistenceContext.getCurrent();
             context.beginTransaction();
 
-            JmsEndpoint conn = manager.findEndpointByPrimaryKey( endpointOid );
-            manager.delete( conn );
+            JmsEndpoint end = endManager.findByPrimaryKey( endpointOid );
+            endManager.delete( end );
             context.commitTransaction();
         } catch ( SQLException e ) {
             throw new DeleteException( e.toString(), e );
@@ -192,7 +179,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
     public void deleteConnection( long connectionOid ) throws RemoteException, FindException, DeleteException {
         HibernatePersistenceContext context = null;
         try {
-            JmsManager manager = getJmsManager();
+            JmsConnectionManager manager = getConnectionManager();
             context = (HibernatePersistenceContext) PersistenceContext.getCurrent();
             context.beginTransaction();
 
@@ -209,11 +196,15 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
     }
 
     public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws RemoteException, FindException {
-        return getJmsManager().findEndpointsForConnection( connectionOid );
+        return getEndpointManager().findEndpointsForConnection( connectionOid );
     }
 
-    private JmsManager getJmsManager() {
-        return (JmsManager)Locator.getDefault().lookup(JmsManager.class);
+    private JmsConnectionManager getConnectionManager() {
+        return (JmsConnectionManager)Locator.getDefault().lookup(JmsConnectionManager.class);
+    }
+
+    private JmsEndpointManager getEndpointManager() {
+        return (JmsEndpointManager)Locator.getDefault().lookup(JmsEndpointManager.class);
     }
 
     private Logger _logger = LogManager.getInstance().getSystemLogger();

@@ -27,9 +27,10 @@ import java.util.logging.Level;
  */
 public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener {
     public JmsBootProcess() {
-        _manager = (JmsManager)Locator.getDefault().lookup( JmsManager.class );
-        if ( _manager == null ) {
-            _logger.severe( "Couldn't find JmsManager! JMS functionality will be disabled!" );
+        _connectionManager = (JmsConnectionManager)Locator.getDefault().lookup( JmsConnectionManager.class );
+        _endpointManager = (JmsEndpointManager)Locator.getDefault().lookup( JmsEndpointManager.class );
+        if ( _connectionManager == null || _endpointManager == null ) {
+            _logger.severe( "Couldn't find JMS Managers! JMS functionality will be disabled!" );
             _valid = false;
         } else {
             _valid = true;
@@ -43,13 +44,12 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
     public void init(ComponentConfig config) throws LifecycleException {
         if ( !_valid ) return;
         if (_booted) throw new LifecycleException("Can't boot JmsBootProcess twice!");
-        _manager.addCrudListener(this);
 
         try {
-            Collection endpoints = _manager.findMessageSourceEndpoints();
+            Collection endpoints = _endpointManager.findMessageSourceEndpoints();
             for (Iterator i = endpoints.iterator(); i.hasNext();) {
                 JmsEndpoint requestEnd = (JmsEndpoint)i.next();
-                JmsConnection conn = _manager.findConnectionByPrimaryKey( requestEnd.getConnectionOid() );
+                JmsConnection conn = _connectionManager.findConnectionByPrimaryKey( requestEnd.getConnectionOid() );
 
                 _logger.info("Initializing JMS receiver for '" + conn.getName() + "/" + requestEnd.getName() + "'");
                 JmsReceiver receiver = makeReceiver(conn, requestEnd);
@@ -57,7 +57,6 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
                 init(receiver);
                 _receivers.add(receiver);
             }
-
 
             _booted = true;
         } catch (FindException e) {
@@ -175,10 +174,10 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
         }
 
         try {
-            EntityHeader[] endpoints = _manager.findEndpointHeadersForConnection( updatedConnection.getOid() );
+            EntityHeader[] endpoints = _endpointManager.findEndpointHeadersForConnection( updatedConnection.getOid() );
             for ( int i = 0; i < endpoints.length; i++ ) {
                 EntityHeader header = endpoints[i];
-                JmsEndpoint endpoint = _manager.findEndpointByPrimaryKey( header.getOid() );
+                JmsEndpoint endpoint = _endpointManager.findByPrimaryKey( header.getOid() );
                 JmsReceiver receiver = makeReceiver( updatedConnection, endpoint);
 
                 try {
@@ -229,7 +228,7 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
         if (updatedEndpoint.isMessageSource()) {
             JmsReceiver receiver = null;
             try {
-                JmsConnection connection = _manager.findConnectionByPrimaryKey( updatedEndpoint.getConnectionOid() );
+                JmsConnection connection = _connectionManager.findConnectionByPrimaryKey( updatedEndpoint.getConnectionOid() );
                 receiver = makeReceiver( connection, updatedEndpoint);
                 receiver.init(ServerConfig.getInstance());
                 receiver.start();
@@ -260,10 +259,12 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    private Logger _logger = LogManager.getInstance().getSystemLogger();
-    private JmsManager _manager;
-    private boolean _booted = false;
+    private JmsConnectionManager _connectionManager;
+    private JmsEndpointManager _endpointManager;
     private Set _receivers = new HashSet();
+
+    private Logger _logger = LogManager.getInstance().getSystemLogger();
+    private boolean _booted = false;
     private boolean _valid = false;
     public static final int FREQUENCY = 4 * 1000;
 }
