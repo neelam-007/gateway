@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  */
 public class BootProcess implements ServerComponentLifecycle {
     static {
-        JdkLoggerConfigurator.configure("com.l7tech", "com/l7tech/server/resources/logging.properties", true);
+        JdkLoggerConfigurator.configure("com.l7tech", "ssglog.properties", true);
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
