@@ -6,28 +6,30 @@
 
 use strict;
 my @list=(
-	hostname      => "Hostname for this SSG node (eg. hostname.company.com)                                                     ",
-	host_ip       => "Host IP for this SSG node (eg. 192.168.1.9)                                                               ",
-	gc_cluster    => "Cluster / Non Cluster Gateway Env - Node is part of a cluster gateway (y/n)                               ",
-	gc_firstnode  => "--Cluster Gateway Env, First node in gateway cluster (y/n)                                                ",
-	gc_masternip  => "--Cluster Gateway Env, IP (reachable by this host) of the first node (eg. 10.0.0.2)                       ",
-        gc_clusternm  => "--Cluster Gateway Env, Cluster host name (eg. cluster_hostname.company.com)                               ",
-	dc_cluster    => "Cluster / Non Cluster DB Env - Node is to be connected to a cluster database environemnt (y/n)            ",
-	dc_dbserver   => "--Cluster DB Env, Node is a DB Server (y/n)                                                               ",
-	dc_firstnode  => "--Cluster DB Env, First node in DB cluster (y/n)                                                          ",
-        dc_dbip       => "--Cluster DB Env, DB cluster IP (eg. 10.0.0.10)                                                           ",
-	dc_email      => "--Cluster DB Env, DB cluster Email (email upon failover)                                                  ",
-	dblocal       => "--Non Cluster DB Env, DB is on the localhost (database must able to login as localhost) (y/n)             ",
-	dbhostname    => "--Non cluster DB Env, DB hostname or IP (must be reach-able by this node) if DB is not on localhost       ",
-	dbuser        => "SSG Database - Username                                                                                   ",
-	dbpass        => "SSG Database - Password for the above user                                                                ",
-	net_def_rt    => "Network Configruation - IP of Load Balancer between bridge/client and gateway (eg. 192.168.1.1)           ",
-	net_front_ip  => "Network Configuration - Node Public IP (eg. 192.168.1.8)                                                  ",
-	net_front_mask=> "Network Configuration - Public Network Mask (eg. 255.255.255.0)                                           ",
-	net_back_ip   => "Network Configruation - Node Private IP (eg. 10.0.0.8)                                                    ",
-	net_back_net  => "Network configuration - Node private Network for /etc/init.d/back_route (eg. 224.0.0.0)                   ",
-	net_back_mask => "Network configuration - Private Network Mask (eg. 255.255.255.0)                                          ",
-	net_back_rt   => "Network configuration - Back End Router (eg. 10.0.0.1)                                                    "
+	hostname      => "Hostname for this SSG node (eg. hostname.company.com)                                                        ",
+	host_ip       => "Host IP for this SSG node (eg. 192.168.1.9)                                                                  ",
+	gc_cluster    => "Cluster / Non Cluster Gateway Env - Node is part of a cluster gateway (y/n)                                  ",
+	gc_firstnode  => "--Cluster Gateway Env, First node in gateway cluster (y/n)                                                   ",
+	gc_masternip  => "--Cluster Gateway Env, IP (reachable by this host) of the first node (eg. 10.0.0.7) to copy keys             ",
+        gc_clusternm  => "--Cluster Gateway Env, Cluster host name (eg. cluster_hostname.company.com)                                  ",
+	dc_cluster    => "Cluster / Non Cluster DB Env - Node is to be connected to a cluster database environemnt (y/n)               ",
+	dc_dbserver   => "--Cluster DB Env, Node is a DB Server (y/n)                                                                  ",
+        dc_repluser   => "--Cluster DB Env, Replicator Username (eg. repl)                                                             ",
+        dc_replpass   => "--Cluster DB Env, Replicator Password (eg. replpass)                                                         ", 
+	dc_firstnode  => "--Cluster DB Env, First node in DB cluster (y/n)                                                             ",
+        dc_dbip       => "--Cluster DB Env, DB cluster IP (eg. 10.0.0.25)                                                              ",
+	dc_email      => "--Cluster DB Env, DB cluster Email (email upon failover)                                                     ",
+	dblocal       => "--Non Cluster DB Env, DB is on the localhost (database must able to login as localhost) (y/n)                ",
+	dbhostname    => "--Non cluster DB Env, DB hostname or IP (must be reach-able by this node) if DB is not on localhost          ",
+	dbuser        => "SSG Database - Username                                                                                      ",
+	dbpass        => "SSG Database - Password for the above user                                                                   ",
+	net_def_rt    => "Network Config - IP of Load Balancer between bridge/client and gateway (eg. 192.168.1.1)                     ",
+	net_front_ip  => "Network Config - Node Public IP (eg. 192.168.1.8)                                                            ",
+	net_front_mask=> "Network Config - Public Network Mask (eg. 255.255.255.0)                                                     ",
+	net_back_ip   => "Network Config (Cluster Gateway Env)-Node Private IP; back_route, ifcfg-eth0 IPADDR (eg. 10.0.0.8)           ",
+	net_back_mask => "Network Config (Cluster Gateway Env)-Private Network Mask; back_route, ifcfg-eth0 NETMASK (eg. 255.255.255.0)",
+	net_back_rt   => "Network Config (Cluster Gateway Env)-Private Gateway; back_route,ifcfg-eth0 GATWAY (eg. 10.0.0.1)            ",
+        net_back_net  => "Network Config - Node private Network for back_route (eg. 224.0.0.0)                                         "
 );
 
 my %Conf=();
@@ -35,6 +37,16 @@ my $pid = $$;
 my $save_file="/etc/SSG_INSTALL";
 my $group_name="gateway";
 my $user_name="gateway";
+
+# Files subject to configuration
+my $front_conf = "/etc/sysconfig/network-scripts/ifcfg-eth1";
+my $back_conf = "/etc/sysconfig/network-scripts/ifcfg-eth0";
+my $cnf = "/etc/my.cnf";
+my $dbfaildetect_file = "/ssg/bin/dbfaildetect.sh";
+my $cluster_hostname_file = "/ssg/etc/conf/cluster_hostname";
+my $hosts_file = "/etc/hosts";
+my $dbconfig = "/ssg/etc/conf/hibernate.properties";
+
 # then change the local files as appropriate
 
 if ($ARGV[0] eq '-usage' ) {
@@ -86,7 +98,6 @@ sub change_os_config {
 
 	# 1. the front network config - file affected: $front_conf
 	print "INFO: Starting Front End Network Configuration... \n";
-	my $front_conf = "/etc/sysconfig/network-scripts/ifcfg-eth1";
 	
 	if ($Conf{net_front_ip} && $Conf{net_front_mask} && $Conf{net_def_rt}) {
 		if ( -e $front_conf ) {
@@ -104,15 +115,13 @@ GATEWAY=$Conf{"net_def_rt"}
 
 EOF
 		close OUT;
-		print "INFO: Front end network configured $front_conf - IPADDR of $Conf{net_front_ip}; NETMASK of $Conf{net_front_mask}; GATEWAY of $Conf{net_def_rt}";	
+		print "INFO: Front end network configured $front_conf - IPADDR of $Conf{net_front_ip}; NETMASK of $Conf{net_front_mask}; GATEWAY of $Conf{net_back_rt}";	
 	} else {
 		print "WARNING: No front end network defined, front end network remains $front_conf\n";
 	}
 
-	# 2. the back network config - file affected: $back_conf, $back_route
+	# 2. the back network config - file affected: $back_conf
         print "INFO: Starting Back End Network Configuration... \n";
-	my $back_conf = "/etc/sysconfig/network-scripts/ifcfg-eth0";
- 	my $back_route = "/etc/init.d/back_route";	
 
 	if ( -e $back_conf ) {
         	print "INFO: $back_conf existed, now renaming $back_conf to $back_conf.bckup_$pid\n";
@@ -127,6 +136,7 @@ ONBOOT=yes
 BOOTPROTO=static
 IPADDR=$Conf{"net_back_ip"}
 NETMASK=$Conf{"net_back_mask"}
+GATEWAY=$Conf{"net_back_rt"}
 
 EOF
 		close OUT;
@@ -149,31 +159,8 @@ EOF
 		print "INFO: Back end network configured $back_conf - BOOTPROTO of dhcp; DHCP_HOSTNAME of $host\n";
 	}	
 
-	if ($Conf{net_back_net} && $Conf{net_back_mask} && $Conf{net_back_rt}) {
-		if ( -e $back_route ) {
-			print "INFO: $back_route existed, now renaming $back_route to $back_route.bckup_$pid";
-			rename( $back_route, "$back_route.bckup_$pid" );
-		}
-		open (IN, "<$back_route.bckup_$pid");
-		open (OUT, ">$back_route");
-		while (<IN>) {
-                        s/start\(\)\s*\{\s*\n/start\(\) \{\n\t\$route add -net $Conf{net_back_net} netmask $Conf{net_back_mask} gw $Conf{net_back_rt}\n/;
-                        s/stop\(\)\s*\{\s*\n/stop\(\) \{\n\t\$route del -net $Conf{net_back_net} netmask $Conf{net_back_mask} gw $Conf{net_back_rt}\n/;
-                        print OUT;
-		}
-		close IN;
-		close OUT;
-                print "INRO: Back end network configured $back_route - back_net of $Conf{net_back_net}; back_mask of $Conf{net_back_mask}; back_rt of $Conf{net_back_rt}\n";
-		print "INFO: Restarting $back_route\n";
-		print "MANUAL TASK: Please review and restart $back_route";	
-	} else {
-		print "WARNING: Back end network $back_route remains\n";
-	}
-
 	# 3. hostname - file affected:$hosts_file 
 	# 3a. hostname for cluster - file affected: $cluster_hostname_file 
-	my $cluster_hostname_file = "/ssg/etc/conf/cluster_hostname";
-	my $hosts_file = "/etc/hosts";
 	print "INFO: Configuring cluster hostname for $cluster_hostname_file & $hosts_file\n";
 	if ($Conf{gc_clusternm} && lc($Conf{gc_cluster}) eq "y") {
                 if ( -e $cluster_hostname_file ) {
@@ -207,7 +194,7 @@ EOF
 		chmod 0644, "$hosts_file";
 		print "INFO: $cluster_hostname_file and $hosts_file files replaced\n";
 	} else {
-		print "WARNING: $cluster_hostname_file not set\n";
+		print "WARNING: $cluster_hostname_file not set (OK if SSG is not part of a cluster)\n";
 	}
 
 	if ( $Conf{gc_cluster} eq "n") {
@@ -256,7 +243,6 @@ EOF
                 }
         } 
 
-	my $dbconfig="/ssg/etc/conf/hibernate.properties";
 	if ($Conf{dbuser}) {
                 print "INFO: Now update $dbconfig\n";
 		rename ($dbconfig,"$dbconfig.bckup_$pid");
@@ -281,9 +267,10 @@ EOF
 		print "WARNING: $dbconfig file not set\n";
 	}
 
-	# 4b. grant user to local database
+	# 4b. grant users to local database
+
+	# grant database user
 	if (($Conf{dbuser}) && (($Conf{dc_dbserver} eq "y") || ($Conf{dblocal} eq "y"))) {
-		# grant user to local database
 		print "INFO: Now grant username & password to local database\n";
 		my $sql = "grant all on ssg.* to $Conf{dbuser}\@'%' identified by '$Conf{dbpass}';\n\n";
 		$sql .="grant all on ssg.* to $Conf{dbuser}\@'localhost' identified by '$Conf{dbpass}';\n\n";
@@ -292,17 +279,29 @@ EOF
 		close TMP;
 		print "INFO: Now run following SQL... \n$sql\n";
 		my $success=`mysql -u root </tmp/sql.grants`;
-		# unlink "/tmp/sql.grants";
+		#unlink "/tmp/sql.grants";
 	} else {
-		print "WARNING: DB username/password not granted to local database\n";
+		print "WARNING: DB user username/password not granted to local database\n";
 	}
+
+	# grant replicator user
+	if (($Conf{dc_cluster} eq "y") && ($Conf{dc_dbserver} eq "y") && ($Conf{dc_repluser}) && ($Conf{dc_replpass})) {
+		print "INFO: Now grant replicator username & password to local database\n";
+                my $sql = "grant replication slave on *.* to $Conf{dc_repluser}\@'%' identified by '$Conf{dc_replpass}';\n\n";
+                open (TMP, ">/tmp/sqlReplicator.grants");
+                print TMP $sql;
+                close TMP;
+                print "INFO: Now run following SQL... \n$sql\n";
+                my $success=`mysql -u root </tmp/sqlReplicator.grants`;
+                #unlink "/tmp/sqlReplicator.grants";
+        } else {
+                print "WARNING: DB replicator username/password not granted to local database (OK for non cluster database, and this host is not a database server)\n";
+        }
  
 	# 4c. do the config for db cluster on my.cnf and on dbfaildetect.sh? - file affected: $cnf, $dbfaildetect_file
         # assumption: my.cnf contains server-id=1, server-id=2, log-bin, log-slave-update
         #             dbfaildetect.sh contains DBHOST=, EMAIL=
-	my $cnf = "/etc/my.cnf";
 	my $cnf_rpm = "/etc/my.cnf.ssg";
-        my $dbfaildetect_file = "/ssg/bin/dbfaildetect.sh";
 
 	if (! -e $cnf_rpm ) {
                 print "ERROR: $cnf_rpm distribution missing from rpm!\n";
@@ -471,12 +470,46 @@ sub writefile {
 
 sub usage {
 	return <<EOF;
-$0: [-apply] [-usage]
--apply     Don't ask for config, run OS config using $save_file
--usage     This message.
-$0 can be run without any option
-  - if $save_file does not exist, script will invoke initial install 
-  - if $save_file already existed (implies reinstall/reconfigure SSG), script will ask for configuration again to change any values, then re-run OS configuration
+===========================
+NAME
+    $0
+
+SYNOPSIS
+    $0 [OPTION]
+
+    For example,
+      $0 -usage
+      $0 -apply
+
+DESCRIPTION
+    Configure Secure Span Gateway (SSG) property files after installing with RPM distribution
+
+    After this script has been run, the input parameters are saved at $save_file.  If you re-run the script, the $save_file will be readin as default values.  However, if you want to remove the default values, you may like to remove the $save_file before re-running the script.
+
+    List of property files may subject to be configured base on input paramters:
+    * $front_conf
+    * $back_conf
+    * $cnf 
+    * $dbfaildetect_file
+    * $cluster_hostname_file
+    * $hosts_file
+    * $dbconfig
+
+    Base on input parameters, this script may grant database access for MySQL database:
+    * GRANT ALL ON ssg.* to <db username>@\'%\' identified by \'<db user password>\';
+    * GRANT ALL ON ssg.* to <db_username>@\'localhost\' identified by \'<db user password>\';
+    * GRANT REPLICATION SLAVE ON *.* to <db replicator username>@\'%\' identified by \'<db replicator password>\';
+    However, this script will not revoke any access that have been granted. You will need to perform manual revoke access if necessary.
+
+OPTION
+    -apply     Don't ask for config, run OS config using $save_file
+    -usage     This message.
+
+    $0 can be run without any option
+      - if $save_file does not exist, script will invoke initial install 
+      - if $save_file already existed (implies reinstall/reconfigure SSG), script will ask for configuration again to change any values, then re-run OS configuration
+===========================
+
 EOF
 
 }
