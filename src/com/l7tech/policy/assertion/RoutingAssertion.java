@@ -23,7 +23,6 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
     private boolean taiCredentialChaining = false;
     private String xmlSecurityActorToPromote;
     private int currentSecurityHeaderHandling = REMOVE_CURRENT_SECURITY_HEADER;
-    private String[] customIpAddresses = null;
 
     /**
      * This is the value of the soap security header actor attribute that should be promoted to
@@ -107,14 +106,5 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
         this.currentSecurityHeaderHandling = currentSecurityHeaderHandling;
     }
 
-    /** @return the custom IP addresses to use as an array of String, or null if no custom IP address list is configured. */
-    public String[] getCustomIpAddresses() {
-        return customIpAddresses;
-    }
-
-    /** @param customIpAddresses custom addresses to use, or null if no custom addresses should be used. */
-    public void setCustomIpAddresses(String[] customIpAddresses) {
-        this.customIpAddresses = customIpAddresses;
-    }
 }
 

@@ -39,4 +39,12 @@ public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
     public void reportSuccess(Object service) {
         // ignored
     }
+
+    public String getName() {
+        return "robin";
+    }
+
+    public String getDescription() {
+        return "Pure Round-Robin";
+    }
 }

@@ -31,6 +31,9 @@ public abstract class AbstractFailoverStrategy implements FailoverStrategy {
 
     abstract public void reportSuccess(Object service);
 
+    public String toString() {
+        return getDescription();
+    }
 
     /**
      * Synchronizes an existing unsynchronized {@link FailoverStrategy}.
@@ -51,7 +54,14 @@ public abstract class AbstractFailoverStrategy implements FailoverStrategy {
             public synchronized void reportSuccess(Object service) {
                 strat.reportSuccess(service);
             }
+
+            public synchronized String getName() {
+                return strat.getName();
+            }
+
+            public synchronized String getDescription() {
+                return strat.getDescription();
+            }
         };
     }
-
 }

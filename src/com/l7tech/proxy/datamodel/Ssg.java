@@ -1,5 +1,6 @@
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -71,6 +72,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private transient Set listeners = new HashSet(); // List of weak references to listeners
     private transient SsgRuntime runtime = new SsgRuntime(this);
     private transient X509Certificate lastSeenPeerCertificate = null;
+    private String failoverStrategyName = FailoverStrategyFactory.STICKY.getName();
 
     /**
      * Get the {@link SsgRuntime} for this Ssg, providing access to behaviour, strategies, and transient settings.
@@ -594,5 +596,13 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
 
     public SSLContext getSslContext() {
         return getRuntime().getSslContext();
+    }
+
+    public String getFailoverStrategyName() {
+        return failoverStrategyName;
+    }
+
+    public void setFailoverStrategyName(String name) {
+        failoverStrategyName = name;
     }
 }

@@ -29,6 +29,7 @@
                 </SslAssertion>
                 <HttpRoutingAssertion>
                     <XmlSecurityActorToPromote stringValueNull="null"/>
+                    <FailoverStrategyName stringValue="sticky"/>
                     <AttachSamlSenderVouches booleanValue="false"/>
                     <TaiCredentialChaining booleanValue="false"/>
                     <UserAgent stringValueNull="null"/>
@@ -44,6 +45,7 @@
                 </HttpRoutingAssertion>
                 <BridgeRoutingAssertion>
                     <XmlSecurityActorToPromote stringValueNull="null"/>
+                    <FailoverStrategyName stringValue="sticky"/>
                     <AttachSamlSenderVouches booleanValue="false"/>
                     <TaiCredentialChaining booleanValue="false"/>
                     <UserAgent stringValueNull="null"/>
@@ -68,7 +70,6 @@
                     <ResponseTimeout intValue="10000"/>
                     <CurrentSecurityHeaderHandling intValue="0"/>
                     <SamlAssertionExpiry intValue="5"/>
-                    <CustomIpAddresses stringArrayValueNull="null"/>
                 </JmsRoutingAssertion>
                 <TrueAssertion/>
                 <MemberOfGroup>
@@ -233,6 +234,7 @@
             <FalseAssertion/>
             <HttpRoutingAssertion>
                 <XmlSecurityActorToPromote stringValueNull="null"/>
+                <FailoverStrategyName stringValue="sticky"/>
                 <AttachSamlSenderVouches booleanValue="false"/>
                 <TaiCredentialChaining booleanValue="false"/>
                 <UserAgent stringValueNull="null"/>

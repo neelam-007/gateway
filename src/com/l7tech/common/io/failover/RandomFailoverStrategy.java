@@ -36,4 +36,12 @@ public class RandomFailoverStrategy extends AbstractFailoverStrategy {
     public void reportSuccess(Object service) {
         // ignored
     }
+
+    public String getName() {
+        return "random";
+    }
+
+    public String getDescription() {
+        return "Pure Random";
+    }
 }

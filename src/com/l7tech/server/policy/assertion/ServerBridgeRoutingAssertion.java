@@ -14,6 +14,7 @@ import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
 import com.l7tech.common.message.*;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
@@ -205,7 +206,12 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
         if (ssg.isUseOverrideIpAddresses()) {
             // Attach failover client
-            FailoverStrategy strategy = new StickyFailoverStrategy(addrs);
+            FailoverStrategy strategy;
+            try {
+                strategy = FailoverStrategyFactory.createFailoverStrategy(assertion.getFailoverStrategyName(), addrs);
+            } catch (IllegalArgumentException e) {
+                strategy = new StickyFailoverStrategy(addrs);
+            }
             int attempts = addrs.length;
             client = new FailoverHttpClient(client, strategy, attempts, logger);
         }

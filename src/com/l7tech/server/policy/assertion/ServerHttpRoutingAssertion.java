@@ -10,6 +10,7 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.MimeKnob;
@@ -93,7 +94,13 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         final String[] addrs = httpRoutingAssertion.getCustomIpAddresses();
         if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs, auditor)) {
-            failoverStrategy = new StickyFailoverStrategy(addrs);
+            FailoverStrategy strat;
+            try {
+                strat = FailoverStrategyFactory.createFailoverStrategy(assertion.getFailoverStrategyName(), addrs);
+            } catch (IllegalArgumentException e) {
+                strat = new StickyFailoverStrategy(addrs);
+            }
+            failoverStrategy = strat;
             maxFailoverAttempts = addrs.length;
         } else {
             failoverStrategy = null;

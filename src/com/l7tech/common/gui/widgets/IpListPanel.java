@@ -7,6 +7,8 @@
 package com.l7tech.common.gui.widgets;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.common.io.failover.FailoverStrategyFactory;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -29,6 +31,7 @@ public class IpListPanel extends JPanel {
     private JList ipList;
     private JRadioButton rbSpecify;
     private JRadioButton rbLookupInDns;
+    private JComboBox cbStrategy;
 
     public IpListPanel() {
         init();
@@ -93,9 +96,14 @@ public class IpListPanel extends JPanel {
             }
         });
 
+        cbStrategy.setModel(new DefaultComboBoxModel(FailoverStrategyFactory.getFailoverStrategyNames()) {
+
+        });
+
         Utilities.enableGrayOnDisabled(ipList);
         Utilities.enableGrayOnDisabled(addButton);
         Utilities.enableGrayOnDisabled(removeButton);
+        Utilities.enableGrayOnDisabled(cbStrategy);
         updateEnableState();
     }
 
@@ -104,6 +112,7 @@ public class IpListPanel extends JPanel {
         boolean ips = rbSpecify.isSelected();
         ipList.setEnabled(ips);
         addButton.setEnabled(ips);
+        cbStrategy.setEnabled(ips);
         removeButton.setEnabled(ips && ipList.getSelectedValue() != null);
     }
 
@@ -142,6 +151,21 @@ public class IpListPanel extends JPanel {
         rbSpecify.setSelected(enableAddresses);
         rbLookupInDns.setSelected(!enableAddresses);
         updateEnableState();
+    }
+
+    public String getFailoverStrategyName() {
+        return ((FailoverStrategy)cbStrategy.getSelectedItem()).getName();
+    }
+
+    public void setFailoverStrategyName(String name) {
+        DefaultComboBoxModel m = (DefaultComboBoxModel)cbStrategy.getModel();
+        for (int i = 0; i < m.getSize(); ++i) {
+            FailoverStrategy strat = (FailoverStrategy)m.getElementAt(i);
+            if (strat.getName().equalsIgnoreCase(name)) {
+                cbStrategy.setSelectedIndex(i);
+                break;
+            }
+        }
     }
 
 }

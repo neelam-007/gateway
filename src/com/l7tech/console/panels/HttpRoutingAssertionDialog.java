@@ -575,10 +575,13 @@ public class HttpRoutingAssertionDialog extends JDialog {
                         assertion.setTaiCredentialChaining(taiCredentialChaining.isSelected());
                         fireEventAssertionChanged(assertion);
 
-                        if (getIpListPanel().isAddressesEnabled())
+                        if (getIpListPanel().isAddressesEnabled()) {
                             assertion.setCustomIpAddresses(getIpListPanel().getAddresses());
-                        else
+                            assertion.setFailoverStrategyName(getIpListPanel().getFailoverStrategyName());
+                        } else {
                             assertion.setCustomIpAddresses(null);
+                            assertion.setFailoverStrategyName("sticky");
+                        }
 
                         if (promoteActorRadio.isSelected()) {
                             String currentVal = (String)promoteActorCombo.getSelectedItem();
@@ -636,6 +639,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         taiCredentialChaining.setSelected(assertion.isTaiCredentialChaining());
         getIpListPanel().setAddressesEnabled(assertion.getCustomIpAddresses() != null);
         getIpListPanel().setAddresses(assertion.getCustomIpAddresses());
+        getIpListPanel().setFailoverStrategyName(assertion.getFailoverStrategyName());
 
         //memebershipStatementCheck.setSelected(assertion.isGroupMembershipStatement()); // Bugzilla 1269
         int expiry = assertion.getSamlAssertionExpiry();

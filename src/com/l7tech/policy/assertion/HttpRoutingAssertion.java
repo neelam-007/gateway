@@ -102,10 +102,38 @@ public class HttpRoutingAssertion extends RoutingAssertion {
         return super.toString() + " url=" + getProtectedServiceUrl() + " login=" + getLogin() + " realm=" + getRealm();
     }
 
+    /** @return the custom IP addresses to use as an array of String, or null if no custom IP address list is configured. */
+    public String[] getCustomIpAddresses() {
+        return _customIpAddresses;
+    }
+
+    /** @param customIpAddresses custom addresses to use, or null if no custom addresses should be used. */
+    public void setCustomIpAddresses(String[] customIpAddresses) {
+        _customIpAddresses = customIpAddresses;
+    }
+
+    /**
+     * @return the name of the FailoverStrategy to use with the CustomIpAddresses.
+     * @see com.l7tech.common.io.failover.FailoverStrategyFactory
+     */
+    public String getFailoverStrategyName() {
+        return _failoverStrategyName;
+    }
+
+    /**
+     * @param failoverStrategyName the name of the FailoverStrategy to use with the CustomIpAddresses.
+     * @see com.l7tech.common.io.failover.FailoverStrategyFactory
+     */
+    public void setFailoverStrategyName(String failoverStrategyName) {
+        this._failoverStrategyName = failoverStrategyName;
+    }
+
     protected String _protectedServiceUrl;
     protected String _login;
     protected String _password;
     protected String _realm;
     protected String _userAgent;
     protected int _maxConnections;
+    protected String[] _customIpAddresses = null;
+    protected String _failoverStrategyName = "sticky";
 }

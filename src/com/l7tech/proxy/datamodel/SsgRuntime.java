@@ -12,6 +12,7 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.DateTranslator;
@@ -607,7 +608,12 @@ public class SsgRuntime {
                 final String[] addrs = ssg.getOverrideIpAddresses();
                 if (ssg.isUseOverrideIpAddresses() && addrs != null && addrs.length > 0) {
                     log.fine("Enabling failover IP list for Gateway " + ssg);
-                    FailoverStrategy strategy = new StickyFailoverStrategy(addrs);
+                    FailoverStrategy strategy;
+                    try {
+                        strategy = FailoverStrategyFactory.createFailoverStrategy(ssg.getFailoverStrategyName(), addrs);
+                    } catch (IllegalArgumentException e) {
+                        strategy = new StickyFailoverStrategy(addrs);
+                    }
                     int max = addrs.length;
                     client = new FailoverHttpClient(client, strategy, max, log);
                 }

@@ -51,4 +51,12 @@ public class StickyFailoverStrategy extends AbstractFailoverStrategy {
         down.remove(service);
         up.add(service);
     }
+
+    public String getName() {
+        return "sticky";
+    }
+
+    public String getDescription() {
+        return "Random Sticky with Failover";
+    }
 }

@@ -42,4 +42,10 @@ public interface FailoverStrategy {
      * @throws IllegalArgumentException if the specified server is unknown to or unmanaged by this strategy instance.
      */
     void reportSuccess(Object service);
+
+    /** @return the short symbolic name of this FailoverStrategy. */
+    String getName();
+
+    /** @return the longer human-readable name of this FailoverStrategy. */
+    String getDescription();
 }

@@ -179,4 +179,12 @@ class SsgNetworkPanel extends JPanel {
     public void setUseOverrideIpAddresses(boolean useOverrideIpAddresses) {
         ipList.setAddressesEnabled(useOverrideIpAddresses);
     }
+
+    public void setFailoverStrategyName(String name) {
+        ipList.setFailoverStrategyName(name);
+    }
+
+    public String getFailoverStrategyName() {
+        return ipList.getFailoverStrategyName();
+    }
 }

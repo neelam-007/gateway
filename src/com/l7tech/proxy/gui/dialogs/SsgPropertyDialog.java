@@ -587,6 +587,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             getNetworkPane().setSslPort(ssg.getSslPort());
             getNetworkPane().setUseOverrideIpAddresses(ssg.isUseOverrideIpAddresses());
             getNetworkPane().setCustomIpAddresses(ssg.getOverrideIpAddresses());
+            getNetworkPane().setFailoverStrategyName(ssg.getFailoverStrategyName());
             cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
             getNetworkPane().updateCustomPortsEnableState();
         }
@@ -633,6 +634,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
             ssg.setUseOverrideIpAddresses(getNetworkPane().isUseOverrideIpAddresses());
             ssg.setOverrideIpAddresses(getNetworkPane().getCustomIpAddresses());
+            ssg.setFailoverStrategyName(getNetworkPane().getFailoverStrategyName());
 
             if (getNetworkPane().isCustomPorts()) {
                 ssg.setSsgPort(getNetworkPane().getSsgPort());
