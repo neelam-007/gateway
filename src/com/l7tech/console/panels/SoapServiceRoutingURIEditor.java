@@ -135,6 +135,19 @@ public class SoapServiceRoutingURIEditor extends JDialog {
             }
             public void keyTyped(KeyEvent e) {}
         });
+
+        Actions.setEscAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                cancel();
+            }
+        });
+        
+        Actions.setEnterAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                ok();
+            }
+        });
+
     }
 
     private void enableSpecificControls() {
