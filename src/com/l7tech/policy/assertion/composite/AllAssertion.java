@@ -17,6 +17,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.io.IOException;
 
+import org.apache.log4j.Category;
+
 /**
  * Evaluate children until none left or one fails; return last result evaluated.
  *
@@ -26,6 +28,8 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class AllAssertion extends CompositeAssertion {
+    private static final Category log = Category.getInstance(AllAssertion.class);
+
     public AllAssertion() {
     }
 
@@ -59,9 +63,11 @@ public class AllAssertion extends CompositeAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest req) throws PolicyAssertionException {
         mustHaveChildren();
+        log.info("AllAssertion: children found");
         AssertionStatus result = AssertionStatus.NONE;
         for (Iterator kids = children.iterator(); kids.hasNext();) {
             Assertion assertion = (Assertion)kids.next();
+            log.info("AllAssertion: calling child " + assertion);
             result = assertion.decorateRequest(req);
             if (result != AssertionStatus.NONE)
                 return result;
