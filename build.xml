@@ -774,7 +774,6 @@
 
             <fileset dir="${src.root}/etc">
                 <include name="keystore.properties" if="dev.build"/>
-                <include name="ssglog.properties" if="dev.build"/>
                 <include name="spring.xml"/>
                 <include name="treecache-service.xml"/>
             </fileset>
@@ -806,10 +805,6 @@
 
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
         <antcall target="keystore.properties"/>
-
-        <propertyfile file="${build.classes}/ssglog.properties">
-            <entry key="java.util.logging.FileHandler.pattern" value="${tomcat.home}/logs/ssg_%g_%u.log"/>
-        </propertyfile>
 
         <!-- html and other static web files -->
         <copy todir="${doc.root}">
