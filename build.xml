@@ -405,7 +405,6 @@
             <fileset dir="${build.dir}/classes">
                 <exclude name="com/l7tech/logging/rmi/**/*"/>
                 <exclude name="com/l7tech/policy/server/**/*"/>
-                <exclude name="com/l7tech/message/**/*"/>
                 <include name="com/l7tech/identity/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/**/*"/>
@@ -433,7 +432,10 @@
                 <include name="com/l7tech/remote/jini/lookup/ServiceFactory.class"/>
                 <include name="com/l7tech/remote/jini/export/RemoteService.class" />
                 <include name="com/l7tech/logging/**/*"/>
-                <include name="com/l7tech/message/**/*"/>
+                <!-- <include name="com/l7tech/message/**/*"/> -->
+                <include name="com/l7tech/message/Message.class"/>
+                <include name="com/l7tech/message/Request.class"/>
+                <include name="com/l7tech/message/Response.class"/>
                 <include name="com/l7tech/objectmodel/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
                 <include name="com/l7tech/policy/assertion/ext/Category.class"/>
