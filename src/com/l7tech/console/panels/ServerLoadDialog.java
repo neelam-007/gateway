@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.adminws.logging.Log;
+import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -264,7 +265,7 @@ public class ServerLoadDialog extends JDialog implements ActionListener, KeyList
         } else if (actionCommand.equals(CMD_CANCEL)) {
             closeWindow = true;
         } else if (actionCommand.equals(CMD_HELP)) {
-            ;
+            Actions.invokeHelp(ServerLoadDialog.this);
         } else if (actionCommand.equals(CMD_REFRESH)) {
             refresh();
         }
