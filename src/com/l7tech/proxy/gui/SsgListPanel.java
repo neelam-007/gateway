@@ -336,6 +336,9 @@ public class SsgListPanel extends JPanel {
             actionChangePasswordAndRevokeClientCertificate = new AbstractAction("Change Password/Revoke Certificate", IconManager.getCert()) {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg ssg = getSelectedSsg();
+                    final char[] currentCMPasswd = ssg.cmPassword();
+                    boolean cmPasswdPotentiallyChanged = false;
+                    boolean changeCompleted = false;
                     if (ssg != null) {
                         if (ssg.getTrustedGateway() != null) {
                             Gui.errorMessage("This is a Federated Gateway.  You must perform this\n" +
@@ -381,6 +384,7 @@ public class SsgListPanel extends JPanel {
                                 }
 
                                 PasswordAuthentication pw = Managers.getCredentialManager().getNewCredentials(ssg, false);
+                                cmPasswdPotentiallyChanged = true;
                                 if (newpass == null)
                                     newpass = PasswordDialog.getPassword(Gui.getInstance().getFrame(), "New password");
                                 if (newpass == null)
@@ -395,7 +399,7 @@ public class SsgListPanel extends JPanel {
                                 // Succeeded, so update password and client cert
                                 ssg.cmPassword(newpass);
                                 SsgKeyStoreManager.deleteClientCert(ssg);
-
+                                changeCompleted = true;
                             } catch (KeyStoreCorruptException e1) {
                                 try {
                                     Ssg problemSsg = ssg.getTrustedGateway();
@@ -457,6 +461,9 @@ public class SsgListPanel extends JPanel {
                                 return;
                             } finally {
                                 CurrentRequest.clearCurrentRequest();
+                                if (!changeCompleted && cmPasswdPotentiallyChanged && currentCMPasswd != null) {
+                                    ssg.cmPassword(currentCMPasswd);
+                                }
                             }
                         }
 
