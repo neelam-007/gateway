@@ -6,7 +6,6 @@
 
 package com.l7tech.service;
 
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.Wsdl;
@@ -19,7 +18,9 @@ import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
