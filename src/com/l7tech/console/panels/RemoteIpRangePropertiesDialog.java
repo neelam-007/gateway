@@ -1,14 +1,20 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.policy.assertion.RemoteIpRange;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.AssertionPath;
 
 import javax.swing.*;
+import javax.swing.event.EventListenerList;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.StringTokenizer;
+import java.util.EventListener;
 
 /**
  * Dialog for viewing and editing a RemoteIpRange assertion.
@@ -25,6 +31,10 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         super(owner, modal);
         this.subject = subject;
         initialize();
+    }
+
+    public void addPolicyListener(PolicyListener listener) {
+        listenerList.add(PolicyListener.class, listener);
     }
 
     private void initialize() {
@@ -85,7 +95,23 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
             subject.setStartIp(newaddress);
             subject.setNetworkMask(Integer.parseInt(suffixStr));
         }
+        fireEventAssertionChanged(subject);
         RemoteIpRangePropertiesDialog.this.dispose();
+    }
+
+    private void fireEventAssertionChanged(final Assertion a) {
+        SwingUtilities.invokeLater(
+          new Runnable() {
+              public void run() {
+                  int[] indices = new int[a.getParent().getChildren().indexOf(a)];
+                  PolicyEvent event = new
+                          PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
+                  EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
+                  for (int i = 0; i < listeners.length; i++) {
+                      ((PolicyListener)listeners[i]).assertionsChanged(event);
+                  }
+              }
+          });
     }
 
     private void bark(String woof) {
@@ -259,6 +285,8 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private JFormattedTextField add1, add2, add3, add4, suffix;
 
     private RemoteIpRange subject;
+
+    private final EventListenerList listenerList = new EventListenerList();
 
     private final static int BORDER_PADDING = 20;
     private final static int CONTROL_SPACING = 5;
