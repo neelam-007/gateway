@@ -132,7 +132,7 @@ public class CSRHandler extends HttpServlet {
             response.setContentLength(certbytes.length);
             response.getOutputStream().write(certbytes);
             response.flushBuffer();
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "sent new cert to " + authenticatedUser.getLogin());
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "sent new cert to user " + authenticatedUser.getLogin() + ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
         } catch (CertificateEncodingException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
@@ -141,23 +141,30 @@ public class CSRHandler extends HttpServlet {
     }
 
     private byte[] readCSRFromRequest(HttpServletRequest request) throws IOException {
-        return HexUtils.slurpStream(request.getInputStream(), 16384);
-        /*byte[] b64Encoded = HexUtils.slurpStream(request.getInputStream(), 16384);
-        String tmpStr = new String(b64Encoded);
+        // csr request might be based64 or not, we need to see what format we are getting
+        byte[] contents = HexUtils.slurpStream(request.getInputStream(), 16384);
+        String tmpStr = new String(contents);
         String beginKey = "-----BEGIN CERTIFICATE REQUEST-----";
+        int beggining = tmpStr.indexOf(beginKey);
+        // the contents is not base64ed and contains the actual bytes
+        if (beggining == -1) return contents;
+        // otherwise, we need to extract section and unbase64
+        beggining += beginKey.length();
         String endKey = "-----END CERTIFICATE REQUEST-----";
-        int beggining = tmpStr.indexOf(beginKey) + beginKey.length();
         int end = tmpStr.indexOf(endKey);
+        if (end == -1) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot read csr request (bad format?)");
+            return new byte[0];
+        }
         String b64str = tmpStr.substring(beggining, end);
         sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
-        return base64decoder.decodeBuffer(b64str);*/
+        return base64decoder.decodeBuffer(b64str);
     }
 
     private Certificate sign(byte[] csr) throws Exception {
         RSASigner signer = getSigner();
         // todo, refactor RSASigner to throw more precise exceptions
         Certificate cert = signer.createCertificate(csr);
-        LogManager.getInstance().getSystemLogger().log(Level.INFO, "CSRHandler.sign() exit subject dn= " + ((X509Certificate)(cert)).getSubjectDN().toString());
         return cert;
     }
 
