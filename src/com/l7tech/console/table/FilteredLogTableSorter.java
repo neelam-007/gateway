@@ -15,6 +15,8 @@ import java.util.logging.Logger;
 import java.util.*;
 
 /*
+ * This class extends the <CODE>FilteredLogTableModel</CODE> class for providing the sorting functionality to the log display.
+ *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
  * $Id$
@@ -22,33 +24,62 @@ import java.util.*;
 
 public class FilteredLogTableSorter extends FilteredLogTableModel {
     static Logger logger = Logger.getLogger(StatisticsTableSorter.class.getName());
-    boolean ascending = false;
-    int columnToSort = LogPanel.LOG_TIMESTAMP_COLUMN_INDEX;
-    int compares;
+    private boolean ascending = false;
+    private int columnToSort = LogPanel.LOG_TIMESTAMP_COLUMN_INDEX;
     private Object[] sortedData = null;
     private ClusterStatusAdmin clusterStatusAdmin = null;
     private LogAdmin logService = null;
     private boolean canceled;
 
+
+    /**
+     * Default constructor
+     */
     public FilteredLogTableSorter() {
     }
 
+    /**
+     * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
+     *
+     * @param model  A table model.
+     */
     public FilteredLogTableSorter(DefaultTableModel model) {
         setModel(model);
     }
 
+    /**
+     * Set the table model.
+     *
+     * @param model  The table model to be set.
+     */
     public void setModel(DefaultTableModel model) {
         super.setRealModel(model);
     }
 
+    /**
+     * Return the index of the column being sorted.
+     *
+     * @return int  The index of the column being sorted.
+     */
     public int getSortedColumn() {
         return columnToSort;
     }
 
+    /**
+     * The sorting order.
+     *
+     * @return boolean  true if the sorting is in ascending order, false otherwise.
+     */
     public boolean isAscending() {
         return ascending;
     }
 
+    /**
+     * Append the new logs to the cache.
+     *
+     * @param nodeList  A list of node objects accompanied with their new logs.
+     * @param msgFilterLevel  The filter level.
+     */
     private void appendData(Hashtable nodeList, int msgFilterLevel) {
         for (Iterator i = nodeList.keySet().iterator(); i.hasNext();) {
             String node = (String) i.next();
@@ -57,6 +88,12 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
     }
 
+    /**
+     * Add the new logs to head of the cache.
+     *
+     * @param nodeList  A list of node objects accompanied with their new logs.
+     * @param msgFilterLevel  The filter level.
+     */
     private void addData(Hashtable nodeList, int msgFilterLevel) {
         for (Iterator i = nodeList.keySet().iterator(); i.hasNext();) {
             String node = (String) i.next();
@@ -65,7 +102,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
     }
 
-
+   /**
+     * Add the new logs to the cache. The position depends on the input parameter specified.
+     *
+     * @param nodeId  The Id of the node which is the source of the new logs.
+     * @param newLogs  The new logs.
+     * @param msgFilterLevel  The filter level.
+     */
     private void addData(String nodeId, Vector newLogs, int msgFilterLevel, boolean front) {
 
         // add new logs to the cache
@@ -108,15 +151,25 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
     }
 
+    /**
+     * Apply the filter specified.
+     *
+     * @param newFilterLevel  The new filter applied
+     */
     public void applyNewMsgFilter(int newFilterLevel) {
-        filterData(newFilterLevel);
 
+        filterData(newFilterLevel);
         sortData(columnToSort, false);
-//        System.out.println("Number of rows in sortedData array: " + sortedData.length);
 
         realModel.fireTableDataChanged();
     }
 
+    /**
+     * Perform the data sorting.
+     *
+     * @param column  The index of the table column to be sorted.
+     * @param orderToggle  true if the sorting order is toggled, false otherwise.
+     */
     public void sortData(int column, boolean orderToggle) {
 
         if (orderToggle) {
@@ -127,10 +180,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         if (column != columnToSort) {
             ascending = true;
         }
+
         // save the column index
         columnToSort = column;
-
-        //Object[] sorted = filteredLogCache.toArray();
 
         Integer[] sorted = new Integer[filteredLogCache.size()];
 
@@ -145,6 +197,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         realModel.setRowCount(sortedData.length);
     }
 
+    /**
+     * Return the value of the table cell specified with its tbale coordinate.
+     *
+     * @param row  The row index.
+     * @param col  The column index.
+     * @return Object  The value at the specified table coordinate.
+     */
     public Object getValueAt(int row, int col) {
 
         LogMessage msg = (LogMessage) filteredLogCache.get(((Integer) sortedData[row]).intValue());
@@ -171,15 +230,33 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
     }
 
+    /**
+     * A class for determining the order of two objects by comparing their values.
+     */
     public class ColumnSorter implements Comparator {
         private boolean ascending;
         private int column;
 
+        /**
+         * Constructor
+         *
+         * @param column  The index of the table column on which the objects are sorted.
+         * @param ascending  true if the sorting order is ascending, false otherwise.
+         */
         ColumnSorter(int column, boolean ascending) {
             this.ascending = ascending;
             this.column = column;
         }
 
+        /**
+         * Compare the order of the two objects. A negative integer, zero, or a positive integer
+         * as the the specified String is greater than, equal to, or less than this String,
+         * ignoring case considerations.
+         *
+         * @param a  One of the two objects to be compared.
+         * @param b  The other one of the two objects to be compared.
+         * @return   -1 if a > b, 0 if a = b, and 1 if a < b.
+         */
         public int compare(Object a, Object b) {
 
             String elementA = new String("");
@@ -234,8 +311,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 elementB = null;
             }
 
-            // Sort nulls so they appear last, regardless
-            // of sort order
+            // Sort nulls so they appear last, regardless of sort order
             if (elementA == null && elementB == null) {
                 return 0;
             } else if (elementA == null) {
@@ -252,6 +328,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
     }
 
+    /**
+     * Initialize the variables when the connection with the cluster is established.
+     */
     public void onConnect() {
         logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
         if (logService == null) throw new IllegalStateException("cannot obtain LogAdmin remote reference");
@@ -265,17 +344,27 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         canceled = false;
     }
 
+    /**
+     *  Reset variables when the connection with the cluster went down.
+     */
     public void onDisconnect() {
         clusterStatusAdmin = null;
         logService = null;
         canceled = true;
-
     }
 
+    /**
+     * Return the flag indicating whether the job has been cancelled or not.
+     *
+     * @return  true if the job is cancelled, false otherwise.
+     */
     public boolean isCanceled() {
         return canceled;
     }
 
+    /**
+     * Clear all caches.
+     */
     private void clearLogCache() {
         rawLogCache = new Hashtable();
         filteredLogCache = new Vector();
@@ -285,12 +374,22 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         realModel.fireTableDataChanged();
     }
 
+    /**
+     * Retreive logs from the cluster.
+     *
+     * @param msgFilterLevel  The filter level.
+     * @param logPane   The object reference to the LogPanel.
+     * @param msgNumSelected  The message number of the log being selected by the user for viewing the details of the message.
+     * @param restartTimer  Specifying whether the refresh timer is restarted after the data retrieval.
+     * @param requests  The list of requests for retrieving logs. One request per node.
+     * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
+     */
     public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer, Vector requests, final boolean newRefresh) {
 
         long endMsgNumber = -1;
-        //Vector requests = new Vector();
+
         if (newRefresh) {
-            //todo: check if this is required anymore
+
             requests = new Vector();
             for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
                 GatewayStatus gatewayStatus = (GatewayStatus) currentNodeList.get(i.next());
@@ -302,14 +401,12 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                         endMsgNumber = ((LogMessage) ((Vector) logCache).firstElement()).getMsgNumber();
                     }
 
-                    //todo: the following line should be moved out of this block - it is placed here for testing purpose only
-                    // maybe this doesn't matter as the node must be in the rawLogCache anyway
+                    // add the request for retrieving logs from the node
                     requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, endMsgNumber));
                 }
-
-                //requests.add(new LogRequest(gatewayStatus.getNodeId(),  -1, endMsgNumber));
             }
         }
+
         // create a worker thread to retrieve the cluster info
         final ClusterLogWorker infoWorker = new ClusterLogWorker(clusterStatusAdmin, logService, currentNodeList, requests) {
             public void finished() {
