@@ -35,7 +35,14 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
         while (iter.hasNext()) {
             EntityHeader thisHeader = (EntityHeader)iter.next();
             IdentityProviderConfig conf = findByPrimaryKey(thisHeader.getOid());
-            InternalIdentityProviderClient provider = new InternalIdentityProviderClient();
+            IdentityProvider provider = null;
+
+            // construct the provider based on the config type
+            if (conf instanceof com.l7tech.identity.ldap.LdapIdentityProviderConfig) {
+                provider = new com.l7tech.identity.ldap.LdapIdentityProviderClient();
+            }
+            else provider = new InternalIdentityProviderClient();
+
             provider.initialize(conf);
             output.add(provider);
         }
