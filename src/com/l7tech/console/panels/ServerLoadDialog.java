@@ -48,16 +48,6 @@ public class ServerLoadDialog extends JDialog implements ActionListener, KeyList
         pack();
     }
 
-    protected void processKeyEvent(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_F5) {
-            e.consume();
-            refresh();
-            System.out.println("hit f5");
-        }
-        System.out.println("other key event");
-        super.processKeyEvent(e);
-    }
-
     /**
      * Loads locale-specific resources: strings, images, etc
      */
