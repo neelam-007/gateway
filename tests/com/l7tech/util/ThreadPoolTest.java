@@ -51,7 +51,7 @@ public class ThreadPoolTest extends TestCase {
     Runnable r =
       new Runnable() {
         public void run() {
-          logger.info("Runnable " + Thread.currentThread());
+          // logger.info("Runnable " + Thread.currentThread());
         }
       };
 
@@ -99,7 +99,7 @@ public class ThreadPoolTest extends TestCase {
       for (int i = 0; i < 1000; i++) {
         pool.start(r);
       }
-      ss.print("1000 Runnable invocations on 5 thread queue");
+      // ss.print("1000 Runnable invocations on 5 thread queue");
       pool.close();
 
       pool = new ThreadPool("ThreadPool", 10);
@@ -108,7 +108,7 @@ public class ThreadPoolTest extends TestCase {
         pool.start(r);
       }
 
-      ss.print("1000 Runnable invocations on 10 thread queue");
+      // ss.print("1000 Runnable invocations on 10 thread queue");
       pool.close();
 
       pool = new ThreadPool("ThreadPool", 100);
@@ -117,7 +117,7 @@ public class ThreadPoolTest extends TestCase {
         pool.start(r);
       }
 
-      ss.print("1000 Runnable invocations on 100 thread queue");
+      // ss.print("1000 Runnable invocations on 100 thread queue");
       pool.close();
 
     } finally {
