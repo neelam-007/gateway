@@ -212,6 +212,10 @@ public class Wizard extends JDialog {
      * initialize the wizard state
      */
     private void initialize() {
+        // add stepStateListener to the startPanel
+        startPanel.addChangeListener(stepStateListener);
+
+        // add stepStateListener to each subsequent panel
         for (Iterator it = new Wizard.Iterator(startPanel); it.hasNext();) {
             WizardStepPanel p = it.next();
             p.addChangeListener(stepStateListener);
@@ -351,7 +355,7 @@ public class Wizard extends JDialog {
      *
      * @param wp the wizard panel
      */
-    private void updateWizardControls(WizardStepPanel wp) {
+    protected void updateWizardControls(WizardStepPanel wp) {
         buttonFinish.setEnabled(wp.canFinish());
         buttonNext.setEnabled(wp.canAdvance() && wizardIterator.hasNext());
         buttonBack.setEnabled(wizardIterator.hasPrevious());
