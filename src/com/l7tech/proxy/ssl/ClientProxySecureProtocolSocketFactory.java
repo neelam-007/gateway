@@ -30,13 +30,17 @@ import java.security.cert.X509Certificate;
  */
 public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSocketFactory {
     private static final Category log = Category.getInstance(ClientProxySecureProtocolSocketFactory.class);
-    private static final MyHandshakeCompletedListener verifier = new MyHandshakeCompletedListener();
     private SSLContext sslContext;
 
     /* My own hostname verifier goes here */
     private static class MyHandshakeCompletedListener implements HandshakeCompletedListener {
+        private String expectedHostname;
+
+        MyHandshakeCompletedListener(String expectedHostname) {
+            this.expectedHostname = expectedHostname;
+        }
+
         public void handshakeCompleted(HandshakeCompletedEvent event) {
-            String expectedHostname = event.getSocket().getChannel().socket().getRemoteSocketAddress().toString();
             log.info("MyHandshakeCompletedListner: connection was made to " + expectedHostname);
             try {
                 Certificate[] certs = event.getPeerCertificates();
@@ -67,7 +71,7 @@ public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSoc
             throws IOException, UnknownHostException
     {
         final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
-        sock.addHandshakeCompletedListener(verifier);
+        sock.addHandshakeCompletedListener(new MyHandshakeCompletedListener(host));
         return sock;
     }
 
@@ -75,13 +79,13 @@ public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSoc
             throws IOException, UnknownHostException
     {
         final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port, clientHost, clientPort);
-        sock.addHandshakeCompletedListener(verifier);
+        sock.addHandshakeCompletedListener(new MyHandshakeCompletedListener(host));
         return sock;
     }
 
     public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
         final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port);
-        sock.addHandshakeCompletedListener(verifier);
+        sock.addHandshakeCompletedListener(new MyHandshakeCompletedListener(host));
         return sock;
     }
 }
