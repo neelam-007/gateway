@@ -3,6 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.WsdlOperationsTableModel;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.wsdl.*;
 import javax.xml.namespace.QName;
@@ -36,12 +38,22 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     }
 
     private void initialize() {
+        operationsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         operationsTableScrollPane.getViewport().setBackground(operationsTable.getBackground());
-        operationsTable.setDefaultRenderer(Object.class,operationsTableCellRenderer);
-        operationsTable.setDefaultRenderer(Input.class,operationsTableCellRenderer);
-        operationsTable.setDefaultRenderer(Output.class,operationsTableCellRenderer);
+        operationsTable.setDefaultRenderer(Object.class, operationsTableCellRenderer);
+        operationsTable.setDefaultRenderer(Input.class, operationsTableCellRenderer);
+        operationsTable.setDefaultRenderer(Output.class, operationsTableCellRenderer);
+        operationsTable.getSelectionModel().
+          addListSelectionListener(new ListSelectionListener() {
+              public void valueChanged(ListSelectionEvent e) {
+                  final int selectedRow = operationsTable.getSelectedRow();
+                  removeOperatonButton.setEnabled(selectedRow != -1);
+              }
+          });
+
         addOperationButton.addActionListener(addOperationActionListener);
         removeOperatonButton.setEnabled(false);
+        removeOperatonButton.addActionListener(removeOperationActionListener);
     }
 
     /**
@@ -118,7 +130,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         });
         operationsTable.setDefaultEditor(Output.class, new DefaultCellEditor(messagesComboBox));
         operationsTable.setDefaultEditor(Input.class, new DefaultCellEditor(messagesComboBox));
-
+        removeOperatonButton.setEnabled(operationsModel.getRowCount() > 0);
     }
 
     /**
@@ -163,6 +175,22 @@ public class WsdlPortTypePanel extends WizardStepPanel {
               }
           }
       };
+
+    /** remove operation listener */
+    private ActionListener
+      removeOperationActionListener = new ActionListener() {
+          /**
+           * Invoked when an action occurs.
+           */
+          public void actionPerformed(ActionEvent e) {
+              int selectedRow = operationsTable.getSelectedRow();
+              if (selectedRow == -1) {
+                  operationsModel.removeOperation(selectedRow);
+                  return;
+              }
+          }
+      };
+
 
     private
     DefaultTableCellRenderer operationsTableCellRenderer

@@ -38,15 +38,6 @@
               <margin top="0" left="0" bottom="0" right="0"/>
             </properties>
           </component>
-          <component id="858cf" class="javax.swing.JTable" binding="bindingOperationsTable">
-            <constraints>
-              <xy x="144" y="229" width="386" height="60"/>
-              <grid row="10" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3">
-                <preferred-size width="150" height="50"/>
-              </grid>
-            </constraints>
-            <properties/>
-          </component>
           <component id="d04dc" class="javax.swing.JLabel">
             <constraints>
               <xy x="25" y="31" width="109" height="17"/>
@@ -146,7 +137,7 @@
           </vspacer>
           <vspacer id="a3eb">
             <constraints>
-              <xy x="331" y="50" width="11" height="20"/>
+              <xy x="331" y="55" width="11" height="10"/>
               <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -154,6 +145,20 @@
               </grid>
             </constraints>
           </vspacer>
+          <scrollpane id="56eea" binding="bindingOperationsTableScrollPane">
+            <constraints>
+              <xy x="144" y="229" width="386" height="60"/>
+              <grid row="10" column="2" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="858cf" class="javax.swing.JTable" binding="bindingOperationsTable">
+                <constraints/>
+                <properties/>
+              </component>
+            </children>
+          </scrollpane>
         </children>
       </grid>
     </children>

@@ -1,7 +1,20 @@
 package com.l7tech.console.panels;
 
+import com.ibm.wsdl.extensions.soap.SOAPConstants;
+import com.l7tech.console.table.WsdlBindingOperationsTableModel;
+
 import javax.swing.*;
+import javax.wsdl.*;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.ExtensionRegistry;
+import javax.wsdl.extensions.soap.SOAPBinding;
+import javax.wsdl.extensions.soap.SOAPOperation;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  *
@@ -13,8 +26,11 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
     private JTextField portTypeBindingNameField;
     private JLabel portTypeName;
     private JTable bindingOperationsTable;
+    private JScrollPane bindingOperationsTableScrollPane;
+
     private JTextField portTypeBindingTransportField; // http://schemas.xmlsoap.org/soap/http
     private JComboBox portTypeBindingStyle;
+    private Definition definition;
 
     public WsdlPortTypeBindingPanel(WizardStepPanel next) {
         super(next);
@@ -23,10 +39,23 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
 
     private void initialize() {
         setLayout(new BorderLayout());
+        JViewport viewport = bindingOperationsTableScrollPane.getViewport();
+        viewport.setBackground(bindingOperationsTable.getBackground());
+        bindingOperationsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
         add(mainPanel, BorderLayout.CENTER);
         ComboBoxModel model =
-          new DefaultComboBoxModel(new String[] {"rpc", "document"});
+          new DefaultComboBoxModel(new String[]{"rpc", "document"});
         portTypeBindingStyle.setModel(model);
+        portTypeBindingStyle.addActionListener( new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    collectSoapBinding(getEditedBinding());
+                } catch (WSDLException e1) {
+                    throw new RuntimeException(e1);
+                }
+            }
+        });
     }
 
     /**
@@ -53,6 +82,120 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
     public String getStepLabel() {
         return "Bindings";
     }
+
+    /**
+     * Provides the wizard with the current data--either
+     * the default data or already-modified settings.
+     *
+     * @param settings the object representing wizard panel state
+     * @exception IllegalArgumentException if the the data provided
+     * by the wizard are not valid.
+     */
+    public void readSettings(Object settings) throws IllegalArgumentException {
+        if (settings instanceof Definition) {
+            definition = (Definition)settings;
+        } else {
+            throw new IllegalArgumentException("Unexpected type " + settings.getClass());
+        }
+        PortType portType = getPortType();
+        portTypeName.setText(portType.getQName().getLocalPart());
+        portTypeBindingNameField.setText(portTypeName.getText() + "Binding");
+
+        Binding binding = null;
+        try {
+            binding = getEditedBinding();
+        } catch (WSDLException e) {
+            throw new RuntimeException(e);
+        }
+        WsdlBindingOperationsTableModel model =
+          new WsdlBindingOperationsTableModel(definition, binding);
+
+        bindingOperationsTable.setModel(model);
+    }
+
+    /**
+     * returns the binding that is being edited (single binidng support only)
+     * creats the binding first time
+     * @return the binding
+     */
+    private Binding getEditedBinding() throws WSDLException {
+        PortType portType = getPortType();
+        Map bindings = definition.getBindings();
+        Binding binding;
+        if (bindings.isEmpty()) {
+            binding = definition.createBinding();
+            binding.setPortType(portType);
+            binding.setUndefined(false);
+            collectSoapBinding(binding);
+            definition.addBinding(binding);
+            for (Iterator it = portType.getOperations().iterator(); it.hasNext();) {
+                Operation op = (Operation)it.next();
+                BindingOperation bo = definition.createBindingOperation();
+                bo.setName(op.getName());
+                bo.setOperation(op);
+                binding.addBindingOperation(bo);
+                // soap action
+                String action =
+                  portType.getQName().getLocalPart() + "#" + bo.getName();
+                ExtensibilityElement ee = null;
+                ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
+                ee = extensionRegistry.createExtension(BindingOperation.class,
+                  SOAPConstants.Q_ELEM_SOAP_OPERATION);
+                if (ee instanceof SOAPOperation) {
+                    SOAPOperation sop = (SOAPOperation)ee;
+                    sop.setSoapActionURI(action);
+                } else {
+                    throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
+                }
+                bo.addExtensibilityElement(ee);
+            }
+        } else {
+            binding = (Binding)bindings.values().iterator().next();
+        }
+        return binding;
+    }
+
+    private void collectSoapBinding(Binding binding) throws WSDLException {
+        ExtensionRegistry extensionRegistry =
+          definition.getExtensionRegistry();
+
+        java.util.List extElements = binding.getExtensibilityElements();
+        java.util.List remove = new ArrayList();
+        for (Iterator iterator = extElements.iterator(); iterator.hasNext();) {
+            ExtensibilityElement ee = (ExtensibilityElement)iterator.next();
+            if (ee instanceof SOAPBinding) {
+                remove.add(ee);
+            }
+        }
+        extElements.removeAll(remove);
+
+        ExtensibilityElement ee = null;
+        ee = extensionRegistry.createExtension(Binding.class,
+          SOAPConstants.Q_ELEM_SOAP_BINDING);
+        if (ee instanceof SOAPBinding) {
+            SOAPBinding sb = (SOAPBinding)ee;
+            sb.setTransportURI(portTypeBindingTransportField.getText());
+            sb.setStyle(portTypeBindingStyle.getSelectedItem().toString());
+            binding.addExtensibilityElement(sb);
+        } else {
+            throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
+        }
+    }
+
+    /**
+     * Retrieve the port type. This method expects the port type, already collected
+     * and throws <code>IllegalStateException</code> if port type not present.
+     * @return the port type
+     * @throws IllegalStateException if there is no port type in the definition
+     */
+    private PortType getPortType() throws IllegalStateException {
+        Map portTypes = definition.getPortTypes();
+        if (portTypes.isEmpty()) {
+            throw new IllegalStateException("Should have at least one port type");
+        }
+        return (PortType)portTypes.values().iterator().next();
+    }
+
 
     {
 // do not edit this generated initializer!!! do not add your code here!!!

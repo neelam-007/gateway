@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.ibm.wsdl.DefinitionImpl;
+import com.ibm.wsdl.extensions.PopulatedExtensionRegistry;
 import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
@@ -32,7 +33,10 @@ public class WsdlCreateWizard extends Wizard {
 
     public WsdlCreateWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
-        wizardInput = new DefinitionImpl();
+        Definition def = new DefinitionImpl();
+        def.setExtensionRegistry(new PopulatedExtensionRegistry());
+        wizardInput = def;
+
     }
 
     protected final JPanel createButtonPanel() {
@@ -61,7 +65,7 @@ public class WsdlCreateWizard extends Wizard {
                         wsdlWriter.writeWSDL((Definition)wizardInput, writer);
                         new RawWsdlDialog(writer.toString(), "wsdl title here....");
                     } catch (WSDLException e1) {
-                        //
+                        e1.printStackTrace();
                     }
                 }
             });
@@ -79,7 +83,7 @@ public class WsdlCreateWizard extends Wizard {
             wsdlTextArea.setEditable(false);
             wsdlTextArea.setTokenMarker(new XMLTokenMarker());
             wsdlTextArea.setText(wsdlString);
-
+            wsdlTextArea.setCaretPosition(0);
             JPanel panel = new JPanel(new BorderLayout());
             panel.add(wsdlTextArea, BorderLayout.CENTER);
 

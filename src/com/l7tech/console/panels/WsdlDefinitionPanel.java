@@ -18,7 +18,7 @@ import java.util.Iterator;
 public class WsdlDefinitionPanel extends WizardStepPanel {
     private static final String DEFAULT_NAME_SPACE = "http://schemas.xmlsoap.org/wsdl/";
     private static final String XSD_NAME_SPACE = "http://www.w3.org/2001/XMLSchema";
-    private static final String SOAP_NAME_SPACE = "http://schemas.xmlsoap.org/wsdl/soap";
+    private static final String SOAP_NAME_SPACE = "http://schemas.xmlsoap.org/wsdl/soap/";
     private JPanel mainPanel;
     private JPanel namePanel;
     private JPanel targetNameSpacePanel;

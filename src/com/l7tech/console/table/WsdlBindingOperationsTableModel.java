@@ -2,29 +2,32 @@ package com.l7tech.console.table;
 
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.*;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.xml.namespace.QName;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * Class <code>WsdlOperationsTableModel</code> represents the port
- * type operations.
+ * Class <code>WsdlBindingOperationsTableModel</code> represents the
+ * port  * type operations.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
-public class WsdlOperationsTableModel extends AbstractTableModel {
+public class WsdlBindingOperationsTableModel extends AbstractTableModel {
     private Definition definition;
-    private PortType portType;
+    private Binding binding;
 
     /**
      * Create the new <code>WsdlMessagesTableModel</code>
      * @param def the WSDL definition
      * @param def the port type these operations belong to
      */
-    public WsdlOperationsTableModel(Definition def, PortType pt) {
-        if (def == null || pt == null) {
+    public WsdlBindingOperationsTableModel(Definition def, Binding b) {
+        if (def == null || b == null) {
             throw new IllegalArgumentException();
         }
         definition = def;
-        portType = pt;
+        binding = b;
     }
 
     /**
@@ -36,7 +39,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @see #getRowCount
      */
     public int getColumnCount() {
-        return 3;
+        return 2;
     }
 
     /**
@@ -49,7 +52,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @see #getColumnCount
      */
     public int getRowCount() {
-        return portType.getOperations().size();
+        return binding.getBindingOperations().size();
     }
 
     /**
@@ -61,11 +64,9 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      */
     public String getColumnName(int column) {
         if (column == 0) {
-            return "Name";
+            return "Operation";
         } else if (column == 1) {
-            return "Input Message";
-        } else if (column == 2) {
-            return "Output Message";
+            return "SOAP Action";
         }
         throw new IndexOutOfBoundsException("column " + column);
     }
@@ -77,12 +78,8 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      *  @return the corresponding class
      */
     public Class getColumnClass(int column) {
-        if (column == 0) {
+        if (column == 0 || column == 1) {
             return String.class;
-        } else if (column == 1) {
-            return Input.class;
-        } else if (column == 2) {
-            return Output.class;
         }
         throw new IndexOutOfBoundsException("column " + column);
     }
@@ -99,16 +96,16 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @return	the value Object at the specified cell
      */
     public Object getValueAt(int rowIndex, int columnIndex) {
-        Operation op = getOperationAt(rowIndex);
+        BindingOperation op = getOperationAt(rowIndex);
         if (columnIndex == 0) {
             return op.getName();
         } else if (columnIndex == 1) {
-            return op.getInput();
-        } else if (columnIndex == 2) {
-            return op.getOutput();
-        } else {
-            throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
+            String sa = getSoapAction(op);
+            if (sa == null) sa = "";
+            return sa;
         }
+        int size = binding.getBindingOperations().size();
+        throw new IndexOutOfBoundsException("" + rowIndex + " > " + size);
     }
 
     /**
@@ -117,24 +114,20 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @param name the message name local part
      * @return the newly created message
      */
-    public Operation addOperation(String name) {
-        Operation op = definition.createOperation();
+    public BindingOperation addOperation(String name) {
+        BindingOperation op = definition.createBindingOperation();
         op.setName(name);
-        op.setUndefined(false);
         addOperation(op);
         return op;
     }
 
     /**
-     * add the operation <code>Operation</code> to
+     * add the binding operation <code>Operation</code> to
      * the port type operations table
      * @param operation the message to add
      */
-    public void addOperation(Operation operation) {
-        portType.addOperation(operation);
-        operation.setInput(definition.createInput());
-        operation.setOutput(definition.createOutput());
-
+    public void addOperation(BindingOperation operation) {
+        binding.addBindingOperation(operation);
         this.fireTableStructureChanged();
     }
 
@@ -144,7 +137,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @param name the message name local part
      */
     public void removeOperation(String name) {
-        List operations = portType.getOperations();
+        List operations = binding.getBindingOperations();
         for (Iterator iterator = operations.iterator(); iterator.hasNext();) {
             Operation operation = (Operation)iterator.next();
             if (name.equals(operation.getName())) {
@@ -159,22 +152,22 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * remove the message by <code>index</code>
      * @param index the message index
      */
-    public Operation removeOperation(int index) {
-        Operation op = getOperationAt(index);
-        portType.getOperations().remove(op);
+    public BindingOperation removeOperation(int index) {
+        BindingOperation op = getOperationAt(index);
+        binding.getBindingOperations().remove(op);
         this.fireTableStructureChanged();
         return op;
     }
 
     /**
-     *  Retuirns true. This is the default implementation for all cells.
+     *  Returns false.  This is the default implementation for all cells.
      *
      *  @param  rowIndex  the row being queried
      *  @param  columnIndex the column being queried
      *  @return false
      */
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return true;
+        return columnIndex != 0;
     }
 
     /**
@@ -188,26 +181,20 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
         if (aValue == null) {
             throw new IllegalArgumentException(" value == null ");
         }
-        Operation op = getOperationAt(rowIndex);
+        BindingOperation op = getOperationAt(rowIndex);
         if (columnIndex == 0) {
-            if (!(aValue instanceof String)) {
-                throw new IllegalArgumentException("Unsupported type "+aValue.getClass());
-            }
             op.setName((String)aValue);
         } else if (columnIndex == 1) {
-            if (!(aValue instanceof Message)) {
-                throw new IllegalArgumentException("Unsupported type "+aValue.getClass()+ " expected "+Message.class);
+            try {
+                setSoapAction(op, (String)aValue);
+            } catch (WSDLException e) {
+                throw new RuntimeException(e);
             }
-            op.getInput().setMessage((Message)aValue);
-        } else if (columnIndex == 2) {
-            if (!(aValue instanceof Message)) {
-                throw new IllegalArgumentException("Unsupported type "+aValue.getClass() +" expected "+Message.class);
-            }
-            op.getOutput().setMessage((Message)aValue);
         } else {
-            throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
+            throw new IndexOutOfBoundsException(" column " + columnIndex + "out of range");
         }
     }
+
 
     /**
      * Returns the Operation at the  row <code>rowIndex</code>.
@@ -216,17 +203,60 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      *                      (1 based)
      * @return	the Operation at the specified row
      */
-    private Operation getOperationAt(int rowIndex) {
-        Iterator it = portType.getOperations().iterator();
+    private BindingOperation getOperationAt(int rowIndex) {
+        List bindingOperations = binding.getBindingOperations();
+        Iterator it = bindingOperations.iterator();
         int row = 0;
         while (it.hasNext()) {
             Object o = it.next();
             if (row++ == rowIndex) {
-                Operation op = (Operation)o;
+                BindingOperation op = (BindingOperation)o;
                 return op;
             }
         }
-        throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
+        throw new IndexOutOfBoundsException(" row " + rowIndex + " > " + bindingOperations.size());
     }
+
+    /**
+     * @param operation to get the soap action for
+     * @return the soap action or null if none fould
+     */
+    private String getSoapAction(BindingOperation operation) {
+        Iterator eels = operation.getExtensibilityElements().iterator();
+        ExtensibilityElement ee;
+        while (eels.hasNext()) {
+            ee = (ExtensibilityElement)eels.next();
+            if (ee instanceof SOAPOperation) {
+                SOAPOperation sop = (SOAPOperation)ee;
+                return sop.getSoapActionURI();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @param operation the binding operation to set the actin for
+     * @param action the soap action to set
+     */
+    private void setSoapAction(BindingOperation operation, String action)
+      throws WSDLException {
+        List extensibilityElements = operation.getExtensibilityElements();
+        Iterator eels = extensibilityElements.iterator();
+
+        while (eels.hasNext()) {
+            ExtensibilityElement ee;
+            ee = (ExtensibilityElement)eels.next();
+            if (ee instanceof SOAPOperation) {
+                SOAPOperation sop = (SOAPOperation)ee;
+                sop.setSoapActionURI(action);
+                return;
+            }
+        }
+        QName qn = new QName(action);
+        ExtensibilityElement ee =
+          definition.getExtensionRegistry().createExtension(SOAPOperation.class, qn);
+        operation.addExtensibilityElement(ee);
+    }
+
 
 }

@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.event.WizardListener;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -12,9 +12,12 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.NoSuchElementException;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.EventListener;
+import java.util.NoSuchElementException;
 
 /**
  * The <code>Wizard</code> that drives the wizard step panels.
@@ -130,15 +133,16 @@ public class Wizard extends JDialog {
         stepsTitlePanel.add(stepsLabel);
         stepLabelsPanel.add(stepsTitlePanel);
         int i = 0;
-        for (Iterator itp = new Iterator(startPanel); itp.hasNext(); itp.next()) {
-            WizardStepPanel p = itp.current();
+        WizardStepPanel p = startPanel;
+        while(p !=null) {
             String label = "" + (++i) + ". " + p.getStepLabel();
             WizardLabel l = new WizardLabel(label, p, false);
             stepLabelsPanel.add(l);
             addWizardListener(l);
+            p = p.nextPanel();
         }
         mainPanel.add(stepLabelsPanel, BorderLayout.WEST);
-        
+
 
         // the wizard step panel
         wizardStepPanel = new JPanel();
@@ -269,16 +273,19 @@ public class Wizard extends JDialog {
      * @param current the current panel
      * @param next the next panel
      */
-    protected void selectWizardPanel(WizardStepPanel current, WizardStepPanel next) {
+    private void selectWizardPanel(WizardStepPanel current, WizardStepPanel next) {
+        if (next == null) {
+            throw new IllegalArgumentException("next == null");
+        }
         if (current != null) {
             if (wizardInput != null) {
                 current.storeSettings(wizardInput);
             }
             wizardStepPanel.remove(current);
         }
-        if (wizardInput != null) {
-            current.readSettings(wizardInput);
-        }
+            if (wizardInput != null) {
+                next.readSettings(wizardInput);
+            }
         wizardStepPanel.add(next, BorderLayout.CENTER);
         updateWizardControls(next);
         fireSelectionChanged(next);
@@ -410,7 +417,6 @@ public class Wizard extends JDialog {
             first = panel;
             current = panel;
         }
-
         /**
          * Returns <tt>true</tt> if this iterator has more elements when
          * traversing the list in the forward direction.
