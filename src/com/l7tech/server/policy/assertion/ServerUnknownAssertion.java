@@ -6,7 +6,6 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -30,7 +29,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class ServerUnknownAssertion implements ServerAssertion {
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private UnknownAssertion unknownAssertion;
 
     public ServerUnknownAssertion(UnknownAssertion a) {

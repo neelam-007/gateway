@@ -113,7 +113,7 @@ public class ServiceUsageManager {
         }
     }
 
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     public static final String TABLE_NAME = "service_usage";
     public static final String NODE_ID_COLUMN_NAME = "nodeid";
     public static final String SERVICE_ID_COLUMN_NAME = "serviceid";

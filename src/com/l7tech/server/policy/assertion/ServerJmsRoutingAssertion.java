@@ -10,7 +10,6 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlRequest;
@@ -28,10 +27,10 @@ import javax.naming.NamingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.PasswordAuthentication;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.net.PasswordAuthentication;
 
 /**
  * Server side implementation of JMS routing assertion.
@@ -368,7 +367,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private Destination routedRequestDestination;
     private Destination endpointResponseDestination;
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     public static final int BUFFER_SIZE = 8192;
     private static final int MAX_OOPSES = 5;
     private static final long RETRY_DELAY = 1000;

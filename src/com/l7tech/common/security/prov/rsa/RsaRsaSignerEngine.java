@@ -124,5 +124,5 @@ public class RsaRsaSignerEngine implements RsaSignerEngine {
         return new X509CertImpl(encoded);
     }
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

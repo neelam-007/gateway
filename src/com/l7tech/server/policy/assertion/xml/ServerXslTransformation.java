@@ -1,30 +1,28 @@
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
+import com.l7tech.message.SoapRequest;
+import com.l7tech.message.SoapResponse;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.transform.dom.DOMSource;
 import java.io.ByteArrayOutputStream;
-import java.io.StringReader;
 import java.io.IOException;
-import java.util.logging.Logger;
+import java.io.StringReader;
 import java.util.logging.Level;
-
-import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapResponse;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.logging.LogManager;
+import java.util.logging.Logger;
 
 /**
  * Server side class that executes an XslTransformation assertion within a policy tree.
@@ -115,5 +113,5 @@ public class ServerXslTransformation implements ServerAssertion {
     }
 
     private XslTransformation subject;
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

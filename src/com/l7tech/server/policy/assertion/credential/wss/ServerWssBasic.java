@@ -7,7 +7,6 @@
 package com.l7tech.server.policy.assertion.credential.wss;
 
 import com.l7tech.common.util.SAXParsingCompleteException;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlRequest;
@@ -35,7 +34,6 @@ import java.util.logging.Logger;
 public class ServerWssBasic implements ServerAssertion {
     public ServerWssBasic(WssBasic data) {
         _data = data;
-        logger = LogManager.getInstance().getSystemLogger();
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
@@ -139,5 +137,5 @@ public class ServerWssBasic implements ServerAssertion {
     }*/
 
     protected WssBasic _data;
-    private Logger logger = null;
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

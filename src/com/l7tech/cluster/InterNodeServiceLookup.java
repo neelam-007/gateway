@@ -148,5 +148,5 @@ public class InterNodeServiceLookup extends ServiceLookup {
     // instead of caching one registrar, we cache one per node
     // key is hostname value is ServiceRegistrar
     private final HashMap registrars = new HashMap();
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

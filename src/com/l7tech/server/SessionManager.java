@@ -1,15 +1,12 @@
 package com.l7tech.server;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.common.security.xml.Session;
-import com.l7tech.common.security.xml.SessionNotFoundException;
 import com.l7tech.common.security.xml.SessionInvalidException;
+import com.l7tech.common.security.xml.SessionNotFoundException;
 
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.security.SecureRandom;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * Holds sessions for xml encryption usage.
@@ -95,7 +92,6 @@ public class SessionManager {
     }
 
     protected SessionManager() {
-        logger = LogManager.getInstance().getSystemLogger();
     }
 
     private static class SingletonHolder {
@@ -103,6 +99,6 @@ public class SessionManager {
     }
 
     private HashMap sessions = new HashMap();
-    private Logger logger = null;
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private SecureRandom rand = null;
 }

@@ -24,7 +24,6 @@ import net.sf.hibernate.HibernateException;
 public class InternalGroupManagerServer extends HibernateEntityManager implements GroupManager {
     public InternalGroupManagerServer( InternalIdentityProviderServer provider ) {
         super();
-        logger = LogManager.getInstance().getSystemLogger();
         _provider = provider;
     }
 
@@ -516,7 +515,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         return Group.class;
     }
 
-    private Logger logger = null;
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private InternalIdentityProviderServer _provider;
 
     public static final String HQL_GETGROUPS = "select grp from grp in class " + IMPCLASSNAME + ", " +

@@ -161,5 +161,5 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
 
     private final ClusterInfoManager ciman = ClusterInfoManager.getInstance();
     private final ServiceUsageManager suman = new ServiceUsageManager();
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

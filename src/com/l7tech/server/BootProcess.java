@@ -34,7 +34,8 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class BootProcess implements ServerComponentLifecycle {
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final ServerLogManager serverLogManager = ServerLogManager.getInstance();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private List _components = new ArrayList();
 
     public void init(ComponentConfig config) throws LifecycleException {
@@ -91,10 +92,11 @@ public class BootProcess implements ServerComponentLifecycle {
 
             PersistenceContext.getCurrent().beginTransaction();
             // initialize the log dumper
-            LogManager logManager = LogManager.getInstance();
+            serverLogManager.suscribeDBHandler();
+            /*LogManager logManager = LogManager.getInstance();
             if (logManager instanceof ServerLogManager) {
                 ((ServerLogManager)logManager).suscribeDBHandler();
-            }
+            }*/
             // initialize the process that updates the cluster status info
             initializeClusterStatusUpdate();
             PersistenceContext.getCurrent().commitTransaction();

@@ -6,11 +6,12 @@
 
 package com.l7tech.service.resolution;
 
-import com.l7tech.service.PublishedService;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.logging.LogManager;
+import com.l7tech.service.PublishedService;
 
-import javax.wsdl.*;
+import javax.wsdl.BindingOperation;
+import javax.wsdl.Definition;
+import javax.wsdl.WSDLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,5 +63,5 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
     }
 
     protected abstract String getTargetValue( Definition def, BindingOperation operation );
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -6,25 +6,24 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
-import org.jaxen.dom.DOMXPath;
 import org.jaxen.JaxenException;
+import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server-side processing for an assertion that verifies whether a request
@@ -132,6 +131,6 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
     }
 
     private final RequestXpathAssertion _data;
-    private final Logger _logger = LogManager.getInstance().getSystemLogger();
+    private final Logger _logger = Logger.getLogger(getClass().getName());
     private DOMXPath _domXpath;
 }

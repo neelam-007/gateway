@@ -2,7 +2,6 @@ package com.l7tech.remote.ws.security;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistenceContext;
@@ -52,7 +51,6 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
     public static final long SESSION_MAX_LENGTH = 120000; // two minutes
 
     public AuthenticationAxisHandler() {
-        logger = LogManager.getInstance().getSystemLogger();
     }
 
     /**
@@ -205,5 +203,5 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
 
     private static final String AUTHENTICATED_USER = "Authenticated_com.l7tech.identity.User";
     IdentityProviderConfigManager identityProviderConfigManager = null;
-    Logger logger = null;
+    final Logger logger = Logger.getLogger(getClass().getName());
 }

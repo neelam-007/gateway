@@ -8,13 +8,12 @@ package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.service.PublishedService;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.service.PublishedService;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -177,5 +176,5 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         sendFault(sreq, sresp, hreq, hresp, HttpServletResponse.SC_UNAUTHORIZED, SoapUtil.FC_CLIENT, "Authentication Required");
     }
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -1,17 +1,15 @@
 package com.l7tech.service.resolution;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.PublishedService;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Query;
+import net.sf.hibernate.Session;
 
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import net.sf.hibernate.Session;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Query;
 
 /**
  *
@@ -171,5 +169,5 @@ public class ResolutionManager {
     //private static final String SOAPACTION_COLUMN = "soapaction";
     //private static final String URN_COLUMN = "urn";
 
-    protected Logger logger = LogManager.getInstance().getSystemLogger();
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 }

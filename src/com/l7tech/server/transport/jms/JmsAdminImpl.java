@@ -8,15 +8,14 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.*;
 import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
 import javax.jms.*;
-import javax.naming.NamingException;
 import javax.naming.Context;
+import javax.naming.NamingException;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
@@ -364,5 +363,5 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         return (JmsEndpointManager)Locator.getDefault().lookup(JmsEndpointManager.class);
     }
 
-    private Logger _logger = LogManager.getInstance().getSystemLogger();
+    private final Logger _logger = Logger.getLogger(getClass().getName());
 }

@@ -2,7 +2,6 @@ package com.l7tech.server;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
@@ -45,10 +44,9 @@ import java.util.logging.Logger;
  */
 public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected ServiceManager serviceManagerInstance = null;
-    protected Logger logger = null;
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 
     public void init(ServletConfig config) throws ServletException {
-        logger = LogManager.getInstance().getSystemLogger();
         super.init(config);
     }
 

@@ -6,14 +6,13 @@
 
 package com.l7tech.server.policy.assertion.identity;
 
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.logging.LogManager;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -78,5 +77,5 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
     }
 
     protected MemberOfGroup _data;
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

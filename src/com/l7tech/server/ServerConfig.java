@@ -6,7 +6,6 @@
 
 package com.l7tech.server;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.TransportProtocol;
 
 import javax.naming.InitialContext;
@@ -321,6 +320,6 @@ public class ServerConfig implements ComponentConfig {
     private Properties _properties;
 
     private static ServerConfig _instance;
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private InitialContext _icontext;
 }

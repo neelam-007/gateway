@@ -251,5 +251,5 @@ public class HibernatePersistenceContext extends PersistenceContext {
     protected Transaction _htxn;
     protected ArrayList txListenerList = new ArrayList();
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

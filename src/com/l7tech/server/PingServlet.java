@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class PingServlet extends HttpServlet {
-    private static final Logger logger = LogManager.getInstance().getSystemLogger();
+    private static final Logger logger = Logger.getLogger(PingServlet.class.getName());
 
     public void init( ServletConfig config ) throws ServletException {
         super.init(config);

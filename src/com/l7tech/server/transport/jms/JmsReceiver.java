@@ -9,17 +9,16 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
-import com.l7tech.logging.LogManager;
 import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
 
 import javax.jms.*;
-import javax.naming.NamingException;
+import javax.jms.IllegalStateException;
 import javax.naming.Context;
+import javax.naming.NamingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.lang.IllegalStateException;
 
 /**
  * Message processing runtime support for JMS messages.
@@ -31,7 +30,7 @@ import java.lang.IllegalStateException;
  */
 public class JmsReceiver implements ServerComponentLifecycle {
     // Statics
-    private static final Logger _logger = LogManager.getInstance().getSystemLogger();
+    private static final Logger _logger = Logger.getLogger(JmsReceiver.class.getName());
     private static final int MAXIMUM_OOPSES = 5;
     /** Set to five seconds so that the uninterruptible (!) poll doesn't pause server shutdown for too long. */
     private static final long RECEIVE_TIMEOUT = 5 * 1000;

@@ -23,7 +23,7 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class JmsSoapRequest extends SoapRequest {
-    private Logger _logger = LogManager.getInstance().getSystemLogger();
+    private final Logger _logger = Logger.getLogger(getClass().getName());
 
     public JmsSoapRequest( JmsTransportMetadata mt ) {
         super( mt );

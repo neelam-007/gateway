@@ -9,17 +9,16 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogManager;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.server.*;
 
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -318,7 +317,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
 
     private Timer _versionTimer = null;
 
-    private Logger _logger = LogManager.getInstance().getSystemLogger();
+    private final Logger _logger = Logger.getLogger(getClass().getName());
     private boolean _booted = false;
     private boolean _valid = false;
     public static final int FREQUENCY = 4 * 1000;

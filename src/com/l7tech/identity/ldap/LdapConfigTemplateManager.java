@@ -161,5 +161,5 @@ public class LdapConfigTemplateManager {
     }*/
 
     private static final HashMap templates = new HashMap();
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

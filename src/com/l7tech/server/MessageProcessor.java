@@ -6,20 +6,19 @@
 
 package com.l7tech.server;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SessionNotFoundException;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceStatistics;
@@ -253,7 +252,7 @@ public class MessageProcessor {
     private static ThreadLocal _currentRequest = new ThreadLocal();
     private static ThreadLocal _currentResponse = new ThreadLocal();
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 
     private DocumentBuilderFactory _dbf;
     private XmlPullParserFactory _xppf;

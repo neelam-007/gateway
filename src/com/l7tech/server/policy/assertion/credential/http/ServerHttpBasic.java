@@ -6,7 +6,6 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -96,5 +95,5 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
     }
 
     protected HttpBasic _data;
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

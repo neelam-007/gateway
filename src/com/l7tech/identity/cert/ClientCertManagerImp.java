@@ -38,7 +38,6 @@ public class ClientCertManagerImp implements ClientCertManager {
             throw new IllegalStateException("Can't instantiate a " + getClass().getName() +
                         "without first initializing a HibernatePersistenceManager!");
         }
-        logger = LogManager.getInstance().getSystemLogger();
     }
 
     public boolean userCanGenCert(User user) {
@@ -249,7 +248,7 @@ public class ClientCertManagerImp implements ClientCertManager {
     }
 
     protected PersistenceManager manager = null;
-    protected Logger logger = null;
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private static final String TABLE_NAME = "client_cert";
     private static final String PROVIDER_COLUMN = "provider";

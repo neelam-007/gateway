@@ -1,11 +1,10 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RemoteIpRange;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.logging.LogManager;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -122,5 +121,5 @@ public class ServerRemoteIpRange implements ServerAssertion {
     // for logging purposes
     private String serializedRange;
 
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

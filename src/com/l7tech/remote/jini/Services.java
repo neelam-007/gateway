@@ -16,8 +16,7 @@ import java.util.logging.Logger;
  */
 public class Services {
     public static final String SERVICES_CONFIG = "start-services.config";
-    //static Logger logger = Logger.getLogger(Services.class.getName());
-    static Logger logger = LogManager.getInstance().getSystemLogger();
+    static Logger logger = Logger.getLogger(Services.class.getName());
     private static Services instance = null;
 
     /**

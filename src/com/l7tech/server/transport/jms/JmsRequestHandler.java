@@ -150,5 +150,5 @@ class JmsRequestHandler {
         }
     }
 
-    private static Logger _logger = LogManager.getInstance().getSystemLogger();
+    private static final Logger _logger = Logger.getLogger(JmsRequestHandler.class.getName());
 }

@@ -8,7 +8,6 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -41,7 +40,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class ServerCustomAssertionHolder implements ServerAssertion {
-    protected Logger logger = LogManager.getInstance().getSystemLogger();
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 
     final protected CustomAssertion customAssertion;
 

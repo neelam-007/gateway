@@ -278,6 +278,6 @@ public class InternalIdentityProviderServer implements IdentityProvider {
     private InternalUserManagerServer userManager;
     private InternalGroupManagerServer groupManager;
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private MessageDigest _md5;
 }

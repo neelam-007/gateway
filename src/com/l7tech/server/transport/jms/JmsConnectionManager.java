@@ -9,7 +9,6 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;
@@ -147,6 +146,6 @@ public class JmsConnectionManager extends HibernateEntityManager {
         return "jms_connection";
     }
 
-    private Logger _logger = LogManager.getInstance().getSystemLogger();
+    private final Logger _logger = Logger.getLogger(getClass().getName());
     private JmsEndpointManager _endpointManager;
 }

@@ -28,7 +28,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     public InternalUserManagerServer( InternalIdentityProviderServer provider ) {
         super();
         _provider = provider;
-        logger = LogManager.getInstance().getSystemLogger();
     }
 
     public User findByPrimaryKey(String oid) throws FindException {
@@ -318,7 +317,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
 
     public static final String F_LOGIN = "login";
     public static final String F_NAME = "name";
-    private Logger logger = null;
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private InternalIdentityProviderServer _provider;
 
 }

@@ -7,17 +7,16 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.logging.LogManager;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.Reference;
-import java.util.Properties;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.net.PasswordAuthentication;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -150,6 +149,6 @@ public class JmsUtil {
         return connect( connection, null );
     }
 
-    private static final Logger logger = LogManager.getInstance().getSystemLogger();
+    private static final Logger logger = Logger.getLogger(JmsUtil.class.getName());
     public static final String DEFAULT_ENCODING = "UTF-8";
 }

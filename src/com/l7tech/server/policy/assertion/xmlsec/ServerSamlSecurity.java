@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.saml.InvalidAssertionException;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
@@ -167,5 +166,5 @@ public class ServerSamlSecurity implements ServerAssertion {
         }
     }
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

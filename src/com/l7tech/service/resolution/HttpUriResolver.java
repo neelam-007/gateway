@@ -6,19 +6,17 @@
 
 package com.l7tech.service.resolution;
 
-import com.l7tech.logging.LogManager;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.message.Request;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.xml.Wsdl;
 
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.Set;
-import java.util.HashSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Resolves services based on the URI part of the WSDL's soap:address extensibility
@@ -75,5 +73,5 @@ public class HttpUriResolver extends NameValueServiceResolver {
         throw new UnsupportedOperationException();
     }
 
-    protected Logger logger = LogManager.getInstance().getSystemLogger();
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 }

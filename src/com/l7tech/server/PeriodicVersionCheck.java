@@ -1,6 +1,5 @@
 package com.l7tech.server;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;
@@ -154,7 +153,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         return DEFAULT_FREQUENCY;
     }
 
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private final HibernateEntityManager _manager;
     private final Map _cachedVersionMap;
     private static final long DEFAULT_FREQUENCY = 4 * 1000;

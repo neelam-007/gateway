@@ -6,14 +6,13 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.TransportMetadata;
 import com.l7tech.message.TransportProtocol;
-import com.l7tech.logging.LogManager;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.SslAssertion;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -69,5 +68,5 @@ public class ServerSslAssertion implements ServerAssertion {
     }
 
     protected SslAssertion _data;
-    protected Logger logger = LogManager.getInstance().getSystemLogger();
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 }

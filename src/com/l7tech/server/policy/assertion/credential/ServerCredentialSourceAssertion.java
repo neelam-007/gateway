@@ -6,15 +6,14 @@
 
 package com.l7tech.server.policy.assertion.credential;
 
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
@@ -81,7 +80,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
     protected abstract AssertionStatus checkCredentials( Request request, Response response ) throws CredentialFinderException;
     protected abstract void challenge( Request request, Response response );
 
-    protected Logger logger = LogManager.getInstance().getSystemLogger();
+    protected final Logger logger = Logger.getLogger(getClass().getName());
     protected transient Map _credentialFinders = new HashMap();
 
     protected CredentialSourceAssertion _data;

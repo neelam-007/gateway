@@ -495,7 +495,7 @@ public class ClusterInfoManager {
                                                                 "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
     private static Pattern ipconfigMacPattern = Pattern.compile(".*Physical Address.*(\\w\\w.\\w\\w.\\w\\w." +
                                                                 "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private String selfId = null;
     private long rememberedBootTime = -1;
 

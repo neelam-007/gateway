@@ -6,8 +6,6 @@
 
 package com.l7tech.server;
 
-import com.l7tech.logging.LogManager;
-
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -23,8 +21,7 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class BootServlet extends HttpServlet {
-    // private final Logger logger = Logger.getLogger(BootServlet.class.getName());
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private final ServerComponentLifecycle _boot = new BootProcess();
 
     public void init( ServletConfig sc ) throws ServletException {

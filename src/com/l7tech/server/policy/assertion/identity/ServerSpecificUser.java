@@ -7,7 +7,6 @@
 package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.identity.User;
-import com.l7tech.logging.LogManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -48,5 +47,5 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
     }
 
     protected SpecificUser _data;
-    protected Logger logger = LogManager.getInstance().getSystemLogger();
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -4,7 +4,6 @@ import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
@@ -475,7 +474,7 @@ public class ServiceCache {
     // read-write lock for thread safety
     private final ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();
 
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 
     //private final PeriodicExecutor checker = new PeriodicExecutor( this );
     private final Timer checker = new Timer(true);

@@ -30,7 +30,6 @@ public abstract class Filter {
     public abstract Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException;
 
     public Filter() {
-        logger = LogManager.getInstance().getSystemLogger();
     }
 
     /**
@@ -82,5 +81,5 @@ public abstract class Filter {
         parent.setChildren(new LinkedList());
     }
 
-    protected Logger logger = null;
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 }

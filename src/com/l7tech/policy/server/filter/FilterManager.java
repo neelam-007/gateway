@@ -108,10 +108,9 @@ public class FilterManager {
             //HideRoutingTarget.class, // no longer needed
             HideUnsupportedClientAssertions.class,
         };
-        logger = LogManager.getInstance().getSystemLogger();
     }
 
     private static FilterManager singleton = null;
     private Class[] filterTypes = null;
-    private Logger logger = null;
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -6,17 +6,16 @@
 
 package com.l7tech.server.util;
 
-import com.l7tech.logging.LogManager;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.UptimeMetrics;
+import com.l7tech.server.ServerConfig;
 
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Run the system's "uptime" utility in a background thread.
@@ -26,7 +25,7 @@ import java.util.logging.Level;
  * Time: 5:45:56 PM
  */
 public class UptimeMonitor {
-    private static final Logger logger = LogManager.getInstance().getSystemLogger();
+    private static final Logger logger = Logger.getLogger(UptimeMonitor.class.getName());
     private static final int REFRESH_DELAY = 1000 * 30;
     private static final String[] UPTIME_PATHS = new String[] {
         "/usr/bin/uptime",

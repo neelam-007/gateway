@@ -9,10 +9,9 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.UserBean;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -20,18 +19,14 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.service.PublishedService;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import javax.wsdl.WSDLException;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.wsdl.WSDLException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,9 +34,9 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SignatureException;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Vector;
 
 /**
  * Server-side implementation of HTTP routing assertion.
@@ -309,5 +304,5 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     protected transient MultiThreadedHttpConnectionManager _connectionManager;
     protected transient HttpState _httpState;
     protected transient UsernamePasswordCredentials _httpCredentials;
-    Logger logger = LogManager.getInstance().getSystemLogger();
+    final Logger logger = Logger.getLogger(getClass().getName());
 }

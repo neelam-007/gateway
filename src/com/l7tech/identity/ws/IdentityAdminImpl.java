@@ -35,7 +35,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
 
     public IdentityAdminImpl() {
-        logger = LogManager.getInstance().getSystemLogger();
     }
 
     /**
@@ -554,6 +553,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     IdentityProviderConfigManager identityProviderConfigManager = null;
-    private Logger logger = null;
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
 }

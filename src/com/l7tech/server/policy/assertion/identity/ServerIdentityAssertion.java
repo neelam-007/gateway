@@ -6,19 +6,18 @@
 
 package com.l7tech.server.policy.assertion.identity;
 
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.IdentityAssertionException;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.AssertionResult;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.identity.*;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.logging.LogManager;
-import com.l7tech.identity.*;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.policy.assertion.AssertionResult;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertionException;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -140,7 +139,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
     protected abstract AssertionStatus checkUser( User u );
 
     protected transient IdentityProviderConfigManager _configManager = null;
-    protected transient Logger logger = LogManager.getInstance().getSystemLogger();
+    protected final transient Logger logger = Logger.getLogger(getClass().getName());
 
     protected IdentityAssertion _data;
 }

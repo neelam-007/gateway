@@ -109,5 +109,5 @@ public class PhaosRsaSignerEngine implements RsaSignerEngine {
         return new X509CertImpl(cert.getEncoded());
     }
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

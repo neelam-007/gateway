@@ -37,8 +37,7 @@ import java.util.logging.Logger;
 public abstract class RemoteService implements Remote, ProxyAccessor {
     private String[] configOptions;
     private final LifeCycle lifeCycle;
-    //private static final Logger logger = Logger.getLogger(RemoteService.class.getName());
-    private static final Logger logger = LogManager.getInstance().getSystemLogger();
+    private static final Logger logger = Logger.getLogger(RemoteService.class.getName());
     private final String[] components = {getClass().getName(),
                                          RemoteService.class.getName()};
 

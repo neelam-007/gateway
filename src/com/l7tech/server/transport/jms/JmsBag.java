@@ -6,12 +6,10 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.logging.LogManager;
-
-import javax.jms.ConnectionFactory;
 import javax.jms.Connection;
-import javax.jms.Session;
+import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
+import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.util.logging.Logger;
@@ -93,7 +91,7 @@ public class JmsBag {
         }
     }
 
-    private static final Logger _logger = LogManager.getInstance().getSystemLogger();
+    private static final Logger _logger = Logger.getLogger(JmsBag.class.getName());
     private ConnectionFactory _connectionFactory;
     private Connection _connection;
     private Session _session;

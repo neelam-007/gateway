@@ -6,7 +6,6 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -117,5 +116,5 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     protected abstract String scheme();
 
     protected HttpCredentialSourceAssertion _data;
-    protected Logger logger = LogManager.getInstance().getSystemLogger();
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 }

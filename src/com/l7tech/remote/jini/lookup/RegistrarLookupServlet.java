@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
+import com.l7tech.remote.jini.export.RemoteService;
 import net.jini.config.*;
 import net.jini.core.discovery.LookupLocator;
 import net.jini.core.lookup.ServiceRegistrar;
@@ -47,8 +48,7 @@ import java.security.AccessControlException;
  * @version 1.0
  */
 public class RegistrarLookupServlet extends HttpServlet {
-    //private static final Logger logger = Logger.getLogger(RegistrarLookupServlet.class.getName());
-    private static final Logger logger = LogManager.getInstance().getSystemLogger();
+    private static final Logger logger = Logger.getLogger(RegistrarLookupServlet.class.getName());
 
     private Configuration lookupConfig;
     private static final String LOOKUP_CONFIG = "com/l7tech/remote/jini/lookup/lookupservlet.config";

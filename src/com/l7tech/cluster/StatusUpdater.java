@@ -30,7 +30,7 @@ import java.io.FileNotFoundException;
  */
 public class StatusUpdater extends Thread {
     public static void initialize() {
-        Logger logger = LogManager.getInstance().getSystemLogger();
+        final Logger logger = Logger.getLogger(StatusUpdater.class.getName());
         if (updater.isAlive()) {
             logger.warning("updater is already alive.");
         }
@@ -172,7 +172,7 @@ public class StatusUpdater extends Thread {
     private final ServiceUsageManager serviceUsageManager = new ServiceUsageManager();
 
     private static final StatusUpdater updater = new StatusUpdater();
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     public static final long UPDATE_FREQUENCY = 4000;
     //public static final long UPDATE_FREQUENCY = 10;
 }

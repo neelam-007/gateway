@@ -1,30 +1,28 @@
 package com.l7tech.server;
 
-import com.l7tech.logging.LogManager;
-import com.l7tech.identity.*;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.protocol.SecureSpanConstants;
-
+import com.l7tech.common.security.xml.Session;
+import com.l7tech.identity.*;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import org.apache.axis.encoding.Base64;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
-import javax.servlet.ServletConfig;
 import java.io.IOException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This servlet allows a client to get a set of 2 symmetric keys for use in the XML Enc assertion(s).
@@ -38,7 +36,6 @@ import java.sql.SQLException;
  */
 public class XMLEncSessionServlet extends HttpServlet {
     public void init( ServletConfig config ) throws ServletException {
-        logger = LogManager.getInstance().getSystemLogger();
         super.init( config );
     }
 
@@ -147,5 +144,5 @@ public class XMLEncSessionServlet extends HttpServlet {
         context.close();
     }
 
-    private Logger logger = null;
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -6,12 +6,13 @@
 
 package com.l7tech.service;
 
-import com.l7tech.logging.LogManager;
+import com.l7tech.message.Request;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.resolution.ResolutionManager;
 import com.l7tech.service.resolution.ServiceResolutionException;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.message.Request;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Session;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -19,9 +20,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import net.sf.hibernate.Session;
-import net.sf.hibernate.HibernateException;
 
 /**
  * Manages PublishedService instances.
@@ -346,6 +344,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         ServiceCache.getInstance().destroy();
     }
 
-    private static final Logger logger = LogManager.getInstance().getSystemLogger();
+    private static final Logger logger = Logger.getLogger(ServiceManagerImp.class.getName());
     private static final String F_VERSION = "version";
 }

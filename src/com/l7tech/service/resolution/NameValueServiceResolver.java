@@ -9,7 +9,6 @@ package com.l7tech.service.resolution;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.service.PublishedService;
 
@@ -220,5 +219,5 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
     private Map _valueToServiceMapMap = new HashMap();
     private Map _serviceOidToValuesArrayMap = new HashMap();
     private ReadWriteLock _rwlock = new ReentrantWriterPreferenceReadWriteLock();
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

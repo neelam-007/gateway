@@ -1,9 +1,10 @@
 package com.l7tech.service.ws;
 
 import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.service.*;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.ServiceManager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,7 +29,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
 
     public ServiceAdminImpl() {
-        logger = LogManager.getInstance().getSystemLogger();
     }
 
     public String resolveWsdlTarget(String url) throws RemoteException {
@@ -203,5 +203,5 @@ public class ServiceAdminImpl implements ServiceAdmin {
         }
         return output;
     }
-    private Logger logger = null;
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -233,6 +233,6 @@ public class LdapUserManager implements UserManager {
     }
 
     private LdapIdentityProviderConfig cfg;
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private LdapIdentityProvider parent;
 }

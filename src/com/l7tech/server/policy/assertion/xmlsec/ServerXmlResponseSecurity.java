@@ -1,18 +1,14 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.common.security.xml.ElementSecurity;
-import com.l7tech.common.security.xml.SecurityProcessor;
-import com.l7tech.common.security.xml.SecurityProcessorException;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.server.SessionManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -120,6 +116,6 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         return AssertionStatus.NONE;
     }
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private XmlResponseSecurity xmlResponseSecurity;
 }

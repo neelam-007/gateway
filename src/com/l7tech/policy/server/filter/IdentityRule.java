@@ -102,7 +102,7 @@ public class IdentityRule extends Filter {
 
     public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user) throws FilteringException {
         if (user == null) return false;
-        Logger logger = LogManager.getInstance().getSystemLogger();
+        Logger logger = Logger.getLogger(IdentityRule.class.getName());
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
             SpecificUser userass = (SpecificUser)idassertion;

@@ -253,5 +253,5 @@ public class HibernatePersistenceManager extends PersistenceManager {
         }
     }
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

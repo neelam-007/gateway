@@ -1,14 +1,16 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.policy.assertion.*;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.logging.LogManager;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TimeOfDay;
+import com.l7tech.policy.assertion.TimeRange;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.Calendar;
 import java.util.TimeZone;
+import java.util.logging.Logger;
 
 /**
  * Server side processing of a TimeRange assertion.
@@ -82,6 +84,6 @@ public class ServerTimeRange implements ServerAssertion {
 
 
     private TimeRange subject;
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private final static TimeOfDay LAST_SEC_OF_DAY = new TimeOfDay(23,59,59);
 }

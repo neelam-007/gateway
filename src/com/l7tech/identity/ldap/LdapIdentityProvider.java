@@ -620,7 +620,7 @@ public class LdapIdentityProvider implements IdentityProvider {
 
     public static final String DESCRIPTION_ATTRIBUTE_NAME = "description";
     private LdapIdentityProviderConfig cfg;
-    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private MessageDigest _md5;
     private LdapUserManager userManager;
     private LdapGroupManager groupManager;

@@ -204,5 +204,5 @@ public abstract class HibernateEntityManager implements EntityManager {
                                              alias + ".name from " + alias + " in class "+
                                              getImpClass().getName();
     protected PersistenceManager _manager;
-    protected Logger logger = LogManager.getInstance().getSystemLogger();
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 }

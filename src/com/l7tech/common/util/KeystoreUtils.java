@@ -183,7 +183,6 @@ public class KeystoreUtils {
     }
 
     protected KeystoreUtils() {
-        logger = LogManager.getInstance().getSystemLogger();
     }
 
     private synchronized Properties getProps() {
@@ -219,5 +218,5 @@ public class KeystoreUtils {
     }
 
     private Properties props = null;
-    private Logger logger = null;
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }
