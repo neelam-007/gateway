@@ -31,7 +31,7 @@ public class InternalUserManagerServer extends PersistentUserManager {
 
     public EntityHeader userToHeader( User user ) {
         InternalUser imp = (InternalUser)cast(user);
-        return new EntityHeader(imp.getUniqueIdentifier(), EntityType.USER, imp.getLogin(), imp.getName());
+        return new EntityHeader(imp.getUniqueIdentifier(), EntityType.USER, imp.getLogin(), null);
     }
 
     public Class getImpClass() {
