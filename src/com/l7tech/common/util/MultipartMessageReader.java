@@ -292,7 +292,8 @@ public class MultipartMessageReader {
                 part.setPostion(multipartParts.size());
                 String contentId = part.getHeader(XmlUtil.CONTENT_ID).getValue();
                 multipartParts.put(contentId, part);
-                if(cid.endsWith(contentId)) {
+                if(cid.endsWith(contentId) ||
+                   cid.endsWith(MultipartUtil.removeConentIdBrackets(contentId))) {
                     // the requested MIME part is found, stop here.
                     partFound = true;
                     break;

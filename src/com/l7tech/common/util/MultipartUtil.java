@@ -123,6 +123,18 @@ public class MultipartUtil {
         return value;
     }
 
+    static public String removeConentIdBrackets(String value) throws IOException {
+
+        if(value == null) return value;
+
+        if (value.startsWith("<")) {
+            if (value.endsWith(">")) {
+                value = value.substring(1,value.length()-1);
+            } else throw new IOException("Invalid Content Id format (mismatched brackets in value)");
+        }
+        return value;
+    }
+
     public static class HeaderValue {
         private final String name;
         private final String value;
