@@ -190,7 +190,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         return _requestReader;
     }
 
-    private static final MessageIdManager _messageIdManager = new SingleNodeMessageIdManager();
+    private static final MessageIdManager _messageIdManager = SingleNodeMessageIdManager.getInstance();
 
     protected abstract Reader doGetRequestReader() throws IOException;
 

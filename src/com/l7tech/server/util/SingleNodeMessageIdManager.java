@@ -20,7 +20,15 @@ public class SingleNodeMessageIdManager implements MessageIdManager {
     private static final long EXPIRY_SCAN_MILLIS = 1000 * 60 * 5; // scan every 5 minutes
     public static final long EXPIRY_GRACE_MILLIS = 1000 * 60 * 1; // remember for at least 1 minute longer than asked
 
-    public SingleNodeMessageIdManager() {}
+    private static class Holder {
+        private static SingleNodeMessageIdManager INSTANCE = new SingleNodeMessageIdManager();
+    }
+
+    public static SingleNodeMessageIdManager getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    private SingleNodeMessageIdManager() {}
 
     public void assertMessageIdIsUnique(MessageId prospect) throws MessageIdManager.DuplicateMessageIdException {
         assertMessageIdIsUnique(prospect, System.currentTimeMillis());
@@ -41,5 +49,4 @@ public class SingleNodeMessageIdManager implements MessageIdManager {
                 i.remove();
         }
     }
-
 }
