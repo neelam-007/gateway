@@ -664,7 +664,8 @@ public class MainWindow extends JFrame {
     private Action getToggleStatusBarToggleAction() {
         if (toggleStatusBarAction != null) return toggleStatusBarAction;
 
-        String atext = resapplication.getString("toggle.status.bar");
+        String atext = resapplication.getString("toggle.status.bar.action.name");
+        String aDesc = resapplication.getString("toggle.status.bar.action.desc");
 
         toggleStatusBarAction =
           new AbstractAction(atext) {
@@ -687,7 +688,7 @@ public class MainWindow extends JFrame {
                   }
               }
           };
-        toggleStatusBarAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        toggleStatusBarAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return toggleStatusBarAction;
     }
 
@@ -699,7 +700,8 @@ public class MainWindow extends JFrame {
     private Action getPolicyMessageAreaToggle() {
         if (togglePolicyMessageArea != null) return togglePolicyMessageArea;
 
-        String atext = resapplication.getString("toggle.policy.msg");
+        String atext = resapplication.getString("toggle.policy.msg.action.name");
+        String aDesc = resapplication.getString("toggle.policy.msg.action.desc");
 
         togglePolicyMessageArea =
           new AbstractAction(atext) {
@@ -727,7 +729,7 @@ public class MainWindow extends JFrame {
                   }
               }
           };
-        togglePolicyMessageArea.putValue(Action.SHORT_DESCRIPTION, atext);
+        togglePolicyMessageArea.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return togglePolicyMessageArea;
     }
 
@@ -1088,10 +1090,11 @@ public class MainWindow extends JFrame {
     private Action getGatewayLogWindowAction() {
         if (toggleGatewayLogWindowAction != null) return toggleGatewayLogWindowAction;
 
-        String atext = resapplication.getString("toggle.gateway.log.display");
+        String actionName = resapplication.getString("toggle.gateway.log.display.action.name");
+        String actionDesc = resapplication.getString("toggle.gateway.log.display.action.desc");
 
         toggleGatewayLogWindowAction =
-          new AbstractAction(atext) {
+          new AbstractAction(actionName) {
               public void actionPerformed(ActionEvent event) {
                   JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
                   if (item.isSelected()) {
@@ -1101,7 +1104,7 @@ public class MainWindow extends JFrame {
                   }
               }
           };
-        toggleGatewayLogWindowAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        toggleGatewayLogWindowAction.putValue(Action.SHORT_DESCRIPTION, actionDesc);
         toggleGatewayLogWindowAction.setEnabled(false);
         enableActionWhileConnected(toggleGatewayLogWindowAction);
         return toggleGatewayLogWindowAction;
@@ -1125,10 +1128,11 @@ public class MainWindow extends JFrame {
     private Action getClusterStatusWindowAction() {
         if (toggleClusterStatusWindowAction != null) return toggleClusterStatusWindowAction;
 
-        String atext = resapplication.getString("toggle.cluster.status.display");
+        String actionName = resapplication.getString("toggle.cluster.status.display.action.name");
+        String actionDesc = resapplication.getString("toggle.cluster.status.display.action.desc");
 
         toggleClusterStatusWindowAction =
-          new AbstractAction(atext) {
+          new AbstractAction(actionName) {
               /**
                * Invoked when an action occurs.
                * 
@@ -1172,7 +1176,7 @@ public class MainWindow extends JFrame {
               }
 
           };
-        toggleClusterStatusWindowAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        toggleClusterStatusWindowAction.putValue(Action.SHORT_DESCRIPTION, actionDesc);
         toggleClusterStatusWindowAction.setEnabled(false);
         return toggleClusterStatusWindowAction;
     }
