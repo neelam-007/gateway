@@ -11,7 +11,9 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
@@ -176,6 +178,16 @@ public class DefaultPolicyValidator extends PolicyValidator {
             // we only support client certs for internal users
             if (a instanceof HttpClientCert || a instanceof XmlRequestSecurity) {
                 seenCredAssertionThatRequiresClientCert = true;
+            }
+
+            // new fla, those assertions cannot forbid ssl
+            if (a instanceof HttpBasic || a instanceof WssBasic) {
+                if (sslForbidden) {
+                    result.addError(
+                            new PolicyValidatorResult.Error(a,
+                            "You cannot forbid SSL and ask for basic credentials.", null)
+                    );
+                }
             }
             seenCredentials = true;
         }
