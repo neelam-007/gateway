@@ -44,8 +44,17 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
      * @throws PolicyAssertionException no
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
-        // todo Mike, set a header on the request that contains the xml session id (i'm not sure where you store that)
-        // the header name is : XmlResponseSecurity.XML_ENC_HEADER_NAME
+        // DECOREATE REQUEST WITH A NONCE FOR RESPONSE SIGNATURE
+        long noncevalue = 0;
+        // todo, mike generate a nonce and it to request as http header XmlResponseSecurity.XML_NONCE_HEADER_NAME
+
+        // IF RESPONSE ENCRYPTION IS TURNED ON, TELL THE SERVER THE PREFFERED SESSION ID
+        if (data.isEncryption()) {
+            long sessionid = 0;
+            // todo, mike get the session id here
+            // todo, mike store this sessionid in http header XmlResponseSecurity.XML_SESSID_HEADER_NAME
+        }
+        
         return AssertionStatus.NONE;
     }
 
