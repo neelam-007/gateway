@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.*;
 import java.rmi.RemoteException;
 import java.rmi.Remote;
 import java.security.cert.CertificateEncodingException;
+import java.util.Set;
 
 /**
  * Class IdentityAdmin.
@@ -65,4 +66,11 @@ public interface IdentityAdmin  extends Remote {
 
     void testIdProviderConfig(IdentityProviderConfig cfg)
                                 throws RemoteException, InvalidIdProviderCfgException;
+
+    Set getGroupHeaders( long providerId, String userId ) throws RemoteException, FindException;
+    void setGroupHeaders( long providerId, String userId, Set groupHeaders ) throws RemoteException, FindException, UpdateException;
+
+    Set getUserHeaders( long providerId, String groupId ) throws RemoteException, FindException;
+    void setUserHeaders( long providerId, String groupId, Set groupHeaders ) throws RemoteException, FindException, UpdateException;
+
 }

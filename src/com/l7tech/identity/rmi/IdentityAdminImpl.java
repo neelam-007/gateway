@@ -8,6 +8,7 @@ import com.sun.jini.start.LifeCycle;
 import java.rmi.RemoteException;
 import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
+import java.util.Set;
 
 import net.jini.config.ConfigurationException;
 
@@ -127,6 +128,22 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
     public void testIdProviderConfig(IdentityProviderConfig cfg) throws RemoteException,
                                             InvalidIdProviderCfgException {
         delegate.testIdProviderConfig(cfg);
+    }
+
+    public Set getGroupHeaders(long providerId, String userId) throws RemoteException, FindException {
+        return delegate.getGroupHeaders(providerId, userId);
+    }
+
+    public void setGroupHeaders(long providerId, String userId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
+        delegate.setGroupHeaders(providerId, userId, groupHeaders);
+    }
+
+    public Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException {
+        return delegate.getUserHeaders(providerId, groupId);
+    }
+
+    public void setUserHeaders(long providerId, String groupId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
+        delegate.setUserHeaders(providerId, groupId, groupHeaders);
     }
 
     // ************************************************
