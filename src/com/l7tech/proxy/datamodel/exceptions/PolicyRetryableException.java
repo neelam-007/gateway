@@ -14,4 +14,19 @@ package com.l7tech.proxy.datamodel.exceptions;
  * Time: 9:56:47 AM
  */
 public class PolicyRetryableException extends Exception {
+    public PolicyRetryableException() {
+        super("Retry policy operation.");
+    }
+
+    public PolicyRetryableException(String message) {
+        super(message);
+    }
+
+    public PolicyRetryableException(Throwable cause) {
+        super(cause);
+    }
+
+    public PolicyRetryableException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

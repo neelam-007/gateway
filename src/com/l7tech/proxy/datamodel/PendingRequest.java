@@ -121,7 +121,7 @@ public class PendingRequest {
                 throw new PolicyRetryableException();
             } else {
                 Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
-                throw new OperationCanceledException();
+                throw new OperationCanceledException("Unable to obtain a client certificate");
             }
         } catch (IOException e) {
             throw new ClientCertificateException("Unable to obtain a client certificate", e);
@@ -388,13 +388,22 @@ public class PendingRequest {
         ssg.secureConversationSharedSecret(s.getSharedSecret());
         secureConversationSharedSecret = s.getSharedSecret();
         if (s.getExpiryDate() == null) {
-            secureConversationExpiryDate = null;
-            ssg.secureConversationExpiryDate(null);
+            log.info("WS-SecureConversation session did not include an expiry date.  Assuming expiry 600 seconds from now.");
+            Calendar expiry = Calendar.getInstance(UTC_TIME_ZONE);
+            expiry.add(Calendar.SECOND, WSSC_PREEXPIRE_SEC);
+            secureConversationExpiryDate = expiry;
+            ssg.secureConversationExpiryDate(expiry);
         } else {
             Calendar expiry = Calendar.getInstance(UTC_TIME_ZONE);
             expiry.setTime(s.getExpiryDate());
             secureConversationExpiryDate = expiry;
             ssg.secureConversationExpiryDate(expiry);
+            Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
+            now.add(Calendar.SECOND, WSSC_PREEXPIRE_SEC);
+            if (!expiry.after(now))
+                log.warning("Significant clock skew detected between local machine (currently " + now + ") and Gateway " + ssg + " (token expiry " + expiry + ").  WS-SecureConversation sessions will expire after every message.");
+            else
+                log.info("WS-SecureConversation session will expire in " + Math.floor((expiry.getTime().getTime() - now.getTime().getTime())/1000) + " sec");
         }
         return secureConversationId;
     }

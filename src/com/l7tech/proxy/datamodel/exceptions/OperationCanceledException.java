@@ -13,18 +13,21 @@ package com.l7tech.proxy.datamodel.exceptions;
  * Time: 9:50:42 AM
  */
 public class OperationCanceledException extends Exception {
+    private static final String DEFAULT_MESSAGE = "Operation canceled.";
+
     public OperationCanceledException() {
+        super(DEFAULT_MESSAGE);
     }
 
     public OperationCanceledException(String message) {
-        super(message);
+        super(message != null ? message : DEFAULT_MESSAGE);
     }
 
     public OperationCanceledException(String message, Throwable cause) {
-        super(message, cause);
+        super(message != null ? message : DEFAULT_MESSAGE, cause);
     }
 
     public OperationCanceledException(Throwable cause) {
-        super(cause);
+        super(DEFAULT_MESSAGE, cause);
     }
 }
