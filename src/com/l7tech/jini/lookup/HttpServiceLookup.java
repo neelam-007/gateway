@@ -70,7 +70,6 @@ public class HttpServiceLookup extends ServiceLookup {
             ProxyPreparer preparer = getProxyPreparer(cl);
             return preparer.prepareProxy(server);
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Unable to obtain the service proxy", e);
             throw new RuntimeException(e);
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
