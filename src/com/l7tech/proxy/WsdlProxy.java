@@ -8,6 +8,7 @@ package com.l7tech.proxy;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -151,7 +152,7 @@ public class WsdlProxy {
                 try {
                     status = httpClient.executeMethod(getMethod);
                 } catch (SSLHandshakeException e) {
-                    if (e.getCause() instanceof ServerCertificateUntrustedException) {
+                    if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {
                         try {
                             log.info("Attempting to discover Ssg server certificate for " + ssg);
                             ClientProxy.installSsgServerCertificate(ssg);
@@ -161,8 +162,10 @@ public class WsdlProxy {
                         } catch (BadCredentialsException e1) {
                             log.warn("Certificate discovery service indicates bad password; setting status to 401 arificially");
                             status = 401; // hack hack hack: fake up a 401 status to trigger password dialog below
+                            // fall through and continue
                         }
                     }
+                    throw e;
                 }
                 log.info("WsdlProxy: connection HTTP status " + status);
                 if (status == 200) {
