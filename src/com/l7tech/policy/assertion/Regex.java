@@ -13,6 +13,7 @@ public class Regex extends Assertion {
     private String regex;
     private String replacement;
     private boolean caseInsensitive;
+    private boolean replace;
 
     /**
      * Test whether the assertion is a credential source. The <code>RegexAssertion</code>
@@ -46,5 +47,21 @@ public class Regex extends Assertion {
 
     public void setCaseInsensitive(boolean caseInsensitive) {
         this.caseInsensitive = caseInsensitive;
+    }
+
+    /**
+     * Test whether the replace has been requested
+     * @return boolean true if replace requested, false otherwise
+     */
+    public boolean isReplace() {
+        return replace;
+    }
+
+    /**
+     * Set hte boolean tooggle that enables replace
+     * @param replace
+     */
+    public void setReplace(boolean replace) {
+        this.replace = replace;
     }
 }

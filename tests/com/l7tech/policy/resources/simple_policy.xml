@@ -209,6 +209,7 @@
                 </WsTrustCredentialExchange>
                 <Regex>
                     <Regex stringValueNull="null"/>
+                    <Replace booleanValue="false"/>
                     <Replacement stringValueNull="null"/>
                     <CaseInsensitive booleanValue="false"/>
                 </Regex>

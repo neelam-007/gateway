@@ -15,6 +15,7 @@ import com.l7tech.common.util.HexUtils;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -53,11 +54,11 @@ public class ServerRegex implements ServerAssertion {
         if (regexPattern == null) {
             if (compileException != null) {
                 auditor.logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID,
-                  new String[]{regexAssertion.getRegex(),
-                        compileException.getMessage()}, compileException);
+                                    new String[]{regexAssertion.getRegex(),
+                                        compileException.getMessage()}, compileException);
             } else {
                 auditor.logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID,
-                  new String[]{regexAssertion.getRegex(), "unknown error"});
+                                    new String[]{regexAssertion.getRegex(), "unknown error"});
             }
             return AssertionStatus.FALSIFIED;
         }
@@ -68,18 +69,26 @@ public class ServerRegex implements ServerAssertion {
               context.getRequest().getMimeKnob().getFirstPart();
 
             final String replacement = regexAssertion.getReplacement();
-            final boolean haveReplacement = replacement != null;
+            final boolean isReplacement = regexAssertion.isReplace();
 
-            byte[] message = HexUtils.slurpStream(firstPart.getInputStream(haveReplacement));
+            // replacement set and replacement null
+            if (isReplacement && replacement == null) {
+                final String msg = "Replace requested, and no replace string specified (null).";
+                logger.log(Level.FINE, msg);
+                throw new PolicyAssertionException(msg);
+            }
+
+            byte[] message = HexUtils.slurpStream(firstPart.getInputStream(isReplacement));
             final String encoding = firstPart.getContentType().getEncoding();
             Matcher matcher = regexPattern.matcher(new String(message, encoding));
-            if (haveReplacement) {
+            if (isReplacement) {
+                logger.log(Level.FINE, "Replace requested: Match pattern '{0}', replace pattern '{1}'", new Object[]{regexAssertion.getRegex(), replacement});
                 String result = matcher.replaceAll(replacement);
                 firstPart.setBodyBytes(result.getBytes(encoding));
             } else {
-                logger.fine("No replace has been requested. Verifying match for pattern "+regexAssertion.getRegex());
-                if (!matcher.find())  {
-                    logger.fine("No match for "+regexAssertion.getRegex());
+                logger.fine("Verifying match for pattern " + regexAssertion.getRegex());
+                if (!matcher.find()) {
+                    logger.fine("No match for " + regexAssertion.getRegex());
                     return AssertionStatus.FALSIFIED;
                 }
             }

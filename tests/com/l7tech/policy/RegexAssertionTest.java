@@ -194,6 +194,7 @@ public class RegexAssertionTest extends TestCase {
         Regex regex = new Regex();
         regex.setRegex(matchPattern);
         regex.setReplacement(replace);
+        regex.setReplace(true);
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
                     regex,
                     new Echo()
@@ -207,8 +208,10 @@ public class RegexAssertionTest extends TestCase {
         Regex regex = new Regex();
         regex.setRegex(matchPattern);
         regex.setReplacement(replace);
+        regex.setReplace(true);
 
         Regex regex2 = new Regex();
+        regex2.setReplace(true);
         regex2.setRegex(matchPattern2);
         regex2.setReplacement(replace2);
 
