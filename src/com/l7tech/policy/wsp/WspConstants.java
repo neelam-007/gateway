@@ -594,6 +594,7 @@ public class WspConstants {
     static final TypeMapping typeMappingObject = new ObjectTypeMapping(Object.class, "objectValue");
     static final TypeMapping typeMappingString = new BasicTypeMapping(String.class, "stringValue");
     static final TypeMapping typeMappingArray = new ArrayTypeMapping(new Object[0], "arrayValue");
+    static final TypeMapping typeMappingStringArray = new ArrayTypeMapping(new String[0], "stringArrayValue");
 
     // This is utterly grotesque, but it's all Java's fault.  Please close eyes here
     static final Constructor hashMapConstructor;
@@ -701,6 +702,7 @@ public class WspConstants {
 
         // Container types
         typeMappingArray,
+        typeMappingStringArray,
         typeMappingMap,
 
         // Composite assertions
