@@ -398,7 +398,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                     g.setName(eh.getName());
                     g.getName();
                     MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName());
-                    ma.setGroupName(g.getName());
                     identityAssertions.add(ma);
                 }
             }
