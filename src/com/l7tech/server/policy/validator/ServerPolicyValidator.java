@@ -4,16 +4,20 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.util.Locator;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +33,8 @@ import java.util.logging.Level;
  *
  *   2.     for each id assertion that is saml only, make sure that no
  *          credential assertion (other than saml) preceeds the assertion
+ *
+ *   3.     for each JMS routing assertion, make sure referenced endpoint exists
  *
  * <p/>
  * <br/><br/>
@@ -63,6 +69,24 @@ public class ServerPolicyValidator extends PolicyValidator {
         } else if (a instanceof CredentialSourceAssertion) {
             if (!(a instanceof SamlSecurity)) {
                 pathContext.seenCredCredAssertionOtherThanSaml = true;
+            }
+        } else if (a instanceof JmsRoutingAssertion) {
+            JmsRoutingAssertion jmsass = (JmsRoutingAssertion)a;
+            long endpointid = jmsass.getEndpointOid().longValue();
+            JmsEndpointManager mgr = (JmsEndpointManager)Locator.getDefault().lookup(JmsEndpointManager.class);
+            boolean jmsEndpointDefinedOk = false;
+            try {
+                JmsEndpoint routedRequestEndpoint = mgr.findByPrimaryKey(endpointid);
+                if (routedRequestEndpoint != null) jmsEndpointDefinedOk = true;
+            } catch (FindException e) {
+                logger.log(Level.FINE, "Error fetching endpoint " + endpointid, e);
+            }
+            if (!jmsEndpointDefinedOk) {
+                r.addError(new PolicyValidatorResult.Error(a,
+                                                           ap,
+                                                           "This routing assertion refers to a JMS " +
+                                                           "endpoint that cannot be found on this system.",
+                                                           null));
             }
         }
     }
