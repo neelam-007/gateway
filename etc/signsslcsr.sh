@@ -64,8 +64,13 @@ fi
 
 
 # set a classpath for the execution of "com.l7tech.identity.cert.RSASigner"
-# CP=$TMP_WAR_CONTENTS/WEB-INF/classes:$TMP_WAR_CONTENTS/WEB-INF/lib/bcprov-jdk14-119.jar:$TMP_WAR_CONTENTS/WEB-INF/lib/jaxrpc.jar:$TMP_WAR_CONTENTS/WEB-INF/lib/wsdl4j.jar
-CP=$WEBAPPS_ROOT/WEB-INF/classes:$WEBAPPS_ROOT/WEB-INF/lib/bcprov-jdk14-119.jar:$WEBAPPS_ROOT/WEB-INF/lib/jaxrpc.jar:$WEBAPPS_ROOT/WEB-INF/lib/wsdl4j.jar
+# 1. the location of our own code
+CP=$WEBAPPS_ROOT/WEB-INF/classes
+# 2. all jars in project
+for filename in $WEBAPPS_ROOT/WEB-INF/lib/*.jar
+do
+  CP=$CP:$filename
+done
 
 # do it
 java -cp $CP com.l7tech.identity.cert.RSASigner $ROOT_KEY_STORE $ROOT_KSTORE_PASSWORD $ROOT_KEY_ALIAS $ROOT_KSTORE_PASSWORD $CSR_FILE $CERTIFICATE_FILE
