@@ -3,7 +3,7 @@
  */
 package com.l7tech.identity.internal.imp;
 
-import java.util.Collection;
+import java.util.Set;
 
 import com.l7tech.identity.internal.Address;
 import com.l7tech.identity.internal.Organization;
@@ -70,21 +70,19 @@ public class UserImp extends EntityImp implements User {
         return _billingAddress;
     }
 
-    public Collection getGroups() {
-        if (_groups == null) _groups = new java.util.ArrayList();
+    public Set getGroups() {
         return _groups;
     }
 
-    public Collection getGroupHeaders() {
-        if (_groupHeaders == null) _groupHeaders = new java.util.ArrayList();
+    public Set getGroupHeaders() {
         return _groupHeaders;
     }
 
-    public void setGroups( Collection groups ) {
+    public void setGroups( Set groups ) {
         _groups = groups;
     }
 
-    public void setGroupHeaders( Collection groupHeaders ) {
+    public void setGroupHeaders( Set groupHeaders ) {
         _groupHeaders = groupHeaders;
     }
 
@@ -148,6 +146,6 @@ public class UserImp extends EntityImp implements User {
     private Address _address;
     private Address _mailingAddress;
     private Address _billingAddress;
-    private Collection _groups;
-    private Collection _groupHeaders;
+    private Set _groups;
+    private Set _groupHeaders;
 }
