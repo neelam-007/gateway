@@ -114,8 +114,6 @@ public class SoapUtil {
     public static final String KINFO_EL_NAME = "KeyInfo";
 
     // Misc
-    public static final String FC_CLIENT = "Client";
-    public static final String FC_SERVER = "Server";
     public static final String SOAPACTION = "SOAPAction";
     public static final String SUPPORTED_ENCRYPTEDKEY_ALGO = "http://www.w3.org/2001/04/xmlenc#rsa-1_5";
     public static final String VALUETYPE_SKI = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509SubjectKeyIdentifier";
