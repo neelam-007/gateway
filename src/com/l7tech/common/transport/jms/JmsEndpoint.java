@@ -86,14 +86,16 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     /**
-     * What does this mean?
+     * @return true if the endpoint is outbound (that is the gateway routes messages to the
+     * queue). false means inbound (that is the ssg gets messages from the queue)
      */
     public boolean isMessageSource() {
         return _messageSource;
     }
 
     /**
-     * What does this mean?
+     * @param messageSource true if the endpoint is outbound (that is the gateway routes messages to the
+     * queue). false means inbound (that is the ssg gets messages from the queue)
      */
     public void setMessageSource( boolean messageSource ) {
         _messageSource = messageSource;
