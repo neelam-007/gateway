@@ -56,6 +56,7 @@ public class SoapUtil {
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
     public static final String WSU_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
     public static final String WSU_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/07/utility";
+    public static final String WSU_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2003/06/utility";
     public static final String WSSC_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/sc";
     public static final String WST_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/trust";
     public static final String WSX_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/mex";
@@ -83,6 +84,7 @@ public class SoapUtil {
     static {
         WSU_URIS.add(WSU_NAMESPACE);
         WSU_URIS.add(WSU_NAMESPACE2);
+        WSU_URIS.add(WSU_NAMESPACE3);
     }
 
     public static final String[] WSU_URIS_ARRAY = (String[])WSU_URIS.toArray(new String[0]);
@@ -412,14 +414,16 @@ public class SoapUtil {
         if (id == null || id.length() < 1) {
             id = node.getAttributeNS(SoapUtil.WSU_NAMESPACE2, ID_ATTRIBUTE_NAME);
             if (id == null || id.length() < 1) {
-                // Special handling for saml:Assertion
-                if (SamlConstants.NS_SAML.equals(node.getNamespaceURI()) &&
-                    SamlConstants.ELEMENT_ASSERTION.equals(node.getLocalName())) {
-                    id = node.getAttribute(SamlConstants.ATTR_ASSERTION_ID);
+                id = node.getAttributeNS(SoapUtil.WSU_NAMESPACE3, ID_ATTRIBUTE_NAME);
+                if (id == null || id.length() < 1) {
+                    // Special handling for saml:Assertion
+                    if (SamlConstants.NS_SAML.equals(node.getNamespaceURI()) &&
+                        SamlConstants.ELEMENT_ASSERTION.equals(node.getLocalName())) {
+                        id = node.getAttribute(SamlConstants.ATTR_ASSERTION_ID);
+                    }
+                    if (id == null || id.length() < 1)
+                        id = node.getAttribute(ID_ATTRIBUTE_NAME);
                 }
-
-                if (id == null || id.length() < 1)
-                    id = node.getAttribute(ID_ATTRIBUTE_NAME);
             }
         }
         // for some reason this is set to "" when not present.
