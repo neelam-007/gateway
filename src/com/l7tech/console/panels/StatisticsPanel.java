@@ -5,6 +5,7 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.console.util.StatisticsWorker;
+import com.l7tech.console.icons.ArrowIcon;
 import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.logging.LogAdmin;
@@ -15,14 +16,9 @@ import javax.swing.event.TableColumnModelListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.TableColumnModelEvent;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.table.DefaultTableColumnModel;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
+import javax.swing.table.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentListener;
-import java.awt.event.ComponentEvent;
+import java.awt.event.*;
 import java.util.Vector;
 import java.util.HashMap;
 
@@ -76,6 +72,8 @@ public class StatisticsPanel extends JPanel {
     private long completedCountPerMinuteTotal = 0;
     private long lastMinuteCompletedCountTotal = 0;
     private HashMap lastMinuteCompletedCountsCache;
+    private Icon upArrowIcon = new ArrowIcon(0);
+    private Icon downArrowIcon = new ArrowIcon(1);
 
     public StatisticsPanel() {
         setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
@@ -158,7 +156,7 @@ public class StatisticsPanel extends JPanel {
 
         statTable = new JTable(getStatTableModel(), getStatColumnModel());
 
-        getStatTableModel().addMouseListenerToHeaderInTable(statTable);
+        addMouseListenerToHeaderInTable(statTable);
 
         statTable.setShowHorizontalLines(false);
         statTable.setShowVerticalLines(false);
@@ -179,12 +177,18 @@ public class StatisticsPanel extends JPanel {
         columnModel.addColumn(new TableColumn(3, 50));
         columnModel.addColumn(new TableColumn(4, 100));
         columnModel.addColumn(new TableColumn(5, 80));
+
+        for(int i = 0; i <= 5; i++){
+             columnModel.getColumn(i).setHeaderRenderer(iconHeaderRenderer);
+        }
+
         columnModel.getColumn(0).setHeaderValue(getStatTableModel().getColumnName(0));
         columnModel.getColumn(1).setHeaderValue(getStatTableModel().getColumnName(1));
         columnModel.getColumn(2).setHeaderValue(getStatTableModel().getColumnName(2));
         columnModel.getColumn(3).setHeaderValue(getStatTableModel().getColumnName(3));
         columnModel.getColumn(4).setHeaderValue(getStatTableModel().getColumnName(4));
         columnModel.getColumn(5).setHeaderValue(getStatTableModel().getColumnName(5));
+
 
         columnModel.addColumnModelListener(new TableColumnModelListener(){
               public void columnMarginChanged(ChangeEvent e){
@@ -538,5 +542,63 @@ public class StatisticsPanel extends JPanel {
         }
 
         return lastMinuteCompletedCount;
+    }
+
+    // This customized renderer can render objects of the type TextandIcon
+    TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus, int row, int column) {
+            // Inherit the colors and font from the header component
+            if (table != null) {
+                JTableHeader header = table.getTableHeader();
+                if (header != null) {
+                    setForeground(header.getForeground());
+                    setBackground(header.getBackground());
+                    setFont(header.getFont());
+                    setHorizontalTextPosition(SwingConstants.LEFT);
+                }
+            }
+
+            setText((String) value);
+
+            if (getStatTableModel().getSortedColumn() == column) {
+
+                if (getStatTableModel().isAscending()) {
+                    setIcon(upArrowIcon);
+                } else {
+                    setIcon(downArrowIcon);
+                }
+            }
+            else{
+                setIcon(null);
+            }
+
+            setBorder(UIManager.getBorder("TableHeader.cellBorder"));
+            setHorizontalAlignment(JLabel.CENTER);
+            return this;
+        }
+    };
+
+    // Add a mouse listener to the Table to trigger a table sort
+    // when a column heading is clicked in the JTable.
+    public void addMouseListenerToHeaderInTable(JTable table) {
+
+        final JTable tableView = table;
+        tableView.setColumnSelectionAllowed(false);
+        MouseAdapter listMouseListener = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                TableColumnModel columnModel = tableView.getColumnModel();
+                int viewColumn = columnModel.getColumnIndexAtX(e.getX());
+                int column = tableView.convertColumnIndexToModel(viewColumn);
+                if (e.getClickCount() == 1 && column != -1) {
+
+                    ((StatisticsTableSorter)tableView.getModel()).sortData(column, true);
+                    ((StatisticsTableSorter)tableView.getModel()).fireTableDataChanged();
+                    tableView.getTableHeader().resizeAndRepaint();
+                }
+            }
+        };
+        JTableHeader th = tableView.getTableHeader();
+        th.addMouseListener(listMouseListener);
     }
 }

@@ -12,13 +12,7 @@ import com.l7tech.logging.StatisticsRecord;
 
 import java.util.*;
 import java.util.logging.Logger;
-
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import javax.swing.JTable;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumnModel;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.table.*;
 
 public class StatisticsTableSorter extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(StatisticsTableSorter.class.getName());
@@ -41,14 +35,24 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
 
     public void setData(Vector data) {
         this.data = data;
-        sortData();
+        sortData(columnToSort, false);
     }
 
-    private void sortData() {
+    public int getSortedColumn(){
+        return columnToSort;
+    }
 
+    public boolean isAscending(){
+        return ascending;
+    }
+
+    public void sortData(int column, boolean orderToggle) {
+        columnToSort = column;
+        if(orderToggle){
+            ascending = ascending ? false : true;
+        }
         Object[] sorted = data.toArray();
         Arrays.sort(sorted, new ColumnSorter(columnToSort, ascending));
-
         sortedData = sorted;
     }
 
@@ -69,37 +73,6 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
-    }
-
-    // Add a mouse listener to the Table to trigger a table sort
-    // when a column heading is clicked in the JTable.
-    public void addMouseListenerToHeaderInTable(JTable table) {
-
-        final JTable tableView = table;
-        tableView.setColumnSelectionAllowed(false);
-        MouseAdapter listMouseListener = new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                TableColumnModel columnModel = tableView.getColumnModel();
-                int viewColumn = columnModel.getColumnIndexAtX(e.getX());
-                int column = tableView.convertColumnIndexToModel(viewColumn);
-                if (e.getClickCount() == 1 && column != -1) {
-
-                    //int shiftPressed = e.getModifiers()&InputEvent.SHIFT_MASK;
-                    //ascending = (shiftPressed == 0);
-
-                    // toggle the sorting order
-                    ascending = ascending ? false : true;
-                    columnToSort = column;
-
-
-                    sortData();
-                    fireTableDataChanged();
-
-                }
-            }
-        };
-        JTableHeader th = tableView.getTableHeader();
-        th.addMouseListener(listMouseListener);
     }
 
     public class ColumnSorter implements Comparator {
