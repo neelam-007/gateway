@@ -6,6 +6,8 @@ import com.l7tech.proxy.datamodel.Managers;
 import org.mortbay.util.MultiException;
 import org.apache.log4j.Category;
 
+import java.net.BindException;
+
 /**
  * Begin execution of client proxy along with an attached GUI.
  * User: mike
@@ -36,7 +38,13 @@ public class Main {
         try {
             clientProxy.start();
         } catch (MultiException e) {
-            Gui.errorMessage("Unable to start the Client Proxy: " + e);
+            String message = "Unable to start the Client Proxy: " + e;
+            if (e.getException(0) instanceof BindException) {
+                message = "The Client Proxy is already running.  \nPlease shut down the existing " +
+                        "Client Proxy and try again.";
+            }
+
+            Gui.getInstance().errorMessage(message);
             System.err.println("Unable to start httpServer");
             e.printStackTrace(System.err);
             System.exit(2);
