@@ -6,8 +6,6 @@
 
 package com.l7tech.message;
 
-import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 
 import javax.servlet.http.HttpServletResponse;
@@ -50,7 +48,11 @@ public class HttpSoapResponse extends SoapResponse {
                 if ( name == null || ovalue == null ) continue;
 
                 if ( PARAM_HTTP_CONTENT_TYPE.equals( name ) ) {
-                    hresponse.setContentType( sresp.getOuterContentType().getValue() );
+                    if (ovalue instanceof String ) {
+                        hresponse.setContentType((String)ovalue);
+                    } else {
+                        hresponse.setContentType(sresp.getOuterContentType().getFullValue());
+                    }
                     continue;
                 }
 
