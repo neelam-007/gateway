@@ -3,9 +3,12 @@ package com.l7tech.service;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
-import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.resolution.NameValueServiceResolver;
@@ -13,8 +16,8 @@ import com.l7tech.service.resolution.ServiceResolutionException;
 import com.l7tech.service.resolution.SoapActionResolver;
 import com.l7tech.service.resolution.UrnResolver;
 
-import javax.wsdl.WSDLException;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,7 +34,7 @@ import java.util.logging.Logger;
  * service statistics.
  *
  * Entry point for runtime resolution.
- * 
+ *
  * Thread safe.
  *
  */
@@ -47,6 +50,7 @@ public class ServiceCache {
     }
 
     public ServiceCache() {
+        // uncomment this to turn on the periodic cache integrity check
         checker.start();
     }
 
@@ -72,21 +76,11 @@ public class ServiceCache {
      * produces a snapshot of the versions of all cached services
      * @return Map with Long service oid as a key and Long service version as values
      */
-    public Map versionSnapshot() throws InterruptedException {
-        Sync read = rwlock.readLock();
+    private Map versionSnapshot() {
         Map output = new HashMap();
-        try {
-            read.acquire();
-            for (Iterator i = services.values().iterator(); i.hasNext(); ) {
-                PublishedService svc = (PublishedService)i.next();
-                output.put(new Long(svc.getOid()), new Long(svc.getVersion()));
-            }
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "interruption in service cache", e);
-            Thread.currentThread().interrupt();
-            throw e;
-        } finally {
-            if (read != null) read.release();
+        for (Iterator i = services.values().iterator(); i.hasNext(); ) {
+            PublishedService svc = (PublishedService)i.next();
+            output.put(new Long(svc.getOid()), new Integer(svc.getVersion()));
         }
         return output;
     }
@@ -206,14 +200,7 @@ public class ServiceCache {
         Sync write = rwlock.writeLock();
         try {
             write.acquire();
-            Long key = new Long(service.getOid());
-            services.remove(key);
-            serverPolicies.remove(key);
-            serviceStatistics.remove(key);
-            for (int i = 0; i < resolvers.length; i++) {
-                resolvers[i].serviceDeleted(service);
-            }
-            logger.finest("removed service from cache. oid=" + service.getOid());
+            removeNoLock(service);
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -221,6 +208,17 @@ public class ServiceCache {
         } finally {
             if (write != null) write.release();
         }
+    }
+
+    private void removeNoLock(PublishedService service) {
+        Long key = new Long(service.getOid());
+        services.remove(key);
+        serverPolicies.remove(key);
+        serviceStatistics.remove(key);
+        for (int i = 0; i < resolvers.length; i++) {
+            resolvers[i].serviceDeleted(service);
+        }
+        logger.finest("removed service from cache. oid=" + service.getOid());
     }
 
     /**
@@ -245,7 +243,7 @@ public class ServiceCache {
     /**
      * switch the cache
      * @param newServiceCache a set containing the PublishedService objects to cache
-     */
+     *
     public void replaceCache(Set newServiceCache) throws InterruptedException, IOException {
         Sync write = rwlock.writeLock();
         try {
@@ -267,13 +265,13 @@ public class ServiceCache {
         } finally {
             if (write != null) write.release();
         }
-    }
+    }*/
 
     /**
      * check for potential resolution conflicts
      *
      * @deprecated should use the new resolution table instead of this to ensure uniqueness of resolution parameters
-     */
+     *
     public void validate(PublishedService candidateService) throws WSDLException,
                                                               DuplicateObjectException, InterruptedException {
         // Make sure WSDL is valid
@@ -297,7 +295,7 @@ public class ServiceCache {
             if (read != null) read.release();
         }
         throw new DuplicateObjectException( "Duplicate service resolution parameters!" );
-    }
+    }*/
 
     /**
      * get statistics for cached service.
@@ -347,16 +345,156 @@ public class ServiceCache {
         checker.die();
     }
 
+
+    /**
+     * this is called by the PeriodicIntegrityChecker thread
+     */
+    private void checkIntegrity(ServiceManagerImp serviceManager) {
+        Sync ciReadLock = rwlock.readLock();
+        try {
+            ciReadLock.acquire();
+        } catch (InterruptedException e) {
+            logger.log(Level.SEVERE, "error getting read lock. " +
+                                     "this integrity check is stopping prematurely", e);
+            return;
+        }
+        try {
+            Map cacheversions = versionSnapshot();
+            PersistenceContext context = null;
+            try {
+                context = PersistenceContext.getCurrent();
+            } catch (SQLException e) {
+                logger.log(Level.SEVERE, "error getting persistence context. " +
+                                         "this integrity check is stopping prematurely", e);
+                return;
+            }
+            try {
+                Map dbversions = null;
+                // begin transaction
+                try {
+                    context.beginTransaction();
+                } catch (TransactionException e) {
+                    logger.log(Level.SEVERE, "error begining transaction. " +
+                                             "this integrity check is stopping prematurely", e);
+                    return;
+                }
+
+                // get db versions
+                try {
+                    dbversions = serviceManager.getServiceVersions();
+                } catch (FindException e) {
+                    logger.log(Level.SEVERE, "error getting versions. " +
+                                             "this integrity check is stopping prematurely", e);
+                    return;
+                }
+
+                // actual check logic
+                ArrayList updatesAndAdditions = new ArrayList();
+                ArrayList deletions = new ArrayList();
+                // 1. check that all that is in db is present in cache and that version is same
+                for (Iterator i = dbversions.keySet().iterator(); i.hasNext();) {
+                    Long dbid = (Long)i.next();
+                    // is it already in cache?
+                    Integer cacheversion = (Integer)cacheversions.get(dbid);
+                    if (cacheversion == null) {
+                        logger.fine("service " + dbid + " to be added to cache.");
+                        updatesAndAdditions.add(dbid);
+                    } else {
+                        // check actual version
+                        Integer dbversion = (Integer)dbversions.get(dbid);
+                        if (!dbversion.equals(cacheversion)) {
+                            updatesAndAdditions.add(dbid);
+                            logger.fine("service " + dbid + " to be updated in cache because outdated.");
+                        }
+
+                    }
+                }
+                // 2. check for things in cache not in db (deletions)
+                for (Iterator i = cacheversions.keySet().iterator(); i.hasNext();) {
+                    Long cacheid = (Long)i.next();
+                    if (dbversions.get(cacheid) == null) {
+                        deletions.add(cacheid);
+                        logger.fine("service " + cacheid + " to be deleted from cache because no longer in database.");
+                    }
+                }
+
+                // 3. make the updates
+                if (updatesAndAdditions.isEmpty() && deletions.isEmpty()) {
+                    // nothing to do. we're done
+                    ciReadLock.release();
+                    ciReadLock = null;
+                }
+                else {
+                    Sync ciWriteLock = rwlock.writeLock();
+                    ciReadLock.release();
+                    ciReadLock = null;
+                    try {
+                        ciWriteLock.acquire();
+                    } catch (InterruptedException e) {
+                        logger.log(Level.SEVERE, "could not get write lock. this integrity" +
+                                                 "check is stopping prematurely", e);
+                        return;
+                    }
+                    try {
+                        for (Iterator i = updatesAndAdditions.iterator(); i.hasNext();) {
+                            Long svcid = (Long)i.next();
+                            PublishedService toUpdateOrAdd = null;
+                            try {
+                                toUpdateOrAdd = serviceManager.findByPrimaryKey(svcid.longValue());
+                            } catch (FindException e) {
+                                toUpdateOrAdd = null;
+                                logger.log(Level.WARNING, "service scheduled for update or addition" +
+                                                          "cannot be retrieved", e);
+                            }
+                            if (toUpdateOrAdd != null) {
+                                try {
+                                    cacheNoLock(toUpdateOrAdd);
+                                } catch (IOException e) {
+                                    logger.log(Level.WARNING, "exception updating cache", e);
+                                }
+                            } // otherwise, next integrity check shall delete this service from cache
+                        }
+                        for (Iterator i = deletions.iterator(); i.hasNext();) {
+                            Long key = (Long)i.next();
+                            PublishedService serviceToDelete = (PublishedService)services.get(key);
+                            removeNoLock(serviceToDelete);
+                        }
+                    } finally {
+                        ciWriteLock.release();
+                    }
+                }
+
+                // close hib transaction
+                try {
+                    context.rollbackTransaction();
+                } catch (TransactionException e) {
+                    logger.log(Level.WARNING, "error rollbacking transaction", e);
+                }
+            } finally {
+                context.close();
+            }
+        } finally {
+            if (ciReadLock != null) ciReadLock.release();
+        }
+    }
+
     private class PeriodicIntegrityChecker extends Thread {
         public void run() {
-            // wait thrice frequency before starting
             try {
-                sleep(INTEGRITY_CHECK_FREQUENCY*3);
+                sleep(INTEGRITY_CHECK_FREQUENCY*2);
             } catch (InterruptedException e) {
                 logger.log(Level.SEVERE, "interruption", e);
                 return;
             }
             logger.finest("initiating cache integrity check process");
+            // get the service manager
+            ServiceManager locmanager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+            if (locmanager != null && locmanager instanceof ServiceManagerImp) {
+                serviceManager = (ServiceManagerImp)locmanager;
+            } else {
+                logger.severe("cannot resolve a service manager");
+                return;
+            }
             while (true) {
                 if (die) break;
                 try {
@@ -366,17 +504,13 @@ public class ServiceCache {
                     break;
                 }
                 try {
-                    check();
+                    checkIntegrity(serviceManager);
                 } catch (Throwable e) {
                     logger.log(Level.WARNING, "unhandled exception", e);
                 }
                 lastCheck = System.currentTimeMillis();
             }
             logger.finest("cache integrity check process stopping");
-        }
-
-        private void check() {
-            // todo : integrity check
         }
 
         public long getLastCheck() {
@@ -388,6 +522,7 @@ public class ServiceCache {
 
         private long lastCheck = -1;
         private boolean die = false;
+        private ServiceManagerImp serviceManager = null;
     }
 
     private static class SingletonHolder {
