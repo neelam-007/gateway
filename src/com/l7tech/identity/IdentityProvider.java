@@ -24,4 +24,6 @@ public interface IdentityProvider {
      * pattern may include wildcard such as * character
      */
     Collection search(EntityType[] types, String searchString) throws FindException;
+
+    String getAuthRealm();
 }
