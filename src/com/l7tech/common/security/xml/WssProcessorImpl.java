@@ -851,7 +851,7 @@ public class WssProcessorImpl implements WssProcessor {
                     throw new InvalidDocumentFormatException("Timestamp's Signature encountered before Timestamp element");
 
                 // Update timestamp with signature information
-                ((TimestampImpl)cntx.timestamp).setSigningSecurityToken(signingCertToken);
+                cntx.timestamp.setSigningSecurityToken(signingCertToken);
             }
         }
     }
@@ -896,7 +896,7 @@ public class WssProcessorImpl implements WssProcessor {
         final Collection elementsThatWereSigned = new ArrayList();
         final Collection elementsThatWereEncrypted = new ArrayList();
         final Collection securityTokens = new ArrayList();
-        WssProcessor.Timestamp timestamp = null;
+        TimestampImpl timestamp = null;
         Element releventSecurityHeader = null;
         String wsaMessageId = null;
         String wsaRelatesTo = null;
