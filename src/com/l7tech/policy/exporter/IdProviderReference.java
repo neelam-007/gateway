@@ -1,24 +1,21 @@
 package com.l7tech.policy.exporter;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.Text;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.console.util.Registry;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Collection;
-import java.util.Iterator;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A reference to an id provider.
@@ -129,17 +126,18 @@ public class IdProviderReference extends ExternalReference {
      */
     boolean verifyReference() {
         // 1. Look for same oid and name. If that exists, => record perfect match.
-        IdentityProviderConfigManager manager = (IdentityProviderConfigManager)
-                                                  Locator.getDefault().lookup(IdentityProviderConfigManager.class);
+        IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
         // We can't do anything without the id provider config manager.
-        if (manager == null) {
-            logger.severe("Cannot get an IdentityProviderConfigManager");
+        if (idAdmin == null) {
+            logger.severe("Cannot get an IdentityAdmin");
             return false;
         }
         IdentityProviderConfig configOnThisSystem = null;
         try {
-            configOnThisSystem = manager.findByPrimaryKey(getProviderId());
+            configOnThisSystem = idAdmin.findIdentityProviderConfigByPrimaryKey(getProviderId());
         } catch (FindException e) {
+            logger.log(Level.WARNING, "error getting id provider config", e);
+        } catch (RemoteException e) {
             logger.log(Level.WARNING, "error getting id provider config", e);
         }
         if (configOnThisSystem != null && configOnThisSystem.getName().equals(getProviderName())) {
@@ -150,16 +148,27 @@ public class IdProviderReference extends ExternalReference {
             return true;
         }
         // 2. Look for same properties. If that exists, => record corresponding match.
-        Collection allConfigs = null;
+        EntityHeader[] allConfigHeaders = null;
         try {
-            allConfigs = manager.findAll();
+            allConfigHeaders = idAdmin.findAllIdentityProviderConfig();
         } catch (FindException e) {
             logger.log(Level.WARNING, "error getting all id provider config", e);
             return false;
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "error getting all id provider config", e);
+            return false;
         }
-        if (allConfigs != null) {
-            for (Iterator i = allConfigs.iterator(); i.hasNext();) {
-                configOnThisSystem = (IdentityProviderConfig)i.next();
+        if (allConfigHeaders != null) {
+            for (int i = 0; i < allConfigHeaders.length; i++) {
+                try {
+                    configOnThisSystem = idAdmin.findIdentityProviderConfigByPrimaryKey(allConfigHeaders[i].getOid());
+                } catch (RemoteException e) {
+                    logger.log(Level.WARNING, "cannot get id provider config", e);
+                    continue;
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "cannot get id provider config", e);
+                    continue;
+                }
                 String localProps = null;
                 try {
                     localProps = configOnThisSystem.getSerializedProps();
