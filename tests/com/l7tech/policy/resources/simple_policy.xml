@@ -127,7 +127,7 @@
                 </ResponseXpathAssertion>
                 <RequestWssReplayProtection/>
                 <RequestSwAAssertion>
-                    <NamespaceMap mapValueNull="null"/>
+                    <NamespaceMap mapValue="included"/>
                     <Bindings mapValue="included"/>
                 </RequestSwAAssertion>
                 <SamlSecurity/>
@@ -177,7 +177,7 @@
             </RequestXpathAssertion>
             <All>
                 <RequestSwAAssertion>
-                    <NamespaceMap mapValueNull="null"/>
+                    <NamespaceMap mapValue="included"/>
                     <Bindings mapValue="included">
                         <entry>
                             <key stringValue="serviceBinding1"/>
