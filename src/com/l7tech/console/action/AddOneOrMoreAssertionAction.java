@@ -45,7 +45,7 @@ public class AddOneOrMoreAssertionAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Add 'one or more' assertion folder to the policy assertion tree";
+        return "Add a 'one or more' assertion folder to the policy";
     }
 
     /**

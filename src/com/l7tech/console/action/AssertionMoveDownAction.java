@@ -29,7 +29,7 @@ public class AssertionMoveDownAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Move down the policy assertion tree";
+        return "Move the assertion down";
     }
 
     /**

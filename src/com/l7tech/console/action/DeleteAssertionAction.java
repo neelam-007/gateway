@@ -35,7 +35,7 @@ public class DeleteAssertionAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Delete the assertion from the policy assertion tree";
+        return "Delete the assertion from the policy";
     }
 
     /**

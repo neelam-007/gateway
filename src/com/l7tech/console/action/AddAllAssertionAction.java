@@ -47,7 +47,7 @@ public class AddAllAssertionAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Add 'all' assertion folder to the policy assertion tree";
+        return "Add an 'all' assertion folder to the policy";
     }
 
     /**

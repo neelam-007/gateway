@@ -41,7 +41,7 @@ public class JmsRoutingAssertionPropertiesAction extends NodeAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/Edit Routing Properties";
+        return "View and edit routing properties";
     }
 
     /**

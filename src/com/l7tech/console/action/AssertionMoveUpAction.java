@@ -28,7 +28,7 @@ public class AssertionMoveUpAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Move up the policy assertion tree";
+        return "Move up the assertion up";
     }
 
     /**

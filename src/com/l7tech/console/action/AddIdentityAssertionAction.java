@@ -43,14 +43,14 @@ public class AddIdentityAssertionAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Add user or group";
+        return "Add User or Group";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Add user or group to the policy";
+        return "Add a user or group to the policy";
     }
 
     /**
