@@ -699,6 +699,7 @@ public class LogPanel extends JPanel {
         getMsgDetails().setText("Loading data...");
         msgTotal.setText(MSG_TOTAL_PREFIX + "0");
         displayedLogMessage = null;
+        getFilteredLogTableSorter().clearLogCache();
     }
 
     /**

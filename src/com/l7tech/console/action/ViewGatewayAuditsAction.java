@@ -8,7 +8,9 @@ import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Arrays;
@@ -72,9 +74,10 @@ public class ViewGatewayAuditsAction extends SecureAction {
     private GatewayLogWindow getGatewayAuditWindow() {
         if (gatewayAuditWindow != null) return gatewayAuditWindow;
 
+        final DeleteAuditEventsAction deleteAuditEventsAction = new DeleteAuditEventsAction();
         final java.util.List extraFileMenuActions = Arrays.asList(new Object[] {
             new DownloadAuditEventsAction(),
-            new DeleteAuditEventsAction(),
+            deleteAuditEventsAction,
         });
 
         gatewayAuditWindow = new GatewayLogWindow(new GatewayLogWindow.Strategy() {
@@ -98,6 +101,14 @@ public class ViewGatewayAuditsAction extends SecureAction {
                 return extraFileMenuActions;
             }
         });
+
+        deleteAuditEventsAction.setChainAction(new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                getGatewayAuditWindow().flushCachedLogs();
+            }
+        });
+
+
         gatewayAuditWindow.addWindowListener(new WindowAdapter() {
             public void windowClosing(final WindowEvent e) {
                 destroyGatewayLogWindow();

@@ -9,13 +9,16 @@ package com.l7tech.console.action;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.console.util.Registry;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
 import java.rmi.RemoteException;
 
 /**
  * Action that deletes the audit events older than 48 hours, after getting confirmation.
  */
 public class DeleteAuditEventsAction extends SecureAction {
+    private Action chainAction = null;
+
     public String getName() {
         return "Delete old audit events";
     }
@@ -26,6 +29,11 @@ public class DeleteAuditEventsAction extends SecureAction {
 
     protected String iconResource() {
         return null;
+    }
+
+    /** Set an action to chain to after this action is performed. */
+    public void setChainAction(Action chainAction) {
+        this.chainAction = chainAction;
     }
 
     protected void performAction() {
@@ -52,5 +60,8 @@ public class DeleteAuditEventsAction extends SecureAction {
         } catch (RemoteException e1) {
             throw new RuntimeException("Unable to delete old audit events.", e1);
         }
+
+        if (chainAction != null)
+            chainAction.actionPerformed(new ActionEvent(this, 0, "chainAction"));
     }
 }

@@ -237,6 +237,10 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         return logPane;
     }
 
+    public void flushCachedLogs() {
+        getLogPane().clearMsgTable();
+    }
+
     /**
      * Intialization when the connection to the server is established.
      */

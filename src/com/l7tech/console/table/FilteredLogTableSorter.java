@@ -375,7 +375,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     /**
      * Clear all caches.
      */
-    private void clearLogCache() {
+    public void clearLogCache() {
         rawLogCache = new Hashtable();
         filteredLogCache = new Vector();
         currentNodeList = new Hashtable();
