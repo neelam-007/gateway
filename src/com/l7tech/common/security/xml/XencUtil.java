@@ -97,7 +97,7 @@ public class XencUtil {
             logger.fine("The KeyId Value Type is not specified. We will therefore assume it is a Subject Key Identifier.");
             valueType = SoapUtil.VALUETYPE_SKI;
         }
-        if (valueType.equals(SoapUtil.VALUETYPE_SKI)) {
+        if (valueType.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
             // If not typed, assume it's a ski
             byte[] ski = recipientCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
             if (ski == null) {
@@ -125,7 +125,7 @@ public class XencUtil {
                     throw new GeneralSecurityException(msg);
                 }
             }
-        } else if (valueType.equals(SoapUtil.VALUETYPE_X509)) {
+        } else if (valueType.endsWith(SoapUtil.VALUETYPE_X509_SUFFIX)) {
             // It seems to be a complete certificate
             X509Certificate referencedCert = CertUtils.decodeCert(keyIdValueBytes);
             if (CertUtils.certsAreEqual(recipientCert, referencedCert)) {

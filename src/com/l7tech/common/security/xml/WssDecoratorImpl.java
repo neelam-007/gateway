@@ -46,6 +46,7 @@ public class WssDecoratorImpl implements WssDecorator {
         SecureRandom rand = new SecureRandom();
         long count = 0;
         Map idToElementCache = new HashMap();
+        String wsseNS = SoapUtil.SECURITY_NAMESPACE;
     }
 
     /**
@@ -57,7 +58,8 @@ public class WssDecoratorImpl implements WssDecorator {
     {
         Context c = new Context();
 
-        Element securityHeader = createSecurityHeader(message, decorationRequirements.getPreferredSecurityNamespace());
+        c.wsseNS = decorationRequirements.getPreferredSecurityNamespace();
+        Element securityHeader = createSecurityHeader(message, c.wsseNS);
         Set signList = decorationRequirements.getElementsToSign();
 
         // If we aren't signing the entire message, find extra elements to sign
@@ -81,7 +83,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element bst = null;
         if (decorationRequirements.getSenderCertificate() != null && !signList.isEmpty())
-            bst = addX509BinarySecurityToken(securityHeader, decorationRequirements.getSenderCertificate());
+            bst = addX509BinarySecurityToken(securityHeader, decorationRequirements.getSenderCertificate(), c);
 
         Element sct = null;
         WssDecorator.DecorationRequirements.SecureConversationSession session =
@@ -112,14 +114,23 @@ public class WssDecoratorImpl implements WssDecorator {
             } else if (bst != null) {
                 // sign with X509 Binary Security Token
                 keyInfoReferenceTarget = bst;
-                keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509;
+                if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
+                    keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509;
+                } else {
+                    keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509_2;
+                }
                 senderSigningKey = decorationRequirements.getSenderPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
             } else if (saml != null) {
                 // sign with SAML token
                 keyInfoReferenceTarget = saml;
-                keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509; // TODO USE PROPER SAML ASSERTION VALUETYPE
+                // TODO USE PROPER SAML ASSERTION VALUETYPE
+                if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
+                    keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509;
+                } else {
+                    keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509_2;
+                }
                 senderSigningKey = decorationRequirements.getSenderPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with saml:Assertion, but senderPrivateKey is null");
@@ -545,10 +556,18 @@ public class WssDecoratorImpl implements WssDecorator {
         if (recipSki != null && recipSki.length > 4) {
             byte[] goodSki = new byte[recipSki.length - 4];
             System.arraycopy(recipSki, 4, goodSki, 0, goodSki.length);
-            addKeyInfo(encryptedKey, goodSki, SoapUtil.VALUETYPE_SKI);
-        } else
-            addKeyInfo(encryptedKey, recipientCertificate.getEncoded(), SoapUtil.VALUETYPE_X509);
-
+            if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
+                addKeyInfo(encryptedKey, goodSki, SoapUtil.VALUETYPE_SKI);
+            } else {
+                addKeyInfo(encryptedKey, goodSki, SoapUtil.VALUETYPE_SKI_2);
+            }
+        } else {
+            if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
+                addKeyInfo(encryptedKey, recipientCertificate.getEncoded(), SoapUtil.VALUETYPE_X509);
+            } else {
+                addKeyInfo(encryptedKey, recipientCertificate.getEncoded(), SoapUtil.VALUETYPE_X509_2);
+            }
+        }
         Element cipherData = XmlUtil.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
         final String base64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipientCertificate.getPublicKey(), c.rand);
@@ -716,15 +735,21 @@ public class WssDecoratorImpl implements WssDecorator {
         return element;
     }
 
-    private Element addX509BinarySecurityToken(Element securityHeader, X509Certificate certificate)
+    private Element addX509BinarySecurityToken(Element securityHeader, X509Certificate certificate, Context c)
             throws CertificateEncodingException
     {
         Document factory = securityHeader.getOwnerDocument();
         Element element = factory.createElementNS(securityHeader.getNamespaceURI(),
                                                   SoapUtil.BINARYSECURITYTOKEN_EL_NAME);
         element.setPrefix(securityHeader.getPrefix());
-        element.setAttribute("ValueType", SoapUtil.VALUETYPE_X509);
-        element.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
+
+        if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
+            element.setAttribute("ValueType", SoapUtil.VALUETYPE_X509);
+            element.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
+        } else {
+            element.setAttribute("ValueType", SoapUtil.VALUETYPE_X509_2);
+            element.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY_2);
+        }
         element.appendChild(XmlUtil.createTextNode(factory, HexUtils.encodeBase64(certificate.getEncoded(), true)));
         securityHeader.appendChild(element);
         return element;
