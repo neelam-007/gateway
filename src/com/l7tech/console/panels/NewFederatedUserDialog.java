@@ -237,6 +237,8 @@ public class NewFederatedUserDialog extends JDialog {
     private void insertUser() {
         user.setName(userNameTextField.getText());
         user.setLogin(loginTextField.getText());
+        user.setSubjectDn(x509SubjectDNTextField.getText());
+        user.setEmail(emailTextField.getText());
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
