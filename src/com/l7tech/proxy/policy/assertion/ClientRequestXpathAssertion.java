@@ -6,22 +6,17 @@
 
 package com.l7tech.proxy.policy.assertion;
 
-import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.common.xml.XpathEvaluator;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.exceptions.*;
-import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.xml.XpathEvaluator;
+import org.jaxen.JaxenException;
 
-import java.security.GeneralSecurityException;
-import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
-
-import org.xml.sax.SAXException;
-import org.jaxen.JaxenException;
 
 /**
  * Client side support for RequestXpathAssertion.
@@ -65,10 +60,10 @@ public class ClientRequestXpathAssertion extends ClientAssertion {
         String str = "";
         if (requestXpathAssertion != null && requestXpathAssertion.pattern() != null)
             str = " \"" + requestXpathAssertion.pattern() + '"';
-        return "Request must match XPath expression";
+        return "Request must match XPath expression" + str;
     }
 
     public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlsignature.gif";
+        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 }
