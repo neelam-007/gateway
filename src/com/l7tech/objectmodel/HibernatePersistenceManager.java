@@ -53,10 +53,14 @@ public class HibernatePersistenceManager extends PersistenceManager {
         }
     }
 
-    public Session getSession() {
+    public Session getSession() throws SQLException {
         if ( _session == null ) {
-
+            if ( _sessionFactory == null ) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling getSession()!");
         }
+
+        _session = _sessionFactory.openSession( _dataSource.getConnection() );
+
+        return _session;
     }
 
     private Session _session;

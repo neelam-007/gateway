@@ -9,5 +9,5 @@ package com.l7tech.objectmodel;
 /**
  * @author alex
  */
-public class ObjectModelException {
+public class ObjectModelException extends Exception {
 }
