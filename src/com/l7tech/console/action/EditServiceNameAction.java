@@ -117,12 +117,8 @@ public class EditServiceNameAction extends NodeAction {
                       JTree tree =
                         (JTree)WindowManager.getInstance().getComponent(ServicesTree.NAME);
                       if (tree != null) {
-                          TreeNode[] nodes = node.getPath();
-                          TreePath nPath = new TreePath(nodes);
-                          if (tree.hasBeenExpanded(nPath)) {
-                              DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                              model.nodeChanged(node);
-                          }
+                          DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                          model.nodeChanged(node);
                           checkWorkspaceService();
                       } else {
                           log.log(Level.WARNING, "Unable to reach the service tree.");
