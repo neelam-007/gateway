@@ -234,6 +234,10 @@ public final class Message {
      * but may need to begin parsing the XML if it is.
      * <p>
      * If this method returns true, a SoapKnob will be present on this Message.
+     * <p>
+     * If Tarari hardware was used to examine the message to determine if it was soap, and the message turned out
+     * to be well-formed XML, a TarariKnob will be present on this Message regardless of whether or not it
+     * was SOAP.
      *
      * @return true if this mesage appears to contain SOAP.
      * @throws SAXException if the XML in the first part's InputStream is not well formed
