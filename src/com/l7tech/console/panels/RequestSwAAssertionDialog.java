@@ -78,8 +78,6 @@ public class RequestSwAAssertionDialog extends JDialog {
         this.serviceNode = sn;
 
         initialize();
-        loadMIMEPartsInfoFromWSDL();
-        initializeXPath();
         populateData();
         pack();
         Utilities.centerOnScreen(this);
@@ -140,7 +138,7 @@ public class RequestSwAAssertionDialog extends JDialog {
 
     }
 
-    private void initializeXPath() {
+    private void initializeXPath(Map bindings) {
         getServiceWsdl().setShowBindings(Wsdl.SOAP_BINDINGS);
         SoapMessageGenerator sg = new SoapMessageGenerator();
         try {
@@ -164,6 +162,9 @@ public class RequestSwAAssertionDialog extends JDialog {
                 SOAPBodyElement operation = (SOAPBodyElement) soapBodyElements.next();
                 String operationName = operation.getName();
                 String operationPrefix = operation.getPrefix();
+
+                Iterator bindingsItr = bindings.keySet().iterator();
+                
 
                 System.out.println("Xpath for the operation " + "\"" + soapRequest.getOperation() + "\" is " +
                         "/" + soapEnvNamePrefix +
@@ -194,12 +195,12 @@ public class RequestSwAAssertionDialog extends JDialog {
     private void populateData() {
 
         if (assertion.getBindings().size() == 0) {
-            // this is the first time
+            // this is the first time, load data from WSDL
+            loadMIMEPartsInfoFromWSDL();
+            initializeXPath(bindings);
             populateData(bindings);
             assertion.setBindings(bindings);
         } else {
-            // todo: check if the WSDL changed
-
             // populate the data from the assertion
             populateData(assertion.getBindings());
         }

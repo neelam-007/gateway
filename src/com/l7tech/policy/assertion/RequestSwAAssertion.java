@@ -31,4 +31,9 @@ public class RequestSwAAssertion extends SwAAssertion {
             throw new IllegalArgumentException("bindings map may not be null");
         this.bindings = bindings;
     }
+
+    public boolean hasMimeParts(String operationName) {
+
+        return true;
+    }
 }
