@@ -26,7 +26,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
-import javax.crypto.SecretKey;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
