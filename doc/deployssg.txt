@@ -89,7 +89,8 @@ as Postgres:
 	CREATE USER gateway WITH PASSWORD 'same_as_linux_passwd';
 	GRANT ALL ON
 	    hibernate_unique_key, identity_provider, internal_group, internal_user,
-	    internal_user_group, published_service, client_cert, service_resolution
+	    internal_user_group, published_service, client_cert, service_resolution,
+	    urlcache
 	TO gateway;
 	Edit Auth file /var/lib/pgsql/data/pg_hba.conf
     Add this line:
