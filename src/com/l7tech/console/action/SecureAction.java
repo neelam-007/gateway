@@ -91,7 +91,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
 
     /**
      * Return the required roles for this action, one of the roles. The base
-     * implementatoinm requires the strongest admin role.
+     * implementatoin requires the strongest admin role.
      *
      * @return the list of roles that are allowed to carry out the action
      */

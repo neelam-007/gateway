@@ -6,13 +6,17 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.widgets.OptionalCredentialsPanel;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.OptionalCredentialsPanel;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsProvider;
-import com.l7tech.console.util.Registry;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.security.RoleFormPreparer;
+import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.Group;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -46,6 +50,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JmsEndpoint endpoint = null;
     private boolean wasClosedByOkButton = false;
     private boolean outboundOnly = false;
+    private RoleFormPreparer securityFormPreparer;
 
     private static class ProviderComboBoxItem {
         private JmsProvider provider;
@@ -78,24 +83,33 @@ public class JmsQueuePropertiesDialog extends JDialog {
      * OK'ed the changes.  If so, call getConnection() and getEndpoint() to read them.  If the dialog completes
      * successfully, the (possibly-new) connection and endpoint will already have been saved to the database.
      *
-     * @param parent        the parent window for the new dialog.
-     * @param connection    the JMS connection to edit, or null to create a new one for this Queue.
-     * @param endpoint      the JMS endpoint to edit, or null to create a new one for this Queue.
-     * @param outboundOnly  if true, the direction will be locked and defaulted to Outbound only.
+     * @param parent       the parent window for the new dialog.
+     * @param connection   the JMS connection to edit, or null to create a new one for this Queue.
+     * @param endpoint     the JMS endpoint to edit, or null to create a new one for this Queue.
+     * @param outboundOnly if true, the direction will be locked and defaulted to Outbound only.
      * @return the new instance
      */
     public static JmsQueuePropertiesDialog createInstance(Window parent, JmsConnection connection, JmsEndpoint endpoint, boolean outboundOnly) {
         JmsQueuePropertiesDialog that;
         if (parent instanceof Frame)
-            that = new JmsQueuePropertiesDialog((Frame) parent);
+            that = new JmsQueuePropertiesDialog((Frame)parent);
         else if (parent instanceof Dialog)
-            that = new JmsQueuePropertiesDialog((Dialog) parent);
+            that = new JmsQueuePropertiesDialog((Dialog)parent);
         else
             throw new IllegalArgumentException("parent must be derived from either Frame or Dialog");
+        final SecurityProvider provider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        if (provider == null) {
+            throw new IllegalStateException("Could not instantiate security provider");
+        }
+        that.securityFormPreparer = new RoleFormPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
+
+
         that.connection = connection;
         that.endpoint = endpoint;
         that.setOutboundOnly(outboundOnly);
+
         that.init();
+
         return that;
     }
 
@@ -109,6 +123,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     /**
      * Check how the dialog was closed.  Return value is only guaranteed to be valid after show() has returned.
+     *
      * @return false iff. the dialog completed successfully via the "Save" button; otherwise true.
      */
     public boolean isCanceled() {
@@ -118,6 +133,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     /**
      * Obtain the connection that was edited or created.  Return value is only guaranteed to be valid if isCanceled()
      * is false.
+     *
      * @return the possibly-new JMS connection, which may have been replaced by a new instance read back from the database
      */
     public JmsConnection getConnection() {
@@ -127,6 +143,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     /**
      * Obtain the endpoint that was edited or created.  Return value is only guaranteed to be valid if isCanceled()
      * is false.
+     *
      * @return the possibly-new JMS endpoint, which may have been replaced by a new instance read back from the database
      */
     public JmsEndpoint getEndpoint() {
@@ -144,127 +161,129 @@ public class JmsQueuePropertiesDialog extends JDialog {
         int y = 0;
 
         p.add(new JLabel("Queue Name:"),
-              new GridBagConstraints(0, y, 1, 1, 0, 0,
-                                     GridBagConstraints.EAST,
-                                     GridBagConstraints.NONE,
-                                     new Insets(0, 0, 5, 3), 0, 0));
+          new GridBagConstraints(0, y, 1, 1, 0, 0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(0, 0, 5, 3), 0, 0));
 
         p.add(getNameTextField(),
-              new GridBagConstraints(1, y++, 1, 1, 0, 0,
-                                     GridBagConstraints.WEST,
-                                     GridBagConstraints.HORIZONTAL,
-                                     new Insets(0, 0, 5, 0), 0, 0));
+          new GridBagConstraints(1, y++, 1, 1, 0, 0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 5, 0), 0, 0));
 
         p.add(new JLabel("Driver:"),
-              new GridBagConstraints(0, y, 1, 1, 0, 0,
-                                     GridBagConstraints.EAST,
-                                     GridBagConstraints.NONE,
-                                     new Insets(0, 0, 5, 3), 0, 0));
+          new GridBagConstraints(0, y, 1, 1, 0, 0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(0, 0, 5, 3), 0, 0));
 
         p.add(getDriverComboBox(),
-              new GridBagConstraints(1, y++, 1, 1, 0, 0,
-                                     GridBagConstraints.WEST,
-                                     GridBagConstraints.NONE,
-                                     new Insets(0, 0, 5, 0), 0, 0));
+          new GridBagConstraints(1, y++, 1, 1, 0, 0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.NONE,
+            new Insets(0, 0, 5, 0), 0, 0));
 
         p.add(new JLabel("Naming Provider URL:"),
-              new GridBagConstraints(0, y, 1, 1, 0, 0,
-                                     GridBagConstraints.EAST,
-                                     GridBagConstraints.NONE,
-                                     new Insets(0, 0, 5, 3), 0, 0));
+          new GridBagConstraints(0, y, 1, 1, 0, 0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(0, 0, 5, 3), 0, 0));
 
         p.add(getJndiUrlTextField(),
-              new GridBagConstraints(1, y++, 1, 1, 0, 0,
-                                     GridBagConstraints.WEST,
-                                     GridBagConstraints.HORIZONTAL,
-                                     new Insets(0, 0, 5, 0), 0, 0));
+          new GridBagConstraints(1, y++, 1, 1, 0, 0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 5, 0), 0, 0));
 
         p.add(new JLabel("Queue Connection Factory URL:"),
-              new GridBagConstraints(0, y, 1, 1, 0, 0,
-                                     GridBagConstraints.EAST,
-                                     GridBagConstraints.NONE,
-                                     new Insets(0, 0, 5, 0), 0, 0));
+          new GridBagConstraints(0, y, 1, 1, 0, 0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(0, 0, 5, 0), 0, 0));
 
         p.add(getQcfNameTextField(),
-              new GridBagConstraints(1, y++, 1, 1, 0, 0,
-                                     GridBagConstraints.WEST,
-                                     GridBagConstraints.HORIZONTAL,
-                                     new Insets(0, 0, 5, 0), 0, 0));
+          new GridBagConstraints(1, y++, 1, 1, 0, 0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 5, 0), 0, 0));
 
         p.add(new JLabel("Initial Context Factory Class:"),
-              new GridBagConstraints(0, y, 1, 1, 0, 0,
-                                     GridBagConstraints.EAST,
-                                     GridBagConstraints.NONE,
-                                     new Insets(0, 0, 5, 0), 0, 0));
+          new GridBagConstraints(0, y, 1, 1, 0, 0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(0, 0, 5, 0), 0, 0));
 
         p.add(getIcfNameTextField(),
-              new GridBagConstraints(1, y++, 1, 1, 0, 0,
-                                     GridBagConstraints.WEST,
-                                     GridBagConstraints.HORIZONTAL,
-                                     new Insets(0, 0, 5, 0), 0, 0));
+          new GridBagConstraints(1, y++, 1, 1, 0, 0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 5, 0), 0, 0));
 
         p.add(new JLabel("Direction:"),
-              new GridBagConstraints(0, y, 1, 1, 0, 0,
-                                     GridBagConstraints.EAST,
-                                     GridBagConstraints.NONE,
-                                     new Insets(6, 0, 5, 0), 0, 0));
+          new GridBagConstraints(0, y, 1, 1, 0, 0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(6, 0, 5, 0), 0, 0));
 
         p.add(getOutboundButton(),
-              new GridBagConstraints(1, y++, 1, 1, 0, 0,
-                                     GridBagConstraints.WEST,
-                                     GridBagConstraints.HORIZONTAL,
-                                     new Insets(6, 0, 0, 0), 0, 0));
+          new GridBagConstraints(1, y++, 1, 1, 0, 0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(6, 0, 0, 0), 0, 0));
 
         p.add(getInboundButton(),
-              new GridBagConstraints(1, y++, 1, 1, 0, 0,
-                                     GridBagConstraints.WEST,
-                                     GridBagConstraints.HORIZONTAL,
-                                     new Insets(0, 0, 6, 0), 0, 0));
+          new GridBagConstraints(1, y++, 1, 1, 0, 0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 6, 0), 0, 0));
 
         p.add(getOptionalCredentialsPanel(),
-              new GridBagConstraints(1, y++, 1, 1, 0, 0,
-                                     GridBagConstraints.WEST,
-                                     GridBagConstraints.HORIZONTAL,
-                                     new Insets(0, 0, 5, 0), 0, 0));
+          new GridBagConstraints(1, y++, 1, 1, 0, 0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 5, 0), 0, 0));
 
         p.add(getButtonPanel(),
-              new GridBagConstraints(0, y++, 2, 1, 10.0, 0,
-                                     GridBagConstraints.EAST,
-                                     GridBagConstraints.HORIZONTAL,
-                                     new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, y++, 2, 1, 10.0, 0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 0, 0), 0, 0));
 
         pack();
         initializeView();
         enableOrDisableComponents();
+        applyFormSecurity();
         Actions.setEscKeyStrokeDisposes(this);
-        
+
     }
+
 
     private JPanel getButtonPanel() {
         if (buttonPanel == null) {
             buttonPanel = new JPanel();
             buttonPanel.setLayout(new GridBagLayout());
             buttonPanel.add(Box.createGlue(),
-                            new GridBagConstraints(0, 0, 1, 1, 10.0, 10.0,
-                                                   GridBagConstraints.EAST,
-                                                   GridBagConstraints.HORIZONTAL,
-                                                   new Insets(0, 0, 0, 0), 0, 0));
+              new GridBagConstraints(0, 0, 1, 1, 10.0, 10.0,
+                GridBagConstraints.EAST,
+                GridBagConstraints.HORIZONTAL,
+                new Insets(0, 0, 0, 0), 0, 0));
             buttonPanel.add(getTestButton(),
-                            new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                                                   GridBagConstraints.EAST,
-                                                   GridBagConstraints.NONE,
-                                                   new Insets(0, 0, 0, 5), 0, 0));
+              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.EAST,
+                GridBagConstraints.NONE,
+                new Insets(0, 0, 0, 5), 0, 0));
             buttonPanel.add(getSaveButton(),
-                            new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                                                   GridBagConstraints.EAST,
-                                                   GridBagConstraints.NONE,
-                                                   new Insets(0, 0, 0, 5), 0, 0));
+              new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.EAST,
+                GridBagConstraints.NONE,
+                new Insets(0, 0, 0, 5), 0, 0));
             buttonPanel.add(getCancelButton(),
-                            new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
-                                                   GridBagConstraints.EAST,
-                                                   GridBagConstraints.NONE,
-                                                   new Insets(0, 0, 0, 5), 0, 0));
-            Utilities.equalizeButtonSizes(new JButton[] { getTestButton(), getSaveButton(), getCancelButton() });
+              new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.EAST,
+                GridBagConstraints.NONE,
+                new Insets(0, 0, 0, 5), 0, 0));
+            Utilities.equalizeButtonSizes(new JButton[]{getTestButton(), getSaveButton(), getCancelButton()});
         }
         return buttonPanel;
     }
@@ -285,17 +304,17 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
                         Registry.getDefault().getJmsManager().testEndpoint(newConnection, newEndpoint);
                         JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
-                                                      "The Gateway has verified the existence of this JMS Queue.",
-                                                      "JMS Connection Successful",
-                                                      JOptionPane.INFORMATION_MESSAGE);
+                          "The Gateway has verified the existence of this JMS Queue.",
+                          "JMS Connection Successful",
+                          JOptionPane.INFORMATION_MESSAGE);
                     } catch (RemoteException e1) {
                         throw new RuntimeException("Unable to test this JMS Queue", e1);
                     } catch (Exception e1) {
                         JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
-                                                      "The Gateway was unable to find this JMS Queue:\n" +
-                                                      e1.getMessage(),
-                                                      "JMS Connection Settings",
-                                                      JOptionPane.ERROR_MESSAGE);
+                          "The Gateway was unable to find this JMS Queue:\n" +
+                          e1.getMessage(),
+                          "JMS Connection Settings",
+                          JOptionPane.ERROR_MESSAGE);
                     }
                 }
             });
@@ -432,17 +451,21 @@ public class JmsQueuePropertiesDialog extends JDialog {
     // Return true if the specified JmsProvider provides the exact same DefaultQueueFactoryUrl and
     // InitialContextFactoryClassname as the specified connection.  Neither parameter may be null.
     private boolean providerMatchesConnection(JmsProvider provider, JmsConnection connection) {
-        return  provider.getDefaultQueueFactoryUrl() != null &&
-                provider.getDefaultQueueFactoryUrl().equals(connection.getQueueFactoryUrl()) &&
-                provider.getInitialContextFactoryClassname() != null &&
-                provider.getInitialContextFactoryClassname().equals(connection.getInitialContextFactoryClassname());
+        return provider.getDefaultQueueFactoryUrl() != null &&
+          provider.getDefaultQueueFactoryUrl().equals(connection.getQueueFactoryUrl()) &&
+          provider.getInitialContextFactoryClassname() != null &&
+          provider.getInitialContextFactoryClassname().equals(connection.getInitialContextFactoryClassname());
     }
 
     private FormPreener formPreener = new FormPreener();
+
     private class FormPreener implements DocumentListener {
         public void insertUpdate(DocumentEvent e) { changed(); }
+
         public void removeUpdate(DocumentEvent e) { changed(); }
+
         public void changedUpdate(DocumentEvent e) { changed(); }
+
         private void changed() {
             enableOrDisableComponents();
         }
@@ -482,18 +505,18 @@ public class JmsQueuePropertiesDialog extends JDialog {
     /**
      * Extract information from the view and create a new JmsConnection object.  The new object will not have a
      * valid OID and will not yet have been saved to the database.
-     *
+     * <p/>
      * If the form state is not valid, an error dialog is displayed and null is returned.
      *
      * @return a new JmsConnection with the current settings, or null if one could not be created.  The new connection
-     * will not yet have been saved to the database.
+     *         will not yet have been saved to the database.
      */
     private JmsConnection makeJmsConnectionFromView() {
         if (!validateForm()) {
             JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
-                                          "At minimum, the name, queue name, naming URL and factory URL are required.",
-                                          "Unable to proceed",
-                                          JOptionPane.ERROR_MESSAGE);
+              "At minimum, the name, queue name, naming URL and factory URL are required.",
+              "Unable to proceed",
+              JOptionPane.ERROR_MESSAGE);
             return null;
         }
 
@@ -508,7 +531,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             } else {
                 JmsProvider provider = providerItem.getProvider();
                 conn = provider.createConnection(getNameTextField().getText(),
-                                                 getJndiUrlTextField().getText());
+                  getJndiUrlTextField().getText());
             }
         }
 
@@ -529,18 +552,18 @@ public class JmsQueuePropertiesDialog extends JDialog {
     /**
      * Extract information from the view and create a new JmsEndpoint object.  The new object will not have a
      * valid OID and will not yet have been saved to the database.
-     *
+     * <p/>
      * If the form state is not valid, an error dialog is displayed and null is returned.
      *
      * @return a new JmsEndpoint with the current settings, or null if one could not be created.  The new connection
-     * will not yet have been saved to the database.
+     *         will not yet have been saved to the database.
      */
     private JmsEndpoint makeJmsEndpointFromView() {
         if (!validateForm()) {
             JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
-                                          "The queue name must be provided.",
-                                          "Unable to proceed",
-                                          JOptionPane.ERROR_MESSAGE);
+              "The queue name must be provided.",
+              "Unable to proceed",
+              JOptionPane.ERROR_MESSAGE);
             return null;
         }
 
@@ -574,7 +597,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private void selectDriverForConnection(JmsConnection connection) {
         int numDrivers = getDriverComboBox().getModel().getSize();
         for (int i = 0; i < numDrivers; ++i) {
-            ProviderComboBoxItem item = (ProviderComboBoxItem) getDriverComboBox().getModel().getElementAt(i);
+            ProviderComboBoxItem item = (ProviderComboBoxItem)getDriverComboBox().getModel().getElementAt(i);
             JmsProvider provider = item.getProvider();
             if (providerMatchesConnection(provider, connection)) {
                 getDriverComboBox().setSelectedItem(item);
@@ -583,7 +606,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
     }
 
-    /** Configure the gui to conform with the current endpoint and connection. */
+    /**
+     * Configure the gui to conform with the current endpoint and connection.
+     */
     private void initializeView() {
         if (connection != null) {
             // configure gui from connection
@@ -593,7 +618,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             getIcfNameTextField().setText(connection.getInitialContextFactoryClassname());
             boolean useCredentials = connection.getUsername() != null && connection.getUsername().length() > 0;
             getOptionalCredentialsPanel().
-                    setUsernameAndPasswordRequired(useCredentials, connection.getUsername(), connection.getPassword());
+              setUsernameAndPasswordRequired(useCredentials, connection.getUsername(), connection.getPassword());
 
         } else {
             // No connection is set
@@ -618,7 +643,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     }
 
-    /** Returns true iff. the form has enough information to construct a JmsConnection. */
+    /**
+     * Returns true iff. the form has enough information to construct a JmsConnection.
+     */
     private boolean validateForm() {
         if (getNameTextField().getText().length() < 1)
             return false;
@@ -631,11 +658,29 @@ public class JmsQueuePropertiesDialog extends JDialog {
         return true;
     }
 
-    /** Adjust components based on the state of the form. */
+    /**
+     * Adjust components based on the state of the form.
+     */
     private void enableOrDisableComponents() {
         final boolean valid = validateForm();
         addButton.setEnabled(valid);
         testButton.setEnabled(valid);
+    }
+
+    private void applyFormSecurity() {
+        // list components that are subject to security (they require the full admin role)
+        securityFormPreparer.prepare(new Component[]{
+            addButton,
+            getInboundButton(),
+            getOutboundButton(),
+            getDriverComboBox(),
+            getQcfNameTextField(),
+            getIcfNameTextField(),
+            getJndiUrlTextField(),
+            getNameTextField()
+
+        });
+        securityFormPreparer.prepare(optionalCredentialsPanel.getComponents());
     }
 
     private ButtonGroup getDirectionButtonGroup() {

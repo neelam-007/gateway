@@ -7,21 +7,24 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.util.Locator;
+import com.l7tech.console.action.Actions;
+import com.l7tech.console.security.RoleFormPreparer;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.action.Actions;
+import com.l7tech.identity.Group;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.*;
-import java.util.*;
 import java.util.List;
 
 /**
@@ -40,6 +43,7 @@ public class JmsQueuesWindow extends JDialog {
     private JPanel sideButtonPanel;
     private JButton addButton;
     private JButton removeButton;
+    private RoleFormPreparer securityFormPreparer;
 
     private JmsQueuesWindow(Frame owner) {
         super(owner, "Manage JMS Queues", true);
@@ -52,36 +56,44 @@ public class JmsQueuesWindow extends JDialog {
     public static JmsQueuesWindow createInstance(Window owner) {
         JmsQueuesWindow that;
         if (owner instanceof Dialog)
-            that = new JmsQueuesWindow((Dialog) owner);
+            that = new JmsQueuesWindow((Dialog)owner);
         else if (owner instanceof Frame)
-            that = new JmsQueuesWindow((Frame) owner);
+            that = new JmsQueuesWindow((Frame)owner);
         else
             throw new IllegalArgumentException("Owner must be derived from either Frame or Window");
+
+        final SecurityProvider provider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        if (provider == null) {
+            throw new IllegalStateException("Could not instantiate security provider");
+        }
+        that.securityFormPreparer = new RoleFormPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
+
 
         Container p = that.getContentPane();
         p.setLayout(new GridBagLayout());
 
         p.add(new JLabel("Known JMS Queues:"),
-              new GridBagConstraints(0, 0, 2, 1, 0.0, 0.0,
-                      GridBagConstraints.CENTER,
-                      GridBagConstraints.NONE,
-                      new Insets(5, 5, 5, 5), 0, 0));
+          new GridBagConstraints(0, 0, 2, 1, 0.0, 0.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.NONE,
+            new Insets(5, 5, 5, 5), 0, 0));
 
         JScrollPane sp = new JScrollPane(that.getJmsQueueTable(),
-                                         JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                                         JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+          JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+          JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         sp.setPreferredSize(new Dimension(400, 200));
         p.add(sp,
-              new GridBagConstraints(0, 1, 1, 1, 10.0, 10.0,
-                                     GridBagConstraints.CENTER,
-                                     GridBagConstraints.BOTH,
-                                     new Insets(5, 5, 5, 5), 0, 0));
+          new GridBagConstraints(0, 1, 1, 1, 10.0, 10.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(5, 5, 5, 5), 0, 0));
 
         p.add(that.getSideButtonPanel(),
-              new GridBagConstraints(1, 1, 1, GridBagConstraints.REMAINDER, 0.0, 1.0,
-                                     GridBagConstraints.NORTH,
-                                     GridBagConstraints.VERTICAL,
-                                     new Insets(5, 5, 5, 5), 0, 0));
+          new GridBagConstraints(1, 1, 1, GridBagConstraints.REMAINDER, 0.0, 1.0,
+            GridBagConstraints.NORTH,
+            GridBagConstraints.VERTICAL,
+            new Insets(5, 5, 5, 5), 0, 0));
+
 
         that.pack();
         that.enableOrDisableButtons();
@@ -138,35 +150,35 @@ public class JmsQueuesWindow extends JDialog {
             sideButtonPanel = new JPanel();
             sideButtonPanel.setLayout(new GridBagLayout());
             sideButtonPanel.add(getAddButton(),
-                                new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                                                       GridBagConstraints.CENTER,
-                                                       GridBagConstraints.HORIZONTAL,
-                                                       new Insets(0, 0, 0, 0), 0, 0));
+              new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL,
+                new Insets(0, 0, 0, 0), 0, 0));
             sideButtonPanel.add(getRemoveButton(),
-                                new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-                                                       GridBagConstraints.CENTER,
-                                                       GridBagConstraints.HORIZONTAL,
-                                                       new Insets(6, 0, 0, 0), 0, 0));
+              new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL,
+                new Insets(6, 0, 0, 0), 0, 0));
             sideButtonPanel.add(getPropertiesButton(),
-                                new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-                                                       GridBagConstraints.CENTER,
-                                                       GridBagConstraints.HORIZONTAL,
-                                                       new Insets(6, 0, 0, 0), 0, 0));
+              new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL,
+                new Insets(6, 0, 0, 0), 0, 0));
             sideButtonPanel.add(Box.createGlue(),
-                                new GridBagConstraints(0, 3, 1, 1, 1.0, 1.0,
-                                                       GridBagConstraints.CENTER,
-                                                       GridBagConstraints.VERTICAL,
-                                                       new Insets(0, 0, 0, 0), 0, 0));
+              new GridBagConstraints(0, 3, 1, 1, 1.0, 1.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.VERTICAL,
+                new Insets(0, 0, 0, 0), 0, 0));
             sideButtonPanel.add(getCloseButton(),
-                                new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
-                                                       GridBagConstraints.SOUTH,
-                                                       GridBagConstraints.HORIZONTAL,
-                                                       new Insets(0, 0, 0, 0), 0, 0));
+              new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+                GridBagConstraints.SOUTH,
+                GridBagConstraints.HORIZONTAL,
+                new Insets(0, 0, 0, 0), 0, 0));
 
-            Utilities.equalizeButtonSizes(new JButton[] { getAddButton(),
-                                                          getRemoveButton(),
-                                                          getPropertiesButton(),
-                                                          getCloseButton() });
+            Utilities.equalizeButtonSizes(new JButton[]{getAddButton(),
+                                                        getRemoveButton(),
+                                                        getPropertiesButton(),
+                                                        getCloseButton()});
         }
         return sideButtonPanel;
     }
@@ -185,17 +197,17 @@ public class JmsQueuesWindow extends JDialog {
                             String name = end.getName();
 
                             try {
-                                Object[] options = { "Remove", "Cancel" };
+                                Object[] options = {"Remove", "Cancel"};
 
                                 int result = JOptionPane.showOptionDialog(null,
-                                                                          "<HTML>Are you sure you want to remove the " +
-                                                                          "registration for the JMS Queue " +
-                                                                          name + "?<br>" +
-                                                                          "<center>This action cannot be undone." +
-                                                                          "</center></html>",
-                                                                          "Remove JMS Queue?",
-                                                                          0, JOptionPane.WARNING_MESSAGE,
-                                                                          null, options, options[1]);
+                                  "<HTML>Are you sure you want to remove the " +
+                                  "registration for the JMS Queue " +
+                                  name + "?<br>" +
+                                  "<center>This action cannot be undone." +
+                                  "</center></html>",
+                                  "Remove JMS Queue?",
+                                  0, JOptionPane.WARNING_MESSAGE,
+                                  null, options, options[1]);
                                 if (result == 0) {
                                     Registry.getDefault().getJmsManager().deleteEndpoint(end.getOid());
 
@@ -208,7 +220,7 @@ public class JmsQueuesWindow extends JDialog {
                                 throw new RuntimeException("Unable to delete queue " + name, e1);
                             }
 
-                        updateEndpointList(null);
+                            updateEndpointList(null);
                         }
                     }
                 }
@@ -255,10 +267,10 @@ public class JmsQueuesWindow extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     int row = getJmsQueueTable().getSelectedRow();
                     if (row >= 0) {
-                        JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple) getJmsQueueTableModel().getJmsQueues().get(row);
+                        JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
                         if (i != null) {
                             JmsQueuePropertiesDialog pd =
-                                    JmsQueuePropertiesDialog.createInstance(getOwner(), i.getConnection(),  i.getEndpoint(), false);
+                              JmsQueuePropertiesDialog.createInstance(getOwner(), i.getConnection(), i.getEndpoint(), false);
                             Utilities.centerOnScreen(pd);
                             pd.show();
                             if (!pd.isCanceled()) {
@@ -298,6 +310,15 @@ public class JmsQueuesWindow extends JDialog {
         }
         getRemoveButton().setEnabled(removeEnabled);
         getPropertiesButton().setEnabled(propsEnabled);
+        applyFormSecurity();
+    }
+
+    private void applyFormSecurity() {
+        // list components that are subject to security (they require the full admin role)
+        securityFormPreparer.prepare(new Component[]{
+            getRemoveButton(),
+            getAddButton()
+        });
     }
 
     private JmsQueueTableModel getJmsQueueTableModel() {
@@ -323,7 +344,7 @@ public class JmsQueuesWindow extends JDialog {
         if (selectedEndpoint != null) {
             List rows = getJmsQueueTableModel().getJmsQueues();
             for (int i = 0; i < rows.size(); ++i) {
-                JmsAdmin.JmsTuple item = (JmsAdmin.JmsTuple) rows.get(i);
+                JmsAdmin.JmsTuple item = (JmsAdmin.JmsTuple)rows.get(i);
                 JmsEndpoint end = item.getEndpoint();
                 if (end != null && end.getOid() == selectedEndpoint.getOid()) {
                     getJmsQueueTable().getSelectionModel().setSelectionInterval(i, i);

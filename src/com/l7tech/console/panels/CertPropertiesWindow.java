@@ -1,22 +1,23 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
+import com.l7tech.common.Authorizer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.Locator;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
 
+import javax.security.auth.Subject;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -30,7 +31,7 @@ import java.util.logging.Logger;
 /**
  * This class provides a dialog for viewing a trusted certificate and its usage.
  * Users can modify the cert name and ussage via the dialog.
- *
+ * <p/>
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
@@ -60,12 +61,21 @@ public class CertPropertiesWindow extends JDialog {
     /**
      * Constructor
      *
-     * @param owner The parent component.
-     * @param tc   The trusted certificate.
-     * @param editable  TRUE if the properties are editable
+     * @param owner    The parent component.
+     * @param tc       The trusted certificate.
+     * @param editable TRUE if the properties are editable
      */
     public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable) {
         super(owner, resources.getString("cert.properties.dialog.title"), true);
+
+        final Authorizer authorizer = (Authorizer)Locator.getDefault().lookup(Authorizer.class);
+        if (authorizer == null) {
+            throw new IllegalStateException("Could not instantiate authorization provider");
+        }
+        final Subject subject = Subject.getSubject(AccessController.getContext());
+        editable = editable && authorizer.isSubjectInRole(subject, new String[]{Group.ADMIN_GROUP_NAME});
+
+
         trustedCert = tc;
         initialize(editable);
         pack();
@@ -74,7 +84,8 @@ public class CertPropertiesWindow extends JDialog {
 
     /**
      * Initialization of the window
-     * @param editable  TRUE if the properties are editable
+     *
+     * @param editable TRUE if the properties are editable
      */
     private void initialize(boolean editable) {
 
@@ -89,7 +100,7 @@ public class CertPropertiesWindow extends JDialog {
         certPanel.setBackground(Color.white);
 
         // disable the fields if the properties should not be modified
-        if(!editable) {
+        if (!editable) {
             disableAll();
         }
 
@@ -102,13 +113,13 @@ public class CertPropertiesWindow extends JDialog {
 
                 // create a new trusted cert
                 try {
-                    tc = (TrustedCert) trustedCert.clone();
+                    tc = (TrustedCert)trustedCert.clone();
                 } catch (CloneNotSupportedException e) {
                     String errmsg = "Internal error! Unable to clone the trusted certificate.";
                     logger.severe(errmsg);
                     JOptionPane.showMessageDialog(mainPanel, errmsg + " \n" + "The certificate has not been updated",
-                            resources.getString("save.error.title"),
-                            JOptionPane.ERROR_MESSAGE);
+                      resources.getString("save.error.title"),
+                      JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
@@ -122,24 +133,24 @@ public class CertPropertiesWindow extends JDialog {
                 } catch (SaveException e) {
                     logger.warning("Unable to save the trusted certificate in server");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.save.error"),
-                            resources.getString("save.error.title"),
-                            JOptionPane.ERROR_MESSAGE);
+                      resources.getString("save.error.title"),
+                      JOptionPane.ERROR_MESSAGE);
 
                 } catch (RemoteException e) {
                     logger.severe("Unable to execute remote call due to remote exception");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.remote.exception"),
-                            resources.getString("save.error.title"),
-                            JOptionPane.ERROR_MESSAGE);
+                      resources.getString("save.error.title"),
+                      JOptionPane.ERROR_MESSAGE);
                 } catch (VersionException e) {
                     logger.warning("Unable to save the trusted certificate: " + trustedCert.getName() + "; version exception.");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.version.error"),
-                            resources.getString("save.error.title"),
-                            JOptionPane.ERROR_MESSAGE);
+                      resources.getString("save.error.title"),
+                      JOptionPane.ERROR_MESSAGE);
                 } catch (UpdateException e) {
                     logger.warning("Unable to update the trusted certificate in server");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.update.error"),
-                            resources.getString("save.error.title"),
-                            JOptionPane.ERROR_MESSAGE);
+                      resources.getString("save.error.title"),
+                      JOptionPane.ERROR_MESSAGE);
                 }
 
                 // suceeded, update the original trusted cert
@@ -159,31 +170,31 @@ public class CertPropertiesWindow extends JDialog {
         });
 
         signingClientCertCheckBox.addMouseListener(new MouseAdapter() {
-            public void mouseEntered( MouseEvent e ) { setClientDesc(); }
+            public void mouseEntered(MouseEvent e) { setClientDesc(); }
         });
         signingClientCertCheckBox.addFocusListener(new FocusAdapter() {
-            public void focusGained( FocusEvent e ) { setClientDesc(); }
+            public void focusGained(FocusEvent e) { setClientDesc(); }
         });
 
         signingServerCertCheckBox.addMouseListener(new MouseAdapter() {
-            public void mouseEntered( MouseEvent e ) { setServerDesc(); }
+            public void mouseEntered(MouseEvent e) { setServerDesc(); }
         });
         signingServerCertCheckBox.addFocusListener(new FocusAdapter() {
-            public void focusGained( FocusEvent e ) { setServerDesc(); }
+            public void focusGained(FocusEvent e) { setServerDesc(); }
         });
 
         signingSAMLTokenCheckBox.addMouseListener(new MouseAdapter() {
-            public void mouseEntered( MouseEvent e ) { setSamlDesc(); }
+            public void mouseEntered(MouseEvent e) { setSamlDesc(); }
         });
         signingSAMLTokenCheckBox.addFocusListener(new FocusAdapter() {
-            public void focusGained( FocusEvent e ) { setSamlDesc(); }
+            public void focusGained(FocusEvent e) { setSamlDesc(); }
         });
 
         outboundSSLConnCheckBox.addMouseListener(new MouseAdapter() {
-            public void mouseEntered( MouseEvent e ) { setSslDesc(); }
+            public void mouseEntered(MouseEvent e) { setSslDesc(); }
         });
         outboundSSLConnCheckBox.addFocusListener(new FocusAdapter() {
-            public void focusGained( FocusEvent e ) { setSslDesc(); }
+            public void focusGained(FocusEvent e) { setSslDesc(); }
         });
 
     }
@@ -234,15 +245,15 @@ public class CertPropertiesWindow extends JDialog {
         try {
             cert = trustedCert.getCertificate();
         } catch (CertificateException e) {
-             logger.warning(resources.getString("cert.decode.error"));
+            logger.warning(resources.getString("cert.decode.error"));
             JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
+              resources.getString("save.error.title"),
+              JOptionPane.ERROR_MESSAGE);
         } catch (IOException e) {
             logger.warning(resources.getString("cert.decode.error"));
             JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
+              resources.getString("save.error.title"),
+              JOptionPane.ERROR_MESSAGE);
         }
 
         // populate the general data
@@ -310,10 +321,11 @@ public class CertPropertiesWindow extends JDialog {
 
     /**
      * Update the trusted cert object with the current settings (from the form).
-     * @param tc  The trusted cert to be updated.
+     *
+     * @param tc The trusted cert to be updated.
      */
     private void updateTrustedCert(TrustedCert tc) {
-        if(tc != null) {
+        if (tc != null) {
             tc.setName(certNameTextField.getText().trim());
             tc.setTrustedForSigningClientCerts(signingClientCertCheckBox.isSelected());
             tc.setTrustedForSigningSamlTokens(signingSAMLTokenCheckBox.isSelected());
@@ -326,12 +338,12 @@ public class CertPropertiesWindow extends JDialog {
      * Retrieve the object reference of the Trusted Cert Admin service
      *
      * @return TrustedCertAdmin  The object reference.
-     * @throws RuntimeException  if the object reference of the Trusted Cert Admin service is not found.
+     * @throws RuntimeException if the object reference of the Trusted Cert Admin service is not found.
      */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
         TrustedCertAdmin tca =
-                (TrustedCertAdmin) Locator.
-                getDefault().lookup(TrustedCertAdmin.class);
+          (TrustedCertAdmin)Locator.
+          getDefault().lookup(TrustedCertAdmin.class);
         if (tca == null) {
             throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
         }

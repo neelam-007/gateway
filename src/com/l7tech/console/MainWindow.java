@@ -6,7 +6,10 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.panels.*;
+import com.l7tech.console.panels.FindIdentitiesDialog;
+import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.panels.PreferencesDialog;
+import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.security.LogonListener;
@@ -36,7 +39,6 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -67,8 +69,10 @@ public class MainWindow extends JFrame {
      * the resource bundle name
      */
     private static
-    ResourceBundle resapplication =
-      java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
+    ResourceBundle resapplication = ResourceBundle.getBundle("com.l7tech.console.resources.console");
+
+    /* this class classloader */
+    private final ClassLoader cl = getClass().getClassLoader();
 
     private JMenuBar mainJMenuBar = null;
     private JMenu fileMenu = null;
@@ -88,6 +92,7 @@ public class MainWindow extends JFrame {
     private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
+    // actions
     private Action refreshAction = null;
     private Action findAction = null;
     private Action prefsAction = null;
@@ -101,6 +106,21 @@ public class MainWindow extends JFrame {
     private CreateServiceWsdlAction createServiceAction = null;
     private ViewGatewayLogsAction viewGatewayLogWindowAction = null;
     private ViewClusterStatusAction viewClusterStatusAction = null;
+    private ValidatePolicyAction validatePolicyAction;
+    private ExportPolicyToFileAction exportPolicyAction;
+    private ImportPolicyFromFileAction importPolicyAction;
+    private SavePolicyAction savePolicyAction;
+    private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
+    private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
+    private HomeAction homeAction = new HomeAction();
+    Action monitorAction = null;
+    private NewGroupAction newInernalGroupAction;
+    private NewLdapProviderAction newLDAPProviderAction;
+    private NewFederatedIdentityProviderAction newPKIProviderAction;
+    private ManageCertificatesAction manageCertificatesAction = null;
+    private NewInternalUserAction newInernalUserAction;
+
+
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
     private JPanel statusBarPane = null;
@@ -117,22 +137,11 @@ public class MainWindow extends JFrame {
     /* progress bar indicator */
     private ProgressBar progressBar = null;
 
-    /* this class classloader */
-    private final ClassLoader cl = getClass().getClassLoader();
-
     public static final String TITLE = "SSG Management Console";
     public static final String NAME = "main.window"; // registered
     private EventListenerList listenerList = new WeakEventListenerList();
     // cached credential manager
     private SecurityProvider securityProvider;
-    private NewInternalUserAction newInernalUserAction;
-    private NewGroupAction newInernalGroupAction;
-    private NewLdapProviderAction newLDAPProviderAction;
-    private NewFederatedIdentityProviderAction newPKIProviderAction;
-    private HomeAction homeAction = new HomeAction();
-    Action monitorAction = null;
-    private Action manageJmsEndpointsAction = null;
-    private Action manageCertificatesAction = null;
     private String connectionContext = "";
     private FocusAdapter actionsFocusListener;
     private ServicesTree servicesTree;
@@ -141,13 +150,8 @@ public class MainWindow extends JFrame {
     private JMenuItem importMenuItem;
     private JMenuItem exportMenuItem;
     private JMenuItem saveMenuItem;
-    private ValidatePolicyAction validatePolicyAction;
-    private ExportPolicyToFileAction exportPolicyAction;
-    private ImportPolicyFromFileAction importPolicyAction;
-    private SavePolicyAction savePolicyAction;
     private boolean disconnected = false;
     private String ssgURL;
-    private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
 
     /**
      * MainWindow constructor comment.
@@ -1131,33 +1135,10 @@ public class MainWindow extends JFrame {
         if (manageJmsEndpointsAction != null)
             return manageJmsEndpointsAction;
 
-        final String atext = resapplication.getString("jms.monitored.endpoints.display.action.name");
-        final String aDesc = resapplication.getString("jms.monitored.endpoints.display.action.desc");
 
-        manageJmsEndpointsAction = new SecureAction() {
-            public String getName() {
-                return atext;
-            }
-
-            public String getDescription() {
-                return atext;
-            }
-
-            protected String iconResource() {
-                return "com/l7tech/console/resources/enableService.gif";
-            }
-
-            protected void performAction() {
-                JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(MainWindow.this);
-                Utilities.centerOnScreen(jqw);
-                jqw.show();
-                jqw.dispose();
-            }
-        };
-        manageJmsEndpointsAction.putValue(Action.NAME, atext);
-        manageJmsEndpointsAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
+        manageJmsEndpointsAction = new ManageJmsEndpointsAction();
         manageJmsEndpointsAction.setEnabled(false);
-        enableActionWhileConnected(manageJmsEndpointsAction);
+        this.addLogonListener(manageJmsEndpointsAction);
         return manageJmsEndpointsAction;
     }
 
@@ -1165,33 +1146,9 @@ public class MainWindow extends JFrame {
         if (manageCertificatesAction != null)
             return manageCertificatesAction;
 
-        final String atext = resapplication.getString("manage.cert.action.name");
-        final String aDesc = resapplication.getString("manage.cert.action.desc");
-
-        manageCertificatesAction = new SecureAction() {
-            public String getName() {
-                return atext;
-            }
-
-            public String getDescription() {
-                return atext;
-            }
-
-            protected String iconResource() {
-                return "com/l7tech/console/resources/cert16.gif";
-            }
-
-            protected void performAction() {
-                CertManagerWindow cmw = CertManagerWindow.getInstance(MainWindow.this);
-                Utilities.centerOnScreen(cmw);
-                cmw.show();
-                cmw.dispose();
-            }
-        };
-        manageCertificatesAction.putValue(Action.NAME, atext);
-        manageCertificatesAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
+        manageCertificatesAction = new ManageCertificatesAction();
         manageCertificatesAction.setEnabled(false);
-        enableActionWhileConnected(manageCertificatesAction);
+        this.addLogonListener(manageCertificatesAction);
         return manageCertificatesAction;
     }
 
@@ -1211,24 +1168,6 @@ public class MainWindow extends JFrame {
         return viewGatewayAuditsWindowAction;
     }
 
-    /**
-     * Configure the specified item to be enabled only while we are connected to a gateway.
-     */
-    private ArrayList weakListenerListWorkAround = new ArrayList();
-
-    private void enableActionWhileConnected(final Action item) {
-        LogonListener myListener = new LogonListener() {
-            public void onLogon(LogonEvent e) {
-                item.setEnabled(true);
-            }
-
-            public void onLogoff(LogonEvent e) {
-                item.setEnabled(false);
-            }
-        };
-        weakListenerListWorkAround.add(myListener); // bind lifecycle to lifespan of MainWindow instance
-        addLogonListener(myListener);
-    }
 
     private Action getClusterStatusAction() {
         if (viewClusterStatusAction != null) return viewClusterStatusAction;
