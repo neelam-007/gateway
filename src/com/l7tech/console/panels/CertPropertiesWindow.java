@@ -92,10 +92,11 @@ public class CertPropertiesWindow extends JDialog {
 
                     // create a new trusted cert
                     TrustedCert tc = new TrustedCert();
+                    X509Certificate cert = null;
 
                     try {
-                        tc.setCertificate(trustedCert.getCertificate());
-                        tc.setSubjectDn(trustedCert.getSubjectDn());
+                        cert = trustedCert.getCertificate();
+
                     } catch (CertificateException e) {
                         logger.warning(resources.getString("cert.decode.error"));
                         JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
@@ -108,8 +109,25 @@ public class CertPropertiesWindow extends JDialog {
                                            JOptionPane.ERROR_MESSAGE);
                     }
 
-                    updateTrustedCert(tc);
-                    getTrustedCertAdmin().saveCert(tc);
+                    if (cert != null) {
+                        try {
+                            tc.setCertificate(cert);
+                            tc.setSubjectDn(trustedCert.getSubjectDn());
+
+                            // udpate the trusted cert with the new values
+                            updateTrustedCert(tc);
+
+                            // save the cert
+                            getTrustedCertAdmin().saveCert(tc);
+
+                        } catch (CertificateEncodingException e) {
+                            logger.warning(resources.getString("cert.decode.error"));
+                            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.encode.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                                       
                     dispose();
 
                 } catch (SaveException e) {
