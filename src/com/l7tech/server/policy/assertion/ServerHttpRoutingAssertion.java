@@ -240,20 +240,22 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             request.getSoapPart(),
                             request.getMultipartBoundary());
 
-                   /* MultipartUtil.addMultiparts(sb,
-                            request.getRequestAttachments(),
-                            request.getMultipartBoundary());*/
+                    if(request.getMultipartReader().isAtLeastOneAttachmentParsed()){
+                        MultipartUtil.addMultiparts(sb,
+                                request.getAttachments(),
+                                request.getMultipartBoundary());
 
-                    // add all Attachments
-                    //postMethod.setRequestBody(sb.toString());
+                        // add all Attachments
+                        postMethod.setRequestBody(sb.toString());
+                    } else {
+                        PushbackInputStream pbis = request.getMultipartReader().getPushbackInputStream();
 
-                    PushbackInputStream pbis = request.getMultipartReader().getPushbackInputStream();
+                        // push the modified SOAP part back to the input stream
+                        pbis.unread(sb.toString().getBytes());
 
-                    // push the modified SOAP part back to the input stream
-                    pbis.unread(sb.toString().getBytes());
-
-                    // post the request using input stream
-                    postMethod.setRequestBody(pbis);
+                        // post the request using input stream
+                        postMethod.setRequestBody(pbis);
+                    }
 
                 } else {
                     postMethod.setRequestBody(requestXml);
