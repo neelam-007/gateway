@@ -156,10 +156,5 @@ public class SignedSamlTest extends TestCase {
     private PublicKey clientPublicKey;
     private X509Certificate[] clientCertChain;
 
-    private static final String CLIENT_ALIAS = "clientCert";
-    private static final String CLIENT_PASS = "asdfasdf";
-    private static final String CLIENT_KEYSTORE = System.getProperty("user.home") +
-                                                  "/.l7tech/key1.p12";
     private static final String ASSERTION_ID = "mySamlAssertion";
-    private static final String CA_ALIAS = "ssgroot";
 }
