@@ -324,7 +324,7 @@ public class SoapUtil {
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
         securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
-        setSoapAttr(soapMsg, securityEl, MUSTUNDERSTAND_ATTR_NAME, "true");
+        setSoapAttr(soapMsg, securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
 
         Element existing = XmlUtil.findFirstChildElement(header);
         if (existing == null)
