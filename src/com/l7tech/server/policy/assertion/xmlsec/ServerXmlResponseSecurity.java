@@ -6,6 +6,7 @@ import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlResponse;
+import com.l7tech.message.SoapRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
@@ -44,7 +45,13 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
     /**
      * despite the name of this method, i'm actually working on the response document here
      */
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(Request arequest, Response response) throws IOException, PolicyAssertionException {
+        if (!(arequest instanceof SoapRequest))
+            return AssertionStatus.NOT_APPLICABLE;      // TODO verify that this is the appropriate return value
+        SoapRequest soapRequest = (SoapRequest)arequest;
+        if (!soapRequest.isSoap())
+            return AssertionStatus.NOT_APPLICABLE;      // TODO verify that this is the appropriate return value
+
         // GET THE DOCUMENT
         Document soapmsg = null;
         try {
@@ -61,7 +68,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         }
 
         // TODO replace response nonce with more standard mechanism when doing replay protection in Milestone 2
-        String nonceValue = (String)request.getParameter(Request.PARAM_HTTP_XML_NONCE);
+        String nonceValue = (String)soapRequest.getParameter(Request.PARAM_HTTP_XML_NONCE);
 
         // (this is optional)
         if (nonceValue != null && nonceValue.length() > 0) {
@@ -79,7 +86,32 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         ElementSecurity[] elements = xmlResponseSecurity.getElements();
 
         // TODO verify TROGDOR integration
-        X509Certificate clientCert = null; // TODO SSG needs to remember client cert from request, or load from DB
+        // find a signed X509 token in the request
+        X509Certificate clientCert = null;
+        if (xmlResponseSecurity.hasEncryptionElement()) {
+            WssProcessor.ProcessorResult wssResult = soapRequest.getWssProcessorOutput();
+            WssProcessor.SecurityToken[] tokens = wssResult.getSecurityTokens();
+            for (int i = 0; i < tokens.length; i++) {
+                WssProcessor.SecurityToken token = tokens[i];
+                if (token instanceof WssProcessor.X509SecurityToken) {
+                    WssProcessor.X509SecurityToken x509token = (WssProcessor.X509SecurityToken)token;
+                    if (x509token.isPossessionProved()) {
+                        if (clientCert != null) {
+                            logger.log( Level.WARNING, "Request included more than one X509 security token whose key ownership was proven" );
+                            return AssertionStatus.BAD_REQUEST; // todo verify that this return value is appropriate
+                        }
+                        clientCert = x509token.asX509Certificate();
+                    }
+                }
+            }
+            if (clientCert == null) {
+                logger.log( Level.WARNING, "Unable to encrypt response -- request included no x509 token whose key ownership was proven" );
+                response.setAuthenticationMissing(true);
+                response.setPolicyViolated(true);
+                return AssertionStatus.FAILED; // todo verify that this return value is appropriate
+            }
+        }
+
         SecurityProcessor signer = SecurityProcessor.createSenderSecurityProcessor(si, clientCert, elements);
         try {
             signer.processInPlace(soapmsg);
