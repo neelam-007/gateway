@@ -48,7 +48,7 @@ public class MainWindow extends JFrame {
     private JMenu editMenu = null;
     private JMenu viewMenu = null;
     private JMenu helpMenu = null;
-    private JMenu tBarsOptionMenu = null;
+    private JMenu gotoMenu = null;
 
     private JMenuItem connectMenuItem = null;
     private JMenuItem disconnectMenuItem = null;
@@ -60,7 +60,6 @@ public class MainWindow extends JFrame {
     private JMenuItem deleteMenuItem = null;
 
     private JMenuItem aboutBoxMenuItem = null;
-    private JMenuItem booksOnlineMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
@@ -69,8 +68,14 @@ public class MainWindow extends JFrame {
     private Action removeNodeAction = null;
     private Action connectAction = null;
     private Action disconnectAction = null;
+    private Action gotoUsersAction = null;
+    private Action gotoGroupsAction = null;
+    private Action gotoPoliciesAction = null;
+    private Action gotoServicesAction = null;
 
     private Action toggleShortcutBaAction = null;
+    private Action toggleTreeViewAction = null;
+
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
     private JPanel statusBarPane = null;
@@ -98,8 +103,8 @@ public class MainWindow extends JFrame {
     /** the panel listener broker */
     private final
     PanelListenerBroker listenerBroker = new PanelListenerBroker();
-    private DirectoryTreeNode editingNode = null;
     private Component cachedOutlookBar;
+    private Component cachedTreeViewPane;
 
     /**
      * MainWindow constructor comment.
@@ -217,20 +222,6 @@ public class MainWindow extends JFrame {
         return aboutBoxMenuItem;
     }
 
-    /**
-     * Return the BooksOnlineMenuItem property value.
-     * @return JMenuItem
-     */
-    private JMenuItem getBooksOnlineMenuItem() {
-        if (booksOnlineMenuItem == null) {
-            booksOnlineMenuItem = new JMenuItem();
-            booksOnlineMenuItem.setText(resapplication.getString("Books_OnlineMenuItem_text"));
-            int mnemonic = booksOnlineMenuItem.getText().toCharArray()[0];
-            booksOnlineMenuItem.setMnemonic(mnemonic);
-            booksOnlineMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
-        }
-        return booksOnlineMenuItem;
-    }
 
     /**
      * Return the helpTopicsMenuItem property value.
@@ -296,16 +287,22 @@ public class MainWindow extends JFrame {
             viewMenu = new JMenu();
             viewMenu.setText(resapplication.getString("View"));
             // workaround to disable icon on the menu
-            viewMenu.add(getToolbarsSubmenu());
+            viewMenu.add(getGotoSubmenu());
             JMenuItem item = new JMenuItem(getRefreshAction());
             // item.setIcon(null);
             item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
             viewMenu.add(item);
             int mnemonic = viewMenu.getText().toCharArray()[0];
             viewMenu.setMnemonic(mnemonic);
+            viewMenu.addSeparator();
 
             JCheckBoxMenuItem jcm = new JCheckBoxMenuItem(getShortcutBarToggleAction());
             jcm.setEnabled(true);
+            viewMenu.add(jcm);
+
+            jcm = new JCheckBoxMenuItem(getTreeViewToggleAction());
+            jcm.setEnabled(true);
+
             viewMenu.add(jcm);
 
         }
@@ -316,43 +313,28 @@ public class MainWindow extends JFrame {
      * Return the newMenu property value.
      * @return JMenuItem
      */
-    private JMenu getToolbarsSubmenu() {
-        if (tBarsOptionMenu == null) {
-            tBarsOptionMenu = new JMenu("Toolbars");
-            int mnemonic = tBarsOptionMenu.getText().toCharArray()[0];
-            tBarsOptionMenu.setMnemonic(mnemonic);
+    private JMenu getGotoSubmenu() {
+        if (gotoMenu == null) {
+            gotoMenu = new JMenu("Go To");
+            int mnemonic = gotoMenu.getText().toCharArray()[0];
+            gotoMenu.setMnemonic(mnemonic);
 
-            ButtonGroup group = new ButtonGroup();
-            JRadioButtonMenuItem rbMenuItem;
+            JMenuItem menuItem;
 
-            rbMenuItem = new JRadioButtonMenuItem("Icons and labels");
-            group.add(rbMenuItem);
-            tBarsOptionMenu.add(rbMenuItem);
-            tBarsOptionMenu.addActionListener(new ActionListener() {
-                /** Invoked when an action occurs.*/
-                public void actionPerformed(ActionEvent e) {
-                }
-            });
+            menuItem = new JMenuItem(getGotoUsersAction());
+            gotoMenu.add(menuItem);
 
-            rbMenuItem = new JRadioButtonMenuItem("Text labels");
-            group.add(rbMenuItem);
-            tBarsOptionMenu.add(rbMenuItem);
-            tBarsOptionMenu.addActionListener(new ActionListener() {
-                /** Invoked when an action occurs.*/
-                public void actionPerformed(ActionEvent e) {
-                }
-            });
+            menuItem = new JMenuItem(getGotoGroupsAction());
+            gotoMenu.add(menuItem);
 
-            rbMenuItem = new JRadioButtonMenuItem("Icons");
-            group.add(rbMenuItem);
-            tBarsOptionMenu.add(rbMenuItem);
-            tBarsOptionMenu.addActionListener(new ActionListener() {
-                /** Invoked when an action occurs.*/
-                public void actionPerformed(ActionEvent e) {
-                }
-            });
+            menuItem = new JMenuItem(getGotoPoliciesAction());
+            gotoMenu.add(menuItem);
+
+            menuItem = new JMenuItem(getGotoServicesAction());
+            gotoMenu.add(menuItem);
+
         }
-        return tBarsOptionMenu;
+        return gotoMenu;
     }
 
     /**
@@ -360,15 +342,15 @@ public class MainWindow extends JFrame {
      * @return JMenu
      */
     private JMenu getHelpMenu() {
-        if (helpMenu == null) {
-            helpMenu = new JMenu();
-            helpMenu.setText(resapplication.getString("Help"));
-            helpMenu.add(getHelpTopicsMenuItem());
-            //helpMenu.add(getBooksOnlineMenuItem());
-            helpMenu.add(getAboutBoxMenuItem());
-            int mnemonic = helpMenu.getText().toCharArray()[0];
-            helpMenu.setMnemonic(mnemonic);
-        }
+        if (helpMenu != null) return helpMenu;
+
+        helpMenu = new JMenu();
+        helpMenu.setText(resapplication.getString("Help"));
+        helpMenu.add(getHelpTopicsMenuItem());
+        helpMenu.add(getAboutBoxMenuItem());
+        int mnemonic = helpMenu.getText().toCharArray()[0];
+        helpMenu.setMnemonic(mnemonic);
+
         return helpMenu;
     }
 
@@ -419,6 +401,101 @@ public class MainWindow extends JFrame {
         disconnectAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return disconnectAction;
     }
+
+    /**
+     * create the Action (the component that is used by several controls)
+     *
+     * @return the connect <CODE>Action</CODE> implementation
+     */
+    private Action getGotoUsersAction() {
+        if (gotoUsersAction != null) return gotoUsersAction;
+        String atext = "Users";
+        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/user16.png"));
+        gotoUsersAction =
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event  the event that occured
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                    }
+                };
+        gotoUsersAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        return gotoUsersAction;
+    }
+
+
+    /**
+     * create the Action (the component that is used by several controls)
+     *
+     * @return the connect <CODE>Action</CODE> implementation
+     */
+    private Action getGotoGroupsAction() {
+        if (gotoGroupsAction != null) return gotoGroupsAction;
+        String atext = "Groups";
+        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/group16.png"));
+        gotoGroupsAction =
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event  the event that occured
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                    }
+                };
+        gotoGroupsAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        return gotoGroupsAction;
+    }
+
+
+    /**
+     * create the Action (the component that is used by several controls)
+     *
+     * @return the connect <CODE>Action</CODE> implementation
+     */
+    private Action getGotoPoliciesAction() {
+        if (gotoPoliciesAction != null) return gotoPoliciesAction;
+        String atext = "Policies";
+        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/policy16.gif"));
+        gotoPoliciesAction =
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event  the event that occured
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                    }
+                };
+        gotoPoliciesAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        return gotoPoliciesAction;
+    }
+
+    /**
+     * create the Action (the component that is used by several controls)
+     *
+     * @return the connect <CODE>Action</CODE> implementation
+     */
+    private Action getGotoServicesAction() {
+        if (gotoServicesAction != null) return gotoServicesAction;
+        String atext = "Services";
+        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/services16.png"));
+        gotoServicesAction =
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event  the event that occured
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                    }
+                };
+        gotoServicesAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        return gotoServicesAction;
+    }
+
 
     /**
      * create the Action (the component that is used by several controls)
@@ -494,6 +571,50 @@ public class MainWindow extends JFrame {
                 };
         toggleShortcutBaAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return toggleShortcutBaAction;
+    }
+
+    /**
+     * create the Action (the component that is used by several controls)
+     *
+     * @return the <CODE>Action</CODE> implementation that toggles the shortcut bar
+     */
+    private Action getTreeViewToggleAction() {
+        if (toggleTreeViewAction != null) return toggleTreeViewAction;
+
+        String atext = resapplication.getString("toggle.tree.view");
+
+        toggleTreeViewAction =
+                new AbstractAction(atext) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event  the event that occured
+                     * @see Action#removePropertyChangeListener
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                        JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+                        Component[] comps = getMainLeftJPanel().getComponents();
+                        for (int i = comps.length - 1; i >= 0; i--) {
+                            if (comps[i] instanceof JSplitPane) {
+                                JSplitPane p = (JSplitPane) comps[i];
+
+                                if (item.isSelected()) {
+                                    if (cachedTreeViewPane != null) {
+                                        p.setRightComponent(cachedTreeViewPane);
+                                    }
+                                } else {
+                                    cachedTreeViewPane = p.getRightComponent();
+                                    p.remove(cachedTreeViewPane);
+                                }
+
+                            }
+
+                        }
+                        //outlookBar.setVisible(item.isEnabled());
+                    }
+                };
+        toggleTreeViewAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        return toggleTreeViewAction;
     }
 
 
@@ -1073,7 +1194,6 @@ public class MainWindow extends JFrame {
      * Updates the right panel to edit the given node.
      */
     private void activateBrowserPanel(DirectoryTreeNode node) {
-        editingNode = node;
 
         JPanel panel;
         // check if node/context supports listing
