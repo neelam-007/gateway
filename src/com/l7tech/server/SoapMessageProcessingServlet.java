@@ -68,10 +68,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             } catch ( PolicyAssertionException pae ) {
                 _log.error( pae );
-                sendFault( sreq, hresponse, "Server", pae.toString() );
+                sendFault( sreq, hresponse, SoapUtil.FC_SERVER, pae.toString() );
             } catch ( MessageProcessingException mpe ) {
                 _log.error( mpe );
-                sendFault( sreq, hresponse, "Server", mpe.toString() );
+                sendFault( sreq, hresponse, SoapUtil.FC_SERVER, mpe.toString() );
             }
         } catch ( SOAPException se ) {
             _log.error( se );
@@ -107,7 +107,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     private void sendChallenge( SoapRequest request, HttpServletResponse response ) throws SOAPException, IOException {
         response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );
-        sendFault( request, response, "Client", "Authentication Required" );
+        sendFault( request, response, SoapUtil.FC_CLIENT, "Authentication Required" );
     }
 
     private Category _log = Category.getInstance( getClass() );

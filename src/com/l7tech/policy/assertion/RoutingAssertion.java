@@ -10,10 +10,11 @@ import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.Wsdl;
+import com.l7tech.credential.PrincipalCredentials;
 
 import java.io.*;
-import java.util.*;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -35,6 +36,21 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         return n;
     }
 
+    public PrincipalCredentials getPrincipalCredentials() {
+        return _principalCredentials;
+    }
+
+    public void setPrincipalCredentials( PrincipalCredentials pc ) {
+        _principalCredentials = pc;
+        try {
+            _httpCredentials = new UsernamePasswordCredentials( pc.getPrincipal().toString(),
+                                                                new String( pc.getCredentials(), "UTF-8" ) );
+        } catch ( UnsupportedEncodingException uee ) {
+            _log.error( uee );
+            throw new RuntimeException( uee );
+        }
+    }
+
     public String getProtectedServiceUrl() {
         return _protectedServiceUrl;
     }
@@ -52,21 +68,30 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
      */
     public AssertionStatus checkRequest( Request request, Response response ) throws PolicyAssertionException {
       	HttpClient client = new HttpClient( _connectionManager );
-        // TODO: Fix URL
 
         PostMethod postMethod = null;
 
         try {
             PublishedService service = (PublishedService)request.getParameter( Request.PARAM_SERVICE );
-            Port wsdlPort = service.getWsdlPort( request );
-
-            if ( wsdlPort == null ) {
-                String err = "WSDL " + service.getWsdlUrl() + " has no Port!";
-                _log.error( err );
-                return AssertionStatus.FAILED;
+            URL url;
+            if ( _protectedServiceUrl == null ) {
+                url = service.getServiceUrl( request );
+            } else {
+                url = new URL( _protectedServiceUrl );
             }
 
-            postMethod = new PostMethod( _protectedServiceUrl );
+            postMethod = new PostMethod( url.toString() );
+            synchronized( _httpState ) {
+                if ( _httpState == null ) {
+                    _httpState = new HttpState();
+                    _httpState.setCredentials( url.getHost(),
+                                               _principalCredentials.getRealm(),
+                                               _httpCredentials );
+
+                }
+            }
+
+            client.setState( _httpState );
 
             postMethod.setRequestBody( request.getRequestStream() );
             client.executeMethod( postMethod );
@@ -76,6 +101,9 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
             return AssertionStatus.NONE;
         } catch ( WSDLException we ) {
             _log.error( we );
+            return AssertionStatus.FAILED;
+        } catch ( MalformedURLException mfe ) {
+            _log.error( mfe );
             return AssertionStatus.FAILED;
         } catch ( IOException ioe ) {
             _log.warn( ioe );
@@ -91,7 +119,10 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     }
 
     protected String _protectedServiceUrl;
+    protected PrincipalCredentials _principalCredentials;
 
     protected transient MultiThreadedHttpConnectionManager _connectionManager;
     protected transient Category _log = Category.getInstance( getClass() );
+    protected transient HttpState _httpState;
+    protected transient UsernamePasswordCredentials _httpCredentials;
 }
