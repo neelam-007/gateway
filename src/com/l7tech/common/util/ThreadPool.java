@@ -1,8 +1,8 @@
 package com.l7tech.common.util;
 
-import com.l7tech.common.util.NoThreadException;
-
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
  * A ThreadPool contains a collection of re-usable threads. Since
@@ -250,7 +250,7 @@ public class ThreadPool extends ThreadGroup {
   /**
    *
    * @return The estimated total number of threads in the ThreadGroup.
-   * @see ThreadGroup.activeCount()
+   * @see ThreadGroup#activeCount()
    */
   public int getThreadCount() {
     return activeCount();
@@ -604,7 +604,7 @@ public class ThreadPool extends ThreadGroup {
    * the thread in the pool. <code>Runnable</CODE> instances run on
    * the PooledThread.
    *
-   * @see ThreadPool.start()
+   * @see ThreadPool#start(Runnable)
    */
   private class PooledThread extends Thread {
     private String mOriginalName;
