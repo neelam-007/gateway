@@ -45,9 +45,9 @@ public class ServicePanel extends WizardStepPanel {
      * initialize the form.
      */
     private void initComponents() {
-        serviceUrljPanel = new JPanel();
-        serviceUrljLabel = new JLabel();
-        wsdlUrljTextField = new ContextMenuTextField();
+        serviceUrlPanel = new JPanel();
+        serviceUrlLabel = new JLabel();
+        wsdlUrlTextField = new ContextMenuTextField();
 
         setLayout(new GridBagLayout());
 
@@ -59,33 +59,33 @@ public class ServicePanel extends WizardStepPanel {
                                    GridBagConstraints.HORIZONTAL,
                                    new Insets(20, 20, 20, 20), 0, 0));
 
-        serviceUrljPanel.setLayout(new GridBagLayout());
+        serviceUrlPanel.setLayout(new GridBagLayout());
 
         JLabel exampleUrl = new JLabel("Example: http://services.example.com/warehouse/purchase.wsdl");
         FontUtil.resizeFont(exampleUrl, 0.84);
-        serviceUrljPanel.add(exampleUrl,
+        serviceUrlPanel.add(exampleUrl,
                              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
                                                     GridBagConstraints.WEST,
                                                     GridBagConstraints.NONE,
                                                     new Insets(0, 0, 0, 0), 0, 0));
 
-        serviceUrljPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
-        serviceUrljLabel.setText("URL:");
-        serviceUrljLabel.setBorder(new EmptyBorder(new Insets(1, 1, 1, 5)));
-        serviceUrljPanel.add(serviceUrljLabel,
+        serviceUrlPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
+        serviceUrlLabel.setText("URL:");
+        serviceUrlLabel.setBorder(new EmptyBorder(new Insets(1, 1, 1, 5)));
+        serviceUrlPanel.add(serviceUrlLabel,
                              new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
                                                     GridBagConstraints.EAST,
                                                     GridBagConstraints.NONE,
                                                     new Insets(0, 0, 0, 0), 0, 0));
 
-        wsdlUrljTextField.setPreferredSize(new Dimension(150, 20));
-        wsdlUrljTextField.getDocument().addDocumentListener(createWsdlUrlDocumentListener());
-        serviceUrljPanel.add(wsdlUrljTextField,
+        wsdlUrlTextField.setPreferredSize(new Dimension(150, 20));
+        wsdlUrlTextField.getDocument().addDocumentListener(createWsdlUrlDocumentListener());
+        serviceUrlPanel.add(wsdlUrlTextField,
                              new GridBagConstraints(1, 1, 1, 1, 100.0, 0.0,
                                                     GridBagConstraints.WEST,
                                                     GridBagConstraints.HORIZONTAL,
                                                     new Insets(0, 0, 0, 0), 0, 0));
-        add(serviceUrljPanel,
+        add(serviceUrlPanel,
             new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0,
                                    GridBagConstraints.CENTER,
                                    GridBagConstraints.HORIZONTAL,
@@ -102,7 +102,7 @@ public class ServicePanel extends WizardStepPanel {
     private DocumentListener createWsdlUrlDocumentListener() {
         return new DocumentListener() {
             private boolean isUrlOk() {
-                String urlStr = wsdlUrljTextField.getText();
+                String urlStr = wsdlUrlTextField.getText();
                 URL url;
                 try {
                     url = new URL(urlStr);
@@ -149,31 +149,31 @@ public class ServicePanel extends WizardStepPanel {
         notifyListeners();
         try {
             String wsdlXml =
-              Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrljTextField.getText());
+              Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrlTextField.getText());
             wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
 
             service.setName(wsdl.getServiceName());
             service.setWsdlXml(wsdlXml);
-            service.setWsdlUrl(wsdlUrljTextField.getText());
+            service.setWsdlUrl(wsdlUrlTextField.getText());
 
             isWsdlDownloaded = true;
             notifyListeners();
         } catch (RemoteException e1) {
             e1.printStackTrace();
             JOptionPane.showMessageDialog(null,
-              "Unable to resolve the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
+              "Unable to resolve the WSDL at location '" + wsdlUrlTextField.getText() + "'\n",
               "Error",
               JOptionPane.ERROR_MESSAGE);
         } catch (WSDLException e1) {
             e1.printStackTrace();
             JOptionPane.showMessageDialog(null,
-              "Unable to parse the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
+              "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() + "'\n",
               "Error",
               JOptionPane.ERROR_MESSAGE);
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
             JOptionPane.showMessageDialog(null,
-              "Illegal URL string '" + wsdlUrljTextField.getText() + "'\n",
+              "Illegal URL string '" + wsdlUrlTextField.getText() + "'\n",
               "Error",
               JOptionPane.ERROR_MESSAGE);
         }
@@ -241,14 +241,14 @@ public class ServicePanel extends WizardStepPanel {
         }
     };
 
-    private JLabel serviceUrljLabel;
-    private JPanel serviceUrljPanel;
-    private JTextField wsdlUrljTextField;
+    private JLabel serviceUrlLabel;
+    private JPanel serviceUrlPanel;
+    private JTextField wsdlUrlTextField;
     private boolean isWsdlUrlSyntaxValid = false;
     private boolean isWsdlDownloaded = false;
 
     // TODO: remove me
     public void setWsdlUrl(String newUrl) {
-        wsdlUrljTextField.setText(newUrl);
+        wsdlUrlTextField.setText(newUrl);
     }
 }
