@@ -1,3 +1,9 @@
+/**
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Mar 03, 2005<br/>
+ */
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
@@ -17,13 +23,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
+/**
+ * To display audit records.
  *
- * $Id$
+ * @author flascelles@layer7-tech.com
  */
-
-public class GatewayLogWindow extends JFrame implements LogonListener {
+public class GatewayAuditWindow extends JFrame implements LogonListener {
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private javax.swing.JLabel gatewayLogTitle = null;
@@ -53,7 +58,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
      * Constructor
      * @param strategy the {@link Strategy} for this window
      */
-    public GatewayLogWindow(final Strategy strategy) {
+    public GatewayAuditWindow(final Strategy strategy) {
         super(strategy.getWindowTitle());
         this.strategy = strategy;
         ImageIcon imageIcon =

@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.GatewayLogWindow;
+import com.l7tech.console.GatewayAuditWindow;
 import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
@@ -22,7 +22,7 @@ import java.util.Collection;
  * @author mike
  */
 public class ViewGatewayAuditsAction extends SecureAction {
-    private GatewayLogWindow gatewayAuditWindow;
+    private GatewayAuditWindow gatewayAuditWindow;
 
     public ViewGatewayAuditsAction() {
     }
@@ -70,7 +70,7 @@ public class ViewGatewayAuditsAction extends SecureAction {
     }
 
 
-    private GatewayLogWindow getGatewayAuditWindow() {
+    private GatewayAuditWindow getGatewayAuditWindow() {
         if (gatewayAuditWindow != null) return gatewayAuditWindow;
 
         final DeleteAuditEventsAction deleteAuditEventsAction = new DeleteAuditEventsAction();
@@ -79,7 +79,7 @@ public class ViewGatewayAuditsAction extends SecureAction {
             deleteAuditEventsAction,
         });
 
-        gatewayAuditWindow = new GatewayLogWindow(new GatewayLogWindow.Strategy() {
+        gatewayAuditWindow = new GatewayAuditWindow(new GatewayAuditWindow.Strategy() {
 
             public GenericLogAdmin getLogAdmin() {
                 return Registry.getDefault().getAuditAdmin();
