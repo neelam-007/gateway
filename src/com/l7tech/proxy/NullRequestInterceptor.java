@@ -12,7 +12,6 @@ import com.l7tech.proxy.datamodel.SsgResponse;
  * User: mike
  * Date: May 22, 2003
  * Time: 3:58:20 PM
- * To change this template use Options | File Templates.
  */
 public class NullRequestInterceptor implements RequestInterceptor {
     public static final NullRequestInterceptor INSTANCE = new NullRequestInterceptor();
