@@ -1,13 +1,14 @@
 package com.l7tech.identity;
 
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
-import com.l7tech.identity.ldap.*;
+import com.l7tech.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.identity.ldap.LdapIdentityProvider;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.logging.Level;
 
 /**
  * This IdentityProviderConfigManager is the server side manager who manages the one and only
@@ -69,23 +70,9 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
                         "is not valid.");
             }
         } else if ( type.equals(IdentityProviderType.LDAP)) {
-            Collection res = null;
-            try {
-                // construct temp provider
-                LdapIdentityProvider tmpProvider = new LdapIdentityProvider();
-                tmpProvider.initialize(identityProviderConfig);
-                res = tmpProvider.getUserManager().findAllHeaders();
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, "Cannot list users from this Identity Provider", e);
-                throw new InvalidIdProviderCfgException("This Identity Provider configuration is not " +
-                        "valid, the directory is not responding or the directory has no entries.", e);
-            }
-            if (res == null || res.size() < 1) {
-                logger.log(Level.SEVERE, "Listing users yielded no results.");
-                throw new InvalidIdProviderCfgException("This Identity Provider configuration is not " +
-                        "valid, the directory is not responding or the directory has no entries.");
-            }
-            logger.fine("Valid IPC tested.");
+            LdapIdentityProvider tmpProvider = new LdapIdentityProvider();
+            tmpProvider.initialize(identityProviderConfig);
+            tmpProvider.test();
         } else {
             logger.severe("testing unsupported type");
             throw new InvalidIdProviderCfgException("Unsupported type");
