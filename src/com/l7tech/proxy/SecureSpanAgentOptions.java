@@ -6,6 +6,9 @@
 
 package com.l7tech.proxy;
 
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
 
 /**
  * Encapsulates settings to tell SecureSpanAgentFactory what kind of SecureSpanAgent to create for you.
@@ -23,6 +26,7 @@ public class SecureSpanAgentOptions {
     private String trustStorePath = null;
     private Boolean useSslByDefault = null;
     private SecureSpanAgentFactory.SecureSpanAgentImpl trustedGateway = null;
+    private GatewayCertificateTrustManager gatewayCertificateTrustManager = null;
 
     /**
      * Create an object to hold settings that can be used to customize the SecureSpanAgent delivered
@@ -220,5 +224,39 @@ public class SecureSpanAgentOptions {
             throw new IllegalArgumentException("trustedGateway must be a SecureSpanAgent instance " +
                                                "obtained from the SecureSpanAgentFactory.");
         this.trustedGateway = (SecureSpanAgentFactory.SecureSpanAgentImpl)trustedGateway;
+    }
+
+    /** Interface implemented by API users who wish to trust new Gateway certificates at runtime. */
+    public static interface GatewayCertificateTrustManager {
+        /**
+         *
+         * @param gatewayCertificateChain The certificate chain obtained during Gateway server certificate discovery.
+         *                                This may or may not be the full chain, but is must contain
+         *                                at least one certificate, assumed to be the Gateway's SSL certificate.
+         * @return true iff. this certificate can be trusted for the current Gateway; false if trust cannot be
+         *         conclusively established.
+         * @throws CertificateException if there is a problem with the gatewayCertificateChain.
+         */
+        boolean isGatewayCertificateTrusted(X509Certificate[] gatewayCertificateChain) throws CertificateException;
+    }
+
+    /**
+     * Check the custom trust manager for dynamically determining whether an about-to-be-imported Gateway SSL
+     * certificate should be trusted.
+     * @return the user callback that will determine certificate trust at runtime.
+     */
+    public GatewayCertificateTrustManager getGatewayCertificateTrustManager() {
+        return gatewayCertificateTrustManager;
+    }
+
+    /**
+     * Set a custom trust manager for dynamically determining whether an about-to-be-imported Gateway SSL certificate
+     * should be trusted.  This trust manager will only be consulted if the Agent is unable to safely determine
+     * certificate trust automatically (perhaps because the password is unavailable to the Agent or Gateway, or the
+     * peer is a Federated Gateway).
+     * @param gatewayCertificateTrustManager a user callback that will determine certificate trust at runtime.
+     */
+    public void setGatewayCertificateTrustManager(GatewayCertificateTrustManager gatewayCertificateTrustManager) {
+        this.gatewayCertificateTrustManager = gatewayCertificateTrustManager;
     }
 }

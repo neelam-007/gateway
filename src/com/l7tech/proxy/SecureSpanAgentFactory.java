@@ -12,13 +12,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.proxy.datamodel.CurrentRequest;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.PolicyManager;
-import com.l7tech.proxy.datamodel.PolicyManagerImpl;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
@@ -37,6 +31,10 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Collections;
 
 /**
  * Obtain a SecureSpanAgent implementation.
@@ -66,6 +64,19 @@ public class SecureSpanAgentFactory {
         }
     }
 
+    private static Map credentialManagerMap = Collections.synchronizedMap(new HashMap());
+    static {
+        Managers.setCredentialManager(new CredentialManagerImpl() {
+            public void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
+                CredentialManager cm = (CredentialManager)credentialManagerMap.get(ssg);
+                if (cm != null)
+                    cm.notifySsgCertificateUntrusted(ssg, certificate);
+                else
+                    super.notifySsgCertificateUntrusted(ssg, certificate);
+            }
+        });
+    }
+
     /**
      * Create a new SecureSpanAgent with the specified settings.  The Agent will be configured to forward messages
      * to the specified Gateway, using the specified credentials.
@@ -91,6 +102,21 @@ public class SecureSpanAgentFactory {
         if (options.getTrustedGateway() != null) {
             SecureSpanAgentImpl trustedAgent = (SecureSpanAgentImpl)options.getTrustedGateway();
             ssg.setTrustedGateway(trustedAgent.getSsg());
+        }
+        if (options.getGatewayCertificateTrustManager() != null) {
+            final SecureSpanAgentOptions.GatewayCertificateTrustManager tm = options.getGatewayCertificateTrustManager();
+            credentialManagerMap.put(ssg, new CredentialManagerImpl() {
+                final String msgNoTrust = "Agent API user's GatewayCertificateTrustManager rejected Gateway certificate";
+                public void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
+                    try {
+                        if (tm.isGatewayCertificateTrusted(new X509Certificate[] {certificate}))
+                            return;
+                    } catch (CertificateException e) {
+                        throw new OperationCanceledException(msgNoTrust, e);
+                    }
+                    throw new OperationCanceledException(msgNoTrust);
+                }
+            });
         }
         CurrentRequest.setCurrentSsg(ssg);
         final PolicyManager policyManager = PolicyManagerImpl.getInstance();
@@ -125,7 +151,8 @@ public class SecureSpanAgentFactory {
         }
 
         public SecureSpanAgent.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
-            PendingRequest pr = new PendingRequest(message, ssg, nri, new URL("http://foo.bar.baz"), null);
+            final URL origUrl = new URL("http://layer7tech.com/agentapi/NoOriginalUri");
+            PendingRequest pr = new PendingRequest(message, ssg, nri, origUrl, null);
             pr.setSoapAction(soapAction);
             try {
                 final SsgResponse response = mp.processMessage(pr);

@@ -32,7 +32,7 @@ import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
- * Test message processing.
+ * Test msgNoTrust processing.
  * User: mike
  * Date: Jun 5, 2003
  * Time: 12:05:43 PM
@@ -151,7 +151,7 @@ public class FunctionalTest extends TestCase {
     }
 
     /**
-     * Bounce a message off of the echo server, going through the client proxy.
+     * Bounce a msgNoTrust off of the echo server, going through the client proxy.
      */
     public void testSimplePing() throws RemoteException, SOAPException, MalformedURLException {
         String payload = "ping 1 2 3";

@@ -15,7 +15,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
 /**
- * Provides a programmatic interface to the Agent's message processor.
+ * Provides a programmatic interface to the Agent's msgNoTrust processor.
  * @author mike
  * @version 1.0
  */
@@ -28,7 +28,7 @@ public interface SecureSpanAgent {
         Document getResponse() throws IOException, SAXException;
     }
 
-    /** Thrown if there is a problem sending a message to the Gateway. */
+    /** Thrown if there is a problem sending a msgNoTrust to the Gateway. */
     public static class SendException extends Exception {}
 
     /** Thrown if a bad username or password was detected. */
@@ -41,16 +41,16 @@ public interface SecureSpanAgent {
     public static class CertificateAlreadyIssuedException extends Exception {}
 
     /**
-     * Send a message to the service through the Gateway.
+     * Send a msgNoTrust to the service through the Gateway.
      * <p>
-     * If instructed by the Gateway, we will download and apply a security policy to the message and response.
+     * If instructed by the Gateway, we will download and apply a security policy to the msgNoTrust and response.
      * <p>
      * The Gateway server certificate will be discovered if necessary.
      * <p>
      * We will apply for a client certificate if necessary.
      *
-     * @param soapAction the SOAPAction header to use for this message, including surrounding double-quote characters
-     * @param message the SOAPEnvelope containing the message to send, as a DOM tree
+     * @param soapAction the SOAPAction header to use for this msgNoTrust, including surrounding double-quote characters
+     * @param message the SOAPEnvelope containing the msgNoTrust to send, as a DOM tree
      * @return
      * @throws SendException                if the operation failed due to one of the following problems:
      *      a client certificate was required but could not be obtained;
@@ -69,10 +69,10 @@ public interface SecureSpanAgent {
     /**
      * As above, but takes the XML as a string.
      *
-     * @param soapAction the SOAPAction header to use for this message, including surrounding double-quote characters
-     * @param message the SOAPEnvelope containing the message to send, as a String containing XML
+     * @param soapAction the SOAPAction header to use for this msgNoTrust, including surrounding double-quote characters
+     * @param message the SOAPEnvelope containing the msgNoTrust to send, as a String containing XML
      * @return
-     * @throws SAXException if the provided message was not well-formed XML
+     * @throws SAXException if the provided msgNoTrust was not well-formed XML
      * @throws SendException see above
      * @throws BadCredentialsException see above
      * @throws IOException see above
