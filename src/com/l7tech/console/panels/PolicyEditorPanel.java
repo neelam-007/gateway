@@ -22,15 +22,14 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
+import javax.swing.plaf.SplitPaneUI;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.EditorKit;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.tree.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ContainerEvent;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.StringReader;
@@ -61,13 +60,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private JScrollPane policyTreePane;
     private ServiceNode serviceNode;
     private boolean initialValidate = false;
+    private boolean messageAreaVisible = false;
+    private JTabbedPane messagesTab;
 
     /**
      * Instantiate the policy editor, optionally validating the policy.
-     *
-     * @param sn the service node
+     * 
+     * @param sn             the service node
      * @param validateOnOpen true, the service will be validated, false otherwise
-     * @throws FindException if the service cannot be found
+     * @throws FindException   if the service cannot be found
      * @throws RemoteException on error invoking the remote service
      */
     public PolicyEditorPanel(ServiceNode sn, boolean validateOnOpen) throws FindException, RemoteException {
@@ -76,17 +77,17 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         renderPolicy(false);
         setEditorListeners();
         if (validateOnOpen) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        try {
-                          initialValidate = true;
-                            validatePolicy();
-                        } finally {
-                          initialValidate = true;
-                        }
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    try {
+                        initialValidate = true;
+                        validatePolicy();
+                    } finally {
+                        initialValidate = true;
                     }
-                });
-            }
+                }
+            });
+        }
     }
 
     /**
@@ -126,11 +127,35 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         displayPolicyValidateResult(pruneDuplicates(result));
     }
 
+
+    public void setMessageAreaVisible(boolean b) {
+        final JComponent messagePane = getMessagePane();
+        messageAreaVisible = b;
+        if (b) {
+            splitPane.add(messagePane, "bottom");
+            splitPane.setDividerSize(10);
+        } else {
+            splitPane.remove(messagePane);
+            splitPane.setDividerSize(0);
+
+        }
+        SplitPaneUI sui = splitPane.getUI();
+        if (sui instanceof BasicSplitPaneUI) {
+            BasicSplitPaneUI bsui = (BasicSplitPaneUI)sui;
+            bsui.getDivider().setVisible(b);
+        }
+    }
+
+    public boolean isMessageAreaVisible() {
+        return messageAreaVisible;
+    }
+
     private void layoutComponents() {
         setBorder(null);
         setLayout(new BorderLayout());
         add(getToolBar(), BorderLayout.NORTH);
         add(getSplitPane(), BorderLayout.CENTER);
+        setMessageAreaVisible(Preferences.getPreferences().isPolicyMessageAreaVisible());
     }
 
     private JSplitPane getSplitPane() {
@@ -138,10 +163,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setBorder(null);
         splitPane.add(getPolicyTreePane(), "top");
-        JComponent messagePane = getMessagePane();
-        splitPane.add(messagePane, "bottom");
 
-        splitPane.setDividerSize(10);
+        final JComponent messagePane = getMessagePane();
+
         splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
           new PropertyChangeListener() {
               public void propertyChange(PropertyChangeEvent evt) {
@@ -150,18 +174,26 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                   prefs.putProperty(MESSAGE_AREA_DIVIDER_KEY, Integer.toString(l));
               }
           });
-        try {
-            Preferences prefs = Preferences.getPreferences();
-            String s = prefs.getString(MESSAGE_AREA_DIVIDER_KEY);
-            if (s != null) {
-                int l = Integer.parseInt(s);
-                splitPane.setDividerLocation(l);
+        messagePane.addHierarchyListener(new HierarchyListener() {
+            public void hierarchyChanged(HierarchyEvent e) {
+                long flags = e.getChangeFlags();
+                if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
+                    if (!messagePane.isShowing()) return;
+                }
+                try {
+                    Preferences prefs = Preferences.getPreferences();
+                    String s = prefs.getString(MESSAGE_AREA_DIVIDER_KEY);
+                    if (s != null) {
+                        int l = Integer.parseInt(s);
+                        splitPane.setDividerLocation(l);
+                    }
+                } catch (NumberFormatException e1) {
+                }
             }
-        } catch (NumberFormatException e1) {
-        }
-
+        });
         return splitPane;
     }
+
 
     private JComponent getPolicyTreePane() {
         if (policyTreePane != null) return policyTreePane;
@@ -252,17 +284,19 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
 
     private JComponent getMessagePane() {
+        if (messagesTab != null) return messagesTab;
+
         messagesTextPane = new JTextPane(new HTMLDocument());
         messagesTextPane.setEditorKit(new HTMLEditorKit());
         // messagesTextPane.setText("");
         messagesTextPane.addHyperlinkListener(hlinkListener);
         messagesTextPane.setEditable(false);
-        JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.setBorder(null);
+        messagesTab = new JTabbedPane();
+        messagesTab.setBorder(null);
         JScrollPane scrollPane = new JScrollPane(messagesTextPane);
         scrollPane.setBorder(null);
-        tabbedPane.addTab("Messages", scrollPane);
-        tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
+        messagesTab.addTab("Messages", scrollPane);
+        messagesTab.setTabPlacement(JTabbedPane.BOTTOM);
         messagesTextPane.addMouseListener(new PopUpMouseListener() {
             protected void popUpMenuHandler(MouseEvent mouseEvent) {
                 JPopupMenu menu = new JPopupMenu();
@@ -273,7 +307,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
 
         });
-        return tabbedPane;
+        return messagesTab;
     }
 
     private class ClearMessageAreaAction extends AbstractAction {
@@ -414,8 +448,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               (PolicyValidatorResult.Error)iterator.next();
             appendToMessageArea(getValidateMessageIntro(pe)
               +
-              "</a>" + " Error :" + pe.getMessage() + ""
-            );
+              "</a>" + " Error :" + pe.getMessage() + "");
         }
         for (Iterator iterator = r.getWarnings().iterator();
              iterator.hasNext();) {
@@ -423,8 +456,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               (PolicyValidatorResult.Warning)iterator.next();
             appendToMessageArea(getValidateMessageIntro(pe)
               +
-              " Warning :" + pe.getMessage() + ""
-            );
+              " Warning :" + pe.getMessage() + "");
         }
         if (r.getErrors().isEmpty() && r.getWarnings().isEmpty()) {
             appendToMessageArea("<i>Policy validated ok.</i>");
@@ -445,6 +477,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     private void appendToMessageArea(String s) {
+        if (messagesTextPane == null) return;
         try {
             int pos = messagesTextPane.getDocument().getLength();
             //if (pos > 0) s = "\n" + s;
@@ -457,6 +490,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     private void overWriteMessageArea(String s) {
+        if (messagesTextPane == null) return;
         messagesTextPane.setText(s);
     }
 
@@ -632,8 +666,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
       throws ContainerVetoException {
         if (e.getChild() == this) {
             if (policyEditorToolbar.buttonSave.isEnabled()) {
-                int answer = (JOptionPane.showConfirmDialog(
-                  ComponentRegistry.getInstance().getMainWindow(),
+                int answer = (JOptionPane.showConfirmDialog(ComponentRegistry.getInstance().getMainWindow(),
                   "<html><center><b>Do you want to save changes to service policy " +
                   "for<br> '" + serviceNode.getName() + "' ?</b></center></html>",
                   "Save Service policy",
@@ -652,6 +685,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     /**
      * prune duplicate messsages
+     * 
      * @param result the validation result
      * @return the result containing unique messages
      */
@@ -672,4 +706,5 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
         return pr;
     }
+
 }
