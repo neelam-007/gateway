@@ -30,12 +30,25 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     private String _password;
     private int _maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
     private boolean _messageSource;
-
     /** Optional, set only if {@link #_replyType} is {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_OTHER} */
     private JmsEndpoint _replyEndpoint;
-
     /** Optional */
     private JmsEndpoint _failureEndpoint;
+
+    public void copyFrom( JmsEndpoint other ) {
+        setOid( other.getOid() );
+        setVersion( other.getVersion() );
+        setName( other.getName() );
+        setConnectionOid( other.getConnectionOid() );
+        setDestinationName( other.getDestinationName() );
+        setReplyType( other.getReplyType() );
+        setUsername( other.getUsername() );
+        setPassword( other.getPassword() );
+        setMaxConcurrentRequests( other.getMaxConcurrentRequests() );
+        setMessageSource( other.isMessageSource() );
+        setReplyEndpoint( other.getReplyEndpoint() );
+        setFailureEndpoint( other.getFailureEndpoint() );
+    }
 
     public EntityHeader toEntityHeader() {
         return new EntityHeader(getOid(), EntityType.JMS_ENDPOINT, getName(), getDestinationName());

@@ -29,6 +29,19 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private String _username;
     private String _password;
 
+    public void copyFrom( JmsConnection other ) {
+        setOid( other.getOid() );
+        setVersion( other.getVersion() );
+        setName( other.getName() );
+        setInitialContextFactoryClassname( other.getInitialContextFactoryClassname() );
+        setJndiUrl( other.getJndiUrl() );
+        setQueueFactoryUrl( other.getQueueFactoryUrl() );
+        setTopicFactoryUrl( other.getTopicFactoryUrl() );
+        setDestinationFactoryUrl( other.getDestinationFactoryUrl() );
+        setUsername( other.getUsername() );
+        setPassword( other.getPassword() );
+    }
+
     public EntityHeader toEntityHeader() {
         return new EntityHeader(getOid(), EntityType.JMS_CONNECTION, getName(), null);        
     }
@@ -88,4 +101,5 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     public void setDestinationFactoryUrl( String destinationFactoryUrl ) {
         _destinationFactoryUrl = destinationFactoryUrl;
     }
+
 }
