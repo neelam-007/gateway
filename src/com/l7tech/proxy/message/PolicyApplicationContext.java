@@ -16,6 +16,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
@@ -24,7 +25,7 @@ import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
-import com.l7tech.proxy.util.TokenServiceClient;
+import com.l7tech.common.security.xml.TokenServiceClient;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -461,10 +462,15 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (ssg.getClientCertificate() == null) {
             PasswordAuthentication pw = getCredentialsForTrustedSsg();
             logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString() + " using HTTP Basic over SSL");
-            s = TokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(ssg.getRuntime().getHttpClient(), pw, ssg, ssg.getServerCertificate());
+            URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
+
+            s = TokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(ssg.getRuntime().getHttpClient(), pw, url, ssg.getServerCertificate());
         } else {
             logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString() + " using a WS-S signed request");
-            s = TokenServiceClient.obtainSecureConversationSessionUsingWssSignature(ssg.getRuntime().getHttpClient(), ssg,
+            URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
+            Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
+
+            s = TokenServiceClient.obtainSecureConversationSessionUsingWssSignature(ssg.getRuntime().getHttpClient(), url, timestampCreatedDate,
                                                                    ssg.getServerCertificate(), ssg.getClientCertificate(),
                                                                    ssg.getClientCertificatePrivateKey());
         }

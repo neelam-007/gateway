@@ -8,11 +8,11 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.xml.TokenServiceClient;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.util.TokenServiceClient;
 
 import java.io.IOException;
 import java.net.URL;

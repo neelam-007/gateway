@@ -4,16 +4,14 @@
  * $Id$
  */
 
-package com.l7tech.proxy.util;
+package com.l7tech.common.security.xml;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.*;
-import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -25,7 +23,6 @@ import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.proxy.datamodel.Ssg;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -188,13 +185,12 @@ public class TokenServiceClient {
      * Requests a SecureConversation context token. The request is authenticated using an xml digital signature and
      * the response is required to be signed.
      */
-    public static SecureConversationSession obtainSecureConversationSessionUsingWssSignature(GenericHttpClient httpClient, Ssg ssg,
-                                                                            X509Certificate serverCertificate, X509Certificate clientCertificate,
-                                                                            PrivateKey clientPrivateKey)
+    public static SecureConversationSession obtainSecureConversationSessionUsingWssSignature(
+            GenericHttpClient httpClient, URL url, Date timestampCreatedDate,
+            X509Certificate serverCertificate, X509Certificate clientCertificate,
+            PrivateKey clientPrivateKey)
             throws IOException, GeneralSecurityException
     {
-        URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
-        Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 SecurityTokenType.WSSC_CONTEXT, RequestType.ISSUE, null, null, timestampCreatedDate);
         Object result = obtainResponse(httpClient, clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, null, true);
@@ -207,11 +203,12 @@ public class TokenServiceClient {
     /**
      * Requests a SecureConversation context token. The request is transport-secured (ssl) and transport authenticated.
      */
-    public static SecureConversationSession obtainSecureConversationSessionWithSslAndOptionalHttpBasic(GenericHttpClient httpClient, PasswordAuthentication httpBasicCredentials, Ssg ssg, X509Certificate serverCertificate)
+    public static SecureConversationSession obtainSecureConversationSessionWithSslAndOptionalHttpBasic(
+            GenericHttpClient httpClient, PasswordAuthentication httpBasicCredentials,
+            URL url, X509Certificate serverCertificate)
             throws IOException, GeneralSecurityException
     {
-        URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
-
+        if (!("https".equals(url.getProtocol()))) throw new IllegalArgumentException("URL must be HTTPS");
         Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC_CONTEXT, RequestType.ISSUE, null, null);
         Object result = obtainResponse(httpClient, null, url, requestDoc, null, serverCertificate, httpBasicCredentials, false);
 

@@ -11,6 +11,7 @@ import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
+import com.l7tech.common.security.xml.TokenServiceClient;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -20,7 +21,6 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.*;
 import com.l7tech.proxy.util.SslUtils;
-import com.l7tech.proxy.util.TokenServiceClient;
 import org.w3c.dom.Element;
 
 import javax.net.ssl.SSLContext;
