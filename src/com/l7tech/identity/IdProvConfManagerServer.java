@@ -9,6 +9,8 @@ import com.l7tech.objectmodel.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.logging.Level;
 
 /**
  * This IdentityProviderConfigManager is the server side manager who manages the one and only
@@ -98,8 +100,29 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
             logger.warning("Attempt to save invalid ldap id provider config. " + msg);
             throw new SaveException(msg);
         }
+
+        // first, check that there isn't an existing provider with same name
         try {
-            return _manager.save(getContext(), identityProviderConfig);
+            List existingProvidersWithSameName = PersistenceManager.find(getContext(), "from " + getTableName() +
+                                                                                       " in class " + getImpClass().getName() +
+                                                                                       " where " + getTableName() + ".name = ?",
+                                                                            identityProviderConfig.getName(), String.class);
+            if (existingProvidersWithSameName != null && !(existingProvidersWithSameName.isEmpty())) {
+                logger.fine("sending error back to requestor because existing provider with same name exists");
+                throw new SaveException("The name " + identityProviderConfig.getName() + " is already used by " +
+                                        "another id provider.");
+            }
+        } catch (SQLException e) {
+            logger.log(Level.INFO, "problem trying to check for provider with same name as " +
+                                    identityProviderConfig.getName(), e);
+        } catch (FindException e) {
+            logger.log(Level.INFO, "problem trying to check for provider with same name as " +
+                                    identityProviderConfig.getName(), e);
+        }
+
+        // then, try to save it
+        try {
+            return PersistenceManager.save(getContext(), identityProviderConfig);
         } catch (SQLException se) {
             throw new SaveException(se.toString(), se);
         }
