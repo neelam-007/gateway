@@ -28,7 +28,22 @@ public class HttpTransportMetadata extends TransportMetadata {
     }
 
     protected Object doGetParameter(String name) {
-        return _request.getAttribute(name);
+        Object value = null;
+        value = _request.getAttribute( name );
+
+        if ( value == null ) {
+            int ppos;
+            String subname;
+
+            if ( name.startsWith( Request.PREFIX_HTTP_HEADER ) ) {
+                // TODO: Check punctuation
+                ppos = name.indexOf( ".", Request.PREFIX_HTTP_HEADER.length() + 1 );
+                subname = name.substring( ppos + 1 );
+                value = _request.getHeader( subname );
+            }
+        }
+
+        return value;
     }
 
     protected final HttpServletRequest _request;
