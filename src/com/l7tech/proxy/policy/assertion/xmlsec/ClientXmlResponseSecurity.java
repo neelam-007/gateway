@@ -2,13 +2,9 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
-import com.l7tech.common.util.*;
-import com.l7tech.common.xml.XpathEvaluator;
-import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.common.security.xml.ElementSecurity;
-import com.l7tech.common.security.xml.SecurityProcessor;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -18,17 +14,13 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import com.l7tech.proxy.util.ClientLogger;
-import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.List;
 
 /**
  * XML Digital signature on the soap response sent from the ssg server to the requestor (probably proxy). May also enforce
@@ -65,8 +57,10 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
      * @throws BadCredentialsException    if the SSG rejects the SSG username/password when establishing the session
      */
     public AssertionStatus decorateRequest(PendingRequest request)
-      throws ServerCertificateUntrustedException,
-      OperationCanceledException, BadCredentialsException, IOException, KeyStoreCorruptException {
+            throws GeneralSecurityException,
+            OperationCanceledException, BadCredentialsException,
+            IOException, KeyStoreCorruptException, ClientCertificateException, PolicyRetryableException
+    {
         Ssg ssg = request.getSsg();
 
         // We'll need to know the server cert in order to check the signature
@@ -76,10 +70,10 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         log.info("According to policy, we're expecting a signed reply.  Will send nonce.");
         request.setNonceRequired(true);
 
-        // If the response will be encrypted, we'll need to ensure that there's a session open
+        // If the response will be encrypted, we'll need to ensure that we have a client cert
         if (xmlResponseSecurity.hasEncryptionElement()) {
-            log.info("According to policy, we're expecting an encrypted reply.  Verifying session.");
-            request.getOrCreateSession();
+            log.info("According to policy, we're expecting an encrypted reply.  Verifying client cert.");
+            request.prepareClientCertificate();
         }
 
         return AssertionStatus.NONE;
@@ -96,13 +90,6 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
       throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException {
         Document doc = response.getResponseAsDocument();
 
-        Session session = request.getSession();
-        Key decryptionKey = null;
-        long keyName = -1;
-        if (session != null) {
-            decryptionKey = new AesKey(session.getKeyRes(), 128);
-            keyName = session.getId();
-        }
         ElementSecurity[] elements = xmlResponseSecurity.getElements();
         SecurityProcessor verifier = SecurityProcessor.createRecipientSecurityProcessor(response.getProcessorResult(),
                                                                                         elements);
@@ -135,18 +122,6 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             handleResponseThrowable(e);
         }
 
-        // clean empty security element and header if necessary
-        /**
-         * todo replace with TROGDOR! (WssProcessor)
-         SoapUtil.cleanEmptyRefList(doc);
-        try {
-            SoapUtil.cleanEmptySecurityElement(doc);
-        } catch (TooManyChildElementsException e) {
-            throw new SAXException(e); // can't happen (multiple SOAP headers can't make it this far)
-        }
-         SoapUtil.cleanEmptyHeaderElement(doc);
-         response.setResponse(doc);
-         */
         return AssertionStatus.NONE;
     }
 
