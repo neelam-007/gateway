@@ -71,6 +71,7 @@ public class PolicyManagerImpl implements PolicyManager {
             int status = client.executeMethod(getMethod);
             Assertion policy = WspReader.parse(getMethod.getResponseBodyAsStream());
             request.getSsg().attachPolicy(request.getUri(), request.getSoapAction(), policy);
+            Managers.getSsgManager().save(); // save changes
         } catch (IllegalArgumentException e) {
             throw new ConfigurationException(
                     "Client request must have either a SOAPAction header or a valid SOAP body namespace URI");
