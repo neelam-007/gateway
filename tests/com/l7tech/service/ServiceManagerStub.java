@@ -9,8 +9,10 @@ import com.l7tech.common.xml.Wsdl;
 import javax.wsdl.WSDLException;
 import java.rmi.RemoteException;
 import java.util.*;
+import java.util.logging.Logger;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.io.IOException;
 import java.net.URL;
 
 /**
@@ -19,9 +21,30 @@ import java.net.URL;
  */
 public class ServiceManagerStub implements ServiceManager {
     private Map services;
+    private static Logger logger = Logger.getLogger(ServiceManagerStub.class.getName());
 
-    public ServiceManagerStub() {
+    public ServiceManagerStub() throws ObjectModelException {
         services = StubDataStore.defaultStore().getPublishedServices();
+            // build the cache if necessary
+        try {
+            if (ServiceCache.getInstance().size() > 0) {
+                logger.finest("cache already built (?)");
+            } else {
+                logger.finest("building service cache");
+                Collection services = findAll();
+                PublishedService service;
+                for (Iterator i = services.iterator(); i.hasNext();) {
+                    service = (PublishedService)i.next();
+                    ServiceCache.getInstance().cache(service);
+                }
+            }
+        } catch (InterruptedException e) {
+            throw new ObjectModelException("exception building cache", e);
+        } catch (IOException e) {
+            throw new ObjectModelException("exception building cache", e);
+        } catch (FindException e) {
+            throw new ObjectModelException("exception building cache", e);
+        }
     }
     /**
      * Retreive the actual PublishedService object from it's oid.
@@ -31,8 +54,7 @@ public class ServiceManagerStub implements ServiceManager {
      * @throws FindException
      */
     public PublishedService findByPrimaryKey(long oid) throws FindException {
-        return
-          (PublishedService)services.get(new Long(oid));
+        return (PublishedService)services.get(new Long(oid));
     }
 
     public void addServiceListener( ServiceListener listener ) {
