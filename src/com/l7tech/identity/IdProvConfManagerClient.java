@@ -3,6 +3,7 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.identity.Client;
 import com.l7tech.adminws.identity.IdentityProviderClient;
+import com.l7tech.adminws.identity.Service;
 import com.l7tech.adminws.ClientCredentialManager;
 import com.l7tech.util.Locator;
 
@@ -135,7 +136,7 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
     private Client getStub() throws java.rmi.RemoteException {
         if (localStub == null) {
             try {
-                localStub = new Client(getServiceURL(), getAdminUsername(), getAdminPassword());
+                localStub = new Client(getServiceURL());
             } catch (Exception e) {
                 throw new java.rmi.RemoteException("Exception getting admin ws stub", e);
             }
@@ -147,30 +148,12 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
     private String getServiceURL() throws IOException {
         String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
         if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
-            System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
-            prefUrl = "http://localhost:8080/ssg";
+            throw new IOException("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
+            // System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
+            // prefUrl = "http://localhost:8080/ssg";
         }
-        prefUrl += "/services/identityAdmin";
+        prefUrl += Service.SERVICE_DEPENDENT_URL_PORTION;
         return prefUrl;
-        //return "http://localhost:8080/UneasyRooster/services/identities";
     }
-
-    private String getAdminUsername() {
-        return getCredentialManager().getUsername();
-    }
-
-    private String getAdminPassword() {
-        return getCredentialManager().getPassword();
-    }
-
-    private ClientCredentialManager getCredentialManager() {
-        ClientCredentialManager credentialManager =
-          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
-        if (credentialManager == null) { // bug
-            throw new RuntimeException("No credential manager configured in services");
-        }
-        return credentialManager;
-    }
-
     private Client localStub = null;
 }
