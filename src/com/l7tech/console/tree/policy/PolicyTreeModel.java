@@ -3,9 +3,12 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
+import com.l7tech.console.tree.AbstractTreeNode;
 
 import javax.swing.tree.DefaultTreeModel;
 import java.io.IOException;
+import java.util.Set;
+import java.util.Iterator;
 
 
 /**
@@ -15,13 +18,9 @@ import java.io.IOException;
  * @version 1.0
  */
 public class PolicyTreeModel extends DefaultTreeModel {
-    public static final int POLICY_VIEW = 0;
-    public static final int IDENTITY_VIEW = 1;
-    private PublishedService service;
-
     /**
      * Creates a new instance of PolicyTreeModel with root set
-     * to the root assertion.
+     * to the node represnting the root assertion.
      *
      * @param root
      */
@@ -30,31 +29,41 @@ public class PolicyTreeModel extends DefaultTreeModel {
     }
 
     /**
-     * Returns the service that this model represents.
-     * Note that the value is optional and may be null.
-     * Instance created using the <code>PublishedService</code>
-     * register the value.
-     *
-     * @return the service or <b>null</b> if not set
-     */
-    public PublishedService getService() {
-        return service;
-    }
-
-    /**
-     * Creates a new instance of PolicyTreeModel for the Published service.
+     * Creates a new instance of the PolicyTreeModel for the Published service.
      *
      * @param service
      */
     public static PolicyTreeModel make(PublishedService service) {
         try {
             PolicyTreeModel model = new PolicyTreeModel(WspReader.parse(service.getPolicyXml()));
-            model.service = service;
             return model;
         } catch (IOException e) {
             // TODO: FIXME Emil!
             throw new IllegalArgumentException("Policy was unparseable");
         }
+    }
+
+    /**
+     * Creates a new instance of PolicyTreeModel with root set
+     * to the abstract tree node. This is a protected constructor
+     * that is used for models such as identity viewl.
+     *
+     * @param root
+     */
+    protected PolicyTreeModel(AbstractTreeNode root) {
+        super(root);
+    }
+
+
+    /**
+     * Creates a new identity view of PolicyTreeModel for the asserton
+     * tree.
+     *
+     * @param root the assertion root
+     */
+    public static PolicyTreeModel identitityModel(Assertion root) {
+        Set paths = IdentityPath.getPaths(root);
+        return new PolicyTreeModel(new IdentityViewsRootNode(paths, root));
     }
 }
 

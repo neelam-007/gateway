@@ -14,7 +14,7 @@ import java.util.Arrays;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class OneOrMoreAssertionTreeNode extends CompositeAssertionTreeNode {
+public class OneOrMoreAssertionTreeNode extends CompositeAssertionTreeNode {
     /**
      * The <code>MemberOfGroupAssertionTreeNode</code> is the composite
      * assertion node that represents the group membership.

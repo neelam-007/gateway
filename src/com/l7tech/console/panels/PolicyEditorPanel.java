@@ -5,11 +5,14 @@ import com.l7tech.console.action.SavePolicyAction;
 import com.l7tech.console.action.ValidatePolicyAction;
 import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.NodeFilter;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -17,11 +20,13 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.text.EditorKit;
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.StringReader;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * The class represnts the policy editor
@@ -138,28 +143,17 @@ public class PolicyEditorPanel extends JPanel {
             identityViewButton.addActionListener( new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     boolean selected = identityViewButton.isSelected();
-                    PolicyTreeModel model = PolicyTreeModel.make(service);
-                    FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
-                    policyTree.setModel(fm);
                     if (selected) {
-                        fm.setFilter(new NodeFilter() {
-                            /**
-                             * @param node  the <code>TreeNode</code> to examine
-                             * @return  true if filter accepts the node, false otherwise
-                             */
-                            public boolean accept(TreeNode node) {
-                                if (node instanceof MemberOfGroupAssertionTreeNode ||
-                                    node instanceof SpecificUserAssertionTreeNode) {
-                                         return false;
-                                }
-                                if (node instanceof CompositeAssertionTreeNode) {
-                                    return ((CompositeAssertionTreeNode)node).getChildCount(this) >0;
-                                }
-                                return true;
-                            }
-                        });
+                        PolicyTreeModel model =
+                          PolicyTreeModel.identitityModel(rootAssertion.asAssertion());
+                        FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
+                        fm.setFilter(new IdentityNodeFilter());
+                        policyTree.setModel(fm);
                     } else {
-                        fm.clearFilter();
+                        PolicyTreeModel model =
+                          new PolicyTreeModel(rootAssertion.asAssertion());
+                        FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
+                        policyTree.setModel(fm);
                     }
                 }
             });
@@ -186,5 +180,36 @@ public class PolicyEditorPanel extends JPanel {
 
     private void overWriteMessageArea(String s) {
         messagesTextPane.setText(s);
+    }
+
+    private static class IdentityNodeFilter implements NodeFilter {
+        /**
+         * @param node  the <code>TreeNode</code> to examine
+         * @return  true if filter accepts the node, false otherwise
+         */
+        public boolean accept(TreeNode node) {
+            if (node instanceof SpecificUserAssertionTreeNode ||
+                node instanceof MemberOfGroupAssertionTreeNode) return false;
+
+            if (node instanceof CompositeAssertionTreeNode) {
+                if (((CompositeAssertionTreeNode)node).getChildCount(this)==0)
+                    return false;
+            }
+
+            TreeNode[] path = ((DefaultMutableTreeNode)node).getPath();
+            IdentityViewTreeNode in = (IdentityViewTreeNode)path[1];
+            AssertionTreeNode an = (AssertionTreeNode)node;
+            IdentityPath ip = in.getIdentityPath();
+            Set paths = ip.getPaths();
+            for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
+                Assertion[] apath = (Assertion[])iterator.next();
+                for (int i = apath.length - 1; i >= 0; i--) {
+                    Assertion assertion = apath[i];
+                    if (assertion.equals(an.asAssertion())) return true;
+                }
+            }
+            return false;
+        }
+
     }
 }

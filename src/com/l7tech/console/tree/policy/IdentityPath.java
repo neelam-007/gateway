@@ -3,6 +3,9 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyPathBuilder;
+import com.l7tech.policy.PolicyPathResult;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
 
@@ -10,7 +13,9 @@ import java.security.Principal;
 import java.util.*;
 
 /**
- * Class <code>IdentityPath</code> represents a path in the .
+ * Class <code>IdentityPath</code> represents a collection of
+ * assertion paths for an identity within given policy.
+ * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class IdentityPath {
@@ -33,10 +38,86 @@ public class IdentityPath {
         return identities;
     }
 
-
-    public static IdentityPath forIdentity(Principal p, Assertion root) {
-        return null;
+    /**
+     * Create the set of <code>IdentityPaths</code> that exist in this
+     * assertion tree. This returns all the meniotned identities with
+     * their paths.
+     *
+     * @param root the assertion root
+     * @return the set of identity paths that exist in thi policy tree
+     */
+    public static Set getPaths(Assertion root) {
+        Set identities = getIdentities(root);
+        Set paths = new HashSet();
+        for (Iterator i = identities.iterator(); i.hasNext();) {
+            Principal principal = (Principal)i.next();
+            paths.add(forIdentity(principal, root));
+        }
+        IdentityPath anonPath = anonymousPaths(root);
+        if (!anonPath.getPaths().isEmpty()) {
+            paths.add(anonPath);
+        }
+        return paths;
     }
+
+    /**
+     * Create the <code>IdentityPath</code> from the assertion for the
+     * the given principal.
+     *
+     * @param p the principal
+     * @param root the assertion root
+     * @return the identity path with the collection of assertion paths
+     *         for the
+     */
+    public static IdentityPath forIdentity(Principal p, Assertion root) {
+        if (!(p instanceof User || p instanceof Group)) {
+            throw new IllegalArgumentException("unknown type");
+        }
+        IdentityPath ipath = new IdentityPath(p);
+        PolicyPathBuilder pb = PolicyPathBuilder.getDefault();
+        PolicyPathResult ppr = pb.generate(root);
+        outer:
+        for (Iterator i = ppr.paths().iterator(); i.hasNext();) {
+            AssertionPath ap = (AssertionPath)i.next();
+            Assertion[] path = ap.getPath();
+            for (int j = path.length - 1; j >= 0; j--) {
+                Assertion assertion = path[j];
+                if (isIdentity(assertion)) {
+                    Principal principal = extractIdentity(assertion);
+                    if (IDCOMPARATOR.compare(principal, p) == 0) {
+                        ipath.identityPaths.add(path);
+                        continue outer;
+                    }
+                }
+            }
+        }
+        return ipath;
+    }
+
+
+    private static IdentityPath anonymousPaths(Assertion root) {
+        User anon = new User();
+        anon.setLogin("Anonymous");
+        anon.setName(anon.getLogin());
+        IdentityPath ipath = new IdentityPath(anon);
+        PolicyPathBuilder pb = PolicyPathBuilder.getDefault();
+        PolicyPathResult ppr = pb.generate(root);
+        outer:
+        for (Iterator i = ppr.paths().iterator(); i.hasNext();) {
+            AssertionPath ap = (AssertionPath)i.next();
+            Assertion[] path = ap.getPath();
+            for (int j = path.length - 1; j >= 0; j--) {
+                Assertion assertion = path[j];
+                if (isIdentity(assertion)) {
+                    continue outer;
+                }
+            }
+            ipath.identityPaths.add(path);
+        }
+        return ipath;
+
+    }
+
 
     /**
      * protected constructor accepting principal.
@@ -58,13 +139,14 @@ public class IdentityPath {
     }
 
     /**
-     * returns the unmdifiable <code>List</code> of assertion paths
-     * for the identoty (user or group) represnetewd by this path.
+     * returns the unmdifiable <code>Set</code> of assertion paths
+     * for the identity (user or group) represented by this path
+     * collection.
      *
      * @return the identity paths
      */
-    public List getPaths() {
-        return Collections.unmodifiableList(identityPaths);
+    public Set getPaths() {
+        return Collections.unmodifiableSet(identityPaths);
     }
 
     /**
@@ -89,6 +171,7 @@ public class IdentityPath {
             SpecificUser su = ((SpecificUser)assertion);
             User u = new User();
             u.setLogin(su.getUserLogin());
+            u.setName(su.getUserLogin());
             u.setProviderId(su.getIdentityProviderOid());
             return u;
         } else if (assertion instanceof MemberOfGroup) {
@@ -104,7 +187,7 @@ public class IdentityPath {
 
     /** user or group */
     private Principal principal;
-    private List identityPaths = new ArrayList();
+    private Set identityPaths = new HashSet();
 
     private static final Comparator IDCOMPARATOR = new Comparator() {
         /**
@@ -126,8 +209,10 @@ public class IdentityPath {
             }
             if (User.class.equals(o1.getClass())) {
                 return compareUsers((User)o1, (User)o2);
+            } else if (Group.class.equals(o1.getClass())) {
+                return compareGroup((Group)o1, (Group)o2);
             }
-            return 0;
+            throw new ClassCastException("Don't know how to handle " + o1.getClass());
 
         }
     };
@@ -135,7 +220,7 @@ public class IdentityPath {
     private static int compareUsers(User u1, User u2) {
         int n = (int)(u1.getProviderId() - u2.getProviderId());
         if (n != 0) return n;
-        return u2.getName().compareTo(u1.getName());
+        return u2.getLogin().compareTo(u1.getLogin());
     }
 
 
