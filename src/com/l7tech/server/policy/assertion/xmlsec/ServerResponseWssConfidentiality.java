@@ -50,8 +50,11 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             throw new PolicyAssertionException("This type of assertion is only supported with SOAP requests");
         SoapRequest soapRequest = (SoapRequest)request;
 
-        // We'll need a public key for the recipient of this response.  Find a signed X509 token in the request
+        // Ecrypting the Response will require either the presence of a client cert (to encrypt the symmetric key)
+        // or a SecureConversation in progress
+
         X509Certificate clientCert = null;
+        WssProcessor.SecurityContextToken secConvContext = null;
         WssProcessor.ProcessorResult wssResult = soapRequest.getWssProcessorOutput();
         WssProcessor.SecurityToken[] tokens = wssResult.getSecurityTokens();
         for (int i = 0; i < tokens.length; i++) {
@@ -65,19 +68,29 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     }
                     clientCert = x509token.asX509Certificate();
                 }
+            } else if (token instanceof WssProcessor.SecurityContextToken) {
+                WssProcessor.SecurityContextToken secConvTok = (WssProcessor.SecurityContextToken)token;
+                if (secConvTok.isPossessionProved()) {
+                    secConvContext = secConvTok;
+                }
             }
         }
 
-        if (clientCert == null) {
-            logger.log( Level.WARNING, "Unable to encrypt response -- request included no x509 token whose key ownership was proven" );
+        if (clientCert == null && secConvContext == null) {
+            logger.log( Level.WARNING, "Unable to encrypt response. Request did not included x509 " +
+                                       "token or secure conversation." );
             response.setAuthenticationMissing(true); // todo is it really, though?
             response.setPolicyViolated(true);
             return AssertionStatus.FAILED; // todo verify that this return value is appropriate
         }
 
-        final X509Certificate foundClientCert = clientCert;
+        response.addDeferredAssertion(this, defferedDecoration(clientCert, secConvContext));
+        return AssertionStatus.NONE;
+    }
 
-        response.addDeferredAssertion(this, new ServerAssertion() {
+    private ServerAssertion defferedDecoration(final X509Certificate clientCert,
+                                               final WssProcessor.SecurityContextToken secConvTok) {
+        return new ServerAssertion() {
             public AssertionStatus checkRequest(Request request, Response response)
                     throws IOException, PolicyAssertionException
             {
@@ -112,20 +125,22 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     return AssertionStatus.NONE;
                 }
 
-                SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                 WssDecorator.DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
-                wssReq.setSenderCertificate(si.getCertificateChain()[0]);
-                wssReq.setSenderPrivateKey(si.getPrivate());
-                wssReq.setRecipientCertificate(foundClientCert);
                 wssReq.getElementsToEncrypt().addAll(selectedElements);
-                wssReq.setSignTimestamp(true);
+
+                if (clientCert != null) {
+                    SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
+                    wssReq.setSenderCertificate(si.getCertificateChain()[0]);
+                    wssReq.setSenderPrivateKey(si.getPrivate());
+                    wssReq.setRecipientCertificate(clientCert);
+                    wssReq.setSignTimestamp(true);
+                }
+
                 logger.finest("Designated " + selectedElements.size() + " response elements for encryption");
 
                 return AssertionStatus.NONE;
             }
-        });
-
-        return AssertionStatus.NONE;
+        };
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
