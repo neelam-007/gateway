@@ -1,13 +1,12 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.message.XmlKnob;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SamlSecurityToken;
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
-import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -82,19 +81,18 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
                 context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
             }
-            SamlAssertion samlAssertion = null;
+            SamlSecurityToken samlAssertion = null;
             for (int i = 0; i < tokens.length; i++) {
                 SecurityToken tok = tokens[i];
                 if (tok instanceof SamlSecurityToken) {
                     SamlSecurityToken samlToken = (SamlSecurityToken)tok;
                     if (samlToken.isPossessionProved()) {
-                        SamlAssertion gotAss = samlToken.asSamlAssertion();
                         if (samlAssertion != null) {
                             logger.severe("We got a request that presented more than one valid signature from more " +
                                           "than one SAML assertion.  This is not currently supported.");
                             return AssertionStatus.BAD_REQUEST;
                         }
-                        samlAssertion = gotAss;
+                        samlAssertion = samlToken;
                     }
                 }
             }

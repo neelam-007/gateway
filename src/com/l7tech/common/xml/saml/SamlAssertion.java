@@ -9,8 +9,8 @@ package com.l7tech.common.xml.saml;
 import com.ibm.xml.dsig.IDResolver;
 import com.ibm.xml.dsig.SignatureContext;
 import com.ibm.xml.dsig.Validity;
-import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.saml.SamlException;
+import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -40,17 +40,8 @@ public class SamlAssertion implements SamlSecurityToken {
     protected static final Logger logger = Logger.getLogger(SamlAssertion.class.getName());
     private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 
-    public static final ConfirmationMethod HOLDER_OF_KEY = new ConfirmationMethod("Holder-of-key");
-    public static final ConfirmationMethod SENDER_VOUCHES = new ConfirmationMethod("Sender-vouches");
-
-    private static final class ConfirmationMethod {
-        private final String name;
-        private ConfirmationMethod(String name) { this.name = name; }
-        public String toString() { return name; }
-    }
-
     Element assertionElement = null;
-    AssertionType assertion = null;
+    final AssertionType assertion;
     boolean isSigned = false;
     ConfirmationMethod confirmationMethod = null;
     X509Certificate subjectCertificate = null;
@@ -68,10 +59,6 @@ public class SamlAssertion implements SamlSecurityToken {
      */
     protected boolean possessionProved = false;
 
-    public SamlAssertion asSamlAssertion() {
-        return this;
-    }
-
     public boolean isHolderOfKey() {
         return HOLDER_OF_KEY.equals(confirmationMethod);
     }
@@ -80,9 +67,6 @@ public class SamlAssertion implements SamlSecurityToken {
         return SENDER_VOUCHES.equals(confirmationMethod);
     }
 
-    /**
-     * @return the actual Confirmation Method used by this assertion, or null if it didn't have one.
-     */
     public ConfirmationMethod getConfirmationMethod() {
         return confirmationMethod;
     }
@@ -260,7 +244,6 @@ public class SamlAssertion implements SamlSecurityToken {
         public ResolveIdException(String s) { super(s); }
     }
 
-    /** Check signature of this saml assertion.  May only be called if isSigned() returns true. */
     public void verifyIssuerSignature() throws SignatureException {
         if (!isSigned) throw new IllegalStateException("May not verify signature; this assertion is not signed");
 
@@ -300,22 +283,18 @@ public class SamlAssertion implements SamlSecurityToken {
         }
     }
 
-    /** @return the name identifier format, or null if there wasn't one. {@see SamlConstants} */
     public String getNameIdentifierFormat() {
         return nameIdentifierFormat;
     }
 
-    /** @return the name qualifier, or null if there wasn't one. {@see SamlConstants} */
     public String getNameQualifier() {
         return nameQualifier;
     }
 
-    /** @return the name identifier value, or null if there wasn't one. {@see SamlConstants} */
     public String getNameIdentifierValue() {
         return nameIdentifierValue;
     }
 
-    /** @return the authentication method, or null if there wasn't one. {@see SamlConstants} */
     public String getAuthenticationMethod() {
         return authenticationMethod;
     }
@@ -324,13 +303,6 @@ public class SamlAssertion implements SamlSecurityToken {
         return expires;
     }
 
-    /**
-     * Check if this assertion has either already expired, or is set to expire within the next preexpireSec seconds.
-     *
-     * @param preexpireSec number of seconds into the future for which the assertion should remain valid.
-     * @return true if this assertion has not yet expired, and will not expire for at least another preexpireSec
-     *         seconds.
-     */
     public boolean isExpiringSoon(int preexpireSec) {
         Calendar expires = getExpires();
         Calendar nowUtc = Calendar.getInstance(UTC_TIME_ZONE);
@@ -345,5 +317,10 @@ public class SamlAssertion implements SamlSecurityToken {
             return issuerCertificate;
         else
             return null;
+    }
+
+    /** @return the Xml Beans assertion type.  Never null. */
+    public AssertionType getXmlBeansAssertionType() {
+        return assertion;
     }
 }
