@@ -160,10 +160,12 @@ CREATE TABLE client_cert (
 
 DROP TABLE IF EXISTS service_resolution;
 CREATE TABLE service_resolution (
+  objectid bigint(20) NOT NULL default '0',
   serviceid bigint NOT NULL,
   soapaction varchar(128) default '',
   urn varchar(255) default '',
-  unique(soapaction, urn)
+  unique(soapaction, urn),
+  PRIMARY KEY (objectid)
 ) TYPE=InnoDB;
 
 --

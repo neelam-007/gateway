@@ -1,5 +1,7 @@
 package com.l7tech.service.resolution;
 
+import com.l7tech.objectmodel.imp.EntityImp;
+
 import java.io.Serializable;
 
 /**
@@ -15,7 +17,7 @@ import java.io.Serializable;
  * Date: Nov 25, 2003<br/>
  * $Id$
  */
-public class ResolutionParameters implements Serializable {
+public class ResolutionParameters extends EntityImp implements Serializable {
     public String getSoapaction() {
         return soapaction;
     }

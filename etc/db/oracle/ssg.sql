@@ -142,6 +142,7 @@ CREATE TABLE client_cert (
 drop table service_resolution;
 
 CREATE TABLE service_resolution (
+  objectid number(38,0) NOT NULL PRIMARY KEY,
   serviceid number(38,0) NOT NULL,
   soapaction varchar(128) default '',
   urn varchar(255) default '',

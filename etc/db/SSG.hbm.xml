@@ -121,10 +121,11 @@
     -->
 
     <class name="com.l7tech.service.resolution.ResolutionParameters" table="service_resolution">
-        <composite-id>
-            <key-property name="urn" column="urn" type="string"/>
-            <key-property name="soapaction" column="soapaction" type="string"/>
-        </composite-id>
+        <id name="oid" column="objectid" type="long">
+            <generator class="hilo"/>
+        </id>
+        <property name="urn" column="urn" type="string"/>
+        <property name="soapaction" column="soapaction" type="string"/>
         <property name="serviceid" column="serviceid" type="long"/>
     </class>
 
