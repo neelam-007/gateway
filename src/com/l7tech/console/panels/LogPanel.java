@@ -3,10 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableModel;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.util.Preferences;
 
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
 import javax.swing.border.Border;
 import javax.swing.table.*;
 import javax.swing.event.*;
@@ -16,7 +14,6 @@ import java.awt.event.MouseEvent;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.ResourceBundle;
-import java.io.IOException;
 
 
 /**
@@ -86,17 +83,18 @@ public class LogPanel extends JPanel {
 
                         //msg = "The selected row is: " + row + "\n";
                         msg = "";
-
                         if (getMsgTable().getModel().getValueAt(row, 0) != null)
-                            msg = msg + "Time    : " + getMsgTable().getModel().getValueAt(row, 0).toString() + "\n";
+                            msg = msg + "Message #: " + getMsgTable().getModel().getValueAt(row, 0).toString() + "\n";
                         if (getMsgTable().getModel().getValueAt(row, 1) != null)
-                            msg = msg + "Severity: " + getMsgTable().getModel().getValueAt(row, 1).toString() + "\n";
+                            msg = msg + "Time     : " + getMsgTable().getModel().getValueAt(row, 1).toString() + "\n";
                         if (getMsgTable().getModel().getValueAt(row, 2) != null)
-                            msg = msg + "Message : " + getMsgTable().getModel().getValueAt(row, 2).toString() + "\n";
+                            msg = msg + "Severity : " + getMsgTable().getModel().getValueAt(row, 2).toString() + "\n";
                         if (getMsgTable().getModel().getValueAt(row, 3) != null)
-                            msg = msg + "Class   : " + getMsgTable().getModel().getValueAt(row, 3).toString() + "\n";
+                            msg = msg + "Message  : " + getMsgTable().getModel().getValueAt(row, 3).toString() + "\n";
                         if (getMsgTable().getModel().getValueAt(row, 4) != null)
-                            msg = msg + "Method  :" + getMsgTable().getModel().getValueAt(row, 4).toString() + "\n";
+                            msg = msg + "Class    : " + getMsgTable().getModel().getValueAt(row, 4).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, 5) != null)
+                            msg = msg + "Method   :" + getMsgTable().getModel().getValueAt(row, 5).toString() + "\n";
                         getMsgDetails().setText(msg);
 
                     }
@@ -377,16 +375,18 @@ public class LogPanel extends JPanel {
     private DefaultTableColumnModel getLogColumnModel() {
         DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
 
-        columnModel.addColumn(new TableColumn(0, 60));
-        columnModel.addColumn(new TableColumn(1, 15));
-        columnModel.addColumn(new TableColumn(2, 200));
-        columnModel.addColumn(new TableColumn(3, 100));
-        columnModel.addColumn(new TableColumn(4, 30));
+        columnModel.addColumn(new TableColumn(0, 20));
+        columnModel.addColumn(new TableColumn(1, 60));
+        columnModel.addColumn(new TableColumn(2, 15));
+        columnModel.addColumn(new TableColumn(3, 200));
+        columnModel.addColumn(new TableColumn(4, 100));
+        columnModel.addColumn(new TableColumn(5, 30));
         columnModel.getColumn(0).setHeaderValue(getLogTableModel().getColumnName(0));
         columnModel.getColumn(1).setHeaderValue(getLogTableModel().getColumnName(1));
         columnModel.getColumn(2).setHeaderValue(getLogTableModel().getColumnName(2));
         columnModel.getColumn(3).setHeaderValue(getLogTableModel().getColumnName(3));
         columnModel.getColumn(4).setHeaderValue(getLogTableModel().getColumnName(4));
+        columnModel.getColumn(5).setHeaderValue(getLogTableModel().getColumnName(5));
 
         return columnModel;
     }
@@ -415,7 +415,7 @@ public class LogPanel extends JPanel {
             return logTableModel;
         }
 
-        String[] cols = {"Time", "Severity", "Message", "Class", "Method"};
+        String[] cols = {"Message #", "Time", "Severity", "Message", "Class", "Method"};
         String[][] rows = new String[][]{};
 
         logTableModel = new LogTableModel(rows, cols);
@@ -425,7 +425,7 @@ public class LogPanel extends JPanel {
 
 
     private void refreshActionPerformed(java.awt.event.ActionEvent evt) {
-        ((FilteredLogTableModel) getMsgTable().getModel()).getLogs(getMsgFilterLevel());
+        ((FilteredLogTableModel) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel());
     }
 
     private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
