@@ -10,6 +10,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -39,10 +41,12 @@ public class ServerUnknownAssertion implements ServerAssertion {
     public ServerUnknownAssertion() {}
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         final boolean hasDetailMessage = unknownAssertion != null && unknownAssertion.getDetailMessage() != null;
         String desc = hasDetailMessage ? unknownAssertion.getDetailMessage() : "No more description available";
 
-        logger.warning("The unknown assertion invoked. Detail message is '" + desc + "'");
+        auditor.logAndAudit(AssertionMessages.UNKNOWN_ASSERTION, new String[] {desc});
         return AssertionStatus.FALSIFIED;
     }
 }

@@ -175,4 +175,7 @@ public class AssertionMessages extends Messages {
     public static final M TIME_RANGE_TOD_OUTSIDE_RANGE                      = m(5702, Level.INFO, "Time of day outside allowed range. Returning failure.");
     public static final M TIME_RAGNE_WITHIN_RANGE                           = m(5703, Level.FINEST, "Request within TimeRange.");
 
+    // ServerUnknownAssertion
+    public static final M UNKNOWN_ASSERTION                                 = m(5800, Level.WARNING, "The unknown assertion invoked. Detail message is: {0}");
+
 }
