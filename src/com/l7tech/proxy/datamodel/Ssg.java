@@ -541,6 +541,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     public void setKeyStorePath(String keyStorePath) {
         if (keyStorePath == null)
             throw new IllegalArgumentException("keyStorePath may not be null");
+        if (keyStorePath.length() < 1)
+            throw new IllegalArgumentException("keyStorePath may not be the empty string");
         this.keyStorePath = keyStorePath;
         flushKeyStoreData();
     }
