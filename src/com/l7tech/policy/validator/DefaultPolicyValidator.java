@@ -2,13 +2,16 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
+import com.l7tech.policy.assertion.ext.CustomAssertions;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -118,10 +121,25 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 processRouting((RoutingAssertion)a);
             } else if (a instanceof AllAssertion) {
                 processAllAss((AllAssertion)a);
+            } else if(isCustom(a)) {
+                processCustom(a);
             } else {
                 processUnknown();
             }
         }
+
+        private void processCustom(Assertion a) {
+            CustomAssertionHolder csh = (CustomAssertionHolder)a;
+            CustomAssertionDescriptor descriptor = CustomAssertions.getDescriptor(csh);
+            if (Category.IDENTITY.equals(descriptor.getCategory()) ||
+                Category.ACCESS_CONTROL.equals(descriptor.getCategory())) {
+                if (!seenCredentials) {
+                    result.addError(new PolicyValidatorResult.Error(a, "Access control specified without authentication scheme.", null));
+                }
+                seenAccessControl = true;
+            }
+        }
+
 
         private void processAllAss(AllAssertion a) {
             if (a.getChildren().isEmpty()) {
@@ -311,6 +329,11 @@ public class DefaultPolicyValidator extends PolicyValidator {
                   result.addWarning(new PolicyValidatorResult.Warning(a,
                       "This composite assertion does not contain any elements.", null));
             }
+        }
+
+
+        private boolean isCustom(Assertion a) {
+            return a instanceof CustomAssertionHolder;
         }
 
         private void processUnknown() {
