@@ -58,7 +58,7 @@ public class RegistryStub extends Registry {
     StubDataStore dataStore = null;
     {
         try {
-          dataStore = new StubDataStore(StubDataStore.PATH);
+          dataStore = new StubDataStore(StubDataStore.DEFAULT_STORE_PATH);
         } catch(FileNotFoundException e) {
             throw new RuntimeException(e);
         }
