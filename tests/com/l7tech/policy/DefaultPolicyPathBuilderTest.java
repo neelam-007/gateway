@@ -9,9 +9,13 @@ package com.l7tech.policy;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.wsp.WspReader;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -134,7 +138,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{one, two, three}));
         DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
         int count = builder.generate(oom).getPathCount();
-        assertTrue("The value received is " + count, count == 63);
+        assertTrue("The value received is " + count, count == 9);
     }
 
     public void testTwoDepthPolicyPathWithConjunctionAnd() throws Exception {
@@ -159,7 +163,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
 
         int count = builder.generate(oom).getPathCount();
-        assertTrue("The value received is " + count, count == 31);
+        assertTrue("The value received is " + count, count == 7);
     }
 
     public void testBug763MonsterPolicy() throws Exception {
@@ -168,15 +172,28 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
 
         PolicyPathResult result = builder.generate(policy);
         int count = result.getPathCount();
-        assertTrue("The value received is " + count, count == 23);
+        assertTrue("The value received is " + count, count == 5);
     }
 
-    public void testPerOperationDecorationsTreeFollowedByIdTree() throws Exception {
-        Assertion policy = WspReader.parse(TestDocuments.getInputStream(TestDocuments.WAREHOUSE_SECURED_POLICY));
+
+    public void testBug1022() throws Exception {
+        Assertion firstAll = new AllAssertion(Arrays.asList(new Assertion[]{
+            new RequestWssX509Cert(),
+            new SpecificUser(-2, "fred", "fred", "fred")
+        }));
+        Assertion secondAll = new AllAssertion(Arrays.asList(new Assertion[]{
+            new HttpBasic(),
+            new SpecificUser(-2, "wilma", "wilma", "wilma")
+        }));
+
+        Assertion top = new AllAssertion(Arrays.asList(new Assertion[]{
+            new OneOrMoreAssertion(Arrays.asList(new Assertion[]{firstAll, secondAll})),
+            new HttpRoutingAssertion("http://wheel")
+        }));
+
         DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
-
-        PolicyPathResult result = builder.generate(policy);
-        int count = result.getPathCount();
-        assertTrue("The value received is " + count, count == 15);
+        PolicyPathResult result = builder.generate(top);
+        assertTrue(result.getPathCount() == 2);
     }
+
 }

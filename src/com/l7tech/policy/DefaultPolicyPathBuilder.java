@@ -81,7 +81,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                 for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
                     AssertionPath assertionPath = (AssertionPath)iterator.next();
                     if (assertionPath.contains(anext.getParent()) &&
-                      !isSibling(assertionPath.lastAssertion(), anext)) {
+                      !containsSibling(assertionPath, anext)) {
                         AssertionPath a = assertionPath.addAssertion(anext);
                         add.add(a);
                     }
@@ -134,6 +134,23 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         return pruneNonEmptyComposites(assertionPaths);
     }
 
+    /**
+     * Test whether the assertion path contains the a assertion's sibling
+     *
+     * @param assertionPath the assertion path
+     * @param a             the assertion to test
+     * @return true if the assertion path contiansd a's sibling, false otherwise
+     */
+    private boolean containsSibling(AssertionPath assertionPath, Assertion a) {
+        Assertion[] path = assertionPath.getPath();
+
+        for (int i = 0; i < path.length; i++) {
+            Assertion assertion = path[i];
+            if (isSibling(assertion, a)) return true;
+        }
+        return false;
+    }
+
     private boolean isSibling(Assertion assertion, Assertion anext) {
         return assertion.getParent() == anext.getParent() && assertion != anext;
     }
@@ -163,23 +180,6 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                 CompositeAssertion ca = (CompositeAssertion)assertion;
                 if (!ca.getChildren().isEmpty()) {
                     remove.add(assertionPath);
-                }
-            }
-        }
-        assertionPaths.removeAll(remove);
-        remove = new HashSet();
-        for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
-            AssertionPath ap = (AssertionPath)iterator.next();
-            Assertion[] path = ap.getPath();
-            for (int i = 0; i < path.length; i++) {
-                Assertion assertion = path[i];
-                if (assertion instanceof CompositeAssertion) {
-                    CompositeAssertion ca = (CompositeAssertion)assertion;
-                    final List children = ca.getChildren();
-                    if (!children.isEmpty() && !children.contains(path[i + 1])) {
-                        remove.add(ap);
-                        break;
-                    }
                 }
             }
         }
