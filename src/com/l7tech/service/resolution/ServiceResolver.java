@@ -24,6 +24,7 @@ public abstract class ServiceResolver implements Comparable {
      */
     public synchronized void setServices( Collection services ) {
         _services = services;
+        doSetServices(services);
     }
 
     public synchronized Set resolve( Request request, Set set ) throws ServiceResolutionException {
@@ -32,6 +33,7 @@ public abstract class ServiceResolver implements Comparable {
         return doResolve( request, set );
     }
 
+    abstract void doSetServices( Collection services );
     abstract Set doResolve( Request request, Set set ) throws ServiceResolutionException;
     public abstract int getSpeed();
 
