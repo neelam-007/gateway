@@ -7,10 +7,8 @@
 package com.l7tech.proxy;
 
 /**
- *
- * User: mike
- * Date: Jun 25, 2003
- * Time: 3:19:04 PM
+ * Thrown if an operation could not continue due to a problem with the client or server configuration,
+ * and retrying the operation is unlikely to succeed until the configuration is changed.
  */
 public class ConfigurationException extends Exception {
     public ConfigurationException() {
