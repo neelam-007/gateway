@@ -14,6 +14,7 @@ import junit.framework.TestSuite;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -35,6 +36,15 @@ public class WspWriterTest extends TestCase {
 
     public static Test suite() {
         return new TestSuite(WspWriterTest.class);
+    }
+
+    private String fixJavaVersion(String input) {
+        return input.replaceAll("<java version=\"[^\"]*\" ", "<java ");
+    }
+
+    private String fixLines(String input) {
+        return fixJavaVersion(
+                input.replaceAll("\\r\\n", "\n").replaceAll("\\n\\r", "\n").replaceAll("\\r", "\n"));
     }
 
     public void testWritePolicy() throws IOException {
@@ -59,28 +69,25 @@ public class WspWriterTest extends TestCase {
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         WspWriter.writePolicy(policy, out);
-        String gotXml = out.toString();
-        gotXml.replaceAll("\n\r", "\n");
-        gotXml.replaceAll("\r\n", "\n");
-        gotXml.replaceAll("\r", "\n");
+        String gotXml = fixLines(out.toString());
 
         log.info("Encoded to XML: " + gotXml);
 
         //uncomment to save the XML to a file
-        //FileOutputStream fos = new FileOutputStream("WspWriterTest_encoded.xml");
-        //fos.write(out.toString().getBytes());
-        //fos.close();
+        FileOutputStream fos = new FileOutputStream("WspWriterTest_gotXml.xml");
+        fos.write(gotXml.getBytes());
+        fos.close();
 
         // See what it should look like
         InputStream knownStream = cl.getResourceAsStream(SIMPLE_POLICY);
         byte[] known = new byte[65536];
         int len = knownStream.read(known);
-        String knownStr = new String(known, 0, len);
-        knownStr.replaceAll("\n\r", "\n");
-        knownStr.replaceAll("\r\n", "\n");
-        knownStr.replaceAll("\r", "\n");
+        String knownStr = fixLines(new String(known, 0, len));
 
         log.info("Expected XML: " + knownStr);
+        fos = new FileOutputStream("WspWriterTest_knownStr.xml");
+        fos.write(knownStr.getBytes());
+        fos.close();
 
         assertTrue(knownStr.equals(gotXml));
 
