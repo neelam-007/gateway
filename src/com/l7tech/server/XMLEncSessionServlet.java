@@ -81,6 +81,7 @@ public class XMLEncSessionServlet extends HttpServlet {
 
         // SEND BACK SESSION
         outputSession(newSession, httpServletResponse);
+        logger.info("XML-ENc session created for user " + user.getLogin() + ". session id = " + newSession.getId());
     }
 
     private void outputSession(Session sessionToOutput, HttpServletResponse response) throws IOException {
