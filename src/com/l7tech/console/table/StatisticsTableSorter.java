@@ -150,6 +150,7 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
                             return -1;
                         }
                     } else {
+                        logger.warning("Unsupported data type for comparison, sorting is performed.");
                         return 0;
                     }
                 } else {
@@ -164,6 +165,7 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
                             return 1;
                         }
                     } else {
+                        logger.warning("Unsupported data type for comparison, sorting is not performed.");
                         return 0;
                     }
 
