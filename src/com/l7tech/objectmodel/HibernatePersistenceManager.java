@@ -151,7 +151,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
         Session s = h._session;
         try {
             Object o = s.load( clazz, new Long(oid), forUpdate ? LockMode.WRITE : LockMode.READ );
-            // TODO: Is it OK to throw a ClassCastException here?
             return (Entity)o;
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
