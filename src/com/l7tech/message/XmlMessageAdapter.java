@@ -9,6 +9,8 @@ package com.l7tech.message;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.xml.sax.InputSource;
+import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xml.serialize.OutputFormat;
 
 import javax.xml.parsers.*;
 import java.io.*;
@@ -31,6 +33,17 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         } catch ( ParserConfigurationException pce ) {
             throw new SAXException( pce );
         }
+    }
+
+    protected String serializeDoc(Document doc) throws IOException {
+        final StringWriter sw = new StringWriter();
+        XMLSerializer xmlSerializer = new XMLSerializer();
+        xmlSerializer.setOutputCharStream(sw);
+        OutputFormat of = new OutputFormat();
+        of.setIndent(4);
+        xmlSerializer.setOutputFormat(of);
+        xmlSerializer.serialize(doc);
+        return sw.toString();
     }
 
     protected Document _document;
