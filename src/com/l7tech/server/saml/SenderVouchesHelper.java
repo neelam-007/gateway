@@ -1,6 +1,6 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
@@ -49,7 +49,7 @@ class SenderVouchesHelper extends SamlAssertionHelper {
         AuthenticationStatementType at = attachAuthenticationStatement(assertion, now);
 
         SubjectConfirmationType st = at.getSubject().addNewSubjectConfirmation();
-        st.addConfirmationMethod(Constants.CONFIRMATION_SENDER_VOUCHES);
+        st.addConfirmationMethod(SamlConstants.CONFIRMATION_SENDER_VOUCHES);
         return assertionToDocument( assertion );
     }
 }

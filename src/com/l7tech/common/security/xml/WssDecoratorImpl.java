@@ -109,6 +109,10 @@ public class WssDecoratorImpl implements WssDecorator {
         if (session != null)
             sct = addSecurityContextToken(securityHeader, session.getId());
 
+        Element saml = null;
+        if (decorationRequirements.getSenderSamlToken() != null && !signList.isEmpty())
+            saml = addSamlSecurityToken(securityHeader, decorationRequirements.getSenderSamlToken());
+
         Element signature = null;
         if (decorationRequirements.getElementsToSign().size() > 0) {
             Key senderSigningKey = null;
@@ -129,6 +133,13 @@ public class WssDecoratorImpl implements WssDecorator {
                 senderSigningKey = decorationRequirements.getSenderPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
+            } else if (saml != null) {
+                // sign with SAML token
+                keyInfoReferenceTarget = saml;
+                keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509; // TODO USE PROPER SAML ASSERTION VALUETYPE
+                senderSigningKey = decorationRequirements.getSenderPrivateKey();
+                if (senderSigningKey == null)
+                    throw new IllegalArgumentException("Signing is requested with saml:Assertion, but senderPrivateKey is null");
             } else
                 throw new IllegalArgumentException("Signing is requested, but there is no senderCertificate or WS-SecureConversation session");
 
@@ -179,6 +190,19 @@ public class WssDecoratorImpl implements WssDecorator {
                 soapHeader.getParentNode().removeChild(soapHeader);
         }
 
+    }
+
+    private Element addSamlSecurityToken(Element securityHeader, Element senderSamlToken)
+            throws DecoratorException
+    {
+        Document factory = securityHeader.getOwnerDocument();
+        Element saml;
+        if (senderSamlToken.getOwnerDocument() == factory)
+            saml = senderSamlToken;
+        else
+            saml = (Element)factory.importNode(senderSamlToken, true);
+        securityHeader.appendChild(saml);
+        return saml;
     }
 
     private static class DerivedKeyToken {

@@ -10,8 +10,12 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.server.saml.HolderOfKeyHelper;
+import com.l7tech.server.saml.SamlAssertionGenerator;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -21,6 +25,7 @@ import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
@@ -79,6 +84,7 @@ public class WssDecoratorTest extends TestCase {
 
     public static class TestDocument {
         Context c;
+        Element senderSamlAssertion; // may be used instead of senderCert
         X509Certificate senderCert;
         PrivateKey senderKey;
         X509Certificate recipientCert;
@@ -94,11 +100,11 @@ public class WssDecoratorTest extends TestCase {
                             Element[] elementsToEncrypt,
                             Element[] elementsToSign)
         {
-            this(c, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
+            this(c, null, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
                  elementsToEncrypt, elementsToSign, null);
         }
 
-        public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
+        public TestDocument(Context c, Element senderSamlAssertion, X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,
                             boolean signTimestamp,
                             Element[] elementsToEncrypt,
@@ -106,6 +112,7 @@ public class WssDecoratorTest extends TestCase {
                             SecretKey secureConversationKey)
         {
             this.c = c;
+            this.senderSamlAssertion = senderSamlAssertion;
             this.senderCert = senderCert;
             this.senderKey = senderKey;
             this.recipientCert = recipientCert;
@@ -122,6 +129,7 @@ public class WssDecoratorTest extends TestCase {
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
         WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
         reqs.setRecipientCertificate(d.recipientCert);
+        reqs.setSenderSamlToken(d.senderSamlAssertion);
         reqs.setSenderCertificate(d.senderCert);
         reqs.setSenderPrivateKey(d.senderKey);
         reqs.setSignTimestamp(d.signTimestamp);
@@ -310,7 +318,7 @@ public class WssDecoratorTest extends TestCase {
     public TestDocument getSigningOnlyWithSecureConversationTestDocument() throws Exception {
         final Context c = new Context();
         return new TestDocument(c,
-                                null,
+                                null, null,
                                 null,
                                 null,
                                 null,
@@ -327,7 +335,7 @@ public class WssDecoratorTest extends TestCase {
     public TestDocument getSigningAndEncryptionWithSecureConversationTestDocument() throws Exception {
         final Context c = new Context();
         return new TestDocument(c,
-                                null,
+                                null, null,
                                 null,
                                 null,
                                 null,
@@ -335,5 +343,44 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[] { c.productid,  c.accountid },
                                 new Element[] { c.body },
                                 TestDocuments.getDotNetSecureConversationSharedSecret());
+    }
+    
+    public void testSignedSamlHolderOfKeyRequest() throws Exception {
+        runTest(getTestSampleSignedSamlHolderOfKeyRequest());
+    }
+
+    private TestDocument getTestSampleSignedSamlHolderOfKeyRequest() throws Exception {
+        final Context c = new Context();
+        Element senderSamlToken = createSenderSamlToken(TestDocuments.getEttkClientCertificate(),
+                                                        TestDocuments.getDotNetServerCertificate(),
+                                                        TestDocuments.getDotNetServerPrivateKey());
+        return new TestDocument(c,
+                                senderSamlToken,
+                                null,
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[0],
+                                new Element[] { c.body },
+                                null);
+    }
+
+    private Element createSenderSamlToken(X509Certificate subjectCert,
+                                                X509Certificate issuerCert,
+                                                PrivateKey issuerPrivateKey)
+            throws Exception
+    {
+        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+        samlOptions.setClientAddress(InetAddress.getLocalHost());
+        SignerInfo si = new SignerInfo(issuerPrivateKey, new X509Certificate[] { issuerCert });
+        LoginCredentials creds = new LoginCredentials(null, null,
+                                                      CredentialFormat.CLIENTCERT,
+                                                      RequestWssX509Cert.class,
+                                                      null,
+                                                      subjectCert);
+        HolderOfKeyHelper hh = new HolderOfKeyHelper(null, samlOptions, creds, si);
+        Document ass = hh.createSignedAssertion();
+        return ass.getDocumentElement();
     }
 }

@@ -82,12 +82,12 @@ class SoapResponseGenerator {
 
     Document streamSoapMessage(ResponseDocument doc)
       throws SOAPException, IOException, SAXException {
-        return Utilities.asDomSoapMessage(doc);
+        return SamlUtilities.asDomSoapMessage(doc);
     }
 
     public void streamSoapMessage(ResponseDocument response, ServletOutputStream outputStream)
       throws IOException, SAXException, SOAPException {
-        final Document document = Utilities.asDomSoapMessage(response);
+        final Document document = SamlUtilities.asDomSoapMessage(response);
 
         XmlUtil.nodeToOutputStream(document, outputStream);
     }

@@ -8,11 +8,12 @@ package com.l7tech.server.saml;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
@@ -33,6 +34,7 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.SignatureException;
+import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -76,7 +78,7 @@ public abstract class SamlAssertionHelper {
                 throw new SAXException("Can't attach SAML token to non-SOAP message");
             }
             SoapUtil.importNode(soapMessage, doc, secElement);
-            NodeList list = secElement.getElementsByTagNameNS(Constants.NS_SAML, "Assertion");
+            NodeList list = secElement.getElementsByTagNameNS(SamlConstants.NS_SAML, "Assertion");
             if (list.getLength() == 0) {
                 throw new IOException("Cannot locate the saml assertion in \n"+XmlUtil.nodeToString(soapMessage));
             }
@@ -233,7 +235,7 @@ public abstract class SamlAssertionHelper {
         assertion.setMinorVersion(BigInteger.ONE);
         assertion.setMajorVersion(BigInteger.ONE);
         if (assertionId == null)
-            assertion.setAssertionID(Long.toHexString(System.currentTimeMillis())); // TODO figure out a better AssertionID
+            assertion.setAssertionID(generateAssertionId(null));
         else
             assertion.setAssertionID(assertionId);
         assertion.setIssuer(caCn);
@@ -251,14 +253,14 @@ public abstract class SamlAssertionHelper {
         return assertion;
     }
 
-    protected static Document assertionToDocument( AssertionType assertion ) throws IOException, SAXException {
+    public static Document assertionToDocument( AssertionType assertion ) throws IOException, SAXException {
         AssertionDocument assertionDocument = AssertionDocument.Factory.newInstance();
         StringWriter sw = new StringWriter();
         assertionDocument.setAssertion(assertion);
 
         XmlOptions xo = new XmlOptions();
         Map namespaces = new HashMap();
-        namespaces.put(Constants.NS_SAML, Constants.NS_SAML_PREFIX);
+        namespaces.put(SamlConstants.NS_SAML, SamlConstants.NS_SAML_PREFIX);
         xo.setSaveSuggestedPrefixes(namespaces);
         /*
         xo.setSavePrettyPrint();
@@ -283,7 +285,7 @@ public abstract class SamlAssertionHelper {
         NameIdentifierType ni = subject.addNewNameIdentifier();
         if (credentials.getFormat().isClientCert()) {
             X509Certificate cert = (X509Certificate)credentials.getPayload();
-            ni.setFormat(Constants.NAMEIDENTIFIER_X509_SUBJECT);
+            ni.setFormat(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT);
             final String dn = cert.getSubjectDN().getName();
             ni.setStringValue(dn);
             SubjectConfirmationType sc = subject.addNewSubjectConfirmation();
@@ -293,7 +295,7 @@ public abstract class SamlAssertionHelper {
             x509.addX509Certificate(cert.getEncoded());
         } else {
             // TODO add email address etc.
-            ni.setFormat(Constants.NAMEIDENTIFIER_UNSPECIFIED);
+            ni.setFormat(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED);
         }
         if (ni.getStringValue() == null && credentials.getLogin() != null)
             ni.setStringValue(credentials.getLogin());
@@ -306,14 +308,14 @@ public abstract class SamlAssertionHelper {
 
         String authMethod = null;
         if (credentialSourceClass.isAssignableFrom(HttpClientCert.class)) {
-            authMethod = Constants.SSL_TLS_CERTIFICATE_AUTHENTICATION;
+            authMethod = SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION;
         } else if (credentialSourceClass.isAssignableFrom(RequestWssX509Cert.class)) {
-            authMethod = Constants.XML_DSIG_AUTHENTICATION;
+            authMethod = SamlConstants.XML_DSIG_AUTHENTICATION;
         } else if (credentialSourceClass.isAssignableFrom(HttpCredentialSourceAssertion.class) ||
                    credentialSourceClass.isAssignableFrom(WssBasic.class)) {
-            authMethod = Constants.PASSWORD_AUTHENTICATION;
+            authMethod = SamlConstants.PASSWORD_AUTHENTICATION;
         } else {
-            authMethod = Constants.UNSPECIFIED_AUTHENTICATION;
+            authMethod = SamlConstants.UNSPECIFIED_AUTHENTICATION;
         }
 
         authStatement.setAuthenticationMethod(authMethod);
@@ -325,7 +327,7 @@ public abstract class SamlAssertionHelper {
                                      X509Certificate[] signingCertChain) throws SignatureException {
         TemplateGenerator template = new TemplateGenerator( assertionDoc, XSignature.SHA1,
                                                             Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
-        final String id = assertionDoc.getDocumentElement().getAttribute(Constants.ATTR_ASSERTION_ID);
+        final String id = assertionDoc.getDocumentElement().getAttribute(SamlConstants.ATTR_ASSERTION_ID);
         template.setPrefix("ds");
         Reference ref = template.createReference("#" + id);
         ref.addTransform(Transform.ENVELOPED);
@@ -359,9 +361,17 @@ public abstract class SamlAssertionHelper {
         }
     }
 
+    public static String generateAssertionId(String prefix) {
+        if (prefix == null) prefix = "SamlAssertion";
+        byte[] disambig = new byte[16];
+        random.nextBytes(disambig);
+        return prefix + "-" + HexUtils.hexDump(disambig);
+    }
+
     protected SignerInfo signerInfo;
     protected Document soapMessage;
     protected SamlAssertionGenerator.Options options;
     protected LoginCredentials credentials;
     protected final TimeZone utcTimeZone;
+    private static final SecureRandom random = new SecureRandom();
 }

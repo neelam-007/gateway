@@ -1,6 +1,6 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -58,18 +58,18 @@ public class SamlProtocolTest extends TestCase {
         RequestDocument rdoc = RequestDocument.Factory.newInstance();
         RequestType rt = rdoc.addNewRequest();
         AuthenticationQueryType at = rt.addNewAuthenticationQuery();
-        at.setAuthenticationMethod(Constants.PASSWORD_AUTHENTICATION);
+        at.setAuthenticationMethod(SamlConstants.PASSWORD_AUTHENTICATION);
         SubjectType subject = at.addNewSubject();
         NameIdentifierType nameIdentifier = subject.addNewNameIdentifier();
-        nameIdentifier.setFormat(Constants.NAMEIDENTIFIER_X509_SUBJECT);
+        nameIdentifier.setFormat(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT);
         nameIdentifier.setStringValue("cn=joe, o=yellow.com");
 
         XmlOptions options = new XmlOptions();
         // xmlOptions.setSavePrettyPrint();
         //xmlOptions.setSavePrettyPrintIndent(2);
         Map prefixes = new HashMap();
-        prefixes.put(Constants.NS_SAMLP, Constants.NS_SAMLP_PREFIX);
-        prefixes.put(Constants.NS_SAML, Constants.NS_SAML_PREFIX);
+        prefixes.put(SamlConstants.NS_SAMLP, SamlConstants.NS_SAMLP_PREFIX);
+        prefixes.put(SamlConstants.NS_SAML, SamlConstants.NS_SAML_PREFIX);
 
         options.setSaveSuggestedPrefixes(prefixes);
         //Document doc = (Document)rdoc.newDomNode(xmlOptions);
@@ -85,18 +85,18 @@ public class SamlProtocolTest extends TestCase {
         RequestDocument rdoc = RequestDocument.Factory.newInstance();
         RequestType rt = rdoc.addNewRequest();
         AuthenticationQueryType at = rt.addNewAuthenticationQuery();
-        at.setAuthenticationMethod(Constants.PASSWORD_AUTHENTICATION);
+        at.setAuthenticationMethod(SamlConstants.PASSWORD_AUTHENTICATION);
         SubjectType subject = at.addNewSubject();
         NameIdentifierType nameIdentifier = subject.addNewNameIdentifier();
-        nameIdentifier.setFormat(Constants.NAMEIDENTIFIER_X509_SUBJECT);
+        nameIdentifier.setFormat(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT);
         nameIdentifier.setStringValue("cn=joe, o=yellow.com");
         SubjectConfirmationType subjectConfirmation = subject.addNewSubjectConfirmation();
-        subjectConfirmation.setConfirmationMethodArray(new String[]{Constants.CONFIRMATION_HOLDER_OF_KEY});
+        subjectConfirmation.setConfirmationMethodArray(new String[]{SamlConstants.CONFIRMATION_HOLDER_OF_KEY});
 
         SOAPMessage sm = MessageFactory.newInstance().createMessage();
         SOAPBody body = sm.getSOAPPart().getEnvelope().getBody();
         // rdoc.save(System.out, xmlOptions);
-        final Element documentElement = ((Document)rdoc.newDomNode(Utilities.xmlOptions())).getDocumentElement();
+        final Element documentElement = ((Document)rdoc.newDomNode(SamlUtilities.xmlOptions())).getDocumentElement();
         SoapUtil.domToSOAPElement(body, documentElement);
         //sm.writeTo(System.out);
 

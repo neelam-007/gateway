@@ -1,6 +1,6 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.common.security.xml.WssDecoratorImpl;
@@ -55,7 +55,7 @@ class Responses {
         SOAPMessage sm = SoapUtil.makeMessage();
         SOAPBody body = sm.getSOAPPart().getEnvelope().getBody();
 
-        final Document document = (Document)rdoc.newDomNode(Utilities.xmlOptions());
+        final Document document = (Document)rdoc.newDomNode(SamlUtilities.xmlOptions());
         final Element documentElement = document.getDocumentElement();
         SoapUtil.domToSOAPElement(body, documentElement);
         String strMsg = SoapUtil.soapMessageToString(sm, "UTF-8");
@@ -92,11 +92,11 @@ class Responses {
      * @return the precanned 'not implemented' <code>ResponseDocument</code>
      */
     static ResponseDocument getNotImplementedResponse(String detail) {
-        ResponseType notImplemented = ResponseType.Factory.newInstance(Utilities.xmlOptions());
+        ResponseType notImplemented = ResponseType.Factory.newInstance(SamlUtilities.xmlOptions());
         StatusType status = notImplemented.addNewStatus();
         StatusCodeType scode = status.addNewStatusCode();
 
-        scode.setValue(new QName(Constants.NS_SAMLP, Constants.STATUS_RESPONDER));
+        scode.setValue(new QName(SamlConstants.NS_SAMLP, SamlConstants.STATUS_RESPONDER));
         String msg = detail;
         if (msg == null) {
             msg = "Not implemented in this provider/version";
@@ -117,10 +117,10 @@ class Responses {
      * @return the precanned empty  <code>ResponseDocument</code>
      */
     static ResponseDocument getEmptySuccess(String detail) {
-        ResponseType empty = ResponseType.Factory.newInstance(Utilities.xmlOptions());
+        ResponseType empty = ResponseType.Factory.newInstance(SamlUtilities.xmlOptions());
         StatusType status = empty.addNewStatus();
         StatusCodeType scode = status.addNewStatusCode();
-        scode.setValue(new QName(Constants.NS_SAMLP, Constants.STATUS_SUCCESS));
+        scode.setValue(new QName(SamlConstants.NS_SAMLP, SamlConstants.STATUS_SUCCESS));
         if (detail != null) {
             status.setStatusMessage(detail);
         }
@@ -137,10 +137,10 @@ class Responses {
      * @return the precanned empty  <code>ResponseDocument</code>
      */
     static ResponseDocument getBadRequest(String detail) {
-        ResponseType empty = ResponseType.Factory.newInstance(Utilities.xmlOptions());
+        ResponseType empty = ResponseType.Factory.newInstance(SamlUtilities.xmlOptions());
         StatusType status = empty.addNewStatus();
         StatusCodeType scode = status.addNewStatusCode();
-        scode.setValue(new QName(Constants.NS_SAMLP, Constants.STATUS_SUCCESS));
+        scode.setValue(new QName(SamlConstants.NS_SAMLP, SamlConstants.STATUS_SUCCESS));
         if (detail != null) {
             status.setStatusMessage(detail);
         }

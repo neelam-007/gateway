@@ -6,7 +6,7 @@ package com.l7tech.common.security.saml;
  * @author emil
  * @version 27-Jul-2004
  */
-public class Constants {
+public class SamlConstants {
     /** namespaces */
     public static final String NS_SAML = "urn:oasis:names:tc:SAML:1.0:assertion";
     public static final String NS_SAML_PREFIX = "saml";
@@ -54,7 +54,7 @@ public class Constants {
     /**
      * Cannot instantiate this class
      */
-    private Constants() {
+    private SamlConstants() {
     }
 
 }

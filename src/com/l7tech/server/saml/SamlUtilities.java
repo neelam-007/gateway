@@ -1,6 +1,6 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import org.apache.xmlbeans.XmlOptions;
@@ -22,11 +22,11 @@ import java.util.Map;
 import java.io.IOException;
 
 /**
- * Package private class with saml protocol utility methods.
+ * Public class with saml protocol utility methods.
  * @author emil
  * @version 5-Aug-2004
  */
-class Utilities {
+public class SamlUtilities {
     /**
      * Tests if the response document has a success status.
      *
@@ -50,14 +50,14 @@ class Utilities {
         }
 
         QName qn = scode.getValue();
-        return Constants.STATUS_SUCCESS.equals(qn.getLocalPart());
+        return SamlConstants.STATUS_SUCCESS.equals(qn.getLocalPart());
     }
 
-    static XmlOptions xmlOptions() {
+    public static XmlOptions xmlOptions() {
         XmlOptions options = new XmlOptions();
         Map prefixes = new HashMap();
-        prefixes.put(Constants.NS_SAMLP, Constants.NS_SAMLP_PREFIX);
-        prefixes.put(Constants.NS_SAML, Constants.NS_SAML_PREFIX);
+        prefixes.put(SamlConstants.NS_SAMLP, SamlConstants.NS_SAMLP_PREFIX);
+        prefixes.put(SamlConstants.NS_SAML, SamlConstants.NS_SAML_PREFIX);
         options.setSaveSuggestedPrefixes(prefixes);
         return options;
     }
@@ -66,7 +66,7 @@ class Utilities {
         SOAPMessage sm = SoapUtil.makeMessage();
         SOAPBody body = sm.getSOAPPart().getEnvelope().getBody();
 
-        final Document document = (Document)doc.newDomNode(Utilities.xmlOptions());
+        final Document document = (Document)doc.newDomNode(SamlUtilities.xmlOptions());
         final Element documentElement = document.getDocumentElement();
 
         SoapUtil.domToSOAPElement(body, documentElement);

@@ -6,7 +6,7 @@
 
 package com.l7tech.server.saml;
 
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
@@ -64,7 +64,7 @@ public class HolderOfKeyHelper extends SamlAssertionHelper {
         AuthenticationStatementType at = attachAuthenticationStatement(assertion, now);
 
         SubjectConfirmationType sc = at.getSubject().getSubjectConfirmation();
-        sc.addConfirmationMethod(Constants.CONFIRMATION_HOLDER_OF_KEY);
+        sc.addConfirmationMethod(SamlConstants.CONFIRMATION_HOLDER_OF_KEY);
 
         return assertionToDocument( assertion );
     }

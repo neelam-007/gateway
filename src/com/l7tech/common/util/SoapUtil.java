@@ -9,6 +9,7 @@ package com.l7tech.common.util;
 import com.l7tech.common.xml.ElementAlreadyExistsException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.security.saml.SamlConstants;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -392,7 +393,14 @@ public class SoapUtil {
         if (id == null || id.length() < 1) {
             id = node.getAttributeNS(SoapUtil.WSU_NAMESPACE2, ID_ATTRIBUTE_NAME);
             if (id == null || id.length() < 1) {
-                id = node.getAttribute(ID_ATTRIBUTE_NAME);
+                // Special handling for saml:Assertion
+                if (SamlConstants.NS_SAML.equals(node.getNamespaceURI()) &&
+                    SamlConstants.ELEMENT_ASSERTION.equals(node.getLocalName())) {
+                    id = node.getAttribute(SamlConstants.ATTR_ASSERTION_ID);
+                }
+
+                if (id == null || id.length() < 1)
+                    id = node.getAttribute(ID_ATTRIBUTE_NAME);
             }
         }
         // for some reason this is set to "" when not present.

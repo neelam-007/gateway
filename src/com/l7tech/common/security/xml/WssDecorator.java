@@ -9,6 +9,7 @@ package com.l7tech.common.security.xml;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
@@ -92,6 +93,14 @@ public interface WssDecorator {
             this.usernameTokenCredentials = usernameTokenCredentials;
         }
 
+        public Element getSenderSamlToken() {
+            return senderSamlToken;
+        }
+
+        public void setSenderSamlToken(Element senderSamlToken) {
+            this.senderSamlToken = senderSamlToken;
+        }
+
         public SecureConversationSession getSecureConversationSession() {
             return secureConversationSession;
         }
@@ -108,6 +117,7 @@ public interface WssDecorator {
         private X509Certificate recipientCertificate = null;
         private X509Certificate senderCertificate = null;
         private LoginCredentials usernameTokenCredentials = null;
+        private Element senderSamlToken = null;
         private SecureConversationSession secureConversationSession = null;
         private PrivateKey senderPrivateKey = null;
         private boolean signTimestamp;

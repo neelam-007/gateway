@@ -6,7 +6,7 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -78,7 +78,7 @@ public class TokenServiceTest extends TestCase {
                 TestDocuments.getDotNetServerCertificate(),
                 TestDocuments.getDotNetServerPrivateKey(),
                 "saml:Assertion");
-        requestMsg.getDocumentElement().setAttribute("xmlns:saml", Constants.NS_SAML);
+        requestMsg.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
         final TokenService service = new TokenService(TestDocuments.getDotNetServerPrivateKey(),

@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -383,12 +383,12 @@ public class TokenService {
         // validate <wst:TokenType>saml:Assertion</wst:TokenType>
         String qname = XmlUtil.getTextValue(tokenTypeEl);
         Map namespaces = XmlUtil.getAncestorNamespaces(tokenTypeEl);
-        String samlPrefix = (String)namespaces.get(Constants.NS_SAML);
+        String samlPrefix = (String)namespaces.get(SamlConstants.NS_SAML);
         int cpos = qname.indexOf(":");
         if (cpos > 0) {
             String qprefix = qname.substring(0,cpos);
             String qlpart = qname.substring(cpos+1);
-            if (qprefix.equals(samlPrefix) && Constants.ELEMENT_ASSERTION.equals(qlpart)) {
+            if (qprefix.equals(samlPrefix) && SamlConstants.ELEMENT_ASSERTION.equals(qlpart)) {
                 return true;
             }
         }

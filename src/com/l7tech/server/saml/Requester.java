@@ -1,6 +1,6 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.apache.commons.httpclient.HttpClient;
@@ -59,7 +59,7 @@ public class Requester {
         }
         SubjectType subject = at.addNewSubject();
         NameIdentifierType nameIdentifier = subject.addNewNameIdentifier();
-        nameIdentifier.setFormat(Constants.NAMEIDENTIFIER_UNSPECIFIED);
+        nameIdentifier.setFormat(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED);
         nameIdentifier.setStringValue(subjectName);
 
         return sendRequest(rdoc);
@@ -75,7 +75,7 @@ public class Requester {
     public ResponseDocument sendRequest(RequestDocument doc) throws SamlException {
         PostMethod postMethod = new PostMethod(serviceUrl);
         postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
-        postMethod.setRequestBody(doc.newInputStream(Utilities.xmlOptions()));
+        postMethod.setRequestBody(doc.newInputStream(SamlUtilities.xmlOptions()));
         try {
             int status = client.executeMethod(postMethod);
             if (status !=200) {

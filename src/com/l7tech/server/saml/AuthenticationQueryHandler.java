@@ -1,6 +1,6 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import org.apache.xmlbeans.XmlOptions;
 import x0Assertion.oasisNamesTcSAML1.*;
 import x0Protocol.oasisNamesTcSAML1.*;
@@ -48,26 +48,26 @@ public class AuthenticationQueryHandler implements SamlRequestHandler {
         if (response !=null) {
             return response;
         }
-        final XmlOptions xmlOptions = Utilities.xmlOptions();
+        final XmlOptions xmlOptions = SamlUtilities.xmlOptions();
         response =  ResponseDocument.Factory.newInstance();
         ResponseType responseType = ResponseType.Factory.newInstance();
         StatusType status = StatusType.Factory.newInstance();
         StatusCodeType statusCode = StatusCodeType.Factory.newInstance(xmlOptions);
-        statusCode.setValue(new QName(Constants.NS_SAMLP, Constants.STATUS_SUCCESS));
+        statusCode.setValue(new QName(SamlConstants.NS_SAMLP, SamlConstants.STATUS_SUCCESS));
         status.setStatusCode(statusCode);
         responseType.setStatus(status);
 
         AssertionType assertion = responseType.addNewAssertion();
         AuthenticationStatementType authStatement = assertion.addNewAuthenticationStatement();
         authStatement.setAuthenticationInstant(Calendar.getInstance());
-        authStatement.setAuthenticationMethod(Constants.PASSWORD_AUTHENTICATION);
+        authStatement.setAuthenticationMethod(SamlConstants.PASSWORD_AUTHENTICATION);
         SubjectType subjectType = authStatement.addNewSubject();
         NameIdentifierType nameIdentifier = subjectType.addNewNameIdentifier();
-        nameIdentifier.setFormat(Constants.NAMEIDENTIFIER_X509_SUBJECT);
+        nameIdentifier.setFormat(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT);
         final String subjectName = getRequestNameIdentifierValue();
         nameIdentifier.setStringValue(subjectName);
         SubjectConfirmationType subjectConfirmation = subjectType.addNewSubjectConfirmation();
-        subjectConfirmation.addConfirmationMethod(Constants.CONFIRMATION_HOLDER_OF_KEY);
+        subjectConfirmation.addConfirmationMethod(SamlConstants.CONFIRMATION_HOLDER_OF_KEY);
 
         response.setResponse(responseType);
         return response;

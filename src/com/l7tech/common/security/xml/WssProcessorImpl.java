@@ -8,7 +8,7 @@ import com.ibm.xml.enc.StructureException;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -189,8 +189,8 @@ public class WssProcessorImpl implements WssProcessor {
                     logger.info("Encountered ReferenceList element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
-            }  else if (securityChildToProcess.getLocalName().equals(Constants.ELEMENT_ASSERTION)) {
-                if ( securityChildToProcess.getNamespaceURI().equals(Constants.NS_SAML) ) {
+            }  else if (securityChildToProcess.getLocalName().equals(SamlConstants.ELEMENT_ASSERTION)) {
+                if ( securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML) ) {
                     processSamlSecurityToken(securityChildToProcess, cntx);
                 } else {
                     logger.info("Encountered SAML Assertion element but not of expected namespace (" +
@@ -1070,7 +1070,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         public String getElementId() {
-            return element.getAttribute(Constants.ATTR_ASSERTION_ID);
+            return element.getAttribute(SamlConstants.ATTR_ASSERTION_ID);
         }
 
         public String toString() {
