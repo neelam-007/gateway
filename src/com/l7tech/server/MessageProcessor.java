@@ -56,17 +56,17 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final AuditContext auditContext;
 
     /**
-     * Create the new <code>MessageProcessor</code> instance with the service
-     * manager, Wss Decorator instance and the server private key.
-     * All arguments are required
-     *
-     * @param sm   the service manager
-     * @param wssd the Wss Decorator
-     * @param pkey the server private key
-     * @param pkey the server certificate
-     * @param auditContext the audit context
-     * @throws IllegalArgumentException if any of the arguments is null
-     */
+         * Create the new <code>MessageProcessor</code> instance with the service
+         * manager, Wss Decorator instance and the server private key.
+         * All arguments are required
+         *
+         * @param sm           the service manager
+         * @param wssd         the Wss Decorator
+         * @param pkey         the server private key
+         * @param pkey         the server certificate
+         * @param auditContext the audit context
+         * @throws IllegalArgumentException if any of the arguments is null
+         */
     public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert, AuditContext auditContext)
       throws IllegalArgumentException {
         if (sm == null) {
@@ -105,57 +105,61 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         final Message response = context.getResponse();
         context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
         ProcessorResult wssOutput = null;
+        AssertionStatus status = AssertionStatus.UNDEFINED;
 
         // WSS-Processing Step
-        boolean isSoap = false;
-        boolean hasSecurity = false;
-
         try {
-            isSoap = context.getRequest().isSoap();
-            hasSecurity = context.getRequest().getSoapKnob().isSecurityHeaderPresent();
-        } catch (SAXException e) {
-            auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT, null, e);
-            return AssertionStatus.BAD_REQUEST;
-        } catch (MessageNotSoapException e) {
-            auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, e); // TODO remove this or downgrade to FINE
-        }
+            boolean isSoap = false;
+            boolean hasSecurity = false;
 
-        if (isSoap && hasSecurity) {
-            WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
             try {
-                final XmlKnob reqXml = request.getXmlKnob();
-                wssOutput = trogdor.undecorateMessage(request,
-                                                      serverCertificate,
-                                                      serverPrivateKey,
-                                                      SecureConversationContextManager.getInstance());
-                reqXml.setProcessorResult(wssOutput);
-            } catch (MessageNotSoapException e) {
-                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);
-                // this shouldn't be possible now
-                // pass through, leaving wssOutput as null
-            } catch (ProcessorException e) {
-                auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                return AssertionStatus.SERVER_ERROR;
-            } catch (InvalidDocumentFormatException e) {
-                auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                return AssertionStatus.SERVER_ERROR;
-            } catch (GeneralSecurityException e) {
-                auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                return AssertionStatus.SERVER_ERROR;
+                isSoap = context.getRequest().isSoap();
+                hasSecurity = context.getRequest().getSoapKnob().isSecurityHeaderPresent();
             } catch (SAXException e) {
-                auditor.logAndAudit(MessageProcessingMessages.ERROR_RETRIEVE_XML, null, e);
-                return AssertionStatus.SERVER_ERROR;
-            } catch (BadSecurityContextException e) {
-                auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                context.setFaultDetail(e);
-                return AssertionStatus.FAILED;
+                auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT, null, e);
+                return AssertionStatus.BAD_REQUEST;
+            } catch (MessageNotSoapException e) {
+                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, e); // TODO remove this or downgrade to FINE
             }
-            auditor.logAndAudit(MessageProcessingMessages.WSS_PROCESSING_COMPLETE);
-        }
 
-        // Policy Verification Step
-        AssertionStatus status = AssertionStatus.UNDEFINED;
-        try {
+            if (isSoap && hasSecurity) {
+                WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
+                try {
+                    final XmlKnob reqXml = request.getXmlKnob();
+                    wssOutput = trogdor.undecorateMessage(request,
+                        serverCertificate,
+                        serverPrivateKey,
+                        SecureConversationContextManager.getInstance());
+                    reqXml.setProcessorResult(wssOutput);
+                } catch (MessageNotSoapException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);
+                    // this shouldn't be possible now
+                    // pass through, leaving wssOutput as null
+                } catch (ProcessorException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    return AssertionStatus.SERVER_ERROR;
+                } catch (InvalidDocumentFormatException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    context.setAuditLevel(Level.SEVERE);
+                    return AssertionStatus.SERVER_ERROR;
+                } catch (GeneralSecurityException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    context.setAuditLevel(Level.SEVERE);
+                    return AssertionStatus.SERVER_ERROR;
+                } catch (SAXException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_RETRIEVE_XML, null, e);
+                    context.setAuditLevel(Level.SEVERE);
+                    return AssertionStatus.SERVER_ERROR;
+                } catch (BadSecurityContextException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    context.setAuditLevel(Level.SEVERE);
+                    context.setFaultDetail(e);
+                    return AssertionStatus.FAILED;
+                }
+                auditor.logAndAudit(MessageProcessingMessages.WSS_PROCESSING_COMPLETE);
+            }
+
+            // Policy Verification Step
             PublishedService service = serviceManager.resolve(context.getRequest());
 
             if (service == null) {
