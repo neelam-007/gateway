@@ -122,6 +122,7 @@ public class StatusUpdater extends Thread {
     public void updateServiceUsage() {
         // get service usage from local cache
         ServiceManager serviceManager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+        String ourid = clusterInfoManager.thisNodeId();
         Collection stats = null;
         try {
             stats = serviceManager.getAllServiceStatistics();
@@ -130,7 +131,7 @@ public class StatusUpdater extends Thread {
         }
         if (stats != null) {
             try {
-                serviceUsageManager.clear();
+                serviceUsageManager.clear(ourid);
             } catch (DeleteException e) {
                 logger.log(Level.SEVERE, "could not update service usage");
                 return;
@@ -139,7 +140,7 @@ public class StatusUpdater extends Thread {
                 ServiceStatistics statobj = (ServiceStatistics)i.next();
                 ServiceUsage sa = new ServiceUsage();
                 sa.setServiceid(statobj.getServiceOid());
-                sa.setNodeid(clusterInfoManager.thisNodeId());
+                sa.setNodeid(ourid);
                 sa.setAuthorized(statobj.getAuthorizedRequestCount());
                 sa.setCompleted(statobj.getCompletedRequestCount());
                 sa.setRequests(statobj.getAttemptedRequestCount());

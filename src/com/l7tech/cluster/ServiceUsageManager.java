@@ -66,13 +66,17 @@ public class ServiceUsageManager {
     }
 
     /**
-     * clears the table
+     * clears the table of existing entries for this server
      */
-    public void clear() throws DeleteException {
+    public void clear(String nodeid) throws DeleteException {
         try {
             HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             Session session = pc.getSession();
-            session.delete("from " + TABLE_NAME + " in class " + ServiceUsage.class.getName());
+
+            String delQuery = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName() +
+                              " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME +
+                              " = \'" + nodeid + "\'";
+            session.delete(delQuery);
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "error clearing table", e);
         } catch (HibernateException e) {
@@ -82,4 +86,5 @@ public class ServiceUsageManager {
 
     private final Logger logger = LogManager.getInstance().getSystemLogger();
     public static final String TABLE_NAME = "service_usage";
+    public static final String NODE_ID_COLUMN_NAME = "nodeid";
 }
