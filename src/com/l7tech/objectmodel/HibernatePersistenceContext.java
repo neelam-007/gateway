@@ -260,6 +260,23 @@ public class HibernatePersistenceContext extends PersistenceContext {
         txListenerList.add(listener);
     }
 
+    public Object doInTransaction(PersistenceAction r) throws ObjectModelException {
+        beginTransaction();
+        boolean ok = false;
+        Object result;
+        try {
+            result = r.run();
+            ok = true;
+        } finally {
+            if ( ok )
+                commitTransaction();
+            else
+                rollbackTransaction();
+        }
+        return result;
+    }
+
+
     protected HibernatePersistenceManager _manager;
     protected Session _session;
     protected DataSource _dataSource;
