@@ -135,6 +135,12 @@ public class DefaultPolicyValidator extends PolicyValidator {
                   new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
                 );
             }
+
+            if (seenCredentials) {
+                result.addWarning(
+                  new PolicyValidatorResult.Warning(a, "You already have a credential assertion.", null)
+                );
+            }
             seenCredentials = true;
         }
 
