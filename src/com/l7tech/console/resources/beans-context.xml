@@ -16,7 +16,7 @@
 
     <bean id="rmiClientSocketFactory" class="com.l7tech.remote.rmi.ssl.SslRMIClientSocketFactory"/>
 
-    <bean id="adminLogin" class="com.l7tech.remote.rmi.EditableRmiProxyFactoryBean">
+    <bean id="adminLogin" class="com.l7tech.remote.rmi.ResettableRmiProxyFactoryBean">
         <property name="serviceInterface">
             <value>com.l7tech.admin.AdminLogin</value>
         </property>

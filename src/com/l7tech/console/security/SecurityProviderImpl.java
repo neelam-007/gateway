@@ -4,7 +4,7 @@ import com.l7tech.admin.AdminContext;
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.common.VersionException;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.remote.rmi.EditableRmiProxyFactoryBean;
+import com.l7tech.remote.rmi.ResettableRmiProxyFactoryBean;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -36,7 +36,7 @@ public class SecurityProviderImpl extends SecurityProvider
         setCredentials(creds);
 
         try {
-            EditableRmiProxyFactoryBean bean = (EditableRmiProxyFactoryBean)applicationContext.getBean("&adminLogin");
+            ResettableRmiProxyFactoryBean bean = (ResettableRmiProxyFactoryBean)applicationContext.getBean("&adminLogin");
             bean.setServiceUrl(namingURL);
             bean.resetStub();
             AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
