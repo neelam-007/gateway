@@ -23,15 +23,24 @@ public class DigestSessions {
         return _instance;
     }
 
-    public boolean canUse( String nonce ) {
-        NonceInfo info = (NonceInfo)_nonceInfos.get( nonce );
+    public boolean use( String nonce ) {
+        NonceInfo info;
+        synchronized( _nonceInfos ) {
+            info = (NonceInfo)_nonceInfos.get( nonce );
+        }
         if ( info == null ) return false;
         long currentTime = System.currentTimeMillis();
         synchronized( info ) {
-            if ( info._expires >= currentTime ) return false;
+            if ( info._expires <= currentTime ) return false;
             if ( info._uses++ > info._maxUses ) return false;
         }
         return true;
+    }
+
+    public void invalidate( String nonce ) {
+        synchronized( _nonceInfos ) {
+            _nonceInfos.remove( nonce );
+        }
     }
 
     /**
@@ -41,7 +50,7 @@ public class DigestSessions {
      *
      * @param request HTTP Servlet request
      */
-    public String generateNonce( Request request, int timeout, int maxUses ) {
+    public String generate( Request request, int timeout, int maxUses ) {
         long currentTime = System.currentTimeMillis();
 
         String nonceValue = request.getTransportMetadata().getParameter( Request.PARAM_REMOTE_ADDR ) + ":" +
@@ -51,7 +60,9 @@ public class DigestSessions {
         nonceValue = HexUtils.encodeMd5Digest(buffer);
 
         // Updating the value in the nonce hashtable
-        _nonceInfos.put( nonceValue, new NonceInfo( currentTime + timeout, maxUses ) );
+        synchronized( _nonceInfos ) {
+            _nonceInfos.put( nonceValue, new NonceInfo( currentTime + timeout, maxUses ) );
+        }
 
         return nonceValue;
     }
