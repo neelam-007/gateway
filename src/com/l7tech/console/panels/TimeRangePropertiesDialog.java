@@ -3,6 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -64,6 +66,52 @@ public class TimeRangePropertiesDialog extends JDialog {
         }
     }
 
+    private void refreshStartUTCLabel() {
+        // calculate corresponding UTC start time
+        SpinnerNumberModel spinModel = (SpinnerNumberModel)startHr.getModel();
+        int localhr = spinModel.getNumber().intValue();
+        spinModel = (SpinnerNumberModel)startMin.getModel();
+        int localmin = spinModel.getNumber().intValue();
+        spinModel = (SpinnerNumberModel)startSec.getModel();
+        int localsec = spinModel.getNumber().intValue();
+        int utchr = localhr - hroffset;
+        int utcmin = localmin - minoffset;
+        while (utcmin >= 60) {
+            ++utchr;
+            utcmin -= 60;
+        }
+        while (utchr >= 24) {
+            utchr -= 24;
+        }
+        String utclabelvalue = (utchr < 10 ? "0" : "") + utchr +
+                               (utcmin < 10 ? ":0" : ":") + utcmin +
+                               (localsec < 10 ? ":0" : ":") + localsec;
+        utcStartTime.setText(utclabelvalue);
+    }
+
+    private void refreshEndUTCLabel() {
+        // calculate corresponding UTC end time
+        SpinnerNumberModel spinModel = (SpinnerNumberModel)endHr.getModel();
+        int localhr = spinModel.getNumber().intValue();
+        spinModel = (SpinnerNumberModel)endMin.getModel();
+        int localmin = spinModel.getNumber().intValue();
+        spinModel = (SpinnerNumberModel)endSec.getModel();
+        int localsec = spinModel.getNumber().intValue();
+        int utchr = localhr - hroffset;
+        int utcmin = localmin - minoffset;
+        while (utcmin >= 60) {
+            ++utchr;
+            utcmin -= 60;
+        }
+        while (utchr >= 24) {
+            utchr -= 24;
+        }
+        String utclabelvalue = (utchr < 10 ? "0" : "") + utchr +
+                               (utcmin < 10 ? ":0" : ":") + utcmin +
+                               (localsec < 10 ? ":0" : ":") + localsec;
+        utcEndTime.setText(utclabelvalue);
+    }
+
     /**
      * create controls and layout
      */
@@ -72,6 +120,10 @@ public class TimeRangePropertiesDialog extends JDialog {
 
         itemsToToggleForTimeOfDay.clear();
         itemsToToggleForDayOfWeek.clear();
+        // calculate UTC offset
+        int totOffsetInMin = Calendar.getInstance().getTimeZone().getRawOffset() / (1000*60);
+        hroffset = totOffsetInMin/60;
+        minoffset = totOffsetInMin%60;
 
         setTitle("Time Range Assertion Properties");
         Container contents = getContentPane();
@@ -107,6 +159,45 @@ public class TimeRangePropertiesDialog extends JDialog {
                 toggleDayOfWeek();
             }
         });
+        startHr.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                refreshStartUTCLabel();
+            }
+        });
+        endHr.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                refreshEndUTCLabel();
+            }
+        });
+        startMin.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                refreshStartUTCLabel();
+            }
+        });
+        endMin.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                refreshEndUTCLabel();
+            }
+        });
+        startSec.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                refreshStartUTCLabel();
+            }
+        });
+        endSec.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                refreshEndUTCLabel();
+            }
+        });
+
+        setValuesToAssertion();
+    }
+
+    private void setValuesToAssertion() {
+        // todo, get values from the assertion and display in dialog
+        // display UTC corresponding times
+        refreshStartUTCLabel();
+        refreshEndUTCLabel();
     }
 
     private void initResources() {
@@ -191,7 +282,7 @@ public class TimeRangePropertiesDialog extends JDialog {
         return timeOfDayPanel;
     }
 
-    public JPanel griddedDayOfWeekPanel() {
+    private JPanel griddedDayOfWeekPanel() {
         JPanel dayOfWeekPanel = new JPanel();
         dayOfWeekPanel.setLayout(new GridBagLayout());
 
@@ -218,17 +309,51 @@ public class TimeRangePropertiesDialog extends JDialog {
         return dayOfWeekPanel;
     }
 
+    private JPanel utcConversionPanel() {
+        JPanel utcConversionPanel = new JPanel();
+        utcConversionPanel.setLayout(new GridBagLayout());
+
+        int nfill = GridBagConstraints.NONE;
+        int fill = GridBagConstraints.HORIZONTAL;
+        int dir = GridBagConstraints.WEST;
+        double weightx = 1.0;
+        Insets insets = new Insets(0, 0, 0, CONTROL_SPACING*3);
+
+        JLabel toto = new JLabel("between");
+        itemsToToggleForTimeOfDay.add(toto);
+        utcConversionPanel.add(toto, new GridBagConstraints(0, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        utcStartTime = new JLabel("06:00:00");
+        itemsToToggleForTimeOfDay.add(utcStartTime);
+        utcConversionPanel.add(utcStartTime, new GridBagConstraints(1, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        toto = new JLabel("UTC");
+        itemsToToggleForTimeOfDay.add(toto);
+        utcConversionPanel.add(toto, new GridBagConstraints(2, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
+
+        toto = new JLabel("and");
+        itemsToToggleForTimeOfDay.add(toto);
+        utcConversionPanel.add(toto, new GridBagConstraints(0, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        utcEndTime = new JLabel("21:00:00");
+        itemsToToggleForTimeOfDay.add(utcEndTime);
+        utcConversionPanel.add(utcEndTime, new GridBagConstraints(1, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        toto = new JLabel("UTC");
+        itemsToToggleForTimeOfDay.add(toto);
+        utcConversionPanel.add(toto, new GridBagConstraints(2, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
+
+        return utcConversionPanel;
+    }
+
     private JComponent mainPanel() {
 
         JPanel timeOfDayPanel = new JPanel();
-        timeOfDayPanel.setLayout(new GridLayout(5, 1, CONTROL_SPACING, 0));
+        timeOfDayPanel.setLayout(new GridLayout(6, 1, 0, 0));
         JPanel titlePanel = new JPanel();
-        titlePanel.setLayout(new FlowLayout(FlowLayout.LEADING, CONTROL_SPACING, 0));
+        titlePanel.setLayout(new FlowLayout(FlowLayout.LEADING, 0, 0));
         enableTimeOfDay = new JCheckBox("Restrict time of day");
         titlePanel.add(enableTimeOfDay);
         enableTimeOfDay.setSelected(true);
         timeOfDayPanel.add(titlePanel);
         timeOfDayPanel.add(makeGriddedTimeOfDaySubPanel());
+        timeOfDayPanel.add(utcConversionPanel());
         timeOfDayPanel.add(new JLabel(""));
 
         titlePanel = new JPanel();
@@ -307,6 +432,8 @@ public class TimeRangePropertiesDialog extends JDialog {
     private JSpinner endMin;
     private JSpinner startSec;
     private JSpinner endSec;
+    private JLabel utcStartTime;
+    private JLabel utcEndTime;
 
     private JCheckBox enableDayOfWeek;
     private JSpinner startDay;
@@ -317,6 +444,8 @@ public class TimeRangePropertiesDialog extends JDialog {
                                                        "Saturday"};
     private final Collection itemsToToggleForTimeOfDay = new ArrayList();
     private final Collection itemsToToggleForDayOfWeek = new ArrayList();
+    private int hroffset;
+    private int minoffset;
 
     private ResourceBundle resources;
 
