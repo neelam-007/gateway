@@ -16,21 +16,35 @@ import java.util.Enumeration;
  * @version 1.1
  */
 public class UserFolderNode extends AbstractTreeNode {
-    public static String NAME = "Users";
+    public static String INTERNAL_USERS_NAME = "Internal Users";
 
     private UserManager userManager;
     private long providerId;
+    private String name;
 
     /**
      * construct the <CODE>UserFolderNode</CODE> instance
      *
-     * @param um the children enumeration
+     * @param um the user manager
      */
     public UserFolderNode(UserManager um, long providerId) {
+       this(um, providerId, INTERNAL_USERS_NAME);
+    }
+
+    /**
+     * construct the <CODE>UserFolderNode</CODE> instance
+     *
+     * @param um the user manager
+     * @param providerId the provider id
+     * @param name the folder name
+     */
+    public UserFolderNode(UserManager um, long providerId, String name) {
         super(null);
         userManager = um;
         this.providerId = providerId;
+        this.name = name;
     }
+
 
     /**
      * Returns true if the receiver is a leaf.
@@ -73,7 +87,7 @@ public class UserFolderNode extends AbstractTreeNode {
      * @return the name as a String
      */
     public String getName() {
-        return NAME;
+        return name;
     }
 
 
@@ -87,7 +101,7 @@ public class UserFolderNode extends AbstractTreeNode {
             new EntitiesEnumeration(new UserEntitiesCollection(userManager)));
         int index = 0;
         for (; e.hasMoreElements();) {
-            insert((MutableTreeNode) e.nextElement(), index++);
+            insert((MutableTreeNode)e.nextElement(), index++);
         }
     }
 

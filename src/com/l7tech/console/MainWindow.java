@@ -5,6 +5,7 @@ import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
 import com.l7tech.console.action.AboutAction;
 import com.l7tech.console.action.ConsoleAction;
 import com.l7tech.console.action.HomeAction;
+import com.l7tech.console.action.FindIdentityAction;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.Utilities;
@@ -451,28 +452,7 @@ public class MainWindow extends JFrame {
      */
     private Action getFindAction() {
         if (findAction != null) return findAction;
-        String atext = resapplication.getString("Find_MenuItem_text");
-        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Find16.gif"));
-
-        findAction =
-          new AbstractAction(atext, icon) {
-              /**
-               * Invoked when an action occurs.
-               *
-               * @param event  the event that occured
-               * @see Action#removePropertyChangeListener
-               */
-              public void actionPerformed(ActionEvent event) {
-//
-//                  EntityTreeNode context =
-//                    (EntityTreeNode)getAssertionPaletteTree().getModel().getRoot();
-//                  JDialog d = new FindDialog(MainWindow.this, true, context, listenerBroker);
-//                  d.setLocation(MainWindow.this.getLocationOnScreen());
-//                  d.show();
-              }
-          };
-        findAction.putValue(Action.SHORT_DESCRIPTION, atext);
-        findAction.setEnabled(false);
+        findAction = new FindIdentityAction();
         return findAction;
     }
 
@@ -528,6 +508,7 @@ public class MainWindow extends JFrame {
      * @param connected true if connected, false otherwise
      */
     private void toggleConnectedMenus(boolean connected) {
+        getFindAction().setEnabled(connected);
         getDisconnectAction().setEnabled(connected);
         getConnectAction().setEnabled(!connected);
     }

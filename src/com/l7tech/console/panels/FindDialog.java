@@ -1,17 +1,24 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.table.DynamicTableModel;
-import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelListener;
+import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * Find Dialog
@@ -19,8 +26,6 @@ import java.util.*;
  * @version 1.2
  */
 public class FindDialog extends JDialog {
-    private final ClassLoader cl = getClass().getClassLoader();
-
     static Map oTypes = new TreeMap(); // sorted
 
     static {
@@ -44,14 +49,12 @@ public class FindDialog extends JDialog {
     private String CMD_FIND = "cmd.find";
     /** name search options */
     private static final
-    String[] NAME_SEARCH_OPTIONS = {"equals", "contains"};
+    String[] NAME_SEARCH_OPTIONS = {"equals", "starts with"};
 
 
     private JPanel mainPanel = null;
-    private JButton fromButton = null;
     private JTextField nameField = null;
-    private JTextField fromField = null;
-    private JCheckBox fqNamesCheckBox = null;
+    private JComboBox providersComboBox = null;
     private JComboBox searchNameOptions = null;
     private JComboBox searchType = null;
 
@@ -71,6 +74,7 @@ public class FindDialog extends JDialog {
 
     /** the search info with search expression and parameters */
     private SearchInfo searchInfo = new SearchInfo();
+    private DefaultComboBoxModel providersComboBoxModel;
 
     /**
      * Creates new FindDialog for a given context
@@ -146,7 +150,7 @@ public class FindDialog extends JDialog {
         constraints.insets = new Insets(12, 12, 0, 0);
         contents.add(descLabel, constraints);
 
-        searchTabs.addTab("General", getGeneralSearchPanel());
+        searchTabs.addTab("Details", getGeneralSearchPanel());
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 1;
@@ -195,10 +199,10 @@ public class FindDialog extends JDialog {
         contents.setLayout(new GridBagLayout());
 
         // "from" label
-        JLabel fromLabel = new JLabel();
-        fromLabel.setDisplayedMnemonic(
-          resources.getString("fromText.mnemonic").charAt(0));
-        fromLabel.setText(resources.getString("fromText.label"));
+        JLabel selectProviderLabel = new JLabel();
+        selectProviderLabel.setDisplayedMnemonic(
+          resources.getString("selectProviderText.mnemonic").charAt(0));
+        selectProviderLabel.setText(resources.getString("selectProviderText.label"));
 
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.gridx = 0;
@@ -206,40 +210,42 @@ public class FindDialog extends JDialog {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(12, 12, 0, 0);
-        contents.add(fromLabel, constraints);
+        contents.add(selectProviderLabel, constraints);
 
-        // text field for context (from)
-        fromField = new JTextField(15);
-        fromField.setText(" does this goes away?");
-        fromField.setToolTipText(resources.getString("fromText.tooltip"));
+        // provider to search
+
+        providersComboBox = new JComboBox();
+        providersComboBox.setModel(getProvidersComboBoxModel());
+        providersComboBox.setRenderer(new ListCellRenderer() {
+            public Component getListCellRendererComponent(
+              JList list,
+              Object value,
+              int index,
+              boolean isSelected,
+              boolean cellHasFocus) {
+                IdentityProvider ip = (IdentityProvider)value;
+                return new JLabel(ip.getConfig().getName());
+            }
+        });
+
+        providersComboBox.setToolTipText(resources.getString("selectProviderText.tooltip"));
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 1;
-        constraints.weightx = 1.0;
-        constraints.gridwidth = 3;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 0, 0);
-        contents.add(fromField, constraints);
-        fromButton =
-          new JButton(new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Tree16.gif")));
-        fromButton.setMargin(new Insets(0, 0, 0, 0));
-
-        fromButton.
-          addActionListener(new ActionListener() {
-              public void actionPerformed(ActionEvent e) {
-                  // selectSearchBase();
-              }
-          });
-
-        fromButton.setToolTipText(resources.getString("fromText.tooltip"));
-        constraints = new GridBagConstraints();
-        constraints.gridx = 4;
-        constraints.gridy = 1;
+        constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 12, 0, 0);
-        contents.add(fromButton, constraints);
+        contents.add(providersComboBox, constraints);
+
+        constraints = new GridBagConstraints();
+        constraints.gridx = 2;
+        constraints.gridy = 1;
+        constraints.gridwidth = 1;
+        constraints.weightx = 1.0;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.anchor = GridBagConstraints.WEST;
+        contents.add(Box.createHorizontalGlue(), constraints);
 
         // "type" label
         JLabel typeLabel = new JLabel();
@@ -286,7 +292,6 @@ public class FindDialog extends JDialog {
               public void actionPerformed(ActionEvent e) {
                   JComboBox c = (JComboBox)e.getSource();
                   String option = (String)c.getSelectedItem();
-                  fqNamesCheckBox.setEnabled("equals".equals(option));
               }
           });
 
@@ -294,10 +299,9 @@ public class FindDialog extends JDialog {
         constraints.gridx = 1;
         constraints.gridy = 3;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.fill = GridBagConstraints.NONE;
         constraints.insets = new Insets(12, 12, 5, 0);
         contents.add(searchNameOptions, constraints);
-
 
         // text field for name to be found
         nameField = new JTextField(15);
@@ -310,27 +314,8 @@ public class FindDialog extends JDialog {
         constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 5, 0);
-
+        constraints.insets = new Insets(12, 12, 5, 12);
         contents.add(nameField, constraints);
-
-        fqNamesCheckBox = new JCheckBox();
-        fqNamesCheckBox.setMnemonic(
-          resources.getString("fqNamesCheckBox.mnemonic").charAt(0));
-        fqNamesCheckBox.setMargin(new Insets(0, 2, 0, 2));
-        fqNamesCheckBox.setToolTipText(
-          resources.getString("fqNamesCheckBox.tooltip"));
-        fqNamesCheckBox.setText(
-          resources.getString("fqNamesCheckBox.label"));
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 4;
-        constraints.gridy = 3;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 5, 11);
-
-        contents.add(fqNamesCheckBox, constraints);
 
 
         return gSearchPanel;
@@ -416,6 +401,10 @@ public class FindDialog extends JDialog {
         } else if (actionCommand.equals(CMD_CLOSE)) {
             ;
         } else if (actionCommand.equals(CMD_FIND)) {
+            if (collectFormData()) {
+                showSearchResult(searchInfo);
+            }
+
             return;
         }
         setVisible(false);
@@ -424,12 +413,35 @@ public class FindDialog extends JDialog {
         dispose();
     }
 
+    private boolean collectFormData() {
+        String name = nameField.getText();
+        String option = (String)searchNameOptions.getSelectedItem();
+        searchInfo.setSearchName(name, "equals".equals(option));
+        String key = (String)searchType.getSelectedItem();
+        searchInfo.setSearchType((SearchType)oTypes.get(key));
+        searchInfo.setProvider((IdentityProvider)providersComboBox.getSelectedItem());
+
+        return true;
+    }
+
 
     /**
      * show the result table. Display and layout the
      * table if required.
      */
     private void showSearchResult(SearchInfo info) {
+        final EntityType[] types = info.getSearchType().getTypes();
+        String searchName = info.getSearchName();
+        if (!info.isExactName()) {
+            searchName += "*";
+        }
+        try {
+            setTableModel(Collections.enumeration(info.getProvider().search(types, searchName)));
+        } catch (Exception e) {
+            setTableModel(Collections.enumeration(Collections.EMPTY_LIST));
+            ErrorManager.getDefault().
+              notify(Level.WARNING, e, "The system reported an error during search.");
+        }
 
         if (!searchResultPanel.isVisible()) {
             SwingUtilities.invokeLater(
@@ -476,7 +488,7 @@ public class FindDialog extends JDialog {
                 Object o =
                   ((DynamicTableModel)jTable.getModel()).getValueAt(row);
                 if (o == null) return;
-                showEntryDialog(o);
+                showEntityDialog(o);
             }
         });
         buttonPanel.add(editButton);
@@ -492,7 +504,7 @@ public class FindDialog extends JDialog {
                   int row = jTable.getSelectedRow();
                   if (row == -1) return;
 
-                  editButton.setEnabled(true);
+                  //editButton.setEnabled(true);
               }
           });
 
@@ -504,7 +516,7 @@ public class FindDialog extends JDialog {
                       if (row == -1) return;
                       Object o = jTable.getModel().getValueAt(row, 0);
                       if (o == null) return;
-                      showEntryDialog(o);
+                      showEntityDialog(o);
                   }
               }
           });
@@ -519,14 +531,10 @@ public class FindDialog extends JDialog {
 
                   int keyCode = e.getKeyCode();
                   if (keyCode == KeyEvent.VK_ENTER) {
-                      showEntryDialog(o);
+                      showEntityDialog(o);
                   }
               }
           });
-
-
-
-
         // space
         buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
 
@@ -556,6 +564,70 @@ public class FindDialog extends JDialog {
     }
 
     /**
+     * set the <CODE>TableModel</CODE> that is used by this
+     * object browser instance.
+     */
+    private void setTableModel(Enumeration enum) {
+        try {
+            stopLoadingTableModel();
+
+            DynamicTableModel.
+              ObjectRowAdapter oa =
+              new DynamicTableModel.ObjectRowAdapter() {
+                  public Object getValue(Object o, int col) {
+                      String text = "";
+                      if (o instanceof EntityHeader) {
+                          EntityHeader eh = (EntityHeader)o;
+                          if (col == 1) {
+                              text = eh.getDescription();
+                          } else {
+                              return eh;
+                          }
+                      } else {
+                          throw new
+                            IllegalArgumentException("Invalid argument type: "
+                            + "\nExpected: EntityHeader"
+                            + "\nReceived: " + o.getClass().getName());
+                      }
+                      if (text == null) {
+                          text = "";
+                      }
+                      return text;
+                  }
+              };
+
+            String columns[] =
+              new String[]{"Name", "Description"};
+
+            tableModel =
+              new DynamicTableModel(enum, columns.length, columns, oa);
+            jTable.setModel(tableModel);
+
+            tableModel.
+              addTableModelListener(
+                new TableModelListener() {
+                    int counter = 0;
+
+                    /**
+                     * This fine grain notification tells listeners the exact range
+                     * of cells, rows, or columns that changed.
+                     */
+                    public void tableChanged(TableModelEvent e) {
+                        if (e.getType() == TableModelEvent.INSERT) {
+                            counter += e.getLastRow() - e.getFirstRow();
+                            resultCounter.setText("[ " + counter + " objects found]");
+                        }
+                    }
+                });
+
+            tableModel.start();
+        } catch (Exception e) {
+            // log.error("setTableModel()", e);
+        }
+    }
+
+
+    /**
      * stop loading the table model. The method does nothing
      * if the model has not been created yet.
      */
@@ -570,10 +642,20 @@ public class FindDialog extends JDialog {
      *
      * @param o   the <CODE>AbstractTreeNode</CODE> instance
      */
-    private void showEntryDialog(Object o) {
-        JPanel panel = null; // PanelFactory.getPanel(o, pListener);
-        if (panel == null) return;
+    private void showEntityDialog(Object o) {
+        EntityEditorPanel panel = null;
 
+        if (o instanceof EntityHeader) {
+            EntityHeader eh = (EntityHeader)o;
+            if (EntityType.GROUP.equals(eh.getType())) {
+                panel = new GroupPanel();
+            } else if (EntityType.USER.equals(eh.getType())) {
+                panel = new UserPanel();
+            }
+        }
+
+        if (panel == null) return;
+        panel.edit(o);
         JFrame f = (JFrame)SwingUtilities.windowForComponent(this);
         EditorDialog dialog = new EditorDialog(f, panel);
         dialog.pack();
@@ -587,6 +669,9 @@ public class FindDialog extends JDialog {
      */
     private final TableCellRenderer
       tableRenderer = new DefaultTableCellRenderer() {
+          Icon groupIcon = new ImageIcon(Utilities.loadImage(GroupPanel.GROUP_ICON_RESOURCE));
+          Icon userIcon = new ImageIcon(Utilities.loadImage(UserPanel.USER_ICON_RESOURCE));
+
           /**  Returns the default table cell renderer.*/
           public Component
             getTableCellRendererComponent(JTable table,
@@ -602,30 +687,50 @@ public class FindDialog extends JDialog {
                   this.setBackground(table.getBackground());
                   this.setForeground(table.getForeground());
               }
-              // based on value type and column, determine cell contents
-              setIcon(null);
+              if (value instanceof EntityHeader) {
+                  EntityHeader eh = (EntityHeader)value;
+                  if (EntityType.USER.equals(eh.getType()))
+                      setIcon(userIcon);
+                  else if (EntityType.GROUP.equals(eh.getType())) {
+                      setIcon(groupIcon);
+                  }
+                  setText(eh.getName());
+              } else {
+                  setIcon(null);
+                  setText(value.toString());
+              }
               return this;
           }
       };
 
+    /**
+     * @return the list of providers combo box model
+     */
+    private ComboBoxModel getProvidersComboBoxModel() {
+        if (providersComboBoxModel != null)
+            return providersComboBoxModel;
+
+        providersComboBoxModel = new DefaultComboBoxModel();
+        try {
+            Iterator providers =
+              Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
+            while (providers.hasNext()) {
+                Object o = providers.next();
+                providersComboBoxModel.addElement(o);
+            }
+        } catch (FindException e) {
+            e.printStackTrace();
+        }
+        return providersComboBoxModel;
+    }
+
+
     /** the class instances keep the search info. */
     private class SearchInfo {
+        IdentityProvider provider;
         String searchName;
         boolean exactName;
-        boolean fqNames;
-        String type = "ALL";
-        String searchDesc;
-        boolean exactDesc;
-
-        /** set the search type */
-        void setObjectType(String t) {
-            type = t;
-        }
-
-        /** FQ names toggle (ignored if not exact) */
-        void setFqNames(boolean b) {
-            fqNames = b;
-        }
+        SearchType searchType;
 
         /** set the search by name and equals/contains. */
         void setSearchName(String name, boolean b) {
@@ -633,50 +738,57 @@ public class FindDialog extends JDialog {
             exactName = b;
         }
 
-        /** set the search by desc and equals/contains. */
-        void setSearchDescription(String desc, boolean b) {
-            searchDesc = desc;
-            exactDesc = b;
+        public IdentityProvider getProvider() {
+            return provider;
         }
 
-        /** Returns whether all types are searched. */
-        boolean isAllTypes() {
-            return type == null || "ALL".equals(type);
+        public void setProvider(IdentityProvider provider) {
+            this.provider = provider;
         }
 
-        /**
-         * Returns the search expression (SQL expression).
-         * sequence must match parameters.
-         */
-        String getSearchExpression() {
-            StringBuffer sb = new StringBuffer();
-
-            return sb.toString();
+        public String getSearchName() {
+            return searchName;
         }
 
-        /** Returns the array of additional attributes requested. */
-        String[] getAdditionalAttributes() {
-            return null;
+        public void setSearchName(String searchName) {
+            this.searchName = searchName;
         }
 
-        private boolean isEmpty(String s) {
-            return "".equals(s) || s == null;
+        public boolean isExactName() {
+            return exactName;
+        }
+
+        public SearchType getSearchType() {
+            return searchType;
+        }
+
+        public void setSearchType(SearchType searchType) {
+            this.searchType = searchType;
         }
     }
 
     private static class SearchType {
-        public static final SearchType USER = new SearchType("Users");
-        public static SearchType GROUP = new SearchType("Groups");
-        public static SearchType ALL = new SearchType("ALL");
+        public static final
+        SearchType USER = new SearchType("Users", new EntityType[]{EntityType.USER});
+        public static final
+        SearchType GROUP = new SearchType("Groups", new EntityType[]{EntityType.GROUP});
+        public static final
+        SearchType ALL = new SearchType("ALL", new EntityType[]{EntityType.GROUP, EntityType.USER});
 
-        private SearchType(String name) {
+        private SearchType(String name, EntityType[] t) {
             this.name = name;
+            this.types = t;
         }
 
         public String getName() {
             return name;
         }
 
+        public EntityType[] getTypes() {
+            return types;
+        }
+
+        EntityType[] types;
         String name;
     }
 }

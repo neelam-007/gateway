@@ -95,7 +95,7 @@ public class HomeAction extends BaseAction {
                                 if (tree != null) {
                                     AbstractTreeNode node =
                                       (AbstractTreeNode)TreeNodeActions.
-                                      nodeByName(UserFolderNode.NAME,
+                                      nodeByName(UserFolderNode.INTERNAL_USERS_NAME,
                                                  (DefaultMutableTreeNode)tree.getModel().getRoot());
                                     if (node !=null) new NewUserAction(node).performAction();
                                 }
@@ -110,7 +110,7 @@ public class HomeAction extends BaseAction {
                                 if (tree != null) {
                                     AbstractTreeNode node =
                                       (AbstractTreeNode)TreeNodeActions.
-                                      nodeByName(GroupFolderNode.NAME,
+                                      nodeByName(GroupFolderNode.INTERNAL_GROUPS_NAME,
                                                  (DefaultMutableTreeNode)tree.getModel().getRoot());
                                     if (node !=null) new NewGroupAction(node).performAction();
                                 }

@@ -8,6 +8,7 @@ import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 

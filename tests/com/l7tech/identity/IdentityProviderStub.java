@@ -6,6 +6,8 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Test stub for identity manager.
@@ -39,22 +41,15 @@ public class IdentityProviderStub implements IdentityProvider {
     }
 
 
-    public void setUserManager(UserManager um) {
-        this.um = um;
-    }
-
-    public void setGroupManager(GroupManager gm) {
-        this.gm = gm;
-    }
-
     public boolean isReadOnly() { return false; }
 
     public Collection search(EntityType[] types, String searchString) throws FindException {
-        throw new FindException("not implemented");
-    }
+        List list = new ArrayList();
+        list.addAll(getUserManager().findAllHeaders());
+        list.addAll(getGroupManager().findAllHeaders());
 
+        return list;
+    }
     private IdentityProviderConfig icf = null;
-    private UserManager um = null;
-    private GroupManager gm = null;
 
 }

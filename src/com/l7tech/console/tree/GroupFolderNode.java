@@ -17,19 +17,30 @@ import java.util.Enumeration;
  * @version 1.1
  */
 public class GroupFolderNode extends AbstractTreeNode {
-    public final static String NAME = "Groups";
+    public final static String INTERNAL_GROUPS_NAME = "Internal Groups";
     private final GroupManager groupManager;
     private long providerId;
+    private String name;
 
     /**
      * construct the <CODE>GroupFolderNode</CODE> instance for
-     * a given entry.
+     * a given provider.
      */
     public GroupFolderNode(GroupManager gm, long providerId) {
+        this(gm, providerId, INTERNAL_GROUPS_NAME);
+    }
+
+    /**
+     * construct the <CODE>GroupFolderNode</CODE> instance for
+     * a given provider.
+     */
+    public GroupFolderNode(GroupManager gm, long providerId, String name) {
         super(null);
         groupManager = gm;
         this.providerId = providerId;
+        this.name = name;
     }
+
 
     /**
      * Returns true if the receiver is a leaf.
@@ -57,7 +68,7 @@ public class GroupFolderNode extends AbstractTreeNode {
             new EntitiesEnumeration(new GroupEntitiesCollection(groupManager)));
         int index = 0;
         for (; e.hasMoreElements();) {
-            insert((MutableTreeNode) e.nextElement(), index++);
+            insert((MutableTreeNode)e.nextElement(), index++);
         }
     }
 
@@ -86,7 +97,7 @@ public class GroupFolderNode extends AbstractTreeNode {
      * @return the name as a String
      */
     public String getName() {
-        return NAME;
+        return name;
     }
 
     /**
