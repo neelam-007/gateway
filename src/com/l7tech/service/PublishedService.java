@@ -9,6 +9,13 @@ package com.l7tech.service;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.wsdl.WSDLException;
+import java.io.*;
+import java.net.URL;
+import java.net.MalformedURLException;
+
+import org.xml.sax.InputSource;
+
 /**
  * @author alex
  */
@@ -20,12 +27,43 @@ public class PublishedService extends NamedEntityImp {
         return _rootAssertion;
     }
 
-    public ProtectedService getProtectedService() {
-        return _protectedService;
+    public String getWsdlUrl() {
+        return _wsdlUrl;
     }
 
-    public void setProtectedService( ProtectedService protServ ) {
-        _protectedService = protServ;
+    public void setWsdlUrl(String wsdlUrl) throws MalformedURLException {
+        _wsdlUrl = wsdlUrl;
+        _url = new URL( wsdlUrl );
+    }
+
+    public String getWsdlXml() throws IOException {
+        if ( _wsdlXml == null ) {
+            Reader r = new BufferedReader( new InputStreamReader( _url.openStream() ) );
+            StringBuffer xml = new StringBuffer();
+            char[] buf = new char[4096];
+            int num;
+            while ( ( num = r.read( buf ) ) != -1 ) {
+                xml.append( buf, 0, num );
+            }
+            _wsdlXml = xml.toString();
+        }
+        return _wsdlXml;
+    }
+
+    public void setWsdlXml( String wsdlXml ) {
+        _wsdlXml = wsdlXml;
+    }
+
+    public Wsdl parsedWsdl() throws WSDLException {
+        if ( _parsedWsdl == null ) {
+            try {
+                String cachedWsdl = getWsdlXml();
+                _parsedWsdl = Wsdl.newInstance( null, new InputSource( new StringReader(cachedWsdl) ) );
+            } catch ( IOException ioe ) {
+                throw new WSDLException( ioe.getMessage(), ioe.toString(), ioe );
+            }
+        }
+        return _parsedWsdl;
     }
 
     public String getPolicyXml() {
@@ -34,6 +72,7 @@ public class PublishedService extends NamedEntityImp {
 
     public void setPolicyXml( String policyXml ) {
         _policyXml = policyXml;
+        // Invalidate stale Root Assertion
         _rootAssertion = null;
     }
 
@@ -41,7 +80,10 @@ public class PublishedService extends NamedEntityImp {
     // PRIVATES
     // ************************************************
     protected String _policyXml;
-    protected ProtectedService _protectedService;
+    protected String _wsdlUrl;
+    protected String _wsdlXml;
 
+    private transient URL _url;
+    protected transient Wsdl _parsedWsdl;
     protected transient Assertion _rootAssertion;
 }
