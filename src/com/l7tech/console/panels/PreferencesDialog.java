@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -296,7 +297,7 @@ public class PreferencesDialog extends JDialog {
         helpButton.setActionCommand(CMD_HELP);
         helpButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                windowAction(event.getActionCommand());
+                Actions.invokeHelp(PreferencesDialog.this);
             }
         });
         buttonPanel.add(helpButton);
@@ -511,7 +512,7 @@ public class PreferencesDialog extends JDialog {
         frame.pack();
         frame.setVisible(false);
 
-        JDialog dialog = new PreferencesDialog(frame, true, false);
+        JDialog dialog = new PreferencesDialog(frame, false, false);
         dialog.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent event) {
                 System.exit(0);

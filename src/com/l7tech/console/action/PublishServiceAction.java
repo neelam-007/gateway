@@ -60,7 +60,7 @@ public class PublishServiceAction extends BaseAction implements ConnectionListen
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-                PublishServiceWizard dialog = new PublishServiceWizard(f, true);
+                PublishServiceWizard dialog = new PublishServiceWizard(f, false);
                 dialog.addEntityListener(listener);
                 dialog.setResizable(false);
                 dialog.show();

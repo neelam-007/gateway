@@ -761,7 +761,7 @@ public class MainWindow extends JFrame {
           new AbstractAction(atext, icon) {
               /** Invoked when an action occurs. */
               public void actionPerformed(ActionEvent event) {
-                  PreferencesDialog dialog = new PreferencesDialog(MainWindow.this, true, isConnected());
+                  PreferencesDialog dialog = new PreferencesDialog(MainWindow.this, false, isConnected());
                   dialog.pack();
                   Utilities.centerOnScreen(dialog);
                   dialog.setResizable(false);
