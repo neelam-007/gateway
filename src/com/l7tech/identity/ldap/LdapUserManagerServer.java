@@ -123,6 +123,19 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
         throw new UpdateException("Not supported in LdapUserManagerServer");
     }
 
+    public EntityHeader userToHeader(User user) {
+        return new EntityHeader(user.getName(), EntityType.USER, user.getLogin(), null);
+    }
+
+    public User headerToUser(EntityHeader header) {
+        try {
+            return findByPrimaryKey(header.getStrId());
+        } catch (FindException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
     public Collection findAllHeaders() throws FindException {
         if (!valid) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");

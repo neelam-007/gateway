@@ -84,6 +84,19 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         }
     }
 
+    public EntityHeader userToHeader(User user) {
+        return new EntityHeader(user.getOid(), EntityType.USER, user.getName(), null);
+    }
+
+    public User headerToUser(EntityHeader header) {
+        try {
+            return findByPrimaryKey(header.getStrId());
+        } catch (FindException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public String getTableName() {
         return "internal_user";
     }

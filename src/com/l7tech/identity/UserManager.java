@@ -11,4 +11,6 @@ public interface UserManager extends EntityManager {
     public void delete( User user ) throws DeleteException;
     public long save( User user ) throws SaveException;
     public void update( User user ) throws UpdateException;
+    public EntityHeader userToHeader(User user);
+    public User headerToUser(EntityHeader header);
 }
