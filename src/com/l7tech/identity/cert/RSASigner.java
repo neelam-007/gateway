@@ -17,6 +17,9 @@ import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import java.util.Properties;
+import java.util.logging.Level;
+
+import com.l7tech.logging.LogManager;
 
 /**
  *  Creates X509 certificates using RSA keys.
@@ -32,7 +35,7 @@ public class RSASigner {
     private boolean useku, kucritical;
     private boolean useski, skicritical;
     private boolean useaki, akicritical;
-    private boolean usecrldist, crldistcritical;
+    //private boolean usecrldist, crldistcritical;
     String crldisturi;
     private SecureRandom random;
 
@@ -91,7 +94,7 @@ public class RSASigner {
     boolean subjectAlternativeNameCritical;
 
     //Use CRLDistributionPoint?;
-    boolean cRLDistributionPoint;
+    //boolean cRLDistributionPoint;
 
     //CRLDistributionPoint critical? (RFC2459 says NO);
     boolean cRLDistributionPointCritical;
@@ -108,17 +111,6 @@ public class RSASigner {
     //CRLNumber critical? (RFC2459 says NO);
     boolean cRLNumberCritical;
 
-    //-------------------------------------------
-    /**
-     *  Constructor for the RSASigner object sets all fields to the values
-     * define in the pass properties.
-     *
-     */
-    public RSASigner(Properties properties) {
-        initProperties(properties);
-        initClass();
-    }
-
     /**
      *  Constructor for the RSASigner object sets all fields to their most common usage using
      * the passed keystore parameters to retreive the private key,
@@ -133,16 +125,6 @@ public class RSASigner {
     }
 
     /**
-     *  Constructor for the RSASigner object sets all fields to their most common usage.    Initialises the
-     *  the signer to prompt for passwords via the commandline.   The name of the keystore and private key alias
-     * are drawn from the propertie file.
-     */
-    public RSASigner() {
-        initDefaults();
-        initClass();
-    }
-
-    /**
      *  Implements ISignSession::createCertificate
      *
      *@param  dn             Description of the Parameter
@@ -151,7 +133,7 @@ public class RSASigner {
      *@exception  Exception  Description of the Exception
      */
     public Certificate createCertificate(String dn, PublicKey pk) throws Exception {
-        System.out.println(">createCertificate(pk)");
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, ">createCertificate(pk)");
         // Standard key usages for end users are: digitalSignature | keyEncipherment or nonRepudiation
         // Default key usage is digitalSignature | keyEncipherment
 
@@ -162,7 +144,7 @@ public class RSASigner {
         keyusage[0] = true;
         // keyEncipherment
         keyusage[2] = true;
-        System.out.println("<createCertificate(pk)");
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "<createCertificate(pk)");
         return createCertificate(dn, pk, keyusage);
     }
     // createCertificate
@@ -192,16 +174,16 @@ public class RSASigner {
      *@exception  Exception  Description of the Exception
      */
     public Certificate createCertificate(String dn, PublicKey pk, int keyusage) throws Exception {
-        System.out.println(">createCertificate(pk, ku)");
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, ">createCertificate(pk, ku)");
         if (false) {
             // If this is a CA, only allow CA-type keyUsage
             keyusage = X509KeyUsage.keyCertSign + X509KeyUsage.cRLSign;
         }
-        System.out.println("dn" + dn);
-        System.out.println("caSubjectName" + caSubjectName);
-        System.out.println("validity" + validity);
-        System.out.println("keyusage" + pk);
-        System.out.println("keyusage" + keyusage);
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "dn" + dn);
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "caSubjectName" + caSubjectName);
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "validity" + validity);
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "keyusage" + pk);
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "keyusage" + keyusage);
 
         X509Certificate cert = makeBCCertificate(dn, caSubjectName, validity.longValue(), pk, keyusage);
         // Verify before returning
@@ -220,17 +202,17 @@ public class RSASigner {
      *@exception  Exception  Description of the Exception
      */
     public Certificate createCertificate(String dn, Certificate incert) throws Exception {
-        System.out.println(">createCertificate(cert)");
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, ">createCertificate(cert)");
         X509Certificate cert = (X509Certificate) incert;
         try {
             cert.verify(cert.getPublicKey());
         } catch (Exception e) {
-            System.out.println("POPO verification failed for " + dn);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on certificate failed.");
         }
         // TODO: extract more extensions than just KeyUsage
         Certificate ret = createCertificate(dn, cert.getPublicKey(), cert.getKeyUsage());
-        System.out.println("<createCertificate(cert)");
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "<createCertificate(cert)");
         return ret;
     }
     // createCertificate
@@ -257,29 +239,24 @@ public class RSASigner {
      *@exception  Exception  Description of the Exception
      */
     public Certificate createCertificate(byte[] pkcs10req, int keyUsage) throws Exception {
-        System.out.println(">createCertificate(pkcs10)");
-        Certificate ret = null;
-
-        DERObject derobj = new DERInputStream(new ByteArrayInputStream(pkcs10req)).readObject();
-        System.out.println("DERObject class = " + derobj.getClass().getName());
-        // DERConstructedSequence seq = (DERConstructedSequence) derobj;
-        // PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(seq);
-        // todo, fla try to fix this some error here
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, ">createCertificate(pkcs10)");
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "Request: " + new String(pkcs10req));
         PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(pkcs10req);
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
         String dn= certReqInfo.getSubject().toString();
-        System.out.println("Signing cert for subject DN="+dn);
+        LogManager.getInstance().getSystemLogger().log(Level.INFO, "Signing cert for subject DN = " + dn);
         if (pkcs10.verify() == false) {
-            System.out.println("POPO verification failed for " + dn);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
+        Certificate ret = null;
         // TODO: extract more information or attributes
         if (keyUsage < 0) {
             ret = createCertificate(dn, pkcs10.getPublicKey());
         } else {
             ret = createCertificate(dn, pkcs10.getPublicKey(), keyUsage);
         }
-        System.out.println("<createCertificate(pkcs10)");
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "<createCertificate(pkcs10)");
         return ret;
     }
 
@@ -398,16 +375,19 @@ public class RSASigner {
         }
         // Subject key identifier
         if (useski == true) {
-            SubjectPublicKeyInfo spki = new SubjectPublicKeyInfo((DERConstructedSequence) new DERInputStream(
-                    new ByteArrayInputStream(publicKey.getEncoded())).readObject());
+            // fla, rewrote this line to avoid deprecated
+            // SubjectPublicKeyInfo spki = new SubjectPublicKeyInfo((DERConstructedSequence) new DERInputStream(new ByteArrayInputStream(publicKey.getEncoded())).readObject());
+            SubjectPublicKeyInfo spki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new DERInputStream(new ByteArrayInputStream(publicKey.getEncoded())).readObject()));
             SubjectKeyIdentifier ski = new SubjectKeyIdentifier(spki);
             certgen.addExtension(X509Extensions.SubjectKeyIdentifier.getId(), skicritical, ski);
         }
         // Authority key identifier
         if (useaki == true) {
-            SubjectPublicKeyInfo apki = new SubjectPublicKeyInfo((DERConstructedSequence) new DERInputStream(
-                    new ByteArrayInputStream(caCert.getPublicKey().getEncoded())).readObject());
+            // fla, rewrote this line to avoid deprecated
+            // SubjectPublicKeyInfo apki = new SubjectPublicKeyInfo((DERConstructedSequence)new DERInputStream(new ByteArrayInputStream(caCert.getPublicKey().getEncoded())).readObject());
+            SubjectPublicKeyInfo apki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new DERInputStream(new ByteArrayInputStream(caCert.getPublicKey().getEncoded())).readObject()));
             AuthorityKeyIdentifier aki = new AuthorityKeyIdentifier(apki);
+            //AuthorityKeyIdentifier aki = new AuthorityKeyIdentifier();
             certgen.addExtension(X509Extensions.AuthorityKeyIdentifier.getId(), akicritical, aki);
         }
 
@@ -421,9 +401,9 @@ public class RSASigner {
          *  GeneralNames san = new GeneralNames(seq);
          *  certgen.addExtension(X509Extensions.SubjectAlternativeName.getId(), sancritical, san);
          *  }
+         *  // CRL Distribution point URI
          */
-        // CRL Distribution point URI
-        if (usecrldist == true) {
+        /*if (usecrldist == true) {
             GeneralName gn = new GeneralName(new DERIA5String(crldisturi), 6);
             DERConstructedSequence seq = new DERConstructedSequence();
             seq.addObject(gn);
@@ -433,11 +413,11 @@ public class RSASigner {
             DERConstructedSequence ext = new DERConstructedSequence();
             ext.addObject(distp);
             certgen.addExtension(X509Extensions.CRLDistributionPoints.getId(), crldistcritical, ext);
-        }
+        }*/
 
         X509Certificate cert = certgen.generateX509Certificate(privateKey);
 
-        System.out.println("<makeBCCertificate()");
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "<makeBCCertificate()");
         return (X509Certificate) cert;
     }
     // makeBCCertificate
@@ -449,57 +429,49 @@ public class RSASigner {
             Provider BCJce = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
             int result = Security.addProvider(BCJce);
-            System.out.println("loaded provider at position " + result);
+            LogManager.getInstance().getSystemLogger().log(Level.FINE, "loaded provider at position " + result);
 
             // Get env variables and read in nessecary data
             //KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
             // KeyStore keyStore = KeyStore.getInstance(keyStoreType); fla modif
             KeyStore keyStore = KeyStore.getInstance("JCEKS");
-
-            System.out.println("keystore:" + keyStorePath);
             InputStream is = new FileInputStream(keyStorePath);
 
             char[] keyStorePass = getPassword(storePass, "Please enter your keystore password: ");
             keyStore.load(is, keyStorePass);
-            System.out.println("privateKeyAlias: " + privateKeyAlias);
+            LogManager.getInstance().getSystemLogger().log(Level.FINE, "privateKeyAlias: " + privateKeyAlias);
             char[] privateKeyPass = getPassword(privateKeyPassString, "Please enter your private key password (may be blank depending on your keystore implementation)");
             if ((new String(privateKeyPass)).equals("null")) {
                 privateKeyPass = null;
             }
-            System.out.println("about to get private key from keystore");
+            LogManager.getInstance().getSystemLogger().log(Level.FINE, "about to get private key from keystore");
             privateKey = (PrivateKey) keyStore.getKey(privateKeyAlias, privateKeyPass);
             if (privateKey == null) {
-                System.out.println("Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
                 throw new Exception("Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
             }
             Certificate[] certchain = keyStore.getCertificateChain(privateKeyAlias); // KeyTools.getCertChain(keyStore, privateKeyAlias);
             if (certchain.length < 1) {
-                System.out.println("Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
                 throw new Exception("Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
             }
             // We only support a ca hierarchy with depth 2.
             caCert = (X509Certificate) certchain[0];
-            System.out.println("cacertIssuer: " + caCert.getIssuerDN().toString());
-            System.out.println("cacertSubject: " + caCert.getSubjectDN().toString());
+            LogManager.getInstance().getSystemLogger().log(Level.FINE, "cacertIssuer: " + caCert.getIssuerDN().toString());
+            LogManager.getInstance().getSystemLogger().log(Level.FINE, "cacertSubject: " + caCert.getSubjectDN().toString());
 
             // We must keep the same order in the DN in the issuer field in created certificates as there
             // is in the subject field of the CA-certificate.
             // MODIFIDED Jul 2, 2003 (KSM) Added reverse=true to constructor because of issues with DN order for caSubject and the
             // interaction with keytool. Keytool expects this to be in CN=, OU=, ...CA= order
             caSubjectName = new X509Name(true, caCert.getSubjectDN().toString());
-            System.out.println("caSubjectName: " + caSubjectName.toString());
+            LogManager.getInstance().getSystemLogger().log(Level.FINE, "caSubjectName: " + caSubjectName.toString());
             //caSubjectName = CertTools.stringToBcX509Name(caCert.getSubjectDN().toString());
 
             // root cert is last cert in chain
             rootCert = (X509Certificate) certchain[certchain.length - 1];
-            System.out.println("rootcertIssuer: " + rootCert.getIssuerDN().toString());
-            System.out.println("rootcertSubject: " + rootCert.getSubjectDN().toString());
-            // is root cert selfsigned?
-            /*if (!CertTools.isSelfSigned(rootCert)) {
-                throw new Exception("Root certificate is not self signed!");
-            }*/
-
-            // The validity in days is specified in environment
+            LogManager.getInstance().getSystemLogger().log(Level.FINE, "rootcertIssuer: " + rootCert.getIssuerDN().toString());
+            LogManager.getInstance().getSystemLogger().log(Level.FINE, "rootcertSubject: " + rootCert.getSubjectDN().toString());
 
             // Should extensions be used? Critical or not?
             if ((usebc = basicConstraints) == true) {
@@ -516,10 +488,10 @@ public class RSASigner {
                 ;
             }
             akicritical = authorityKeyIdentifierCritical;
-            if ((usecrldist = cRLDistributionPoint) == true) {
+            /*if ((usecrldist = cRLDistributionPoint) == true) {
                 crldistcritical = cRLDistributionPointCritical;
                 crldisturi = cRLDistURI;
-            }
+            }*/
 
             // Init random number generator for random serialnumbers
             random = SecureRandom.getInstance("SHA1PRNG");
@@ -554,38 +526,6 @@ public class RSASigner {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private void initProperties(Properties props) {
-        initDefaults();
-        //now run through and set all the properties
-        keyStorePath = props.getProperty("keyStorePath");
-        keyStoreType = props.getProperty("keyStoreType");
-        System.out.println(keyStorePath);
-        //NO DEFAULT if this is null the user will be prompted for it later
-        storePass = props.getProperty("storePass");
-        privateKeyAlias = props.getProperty("privateKeyAlias");
-        //NO DEFAULT if this is null the user will be prompted later
-        privateKeyPassString = props.getProperty("privateKeyPassString");
-        validity = new Long(props.getProperty("validity"));
-        basicConstraints = new Boolean(props.getProperty("validity")).booleanValue();
-        basicConstraintsCritical = new Boolean(props.getProperty("validity")).booleanValue();
-        keyUsage = new Boolean(props.getProperty("validity")).booleanValue();
-        keyUsageCritical = new Boolean(props.getProperty("validity")).booleanValue();
-        // MODIFIED (KSM) Jun 27, 03 - Added retrieval of critical subject and authority key identifier fields. Need to follow
-        // certificate chains properly...
-        subjectKeyIdentifier = new Boolean(props.getProperty("subjectKeyIdentifier")).booleanValue();
-        subjectKeyIdentifierCritical = new Boolean(props.getProperty("subjectKeyIdentifierCritical")).booleanValue();
-        authorityKeyIdentifier = new Boolean(props.getProperty("authorityKeyIdentifier")).booleanValue();
-        authorityKeyIdentifierCritical = new Boolean(props.getProperty("authorityKeyIdentifierCritical")).booleanValue();
-        subjectAlternativeName = new Boolean(props.getProperty("validity")).booleanValue();
-        subjectAlternativeNameCritical = new Boolean(props.getProperty("validity")).booleanValue();
-        cRLDistributionPoint = new Boolean(props.getProperty("validity")).booleanValue();
-        cRLDistributionPointCritical = new Boolean(props.getProperty("validity")).booleanValue();
-        String cRLDistURI = props.getProperty("cRLDistURI");
-        emailInDN = new Boolean(props.getProperty("validity")).booleanValue();
-        cRLNumber = new Boolean(props.getProperty("validity")).booleanValue();
-        cRLNumberCritical = new Boolean(props.getProperty("validity")).booleanValue();
     }
 
     /**
@@ -635,8 +575,8 @@ public class RSASigner {
         subjectAlternativeNameCritical = false;
         defaultProperties.setProperty("subjectAlternativeNameCritical", Boolean.toString(subjectAlternativeNameCritical));
         //Use CRLDistributionPoint?;
-        cRLDistributionPoint = false;
-        defaultProperties.setProperty("cRLDistributionPoint", Boolean.toString(cRLDistributionPoint));
+        //cRLDistributionPoint = false;
+        //defaultProperties.setProperty("cRLDistributionPoint", Boolean.toString(cRLDistributionPoint));
         //CRLDistributionPoint critical? (RFC2459 says NO);
         cRLDistributionPointCritical = false;
         defaultProperties.setProperty("cRLDistributionPointCritical", Boolean.toString(cRLDistributionPointCritical));
