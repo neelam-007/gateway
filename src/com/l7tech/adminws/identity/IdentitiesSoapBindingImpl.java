@@ -17,6 +17,7 @@ import java.rmi.RemoteException;
  */
 public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Identity{
     public com.l7tech.adminws.identity.Header[] findAlllIdentityProviderConfig() throws java.rmi.RemoteException {
+        //return returnTestHeaders();
         try {
             return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders());
         } catch (FindException e) {
@@ -27,6 +28,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     }
 
     public com.l7tech.adminws.identity.Header[] findAllIdentityProviderConfigByOffset(int offset, int windowSize) throws java.rmi.RemoteException {
+        //return returnTestHeaders();
         try {
             return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders(offset, windowSize));
         } catch (FindException e) {
@@ -37,6 +39,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     }
 
     public com.l7tech.adminws.identity.IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws java.rmi.RemoteException {
+        //return returnTestIpc();
         try {
             return TypeTranslator.genericToServiceIdProviderConfig(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(oid));
         } catch (FindException e) {
@@ -47,6 +50,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     }
 
     public long saveIdentityProviderConfig(com.l7tech.adminws.identity.IdentityProviderConfig identityProviderConfig) throws java.rmi.RemoteException {
+        //return 123;
         try {
             if (identityProviderConfig.getOid() > 0) {
                 getIdentityProviderConfigManagerAndBeginTransaction().update(TypeTranslator.serviceIdentityProviderConfigToGenericOne(identityProviderConfig));
@@ -317,22 +321,40 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
             e.printStackTrace(System.err);
             throw new RemoteException("NamingException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
         }*/
-        /*
-        try {
-            HibernatePersistenceManager.initialize();
-            identityProviderConfigManager = new com.l7tech.identity.imp.IdentityProviderConfigManagerImp(com.l7tech.objectmodel.HibernatePersistenceManager.getContext());
-        } catch (IOException e) {
-            throw new RemoteException("IOException in IdentitiesSoapBindingImpl.getIdentityProviderConfigManager", e);
-        } catch (SQLException e) {
-            throw new RemoteException("SQLException in IdentitiesSoapBindingImpl.getIdentityProviderConfigManager", e);
-        } catch (NamingException e) {
-            throw new RemoteException("NamingException in IdentitiesSoapBindingImpl.getIdentityProviderConfigManager", e);
-        } catch (NullPointerException e) {
-            throw new RemoteException("NullPointerException in HibernatePersistenceManager", e);
-        }
-        if (identityProviderConfigManager == null) throw new java.rmi.RemoteException("Cannot instantiate the IdentityProviderConfigManager");
-        */
     }
+
+    /*
+    // test method while the ssg object model is not operational or deployed
+    private com.l7tech.adminws.identity.Header[] returnTestHeaders() {
+        // test method
+        com.l7tech.adminws.identity.Header[] ret = new com.l7tech.adminws.identity.Header[3];
+        ret[0] = new com.l7tech.adminws.identity.Header();
+        ret[1] = new com.l7tech.adminws.identity.Header();
+        ret[2] = new com.l7tech.adminws.identity.Header();
+        ret[0].setName("one");
+        ret[0].setOid(1);
+        ret[0].setType("type1");
+        ret[1].setName("two");
+        ret[1].setOid(2);
+        ret[1].setType("type2");
+        ret[2].setName("three");
+        ret[2].setOid(3);
+        ret[2].setType("type3");
+        return ret;
+    }
+
+    private com.l7tech.adminws.identity.IdentityProviderConfig returnTestIpc() {
+        com.l7tech.adminws.identity.IdentityProviderConfig ret = new com.l7tech.adminws.identity.IdentityProviderConfig();
+        ret.setDescription("desc");
+        ret.setName("name");
+        ret.setOid(654);
+        ret.setTypeClassName("classtype");
+        ret.setTypeDescription("typedesc");
+        ret.setTypeName("typename");
+        ret.setTypeOid(56546);
+        return ret;
+    }
+    */
 
     IdentityProviderConfigManager identityProviderConfigManager = null;
     //java.util.HashMap userManagersMap = null;
