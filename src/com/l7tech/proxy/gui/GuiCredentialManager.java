@@ -66,6 +66,9 @@ public class GuiCredentialManager implements CredentialManager {
                         if (pw == null) {
                             promptState.credentialsObtained = false;
                             if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
+                                // This is the second time we've popped up a logon dialog and the user has impatiently
+                                // canceled it.  We can take a hint -- we'll turn off logon prompts until the proxy is
+                                // restarted or the user manually changes the password.
                                 ssg.promptForUsernameAndPassword(false);
                                 return;
                             }
@@ -73,6 +76,7 @@ public class GuiCredentialManager implements CredentialManager {
                         ssg.setUsername(pw.getUserName());
                         ssg.password(pw.getPassword()); // TODO: encoding?
                         ssg.onCredentialsUpdated();
+                        ssg.promptForUsernameAndPassword(true);
                         promptState.credentialsObtained = true;
                     }
                 });
