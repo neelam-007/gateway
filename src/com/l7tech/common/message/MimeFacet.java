@@ -19,14 +19,14 @@ class MimeFacet extends MessageFacet {
     private final MimeBody mimeBody;
 
     protected MimeFacet(Message message) {
-        super(message, null); // Null because this will normally be the root aspect
+        super(message, null); // Null because this will normally be the last aspect
         mimeBody = null;
     }
 
     public MimeFacet(Message message, StashManager stash, ContentTypeHeader ctype, InputStream bodyStream)
             throws NoSuchPartException, IOException
     {
-        super(message, null); // Null because this will normally be the root aspect
+        super(message, null); // Null because this will normally be the last aspect
         this.mimeBody = new MimeBody(stash, ctype, bodyStream);
     }
 
