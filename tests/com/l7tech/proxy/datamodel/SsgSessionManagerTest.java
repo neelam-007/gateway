@@ -6,36 +6,32 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.proxy.processor.OperationCanceledException;
+import com.l7tech.xmlenc.Session;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
+import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import java.util.logging.Logger;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.net.InetAddress;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.Principal;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.io.IOException;
 
-import com.l7tech.xmlenc.Session;
-import com.l7tech.proxy.processor.OperationCanceledException;
-
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.TrustManager;
-
-import org.apache.commons.httpclient.protocol.Protocol;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 
 /**
  * Test ability to establish session.  Requires access to a running SSG w/ a session manager.
