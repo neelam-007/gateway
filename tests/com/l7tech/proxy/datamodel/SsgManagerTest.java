@@ -12,11 +12,10 @@ import java.util.Arrays;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
+ * Work the Client Proxy's SSG Manager a little bit.
  * User: mike
  * Date: Jun 2, 2003
  * Time: 3:39:14 PM
- * To change this template use Options | File Templates.
  */
 public class SsgManagerTest extends TestCase {
     static Logger log = Logger.getLogger(ThreadPoolTest.class.getName());
