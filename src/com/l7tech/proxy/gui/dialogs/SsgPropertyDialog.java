@@ -299,14 +299,16 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
         List sslList = clientProxy.getSsgFinder().getSsgList();
 
-        for (int i = 0; i < sslList.size(); i++) {
+        int i = 0;
+        for (; i < sslList.size(); i++) {
             Ssg item = (Ssg) sslList.get(i);
-            if(!item.getLocalEndpoint().equals(ssg.getLocalEndpoint())) {
+            if (!item.getLocalEndpoint().equals(ssg.getLocalEndpoint())) {
                 identityPane.getTrustedSSGComboBox().addItem(item.getLocalEndpoint());
             }
-            if(identityPane.getTrustedSSGComboBox().getItemCount() <= 0) {
-                identityPane.getTrustedSSGComboBox().addItem("<No trusted gateways configured>");
-            }
+
+        }
+        if (i <= 0) {
+            identityPane.getTrustedSSGComboBox().addItem("<No trusted gateways configured>");
         }
 
         return identityPane;
