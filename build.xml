@@ -1,4 +1,3 @@
-<?xml version="1.0"?>
 <project name="UneasyRooster" default="dev" basedir=".">
     <!-- Uncomment for jikes/emacs to be used
     <property name="build.compiler" value="jikes"/>
@@ -258,13 +257,6 @@
       ** Please do not invoke below targets as main targets.
     -->
 
-    <path id="cpjars">
-        <fileset dir="${src.root}/lib">
-            <include name="axis.jar"/>
-            <include name="axis-ant.jar"/>
-        </fileset>
-    </path>
-
     <!--
       ** 'package' target.
       ** package the application ( both client and server) in their
@@ -272,41 +264,12 @@
       ** This target is invoked by other targets such as deploy and dist.
       -->
     <target name="package" depends="init-dev, compile">
-        <pathconvert refid="cpjars" pathsep=" " property="foo"/>
-
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
-            <lib dir="${build.dir}/lib">
-                <exclude name="ant.jar"/>
-                <exclude name="axis-ant.jar"/>
-                <exclude name="cachedir"/>
-                <exclude name="catalina*.jar"/>
-                <exclude name="commons-logging.jar"/>
-                <exclude name="forms_rt.jar"/>
-                <exclude name="jh.jar"/>
-                <exclude name="jsdk23.jar"/>
-                <exclude name="jython.jar"/>
-                <exclude name="kunststoff.jar"/>
-                <exclude name="log4j*.jar"/>
-                <exclude name="org.mortbay.jetty.jar"/>
-                <exclude name="servlet.jar"/>
+            <lib dir="${build.dir}/lib"
+                excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, catalina.jar">
             </lib>
-            <classes dir="${build.classes}">
-                <include name="SSG.hbm.xml"/>
-                <include name="*.properties"/>
-                <include name="com/l7tech/adminws/**/*"/>
-                <include name="com/l7tech/common/**/*"/>
-                <exclude name="com/l7tech/common/gui"/>
-                <include name="com/l7tech/console/event/*"/>
-                <include name="com/l7tech/identity/**/*"/>
-                <include name="com/l7tech/jini/**/*"/>
-                <include name="com/l7tech/logging/**/*"/>
-                <include name="com/l7tech/message/**/*"/>
-                <include name="com/l7tech/objectmodel/**/*"/>
-                <include name="com/l7tech/policy/**/*"/>
-                <include name="com/l7tech/server/**/*"/>
-                <include name="com/l7tech/service/**/*"/>
-            </classes>
+            <classes dir="${build.classes}"/>
 
             <zipfileset dir="${src.root}/etc" prefix="WEB-INF">
                 <include name="server-config.wsdd"/>
@@ -317,28 +280,18 @@
             <zipfileset dir="${src.root}/web" includes="index.html"/>
             <!-- Jini config -->
             <zipfileset dir="${src.root}/etc/jini" includes="start-services.config, services.config, services.policy" prefix="WEB-INF/classes"/>
+
         </war>
         <!-- the client proxy jar -->
-        <jar jarfile="${build.dir}/Agent.jar" manifest="${src.root}/etc/Agent.mf">
+        <jar jarfile="${build.dir}/ClientProxy.jar" manifest="${src.root}/etc/ClientProxy.mf">
             <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/proxy/**/*"/>
-                <include name="com/l7tech/common/**/*"/>
-                <include name="com/l7tech/policy/**/*"/>
+                <include name="com/l7tech/**"/> <!-- Well that was easy enough! -->
             </fileset>
         </jar>
         <!-- the console jar -->
-        <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
+        <jar jarfile="${build.dir}/ManagementConsole.jar" manifest="${src.root}/etc/ManagementConsole.mf">
             <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/adminws/**/*"/>
-                <include name="com/l7tech/common/**/*"/>
-                <include name="com/l7tech/console/**/*"/>
-                <include name="com/l7tech/identity/**/*"/>
-                <include name="com/l7tech/jini/**/*"/>
-                <include name="com/l7tech/logging/**/*"/>
-                <include name="com/l7tech/message/**/*"/>
-                <include name="com/l7tech/objectmodel/**/*"/>
-                <include name="com/l7tech/policy/**/*"/>
-                <include name="com/l7tech/service/**/*"/>
+                <include name="com/l7tech/**"/> <!-- Well that was easy enough! -->
             </fileset>
         </jar>
     </target>
@@ -348,8 +301,6 @@
       ** update version tokens
       -->
     <target name="prepare">
-        <fail unless="database.type" message="The database.type property must be set!"/>
-
         <!-- time stamp -->
         <tstamp/>
         <mkdir dir="${build.dir}"/>
@@ -380,7 +331,6 @@
 
             <fileset dir="${src.root}/etc">
                 <include name="keystore.properties"/>
-                <include name="ssglog.properties"/>
             </fileset>
 
             <fileset dir="${src.root}/src">
@@ -398,7 +348,7 @@
 
 
             <fileset dir="${src.root}/src">
-                <include name="com/l7tech/proxy/resources/**"/>
+                <include name="com/l7tech/proxy/resources/*"/>
             </fileset>
 
             <fileset dir="${src.root}/src">
@@ -423,7 +373,7 @@
     <!--
       ** main compile target
       -->
-    <target name="compile" depends="init-dev, prepare, configure_properties" unless="compile.pattern">
+    <target name="compile" depends="prepare, configure_properties" unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
             deprecation="on" depend="on" verbose="no">
             <classpath refid="project.class.path"/>
@@ -476,8 +426,6 @@
             token="DB_PASSWORD" value="${database.password}"/>
         <replace file="${build.etc}/web.xml"
             token="TOMCAT_HOME" value="${tomcat.home}"/>
-        <replace file="${build.classes}/ssglog.properties"
-            token="TOMCAT_HOME" value="${tomcat.home}"/>
     </target>
 
 
@@ -527,7 +475,7 @@
 
     <target name="make-install-image" depends="init-dev">
         <fail unless="install.build.number" message="Set the install.build.number property before running this target!"/>
-        <property file="${src.root}/etc/install.properties"/>
+        <property file="etc/install.properties"/>
 
         <fail unless="install.tomcat.tar.gz" message="Set the install.tomcat.tar.gz property or create install.properties!"/>
         <fail unless="install.jdk.tar.gz" message="Set the install.jdk.tar.gz property or create install.properties!"/>
@@ -543,16 +491,66 @@
         <fail unless="tomcat.exists" message="Couldn't find ${install.tomcat.tar.gz}! Check your install.properties file!"/>
         <fail unless="jdk.exists" message="Couldn't find ${install.jdk.tar.gz}! Check your install.properties file!"/>
 
-        <echo>SSG hostname = ${install.ssg.hostname}</echo>
-        <echo>CA hostname = ${install.ca.hostname}</echo>
+        <!-- Relative pathnames -->
+        <property name="install.rel.dist" value="dist"/>
+        <property name="install.rel.doc" value="doc"/>
+        <property name="install.rel.etc" value="etc"/>
+	<property name="install.rel.bin" value="bin"/>
+        <property name="install.rel.logs" value="logs"/>
+        <property name="install.rel.conf" value="${install.rel.etc}/conf"/>
+        <property name="install.rel.keys" value="${install.rel.etc}/keys"/>
+        <property name="install.rel.sql" value="${install.rel.etc}/sql"/>
+        <property name="install.rel.ca.keystore" value="${install.rel.keys}/ca.ks"/>
+        <property name="install.rel.ssl.keystore" value="${install.rel.keys}/ssl.ks"/>
+        <property name="install.rel.ssl.csr" value="${install.rel.keys}/ssl.csr"/>
+        <property name="install.rel.ssl.crt" value="${install.rel.keys}/ssl.crt"/>
+
+        <property name="install.rel.jdk" value="${install.jdk.dir}"/>
+        <property name="install.rel.tomcat" value="${install.tomcat.dir}"/>
+
+        <!-- Absolute source paths -->
+        <property name="install.src.base" value="${build.dir}/install/ssg"/>
+	<property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
+        <property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>
+        <property name="install.src.doc" value="${install.src.base}/${install.rel.doc}"/>
+        <property name="install.src.jdk" value="${install.src.base}/${install.rel.jdk}"/>
+        <property name="install.src.tomcat" value="${install.src.base}/${install.rel.tomcat}"/>
+
+        <property name="install.src.etc" value="${install.src.base}/${install.rel.etc}"/>
+        <property name="install.src.keys" value="${install.src.base}/${install.rel.keys}"/>
+        <property name="install.src.sql" value="${install.src.base}/${install.rel.sql}"/>
+        <property name="install.src.ca.keystore" value="${install.src.base}/${install.rel.ca.keystore}"/>
+        <property name="install.src.ssl.keystore" value="${install.src.base}/${install.rel.ssl.keystore}"/>
+        <property name="install.src.ssl.csr" value="${install.src.base}/${install.rel.ssl.csr}"/>
+        <property name="install.src.ssl.crt" value="${install.src.base}/${install.rel.ssl.crt}"/>
+
+        <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
+        <property name="install.src.passwords.txt" value="${install.src.base}/passwords.txt"/>
+        <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
+	<property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
+        <property name="install.src.server.xml" value="${install.src.tomcat}/conf/server.xml"/>
+
+        <!-- Absolute target paths -->
+        <property name="install.target.base" value="/ssg"/>
+        <property name="install.target.keys" value="${install.target.base}/${install.rel.keys}"/>
+        <property name="install.target.tomcat" value="${install.target.base}/${install.rel.tomcat}"/>
+        <property name="install.target.ssl.keystore" value="${install.target.keys}/${install.rel.ssl.keystore}"/>
+	<property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
+
+        <property name="install.alias.ca.keystore" value="ssgroot"/>
+        <property name="install.alias.ssl.keystore" value="tomcat"/>
+        <property name="install.src.war" value="${install.src.dist}/ROOT-b${install.build.number}.war"/>
 
         <echo>Making directories...</echo>
         <mkdir dir="${install.src.base}"/>
         <mkdir dir="${install.src.dist}"/>
         <mkdir dir="${install.src.doc}"/>
         <mkdir dir="${install.src.etc}"/>
+        <mkdir dir="${install.src.sql}"/>
+	<mkdir dir="${install.src.bin}"/>
         <mkdir dir="${install.src.keys}"/>
         <mkdir dir="${install.src.conf}"/>
+        <mkdir dir="${install.src.logs}"/>
 
         <echo>Generating passwords...</echo>
         <exec executable="${src.root}/etc/rpass.pl" outputproperty="install.pass.root"/>
@@ -579,10 +577,11 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
 
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>
         <echo>Patching ${install.src.keystore.properties}...</echo>
+        <echo>${install.target.tomcat}</echo>
 
         <replaceregexp file="${install.src.keystore.properties}">
             <regexp pattern="keystoredir=.*"/>
-            <substitution expression="keystoredir=${install.target.keys}"/>
+            <substitution expression="keystoredir=${install.target.tomcat}"/>
         </replaceregexp>
         <replaceregexp file="${install.src.keystore.properties}">
             <regexp pattern="rootcakspasswd=.*"/>
@@ -593,10 +592,20 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <substitution expression="sslkspasswd=${install.pass.ssl.keystore}"/>
         </replaceregexp>
 
+ 	<copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}"/>
+        <echo>Patching ${install.src.ssglog.properties}...</echo>
+        <replaceregexp file="${install.src.ssglog.properties}">
+	    <regexp pattern="com.l7tech.server.log.FileHandler.path=.*"/>
+            <substitution expression="com.l7tech.server.log.FileHandler.path=${install.target.logs}"/>
+        </replaceregexp>
+
+	<!-- Extract Tomcat & JDK tarballs -->
         <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
 
-        <copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
+        <!-- Copy WAR file into position -->
+	<copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
+        <!-- Copy server.xml & catalina.policy -->
         <copy todir="${install.src.tomcat}/conf">
             <fileset dir="${src.root}/etc" includes="server.xml, catalina.policy"/>
         </copy>
@@ -638,18 +647,17 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <arg line="-storepass ${install.pass.ssl.keystore}"/>
         </java>
 
-        <path id="install.classpath">
+        <!-- Sign it! -->
+        <path id="classpath">
             <pathelement path="${src.root}/build/classes"/>
             <fileset dir="${src.root}/lib">
                 <include name="*.jar"/>
             </fileset>
         </path>
 
-        <!-- Sign it! -->
-        <!-- java RSASigner rootkstorePath rootkstorepass rootkeyAlias rootprivateKeyPass csrfilepath outputcertpath -->
         <echo>Signing SSL certificate...</echo>
         <delete file="${install.src.ssl.crt}"/>
-        <java classname="com.l7tech.identity.cert.RSASigner" classpathref="install.classpath">
+        <java classname="com.l7tech.identity.cert.RSASigner" classpathref="classpath">
             <arg line="${install.src.ca.keystore}"/>
             <arg line="${install.pass.ca.keystore}"/>
             <arg line="${install.alias.ca.keystore}"/>
@@ -666,25 +674,27 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <arg line="${install.src.tomcat}/webapps/ROOT.war"/>
         </exec>
 
-        <!-- H4x0r tomcat conf -->
-        <replaceregexp file="${install.src.tomcat}/conf/server.xml">
-            <regexp pattern='keystoreFile=".*"'/>
-            <substitution expression='keystoreFile="${install.target.ssl.keystore}"'/>
+ 	<!-- Hack server.xml -->
+        <echo>Patching ${install.src.server.xml}...</echo>
+
+        <replaceregexp file="${install.src.server.xml}">
+          <regexp pattern='keystoreFile=".*"'/>
+          <substitution expression='keystoreFile="${install.target.ssl.keystore}"'/>
         </replaceregexp>
 
-        <replaceregexp file="${install.src.tomcat}/conf/server.xml">
-            <regexp pattern='keystorePass=".*"'/>
-            <substitution expression='keystorePass="${install.pass.ssl.keystore}"'/>
+        <replaceregexp file="${install.src.server.xml}">
+          <regexp pattern='keystorePass=".*"'/>
+          <substitution expression='keystorePass="${install.pass.ssl.keystore}"'/>
         </replaceregexp>
 
-        <!-- Unpack WAR -->
-
-        <!--
-            * todo: add the property prompts and environment variables in the install
-            * script for
-            * - jini.server.hostname pointing to the name that the console clients
-            * resovle to
-        -->
+        <!-- Copy misc. stuff -->
+        <copy todir="${install.src.sql}" file="${src.root}/etc/db/${database.type}/ssg.sql"/>
+        <copy todir="${install.src.bin}">
+          <fileset dir="${src.root}/etc">
+ 	    <include name="*.sh"/>
+	    <include name="*.pl"/>
+ 	  </fileset>
+        </copy>
 
     </target>
 
@@ -734,8 +744,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <echo>Setting version in Nullsoft Installer source files to ${build.version}</echo>
         <replaceregexp match='define MUI_VERSION ".*"' replace='define MUI_VERSION "${build.version}"'>
             <fileset dir="${src.root}">
-                <include name="installer/proxy/win32/Agent.nsi"/>
-                <include name="installer/console/win32/Manager.nsi"/>
+                <include name="installer/proxy/win32/ClientProxy.nsi"/>
+                <include name="installer/console/win32/ManagementConsole.nsi"/>
             </fileset>
         </replaceregexp>
 
