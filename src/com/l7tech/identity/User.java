@@ -1,6 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import java.util.Set;
 import java.util.Collections;
@@ -156,9 +157,7 @@ public class User extends NamedEntityImp implements Principal {
         return hash;
     }
 
-    public static String encodePasswd(String login, String passwd) {
-        String toEncode = login + ":" + passwd;
-
+    private static String encodePasswd( String a1 ) {
         // MD5 IT
         java.security.MessageDigest md5Helper = null;
         try {
@@ -166,7 +165,7 @@ public class User extends NamedEntityImp implements Principal {
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
-        byte[] digest = md5Helper.digest(toEncode.getBytes());
+        byte[] digest = md5Helper.digest( a1.getBytes() );
         // ENCODE IT
         if (digest == null) return "";
         char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
@@ -180,6 +179,16 @@ public class User extends NamedEntityImp implements Principal {
             buffer[i*2 + 1] = hexadecimal[low];
         }
         return new String(buffer);
+    }
+
+    public static String encodePasswd(String login, String passwd) {
+        String toEncode = login + ":" + HttpDigest.REALM + ":" + passwd;
+        return encodePasswd( toEncode );
+    }
+
+    public static String encodePasswd( String login, String passwd, String realm ) {
+        String toEncode = login + ":" + realm + ":" + passwd;
+        return encodePasswd( toEncode );
     }
 
     /**
