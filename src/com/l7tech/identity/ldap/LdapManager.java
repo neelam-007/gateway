@@ -8,6 +8,7 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
+import java.util.Hashtable;
 
 /**
  * Layer 7 Technologies, inc.
@@ -35,11 +36,12 @@ public class LdapManager {
     }
 
     protected static DirContext getBrowseContext( IdentityProviderConfig config ) throws NamingException {
-        java.util.Hashtable env = new java.util.Hashtable();
+        Hashtable env = new Hashtable();
         env.put( "java.naming.ldap.version", "3" );
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         Object temp = config.getProperty( LdapConfigSettings.LDAP_HOST_URL );
         if ( temp != null ) env.put(Context.PROVIDER_URL, temp );
+        env.put("com.sun.jndi.ldap.connect.pool", "true");
 
         String dn = config.getProperty( LdapConfigSettings.LDAP_BIND_DN );
         if ( dn != null && dn.length() > 0 ) {
@@ -53,6 +55,5 @@ public class LdapManager {
         return new InitialDirContext(env);
     }
 
-    //protected DirContext anonymousContext = null;
     protected IdentityProviderConfig config;
 }
