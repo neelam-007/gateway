@@ -11,6 +11,7 @@ import javax.naming.directory.*;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.HashSet;
 
 /**
  * Layer 7 Technologies, inc.
@@ -50,7 +51,8 @@ public class LdapUserManagerServer implements UserManager {
             if (tmp != null) out.setName(tmp.toString());
             tmp = extractOneAttributeValue(attributes, PASSWD_ATTR_NAME);
             if (tmp != null) out.setPassword(tmp.toString());
-            // todo, record group memberships (use "groupMembership" attribute of user?)
+            Collection groupHeaders = findGroupMembershipsAsHeaders(out);
+            out.setGroupHeaders(new HashSet(groupHeaders));
             return out;
         } catch (NamingException e) {
             e.printStackTrace(System.err);
@@ -203,6 +205,42 @@ public class LdapUserManagerServer implements UserManager {
 
     }
 
+    private Collection findGroupMembershipsAsHeaders(LdapUser user) {
+        Collection out = new ArrayList();
+        try
+        {
+            NamingEnumeration answer = null;
+            String filter = "(" + GROUPOBJ_MEMBER_ATTR + "=" + user.getLogin() + ")";
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            answer = getAnonymousContext().search(config.getSearchBase(), filter, sc);
+            while (answer.hasMore())
+            {
+                SearchResult sr = (SearchResult)answer.next();
+
+                String dn = null;
+                String cn = null;
+                String description = null;
+
+                Attributes atts = sr.getAttributes();
+                Object tmp = extractOneAttributeValue(atts, NAME_ATTR_NAME);
+                if (tmp != null) cn = tmp.toString();
+                tmp = extractOneAttributeValue(atts, DESCRIPTION_ATTR);
+                if (tmp != null) description = tmp.toString();
+
+                dn = sr.getName() + "," + config.getSearchBase();
+                EntityHeader grpheader = new EntityHeader(dn, EntityType.USER, cn, description);
+                out.add(grpheader);
+            }
+        }
+        catch (NamingException e)
+        {
+            // if nothing can be found, just trace this exception and return empty collection
+            e.printStackTrace(System.err);
+        }
+        return out;
+    }
+
     private Object extractOneAttributeValue(Attributes attributes, String attrName) {
         Attribute valuesWereLookingFor = attributes.get(attrName);
         if (valuesWereLookingFor != null && valuesWereLookingFor.size() > 0) {
@@ -244,4 +282,6 @@ public class LdapUserManagerServer implements UserManager {
     private static final String NAME_ATTR_NAME = "cn";
     private static final String PASSWD_ATTR_NAME = "userPassword";
     private static final String USER_OBJCLASS = "inetOrgPerson";
+    private static final String GROUPOBJ_MEMBER_ATTR = "memberUid";
+    private static final String DESCRIPTION_ATTR = "description";
 }
