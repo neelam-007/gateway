@@ -369,9 +369,12 @@
       ** This should be done ONLY for non distribution builds.
       -->
     <target name="configure_properties" unless="dist.build">
+
+        <!--
         <echo message="The database url is '${database.connection.url}'"/>
         <echo message="The database url is '${database.user}'"/>
         <echo message="The database url is '${database.password}'"/>
+        -->
 
         <replace file="${build.classes}/hibernate.properties"
             token="DB_URL" value="${database.connection.url}"/>
