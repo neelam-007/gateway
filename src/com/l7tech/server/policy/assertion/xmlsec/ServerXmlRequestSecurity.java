@@ -59,13 +59,15 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         Session xmlsecSession = null;
         try {
             xmlsecSession = getXmlSecSession(soapmsg);
-        } catch (PolicyAssertionException e) {
-            response.setAuthenticationMissing(true);
-            response.setPolicyViolated(true);
-            return AssertionStatus.FALSIFIED;
         } catch (SessionInvalidException e) {
             // when the session is no longer valid we must inform the client proxy so that he generates another session
             response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
+            return AssertionStatus.FALSIFIED;
+        }
+        
+        if (xmlsecSession == null) {
+            response.setPolicyViolated(true);
+            response.setAuthenticationMissing(true);
             return AssertionStatus.FALSIFIED;
         }
 
@@ -189,15 +191,15 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         return seqNr;
     }
 
-    private Session getXmlSecSession(Document soapmsg) throws PolicyAssertionException, SessionInvalidException {
+    private Session getXmlSecSession(Document soapmsg) throws SessionInvalidException {
         // get the session id from the security context
         long sessionID = 0;
         try {
             sessionID = SecureConversationTokenHandler.readSessIdFromDocument(soapmsg);
         } catch (XMLSecurityElementNotFoundException e) {
             String msg = "could not extract session id from msg.";
-            logger.log(Level.SEVERE, msg, e);
-            throw new PolicyAssertionException(msg);
+            logger.log(Level.WARNING, msg, e);
+            return null;
         }
 
         // retrieve the session
@@ -206,7 +208,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             xmlsession = SessionManager.getInstance().getSession(sessionID);
         } catch (SessionNotFoundException e) {
             String msg = "Exception finding session with id=" + sessionID + ". session could reside on other cluster member or is no longer valid.";
-            logger.log(Level.SEVERE, msg, e);
+            logger.log(Level.WARNING, msg, e);
             throw new SessionInvalidException(msg, e);
         } catch (NumberFormatException e) {
             String msg = "Session id is not long value : " + sessionID;
