@@ -319,8 +319,9 @@
                 <include name="xml-apis.jar"/>
                 <include name="xpp3-1.1.3.3.jar"/>
                 <include name="xss4j.jar"/>
-
-                <include name="gateway/jms/**/*.jar"/>
+                
+                <include name="openjms-client-0.7.6-rc3.jar"/>
+                <include name="exolabcore-0.3.6.jar"/>
             </lib>
 
             <classes dir="${build.classes}">
@@ -500,9 +501,17 @@
         <mkdir dir="${doc.root}"/>
         <!-- lib -->
         <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib"
-                excludes="**/CVS/*,**/**ant*,**/optional.jar,
-                          **/*junit.jar, **/jsdk23.jar"/>
+            <fileset dir="${src.root}/lib">
+                <include name="*.jar"/>
+                <exclude name="**/CVS/*"/>
+                <exclude name="**/**ant*"/>
+                <exclude name="**/optional.jar"/>
+                <exclude name="**/*junit.jar"/>
+                <exclude name="**/jsdk23.jar"/>
+            </fileset>
+            <fileset dir="${src.root}/lib/gateway/jms/openjms">
+                <include name="**/*.jar"/>
+            </fileset>
         </copy>
 
         <!-- the web.xml -->
