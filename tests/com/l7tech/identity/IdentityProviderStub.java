@@ -44,10 +44,8 @@ public class IdentityProviderStub implements IdentityProvider {
         this.gm = gm;
     }
 
-    private IdentityProviderConfig icf = new IdentityProviderConfigImp();
+    private IdentityProviderConfig icf = null;
     private UserManager um = null;
-
-
     private GroupManager gm = null;
 
 }

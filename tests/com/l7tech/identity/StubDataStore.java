@@ -60,9 +60,12 @@ public class StubDataStore {
         IdentityProviderConfig config = new IdentityProviderConfigImp();
         config.setOid(nextObjectId());
         config.setDescription("Internal identity provider (stub)");
-        encoder.writeObject(config);
+
         IdentityProviderType type = new IdentityProviderTypeImp();
-        //type.setDescription(); //todo finish this!!!
+        type.setDescription("Internal identity provider test stub");
+        type.setClassName(IdentityProviderStub.class.getName());
+        config.setType(type);
+        encoder.writeObject(config);
 
         return config.getOid();
     }
@@ -203,6 +206,7 @@ public class StubDataStore {
      */
     public static void main(String[] args) {
         try {
+            System.out.println("Generating stub data stor in '"+PATH+File.separator+"data.xml'");
             new StubDataStore().initializeSeedData(PATH);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
