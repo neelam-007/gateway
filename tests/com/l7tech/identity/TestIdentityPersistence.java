@@ -8,20 +8,21 @@ import com.l7tech.util.Locator;
 /**
  * @author alex
  */
-public class TestIdentityProviderConfigManager extends TestCase {
+public class TestIdentityPersistence extends TestCase {
     /**
-     * test <code>TestIdentityProviderConfigManager</code> constructor
+     * test <code>TestIdentityPersistence</code> constructor
      */
-    public TestIdentityProviderConfigManager(String name) {
+    public TestIdentityPersistence(String name) {
         super(name);
     }
 
     /**
      * create the <code>TestSuite</code> for the
-     * TestIdentityProviderConfigManager <code>TestCase</code>
+     * TestIdentityPersistence <code>TestCase</code>
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite(TestIdentityProviderConfigManager.class);
+        TestSuite suite = new TestSuite(TestIdentityPersistence.class);
+        suite.addTest( new TestIdentityProviderConfigManager() );
         return suite;
     }
 
@@ -45,7 +46,7 @@ public class TestIdentityProviderConfigManager extends TestCase {
 
     }
     /**
-     * Test <code>TestIdentityProviderConfigManager</code> main.
+     * Test <code>TestIdentityPersistence</code> main.
      */
     public static void main(String[] args) throws
             Throwable {
