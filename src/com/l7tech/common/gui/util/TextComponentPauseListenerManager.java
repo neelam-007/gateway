@@ -6,8 +6,6 @@
 
 package com.l7tech.common.gui.util;
 
-import com.l7tech.common.gui.util.PauseListener;
-
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
