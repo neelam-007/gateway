@@ -169,7 +169,7 @@
 
     <env-entry>
         <description>Location of the root ca cert. Used to verify the validity of user certs.</description>
-        <!-- this value is changed by the rootcaGen.sh script (not yet - todo) -->
+        <!-- this value is changed by the rootcaGen.sh script -->
         <env-entry-name>RootCertLocation</env-entry-name><env-entry-value>/usr/java/jakarta-tomcat-4.1.24/kstores/ssgroot.cer</env-entry-value>
         <env-entry-type>java.lang.String</env-entry-type>
     </env-entry>
