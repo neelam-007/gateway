@@ -7,7 +7,6 @@
 package com.l7tech.util;
 
 import org.apache.log4j.Category;
-import org.apache.tools.ant.filters.StringInputStream;
 import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
 import org.w3c.dom.Document;
@@ -19,6 +18,7 @@ import javax.xml.parsers.DocumentBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.io.ByteArrayInputStream;
 
 /**
  * Thread-local XML parsing and pretty-printing utilities.
@@ -47,8 +47,8 @@ public class XmlUtil {
     }
 
     public static Document stringToDocument(String inputXmlNotAUrl) throws IOException, SAXException {
-        StringInputStream sis = new StringInputStream(inputXmlNotAUrl);
-        return parse(sis);
+        ByteArrayInputStream bis = new ByteArrayInputStream(inputXmlNotAUrl.getBytes());
+        return parse(bis);
     }
 
     public static Document parse(InputStream input) throws IOException, SAXException {
