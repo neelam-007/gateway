@@ -19,6 +19,9 @@ import java.util.Iterator;
 public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.handlers.BasicHandler {
 
     protected boolean userIsMemberOfGroup(long userOid, String groupName) {
+        /*
+        IMPLEMENTATION 1, GET USER BY ID , THEN SEE IF SSGAdmin is part of the groups he's in
+        THIS DOES NOT SEEM TO WORK BECAUSE OF AN APPARENT ISSUE WITH USER.GETGROUP RETURNING NULL (ALWAYS)
         com.l7tech.identity.User user = findUserByOid(userOid);
         if (user == null) return false;
         java.util.Collection groups = user.getGroups();
@@ -36,6 +39,28 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
         }
         System.err.println("InternalIDSecurityAxisHandler.userIsMemberOfGroup: user oid " + userOid + "denied membership to group " + groupName);
         return false;
+        */
+        
+        // IMPLEMENTATION 2, get the group, then see if the user is in there
+        Group grp = findGroupByNameAndRealm(groupName, null);
+        if (grp == null) {
+            System.err.println("InternalIDSecurityAxisHandler.userIsMemberOfGroup group " + groupName + " cannot be found.");
+            return false;
+        }
+        Collection members = grp.getMembers();
+        if (members == null) {
+            System.err.println("InternalIDSecurityAxisHandler.userIsMemberOfGroup group " + groupName + " has no members.");
+            return false;
+        }
+        java.util.Iterator i = members.iterator();
+        while (i.hasNext()) {
+            com.l7tech.identity.User user = (com.l7tech.identity.User)i.next();
+            if (user.getOid() == userOid) {
+                return true;
+            }
+        }
+        System.err.println("InternalIDSecurityAxisHandler.userIsMemberOfGroup: user oid " + userOid + "denied membership to group " + groupName);
+        return false;
     }
 
     protected com.l7tech.identity.User findUserByLoginAndRealm(String login, String realm) {
@@ -46,6 +71,27 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
             while (i.hasNext()) {
                 User user = (User)i.next();
                 if (user.getLogin().equals(login)) return user;
+            }
+            return null;
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace(System.err);
+            return null;
+        } catch (FindException e) {
+            e.printStackTrace(System.err);
+            return null;
+        } finally {
+            endTransaction();
+        }
+    }
+
+    protected com.l7tech.identity.Group findGroupByNameAndRealm(String name, String realm) {
+        try {
+            GroupManager manager = getInternalGroupManagerAndBeginTransaction();
+            Collection groups = manager.findAll();
+            Iterator i = groups.iterator();
+            while (i.hasNext()) {
+                Group grp = (Group)i.next();
+                if (grp.getName().equals(name)) return grp;
             }
             return null;
         } catch (java.sql.SQLException e) {
@@ -93,6 +139,29 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
         } catch (FindException e) {
             e.printStackTrace(System.err);
             throw new java.sql.SQLException("TransactionException in getInternalUserManagerAndBeginTransaction "+ e.getMessage());
+        }
+        return null;
+    }
+
+    private GroupManager getInternalGroupManagerAndBeginTransaction() throws java.sql.SQLException {
+        try {
+            IdentityProviderConfigManager identityProviderConfigManager = (com.l7tech.identity.IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+            if (identityProviderConfigManager == null) throw new java.sql.SQLException("Cannot instantiate the IdentityProviderConfigManager");
+            PersistenceContext.getCurrent().beginTransaction();
+            Collection ipcCollection = identityProviderConfigManager.findAll();
+            Iterator i = ipcCollection.iterator();
+            while (i.hasNext()) {
+                IdentityProviderConfig ipc = (IdentityProviderConfig)i.next();
+                // todo, verify we have the right type of provider (once more than one type exist)
+                IdentityProvider provider = IdentityProviderFactory.makeProvider(ipc);
+                return provider.getGroupManager();
+            }
+        } catch (TransactionException e) {
+            e.printStackTrace(System.err);
+            throw new java.sql.SQLException("TransactionException in getInternalGroupManagerAndBeginTransaction "+ e.getMessage());
+        } catch (FindException e) {
+            e.printStackTrace(System.err);
+            throw new java.sql.SQLException("TransactionException in getInternalGroupManagerAndBeginTransaction "+ e.getMessage());
         }
         return null;
     }
