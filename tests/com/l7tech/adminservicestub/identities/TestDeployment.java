@@ -33,7 +33,7 @@ public class TestDeployment {
 
     public static void printres(ListResultEntry[] res) {
         for (int i = 0; i < res.length; i++) {
-            System.out.println(res[i].getName());
+            System.out.println(res[i].getName() + " - " + res[i].getType());
         }
     }
 }

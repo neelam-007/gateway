@@ -9,6 +9,7 @@ package com.l7tech.adminservicestub;
 
 public class ListResultEntry  implements java.io.Serializable {
     private java.lang.String name;
+    private java.lang.String type;
     private long uid;
 
     public ListResultEntry() {
@@ -20,6 +21,14 @@ public class ListResultEntry  implements java.io.Serializable {
 
     public void setName(java.lang.String name) {
         this.name = name;
+    }
+
+    public java.lang.String getType() {
+        return type;
+    }
+
+    public void setType(java.lang.String type) {
+        this.type = type;
     }
 
     public long getUid() {
@@ -45,6 +54,9 @@ public class ListResultEntry  implements java.io.Serializable {
             ((this.name==null && other.getName()==null) || 
              (this.name!=null &&
               this.name.equals(other.getName()))) &&
+            ((this.type==null && other.getType()==null) || 
+             (this.type!=null &&
+              this.type.equals(other.getType()))) &&
             this.uid == other.getUid();
         __equalsCalc = null;
         return _equals;
@@ -60,6 +72,9 @@ public class ListResultEntry  implements java.io.Serializable {
         if (getName() != null) {
             _hashCode += getName().hashCode();
         }
+        if (getType() != null) {
+            _hashCode += getType().hashCode();
+        }
         _hashCode += new Long(getUid()).hashCode();
         __hashCodeCalc = false;
         return _hashCode;
@@ -74,6 +89,11 @@ public class ListResultEntry  implements java.io.Serializable {
         org.apache.axis.description.ElementDesc elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("name");
         elemField.setXmlName(new javax.xml.namespace.QName("", "name"));
+        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
+        typeDesc.addFieldDesc(elemField);
+        elemField = new org.apache.axis.description.ElementDesc();
+        elemField.setFieldName("type");
+        elemField.setXmlName(new javax.xml.namespace.QName("", "type"));
         elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
