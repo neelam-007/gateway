@@ -7,6 +7,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
+import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -148,6 +149,9 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             }
             logger.info("Decrypted request successfully.");
         }
+
+        // note, the routing should no longer use the non parsed payload
+        ((XmlRequest)request).setDocument(soapmsg);
 
         return AssertionStatus.NONE;
     }
