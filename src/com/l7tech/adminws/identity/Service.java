@@ -3,7 +3,10 @@ package com.l7tech.adminws.identity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.*;
 import com.l7tech.util.Locator;
+import com.l7tech.logging.LogManager;
+
 import java.rmi.RemoteException;
+import java.util.logging.Level;
 
 /**
  * Layer 7 Technologies, inc.
@@ -36,10 +39,10 @@ public class Service {
             java.util.Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders();
             return collectionToHeaderArray(res);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "FindException in findAllIdentityProviderConfig", e);
             throw new RemoteException("FindException in findAllIdentityProviderConfig", e);
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception in findAllIdentityProviderConfig", e);
             throw new RemoteException("Exception in findAllIdentityProviderConfig", e);
         } finally {
             endTransaction();
@@ -55,10 +58,10 @@ public class Service {
             java.util.Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in findAllIdentityProviderConfigByOffset", e);
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("Exception in findAllIdentityProviderConfigByOffset", e);
         } finally {
             endTransaction();
@@ -73,7 +76,7 @@ public class Service {
         try {
             return getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(oid);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("FindException in findIdentityProviderConfigByPrimaryKey", e);
         } finally {
             endTransaction();
@@ -86,11 +89,13 @@ public class Service {
                 IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
                 originalConfig.copyFrom(identityProviderConfig);
                 manager.update(originalConfig);
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated IDProviderConfig: " + identityProviderConfig.getOid());
                 return identityProviderConfig.getOid();
             }
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Saving IDProviderConfig: " + identityProviderConfig.getOid());
             return getIdentityProviderConfigManagerAndBeginTransaction().save(identityProviderConfig);
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("Exception in saveIdentityProviderConfig", e);
         } finally {
             endTransaction();
@@ -100,12 +105,13 @@ public class Service {
         try {
             IdentityProviderConfigManager manager = getIdentityProviderConfigManagerAndBeginTransaction();
             manager.delete(manager.findByPrimaryKey(oid));
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Deleted IDProviderConfig: " + oid);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("FindException in deleteIdentityProviderConfig", e);
         }
         catch (DeleteException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("DeleteException in deleteIdentityProviderConfig", e);
         } finally {
             endTransaction();
@@ -117,7 +123,7 @@ public class Service {
             java.util.Collection res = userManager.findAllHeaders();
             return collectionToHeaderArray(res);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in findAllUsers", e);
         } finally {
             endTransaction();
@@ -129,7 +135,7 @@ public class Service {
             java.util.Collection res = userManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in findAllUsers", e);
         } finally {
             endTransaction();
@@ -141,7 +147,7 @@ public class Service {
         try {
             return userManager.findByPrimaryKey(userId);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("FindException in findUserByPrimaryKey", e);
         } finally {
             endTransaction();
@@ -153,11 +159,12 @@ public class Service {
         try {
             com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
             userManager.delete(user);
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Deleted User: " + userId);
         } catch (DeleteException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("DeleteException in deleteUser", e);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("FindException in deleteUser", e);
         } finally {
             endTransaction();
@@ -171,11 +178,13 @@ public class Service {
                 User originalUser = userManager.findByPrimaryKey(Long.toString(user.getOid()));
                 originalUser.copyFrom(user);
                 userManager.update(originalUser);
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated User: " + user.getOid());
                 return user.getOid();
             }
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Saving User: " + user.getOid());
             return userManager.save(user);
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("Exception in saveUser", e);
         } finally {
             endTransaction();
@@ -186,7 +195,7 @@ public class Service {
             java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders();
             return collectionToHeaderArray(res);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in findAllGroups", e);
         } finally {
             endTransaction();
@@ -197,7 +206,7 @@ public class Service {
             java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in findAllGroups", e);
         } finally {
             endTransaction();
@@ -207,7 +216,7 @@ public class Service {
         try {
             return retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findByPrimaryKey(groupId);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in findGroupByPrimaryKey", e);
         } finally {
             endTransaction();
@@ -220,7 +229,7 @@ public class Service {
             if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
             groupManager.delete(grp);
         } catch (ObjectModelException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("ObjectModelException in deleteGroup", e);
         } finally {
             endTransaction();
@@ -236,17 +245,19 @@ public class Service {
                 groupManager.update(originalGroup);
                 // end of patch
                 //groupManager.update(group);
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated Group: " + group.getOid());
                 return group.getOid();
             }
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Saving Group: " + group.getOid());
             return groupManager.save(group);
         } catch (SaveException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("SaveException in saveGroup", e);
         } catch (UpdateException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("UpdateException in saveGroup", e);
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in saveGroup", e);
         } finally {
             endTransaction();
@@ -265,10 +276,10 @@ public class Service {
             PersistenceContext.getCurrent().beginTransaction();
         }
         catch (java.sql.SQLException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("SQLException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
         } catch (TransactionException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("TransactionException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
         }
         return identityProviderConfigManager;
@@ -278,10 +289,10 @@ public class Service {
         try {
             PersistenceContext.getCurrent().commitTransaction();
         } catch (java.sql.SQLException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("Exception commiting", e);
         } catch (TransactionException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("Exception commiting", e);
         }
     }
@@ -292,7 +303,7 @@ public class Service {
             IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
             ret = provider.getUserManager();
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("RemoteException in retrieveUserManager", e);
         }
         return ret;
@@ -304,7 +315,7 @@ public class Service {
             IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
             ret = provider.getGroupManager();
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("RemoteException in retrieveGroupManager", e);
         }
         return ret;
@@ -316,10 +327,10 @@ public class Service {
             identityProviderConfigManager = (com.l7tech.identity.IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
             if (identityProviderConfigManager == null) throw new java.rmi.RemoteException("Cannot instantiate the IdentityProviderConfigManager");
         } catch (ClassCastException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("ClassCastException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup", e);
         } catch (RuntimeException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("RuntimeException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
         }
     }
@@ -333,7 +344,7 @@ public class Service {
             try {
                 output[count] = (com.l7tech.objectmodel.EntityHeader)i.next();
             } catch (ClassCastException e) {
-                e.printStackTrace(System.err);
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
                 throw new java.rmi.RemoteException("Collection contained something other than a com.l7tech.objectmodel.EntityHeader", e);
             }
             ++count;

@@ -4,6 +4,7 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
+import com.l7tech.logging.LogManager;
 
 import javax.naming.directory.*;
 import javax.naming.NamingException;
@@ -12,6 +13,7 @@ import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.HashSet;
+import java.util.logging.Level;
 
 /**
  * Layer 7 Technologies, inc.
@@ -62,7 +64,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             context.close();
             return out;
         } catch (NamingException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
     }
@@ -110,7 +112,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
         }
         catch (NamingException e)
         {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
         return output;
@@ -156,7 +158,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
         }
         catch (NamingException e)
         {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
         return output;

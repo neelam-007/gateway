@@ -5,9 +5,11 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.util.Locator;
+import com.l7tech.logging.LogManager;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.logging.Level;
 
 /**
  * Layer 7 Technologies, inc.
@@ -44,12 +46,12 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
         // IMPLEMENTATION 2, get the group, then see if the user is in there
         Group grp = findGroupByNameAndRealm(groupName, null);
         if (grp == null) {
-            System.err.println("InternalIDSecurityAxisHandler.userIsMemberOfGroup group " + groupName + " cannot be found.");
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "InternalIDSecurityAxisHandler.userIsMemberOfGroup group " + groupName + " cannot be found.");
             return false;
         }
         Collection members = grp.getMembers();
         if (members == null) {
-            System.err.println("InternalIDSecurityAxisHandler.userIsMemberOfGroup group " + groupName + " has no members.");
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "InternalIDSecurityAxisHandler.userIsMemberOfGroup group " + groupName + " has no members.");
             return false;
         }
         java.util.Iterator i = members.iterator();
@@ -59,7 +61,7 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
                 return true;
             }
         }
-        System.err.println("InternalIDSecurityAxisHandler.userIsMemberOfGroup: user oid " + userOid + "denied membership to group " + groupName);
+        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "InternalIDSecurityAxisHandler.userIsMemberOfGroup: user oid " + userOid + "denied membership to group " + groupName);
         return false;
     }
 
@@ -68,13 +70,13 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
             UserManager manager = getInternalUserManagerAndBeginTransaction();
             return manager.findByLogin(login);
         } catch (java.sql.SQLException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             return null;
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             return null;
         } catch (NullPointerException e){
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             return null;
         } finally {
             endTransaction();
@@ -92,10 +94,10 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
             }
             return null;
         } catch (java.sql.SQLException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             return null;
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             return null;
         } finally {
             endTransaction();
@@ -107,10 +109,10 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
             UserManager manager = getInternalUserManagerAndBeginTransaction();
             return manager.findByPrimaryKey(Long.toString(oid));
         } catch (java.sql.SQLException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             return null;
         } catch (FindException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             return null;
         } finally {
             endTransaction();
@@ -124,7 +126,7 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
             if (identityProviderConfigManager == null) throw new java.sql.SQLException("could not instantiate the IdentityProviderConfigManager");
             return identityProviderConfigManager.getInternalIdentityProvider().getUserManager();
         } catch (TransactionException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.sql.SQLException("TransactionException in getInternalUserManagerAndBeginTransaction "+ e.getMessage());
         }
     }
@@ -136,7 +138,7 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
             if (identityProviderConfigManager == null) throw new java.sql.SQLException("could not instantiate the IdentityProviderConfigManager");
             return identityProviderConfigManager.getInternalIdentityProvider().getGroupManager();
         } catch (TransactionException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.sql.SQLException("TransactionException in getInternalGroupManagerAndBeginTransaction "+ e.getMessage());
         }
     }
@@ -145,9 +147,9 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
         try {
             PersistenceContext.getCurrent().commitTransaction();
         } catch (java.sql.SQLException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
         } catch (TransactionException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
         }
     }
 

@@ -4,6 +4,7 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
+import com.l7tech.logging.LogManager;
 
 import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
@@ -12,6 +13,7 @@ import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.HashSet;
+import java.util.logging.Level;
 
 /**
  * Layer 7 Technologies, inc.
@@ -62,7 +64,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             context.close();
             return out;
         } catch (NamingException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
     }
@@ -85,7 +87,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             } else return null;
             return findByPrimaryKey(dn);
         } catch (NamingException e) {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
     }
@@ -146,7 +148,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
         }
         catch (NamingException e)
         {
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
         return output;
@@ -190,11 +192,9 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             }
             if (answer != null) answer.close();
             context.close();
-        }
-        catch (NamingException e)
-        {
+        } catch (NamingException e) {
             // if nothing can be found, just trace this exception and return empty collection
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
         }
         return output;
     }
@@ -255,11 +255,9 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             }
             if (answer != null) answer.close();
             context.close();
-        }
-        catch (NamingException e)
-        {
+        } catch (NamingException e) {
             // if nothing can be found, just trace this exception and return empty collection
-            e.printStackTrace(System.err);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
         }
         return out;
     }
