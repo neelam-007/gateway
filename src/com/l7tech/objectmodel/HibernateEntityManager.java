@@ -38,7 +38,7 @@ public abstract class HibernateEntityManager implements EntityManager {
         String alias = getTableName();
         String query = "FROM " + alias +
                        " IN CLASS " + getImpClass() +
-                       " WHERE " + alias + ".objectid = ?";
+                       " WHERE " + alias + ".oid = ?";
         try {
             List results = PersistenceManager.find( getContext(), query, new Long( oid ), Long.TYPE );
             if ( results.size() == 0 ) return null;
@@ -57,10 +57,9 @@ public abstract class HibernateEntityManager implements EntityManager {
         String alias = getTableName();
         if ( !Entity.class.isAssignableFrom( impClass ) ) throw new FindException( "Can't find non-Entities!" );
 
-        String query = "SELECT " + alias + ".objectid, " + alias + ".version" +
+        String query = "SELECT " + alias + ".oid, " + alias + ".version" +
                        " FROM " + alias +
-                       " IN CLASS " + getImpClass() +
-                       " WHERE " + alias + ".objectid = ?";
+                       " IN CLASS " + getImpClass();
 
         try {
             List results = PersistenceManager.find( getContext(), query );
