@@ -86,8 +86,6 @@ CREATE TABLE internal_user (
   last_name varchar(32) default NULL,
   email varchar(128) default NULL,
   title varchar(64) default NULL,
-  cert BLOB DEFAULT NULL,
-  cert_reset_counter INT DEFAULT '0',
   PRIMARY KEY  (oid),
   UNIQUE KEY l_idx (login)
 ) TYPE=InnoDB;
@@ -157,4 +155,22 @@ CREATE TABLE published_service (
 
 --
 -- Dumping data for table 'published_service'
+--
+
+--
+-- Table structure for table 'client_cert'
+--
+
+DROP TABLE client_cert;
+CREATE TABLE client_cert (
+  objectid bigint NOT NULL primary key default '0',
+  provider bigint NOT NULL default '0',
+  login varchar(255) NOT NULL default '',
+  cert text DEFAULT NULL,
+  reset_counter int NOT NULL default '0',
+  PRIMARY KEY  (objectid)
+) TYPE=InnoDB;
+
+--
+-- Dumping data for table 'client_cert'
 --

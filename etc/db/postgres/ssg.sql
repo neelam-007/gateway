@@ -76,9 +76,7 @@ CREATE TABLE internal_user (
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
   email varchar(128) default NULL,
-  title varchar(64) default NULL,
-  cert text DEFAULT NULL,
-  cert_reset_counter INT DEFAULT '0'
+  title varchar(64) default NULL
 );
 
 alter table internal_user add unique ( login );
@@ -126,4 +124,21 @@ CREATE TABLE published_service (
 
 --
 -- Dumping data for table 'published_service'
+--
+
+--
+-- Table structure for table 'client_cert'
+--
+
+DROP TABLE client_cert;
+CREATE TABLE client_cert (
+  objectid bigint NOT NULL primary key default '0',
+  provider bigint NOT NULL default '0',
+  login varchar(255) NOT NULL default '',
+  cert text DEFAULT NULL,
+  reset_counter int NOT NULL default '0'
+);
+
+--
+-- Dumping data for table 'client_cert'
 --

@@ -26,18 +26,6 @@
         <property name="serializedProps" type="string" column="properties" />
     </class>
 
-    <class name="com.l7tech.objectmodel.imp.ObjectIdentityImp" table="object_identity">
-        <id name="oid" column="oid" type="long">
-          <generator class="hilo.long"/>
-        </id>
-
-        <property name="tableName" column="table_name" type="string"/>
-        <property name="keySeed" column="key_seed" type="long"/>
-        <property name="keyBatchSize" column="key_batch_size" type="int"/>
-        <property name="classSeed" column="class_seed" type="int"/>
-        <property name="serverSeed" column="server_seed" type="int"/>
-    </class>
-
     <class name="com.l7tech.identity.Group" table="internal_group">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
             <generator class="hilo.long"/>
@@ -68,8 +56,6 @@
         <property name="lastName" column="last_name" type="string"/>
         <property name="email" type="string"/>
         <property name="title" type="string"/>
-	    <property name="cert" type="string"/>
-        <property name="certResetCounter" column="cert_reset_counter" type="int"/>
 
         <set role="groups" lazy="false" table="internal_user_group">
             <key column="internal_user"/>
@@ -89,6 +75,16 @@
         <property name="wsdlUrl" column="wsdl_url" type="string"/>
         <property name="wsdlXml" column="wsdl_xml" type="string"/>
         <property name="disabled" column="disabled" type="boolean"/>
+    </class>
+
+    <class name="com.l7tech.identity.cert.CertEntryRow" table="client_cert">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="provider" column="provider" type="long"/>
+        <property name="login" column="login" type="string"/>
+        <property name="cert" column="cert" type="string"/>
+        <property name="resetCounter" column="reset_counter" type="int"/>
     </class>
 
 </hibernate-mapping>
