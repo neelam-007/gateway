@@ -214,6 +214,11 @@ public final class SoapMsgSigner {
             throw new InvalidSignatureException("Could not get X509 cert");
         }
 
+        // todo
+        // this may contain instead a wsse:SecurityTokenReference pointing to
+        // a wsse:BinarySecurityToken. we should support getting the cert from
+        // that location too.
+
         // validate signature
         PublicKey pubKey = certs[0].getPublicKey();
         Validity validity = sigContext.verify(sigElement, pubKey);
