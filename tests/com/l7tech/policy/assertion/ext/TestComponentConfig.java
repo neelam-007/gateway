@@ -17,6 +17,6 @@ public class TestComponentConfig implements ComponentConfig {
         if (!prop.equals(propName)) {
             throw new IllegalArgumentException("the only property supported is '" + prop + "'");
         }
-        return "/com/l7tech/policy/assertion/ext/testext.properties";
+        return "/com/l7tech/policy/assertion/ext/test_customassertions.properties";
     }
 }

@@ -4,7 +4,8 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * The utility class that keeps track of the registered ext assertions.
+ * The utility class, custom assertions holdrr that keeps track of the registered
+ * custom assertions.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
@@ -45,7 +46,8 @@ public class CustomAssertions {
      */
     public static Class getServerAssertion(Class a) {
         for (Iterator iterator = assertions.keySet().iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
+            Object key = iterator.next();
+            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)assertions.get(key);
             if (a.equals(eh.getAssertion())) {
                 return eh.getServerAssertion();
             }
@@ -59,11 +61,28 @@ public class CustomAssertions {
     public static Set getAssertions() {
         Set allAssertions = new HashSet();
         for (Iterator iterator = assertions.keySet().iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
+            Object key = iterator.next();
+            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)assertions.get(key);
             allAssertions.add(eh.getAssertion());
         }
         return allAssertions;
     }
+
+    /**
+     * @return the set of all assertions registered
+     */
+    public static Set getAssertions(Category cat) {
+        Set allAssertions = new HashSet();
+        for (Iterator iterator = assertions.keySet().iterator(); iterator.hasNext();) {
+            Object key = iterator.next();
+            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)assertions.get(key);
+            if (cat.equals(eh.getCategory())) {
+                allAssertions.add(eh.getAssertion());
+            }
+        }
+        return allAssertions;
+    }
+
 
     private static Map assertions = new HashMap();
 }

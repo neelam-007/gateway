@@ -30,6 +30,7 @@ public class CustomAssertionBootProcessTest extends TestCase {
         CustomAssertionsBootProcess ehb = new CustomAssertionsBootProcess();
         ehb.init(new TestComponentConfig());
         ehb.start();
+        System.out.println(CustomAssertions.getAssertions(Category.IDENTITY));
     }
 
 

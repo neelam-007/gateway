@@ -87,6 +87,7 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
         String clientClass = null;
         String serverClass = null;
         String assertionClass = null;
+        Category category = Category.UNFILLED;
 
         assertionClass = (String)properties.get(baseKey + ".class");
 
@@ -97,6 +98,11 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
                     clientClass = (String)properties.get(key);
                 } else if (key.endsWith(".server")) {
                     serverClass = (String)properties.get(key);
+                } else if (key.endsWith(".category")) {
+                    Category c = Category.asCategory((String)properties.get(key));
+                    if (c != null) {
+                        category = c;
+                    }
                 }
             }
         }
@@ -113,7 +119,7 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
             Class a = Class.forName(assertionClass);
             Class ca = Class.forName(clientClass);
             Class sa = Class.forName(serverClass);
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, sa);
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, sa, category);
             CustomAssertions.register(eh);
         } catch (ClassNotFoundException e) {
             StringBuffer sb = new StringBuffer("Cannot load class(es) for extensibility assertion, skipping...\n");
@@ -139,5 +145,5 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
     }
 
     private String fileName;
-    final static String KEY_CONFIG_FILE = "ext.assertions.file";
+    final static String KEY_CONFIG_FILE = "custom.assertions.file";
 }

@@ -1,7 +1,6 @@
 package com.l7tech.policy.assertion.ext;
 
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
 /**
@@ -20,6 +19,7 @@ public class CustomAssertionDescriptor {
     private Class serverAssertion;
     private Class clientAssertion;
     private String name;
+    private Category category;
 
     /**
      * Create the new extensibility holder instance with the assertion, server
@@ -30,10 +30,11 @@ public class CustomAssertionDescriptor {
      * @param ca   the agent assertion class
      * @param sa   the server side assertion class
      */
-    public CustomAssertionDescriptor(String name, Class a, Class ca, Class sa) {
+    public CustomAssertionDescriptor(String name, Class a, Class ca, Class sa, Category cat) {
         this.name = name;
         this.assertion = a;
-        if (!Assertion.class.isAssignableFrom(a)) {
+        this.category = cat;
+        if (!CustomAssertion.class.isAssignableFrom(a)) {
             throw new IllegalArgumentException("assertion " + a);
         }
 
@@ -67,6 +68,13 @@ public class CustomAssertionDescriptor {
     }
 
     /**
+     * @return the category for this custom assertion
+     */
+    public Category getCategory() {
+        return category;
+    }
+
+    /**
      * @return the server assertion class
      */
     public Class getServerAssertion() {
@@ -76,6 +84,7 @@ public class CustomAssertionDescriptor {
     public String toString() {
         return new StringBuffer("[")
           .append("; name='").append(name).append("'")
+          .append("category=").append(category)
           .append("assertion=").append(safeName(assertion))
           .append("; serverAssertion=").append(safeName(serverAssertion))
           .append("; clientAssertion=").append(safeName(clientAssertion))

@@ -19,7 +19,17 @@ public class NetegritySiteminderProperties implements CustomAssertion {
         this.resource = resource;
     }
 
+    public String getCookieName() {
+        return cookieName;
+    }
+
+    public void setCookieName(String cookieName) {
+        this.cookieName = cookieName;
+    }
+
     private String resource;
+
+    private String cookieName;
 
     public String getName() {
         return "Netegrity Siteminder";

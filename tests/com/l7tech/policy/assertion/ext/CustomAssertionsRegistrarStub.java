@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.CustomAssertionHolder;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -15,7 +16,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @return the list of all assertions known to the runtime
      * @throws java.rmi.RemoteException
      */
-    public List getAssertions() throws RemoteException {
+    public Collection getAssertions() throws RemoteException {
         return new ArrayList();
     }
 
@@ -25,7 +26,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      *         for a give n category
      * @throws java.rmi.RemoteException
      */
-    public List getAssertions(Category c) throws RemoteException {
+    public Collection getAssertions(Category c) throws RemoteException {
         CustomAssertionHolder ca = new CustomAssertionHolder();
         ca.setCustomAssertion(new NetegritySiteminderProperties());
         List list = new ArrayList();

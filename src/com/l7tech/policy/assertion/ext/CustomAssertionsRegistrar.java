@@ -2,7 +2,7 @@ package com.l7tech.policy.assertion.ext;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * The interface <code>CustomAssertionsRegistrar</code> implementations
@@ -17,7 +17,7 @@ public interface CustomAssertionsRegistrar extends Remote {
      * @return the list of all assertions known to the runtime
      * @throws RemoteException
      */
-    List getAssertions() throws RemoteException;
+    Collection getAssertions() throws RemoteException;
 
     /**
      * @param c the category to query for
@@ -25,5 +25,5 @@ public interface CustomAssertionsRegistrar extends Remote {
      *         for a give n category
      * @throws RemoteException
      */
-    List getAssertions(Category c) throws RemoteException;
+    Collection getAssertions(Category c) throws RemoteException;
 }
