@@ -129,7 +129,7 @@ public class TokenServiceServlet extends HttpServlet {
                                                                       "contexts must be associated unambigously to one " +
                                                                       "user.");
                                 } else {
-                                authenticatedUser = dude;
+                                    authenticatedUser = dude;
                                 }
                             }
                         } catch (AuthenticationException e) {
@@ -144,7 +144,9 @@ public class TokenServiceServlet extends HttpServlet {
                     logger.log(Level.WARNING, "could not get id provider from factory", e);
                     return null;
                 }
-                logger.fine("Credentials did not authenticate against any provider.");
+                if (authenticatedUser == null) {
+                    logger.fine("Credentials did not authenticate against any provider.");
+                }
                 return authenticatedUser;
             }
         };
