@@ -86,75 +86,97 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         PostMethod postMethod = null;
 
         try {
-            PublishedService service = (PublishedService)request.getParameter(Request.PARAM_SERVICE);
-            URL url;
-            URL wsdlUrl = service.serviceUrl(request);
-            String psurl = _data.getProtectedServiceUrl();
-            if (psurl == null) {
-                url = wsdlUrl;
-            } else {
-                url = new URL(psurl);
+            try {
+                PublishedService service = (PublishedService)request.getParameter(Request.PARAM_SERVICE);
+                URL url;
+                URL wsdlUrl = service.serviceUrl(request);
+                String psurl = _data.getProtectedServiceUrl();
+                if (psurl == null) {
+                    url = wsdlUrl;
+                } else {
+                    url = new URL(psurl);
+                }
+
+                HttpClient client = new HttpClient(_connectionManager);
+
+                postMethod = new PostMethod(url.toString());
+
+                // TODO: Attachments
+                postMethod.setRequestHeader(CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
+
+                String userAgent = _data.getUserAgent();
+                if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
+                postMethod.setRequestHeader(USER_AGENT, userAgent);
+
+                StringBuffer hostValue = new StringBuffer(url.getHost());
+                int port = url.getPort();
+                if (port != -1) {
+                    hostValue.append(":");
+                    hostValue.append(port);
+                }
+                postMethod.setRequestHeader(HOST, hostValue.toString());
+                postMethod.setRequestHeader(SoapUtil.SOAPACTION, (String)request.getParameter(Request.PARAM_HTTP_SOAPACTION));
+
+                String login = _data.getLogin();
+                String password = _data.getPassword();
+
+                if (login != null && password != null) {
+                    logger.fine("Using login '" + login + "'");
+                    HttpState state = client.getState();
+                    postMethod.setDoAuthentication(true);
+                    state.setAuthenticationPreemptive(true);
+                    state.setCredentials(null, null, new UsernamePasswordCredentials(login, new String(password)));
+                }
+
+                String requestXml = request.getRequestXml();
+                if (_data.isAttachSamlSenderVouches()) {
+                    Document document = XmlUtil.stringToDocument(requestXml);
+                    SamlAssertionGenerator ag = new SamlAssertionGenerator();
+    //                SignerInfo si = new com.l7tech.common.security.Keys().asSignerInfo("CN="+ServerConfig.getInstance().getHostname());
+                    SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
+                    UserBean ub = new UserBean();
+                    ub.setName("CN="+login);
+                    ag.attachSenderVouches(document, ub, si);
+                    requestXml = XmlUtil.documentToString(document);
+                }
+                attachCookies(client, request.getTransportMetadata());
+                postMethod.setRequestBody(requestXml);
+                client.executeMethod(postMethod);
+
+                int status = postMethod.getStatusCode();
+                if (status == 200)
+                    logger.fine("Request routed successfully");
+                else
+                    logger.info("Protected service responded with status " + status);
+
+                response.setParameter(Response.PARAM_HTTP_STATUS, new Integer(status));
+
+                // TODO: Attachments
+
+                request.setRoutingStatus(RoutingStatus.ROUTED);
+
+            } catch (WSDLException we) {
+                logger.log(Level.SEVERE, null, we);
+                return AssertionStatus.FAILED;
+            } catch (MalformedURLException mfe) {
+                logger.log(Level.SEVERE, null, mfe);
+                return AssertionStatus.FAILED;
+            } catch (IOException ioe) {
+                // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
+                logger.log(Level.SEVERE, null, ioe);
+                return AssertionStatus.FAILED;
+            } catch (SAXException e) {
+                logger.log(Level.SEVERE, null, e);
+                return AssertionStatus.FAILED;
+            } catch (SignatureException e) {
+                logger.log(Level.SEVERE, null, e);
+                return AssertionStatus.FAILED;
             }
-
-            HttpClient client = new HttpClient(_connectionManager);
-
-            postMethod = new PostMethod(url.toString());
-
-            // TODO: Attachments
-            postMethod.setRequestHeader(CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
-
-            String userAgent = _data.getUserAgent();
-            if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
-            postMethod.setRequestHeader(USER_AGENT, userAgent);
-
-            StringBuffer hostValue = new StringBuffer(url.getHost());
-            int port = url.getPort();
-            if (port != -1) {
-                hostValue.append(":");
-                hostValue.append(port);
-            }
-            postMethod.setRequestHeader(HOST, hostValue.toString());
-            postMethod.setRequestHeader(SoapUtil.SOAPACTION, (String)request.getParameter(Request.PARAM_HTTP_SOAPACTION));
-
-            String login = _data.getLogin();
-            String password = _data.getPassword();
-
-            if (login != null && password != null) {
-                logger.fine("Using login '" + login + "'");
-                HttpState state = client.getState();
-                postMethod.setDoAuthentication(true);
-                state.setAuthenticationPreemptive(true);
-                state.setCredentials(null, null, new UsernamePasswordCredentials(login, new String(password)));
-            }
-
-            String requestXml = request.getRequestXml();
-            if (_data.isAttachSamlSenderVouches()) {
-                Document document = XmlUtil.stringToDocument(requestXml);
-                SamlAssertionGenerator ag = new SamlAssertionGenerator();
-//                SignerInfo si = new com.l7tech.common.security.Keys().asSignerInfo("CN="+ServerConfig.getInstance().getHostname());
-                SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
-                UserBean ub = new UserBean();
-                ub.setName("CN="+login);
-                ag.attachSenderVouches(document, ub, si);
-                requestXml = XmlUtil.documentToString(document);
-            }
-            attachCookies(client, request.getTransportMetadata());
-            postMethod.setRequestBody(requestXml);
-            client.executeMethod(postMethod);
-
-            int status = postMethod.getStatusCode();
-            if (status == 200)
-                logger.fine("Request routed successfully");
-            else
-                logger.info("Protected service responded with status " + status);
-
-            response.setParameter(Response.PARAM_HTTP_STATUS, new Integer(status));
-
-            // TODO: Attachments
-            InputStream responseStream = postMethod.getResponseBodyAsStream();
-            String ctype = postMethod.getResponseHeader(CONTENT_TYPE).getValue();
-            response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
-            if (ctype.indexOf(TEXT_XML) >= 0) {
+            // BEYOND THIS POINT, WE DONT RETURN FAILURE
+            try {
+                InputStream responseStream = postMethod.getResponseBodyAsStream();
+                String ctype = postMethod.getResponseHeader(CONTENT_TYPE).getValue();
+                response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
                 // Note that this will consume the first part of the stream...
                 BufferedReader br = new BufferedReader(new InputStreamReader(responseStream, ENCODING));
                 String line;
@@ -163,34 +185,19 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     responseXml.append(line);
                 }
                 response.setResponseXml(responseXml.toString());
+                response.setProtectedResponseStream(responseStream);
+            } catch (IOException e) {
+                logger.log(Level.FINE, "error reading response", e);
+                // here we dont return error because we already routed
             }
-            response.setProtectedResponseStream(responseStream);
-
-            request.setRoutingStatus(RoutingStatus.ROUTED);
-
-            return AssertionStatus.NONE;
-        } catch (WSDLException we) {
-            logger.log(Level.SEVERE, null, we);
-            return AssertionStatus.FAILED;
-        } catch (MalformedURLException mfe) {
-            logger.log(Level.SEVERE, null, mfe);
-            return AssertionStatus.FAILED;
-        } catch (IOException ioe) {
-            // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-            logger.log(Level.SEVERE, null, ioe);
-            return AssertionStatus.FAILED;
-        } catch (SAXException e) {
-            logger.log(Level.SEVERE, null, e);
-            return AssertionStatus.FAILED;
-        } catch (SignatureException e) {
-            logger.log(Level.SEVERE, null, e);
-            return AssertionStatus.FAILED;
         } finally {
             if (postMethod != null) {
                 MethodCloser mc = new MethodCloser(postMethod);
                 response.runOnClose(mc);
             }
         }
+
+        return AssertionStatus.NONE;
     }
 
     /**
