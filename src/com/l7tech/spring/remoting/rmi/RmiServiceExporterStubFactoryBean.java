@@ -260,6 +260,9 @@ public class RmiServiceExporterStubFactoryBean
      * Unbind the RMI service from the registry at bean factory shutdown.
      */
     public void destroy() throws RemoteException, NotBoundException {
+        if (!singleton) { // non singleton services are handed directly by client and handled by dgc
+            return;
+        }
         if (logger.isInfoEnabled()) {
             logger.info("Unbinding RMI service '" + getDisplayServiceName() +
               "' from registry at port '" + this.registryPort + "'");
