@@ -13,5 +13,5 @@ package com.l7tech.proxy.processor;
  * Date: Aug 13, 2003
  * Time: 9:56:47 AM
  */
-public class PolicyRetryableException extends MessageProcessorException {
+public class PolicyRetryableException extends Exception {
 }

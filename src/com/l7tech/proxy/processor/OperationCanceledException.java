@@ -12,7 +12,7 @@ package com.l7tech.proxy.processor;
  * Date: Aug 13, 2003
  * Time: 9:50:42 AM
  */
-public class OperationCanceledException extends MessageProcessorException {
+public class OperationCanceledException extends Exception {
     public OperationCanceledException() {
     }
 
