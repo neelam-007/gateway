@@ -11,7 +11,7 @@ import com.l7tech.message.XmlRequest;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
-import javax.xml.soap.SOAPConstants;
+import javax.xml.soap.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.IOException;
@@ -69,5 +69,22 @@ public class SoapUtil {
                 throw new IllegalArgumentException( "SOAP envelope contains more than one " + elementName + " element!" );
         }
         return element;
+    }
+
+    public static SOAPMessage makeMessage() throws SOAPException {
+        MessageFactory mf = MessageFactory.newInstance();
+        SOAPMessage smsg = mf.createMessage();
+        return smsg;
+    }
+
+    public static SOAPFault addFaultTo( SOAPMessage message, String faultCode, String faultString ) throws SOAPException {
+        SOAPPart spart = message.getSOAPPart();
+        SOAPEnvelope senv = spart.getEnvelope();
+        SOAPBody body = senv.getBody();
+        // TODO: Match namespace to request's SOAP version?
+        SOAPFault fault = body.addFault();
+        fault.setFaultCode( faultCode );
+        fault.setFaultString( faultString);
+        return fault;
     }
 }
