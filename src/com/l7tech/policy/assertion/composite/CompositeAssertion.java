@@ -47,7 +47,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      */
     public Object clone() throws CloneNotSupportedException {
         CompositeAssertion n = (CompositeAssertion)super.clone();
-        n.setChildren(reparentedChildren(n, children));
+        n.setChildren(copyAndReparentChildren(n, children));
         return n;
     }
 
@@ -69,10 +69,27 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * @param children      The children to copy and reparent.
      * @return              The copied and reparented list.
      */
-    private List reparentedChildren(CompositeAssertion newParent, List children) {
+    private List copyAndReparentChildren(CompositeAssertion newParent, List children) {
         List newKids = new LinkedList();
         for (Iterator i = children.iterator(); i.hasNext(); ) {
             Assertion child = ((Assertion)i.next()).getCopy();
+            child.setParent(newParent);
+            newKids.add(child);
+        }
+        return newKids;
+    }
+
+    /**
+     * Return a new list of the given child nodes, with their Parent refs altered
+     * in place to point to newParent.
+     * @param newParent The new Parent CompositeAssertion.
+     * @param children A list of child nodes whose Parent fields will be set to newParent.
+     * @return A new list, but pointing at those same children.
+     */
+    private List reparentedChildren(CompositeAssertion newParent, List children) {
+        List newKids = new LinkedList();
+        for (Iterator i = children.iterator(); i.hasNext(); ) {
+            Assertion child = (Assertion)i.next();
             child.setParent(newParent);
             newKids.add(child);
         }
