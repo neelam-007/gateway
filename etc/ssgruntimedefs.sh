@@ -41,6 +41,16 @@ fi
 
 export JAVA_OPTS="$JAVA_OPTS -Xmx768m -Xss1m"
 
+if $cygwin; then
+    mac=''
+else
+    mac=`/sbin/ifconfig eth0 |awk '/HWaddr/ {print $5}'`
+fi
+
+if [ ! -z $mac ]; then
+        export JAVA_OPTS="$JAVA_OPTS -Dcom.l7tech.cluster.macAddress=$mac"
+fi
+
 # define tomcat home
 TOMCAT_HOME=/ssg/tomcat/
 if $cygwin; then
