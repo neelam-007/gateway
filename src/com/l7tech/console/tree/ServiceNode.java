@@ -1,5 +1,6 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
@@ -30,14 +31,14 @@ import java.util.logging.Logger;
 public class ServiceNode extends EntityHeaderNode {
     static final Logger log = Logger.getLogger(ServiceNode.class.getName());
     private PublishedService svc;
+    private String serviceName = null;
 
     /**
      * construct the <CODE>ServiceNode</CODE> instance for
      * a given entity header.
      *
-     * @param e  the EntityHeader instance, must represent published service
-     * @exception IllegalArgumentException
-     *                   thrown if unexpected type
+     * @param e the EntityHeader instance, must represent published service
+     * @throws IllegalArgumentException thrown if unexpected type
      */
     public ServiceNode(EntityHeader e)
       throws IllegalArgumentException {
@@ -48,8 +49,8 @@ public class ServiceNode extends EntityHeaderNode {
     public PublishedService getPublishedService() throws FindException, RemoteException {
         if (svc == null) {
             EntityHeader eh = getEntityHeader();
-            svc = Registry.getDefault().
-              getServiceManager().findServiceByPrimaryKey(eh.getOid());
+            svc = Registry.getDefault().getServiceManager().findServiceByPrimaryKey(eh.getOid());
+
         }
         return svc;
     }
@@ -59,6 +60,7 @@ public class ServiceNode extends EntityHeaderNode {
      */
     public void clearServiceHolder() {
         svc = null;
+        serviceName = null;
     }
 
     /**
@@ -102,7 +104,7 @@ public class ServiceNode extends EntityHeaderNode {
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
+     * Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
      */
@@ -140,7 +142,7 @@ public class ServiceNode extends EntityHeaderNode {
         } catch (Exception e) {
             ErrorManager.getDefault().
               notify(Level.SEVERE, e,
-              "Error loading service elements"+getEntityHeader().getOid());
+                "Error loading service elements" + getEntityHeader().getOid());
         }
     }
 
@@ -148,15 +150,18 @@ public class ServiceNode extends EntityHeaderNode {
      * @return the node name that is displayed
      */
     public String getName() {
+        return getServiceName();
+    }
+
+    private String getServiceName() {
         try {
-            return getPublishedService().getName();
+            if (serviceName == null) {
+                serviceName = getPublishedService().getName();
+            }
+            return serviceName;
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Unable to find the service", e);
-            // dont call the error manager here because this node is being refreshed constantly and it
-            // causes some sort of error loop
-            //ErrorManager.getDefault().notify(Level.SEVERE, e, "Unable to find the service "+getEntityHeader().getOid());
+            throw ExceptionUtils.wrap(e);
         }
-        return "*invalid*";
     }
 
     /**

@@ -11,7 +11,6 @@ import java.awt.event.ActionEvent;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * @author emil
@@ -19,6 +18,7 @@ import java.util.logging.Level;
  */
 public abstract class SecureAction extends BaseAction implements LogonListener {
     static final Logger logger = Logger.getLogger(SecureAction.class.getName());
+    private SecurityProvider securityProvider;
 
     protected SecureAction() {
     }
@@ -36,7 +36,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
     /**
      * Determines whether the current subject belongs to the specified Role (group).
      *
-     * @param roles   the string array of role names
+     * @param roles the string array of role names
      * @return true if the subject, belongs to one of the the specified roles,
      *         false, otherwise.
      */
@@ -46,12 +46,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
         if (subject == null || subject.getPrincipals().isEmpty()) { // if no subject or no principal
             return false;
         }
-        try {
-            return getSecurityProvider().isSubjectInRole(subject, roles);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Error in authorization check for subject "+subject, e);
-        }
-        return false;
+        return getSecurityProvider().isSubjectInRole(subject, roles);
     }
 
     /**
@@ -92,8 +87,10 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
     }
 
     protected final SecurityProvider getSecurityProvider() {
-        SecurityProvider sm = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
-        return sm;
+        if (securityProvider != null) return securityProvider;
+
+        securityProvider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        return securityProvider;
     }
 
     /**
