@@ -6,15 +6,14 @@
 
 package com.l7tech.server;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.logging.LogManager;
-import com.l7tech.logging.RequestAuditRecord;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -68,17 +67,20 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             try {
                 status = MessageProcessor.getInstance().processMessage( sreq, sresp );
 
-                sresp.setHeadersIn( hresponse );
+                sresp.setHeadersIn( hresponse, status );
+                String protRespXml = sresp.getResponseXml();
 
                 if ( status == AssertionStatus.NONE ) {
-                    String ctype = (String)sresp.getParameter( Response.PARAM_HTTP_CONTENT_TYPE );
-                    if ( ctype == null || ctype.length() == 0 ) ctype = DEFAULT_CONTENT_TYPE;
-                    hresponse.setContentType( ctype );
+                    if ( protRespXml == null ) {
+                        logger.fine( "Sending empty response" );
+                    } else {
+                        String ctype = (String)sresp.getParameter( Response.PARAM_HTTP_CONTENT_TYPE );
+                        if ( ctype == null || ctype.length() == 0 ) ctype = DEFAULT_CONTENT_TYPE;
+                        hresponse.setContentType( ctype );
 
-                    String protRespXml = sresp.getResponseXml();
-                    respWriter = new BufferedWriter( new OutputStreamWriter( hresponse.getOutputStream(), ENCODING ) );
-
-                    respWriter.write( protRespXml );
+                        respWriter = new BufferedWriter( new OutputStreamWriter( hresponse.getOutputStream(), ENCODING ) );
+                        respWriter.write( protRespXml );
+                    }
                 } else if ( sresp.isAuthenticationMissing() ||
                             status == AssertionStatus.AUTH_REQUIRED ||
                             status == AssertionStatus.AUTH_FAILED ||
