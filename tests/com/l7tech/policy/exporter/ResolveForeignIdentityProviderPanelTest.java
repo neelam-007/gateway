@@ -23,7 +23,7 @@ public class ResolveForeignIdentityProviderPanelTest {
         ResolveForeignIdentityProviderPanel panel = new ResolveForeignIdentityProviderPanel(null, ref);
         Wizard wiz = new Wizard(null, panel);
         wiz.pack();
-        wiz.setSize(1100, 500);
+        wiz.setSize(900, 500);
         Utilities.centerOnScreen(wiz);
         wiz.setModal(true);
         wiz.setVisible(true);
