@@ -1,7 +1,6 @@
 package com.l7tech.console.table;
 
 import com.l7tech.common.security.xml.ElementSecurity;
-import com.l7tech.common.security.xml.ElementSecurity;
 
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.BindingOperation;
@@ -82,8 +81,10 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
         public boolean implies(SecuredMessagePart p) {
             if (equals(p)) return true;
             if (operation != null && p.operation != null) {
-                if (operation.equals(p.getOperationName())) {
-                    return true;
+                if (operation.getName().equals(p.getOperationName())) {
+                    if (xpathExpression != null && p.xpathExpression != null) {
+                        return xpathExpression.startsWith(p.xpathExpression);
+                    }
                 }
             } else if (operation == null && p.operation == null) {
                 if (xpathExpression != null && p.xpathExpression != null) {
