@@ -336,7 +336,10 @@
         <constructor-arg>
             <ref bean="sslKeystoreCertificate"/>
         </constructor-arg>
-    </bean>
+        <constructor-arg>
+             <ref bean="auditContext"/>
+         </constructor-arg>
+     </bean>
     <!-- server side policy service -->
     <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
         <constructor-arg>
@@ -350,6 +353,9 @@
         </constructor-arg>
         <constructor-arg>
             <ref bean="policyFilterManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="auditContext"/>
         </constructor-arg>
     </bean>
     <!-- server side token service -->

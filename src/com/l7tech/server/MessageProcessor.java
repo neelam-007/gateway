@@ -53,19 +53,21 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final WssDecorator wssDecorator;
     private final PrivateKey serverPrivateKey;
     private final X509Certificate serverCertificate;
+    private final AuditContext auditContext;
 
     /**
-         * Create the new <code>MessageProcessor</code> instance with the service
-         * manager, Wss Decorator instance and the server private key.
-         * All arguments are required
-         *
-         * @param sm   the service manager
-         * @param wssd the Wss Decorator
-         * @param pkey the server private key
-         * @param pkey the server certificate
-         * @throws IllegalArgumentException if any of the arguments is null
-         */
-    public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
+     * Create the new <code>MessageProcessor</code> instance with the service
+     * manager, Wss Decorator instance and the server private key.
+     * All arguments are required
+     *
+     * @param sm   the service manager
+     * @param wssd the Wss Decorator
+     * @param pkey the server private key
+     * @param pkey the server certificate
+     * @param auditContext the audit context
+     * @throws IllegalArgumentException if any of the arguments is null
+     */
+    public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert, AuditContext auditContext)
       throws IllegalArgumentException {
         if (sm == null) {
             throw new IllegalArgumentException("Service Manager is required");
@@ -79,16 +81,19 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (cert == null) {
             throw new IllegalArgumentException("Server Certificate is required");
         }
+        if (auditContext == null) {
+            throw new IllegalArgumentException("Audit Context is required");
+        }
         this.serviceManager = sm;
         this.wssDecorator = wssd;
         this.serverPrivateKey = pkey;
         this.serverCertificate = cert;
+        this.auditContext = auditContext;
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
       throws IOException, PolicyAssertionException, PolicyVersionException
     {
-        AuditContext auditContext = (AuditContext)getApplicationContext().getBean("auditContext");
         context.setAuditContext(auditContext);
         return reallyProcessMessage(context);
     }
@@ -337,6 +342,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
         return status;
     }
+
     private static final Level DEFAULT_MESSAGE_AUDIT_LEVEL = Level.INFO;
     private Auditor auditor;
     final Logger logger = Logger.getLogger(getClass().getName());

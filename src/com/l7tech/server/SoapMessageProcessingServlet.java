@@ -54,6 +54,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco.modulator?serviceoid=";
     private WebApplicationContext applicationContext;
     private MessageProcessor messageProcessor;
+    private AuditContext auditContext;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -62,6 +63,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             throw new ServletException("Configuration error; could not get application context");
         }
         messageProcessor = (MessageProcessor)applicationContext.getBean("messageProcessor");
+        auditContext = (AuditContext)applicationContext.getBean("auditContext");
     }
 
     public void doGet(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
@@ -197,7 +199,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
         } finally {
             try {
-                AuditContext auditContext = (AuditContext)applicationContext.getBean("auditContext");
                 auditContext.flush();
             } finally {
                 context.close();

@@ -60,8 +60,8 @@ import java.util.logging.Logger;
  * Whether or not a requestor is allowed to download a policy depends on whether or not he is capable
  * of consuming it. This is determined by looking at the identity assertions inside the target policy
  * comparing them with the identity resuling from the authentication of the policy download request.
- *
- *
+ * <p/>
+ * <p/>
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -71,20 +71,22 @@ import java.util.logging.Logger;
  */
 public class PolicyService extends ApplicationObjectSupport {
     /**
-     * The supported credential sources used to determine whether the requester is
-     * allowd to download the policy */
-    private static final Assertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[] {
-        new RequestWssSaml(),
-        new RequestWssX509Cert(),
-        new SecureConversation(),
-        new SslAssertion(true),
-        new HttpDigest(),
-        new WssBasic(),
-        new HttpBasic()
-    };
+         * The supported credential sources used to determine whether the requester is
+         * allowd to download the policy
+         */
+    private static final Assertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[]{
+          new RequestWssSaml(),
+          new RequestWssX509Cert(),
+          new SecureConversation(),
+          new SslAssertion(true),
+          new HttpDigest(),
+          new WssBasic(),
+          new HttpBasic()
+        };
 
     public interface ServiceInfo {
         Assertion getPolicy();
+
         String getVersion();
     }
 
@@ -95,7 +97,7 @@ public class PolicyService extends ApplicationObjectSupport {
         ServiceInfo getPolicy(String serviceId);
     }
 
-    public PolicyService(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, FilterManager filterManager) {
+    public PolicyService(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, FilterManager filterManager, AuditContext auditContext) {
         // populate all possible credentials sources
         allCredentialAssertions = new ArrayList();
         for (int i = 0; i < ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
@@ -125,9 +127,16 @@ public class PolicyService extends ApplicationObjectSupport {
         if (policyFactory == null) {
             throw new IllegalArgumentException("Policy Factory is required");
         }
+        if (filterManager == null) {
+            throw new IllegalArgumentException("Filter Manager is required");
+        }
         this.filterManager = filterManager;
-    }
 
+        if (auditContext == null) {
+            throw new IllegalArgumentException("Audit Context is required");
+        }
+        this.auditContext = auditContext;
+    }
 
 
     /**
@@ -136,14 +145,14 @@ public class PolicyService extends ApplicationObjectSupport {
     public Document respondToPolicyDownloadRequest(String policyId,
                                                    User preAuthenticatedUser,
                                                    PolicyGetter policyGetter) throws FilteringException,
-                                                                                     IOException,
-                                                                                     SAXException {
-                Assertion targetPolicy = policyGetter.getPolicy(policyId).getPolicy();
+      IOException,
+      SAXException {
+        Assertion targetPolicy = policyGetter.getPolicy(policyId).getPolicy();
         if (targetPolicy == null) {
             logger.info("cannot find target policy from id: " + policyId);
             return null;
         }
-        
+
         boolean isanonymous = atLeastOnePathIsAnonymous(targetPolicy);
         if (preAuthenticatedUser == null && !isanonymous) return null;
 
@@ -165,7 +174,7 @@ public class PolicyService extends ApplicationObjectSupport {
     public void respondToPolicyDownloadRequest(PolicyEnforcementContext context,
                                                boolean signResponse,
                                                PolicyGetter policyGetter)
-            throws IOException, SAXException
+      throws IOException, SAXException
     {
         final XmlKnob reqXml = context.getRequest().getXmlKnob();
         final Message response = context.getResponse();
@@ -208,9 +217,9 @@ public class PolicyService extends ApplicationObjectSupport {
             Document fault = null;
             try {
                 fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
-                                                         "policy " + policyId + " not found",
-                                                         null,
-                                                         "");
+                                                                 "policy " + policyId + " not found",
+                                                                 null,
+                                                                 "");
             } catch (IOException e) {
                 fault = exceptionToFault(e);
             } catch (SAXException e) {
@@ -234,7 +243,7 @@ public class PolicyService extends ApplicationObjectSupport {
             logger.fine("Running meta-policy.");
             ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
             try {
-                context.setAuditContext((AuditContext)getApplicationContext().getBean("auditContext"));
+                context.setAuditContext(auditContext);
                 status = policyPolicy.checkRequest(context);
             } catch (IOException e) {
                 response.initialize(exceptionToFault(e));
@@ -290,9 +299,9 @@ public class PolicyService extends ApplicationObjectSupport {
                 detailEl = SoapFaultUtils.makeFaultDetailsSubElement("more", msg);
             }
             fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
-                                                     "unauthorized policy download",
-                                                     detailEl,
-                                                     "");
+                                                             "unauthorized policy download",
+                                                             detailEl,
+                                                             "");
             return fault;
         } catch (IOException e) {
             return exceptionToFault(e);
@@ -302,20 +311,20 @@ public class PolicyService extends ApplicationObjectSupport {
     }
 
     private Document wrapFilteredPolicyInResponse(Document policyDoc,
-                                              String policyVersion,
-                                              String relatesTo,
-                                              boolean signResponse)
-                            throws GeneralSecurityException, DecoratorException {
+                                                  String policyVersion,
+                                                  String relatesTo,
+                                                  boolean signResponse)
+      throws GeneralSecurityException, DecoratorException {
         Document responseDoc;
         try {
             responseDoc = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
-                                                   "<soap:Header>" +
-                                                   "<L7a:" + SoapUtil.L7_POLICYVERSION_ELEMENT + " xmlns:L7a=\"" +
-                                                   SoapUtil.L7_MESSAGEID_NAMESPACE + "\"/>" +
-                                                   "</soap:Header>" +
-                                                   "<soap:Body>" +
-                                                   "<wsx:GetPolicyResponse xmlns:wsx=\"" + SoapUtil.WSX_NAMESPACE + "\"/>" +
-                                                   "</soap:Body></soap:Envelope>");
+              "<soap:Header>" +
+              "<L7a:" + SoapUtil.L7_POLICYVERSION_ELEMENT + " xmlns:L7a=\"" +
+              SoapUtil.L7_MESSAGEID_NAMESPACE + "\"/>" +
+              "</soap:Header>" +
+              "<soap:Body>" +
+              "<wsx:GetPolicyResponse xmlns:wsx=\"" + SoapUtil.WSX_NAMESPACE + "\"/>" +
+              "</soap:Body></soap:Envelope>");
             Element header = SoapUtil.getHeaderElement(responseDoc);
             Element pver = XmlUtil.findFirstChildElement(header);
             pver.appendChild(XmlUtil.createTextNode(responseDoc, policyVersion));
@@ -361,12 +370,12 @@ public class PolicyService extends ApplicationObjectSupport {
         Element header = SoapUtil.getHeaderElement(requestDoc);
         if (header == null) throw new MissingRequiredElementException("No SOAP Header was found in the request.");
         Element sidEl = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE, SoapUtil.L7_SERVICEID_ELEMENT);
-        if (sidEl == null) throw new MissingRequiredElementException("No {" +SoapUtil.L7_MESSAGEID_NAMESPACE +
-                                                                         "}" + SoapUtil.L7_SERVICEID_ELEMENT +
-                                                                         " element was found in the SOAP header.");
+        if (sidEl == null) throw new MissingRequiredElementException("No {" + SoapUtil.L7_MESSAGEID_NAMESPACE +
+                             "}" + SoapUtil.L7_SERVICEID_ELEMENT +
+                             " element was found in the SOAP header.");
         String serviceId = XmlUtil.getTextValue(sidEl);
         if (serviceId == null || serviceId.length() < 1) throw new InvalidDocumentFormatException(SoapUtil.L7_SERVICEID_ELEMENT +
-                                                                                                  " element was empty.");
+                                                           " element was empty.");
 
         // Check that this is a proper GetPolicy request.
         Element body = SoapUtil.getBodyElement(requestDoc);
@@ -385,9 +394,9 @@ public class PolicyService extends ApplicationObjectSupport {
                 fault = SoapFaultUtils.generateSoapFaultDocument((SoapFaultDetail)e, SoapFaultUtils.FC_SERVER);
             } else {
                 fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
-                                                         e.getMessage(),
-                                                         null,
-                                                         e.getClass().getName());
+                                                                 e.getMessage(),
+                                                                 null,
+                                                                 e.getClass().getName());
             }
             return fault;
         } catch (IOException e1) {
@@ -398,10 +407,11 @@ public class PolicyService extends ApplicationObjectSupport {
     }
 
     /**
-     * Constructs a policy that determines if a requestor should be allowed to download a policy.
-     * @param targetPolicy the policy targeted by a requestor.
-     * @return the policy that should be validated by the policy download request for the passed target
-     */
+         * Constructs a policy that determines if a requestor should be allowed to download a policy.
+         *
+         * @param targetPolicy the policy targeted by a requestor.
+         * @return the policy that should be validated by the policy download request for the passed target
+         */
     ServerAssertion constructPolicyPolicy(Assertion targetPolicy) {
         AllAssertion base = new AllAssertion();
         base.addChild(new OneOrMoreAssertion(allCredentialAssertions));
@@ -445,6 +455,7 @@ public class PolicyService extends ApplicationObjectSupport {
     private final PrivateKey privateServerKey;
     private final X509Certificate serverCert;
     private final ServerPolicyFactory policyFactory;
+    private final AuditContext auditContext;
     private final FilterManager filterManager;
     private final Logger logger = Logger.getLogger(PolicyService.class.getName());
 }

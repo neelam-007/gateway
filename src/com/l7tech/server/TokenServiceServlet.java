@@ -55,6 +55,7 @@ import java.util.logging.Logger;
 public class TokenServiceServlet extends HttpServlet {
     private WebApplicationContext applicationContext;
     private TokenService tokenService;
+    private AuditContext auditContext;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -63,6 +64,7 @@ public class TokenServiceServlet extends HttpServlet {
             throw new ServletException("Configuration error; could not get application context");
         }
         tokenService = (TokenService)applicationContext.getBean("tokenService");
+        auditContext = (AuditContext)applicationContext.getBean("auditContext");
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -87,7 +89,6 @@ public class TokenServiceServlet extends HttpServlet {
 
             final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
 
-            AuditContext auditContext = (AuditContext)applicationContext.getBean("auditContext");
             context.setAuditContext(auditContext);
 
             AssertionStatus status = AssertionStatus.UNDEFINED;
