@@ -12,7 +12,10 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
-import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -96,25 +99,11 @@ public class ClientCertSslClient {
             return "tomcat";
         }
 
-        /**
-         * 1.5 compatibility stub
-         */
-        public String chooseEngineServerAlias(String s, Principal[] principals, SSLEngine sslEngine) {
-            return "tomcat";
-        }
-
         public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
             InetAddress ia = socket.getInetAddress();
             String hostname = ia.getHostName();
             log.info("MyKeyManager: chooseClientAlias: ia=" + ia + "  hostname=" + hostname);
 
-            return "tomcat";
-        }
-
-        /**
-         * 1.5 compatibility stub
-         */
-        public String chooseEngineClientAlias(String[] strings, Principal[] principals, SSLEngine sslEngine) {
             return "tomcat";
         }
     }

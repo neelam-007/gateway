@@ -114,21 +114,7 @@ public class SsgFaker {
                         return "testcert";
                     }
 
-                    /**
-                     * 1.5 compatibility stub
-                     */
-                    public String chooseEngineServerAlias(String s, Principal[] principals, SSLEngine sslEngine) {
-                        return "testcert";
-                    }
-
                     public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
-                        return "testcert";
-                    }
-
-                    /**
-                     * 1.5 compatibility stub
-                     */ 
-                    public String chooseEngineClientAlias(String[] strings, Principal[] principals, SSLEngine sslEngine) {
                         return "testcert";
                     }
                 };

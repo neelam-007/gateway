@@ -15,7 +15,6 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.util.ClientLogger;
 
 import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.SSLEngine;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
@@ -90,20 +89,6 @@ public class ClientProxyKeyManager implements X509KeyManager {
 
     public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
         throw new ClientProxySslException("SSL server sockets are not supported by the ClientProxyKeyManager");
-    }
-
-    /**
-     * 1.5 compatibility stub
-     */
-    public String chooseEngineServerAlias(String s, Principal[] principals, SSLEngine sslEngine) {
-        throw new ClientProxySslException("SSL server sockets are not supported by the ClientProxyKeyManager");
-    }
-
-    /**
-     * 1.5 compatibility stub
-     */
-    public String chooseEngineClientAlias(String[] strings, Principal[] principals, SSLEngine sslEngine) {
-        return chooseClientAlias( strings, principals, null );
     }
 
     public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {

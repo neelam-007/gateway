@@ -14,7 +14,11 @@ import junit.framework.TestSuite;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -78,21 +82,7 @@ public class SsgSessionManagerTest extends TestCase {
                 return null;
             }
 
-            /**
-             * 1.5 compatibility stub
-             */
-            public String chooseEngineServerAlias(String s, Principal[] principals, SSLEngine sslEngine) {
-                return null;
-            }
-
             public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
-                return null;
-            }
-
-            /**
-             * 1.5 compatibility stub
-             */
-            public String chooseEngineClientAlias(String[] strings, Principal[] principals, SSLEngine sslEngine) {
                 return null;
             }
         };

@@ -76,25 +76,11 @@ public class ClientCertSslServer {
             return "tomcat";
         }
 
-        /**
-         * 1.5 compatibility stub
-         */
-        public String chooseEngineServerAlias(String s, Principal[] principals, SSLEngine sslEngine) {
-            return "tomcat";
-        }
-
         public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
             InetAddress ia = socket.getInetAddress();
             String hostname = ia.getHostName();
             log.info("MyKeyManager: chooseClientAlias: ia=" + ia + "  hostname=" + hostname);
 
-            return "tomcat";
-        }
-
-        /**
-         * 1.5 compatibility stub
-         */
-        public String chooseEngineClientAlias(String[] strings, Principal[] principals, SSLEngine sslEngine) {
             return "tomcat";
         }
     }
