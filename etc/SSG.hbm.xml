@@ -47,43 +47,6 @@
         <property name="serverSeed" column="server_seed" type="int"/>
     </class>
 
-    <!--
-    <class name="com.l7tech.identity.internal.imp.AddressImp" table="address">
-        <id name="oid" column="oid" type="long">
-                <generator class="hilo.long"/>
-        </id>
-
-        <property name="address" type="string"/>
-        <property name="address2" type="string"/>
-        <property name="city" type="string"/>
-        <property name="state" type="com.l7tech.identity.internal.imp.StateImp"/>
-        <property name="country" type="com.l7tech.identity.internal.imp.CountryImp"/>
-        <property name="postalCode" column="postal_code" type="string"/>
-    </class>
-
-    <class name="com.l7tech.identity.internal.imp.CountryImp" table="country">
-        <id name="oid" column="oid" type="long">
-            <generator class="hilo.long"/>
-        </id>
-        <property name="code" type="string"/>
-        <property name="name" type="string"/>
-
-        <set role="states" lazy="false" table="state">
-            <key column="country"/>
-            <one-to-many class="com.l7tech.identity.internal.imp.StateImp"/>
-        </set>
-    </class>
-
-    <class name="com.l7tech.identity.internal.imp.StateImp" table="state">
-        <id name="oid" column="oid" type="long">
-            <generator class="hilo.long"/>
-        </id>
-        <property name="code" type="string"/>
-        <property name="name" type="string"/>
-        <property name="country" type="com.l7tech.identity.internal.imp.CountryImp"/>
-    </class>
-    -->
-
     <class name="com.l7tech.identity.internal.imp.GroupImp" table="internal_group">
         <id name="oid" column="oid" type="long">
             <generator class="hilo.long"/>
@@ -99,24 +62,6 @@
         </set>
     </class>
 
-    <!--
-    <class name="com.l7tech.identity.internal.imp.OrganizationImp" table="internal_organization">
-        <id name="oid" column="oid" type="long">
-            <generator class="hilo.long"/>
-        </id>
-
-        <property name="name" type="string"/>
-        <property name="address" type="com.l7tech.identity.internal.imp.AddressImp"/>
-        <property name="mailingAddress" column="mailing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
-        <property name="billingAddress" column="billing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
-
-        <set role="users" lazy="false" table="internal_user">
-            <key column="organization"/>
-            <one-to-many class="com.l7tech.identity.internal.imp.UserImp"/>
-        </set>
-    </class>
-    -->
-
     <class name="com.l7tech.identity.internal.imp.UserImp" table="internal_user">
         <id name="oid" column="oid" type="long">
             <generator class="hilo.long"/>
@@ -128,13 +73,6 @@
         <property name="lastName" column="last_name" type="string"/>
         <property name="email" type="string"/>
         <property name="title" type="string"/>
-        <!--
-        <property name="department" type="string"/>
-        <property name="organization" type="com.l7tech.identity.internal.imp.OrganizationImp"/>
-        <property name="address" type="com.l7tech.identity.internal.imp.AddressImp"/>
-        <property name="billingAddress" column="billing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
-        <property name="mailingAddress" column="mailing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
-        -->
         <set role="groups" lazy="false" table="internal_user_group">
             <key column="internal_user"/>
             <many-to-many class="com.l7tech.identity.internal.imp.GroupImp" column="internal_group"/>
