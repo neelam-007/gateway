@@ -9,6 +9,7 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 
 
@@ -92,6 +93,17 @@ public class RegistryImpl extends Registry {
             throw new RuntimeException("Could not get " + JmsAdmin.class);
         }
         return ja;
+    }
+
+    /**
+     * @return the Trusted Cert Manager
+     */
+    public TrustedCertAdmin getTrustedCertManager() {
+        TrustedCertAdmin tca = (TrustedCertAdmin)Locator.getDefault().lookup(TrustedCertAdmin.class);
+        if (tca == null) {
+            throw new RuntimeException("Could not get " + TrustedCertAdmin.class);
+        }
+        return tca;
     }
 
     /**
