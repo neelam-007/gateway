@@ -188,8 +188,8 @@ public class Gui {
     /**
      * Interface implemented by consumers who wish to be notified when the user shuts down the GUI.
      */
-    public static interface ShutdownListener {
-        public void guiShutdown();
+    public interface ShutdownListener {
+        void guiShutdown();
     }
 
     private ShutdownListener ShutdownListener;
