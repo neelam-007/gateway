@@ -420,8 +420,8 @@
             jvm="${java.home}/bin/java"
             maxmemory="128m">
             <jvmarg value="-Djava.compiler=NONE"/>
-            <sysproperty key="tomcat.home" value="${tomcat.home}"/>
-            <arg value="-start"/>
+            <sysproperty key="catalina.home" value="${tomcat.home}"/>
+            <arg value="start"/>
             <classpath>
                 <fileset dir="${tomcat.home}">
                     <include name="**/*.jar"/>
@@ -434,8 +434,8 @@
         <java classname="org.apache.tomcat.startup.Tomcat"
             dir="${tomcat.home}"
             fork="yes">
-            <sysproperty key="tomcat.home" value="${tomcat.home}"/>
-            <arg value="-stop"/>
+            <sysproperty key="catalina.home" value="${tomcat.home}"/>
+            <arg value="stop"/>
             <classpath>
                 <fileset dir="${tomcat.home}">
                     <include name="**/*.jar"/>
