@@ -60,6 +60,17 @@ public class TokenService {
         }
     }
 
+
+    public TokenService() {}
+
+    /**
+     * specify the server key and cert at construction time instead of letting the object try to retreive them
+     */
+    public TokenService(PrivateKey privateServerKey, X509Certificate serverCert) {
+        this.privateServerKey = privateServerKey;
+        this.serverCert = serverCert;
+    }
+
     /**
      * Handles the request for a security token (either secure conversation context or saml thing).
      * @param request the request for the secure conversation context
@@ -157,7 +168,6 @@ public class TokenService {
                                     "<wst:RequestedSecurityToken>" +
                                         "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
                                         "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
-                                       // todo, add wsu:Expires here
                                     "</wst:RequestedSecurityToken>" +
                                     "<wst:RequestedProofToken>" +
                                       // todo, add encrypted key here with the shared secret
