@@ -6,12 +6,14 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import java.io.StringReader;
 import java.rmi.RemoteException;
 import java.util.Collections;
@@ -52,6 +54,10 @@ public class ServiceNode extends EntityHeaderNode {
             svc = Registry.getDefault().getServiceManager().findServiceByPrimaryKey(eh.getOid());
             // throw something if null, the service may have been deleted
             if (svc == null) {
+                TopComponents creg = TopComponents.getInstance();
+                JTree tree = (JTree)creg.getComponent(ServicesTree.NAME);
+                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                model.removeNodeFromParent(this);
                 throw new FindException("The service '"+eh.getName()+"' does not exist any more.");
             }
         }
@@ -82,7 +88,7 @@ public class ServiceNode extends EntityHeaderNode {
             return new Action[0];
         }
         if (ps == null) {
-            log.warning("Cannot retriev service");
+            log.warning("Cannot retrieve service");
             return new Action[0];
         }
         DisableServiceAction da = new DisableServiceAction(this);
