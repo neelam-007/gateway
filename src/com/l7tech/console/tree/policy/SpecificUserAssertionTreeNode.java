@@ -52,6 +52,15 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
     }
 
     /**
+     * Gets the default action for this node.
+     *
+     * @return <code>null</code> indicating there should be none default action
+     */
+    public Action getPreferredAction() {
+        return new IdentityPolicyAction(this);
+    }
+
+    /**
      * @return the node name that is displayed
      */
     public String getName() {

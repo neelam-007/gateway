@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.DeleteAssertionAction;
+import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.ArrowImage;
@@ -29,7 +30,7 @@ import java.io.IOException;
 
 /**
  * Class PolicyTree is the extended <code>JTree</code> with addtional
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PolicyTree extends JTree implements DragSourceListener,
@@ -47,8 +48,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     /**
      * Create the new policy tree with the policy model.
-     *
-     * @param newModel
+     * 
+     * @param newModel 
      */
     public PolicyTree(PolicyTreeModel newModel) {
         super(newModel);
@@ -74,7 +75,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
         newModel.addTreeModelListener(this);
     }
 
-    /** initialize */
+    /**
+     * initialize
+     */
     private void initialize() {
 
         // Make this JTree a drag source
@@ -99,7 +102,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
      */
     class TreeKeyListener extends KeyAdapter {
 
-        /** Invoked when a key has been pressed.*/
+        /**
+         * Invoked when a key has been pressed.
+         */
         public void keyPressed(KeyEvent e) {
             if (isIdentityView()) return;
             JTree tree = (JTree)e.getSource();
@@ -123,8 +128,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
         /**
          * Handle the mouse click popup when the Tree item is right clicked. The context sensitive
          * menu is displayed if the right click was over an item.
-         *
-         * @param mouseEvent
+         * 
+         * @param mouseEvent 
          */
         protected void popUpMenuHandler(MouseEvent mouseEvent) {
             JTree tree = (JTree)mouseEvent.getSource();
@@ -170,12 +175,30 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 }
             }
         }
+
+        /**
+         * Invoked when the mouse has been clicked on a component.
+         */
+        public void mouseClicked(MouseEvent e) {
+            if (e.getClickCount() != 2) return;
+            JTree tree = (JTree)e.getSource();
+            TreePath path = tree.getSelectionPath();
+            if (path == null) return;
+            AssertionTreeNode node = (AssertionTreeNode)path.getLastPathComponent();
+            if (node == null) return;
+
+            Action a = node.getPreferredAction();
+            if (a != null) {
+                ActionManager.getInstance().invokeAction(a);
+            }
+
+        }
     }
 
     /**
      * Make a popup menu from actions.
      * The menu is constructed from the set of actions returned
-     *
+     * 
      * @return the popup menu
      */
     private JPopupMenu getPopupMenu(Action[] actions) {
@@ -296,7 +319,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     private boolean isIdentityView() {
         TreeModel model = getModel();
         return (model instanceof FilteredTreeModel &&
-                ((FilteredTreeModel)model).getFilter() !=null);
+          ((FilteredTreeModel)model).getFilter() != null);
     }
 
 
@@ -452,7 +475,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         /**
-         *
          * @param e the drop target event
          */
         private void assertionDragOver(DropTargetDragEvent e) {
@@ -612,7 +634,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 }
 
                 if (path.equals(pathSource)) {
-                    log.fine("REJECTING DRAG: "+pathSource.getLastPathComponent());
+                    log.fine("REJECTING DRAG: " + pathSource.getLastPathComponent());
                     return false;
                 }
                 return true;
@@ -764,10 +786,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 DefaultMutableTreeNode n = null;
                 int currentIndex = 0;
                 Enumeration e = parent.children();
-                for (;e.hasMoreElements() && lastIndex >= currentIndex;) {
+                for (; e.hasMoreElements() && lastIndex >= currentIndex;) {
                     n = (DefaultMutableTreeNode)e.nextElement();
                 }
-                if (n !=null) {
+                if (n != null) {
                     setSelectionPath(new TreePath(n.getPath()));
                 } else {
                     if (parent != parent.getRoot()) {
