@@ -7,6 +7,7 @@
 package com.l7tech.policy.assertion;
 
 /**
+ * Something is wrong in the policy.
  * @author alex
  */
 public class PolicyAssertionException extends Exception {
