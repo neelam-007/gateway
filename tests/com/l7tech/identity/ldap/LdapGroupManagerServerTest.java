@@ -1,14 +1,14 @@
 package com.l7tech.identity.ldap;
 
-import java.util.Collection;
-import java.util.Iterator;
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProviderConfig;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Layer 7 Technologies, inc.
@@ -43,11 +43,13 @@ public class LdapGroupManagerServerTest extends TestCase {
 
     private String printGroup(Group grp) {
         String out = "Group: " + grp.toString();
+        /*
         Iterator i = grp.getMembers().iterator();
         while (i.hasNext()) {
             User u = (User)i.next();
             out += "\n\n\tmember:" + u.toString();
         }
+        */
         return out;
     }
 

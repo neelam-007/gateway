@@ -80,7 +80,7 @@ public class IdProvConfManagerClientTest {
         System.out.println("saving new user");
         String usrid = userMan.save(newUser);
         System.out.println("add user to group");
-        thepolice.getMembers().add(newUser);
+        //thepolice.getMembers().add(newUser);
         System.out.println("update the group");
         groupMan.update(thepolice);
         System.out.println("done");
