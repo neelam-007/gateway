@@ -17,7 +17,7 @@ package com.l7tech.common.protocol;
 public class SecureSpanConstants {
 
     /** The HTTP user agent sent by the current version of the Agent. */
-    public static final String USER_AGENT = "L7 Agent; Protocol v1.0";
+    public static final String USER_AGENT = "L7 Agent; Protocol v2.0";
 
     /** The MIME type of the X.509 certificate sent by the certificate discovery server. */
     public static final String CERTIFICATE_MIME_TYPE = "application/x-x509-ca-cert";
