@@ -1,12 +1,13 @@
 package com.l7tech.policy.assertion.xml;
 
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
-import org.w3c.dom.*;
-import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
+import org.w3c.dom.*;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
 import java.io.StringWriter;
 
@@ -102,9 +103,8 @@ public class SchemaValidation extends Assertion {
      * todo: move this to some xml util class
      */
     public static String elementToXml(Element schema) throws IOException, ParserConfigurationException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        Document schemadoc = dbf.newDocumentBuilder().newDocument();
+        DocumentBuilder builder = XmlUtil.getDocumentBuilder();
+        Document schemadoc = builder.newDocument();
         Element newRootNode = (Element)schemadoc.importNode(schema, true);
         schemadoc.appendChild(newRootNode);
         // remember all namespace declarations of parent elements

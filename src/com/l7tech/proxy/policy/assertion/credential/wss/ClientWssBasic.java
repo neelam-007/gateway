@@ -7,6 +7,7 @@
 package com.l7tech.proxy.policy.assertion.credential.wss;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -18,8 +19,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
 
@@ -57,14 +56,10 @@ public class ClientWssBasic extends ClientWssCredentialSource {
 
         Element secElement = null;
         // todo, handle case where the security element is already present in the header
-        try {
-            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            String secElStr = "<wsse:Security xmlns:wsse=\"" + SECURITY_NAMESPACE + "\">\n<wsse:UsernameToken Id=\"MyID\">\n<wsse:Username>" + username + "</wsse:Username>\n<Password>" + new String(password) + "</Password>\n</wsse:UsernameToken>\n</wsse:Security>";
-            Document doc2 = builder.parse(new InputSource(new StringReader(secElStr)));
-            secElement = doc2.getDocumentElement();
-        } catch (ParserConfigurationException e) {
-            throw new RuntimeException(e.getMessage(), e);  // can't happen
-        }
+        DocumentBuilder builder = XmlUtil.getDocumentBuilder();
+        String secElStr = "<wsse:Security xmlns:wsse=\"" + SECURITY_NAMESPACE + "\">\n<wsse:UsernameToken Id=\"MyID\">\n<wsse:Username>" + username + "</wsse:Username>\n<Password>" + new String(password) + "</Password>\n</wsse:UsernameToken>\n</wsse:Security>";
+        Document doc2 = builder.parse(new InputSource(new StringReader(secElStr)));
+        secElement = doc2.getDocumentElement();
 
         secElement = (Element)soapmsg.importNode(secElement, true);
         headerel.appendChild(secElement);

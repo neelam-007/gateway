@@ -8,21 +8,21 @@ package com.l7tech.common.util;
 
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.util.List;
+import java.io.*;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Thread-local XML parsing and pretty-printing utilities.
@@ -31,12 +31,31 @@ import java.util.Iterator;
  * Time: 4:20:59 PM
  */
 public class XmlUtil {
+    private static final EntityResolver SAFE_ENTITY_RESOLVER = new EntityResolver() {
+        public InputSource resolveEntity( String publicId, String systemId ) throws SAXException, IOException {
+            logger.warning( "Document referred to an external entity with system id '" + systemId + "'. Ignoring." );
+            return new InputSource(new StringReader(""));
+        }
+    };
+
+    /**
+     * Returns a stateless, thread-safe {@link EntityResolver} that ignores external entity references
+     * but otherwise works as expected.  This EntityResolver should be used in ALL XML parsing to avoid
+     * DOS attacks.
+     * @return a safe {@link EntityResolver} instance.
+     */
+    public static EntityResolver getSafeEntityResolver() {
+        return SAFE_ENTITY_RESOLVER;
+    }
+
     private static ThreadLocal documentBuilder = new ThreadLocal() {
         protected synchronized Object initialValue() {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
             try {
-                return dbf.newDocumentBuilder();
+                DocumentBuilder builder = dbf.newDocumentBuilder();
+                builder.setEntityResolver(SAFE_ENTITY_RESOLVER);
+                return builder;
             } catch (ParserConfigurationException e) {
                 throw new RuntimeException(e); // can't happen
             }
@@ -44,7 +63,7 @@ public class XmlUtil {
     };
 
     public static DocumentBuilder getDocumentBuilder() {
-        return (DocumentBuilder) documentBuilder.get();
+        return (DocumentBuilder)documentBuilder.get();
     }
 
     public static Document stringToDocument(String inputXmlNotAUrl) throws IOException, SAXException {
@@ -230,4 +249,6 @@ public class XmlUtil {
         }
         return true;
     }
+
+    private static final Logger logger = CommonLogger.getSystemLogger();
 }

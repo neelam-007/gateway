@@ -9,6 +9,7 @@ package com.l7tech.server;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SessionNotFoundException;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
@@ -172,7 +173,9 @@ public class MessageProcessor {
     }
 
     public DocumentBuilder getDomParser() throws ParserConfigurationException {
-        return _dbf.newDocumentBuilder();
+        DocumentBuilder builder = _dbf.newDocumentBuilder();
+        builder.setEntityResolver(XmlUtil.getSafeEntityResolver());
+        return builder;
     }
 
     public XmlPullParser getPullParser() throws XmlPullParserException {

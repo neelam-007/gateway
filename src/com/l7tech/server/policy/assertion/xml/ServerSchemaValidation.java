@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -101,6 +102,7 @@ public class ServerSchemaValidation implements ServerAssertion {
         DocumentBuilder db = null;
         try {
             db = dbf.newDocumentBuilder();
+            db.setEntityResolver(XmlUtil.getSafeEntityResolver());
         } catch (ParserConfigurationException e) {
             String msg = "parser configuration exception";
             logger.log(Level.WARNING, msg, e);
