@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.*;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Layer 7 Technologies, inc.
@@ -124,29 +125,18 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
     // ************************************************
     // PRIVATES
     // ************************************************
-    private boolean userIsAdministrator(User user) throws FindException {
-        if (user.getOid() < 1) return false;
-        String compareCriterion = Long.toString(user.getOid());
+    private boolean userIsAdministrator(User userpassed) throws FindException {
 
-        // get the group manager
-        GroupManagerClient groupManager = new GroupManagerClient(config);
-        // get the admingroup
-        Collection groupHeaders = groupManager.findAllHeaders();
-        Iterator i = groupHeaders.iterator();
-        while (i.hasNext()) {
+        System.out.println("userIsAdministrator?");
+
+        // i actually dont get the user
+        User user = findByPrimaryKey(Long.toString(userpassed.getOid()));
+        Set groupMembershipHeaders = user.getGroupHeaders();
+        for (Iterator i = groupMembershipHeaders.iterator(); i.hasNext();) {
             EntityHeader header = (EntityHeader)i.next();
-            if (header.getName() != null && header.getName().equals(Group.ADMIN_GROUP_NAME)) {
-                Group adminGroup = groupManager.findByPrimaryKey(header.getStrId());
-                // get the member headers
-                Collection adminUsers = adminGroup.getMembers();
-                Iterator i2 = adminUsers.iterator();
-                // see if user is there
-                while (i2.hasNext()) {
-                    User member = (User)i2.next();
-                    String memberId = Long.toString(member.getOid());
-                    if (memberId != null && memberId.equals(compareCriterion)) return true;
-                }
-            }
+            if (header.getName() != null && header.getName().equals(Group.ADMIN_GROUP_NAME)) return true;
+
+            System.out.println(header.getName());
         }
         return false;
     }
