@@ -12,8 +12,7 @@ import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 import java.lang.reflect.Method;
 
 import org.w3c.dom.Document;
@@ -130,7 +129,7 @@ public class WssRoundTripTest extends TestCase {
         WssDecorator martha = new WssDecoratorImpl();
         WssProcessor trogdor = new WssProcessorImpl();
 
-        log.info("Message before decoration:" + XmlUtil.nodeToString(message));
+        log.info("Message before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(message));
 
         martha.decorateMessage(message,
                                td.recipientCert,
@@ -141,7 +140,7 @@ public class WssRoundTripTest extends TestCase {
                                td.elementsToSign,
                                null);
 
-        log.info("Decorated message:\n\n" + XmlUtil.nodeToString(message));
+        log.info("Decorated message (*note: pretty-printed):\n\n" + XmlUtil.nodeToFormattedString(message));
 
         // Serialize to string to simulate network transport
         byte[] decoratedMessage = XmlUtil.nodeToString(message).getBytes();
@@ -159,28 +158,77 @@ public class WssRoundTripTest extends TestCase {
                                                                    td.recipientKey);
 
         Document undecorated = r.getUndecoratedMessage();
-        log.info("After undecoration:" + XmlUtil.nodeToString(undecorated));
+        log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(undecorated));
 
         Element[] encrypted = r.getElementsThatWereEncrypted();
-            assertTrue(encrypted != null);
-            if (encrypted.length > 0) {
-                log.info("The following elements were encrypted:");
-                for (int j = 0; j < encrypted.length; j++) {
-                    Element element = encrypted[j];
-                    log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
-                }
-            } else
-                log.info("No elements were encrypted.");
+        assertNotNull(encrypted);
+        WssProcessor.SignedElement[] signed = r.getElementsThatWereSigned();
+        assertNotNull(signed);
 
-            WssProcessor.SignedElement[] signed = r.getElementsThatWereSigned();
-            assertTrue(signed != null);
-            if (signed.length > 0) {
-                log.info("The following elements were signed:");
-                for (int j = 0; j < signed.length; j++) {
-                    Element element = signed[j].asElement();
-                    log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
+        // If timestamp was supposed to be signed, make sure it actually was
+        if (td.signTimestamp) {
+            assertTrue(r.getTimestamp().isSigned());
+            assertTrue(r.getTimestamp().getSigningSecurityToken().asX509Certificate().equals(td.senderCert));
+        }
+
+        // Make sure all requested elements were signed
+        for (int i = 0; i < td.elementsToSign.length; ++i) {
+            Element elementToSign = td.elementsToSign[i];
+
+            boolean wasSigned = false;
+            for (int j = 0; j < signed.length; ++j) {
+                Element signedElement = signed[j].asElement();
+                if (localNamePathMatches(elementToSign, signedElement)) {
+                    assertEquals(signed[j].getSigningSecurityToken().asX509Certificate(), td.senderCert);
+                    wasSigned = true;
+                    break;
                 }
-            } else
-                log.info("No elements were signed.");
+            }
+            assertTrue(wasSigned);
+            log.info("Element " + elementToSign + " verified as signed successfully.");
+        }
+
+        // Make sure all requested elements were encrypted
+        for (int i = 0; i < td.elementsToEncrypt.length; ++i) {
+            Element elementToEncrypt = td.elementsToEncrypt[i];
+            log.info("Looking to ensure element was encrypted: " + XmlUtil.nodeToString(elementToEncrypt));
+
+            boolean wasEncrypted = false;
+            for (int j = 0; j < encrypted.length; ++j) {
+                Element encryptedElement = encrypted[j];
+                log.info("Checking if element matches: " + XmlUtil.nodeToString(encryptedElement));
+                if (localNamePathMatches(elementToEncrypt, encryptedElement)) {
+                    // Make sure the encryption did not damage the element or its contents
+                    assertEquals(XmlUtil.nodeToString(elementToEncrypt),
+                                 XmlUtil.nodeToString(encryptedElement));
+                    wasEncrypted = true;
+                    break;
+                }
+            }
+            assertTrue(wasEncrypted);
+            log.info("Element " + elementToEncrypt + " verified as encrypted successfully.");
+        }
+    }
+
+    /**
+     * @return true iff. the two elements have the same namespace and localname and the same number of direct ancestor
+     *         elements, and each pair of corresponding direct ancestor elements have the same namespace and localname.
+     */
+    private boolean localNamePathMatches(Element a, Element b) {
+        Element aroot = a.getOwnerDocument().getDocumentElement();
+        Element broot = b.getOwnerDocument().getDocumentElement();
+        while (a != null && b != null) {
+            if (!a.getLocalName().equals(b.getLocalName()))
+                return false;
+            if (!a.getNamespaceURI().equals(b.getNamespaceURI()))
+                return false;
+            if ((a == aroot) != (b == broot))
+                return false;
+            if (a == aroot || b == broot)
+                return true;
+            a = (Element) a.getParentNode();
+            b = (Element) b.getParentNode();
+        }
+        return true;
     }
 }
