@@ -12,6 +12,8 @@ import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.Arrays;
 
 /**
@@ -32,6 +34,7 @@ public class PasswordDialog extends JDialog {
     private JPasswordField fieldPasswordVerify;
     private boolean passwordValid = false;
     private DocumentListener passwordDocumentListener;
+    private JLabel capsMessage = new JLabel();
 
     public PasswordDialog(Frame owner, String title) {
         super(owner, title, true);
@@ -43,8 +46,11 @@ public class PasswordDialog extends JDialog {
             mainPanel = new JPanel();
             mainPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 0, 5));
             mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+            mainPanel.add(capsMessage);
             mainPanel.add(getWidgetPanel());
             mainPanel.add(getButtonPanel());
+            PasswordDialog.this.addKeyListener(new CapslockKeyListener());
+            checkPasswords();
         }
         return mainPanel;
     }
@@ -106,6 +112,7 @@ public class PasswordDialog extends JDialog {
             fieldPassword = new JPasswordField();
             fieldPassword.getDocument().addDocumentListener(getDocumentListener());
             fieldPassword.putClientProperty(DFG, fieldPassword.getForeground());
+            fieldPassword.addKeyListener(new CapslockKeyListener());
         }
         return fieldPassword;
     }
@@ -115,6 +122,7 @@ public class PasswordDialog extends JDialog {
             fieldPasswordVerify = new JPasswordField();
             fieldPasswordVerify.getDocument().addDocumentListener(getDocumentListener());
             fieldPasswordVerify.putClientProperty(DFG, fieldPasswordVerify.getForeground());
+            fieldPasswordVerify.addKeyListener(new CapslockKeyListener());
         }
         return fieldPasswordVerify;
     }
@@ -139,6 +147,7 @@ public class PasswordDialog extends JDialog {
     }
 
     private void checkPasswords() {
+        checkCapsLock();
         if (isPasswordValid()) {
             getFieldPassword().setForeground(Color.BLUE);
             getFieldPasswordVerify().setForeground(Color.BLUE);
@@ -152,6 +161,11 @@ public class PasswordDialog extends JDialog {
             getButtonOk().setForeground(Color.GRAY);
             getButtonOk().setEnabled(false);
         }
+    }
+
+    private void checkCapsLock() {
+        capsMessage.setText(Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK) ?
+                                    "(CAPS LOCK)" : " ");
     }
 
     private char[] runPasswordPrompt() {
@@ -176,5 +190,22 @@ public class PasswordDialog extends JDialog {
     public static void main(String[] argv) {
         char[] word = PasswordDialog.getPassword(null, "Get Password");
         System.out.println("Got password: \"" + (word == null ? "<none>" : new String(word)) + "\"");
+    }
+
+    private class CapslockKeyListener implements KeyListener {
+        public void keyTyped(KeyEvent e) {
+            if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK)
+                checkCapsLock();
+        }
+
+        public void keyPressed(KeyEvent e) {
+            if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK)
+                checkCapsLock();
+        }
+
+        public void keyReleased(KeyEvent e) {
+            if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK)
+                checkCapsLock();
+        }
     }
 }
