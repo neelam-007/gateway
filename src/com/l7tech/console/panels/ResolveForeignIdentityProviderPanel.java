@@ -26,6 +26,14 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         initialize();
     }
 
+    public String getDescription() {
+        return getStepLabel();
+    }
+
+    public String getStepLabel() {
+        return "Resolve missing Identity Provider " + unresolvedRef.getProviderName();
+    }
+
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
