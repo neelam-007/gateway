@@ -20,11 +20,13 @@ import com.ibm.xml.enc.type.KeyInfo;
 import com.ibm.xml.enc.type.KeyName;
 import com.ibm.xml.enc.util.AdHocIdResolver;
 import com.l7tech.common.security.AesKey;
+import com.l7tech.common.util.SoapUtil;
 import org.apache.log4j.Category;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -250,6 +252,17 @@ public class XmlMangler {
         } catch (KeyInfoResolvingException e) {
             throw new XmlManglerException(e);
         }
+
+        // clean up the document
+        cleanEmptyRefList(soapMsg);
+    }
+
+    public static void cleanEmptyRefList(Document soapMsg) {
+        NodeList listRefElements = soapMsg.getElementsByTagNameNS(xencNS, "ReferenceList");
+        if (listRefElements.getLength() < 1) return;
+        Element refEl = (Element)listRefElements.item(0);
+        if (!SoapUtil.elHasChildrenElements(refEl)) {
+            refEl.getParentNode().removeChild(refEl);
+        }
     }
 }
-
