@@ -185,8 +185,18 @@ CREATE TABLE service_resolution (
   soapaction varchar(128) NOT NULL default '',
   urn varchar(255) NOT NULL default '',
   primary key(soapaction, urn)
-);
+) TYPE=InnoDB;
 
 --
 -- Dumping data for table 'service_resolution'
 --
+
+DROP TABLE IF EXIST urlcache;
+CREATE TABLE urlcache (
+  oid bigint NOT NULL default '0',
+  timestamp bigint NOT NULL default '0',
+  url mediumtext NOT NULL default '',
+  size integer NOT NULL default '0',
+  content text,
+  PRIMARY KEY(oid);
+) TYPE=InnoDB;
