@@ -80,7 +80,13 @@ public class Service implements ServiceManager {
     public ServiceStatistics getStatistics( long serviceOid ) throws RemoteException {
         Map services = serviceManagerInstance.serviceMap();
         PublishedService service = (PublishedService)services.get( new Long( serviceOid ) );
-        return service.getStatistics();
+
+        if(service != null){
+            return service.getStatistics();
+        }
+        else{
+            return null;
+        }
     }
 
     /**
@@ -127,6 +133,10 @@ public class Service implements ServiceManager {
         } finally {
             endTransaction();
         }
+    }
+
+    public Map serviceMap() throws RemoteException {
+        return serviceManagerInstance.serviceMap();
     }
 
     // ************************************************

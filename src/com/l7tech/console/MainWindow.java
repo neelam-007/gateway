@@ -72,6 +72,7 @@ public class MainWindow extends JFrame {
     private JMenuItem exitMenuItem = null;
     private JMenuItem menuItemPref = null;
     private JCheckBoxMenuItem logMenuItem = null;
+    private JCheckBoxMenuItem statMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
@@ -83,6 +84,7 @@ public class MainWindow extends JFrame {
     private Action disconnectAction = null;
     private Action toggleStatusBarAction = null;
     private Action toggleShowLogAction = null;
+    private Action toggleShowStatAction = null;
     private Action publishServiceAction = null;
 
 
@@ -92,6 +94,7 @@ public class MainWindow extends JFrame {
     private JLabel statusMsgLeft = null;
     private JLabel statusMsgRight = null;
     private LogPanel logPane = null;
+    private StatisticsPanel statisticsPane = null;
 
 
     private JToolBar toolBarPane = null;
@@ -102,6 +105,7 @@ public class MainWindow extends JFrame {
     private JPanel mainLeftJPanel = null;
 
     private JPanel mainSplitPaneRight = null;
+    private MiscPanel mainBottomTabbedPane = null;
 
     /* progress bar indicator */
     private ProgressBar progressBar = null;
@@ -321,13 +325,19 @@ public class MainWindow extends JFrame {
         viewMenu.add(logMenuItem);
         logMenuItem.setEnabled(false);
 
+        statMenuItem = new JCheckBoxMenuItem(getShowStatToggleAction());
+        viewMenu.add(statMenuItem);
+        statMenuItem.setEnabled(false);
+
         addWindowListener(new WindowAdapter() {
              /** Invoked when a window has been opened. */
              public void windowOpened(WindowEvent e) {
-                 boolean  s = Boolean.getBoolean("gateway.log.selected");
-                 logMenuItem.setSelected(s);
+                 boolean logSelected = Boolean.getBoolean("gateway.log.selected");
+                 boolean statSelected = Boolean.getBoolean("gateway.statistics.selected");
+                 logMenuItem.setSelected(logSelected);
+                 statMenuItem.setSelected(statSelected);
 
-                if(s){
+                if(logSelected){
                     getLogPane().setLogPaneDividerLocation();
                 }
              }
@@ -336,8 +346,12 @@ public class MainWindow extends JFrame {
              public void windowClosed(WindowEvent e) {
                  try {
                      Preferences prefs = Preferences.getPreferences();
-                     boolean s = logMenuItem.isSelected();
-                      prefs.putProperty("gateway.log.selected", Boolean.toString(s));
+                     boolean logSelected = logMenuItem.isSelected();
+                     prefs.putProperty("gateway.log.selected", Boolean.toString(logSelected));
+
+                     boolean statSelected = statMenuItem.isSelected();
+                     prefs.putProperty("gateway.statistics.selected", Boolean.toString(statSelected));
+
                  } catch (IOException e1) {
                  } catch (NullPointerException e1) {
                  }
@@ -574,8 +588,6 @@ public class MainWindow extends JFrame {
     }
 
 
-
-    // Francis
     /**
      * create the Action (the component that is used by several controls)
      *
@@ -601,23 +613,23 @@ public class MainWindow extends JFrame {
                         getLogPane().setVisible(item.isSelected());
                         if (item.isSelected()) {
                             restoreLogPane();
-                            validate();
-                            repaint();
+                            //validate();
+                            //repaint();
                         }
                         else{
-
                             // store the current divider location
                             try {
                                 Preferences prefs = Preferences.getPreferences();
                                 int l = getMainJSplitPane().getDividerLocation();
-                                prefs.putProperty("main.log.split.divider.location", Integer.toString(l));
+                                prefs.putProperty("main.split.pane.divider.location", Integer.toString(l));
                             } catch (IOException e1) {
                             } catch (NullPointerException e1) {
                             }
 
                             getLogPane().stopRefreshTimer();
-
-                            getMainJSplitPane().setDividerSize(0);
+                            getMainBottomTabbedPane().removeComponent(getLogPane());
+                            getMainBottomTabbedPane().updateDisplay();
+                            updateMainSplitPaneDividerLocation();
                         }
                     }
 
@@ -642,6 +654,71 @@ public class MainWindow extends JFrame {
         toggleShowLogAction.putValue(Action.SHORT_DESCRIPTION, atext);
 
         return toggleShowLogAction;
+    }
+
+
+    /**
+     * create the Action (the component that is used by several controls)
+     *
+     * @return the <CODE>Action</CODE> implementation that show/hide the Statistics window
+     */
+    private Action getShowStatToggleAction() {
+        if (toggleShowStatAction != null) return toggleShowStatAction;
+
+        String atext = "Statistics";
+
+        toggleShowStatAction =
+                new AbstractAction(atext) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event  the event that occured
+                     * @see Action#removePropertyChangeListener
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                        JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+
+                        getStatisticsPane().setVisible(item.isSelected());
+                        if (item.isSelected()) {
+                            restoreStatPane();
+                        }
+                        else{
+
+                            // store the current divider location
+                            try {
+                                Preferences prefs = Preferences.getPreferences();
+                                int l = getMainJSplitPane().getDividerLocation();
+                                prefs.putProperty("main.split.pane.divider.location", Integer.toString(l));
+                            } catch (IOException e1) {
+                            } catch (NullPointerException e1) {
+                            }
+                            getStatisticsPane().stopRefreshTimer();
+                            getMainBottomTabbedPane().removeComponent(getStatisticsPane());
+                            getMainBottomTabbedPane().updateDisplay();
+                            updateMainSplitPaneDividerLocation();
+                        }
+                    }
+
+                    ConnectionListener listener = new ConnectionListener() {
+                        public void onConnect(ConnectionEvent e) {
+                            if(statMenuItem.isSelected()){
+                               restoreStatPane();
+                             }
+                        }
+
+                        public void onDisconnect(ConnectionEvent e) {
+                            getStatisticsPane().stopRefreshTimer();
+                        }
+                    };
+
+                    {
+                        MainWindow.this.addConnectionListener(listener);
+                    }
+                };
+
+        toggleShowStatAction.putValue(Action.SHORT_DESCRIPTION, atext);
+
+        return toggleShowStatAction;
     }
 
     private Action getServerLoadAction() {
@@ -804,6 +881,7 @@ public class MainWindow extends JFrame {
         getDisconnectAction().setEnabled(connected);
         getConnectAction().setEnabled(!connected);
         getShowLogToggleAction().setEnabled(connected);
+        getShowStatToggleAction().setEnabled(connected);
         getServerLoadAction().setEnabled(connected);
         homeAction.setEnabled(connected);
 
@@ -1003,13 +1081,34 @@ public class MainWindow extends JFrame {
             mainJSplitPane.setResizeWeight(0.5);
 
             mainJSplitPane.setTopComponent(getMainJSplitPaneTop());
-            mainJSplitPane.setBottomComponent(getLogPane());
+            mainJSplitPane.setBottomComponent(getMainBottomTabbedPane());
 
-            setMainJSplitPaneDividerLocation();
+            getMainBottomTabbedPane().updateDisplay();
+            //mainJSplitPane.setBottomComponent(getLogPane());
+
+            updateMainSplitPaneDividerLocation();
             mainJSplitPane.setDividerSize(0);
 
             }
         return mainJSplitPane;
+    }
+
+    private MiscPanel getMainBottomTabbedPane(){
+
+        if(mainBottomTabbedPane != null) return mainBottomTabbedPane;
+
+        mainBottomTabbedPane = new MiscPanel();
+        //mainBottomTabbedPane.addTab("Logs", getLogPane());
+        //mainBottomTabbedPane.addTab("Statistics", getStatisticsPane());
+
+        return mainBottomTabbedPane;
+    }
+
+    private StatisticsPanel getStatisticsPane(){
+        if(statisticsPane != null) return statisticsPane;
+
+        statisticsPane = new StatisticsPanel();
+        return statisticsPane;
     }
 
     private LogPanel getLogPane() {
@@ -1666,27 +1765,55 @@ public class MainWindow extends JFrame {
      * restore the log window
      */
     private void restoreLogPane(){
-        setMainJSplitPaneDividerLocation();
-        mainJSplitPane.setDividerSize(MAIN_SPLIT_PANE_DIVIDER_SIZE);
+
         getLogPane().refreshLogs();
+
+        getMainBottomTabbedPane().addTab("Logs", getLogPane());
         getLogPane().setVisible(true);
+        getMainBottomTabbedPane().updateDisplay();
+        getMainBottomTabbedPane().setSelectedComponent(getLogPane());
+
+        updateMainSplitPaneDividerLocation();
+        mainJSplitPane.setDividerSize(MAIN_SPLIT_PANE_DIVIDER_SIZE);
     }
 
-    private void setMainJSplitPaneDividerLocation(){
+    private void restoreStatPane(){
 
-        try {
-            Preferences prefs = Preferences.getPreferences();
-            String s = prefs.getString("main.log.split.divider.location");
-            if (s != null) {
-                int l = Integer.parseInt(s);
-                mainJSplitPane.setDividerLocation(l);
-            } else {
-                mainJSplitPane.setDividerLocation(0.7);
+        getStatisticsPane().refreshStatistics();
+
+        getMainBottomTabbedPane().addTab("Statistics", getStatisticsPane());
+        getStatisticsPane().setVisible(true);
+        getMainBottomTabbedPane().updateDisplay();
+        getMainBottomTabbedPane().setSelectedComponent(getStatisticsPane());
+
+        updateMainSplitPaneDividerLocation();
+        mainJSplitPane.setDividerSize(MAIN_SPLIT_PANE_DIVIDER_SIZE);
+
+    }
+
+    private void updateMainSplitPaneDividerLocation(){
+
+        // set the divider size to zero only when there is nothihng in the pane
+        if (getMainBottomTabbedPane().getTabCount() <= 0) {
+            getMainJSplitPane().setDividerSize(0);
+        } else {
+            // No need to change the divider location if there is one tab being diplayed
+            if(getMainBottomTabbedPane().getTabCount() < 2){
+                try {
+                    Preferences prefs = Preferences.getPreferences();
+                    String s = prefs.getString("main.split.pane.divider.location");
+                    if (s != null) {
+                        int l = Integer.parseInt(s);
+                        mainJSplitPane.setDividerLocation(l);
+                    } else {
+                        mainJSplitPane.setDividerLocation(0.7);
+                    }
+                } catch (IOException e1) {
+
+                } catch (NumberFormatException e1) {
+
+                }
             }
-        } catch (IOException e1) {
-
-        } catch (NumberFormatException e1) {
-
         }
     }
 

@@ -1,17 +1,14 @@
 package com.l7tech.adminws.service;
 
-import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.*;
-import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogManager;
 import com.l7tech.jini.export.RemoteService;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceStatistics;
 import com.sun.jini.start.LifeCycle;
-
-import java.util.Collection;
-import java.util.logging.Level;
-import java.io.IOException;
-
 import net.jini.config.ConfigurationException;
+
+import java.io.IOException;
+import java.rmi.RemoteException;
 
 /**
  * The class is the admin service manager implementaiton.
@@ -54,6 +51,10 @@ public class ServiceManagerImpl extends RemoteService implements ServiceManager 
 
     public void deletePublishedService(long oid) throws java.rmi.RemoteException {
         delegate.deletePublishedService(oid);
+    }
+
+    public ServiceStatistics getStatistics(long oid) throws RemoteException {
+        return delegate.getStatistics( oid );
     }
 
     // ************************************************

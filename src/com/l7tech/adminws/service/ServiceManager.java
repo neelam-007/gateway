@@ -1,6 +1,7 @@
 package com.l7tech.adminws.service;
 
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceStatistics;
 
 import java.rmi.Remote;
 
@@ -20,4 +21,6 @@ public interface ServiceManager extends Remote {
     long savePublishedService(PublishedService service) throws java.rmi.RemoteException;
 
     void deletePublishedService(long oid) throws java.rmi.RemoteException;
+
+    ServiceStatistics getStatistics( long oid ) throws java.rmi.RemoteException;
 }

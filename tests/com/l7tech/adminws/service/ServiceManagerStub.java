@@ -5,16 +5,14 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
+import com.l7tech.service.ServiceStatistics;
 
 import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Class ServiceManagerStub.
@@ -88,7 +86,13 @@ public class ServiceManagerStub implements ServiceManager {
         }
 
     }
-   /**
+
+    public ServiceStatistics getStatistics(long oid) throws RemoteException {
+        // Not applicable?
+        return null;
+    }
+
+    /**
      * Returns an unmodifiable collection of <code>EntityHeader</code>
      * objects for all instances of the entity class corresponding to
      * this Manager.
