@@ -15,6 +15,15 @@ import java.util.HashMap;
  */
 public interface ServiceManager extends EntityManager {
     /**
+     * Retreive the actual PublishedService object from it's oid.
+     *
+     * @param oid
+     * @return
+     * @throws FindException
+     */
+    public PublishedService findByPrimaryKey( long oid ) throws FindException;
+
+    /**
      * Get what the server sees at that url.
      * Meant to be used by admin console entity.
      * @param url the url target to inspect.

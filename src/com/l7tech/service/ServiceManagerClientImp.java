@@ -15,6 +15,10 @@ import java.io.IOException;
  *
  */
 public class ServiceManagerClientImp implements ServiceManager {
+    public PublishedService findByPrimaryKey(long oid) throws FindException {
+        return null;
+    }
+
     public String resolveWsdlTarget(String url) throws java.rmi.RemoteException {
         return getStub().resolveWsdlTarget(url);
     }
