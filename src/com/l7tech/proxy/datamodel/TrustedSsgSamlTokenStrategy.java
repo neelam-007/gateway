@@ -60,8 +60,8 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
                                                    TokenServiceClient.RequestType.ISSUE,
                                                    SecurityTokenType.SAML_ASSERTION,
                                                    null, // no base
-                                                   null // no appliesTo
-        );
+                                                   null, // no appliesTo
+                                                   true);
         log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         return s;
     }

@@ -110,7 +110,8 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
                                                    TokenServiceClient.RequestType.VALIDATE,
                                                    null, // no token type (FIM doesn't like it)
                                                    usernameToken,
-                                                   getAppliesTo());
+                                                   getAppliesTo(),
+                                                   false);
         log.log(Level.INFO, "Obtained SAML assertion from WS-Trust server " + wsTrustUrl);
         return s;
     }

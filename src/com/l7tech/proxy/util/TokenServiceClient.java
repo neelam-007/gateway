@@ -184,7 +184,8 @@ public class TokenServiceClient {
     }
 
     /**
-     * Requests a SecureConversation context token. The request is authenticated using an xml digital signature.
+     * Requests a SecureConversation context token. The request is authenticated using an xml digital signature and
+     * the response is required to be signed.
      */
     public static SecureConversationSession obtainSecureConversationSessionUsingWssSignature(GenericHttpClient httpClient, Ssg ssg,
                                                                             X509Certificate serverCertificate, X509Certificate clientCertificate,
@@ -195,7 +196,7 @@ public class TokenServiceClient {
         Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 SecurityTokenType.WSSC_CONTEXT, RequestType.ISSUE, null, null, timestampCreatedDate);
-        Object result = obtainResponse(httpClient, clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, null);
+        Object result = obtainResponse(httpClient, clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, null, true);
 
         if (!(result instanceof SecureConversationSession))
             throw new IOException("Token server returned unwanted token type " + result.getClass());
@@ -211,13 +212,33 @@ public class TokenServiceClient {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
 
         Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC_CONTEXT, RequestType.ISSUE, null, null);
-        Object result = obtainResponse(httpClient, null, url, requestDoc, null, serverCertificate, httpBasicCredentials);
+        Object result = obtainResponse(httpClient, null, url, requestDoc, null, serverCertificate, httpBasicCredentials, false);
 
         if (!(result instanceof SecureConversationSession))
             throw new IOException("Token server returned unwanted token type " + result.getClass());
         return (SecureConversationSession)result;
     }
 
+    /**
+     * Obtain a SAML token using WS-Trust.  The request will be signed if a client cert, client key, and recipient
+     * cert are provided.  Response will be required to be signed if requireWssSignedResponse is true.
+     *
+     * @param httpClient
+     * @param httpBasicCredentials
+     * @param url
+     * @param serverCertificate
+     * @param timestampCreatedDate
+     * @param clientCertificate
+     * @param clientPrivateKey
+     * @param requestType
+     * @param tokenType
+     * @param base
+     * @param appliesToAddress
+     * @param requireWssSignedResponse
+     * @return
+     * @throws IOException
+     * @throws GeneralSecurityException
+     */
     public static SamlAssertion obtainSamlAssertion(GenericHttpClient httpClient,
                                                     PasswordAuthentication httpBasicCredentials,
                                                     URL url,
@@ -228,9 +249,12 @@ public class TokenServiceClient {
                                                     RequestType requestType,
                                                     SecurityTokenType tokenType,
                                                     SecurityToken base,
-                                                    String appliesToAddress)
+                                                    String appliesToAddress,
+                                                    boolean requireWssSignedResponse)
             throws IOException, GeneralSecurityException
     {
+        if (requireWssSignedResponse && serverCertificate == null)
+            throw new IllegalArgumentException("requireWssSignedResponse, but no server cert provided");
         if (timestampCreatedDate == null) timestampCreatedDate = new Date();
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate,
                                                                 clientPrivateKey,
@@ -240,7 +264,7 @@ public class TokenServiceClient {
                                                                 appliesToAddress,
                                                                 timestampCreatedDate);
         requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
-        Object result = obtainResponse(httpClient, clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, httpBasicCredentials);
+        Object result = obtainResponse(httpClient, clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, httpBasicCredentials, requireWssSignedResponse);
 
         if (!(result instanceof SamlAssertion))
             throw new IOException("Token server returned unwanted token type " + result.getClass());
@@ -253,7 +277,8 @@ public class TokenServiceClient {
                                          Document requestDoc,
                                          PrivateKey clientPrivateKey,
                                          X509Certificate serverCertificate,
-                                         PasswordAuthentication httpBasicCredentials)
+                                         PasswordAuthentication httpBasicCredentials,
+                                         boolean requireWssSignedResponse)
             throws IOException, GeneralSecurityException
     {
         Document response = null;
@@ -296,7 +321,7 @@ public class TokenServiceClient {
 
         try {
             checkForSoapFault(response);
-            if (serverCertificate != null) {
+            if (serverCertificate != null && requireWssSignedResponse) {
                 if (clientCertificate != null && clientPrivateKey != null) {
                     return parseSignedRequestSecurityTokenResponse(response,
                                                                    clientCertificate,
