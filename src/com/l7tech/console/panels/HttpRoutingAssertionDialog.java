@@ -10,6 +10,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -20,12 +22,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.EventListener;
+import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
 import java.net.URL;
 import java.net.MalformedURLException;
-
 
 /**
  * <code>HttpRoutingAssertionDialog</code> is the protected service
@@ -520,6 +523,16 @@ public class HttpRoutingAssertionDialog extends JDialog {
                         assertion.setTaiCredentialChaining(taiCredentialChaining.isSelected());
                         fireEventAssertionChanged(assertion);
                         HttpRoutingAssertionDialog.this.dispose();
+                        if (promoteActorCheck.isSelected()) {
+                            String currentVal = (String)promoteActorCombo.getSelectedItem();
+                            if (currentVal != null && currentVal.length() > 0) {
+                                assertion.setXmlSecurityActorToPromote(currentVal);
+                            } else {
+                                assertion.setXmlSecurityActorToPromote(null);
+                            }
+                        } else {
+                            assertion.setXmlSecurityActorToPromote(null);
+                        }
                     }
                 }
             });
@@ -573,8 +586,51 @@ public class HttpRoutingAssertionDialog extends JDialog {
         });
 
         // read actor promotion information
-        // todo
-        promoteActorCheck.setSelected(false);
-        promoteActorCombo.setEnabled(false);
+        java.util.List existingActors = listExistingXmlSecurityRecipientContextFromPolicy();
+        for (Iterator iterator = existingActors.iterator(); iterator.hasNext();) {
+            String s = (String) iterator.next();
+            ((DefaultComboBoxModel)promoteActorCombo.getModel()).addElement(s);
+        }
+        if (assertion.getXmlSecurityActorToPromote() == null) {
+            promoteActorCheck.setSelected(false);
+            promoteActorCombo.setEnabled(false);
+        } else {
+            promoteActorCheck.setSelected(true);
+            promoteActorCombo.setEnabled(true);
+            promoteActorCombo.getModel().setSelectedItem(assertion.getXmlSecurityActorToPromote());
+        }
+    }
+
+    /**
+     * @return a list of string objects; one for each different actor referenced from this policy
+     */
+    private java.util.List listExistingXmlSecurityRecipientContextFromPolicy() {
+        ArrayList output = new ArrayList();
+        // get to root of policy
+        Assertion root = assertion;
+        while (root.getParent() != null) {
+            root = root.getParent();
+        }
+        populateXmlSecurityRecipientContext(root, output);
+
+        return output;
+    }
+
+    private void populateXmlSecurityRecipientContext(Assertion toInspect, java.util.List receptacle) {
+        if (toInspect instanceof CompositeAssertion) {
+            CompositeAssertion ca = (CompositeAssertion)toInspect;
+            for (Iterator i = ca.children(); i.hasNext();) {
+                Assertion a = (Assertion)i.next();
+                populateXmlSecurityRecipientContext(a, receptacle);
+            }
+        } else if (toInspect instanceof XmlSecurityAssertionBase) {
+            XmlSecurityAssertionBase xsecass = (XmlSecurityAssertionBase)toInspect;
+            if (!xsecass.getRecipientContext().localRecipient()) {
+                String existingactor = xsecass.getRecipientContext().getActor();
+                if (!receptacle.contains(existingactor)) {
+                    receptacle.add(existingactor);
+                }
+            }
+        }
     }
 }
