@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -84,7 +83,7 @@ public class Wizard extends JDialog {
         mainPanel.setBorder(new EtchedBorder());
 
         addWindowListener(new WindowAdapter() {
-            public void windowClosed(WindowEvent evt) {
+            public void windowClosing(WindowEvent evt) {
                 cancel(new ActionEvent(Wizard.this, 0, ""));
             }
         });
