@@ -555,7 +555,10 @@ public class ExchangerDocument implements XDocument {
         Object[] list = listeners.getListenerList();
 
         for (int i = list.length - 2; i >= 0; i -= 2) {
-            listeners.remove(list[i + 1].getClass(), (EventListener)list[i + 1]);
+            Object listenerClass = list[i + 1].getClass();
+            if(listenerClass instanceof EventListener) {
+                listeners.remove(EventListener.class, (EventListener)list[i + 1]);
+            }
         }
     }
 } 

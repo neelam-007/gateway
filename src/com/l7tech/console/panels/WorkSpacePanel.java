@@ -227,7 +227,7 @@ public class WorkSpacePanel extends JPanel {
          */
         public synchronized void addContainerListener(ContainerListener l) {
             if (l instanceof VetoableContainerListener) {
-                listenerList.add(VetoableContainerListener.class, l);
+                listenerList.add(VetoableContainerListener.class, (VetoableContainerListener)l);
             }
             super.addContainerListener(l);
         }
@@ -243,7 +243,7 @@ public class WorkSpacePanel extends JPanel {
          */
         public synchronized void removeContainerListener(ContainerListener l) {
             if (l instanceof VetoableContainerListener) {
-                listenerList.remove(VetoableContainerListener.class, l);
+                listenerList.remove(VetoableContainerListener.class, (VetoableContainerListener)l);
             }
             super.removeContainerListener(l);
         }
