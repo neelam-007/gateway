@@ -48,6 +48,12 @@ public class PolicyServiceTest extends TestCase {
 
     protected void setUp() throws Exception {
         System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.TestLocator");
+        UserBean francoBean = new UserBean();
+        francoBean.setName(TESTUSER_LOGIN);
+        francoBean.setLogin(TESTUSER_LOGIN);
+        francoBean.setUniqueIdentifier(TESTUSER_UID);
+        francoBean.setProviderId(TestIdentityProvider.PROVIDER_ID);
+        TestIdentityProvider.addUser(francoBean, TESTUSER_LOGIN, TESTUSER_PASSWD.toCharArray());
     }
 
     public static void main(String[] args) {
@@ -68,10 +74,6 @@ public class PolicyServiceTest extends TestCase {
         log.info("Request (pretty-printed): " + XmlUtil.nodeToFormattedString(request));
 
         SoapRequest soapReq = new TestSoapRequest(request);
-        // todo
-        // Mike, you can't do this because those credentials will simply be overwritten by
-        // the assertion that processes the signature you are creating in PolicyServiceClient.createSignedGetPolicyRequest
-        //
         if (loginCredentials != null) {
             soapReq.setPrincipalCredentials(loginCredentials);
         }
@@ -88,7 +90,7 @@ public class PolicyServiceTest extends TestCase {
                     }
 
                     public String getVersion() {
-                        return "666";
+                        return "1";
                     }
                 };
             }
@@ -106,32 +108,38 @@ public class PolicyServiceTest extends TestCase {
         log.info("Returned policy: " + policy.getAssertion());
     }
 
+    private void testwithValidIdentity(final Assertion policyToTest) throws Exception {
+
+        LoginCredentials francoCreds = new LoginCredentials(TESTUSER_LOGIN, TESTUSER_PASSWD.toCharArray(),
+                                                            CredentialFormat.CLEARTEXT,
+                                                            HttpBasic.class);
+        testPolicy(policyToTest, francoCreds);
+    }
+
     public void testSimplePolicyService() throws Exception {
         testPolicy(new TrueAssertion(), null);
     }
 
     public void testWithIdentities() throws Exception {
-        UserBean francoBean = new UserBean();
-        francoBean.setName("franco");
-        francoBean.setLogin("franco");
-        francoBean.setUniqueIdentifier("666");
-        francoBean.setProviderId(TestIdentityProvider.PROVIDER_ID);
-        TestIdentityProvider.addUser(francoBean, "franco", "password".toCharArray());
-
         AllAssertion root = new AllAssertion();
         root.getChildren().add(new HttpBasic());
         OneOrMoreAssertion or = new OneOrMoreAssertion();
         root.getChildren().add(or);
-        or.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "franco", "666", "franco"));
+        or.getChildren().add(TESTUSER_IDASSERTION);
         or.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
         root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
         root.setChildren(root.getChildren());
         or.setChildren(or.getChildren());
         log.info(root.toString());
 
-        LoginCredentials francoCreds = new LoginCredentials("franco", "password".toCharArray(),
-                                                            CredentialFormat.CLEARTEXT,
-                                                            HttpBasic.class);
-        testPolicy(root, francoCreds);
+        testwithValidIdentity(root);
     }
+
+    private static final String TESTUSER_UID = "666";
+    private static final String TESTUSER_LOGIN = "franco";
+    private static final String TESTUSER_PASSWD = "password";
+    private SpecificUser TESTUSER_IDASSERTION = new SpecificUser(TestIdentityProvider.PROVIDER_ID,
+                                                                 TESTUSER_LOGIN,
+                                                                 TESTUSER_UID,
+                                                                 TESTUSER_LOGIN);
 }
