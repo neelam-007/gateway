@@ -47,10 +47,10 @@ public class CredentialManagerImpl implements CredentialManager {
     }
 
     public void notifyLengthyOperationStarting(Ssg ssg, String message) {
-        log.info("Starting lengthy operation: " + message);
+        log.info("Starting lengthy operation for Ssg " + ssg + ": " + message);
     }
 
     public void notifyLengthyOperationFinished(Ssg ssg) {
-        log.info("Lengthy operation has completed");
+        log.info("Lengthy operation for Ssg " + ssg + " has completed");
     }
 }
