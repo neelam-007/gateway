@@ -40,7 +40,9 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
 
     public long save(Group group) throws SaveException {
         try {
-            return getStub().saveGroup(config.getOid(), group);
+            long res = getStub().saveGroup(config.getOid(), group);
+            if (res > 0) group.setOid(res);
+            return res;
         } catch (java.rmi.RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
