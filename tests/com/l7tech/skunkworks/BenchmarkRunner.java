@@ -25,7 +25,7 @@ public class BenchmarkRunner {
     Logger log = Logger.getLogger(BenchmarkRunner.class.getName());
 
     /** A maximum number of threads that the test uses */
-    public static final int MAX_THREAD_COUNT = 50;
+    public static final int MAX_THREAD_COUNT = 500;
     /** an arbitray number of requests per thread that the test uses */
     public static final int REQUESTS_PER_THREAD = 15;
 
