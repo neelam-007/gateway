@@ -61,7 +61,11 @@ public class PolicyDownloader {
                 log.info("Trying SSL-with-client-cert policy download from " + ssg);
             else
                 log.info("Trying anonymous policy download from " + ssg);
-            Policy policy = PolicyServiceClient.downloadPolicyWithNoAuthentication(ssg, serviceId, serverCert, useSsl);
+            Policy policy = PolicyServiceClient.downloadPolicyWithNoAuthentication(ssg.getRuntime().getHttpClient(),
+                                                                                   ssg,
+                                                                                   serviceId,
+                                                                                   serverCert,
+                                                                                   useSsl);
             return policy;
         } catch (BadCredentialsException e) {
             // FALLTHROUGH and try again using credentials
@@ -83,7 +87,8 @@ public class PolicyDownloader {
                         key = ssg.getClientCertificatePrivateKey();
                     }
                     SamlAssertion saml = request.getOrCreateSamlAssertion();
-                    policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg,
+                    policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg.getRuntime().getHttpClient(),
+                                                                                 ssg,
                                                                                  serviceId,
                                                                                  serverCert,
                                                                                  useSsl || key == null, 
@@ -95,13 +100,22 @@ public class PolicyDownloader {
                     request.prepareClientCertificate();
                     X509Certificate clientCert = ssg.getClientCertificate();
                     PrivateKey key = ssg.getClientCertificatePrivateKey();
-                    policy = PolicyServiceClient.downloadPolicyWithWssSignature(ssg, serviceId, serverCert, useSsl,
-                                                                                clientCert, key);
+                    policy = PolicyServiceClient.downloadPolicyWithWssSignature(ssg.getRuntime().getHttpClient(),
+                                                                                ssg,
+                                                                                serviceId,
+                                                                                serverCert,
+                                                                                useSsl,
+                                                                                clientCert,
+                                                                                key);
                 } else {
                     // Trusted SSG, but with no client cert -- use HTTP Basic over SSL for authentication.
                     log.info("Trying HTTP Basic-over-SSL authenticated policy download from Trusted Gateway " + ssg);
                     PasswordAuthentication creds = request.getCredentialsForTrustedSsg();
-                    policy = PolicyServiceClient.downloadPolicyWithHttpBasicOverSsl(ssg, serviceId, serverCert, creds);
+                    policy = PolicyServiceClient.downloadPolicyWithHttpBasicOverSsl(ssg.getRuntime().getHttpClient(),
+                                                                                    ssg,
+                                                                                    serviceId,
+                                                                                    serverCert,
+                                                                                    creds);
                 }
                 if (policy == null)
                     throw new ConfigurationException("Unable to obtain a policy."); // can't happen

@@ -10,6 +10,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -34,7 +35,7 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
      * @param context
      * @return the AssertionStatus.NONE if at least one child succeeded; the rightmost-child error otherwise.
      */
-    public AssertionStatus decorateRequest(PolicyApplicationContext context) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException {
+    public AssertionStatus decorateRequest(PolicyApplicationContext context) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
         mustHaveChildren(data);
         AssertionStatus result = AssertionStatus.FAILED;
         for ( int i = 0; i < children.length; i++ ) {

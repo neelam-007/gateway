@@ -8,12 +8,14 @@ package com.l7tech.common.http;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.util.HexUtils;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +30,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
     public UrlConnectionHttpClient() {
     }
 
-    public GenericHttpRequest createRequest(final GenericHttpMethod method, GenericHttpRequestParamsImpl params)
+    public GenericHttpRequest createRequest(final GenericHttpMethod method, GenericHttpRequestParams params)
             throws GenericHttpException
     {
         try {
@@ -51,15 +53,29 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                 conn.setDoOutput(true);
             conn.setAllowUserInteraction(false);
             conn.setDefaultUseCaches(false);
+
+            // Set headers
             HttpHeader[] extraHeaders = params.getExtraHeaders();
             for (int i = 0; i < extraHeaders.length; i++) {
                 HttpHeader extraHeader = extraHeaders[i];
                 conn.setRequestProperty(extraHeader.getName(), extraHeader.getFullValue());
             }
+
+            // Set content type
             if (params.getContentType() != null)
                 conn.setRequestProperty(MimeUtil.CONTENT_TYPE, params.getContentType().getFullValue());
 
+            // HTTP Basic support -- preemptive authentication
+            PasswordAuthentication pw = params.getPasswordAuthentication();
+            if (pw != null) {
+                String auth = "Basic " + HexUtils.encodeBase64(
+                        (pw.getUserName() + ":" + new String(pw.getPassword())).getBytes());
+                conn.setRequestProperty("Authorization", auth);
+            }
+
             return new GenericHttpRequest() {
+                boolean completedRequest = false;
+
                 public OutputStream getOutputStream() throws GenericHttpException {
                     try {
                         if (method != POST) throw new UnsupportedOperationException();
@@ -84,6 +100,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                             n++;
                         } while (value != null);
 
+                        completedRequest = true;
                         return new GenericHttpResponse() {
                             public InputStream getInputStream() throws GenericHttpException {
                                 InputStream inputStream;
@@ -114,7 +131,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                             }
 
                             public void close() {
-
+                                httpConn.disconnect();
                             }
 
                         };
@@ -124,7 +141,10 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                 }
 
                 public void close() {
-
+                    if (!completedRequest) {
+                        httpConn.disconnect();
+                        completedRequest = true;
+                    }
                 }
             };
         } catch (IOException e) {

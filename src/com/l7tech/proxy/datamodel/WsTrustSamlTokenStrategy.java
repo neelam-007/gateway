@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.UrlConnectionHttpClient;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
@@ -19,6 +21,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.ssl.SslPeer;
+import com.l7tech.proxy.ssl.SslPeerHttpClient;
 import com.l7tech.proxy.util.SslUtils;
 import com.l7tech.proxy.util.TokenServiceClient;
 import org.w3c.dom.Element;
@@ -42,6 +45,10 @@ import java.util.logging.Logger;
  */
 public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implements Cloneable {
     private static final Logger log = Logger.getLogger(WsTrustSamlTokenStrategy.class.getName());
+    private static final SSLContext SSL_CONTEXT;
+
+    // TODO parameterize the HTTP client to use
+    private final UrlConnectionHttpClient genericHttpClient = new UrlConnectionHttpClient();
 
     private String wsTrustUrl;
     private String username;
@@ -50,7 +57,6 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
     private String tokenServerCertB64;
 
     private transient X509Certificate tokenServerCert = null;
-    private static final SSLContext SSL_CONTEXT;
 
     static {
         try {
@@ -89,13 +95,15 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
 
         final X509Certificate tokenServerCert = getTokenServerCert();
         final URL url = new URL(wsTrustUrl);
-        SslPeer sslPeer = new WsTrustSslPeer(tokenServerCert, url);
+
+        GenericHttpClient httpClient = new SslPeerHttpClient(genericHttpClient,
+                                                             new WsTrustSslPeer(tokenServerCert, url));
 
         UsernameToken usernameToken = new UsernameTokenImpl(getUsername(), getPassword());
         Element utElm = usernameToken.asElement();
         SoapUtil.setWsuId(utElm, SoapUtil.WSU_NAMESPACE, "UsernameToken-1");
-        s = TokenServiceClient.obtainSamlAssertion(url,
-                                                   sslPeer,
+        s = TokenServiceClient.obtainSamlAssertion(httpClient, null, url,
+                                                   tokenServerCert,
                                                    null, // not overriding timestamp created date
                                                    null, // no client cert (not signing message)
                                                    null, // no client private key (not signing message)

@@ -62,6 +62,20 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
         setExtraHeaders(extraHeaders);
     }
 
+    /**
+     * Create a mutable copy of the specified GenericHttpRequestParams.
+     *
+     * @param original the original to be copied.  Must not be null.
+     */
+    public GenericHttpRequestParamsImpl(GenericHttpRequestParams original) {
+        this(original.getTargetUrl(),
+             original.getPasswordAuthentication(),
+             original.getSslSocketFactory(),
+             original.getContentType(),
+             original.getContentLength(),
+             original.getExtraHeaders());
+    }
+
     public URL getTargetUrl() {
         return targetUrl;
     }

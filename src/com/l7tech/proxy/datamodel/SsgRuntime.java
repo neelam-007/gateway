@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.UrlConnectionHttpClient;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.DateTranslator;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -14,6 +16,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.ssl.SslPeer;
+import com.l7tech.proxy.ssl.SslPeerHttpClient;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
@@ -42,6 +45,8 @@ public class SsgRuntime {
     // Maximum simultaneous outbound connections.  Throttled wide-open.
     public static final int MAX_CONNECTIONS = 60000;
 
+    private final MultiThreadedHttpConnectionManager httpConnectionManager = new MultiThreadedHttpConnectionManager();
+
     private PolicyManager rootPolicyManager = null; // policy store that is not saved to disk
     private char[] password = null;
     private boolean promptForUsernameAndPassword = true;
@@ -63,7 +68,7 @@ public class SsgRuntime {
     private Calendar secureConversationExpiryDate = null;
     private long timeOffset = 0;
     private Map tokenStrategiesByType;
-    private final MultiThreadedHttpConnectionManager httpConnectionManager = new MultiThreadedHttpConnectionManager();
+    SslPeerHttpClient sslPeerHttpClient = null;
 
     private DateTranslator fromSsgDateTranslator = new DateTranslator() {
         public Date translate(Date source) {
@@ -557,6 +562,19 @@ public class SsgRuntime {
 
     public MultiThreadedHttpConnectionManager getHttpConnectionManager() {
         return httpConnectionManager;
+    }
+
+    /**
+     * Get a GenericHttpClient ready to make a single request to this Ssg.
+     * Currently this HTTP client is not very performant and should not be used in performance-critical sections of code.
+     * @return the HTTP client.  Never null.
+     */
+    public GenericHttpClient getHttpClient() {
+        synchronized (ssg) {
+            if (sslPeerHttpClient == null)
+                sslPeerHttpClient = new SslPeerHttpClient(new UrlConnectionHttpClient(), ssg);
+            return sslPeerHttpClient;
+        }
     }
 
     // Hack to allow lazy initialization of SSL stuff

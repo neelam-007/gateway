@@ -9,6 +9,7 @@ package com.l7tech.proxy.policy.assertion;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import org.xml.sax.SAXException;
@@ -29,5 +30,5 @@ public interface ClientDecorator {
     AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
             ClientCertificateException, IOException, SAXException, KeyStoreCorruptException,
-            HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException;
+            HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException;
 }

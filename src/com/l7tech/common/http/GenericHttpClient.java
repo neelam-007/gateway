@@ -17,5 +17,13 @@ public interface GenericHttpClient {
         private GenericHttpMethod() {}
     }
 
-    GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParamsImpl params) throws GenericHttpException;
+    /**
+     * Create an HTTP request.
+     *
+     * @param method the request method to use.  May be one of {@link #GET} or {@link #POST}.
+     * @param params the request params.  Must not be null.
+     * @return the HTTP request object, ready to proceed.  Never null.
+     * @throws GenericHttpException if there is a configuration, network, or HTTP problem.
+     */
+    GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException;
 }

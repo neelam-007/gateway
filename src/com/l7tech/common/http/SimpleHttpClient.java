@@ -6,6 +6,7 @@
 
 package com.l7tech.common.http;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
@@ -50,7 +51,7 @@ public class SimpleHttpClient implements GenericHttpClient {
         this.client = delegate;
     }
 
-    public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParamsImpl params) throws GenericHttpException {
+    public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
         return client.createRequest(method, params);
     }
 
@@ -61,7 +62,7 @@ public class SimpleHttpClient implements GenericHttpClient {
      * @return the response.  Never null.
      * @throws GenericHttpException if there is a configuration, network or HTTP problem
      */
-    public GenericHttpResponse get(GenericHttpRequestParamsImpl params) throws GenericHttpException {
+    public GenericHttpResponse get(GenericHttpRequestParams params) throws GenericHttpException {
         return client.createRequest(GenericHttpClient.GET, params).getResponse();
     }
 
@@ -74,7 +75,7 @@ public class SimpleHttpClient implements GenericHttpClient {
      * @return a generic HTTP request implementation ready to proceed with the POST.  Never null.
      * @throws GenericHttpException if there is a configuration, network or HTTP problem.
      */
-    public GenericHttpRequest post(GenericHttpRequestParamsImpl params) throws GenericHttpException {
+    public GenericHttpRequest post(GenericHttpRequestParams params) throws GenericHttpException {
         return client.createRequest(GenericHttpClient.POST, params);
     }
 
@@ -111,7 +112,7 @@ public class SimpleHttpClient implements GenericHttpClient {
      * @return the response.  Never null.
      * @throws GenericHttpException if there is a network or HTTP problem
      */
-    SimpleHttpResponse post(GenericHttpRequestParamsImpl params, byte[] requestBody) throws GenericHttpException {
+    public SimpleHttpResponse post(GenericHttpRequestParams params, byte[] requestBody) throws GenericHttpException {
         if (params == null || requestBody == null) throw new NullPointerException();
         GenericHttpRequest request = null;
         GenericHttpResponse response = null;
@@ -139,7 +140,7 @@ public class SimpleHttpClient implements GenericHttpClient {
      * @throws SAXException if the request can't be serialized
      * @throws SAXException if the response is not well-formed XML
      */
-    SimpleXmlResponse postXml(GenericHttpRequestParamsImpl params, Document doc) throws GenericHttpException, SAXException {
+    public SimpleXmlResponse postXml(GenericHttpRequestParams params, Document doc) throws GenericHttpException, SAXException {
         if (params == null || doc == null) throw new NullPointerException();
         GenericHttpRequest request = null;
         GenericHttpResponse response = null;
@@ -148,6 +149,9 @@ public class SimpleHttpClient implements GenericHttpClient {
             request = client.createRequest(GenericHttpClient.POST, params);
             HexUtils.copyStream(new ByteArrayInputStream(requestBody), request.getOutputStream());
             response = request.getResponse();
+            final ContentTypeHeader contentType = response.getContentType();
+            if (contentType == null || !contentType.isXml())
+                throw new SAXException("Response from server was non-XML content type: " + contentType);
             Document responseDoc = XmlUtil.parse(response.getInputStream());
             return new SimpleXmlResponseImpl(response, responseDoc);
         } catch (IOException e) {

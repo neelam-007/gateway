@@ -52,15 +52,16 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
 
         Date timestampCreatedDate = tokenServerSsg.getRuntime().getDateTranslatorToSsg().translate(new Date());
 
-        s = TokenServiceClient.obtainSamlAssertion(url,
-                                                   tokenServerSsg,
+        s = TokenServiceClient.obtainSamlAssertion(tokenServerSsg.getRuntime().getHttpClient(), null, url,
+                                                   tokenServerSsg.getServerCertificate(),
                                                    timestampCreatedDate,
                                                    tokenServerSsg.getClientCertificate(),
                                                    tokenServerSsg.getClientCertificatePrivateKey(),
                                                    TokenServiceClient.RequestType.ISSUE,
                                                    SecurityTokenType.SAML_ASSERTION,
                                                    null, // no base
-                                                   null); // no appliesTo
+                                                   null // no appliesTo
+        );
         log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         return s;
     }

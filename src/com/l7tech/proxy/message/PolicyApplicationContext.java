@@ -450,19 +450,25 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     private String establishSecureConversationSession()
-      throws OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException,
-             BadCredentialsException, IOException {
-        // prepareClientCertificate(); // todo fla, if the ssa can talk ssl to ssg, then a client cert is not necessary
+            throws OperationCanceledException, GeneralSecurityException,
+            BadCredentialsException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException
+    {
         Ssg ssg = getSsg();
         TokenServiceClient.SecureConversationSession s = null;
-        logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString());
+
+        // TODO support WS-SC with Http basic to fed SSG with third-party token service?
+        if (ssg.isFederatedGateway())
+            prepareClientCertificate();
+
         if (ssg.getClientCertificate() == null) {
-            s = TokenServiceClient.obtainSecureConversationSession(ssg, ssg.getServerCertificate());
+            PasswordAuthentication pw = getCredentialsForTrustedSsg();
+            logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString() + " using HTTP Basic over SSL");
+            s = TokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(ssg.getRuntime().getHttpClient(), pw, ssg, ssg.getServerCertificate());
         } else {
-            s = TokenServiceClient.obtainSecureConversationSession(ssg,
-                                                                   ssg.getClientCertificate(),
-                                                                   ssg.getClientCertificatePrivateKey(),
-                                                                   ssg.getServerCertificate());
+            logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString() + " using a WS-S signed request");
+            s = TokenServiceClient.obtainSecureConversationSessionUsingWssSignature(ssg.getRuntime().getHttpClient(), ssg,
+                                                                   ssg.getServerCertificate(), ssg.getClientCertificate(),
+                                                                   ssg.getClientCertificatePrivateKey());
         }
         logger.log(Level.INFO, "WS-SecureConversation session established with Gateway " + ssg.toString() + "; session ID=" + s.getSessionId());
         ssg.getRuntime().secureConversationId(s.getSessionId());
@@ -531,8 +537,8 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @return the secure conversation ID for this session, which may be newly created.  Never null.
      */
     public String getOrCreateSecureConversationId()
-      throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
-      ClientCertificateException, BadCredentialsException, PolicyRetryableException {
+            throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
+            ClientCertificateException, BadCredentialsException, PolicyRetryableException, ConfigurationException {
         checkExpiredSecureConversationSession();
         if (secureConversationId != null)
             return secureConversationId;

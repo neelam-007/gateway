@@ -6,7 +6,10 @@
 
 package com.l7tech.proxy.util;
 
-import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.GenericHttpRequestParamsImpl;
+import com.l7tech.common.http.SimpleHttpClient;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.token.ParsedElement;
 import com.l7tech.common.security.token.SecurityToken;
@@ -18,7 +21,6 @@ import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -33,18 +35,14 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -317,10 +315,10 @@ public class PolicyServiceClient {
      * As a side-effect of downloading policy, we'll check for gross clock-skew between this SSG's clock
      * and our own and enable compensation if some is detected.
      *
+     * @param httpClient          required.  The GenericHttpClient to use for the request.
      * @param url
-     * @param ssg
      * @param requestDoc
-     * @param httpBasicAuthorization optional.  If specified, the Authorization: HTTP header will be set to whatever is in this string.
+     * @param httpBasicCredentials optional.  If specified, the Authorization: HTTP header will be set to whatever is in this string.
      * @param serverCertificate  required.  used to verify identity of signer of downloaded policy.
      * @param clientCert         optional. if specified along with clientKey, an encrypted response can be processed.
      * @param clientKey          optional. if specified along with getCachedClientCert, an encrypted response can be processed.
@@ -329,10 +327,11 @@ public class PolicyServiceClient {
      * @throws GeneralSecurityException
      * @throws BadCredentialsException
      */
-    private static Policy obtainResponse(URL url,
+    private static Policy obtainResponse(GenericHttpClient httpClient,
+                                         URL url,
                                          Ssg ssg,
                                          Document requestDoc,
-                                         String httpBasicAuthorization,
+                                         PasswordAuthentication httpBasicCredentials,
                                          X509Certificate serverCertificate,
                                          X509Certificate clientCert,
                                          PrivateKey clientKey)
@@ -341,46 +340,31 @@ public class PolicyServiceClient {
         log.log(Level.INFO, "Downloading policy from " + url.toString());
 
         final long millisBefore = System.currentTimeMillis();
-        CurrentSslPeer.set(ssg);
-        URLConnection conn = url.openConnection();
-        if (!(conn instanceof HttpURLConnection))
-            throw new IOException("Connection to policy server was not an HttpURLConnection; instead it was " + conn.getClass());
-        HttpURLConnection httpConn = (HttpURLConnection)conn;
-        boolean usingSsl = SslUtils.configureSslSocketFactory(conn);
-        if (httpBasicAuthorization != null)
-            conn.setRequestProperty("Authorization", httpBasicAuthorization);
-        conn.setDoOutput(true);
-        conn.setAllowUserInteraction(false);
-        conn.setRequestProperty(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
-        XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
-        final int code = httpConn.getResponseCode();
-        log.log(Level.FINE, "Policy server responded with: " + code + " " + httpConn.getResponseMessage());
-        final int len = conn.getContentLength();
-        log.log(Level.FINEST, "Policy server response content length=" + len);
-        CurrentSslPeer.set(null);
-        final String contentType = conn.getContentType();
-        if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
-            throw new IOException("Policy server returned unsupported content type " + conn.getContentType());
-        Document response = null;
-        InputStream inputStream;
+        final GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+        params.setContentType(ContentTypeHeader.XML_DEFAULT);
+        if (httpBasicCredentials != null)
+            params.setPasswordAuthentication(httpBasicCredentials);
+
+        boolean usingSsl = "https".equalsIgnoreCase(url.getProtocol());
+
+        SimpleHttpClient client = new SimpleHttpClient(httpClient);
         try {
-            inputStream = conn.getInputStream();
-        } catch (IOException e) {
-            inputStream = httpConn.getErrorStream();
-            if (inputStream == null)
-                throw e;
-        }
-        try {
-            response = XmlUtil.parse(inputStream);
-        } catch (SAXException e) {
-            throw new CausedIOException("Unable to XML parse GetPolicyResponse", e);
-        }
-        final long millisAfter = System.currentTimeMillis();
-        final long roundTripMillis = millisAfter - millisBefore;
-        log.log(Level.FINER, "Policy download took " + roundTripMillis + "ms");
-        Policy result = null;
-        Date ssgTime = null; // Trusted timestamp from the SSG
-        try {
+            SimpleHttpClient.SimpleXmlResponse conn = client.postXml(params, requestDoc);
+
+            final int code = conn.getStatus();
+            log.log(Level.FINE, "Policy server responded with: " + code);
+            final Long len = conn.getContentLength();
+            log.log(Level.FINEST, "Policy server response content length=" + len);
+
+            Document response = conn.getDocument();
+
+
+            final long millisAfter = System.currentTimeMillis();
+            final long roundTripMillis = millisAfter - millisBefore;
+            log.log(Level.FINER, "Policy download took " + roundTripMillis + "ms");
+            Policy result = null;
+            Date ssgTime = null; // Trusted timestamp from the SSG
+
             Date[] timestampCreatedDate = new Date[] { null };
             boolean[] timestampWasSigned = new boolean[] { false };
             result = parseGetPolicyResponse(requestDoc,
@@ -395,19 +379,21 @@ public class PolicyServiceClient {
                 if (usingSsl || timestampWasSigned[0])
                     ssgTime = timestampCreatedDate[0];
             }
+
+            if (ssgTime != null && Math.abs(ssgTime.getTime() - millisAfter) > 10000 + roundTripMillis) {
+                final long ssgDiff = ssgTime.getTime() - ((millisAfter + millisBefore) / 2);
+                final long posDiff = Math.abs(ssgDiff);
+                final String aheadBehind = ssgDiff > 0 ? "ahead of" : "behind";
+                log.log(Level.INFO, "Noting that Gateway " + ssg + " clock is at about " + posDiff + "ms " + aheadBehind + " local clock.");
+                ssg.getRuntime().setTimeOffset(ssgDiff);
+            }
+
+            return result;
+        } catch (SAXException e) {
+            throw new InvalidDocumentFormatException(e);
         } catch (ProcessorException e) {
             throw new CausedIOException("Unable to obtain policy from policy server", e);
         }
-
-        if (ssgTime != null && Math.abs(ssgTime.getTime() - millisAfter) > 10000 + roundTripMillis) {
-            final long ssgDiff = ssgTime.getTime() - ((millisAfter + millisBefore) / 2);
-            final long posDiff = Math.abs(ssgDiff);
-            final String aheadBehind = ssgDiff > 0 ? "ahead of" : "behind";
-            log.log(Level.INFO, "Noting that Gateway " + ssg + " clock is at about " + posDiff + "ms " + aheadBehind + " local clock.");
-            ssg.getRuntime().setTimeOffset(ssgDiff);
-        }
-
-        return result;
     }
 
     /**
@@ -428,7 +414,8 @@ public class PolicyServiceClient {
      * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
      * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
      */
-    public static Policy downloadPolicyWithWssSignature(Ssg ssg,
+    public static Policy downloadPolicyWithWssSignature(GenericHttpClient httpClient,
+                                                        Ssg ssg,
                                                         String serviceId,
                                                         X509Certificate serverCertificate,
                                                         boolean useSsl,
@@ -442,7 +429,7 @@ public class PolicyServiceClient {
                           SecureSpanConstants.POLICY_SERVICE_FILE);
         Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createDecoratedGetPolicyRequest(serviceId, null, clientCert, clientKey, timestampCreatedDate);
-        return obtainResponse(url, ssg, requestDoc, null, serverCertificate, clientCert, clientKey);
+        return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, clientCert, clientKey);
     }
 
     /**
@@ -460,7 +447,8 @@ public class PolicyServiceClient {
      * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
      * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
      */
-    public static Policy downloadPolicyWithHttpBasicOverSsl(Ssg ssg,
+    public static Policy downloadPolicyWithHttpBasicOverSsl(GenericHttpClient httpClient,
+                                                            Ssg ssg,
                                                             String serviceId,
                                                             X509Certificate serverCertificate,
                                                             PasswordAuthentication basicCredentials)
@@ -468,9 +456,7 @@ public class PolicyServiceClient {
     {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.POLICY_SERVICE_FILE);
         Document requestDoc = createGetPolicyRequest(serviceId);
-        String auth = "Basic " + HexUtils.encodeBase64(
-                (basicCredentials.getUserName() + ":" + new String(basicCredentials.getPassword())).getBytes());        
-        return obtainResponse(url, ssg, requestDoc, auth, serverCertificate, null, null);
+        return obtainResponse(httpClient, url, ssg, requestDoc, basicCredentials, serverCertificate, null, null);
     }
     
     /**
@@ -493,7 +479,8 @@ public class PolicyServiceClient {
      * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
      * @throws BadCredentialsException if the policy service denies access to this policy to your (lack of) credentials
      */
-    public static Policy downloadPolicyWithSamlAssertion(Ssg ssg,
+    public static Policy downloadPolicyWithSamlAssertion(GenericHttpClient httpClient,
+                                                         Ssg ssg,
                                                          String serviceId,
                                                          X509Certificate serverCertificate,
                                                          boolean useSsl,
@@ -507,7 +494,7 @@ public class PolicyServiceClient {
                           SecureSpanConstants.POLICY_SERVICE_FILE);
         Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createDecoratedGetPolicyRequest(serviceId, samlAss, null, subjectPrivateKey, timestampCreatedDate);
-        return obtainResponse(url, ssg, requestDoc, null, serverCertificate, samlAss.getSubjectCertificate(), subjectPrivateKey);
+        return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, samlAss.getSubjectCertificate(), subjectPrivateKey);
     }
 
     /**
@@ -526,7 +513,8 @@ public class PolicyServiceClient {
      * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
      * @throws BadCredentialsException if the policy service denies access to this policy to your (lack of) credentials
      */
-    public static Policy downloadPolicyWithNoAuthentication(Ssg ssg,
+    public static Policy downloadPolicyWithNoAuthentication(GenericHttpClient httpClient,
+                                                            Ssg ssg,
                                                             String serviceId,
                                                             X509Certificate serverCertificate,
                                                             boolean useSsl)
@@ -537,6 +525,6 @@ public class PolicyServiceClient {
                           useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
                           SecureSpanConstants.POLICY_SERVICE_FILE);
         Document requestDoc = createGetPolicyRequest(serviceId);
-        return obtainResponse(url, ssg, requestDoc, null, serverCertificate, null, null);        
+        return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, null, null);
     }
 }

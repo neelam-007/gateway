@@ -8,6 +8,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -37,7 +38,7 @@ public class ClientSecureConversation extends ClientAssertion {
             throws BadCredentialsException, OperationCanceledException,
             GeneralSecurityException, ClientCertificateException, IOException, SAXException,
             KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException,
-            PolicyAssertionException, InvalidDocumentFormatException
+            PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException
     {
         // Establish session, if possible
         final String sessionId = context.getOrCreateSecureConversationId();
