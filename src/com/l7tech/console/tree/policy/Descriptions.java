@@ -127,12 +127,8 @@ public class Descriptions {
          */
         protected Object[] parameters() {
             if (assertion instanceof HttpRoutingAssertion) {
-                String suffix = "";
-                if (assertion instanceof BridgeRoutingAssertion)
-                    suffix = " using SecureSpan Bridge";
                 return new Object[]{
-                    ((HttpRoutingAssertion)assertion).getProtectedServiceUrl() + suffix
-                };
+                    ((HttpRoutingAssertion)assertion).getProtectedServiceUrl()};
             } else if (assertion instanceof JmsRoutingAssertion) {
                 JmsRoutingAssertion ass = (JmsRoutingAssertion)assertion;
                 String s;
@@ -203,6 +199,7 @@ public class Descriptions {
         descriptionsMap.put(HttpBasic.class, NoParam.class);
         descriptionsMap.put(HttpDigest.class, NoParam.class);
         descriptionsMap.put(HttpRoutingAssertion.class, RoutingDescription.class);
+        descriptionsMap.put(BridgeRoutingAssertion.class, RoutingDescription.class);
         descriptionsMap.put(JmsRoutingAssertion.class, RoutingDescription.class);
         descriptionsMap.put(RequestWssIntegrity.class, NoParam.class);
         descriptionsMap.put(ResponseWssIntegrity.class, NoParam.class);
