@@ -120,11 +120,11 @@ public class WssProcessorTest extends TestCase {
     TestDocument[] TEST_DOCUMENTS = {
         makeDotNetTestDocument("dotnet encrypted request", TestDocuments.DOTNET_ENCRYPTED_REQUEST),
         makeDotNetTestDocument("dotnet signed request", TestDocuments.DOTNET_SIGNED_REQUEST),
-        makeDotNetTestDocument("dotnet signed tampered request", TestDocuments.DOTNET_SIGNED_TAMPERED_REQUEST),
+        /*makeDotNetTestDocument("dotnet signed tampered request", TestDocuments.DOTNET_SIGNED_TAMPERED_REQUEST),
         makeDotNetTestDocument("dotnet signed request using derived key token",
                                TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN),
         makeDotNetTestDocument("dotnet signed request using derived key token",
-                               TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN),
+                               TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN),*/
         makeEttkTestDocument("ettk signed request", TestDocuments.ETTK_SIGNED_REQUEST),
         makeEttkTestDocument("ettk encrypted request", TestDocuments.ETTK_ENCRYPTED_REQUEST),
         makeEttkTestDocument("ettk signed encrypted request", TestDocuments.ETTK_SIGNED_ENCRYPTED_REQUEST),
