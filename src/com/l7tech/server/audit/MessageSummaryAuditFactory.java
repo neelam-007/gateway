@@ -14,6 +14,7 @@ import com.l7tech.message.Response;
 import com.l7tech.message.XmlRequest;
 import com.l7tech.message.XmlResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.service.PublishedService;
 
@@ -78,13 +79,19 @@ public class MessageSummaryAuditFactory {
                 serviceName = service.getName();
             }
         }
+
         authenticated = currentRequest.isAuthenticated();
         if ( authenticated ) {
             User u = currentRequest.getUser();
-            identityProviderOid = u.getProviderId();
-            userId = u.getUniqueIdentifier();
-            userName = u.getName();
-            if (userName == null) userName = u.getLogin();
+            if (u == null) {
+                LoginCredentials creds = currentRequest.getPrincipalCredentials();
+                if (creds != null) userName = creds.getLogin();
+            } else {
+                identityProviderOid = u.getProviderId();
+                userId = u.getUniqueIdentifier();
+                userName = u.getName();
+                if (userName == null) userName = u.getLogin();
+            }
         }
 
         PublishedService service = (PublishedService)currentRequest.getParameter(Request.PARAM_SERVICE);
