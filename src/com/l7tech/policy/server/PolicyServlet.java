@@ -13,6 +13,7 @@ import com.l7tech.util.Locator;
 import com.l7tech.logging.LogManager;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -47,7 +48,12 @@ import java.util.logging.Level;
  *
  */
 public class PolicyServlet extends HttpServlet {
-    private static final String CERT_PATH = "../../kstores/ssg.cer";
+    private static final String DEFAULT_CERT_PATH = "../../kstores/ssg.cer";
+    private static final String PARAM_CERT_PATH = "CertPath";
+
+    public void init( ServletConfig config ) throws ServletException {
+        super.init( config );
+    }
 
     protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
         // GET THE PARAMETERS PASSED
@@ -117,7 +123,10 @@ public class PolicyServlet extends HttpServlet {
             throws SQLException, TransactionException, FindException, IOException, NoSuchAlgorithmException
     {
         // Find our certificate
-        String gotpath = request.getSession().getServletContext().getRealPath(CERT_PATH);
+        String certPath = getServletConfig().getInitParameter( PARAM_CERT_PATH );
+        if ( certPath == null || certPath.length() == 0 ) certPath = DEFAULT_CERT_PATH;
+
+        String gotpath = request.getSession().getServletContext().getRealPath( certPath );
         InputStream certStream = new FileInputStream(gotpath);
         byte[] cert;
         try {
