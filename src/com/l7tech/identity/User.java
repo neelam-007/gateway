@@ -140,7 +140,7 @@ public class User extends NamedEntityImp implements Principal {
     // PRIVATES
     // ************************************************
 
-    private String encodePasswd(String login, String passwd) {
+    public static String encodePasswd(String login, String passwd) {
         String toEncode = login + ":" + passwd;
 
         // MD5 IT
