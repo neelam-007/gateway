@@ -206,7 +206,7 @@
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib"
-                 excludes="${common.lib.jars}, jh.jar, kunststoff.jar, catalina.jar">
+                 excludes="${common.lib.jars}, jh.jar, kunststoff.jar">
             </lib>
             <classes dir="${build.classes}"/>
             <zipfileset dir="${src.root}/etc" includes="server-config.wsdd" prefix="WEB-INF"/>
