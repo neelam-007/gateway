@@ -110,7 +110,10 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             List headers = new ArrayList();
             for (Iterator i = results.iterator(); i.hasNext();) {
                 PersistentGroup group = (PersistentGroup)i.next();
-                headers.add(new EntityHeader(group.getOid(), EntityType.fromInterface(getInterfaceClass()), group.getName(), EMPTY_STRING));
+                headers.add(new EntityHeader(group.getOid(),
+                                             EntityType.fromInterface(getInterfaceClass()),
+                                             group.getName(),
+                                             group.getDescription()));
             }
             return Collections.unmodifiableList(headers);
         } catch (SQLException e) {
