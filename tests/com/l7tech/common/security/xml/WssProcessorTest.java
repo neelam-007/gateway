@@ -104,6 +104,7 @@ public class WssProcessorTest extends TestCase {
         Document undecorated = result.getUndecoratedMessage();
         assertTrue(undecorated != null);
         log.info("Undecorated document:\n" + XmlUtil.nodeToFormattedString(undecorated));
+        log.info("Security namespace observed:\n" + result.getSecurityNS());
     }
 
     private static class TestDocument {
