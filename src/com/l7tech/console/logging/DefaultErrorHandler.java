@@ -8,13 +8,14 @@ import javax.swing.*;
 import java.util.logging.Level;
 
 /**
- * Class ErrorManager is the console error handler. It handles user notifying
- * anbd error logging.
+ * <code>DefaultErrorHandler</code> is the generic error message handler
+ * that displays the dialog and logs the message.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class DefaultErrorHandler implements ErrorHandler {
     private JFrame mainFrame = null;
+
     /**
      * handle the error event
      *
