@@ -354,13 +354,13 @@ public class LogonDialog extends JDialog {
                 Object[] urls = serverUrlHistory.getEntries();
                 for (int i = 0; i < urls.length; i++) {
                     String surl = urls[i].toString();
-                    String hostNamePort = surl;
+                    String hostName = surl;
                     try {
                         URL url = new URL(surl);
-                        hostNamePort = url.getHost() + ":" + url.getPort();
+                        hostName = url.getHost();
                     } catch (MalformedURLException e) {
                     }
-                    serverComboBox.addItem(hostNamePort);
+                    serverComboBox.addItem(hostName);
                     if (i == 0) {
                         serverComboBox.setSelectedIndex(0);
                     }
