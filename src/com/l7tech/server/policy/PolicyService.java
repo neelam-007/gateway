@@ -13,9 +13,7 @@ import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.message.SoapRequest;
 import com.l7tech.message.SoapResponse;
-import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.common.security.xml.WssProcessorImpl;
-import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.SoapFaultDetail;
@@ -204,11 +202,20 @@ public class PolicyService {
             }
             response.setDocument(fault);
         }
-        wrapFilteredPolicyInResponse(policyDoc, response);
+        try {
+            wrapFilteredPolicyInResponse(policyDoc, response);
+        } catch (GeneralSecurityException e) {
+            exceptionToFault(e, response);
+            return;
+        } catch (WssDecorator.DecoratorException e) {
+            exceptionToFault(e, response);
+            return;
+        }
         return;
     }
 
-    private void wrapFilteredPolicyInResponse(Document policyDoc, SoapResponse response) {
+    private void wrapFilteredPolicyInResponse(Document policyDoc, SoapResponse response)
+                            throws GeneralSecurityException, WssDecorator.DecoratorException {
         Document responseDoc;
         try {
             responseDoc = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
@@ -218,11 +225,26 @@ public class PolicyService {
             Element body = SoapUtil.getBodyElement(responseDoc);
             Element gpr = XmlUtil.findFirstChildElement(body);
             gpr.appendChild(responseDoc.importNode(policyDoc.getDocumentElement(), true));
+            signresponse(responseDoc);
             response.setResponseXml(XmlUtil.nodeToString(responseDoc));
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
+        } catch (InvalidDocumentFormatException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
+    private void signresponse(Document responseDoc) throws GeneralSecurityException, WssDecorator.DecoratorException {
+        WssDecoratorImpl decorator = new WssDecoratorImpl();
+        WssDecorator.DecorationRequirements reqmts = new WssDecorator.DecorationRequirements();
+        reqmts.setSenderCertificate(serverCert);
+        reqmts.setSenderPrivateKey(privateServerKey);
+        reqmts.setSignTimestamp(true);
+        try {
+            reqmts.getElementsToSign().add(SoapUtil.getBodyElement(responseDoc));
+            decorator.decorateMessage(responseDoc, reqmts);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
         }
