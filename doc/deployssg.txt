@@ -1,42 +1,104 @@
+$Id$
 Layer 7 Technologies, inc.
 User: flascelles
-Date: Jul 07, 2003
+Date: $Date$
 
 SSG deployment steps for a clean linux box
 
 Preconditions
-linux is installed including postgresql
-know the root password
+
+Redhat linux is installed including postgresql server
+
+know the root password ....
 
 PREPARING THE SERVER
 =========================================
-[ROOT]	create user gateway, choose a password for this user, remember it
-[ROOT]	check /etc/hosts. make sure first line reads 127.0.0.1 localhost localhost.localdomain
-[GATEWAY] download and install jdk 1.4.1 it should go in /usr/java/j2sdk1.4.1
-[GATEWAY] download and uncompress tomcat custom version it should go in /usr/java/tomcat-4.1.27-l7p2
+Networking (as root)
 
-[ROOT]	user postgres should already exist, set its password "passwd postgres"
+Set hostname. /etc/sysconfig/networking sets it permanently
 
-[POSTGRES] initdb --pgdata=/var/lib/pgsql/data
-[POSTGRES] change /var/lib/pgsql/data/postgresql.conf to allow network access (required for jdbc access) look for tcpip_socket = false, set to true
+Hostname command with the above name to set it on a running system
 
-[ROOT] start psql server service postgresql start
-[ROOT] make sure mysqld starts at boot chkconfig postgresql on
+Create user gateway, choose a password for this user, remember it
 
-[POSTGRES]	createdb ssg
-[POSTGRES]	psql ssg -f ssg.sql
-[POSTGRES]	CREATE USER gateway WITH PASSWORD 'same_as_linux_passwd';
-[POSTGRES]	GRANT ALL ON table_name to gateway; (for every tables)
-[POSTGRES]  ADD ENTRYS IN PGSQL Auth file /var/lib/pgsql/data/pg_hba.conf
+Check /etc/hosts. make sure first line reads 127.0.0.1 localhost localhost.localdomain
+
+Set IP addresses, using dhcp or netconfig eth0/eth1
+
+If dns does not resolve, adding a line in /etc/hosts makes configuration cleaner.
+        i.p.adddy      hostname hostname.domain.com
+        is the standard pattern.
+
+eth0 is assumed to be external address.
+
+
+user postgres should already exist, its only accessible by "su - postgres", do not set
+a password. The account should not be able to be logged into.
+
+
+Server Software
+
+As user Gateway.
+
+Install the toolkit into /ssg
+This includes the tomcat, the jdk, the gateway WAR and the config
+The kit build SHOULD have included the above configured hostname and root ca name.
+if not, a post install will need to be done.
+
+
+Database:
+
+As root:
+
+change /var/lib/pgsql/data/postgresql.conf
+
+Allow network access (required for jdbc access)
+
+look for tcpip_socket = false, set to true
+
+Allos scalability of database:
+
+uncomment and set max_connections to 100
+
+Set tcp to only listen on localhost
+
+look for virtual_host. Uncomment it, set to '127.0.0.1'
+
+Restart psql server
+
+    service postgresql restart
+
+make sure it starts at boot
+
+    chkconfig postgresql on
+hibernate_unique_key, identity_provider, internal_group, internal_user, internal_user_group, published_service
+
+as Postgres:
+
+    initdb --pgdata=/var/lib/pgsql/data
+	createdb ssg
+	psql ssg -f /ssg/etc/db/postgres/ssg.sql
+    psql ssg;
+	CREATE USER gateway WITH PASSWORD 'same_as_linux_passwd';
+	GRANT ALL ON
+	    hibernate_unique_key, identity_provider,
+	    internal_group, internal_user, internal_user_group, published_service
+	TO gateway;
+	Edit Auth file /var/lib/pgsql/data/pg_hba.conf
+    Add this line:
             host  ssg  gateway  127.0.0.1  255.255.255.255  password
 
+DB is now in place
 
-DEPLOYING THE SSG
-=========================================
-[GATEWAY] get the ssg distribution tar
-[ROOT] copy UneasyRooster/etc/ssgruntimedefs.sh to /etc/profile.d make sure JAVA_HOME and TOMCAT_HOME are correct
-[GATEWAY] run deploy.sh
-[GATEWAY] startssg (start the server)
+As root
+ cp /ssg/dist/etc/ssgruntimedefs.sh /etc/profile.d
 
-SSG SERVER NOW UP AND RUNNING
+Sets JAVA_HOME TOMCAT_HOME
 
+ echo "su - gateway -c /ssg/tomcat/bin/startup.sh -security" >> /etc/rc.d/rc.local
+
+Starts the gateway on machine boot.
+
+As gateway
+
+ run startssg
