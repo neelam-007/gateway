@@ -152,6 +152,23 @@
 
  </service>
 
+ <service name="loggingAdmin" provider="java:RPC">
+  <parameter name="allowedMethods" value="getSystemLog"/>
+  <parameter name="wsdlPortType" value="loggingPortType"/>
+  <parameter name="scope" value="Application"/>
+  <parameter name="className" value="com.l7tech.adminws.logging.Service"/>
+  <parameter name="wsdlServicePort" value="loggingPort"/>
+  <parameter name="wsdlTargetNamespace" value="http://www.layer7-tech.com/logging"/>
+  <parameter name="wsdlServiceElement" value="loggingService"/>
+
+  <operation name="getSystemLog" qname="ns1:getSystemLog" returnQName="getSystemLogReturn" returnType="ns1:ArrayOfStrings" xmlns:ns1="http://www.layer7-tech.com/logging" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <parameter name="offset" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+      <parameter name="size" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+  </operation>
+
+  <typeMapping deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns1:ArrayOfStrings" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" type="java:java.lang.String[]" xmlns:ns1="http://www.layer7-tech.com/logging"/>
+
+ </service>
 
 
  <transport name="http">
