@@ -342,7 +342,11 @@ public class MainWindow extends JFrame {
                 }
              }
 
-             /** Invoked when a window has been closed. */
+            public void windowClosing(WindowEvent e) {
+                MainWindow.this.exitMenuEventHandler(null);
+            }
+
+            /** Invoked when a window has been closed. */
              public void windowClosed(WindowEvent e) {
                  try {
                      Preferences prefs = Preferences.getPreferences();
@@ -457,7 +461,11 @@ public class MainWindow extends JFrame {
                * @param event  the event that occured
                */
               public void actionPerformed(ActionEvent event) {
-                  disconnectHandler(event);
+                  try {
+                      disconnectHandler(event);
+                  } catch (ActionVetoException e) {
+                      // action vetoed
+                  }
               }
           };
         disconnectAction.putValue(Action.SHORT_DESCRIPTION, atext);
@@ -1346,13 +1354,8 @@ public class MainWindow extends JFrame {
      *
      * @param event  ActionEvent
      */
-    private void disconnectHandler(ActionEvent event) {
-        try {
-            getWorkSpacePanel().clearWorkspace();
-        } catch (ActionVetoException e) {
-            log.log(Level.FINE, "action vetoed ",e);
-            return;
-        }
+    private void disconnectHandler(ActionEvent event) throws ActionVetoException {
+        getWorkSpacePanel().clearWorkspace();
         getStatusMsgLeft().setText("Disconnected");
         getStatusMsgRight().setText("");
         getAssertionPaletteTree().setModel(null);
@@ -1413,6 +1416,13 @@ public class MainWindow extends JFrame {
      * @see ActionEvent for details
      */
     private void exitMenuEventHandler(ActionEvent event) {
+        if (isConnected()) {
+            try {
+                disconnectHandler(event);
+            } catch (ActionVetoException e) {
+                return;
+            }
+        }
         this.dispose();
     }
 
@@ -1483,7 +1493,7 @@ public class MainWindow extends JFrame {
             setLookAndFeel(lfName);
         }
 
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setName("MainWindow");
         setJMenuBar(getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
@@ -1627,7 +1637,11 @@ public class MainWindow extends JFrame {
                     SwingUtilities.invokeLater(
                       new Runnable() {
                           public void run() {
-                              MainWindow.this.disconnectHandler(null);
+                              try {
+                                  MainWindow.this.disconnectHandler(null);
+                              } catch (ActionVetoException e1) {
+                                  // swallow, cannot happen from here
+                              }
                           }
                       });
                 }
