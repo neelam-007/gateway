@@ -25,4 +25,8 @@ public class StaleUpdateException extends UpdateException {
     public StaleUpdateException( String message, Throwable cause ) {
         super( message, cause );
     }
+
+    public StaleUpdateException(Throwable cause ) {
+        super(cause.getMessage(), cause);
+    }
 }
