@@ -469,6 +469,9 @@ public class FindIdentitiesDialog extends JDialog {
         if (!info.isExactName()) {
             searchName += "*";
         }
+        if ("".equals(searchName)) {
+            searchName = "*";
+        }
         try {
             setTableModel(Collections.enumeration(info.getProvider().search(types, searchName)));
         } catch (Exception e) {
