@@ -13,8 +13,8 @@ import java.util.Iterator;
 public class IdentityProviderConfigManagerStub implements IdentityProviderConfigManager {
     private StubDataStore dataStore;
 
-    public IdentityProviderConfigManagerStub(StubDataStore dataStore) {
-            this.dataStore = dataStore;
+    public IdentityProviderConfigManagerStub() {
+            this.dataStore = StubDataStore.defaultStore();
     }
 
 

@@ -6,11 +6,18 @@ import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.service.Wsdl;
+import com.l7tech.service.PublishedService;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.wsp.WspWriter;
 
+import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.*;
 import java.util.*;
+import java.net.MalformedURLException;
 
 /**
  * The test in memory datastore with users, groups, providers etc. Used
@@ -21,16 +28,32 @@ import java.util.*;
  * @version 1.0
  */
 public class StubDataStore {
+    private static StubDataStore defaultStore = null;
     /** default data store patch */
-    public static final String DEFAULT_STORE_PATH="tests/com/l7tech/identity/data.xml";
+    public static final String DEFAULT_STORE_PATH = "tests/com/l7tech/identity/data.xml";
+
     StubDataStore() {
+    }
+
+    /**
+     * create the default store
+     * @return the default data  store
+     */
+    public synchronized static StubDataStore defaultStore() {
+        if (defaultStore != null) return defaultStore;
+        try {
+            defaultStore = new StubDataStore(StubDataStore.DEFAULT_STORE_PATH);
+            return defaultStore;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * Instantiate path
      * @param storePath
      */
-    public StubDataStore(String storePath) throws FileNotFoundException {
+    protected StubDataStore(String storePath) throws FileNotFoundException {
         if (!new File(storePath).exists()) {
             StubDataStore.main(new String[]{storePath});
         }
@@ -50,15 +73,21 @@ public class StubDataStore {
     Map getIdentityProviderConfigs() {
         return providerConfigs;
     }
+
+    public Map getPublishedServices() {
+          return pubServices;
+    }
+
+
     /**
      * @return the next sequence
      */
-    long nextObjectId() {
+    public long nextObjectId() {
         return ++objectIdSequence;
     }
 
 
-    private long initialInternalProvider(XMLEncoder encoder) {
+    private IdentityProviderConfig initialInternalProvider(XMLEncoder encoder) {
         IdentityProviderConfig config = new IdentityProviderConfigImp();
         config.setOid(nextObjectId());
         config.setDescription("Internal identity provider (stub)");
@@ -68,8 +97,8 @@ public class StubDataStore {
         type.setClassName(IdentityProviderStub.class.getName());
         config.setType(type);
         encoder.writeObject(config);
-
-        return config.getOid();
+        populate(config);
+        return config;
     }
 
     private void initialUsers(XMLEncoder encoder, long providerId) {
@@ -81,7 +110,7 @@ public class StubDataStore {
         user.setLastName("Bunky");
         user.setEmail("fred@layer7-tech.com");
         encoder.writeObject(user);
-        users.put(new Long(user.getOid()), user);
+        populate(user);
 
         user = new UserImp();
         user.setProviderOid(providerId);
@@ -91,7 +120,7 @@ public class StubDataStore {
         user.setLastName("Freeman");
         user.setEmail("don@layer7-tech.com");
         encoder.writeObject(user);
-        users.put(new Long(user.getOid()), user);
+        populate(user);
 
         user = new UserImp();
         user.setProviderOid(providerId);
@@ -101,7 +130,7 @@ public class StubDataStore {
         user.setLastName("Schwartz");
         user.setEmail("hertz@layer7-tech.com");
         encoder.writeObject(user);
-        users.put(new Long(user.getOid()), user);
+        populate(user);
     }
 
     private void initialGroups(XMLEncoder encoder, long providerId) {
@@ -122,8 +151,10 @@ public class StubDataStore {
             membersHeaders.add(fromUser((User)users.get(i.next())));
         }
 
+
         group.setMemberHeaders(membersHeaders);
         encoder.writeObject(group);
+        populate(group);
 
         group = new GroupImp();
         group.setProviderOid(providerId);
@@ -131,6 +162,8 @@ public class StubDataStore {
         group.setName("marketing");
         group.setDescription("Marketing group");
         encoder.writeObject(group);
+        populate(group);
+
 
         group = new GroupImp();
         group.setProviderOid(providerId);
@@ -138,18 +171,43 @@ public class StubDataStore {
         group.setName("engineering");
         group.setDescription("Engineering group");
         encoder.writeObject(group);
+        populate(group);
     }
 
-    private void reconstituteFrom(String path) throws FileNotFoundException {
+    private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
+      throws FileNotFoundException, WSDLException, MalformedURLException {
+        String path = "tests/com/l7tech/service/StockQuoteService.wsdl";
+        File file = new File(path);
+        Wsdl wsdl = Wsdl.newInstance(null, new FileReader(file));
+        PublishedService service = new PublishedService();
+        service.setName(wsdl.getDefinition().getTargetNamespace());
+        service.setUrn(wsdl.getDefinition().getTargetNamespace());
+        service.setWsdlXml(wsdl.toString());
+        service.setWsdlUrl(file.toURI().toString());
+        service.setOid(nextObjectId());
+        Group g =
+          (Group)groups.values().iterator().next();
+        Assertion assertion =
+          new MemberOfGroup(IdentityProviderFactory.makeProvider(pc), g);
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        WspWriter.writePolicy(assertion, bo);
+
+        service.setPolicyXml(bo.toString());
+        encoder.writeObject(service);
+        populate(service);
+
+    }
+
+    private void reconstituteFrom(String path)
+      throws FileNotFoundException {
         XMLDecoder decoder = null;
         try {
             decoder = new XMLDecoder(
-                    new BufferedInputStream(
-                            new FileInputStream(path)));
+              new BufferedInputStream(
+                new FileInputStream(path)));
             while (true) {
                 populate(decoder.readObject());
                 this.nextObjectId();
-
             }
 
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -168,23 +226,28 @@ public class StubDataStore {
             users.put(new Long(((User)o).getOid()), o);
         } else if (o instanceof IdentityProviderConfig) {
             providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), o);
+        } else if (o instanceof PublishedService) {
+            pubServices.put(new Long(((PublishedService)o).getOid()), o);
         } else {
             System.err.println("Don't know how to handle " + o.getClass());
         }
     }
 
     private void initializeSeedData(String storePath)
-            throws FileNotFoundException {
+      throws FileNotFoundException, MalformedURLException, WSDLException {
         XMLEncoder encoder = null;
         try {
             File target = new File(storePath);
             if (target.exists()) target.delete();
             encoder =
-                    new XMLEncoder(
-                            new BufferedOutputStream(new FileOutputStream(storePath)));
-            long providerId = initialInternalProvider(encoder);
+              new XMLEncoder(
+                new BufferedOutputStream(new FileOutputStream(storePath)));
+            IdentityProviderConfig providerConfig
+              = initialInternalProvider(encoder);
+            long providerId = providerConfig.getOid();
             initialUsers(encoder, providerId);
             initialGroups(encoder, providerId);
+            initialServices(encoder, providerConfig);
         } finally {
             if (encoder != null)
                 encoder.close();
@@ -194,12 +257,13 @@ public class StubDataStore {
 
     private EntityHeader fromUser(User u) {
         return
-                new EntityHeader(u.getOid(), EntityType.USER, u.getName(), null);
+          new EntityHeader(u.getOid(), EntityType.USER, u.getName(), null);
     }
 
     private Map providerConfigs = new HashMap();
     private Map users = new HashMap();
     private Map groups = new HashMap();
+    private Map pubServices = new HashMap();
     private long objectIdSequence = 0;
 
     /**
@@ -212,9 +276,9 @@ public class StubDataStore {
             if (args.length > 0) {
                 path = args[0];
             }
-            System.out.println("Generating stub data stor in '"+path+"'");
+            System.out.println("Generating stub data stor in '" + path + "'");
             new StubDataStore().initializeSeedData(path);
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
