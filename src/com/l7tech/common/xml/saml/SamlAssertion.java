@@ -55,7 +55,6 @@ public abstract class SamlAssertion {
         // saml:Assertion/saml:AuthenticationStatement/saml:Subject/saml:SubjectConfirmation/saml:ConfirmationMethod
         // HOK should be urn:oasis:names:tc:SAML:1.0:cm:holder-of-key
         // SV should be urn:oasis:names:tc:SAML:1.0:cm:sender-vouches
-
         NodeList list = assertion.getElementsByTagNameNS(SamlConstants.NS_SAML, "ConfirmationMethod");
         for (int i = 0; i < list.getLength(); i++) {
             Element el = (Element)list.item(i);
@@ -69,7 +68,7 @@ public abstract class SamlAssertion {
             }
         }
         // todo, fallback on something?
-        String msg = "Could not determine the type of saml assertion";
+        String msg = "Could not determine the saml ConfirmationMethod (neither holder-of-key nor sender-vouches)";
         logger.severe(msg);
         throw new SAXException(msg);
     }
