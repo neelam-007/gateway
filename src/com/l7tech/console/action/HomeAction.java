@@ -59,16 +59,11 @@ public class HomeAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              public void run() {
-                  try {
-                      wpanel.setComponent(getHomePageComponent());
-                  } catch (ActionVetoException e) {
-                      log.fine("workspace change vetoed");
-                  }
-              }
-          });
+        try {
+            wpanel.setComponent(getHomePageComponent());
+        } catch (ActionVetoException e) {
+            log.fine("workspace change vetoed");
+        }
     }
 
 
@@ -91,7 +86,7 @@ public class HomeAction extends BaseAction {
                             }
                         });
                     } else if (CREATE_DEFINITION.equals(url)) {
-                            SwingUtilities.invokeLater(new Runnable() {
+                        SwingUtilities.invokeLater(new Runnable() {
                             public void run() {
                                 new CreateServiceWsdlAction().performAction();
                             }
@@ -104,8 +99,8 @@ public class HomeAction extends BaseAction {
                                 if (tree != null) {
                                     AbstractTreeNode node =
                                       (AbstractTreeNode)TreeNodeActions.
-                                      nodeByNamePath(new String[] {"Internal Identity Provider", "Users"},
-                                                 (DefaultMutableTreeNode)tree.getModel().getRoot());
+                                      nodeByNamePath(new String[]{"Internal Identity Provider", "Users"},
+                                        (DefaultMutableTreeNode)tree.getModel().getRoot());
                                     new NewUserAction(node).actionPerformed(null);
                                 }
 
@@ -119,8 +114,8 @@ public class HomeAction extends BaseAction {
                                 if (tree != null) {
                                     AbstractTreeNode node =
                                       (AbstractTreeNode)TreeNodeActions.
-                                      nodeByNamePath(new String[] {"Internal Identity Provider", "Groups"},
-                                                 (DefaultMutableTreeNode)tree.getModel().getRoot());
+                                      nodeByNamePath(new String[]{"Internal Identity Provider", "Groups"},
+                                        (DefaultMutableTreeNode)tree.getModel().getRoot());
                                     new NewGroupAction(node).actionPerformed(null);
                                 }
 
