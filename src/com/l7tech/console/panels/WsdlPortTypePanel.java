@@ -39,6 +39,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
 
     private void initialize() {
         operationsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        operationsTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+
         operationsTableScrollPane.getViewport().setBackground(operationsTable.getBackground());
         operationsTable.setDefaultRenderer(Object.class, operationsTableCellRenderer);
         operationsTable.setDefaultRenderer(Input.class, operationsTableCellRenderer);

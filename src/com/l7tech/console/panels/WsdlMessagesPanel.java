@@ -8,6 +8,8 @@ import com.l7tech.console.table.WsdlMessagesTableModel;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.wsdl.Definition;
@@ -41,6 +43,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     private JButton removeMessagePartButton;
     private Definition definition;
     private JComboBox partTypesComboBox;
+    private CellEditorListener cellEditorListener;
 
     public WsdlMessagesPanel(WizardStepPanel next) {
         super(next);
@@ -82,12 +85,15 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         messagesTable.
           getSelectionModel().addListSelectionListener(messagesTableSelectionListener);
 
+        messagesTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+
         partsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         partsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 removeMessagePartButton.setEnabled(partsTableModel.getRowCount() > 0);
             }
         });
+        partsTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 
         partTypesComboBox = new JComboBox(XmlSchemaConstants.QNAMES.toArray());
         partTypesComboBox.setBackground(partsTable.getBackground());
@@ -117,6 +123,16 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         addMessagePartButton.setEnabled(false);
         removeMessagePartButton.setEnabled(false);
 
+
+        cellEditorListener = new CellEditorListener() {
+            public void editingCanceled(ChangeEvent e) {
+                log.info("edting cancelled "+e.getSource());
+            }
+
+            public void editingStopped(ChangeEvent e) {
+                log.info("edting stopped "+e.getSource());
+            }
+        };
     }
 
     /**
@@ -206,13 +222,14 @@ public class WsdlMessagesPanel extends WizardStepPanel {
               public Object getCellEditorValue() {
                   QName on = message.getQName();
                   QName nn =
-                    new QName(on.getNamespaceURI(), (String)delegate.getCellEditorValue());
+                    new QName(on.getNamespaceURI(), (String)super.getCellEditorValue());
                   Message nm = new WsdlMessagesTableModel.MessageElement();
                   nm.setUndefined(false);
                   nm.setQName(nn);
                   return nm;
               }
           };
+        cellEditor.addCellEditorListener(cellEditorListener);
         //cellEditor.setClickCountToStart(1);
         messagesTable.setDefaultEditor(Object.class, cellEditor);
         if (messagesTableModel.getRowCount() == 0) {
@@ -231,8 +248,6 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      * Rather than updating its settings with every change in the GUI,
      * it should collect them, and then only save them when requested to
      * by this method.
-     *
-     * This is a noop version that subclasses implement.
      *
      * @exception IllegalArgumentException if the the data provided
      * by the wizard are not valid.

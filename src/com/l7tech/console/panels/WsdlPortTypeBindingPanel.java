@@ -43,6 +43,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         JViewport viewport = bindingOperationsTableScrollPane.getViewport();
         viewport.setBackground(bindingOperationsTable.getBackground());
         bindingOperationsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        bindingOperationsTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 
         add(mainPanel, BorderLayout.CENTER);
         ComboBoxModel model =
