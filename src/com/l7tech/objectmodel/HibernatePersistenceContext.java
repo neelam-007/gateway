@@ -144,6 +144,13 @@ public class HibernatePersistenceContext extends PersistenceContext {
                     _session = null;
                     hibernateException = he;
                 }
+                // if the connection did not work, do something with it instead of
+                // just retrying the same thing
+                if (conn != null) {
+                    _session.reconnect(conn);
+                } else {
+                    _session.reconnect();
+                }
             }
         } finally {
             try {
