@@ -107,7 +107,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                             // Can't encrypt the whole envelope, so encrypt just the body instead.
                             encElement = SoapUtil.getBodyElement(document);
                             if (encElement == null)
-                                throw new SecurityProcessorException("Mesage has no SOAP body",
+                                throw new SecurityProcessorException("Message has no SOAP body",
                                                                      new MessageNotSoapException("Message has no SOAP body"));
                         }
 
