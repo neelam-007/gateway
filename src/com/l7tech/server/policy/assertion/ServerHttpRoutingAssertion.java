@@ -10,6 +10,7 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.UserBean;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
@@ -49,7 +50,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 public static final String CONTENT_TYPE = "Content-Type";
     public static final String USER_AGENT = "User-Agent";
     public static final String HOST = "Host";
-    public static final String SOAPACTION = "SOAPAction";
     public static final String TEXT_XML = "text/xml";
     public static final String ENCODING = "UTF-8";
 
@@ -118,7 +118,7 @@ public static final String CONTENT_TYPE = "Content-Type";
                 hostValue.append(port);
             }
             postMethod.setRequestHeader(HOST, hostValue.toString());
-            postMethod.setRequestHeader(SOAPACTION, (String)request.getParameter(Request.PARAM_HTTP_SOAPACTION));
+            postMethod.setRequestHeader(SoapUtil.SOAPACTION, (String)request.getParameter(Request.PARAM_HTTP_SOAPACTION));
 
             String login = _data.getLogin();
             String password = _data.getPassword();
