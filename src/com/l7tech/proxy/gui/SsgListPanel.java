@@ -178,7 +178,7 @@ public class SsgListPanel extends JPanel {
                     ssgListModel.editedSsg();
                 }
             };
-            actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Set this Gateway as the default");
+            actionSetDefaultSsg.putValue(Action.SHORT_DESCRIPTION, "Set this Gateway as the default");
         }
         return actionSetDefaultSsg;
     }
