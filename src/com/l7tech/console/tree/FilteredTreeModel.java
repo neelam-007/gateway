@@ -21,7 +21,8 @@ public class FilteredTreeModel extends DefaultTreeModel {
     }
 
     /**
-     * associate the filter with this <CODE>TreeModel</CODE>
+     * associate the filter with this <CODE>TreeModel</CODE>. Null
+     * value clears the filter
      *
      * @param filter new NodeFilter
      */
@@ -30,10 +31,10 @@ public class FilteredTreeModel extends DefaultTreeModel {
     }
 
     /**
-     * clear the filter associated with this <CODE>TreeModel</CODE>
+     * @return the cirrent <code>NodeFilter</code>
      */
-    public void clearFilter() {
-        filter = null;
+    public NodeFilter getFilter() {
+        return filter;
     }
 
     /**

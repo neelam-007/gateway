@@ -100,6 +100,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         /** Invoked when a key has been pressed.*/
         public void keyPressed(KeyEvent e) {
+            if (isIdentityView()) return;
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
             if (path == null) return;
@@ -127,6 +128,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
         protected void popUpMenuHandler(MouseEvent mouseEvent) {
             JTree tree = (JTree)mouseEvent.getSource();
             AbstractTreeNode node = null;
+
+            if (isIdentityView()) return; // non editable if identity view
 
             if (mouseEvent.isPopupTrigger()) {
                 int closestRow = tree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
@@ -223,7 +226,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
             return;
         if (isRootPath(path))
             return;	// Ignore user trying to drag the root node
-
+        if (isIdentityView())
+            return; // Ignore if in identity view
         // Work out the offset of the drag point from the TreePath bounding rectangle origin
         Rectangle raPath = getPathBounds(path);
         ptOffset.setLocation(ptDragOrigin.x - raPath.x, ptDragOrigin.y - raPath.y);
@@ -286,6 +290,12 @@ public class PolicyTree extends JTree implements DragSourceListener,
         TreePath rp = new TreePath(getModel().getRoot());
         return rp.equals(path);
         // return isRootVisible() && getRowForPath(path) == 0;
+    }
+
+    private boolean isIdentityView() {
+        TreeModel model = getModel();
+        return (model instanceof FilteredTreeModel &&
+                ((FilteredTreeModel)model).getFilter() !=null);
     }
 
 
@@ -354,6 +364,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         public void dragOver(DropTargetDragEvent e) {
+            if (isIdentityView()) {
+                e.rejectDrag();
+                return;
+            }
             DataFlavor[] flavors = e.getCurrentDataFlavors();
             for (int i = 0; i < flavors.length; i++) {
                 DataFlavor flavor = flavors[i];

@@ -18,12 +18,13 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.util.logging.Logger;
 
 /**
  * The policy toolbar with toolbar actions and listeners.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
@@ -42,7 +43,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
 
     /**
      * register the toolbar with the palette assertion tree.
-     *
+     * 
      * @param tree the assertion tree
      */
     public void registerPaletteTree(JTree tree) {
@@ -51,12 +52,38 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
 
     /**
      * register the toolbar with the policy editor tree.
-     *
+     * 
      * @param tree the assertion tree
      */
     public void registerPolicyTree(JTree tree) {
         tree.addTreeSelectionListener(policyTreeListener);
         tree.getModel().addTreeModelListener(policyTreeModelListener);
+    }
+
+    /**
+     * register the toolbar with the policy editor tree.
+     * 
+     * @param tree the assertion tree
+     */
+    public void unregisterPolicyTree(JTree tree) {
+        if (tree == null) return;
+        tree.removeTreeSelectionListener(policyTreeListener);
+        final TreeModel model = tree.getModel();
+        if (model !=null) {
+            model.removeTreeModelListener(policyTreeModelListener);
+
+        }
+    }
+
+
+    /**
+     * disable all the policy toolbar actions
+     */
+    public void disableAll() {
+        getDeleteAssertionAction().setEnabled(false);
+        getAssertionMoveDownAction().setEnabled(false);
+        getAssertionMoveUpAction().setEnabled(false);
+        getAddAssertionAction().setEnabled(false);
     }
 
     /**
@@ -188,12 +215,6 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
           !lastPaletteNode.getAllowsChildren();
     }
 
-    private void disableAll() {
-        getDeleteAssertionAction().setEnabled(false);
-        getAssertionMoveDownAction().setEnabled(false);
-        getAssertionMoveUpAction().setEnabled(false);
-        getAddAssertionAction().setEnabled(false);
-    }
 
     private TreeSelectionListener
       assertionPaletteListener = new TreeSelectionListener() {
@@ -201,7 +222,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
               try {
                   TreePath path = e.getNewLeadSelectionPath();
                   if (path == null) {
-                       lastPaletteNode = null;
+                      lastPaletteNode = null;
                   } else {
                       lastPaletteNode = (AbstractTreeNode)path.getLastPathComponent();
                   }
@@ -257,6 +278,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
 
     /**
      * Invoked on connection event
+     * 
      * @param e describing the connection event
      */
     public void onConnect(ConnectionEvent e) {
@@ -264,6 +286,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
 
     /**
      * Invoked on disconnect
+     * 
      * @param e describing the dosconnect event
      */
     public void onDisconnect(ConnectionEvent e) {
