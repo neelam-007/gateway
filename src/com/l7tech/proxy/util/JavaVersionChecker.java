@@ -48,7 +48,7 @@ public class JavaVersionChecker {
                 isDesiredVersion = true;
                 break;
             }
-            if (count >= targetVersion.length) {
+            if (count >= targetVersion.length - 1) {
                 isDesiredVersion = true;
                 break;
             }
