@@ -1,16 +1,20 @@
 package com.l7tech.common.audit;
 
+import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.event.Created;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.service.PublishedService;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import net.sf.hibernate.Session;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.logging.Level;
 
 /**
@@ -50,6 +54,15 @@ public class AuditPersistenceTest extends TestCase {
         Object id = s.save(new MessageSummaryAuditRecord(Level.INFO, "thisnode", requestId, AssertionStatus.NONE, "127.0.0.1", "<haha/>", 7, "<bye/>", 6, 1234, "HelloService", true, 2345, "joe", "3456"));
         System.out.println("Saved " + id);
         context.commitTransaction();
+    }
+
+    public void testFind() throws Exception {
+        AuditRecordManager man = (AuditRecordManager) Locator.getDefault().lookup(AuditRecordManager.class);
+        Collection found = man.find(new AuditSearchCriteria(null, 0, 0, 0));
+        for ( Iterator i = found.iterator(); i.hasNext(); ) {
+            AuditRecord auditRecord = (AuditRecord) i.next();
+            System.out.println(auditRecord.toString());
+        }
     }
 
     public void setUp() throws Exception {
