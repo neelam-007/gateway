@@ -367,6 +367,7 @@ public class RoutingAssertionDialog extends JDialog {
                     assertion.setProtectedServiceUrl(serviceUrlTextField.getText());
                     assertion.setLogin(identityTextField.getText());
                     assertion.setPassword(new String(getCredentials()));
+                    assertion.setRealm(realmTextField.getText());
                     fireEventAssertionChanged(assertion);
                     RoutingAssertionDialog.this.dispose();
 
