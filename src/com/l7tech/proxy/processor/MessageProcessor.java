@@ -6,7 +6,10 @@
 
 package com.l7tech.proxy.processor;
 
+import com.l7tech.common.http.*;
+import com.l7tech.common.io.TeeInputStream;
 import com.l7tech.common.message.AbstractHttpResponseKnob;
+import com.l7tech.common.message.HttpHeadersKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -30,7 +33,6 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
-import com.l7tech.proxy.message.HttpHeadersKnob;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
@@ -38,8 +40,7 @@ import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.util.SslUtils;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -58,9 +59,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -69,15 +68,16 @@ import java.util.regex.Pattern;
 /**
  * The core of the Client Proxy.
  * <p/>
- * User: mike
- * Date: Aug 13, 2003
- * Time: 9:51:36 AM
+ * User: mike<br/>
+ * Date: Aug 13, 2003<br/>
+ * Time: 9:51:36 AM<br/>
  */
 public class MessageProcessor {
     private static final Logger log = Logger.getLogger(MessageProcessor.class.getName());
 
     public static final String PROPERTY_LOGPOSTS = "com.l7tech.proxy.processor.logPosts";
     public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
+    public static final String PROPERTY_LOGRAWRESPONSESTREAM = "com.l7tech.proxy.processor.logRawResponseStream"; // if true, logs raw response InputStream to System.err
     public static final String PROPERTY_LOGATTACHMENTS = "com.l7tech.proxy.processor.logAttachments";
     public static final String PROPERTY_REFORMATLOGGEDXML = "com.l7tech.proxy.processor.reformatLoggedXml";
     public static final String PROPERTY_TIMESTAMP_EXPIRY = "com.l7tech.proxy.processor.timestampExpiryMillis";
@@ -146,23 +146,14 @@ public class MessageProcessor {
                             undecorateResponse(context);
                             succeeded = true;
                             return;
+                        } catch (GenericHttpException e) {
+                            SSLException sslException = (SSLException)ExceptionUtils.getCauseIfCausedBy(e, SSLException.class);
+                            if (sslException != null)
+                                handleAnySslException(context, sslException, ssg);
+                            else
+                                throw e;
                         } catch (SSLException e) {
-                            if (context.getSsg().isFederatedGateway()) {
-                                SslPeer sslPeer = CurrentSslPeer.get();
-                                if (sslPeer == null)
-                                    throw new IllegalStateException("SSL exception, but no SSL peer set for this thread");
-                                if (sslPeer == context.getSsg()) {
-                                    // We were talking to this Federated Gateway
-                                    handleSslException(context.getSsg(), null, e);
-                                } else if (sslPeer == context.getSsg().getTrustedGateway()) {
-                                    // We were talking to this Federated Gateway's Trusted Gateway
-                                    handleSslException((Ssg)sslPeer, context.getFederatedCredentials(), e);
-                                } else {
-                                    // We were talking to something else, probably a token provider.
-                                    handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
-                                }
-                            } else
-                                handleSslException(context.getSsg(), context.getCredentialsForTrustedSsg(), e);
+                            handleAnySslException(context, e, ssg);
                             // FALLTHROUGH -- retry with new server certificate
                         } catch (ServerCertificateUntrustedException e) {
                             if (context.getSsg().isFederatedGateway()) {
@@ -207,6 +198,25 @@ public class MessageProcessor {
                 }
             }
         }
+    }
+
+    private void handleAnySslException(final PolicyApplicationContext context, SSLException e, Ssg ssg) throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException {
+        if (context.getSsg().isFederatedGateway()) {
+            SslPeer sslPeer = CurrentSslPeer.get();
+            if (sslPeer == null)
+                throw new IllegalStateException("SSL exception, but no SSL peer set for this thread");
+            if (sslPeer == context.getSsg()) {
+                // We were talking to this Federated Gateway
+                handleSslException(context.getSsg(), null, e);
+            } else if (sslPeer == context.getSsg().getTrustedGateway()) {
+                // We were talking to this Federated Gateway's Trusted Gateway
+                handleSslException((Ssg)sslPeer, context.getFederatedCredentials(), e);
+            } else {
+                // We were talking to something else, probably a token provider.
+                handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
+            }
+        } else
+            handleSslException(context.getSsg(), context.getCredentialsForTrustedSsg(), e);
     }
 
     private void handleBadCredentialsException(Ssg ssg, PolicyApplicationContext context, BadCredentialsException e)
@@ -555,36 +565,27 @@ public class MessageProcessor {
         URL url = getUrl(context);
         final Ssg ssg = context.getSsg();
 
-        HttpClient client = new HttpClient(context.getSsg().getRuntime().getHttpConnectionManager());
-        HttpState state = client.getState();
+        List headers = new ArrayList();
+        headers.add(new GenericHttpHeader("Cookie", context.getSsg().getRuntime().getSessionCookiesHeaderValue()));
 
-        // Forget any cached session cookies, for all services shared by this SSG        
-        if (context.isPolicyUpdated()) {
-            ssg.getRuntime().clearSessionCookies();
-        }
-
-        Cookie[] cookies = context.getSsg().getRuntime().getSessionCookies();
-        if (cookies != null) {
-            for (int i = 0; i < cookies.length; i++) {
-                Cookie cookie = cookies[i];
-                state.addCookie(cookie);
-            }
-        }
-
-        PostMethod postMethod = null;
         final Message request = context.getRequest();
         final Message response = context.getResponse();
 
+        GenericHttpClient httpClient = ssg.getRuntime().getHttpClient();
+        GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+
+        GenericHttpRequest httpRequest = null;
+        GenericHttpResponse httpResponse = null;
+
         try {
-            postMethod = new PostMethod(url.toString());
-            setAuthenticationAndBufferingState(context, state, postMethod);
-            postMethod.addRequestHeader("SOAPAction", context.getPolicyAttachmentKey().getSoapAction());
-            postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, context.getOriginalUrl().toString());
+            setAuthenticationAndBufferingState(context, params);
+            headers.add(new GenericHttpHeader("SOAPAction", context.getPolicyAttachmentKey().getSoapAction()));
+            headers.add(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, context.getOriginalUrl().toString()));
 
             // Let the Gateway know what policy version we used for the request.
             Policy policy = context.getActivePolicy();
             if (policy != null && policy.getVersion() != null)
-                postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
+                headers.add(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion()));
 
             final Document decoratedDocument = request.getXmlKnob().getDocumentReadOnly();
             String postBody = XmlUtil.nodeToString(decoratedDocument);
@@ -606,19 +607,23 @@ public class MessageProcessor {
                 }
             }
 
-            postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, request.getMimeKnob().getOuterContentType().getFullValue());
+            headers.add(new GenericHttpHeader(MimeUtil.CONTENT_TYPE, request.getMimeKnob().getOuterContentType().getFullValue()));
 
             final InputStream bodyInputStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
-            postMethod.setRequestBody(bodyInputStream);
+            params.setExtraHeaders((HttpHeader[])headers.toArray(new HttpHeader[0]));
+            httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);
+            httpRequest.setInputStream(bodyInputStream);
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
-            CurrentSslPeer.set(ssg);
-            int status = client.executeMethod(postMethod);
-            CurrentSslPeer.set(null);
+            httpResponse = httpRequest.getResponse();
+            httpRequest = null; // no longer need to close the request
+            int status = httpResponse.getStatus();
             log.info("POST to Gateway completed with HTTP status code " + status);
 
-            Header certStatusHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS);
-            if (certStatusHeader != null && SecureSpanConstants.INVALID.equalsIgnoreCase(certStatusHeader.getValue())) {
+            HttpHeaders responseHeaders = httpResponse.getHeaders();
+            gatherCookies(responseHeaders, ssg);
+            String certStatus = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.CERT_STATUS);
+            if (SecureSpanConstants.INVALID.equalsIgnoreCase(certStatus)) {
                 log.info("Gateway response contained a certficate status:invalid header.  Will get new client cert.");
                 // Try to get a new client cert; if this succeeds, it'll replace the old one
                 try {
@@ -644,22 +649,24 @@ public class MessageProcessor {
                 }
             }
 
-            Header policyUrlHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
-            if (policyUrlHeader != null) {
-                log.info("Gateway response contained a PolicyUrl header: " + policyUrlHeader.getValue());
+            String policyUrlStr = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
+            if (policyUrlStr != null) {
+                log.info("Gateway response contained a PolicyUrl header: " + policyUrlStr);
                 // Have we already updated a policy while processing this request?
                 if (context.isPolicyUpdated()) {
-                    InputStream rStream = postMethod.getResponseBodyAsStream();
-                    byte[] output = null;
-                    if (rStream != null) {
-                        output = HexUtils.slurpStream(rStream);
+                    InputStream responseBodyAsStream = httpResponse.getInputStream();
+                    String content = "";
+                    if (responseBodyAsStream != null && LogFlags.logResponse) {
+                        byte[] output = HexUtils.slurpStream(responseBodyAsStream);
+                        content = "  Response body:\n" + new String(output);
                     }
-                    log.warning("Gateway returning error with content: " + new String(output));
-                    throw new ConfigurationException("Policy was updated, but Gateway says it's still out-of-date");
+                    final String msg = "Policy was updated, but Gateway says it's still out-of-date.";
+                    log.warning(msg + content);
+                    throw new ConfigurationException(msg);
                 }
                 String serviceid = null;
                 try {
-                    URL policyUrl = new URL(policyUrlHeader.getValue());
+                    URL policyUrl = new URL(policyUrlStr);
                     // force the policy URL to point at the SSG hostname the user typed
                     policyUrl = new URL(policyUrl.getProtocol(), ssg.getSsgAddress(), policyUrl.getPort(), policyUrl.getFile());
                     String query = policyUrl.getQuery();
@@ -674,7 +681,6 @@ public class MessageProcessor {
                 }
 
                 context.downloadPolicy(serviceid);
-                context.setPolicyUpdated(true);
                 if (status != 200) {
                     log.info("Retrying request with the new policy");
                     throw new PolicyRetryableException();
@@ -682,33 +688,32 @@ public class MessageProcessor {
                 log.info("Will use new policy for future requests.");
             }
 
-            HttpHeaders headers = new HttpHeaders(postMethod.getResponseHeaders());
 
-            Header contentType = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE);
-            log.info("Response Content-Type: " + contentType);
-            if (contentType == null || contentType.getValue() == null) {
+            String contentTypeStr = responseHeaders.getOnlyOneValue(MimeUtil.CONTENT_TYPE);
+            log.info("Response Content-Type: " + contentTypeStr);
+            if (contentTypeStr == null || contentTypeStr.length() < 1) {
                 log.warning("Server did not return a Content-Type");
-                checkStatus(status, postMethod, url, ssg);
+                checkStatus(status, responseHeaders, url, ssg);
                 throw new IOException("Response from Gateway did not include a Content-Type");
             }
-            final ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(contentType.getValue());
+            final ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(contentTypeStr);
+            InputStream responseBodyAsStream = httpResponse.getInputStream();
+
+            if (LogFlags.logRawResponseStream)
+                responseBodyAsStream = new TeeInputStream(responseBodyAsStream, System.err);
+
             if (!(outerContentType.isXml() || outerContentType.isMultipart())) {
-                InputStream rStream = postMethod.getResponseBodyAsStream();
                 byte[] output = null;
-                if (rStream != null) {
-                    output = HexUtils.slurpStream(rStream);
+                String content = "";
+                if (responseBodyAsStream != null && LogFlags.logResponse) {
+                    output = HexUtils.slurpStream(responseBodyAsStream);
+                    content = " with content:\n" + new String(output);
                 }
-                if (output != null) {
-                    log.warning("Server returned unsupported Content-Type (" + outerContentType.getFullValue() +
-                                ") with content\n" + new String(output));
-                }
-                checkStatus(status, postMethod, url, ssg);
+                log.warning("Server returned unsupported Content-Type (" + outerContentType.getFullValue() + ")" + content);
+                checkStatus(status, responseHeaders, url, ssg);
                 throw new IOException("Response from Gateway was unsupported Content-Type " + outerContentType.getFullValue());
             }
 
-
-            InputStream responseBodyAsStream = postMethod.getResponseBodyAsStream();
-            //responseBodyAsStream = new TeeInputStream(responseBodyAsStream, System.err);
             response.initialize(Managers.createStashManager(),
                                              outerContentType,
                                              responseBodyAsStream);
@@ -722,12 +727,17 @@ public class MessageProcessor {
                     throw new UnsupportedOperationException();
                 }
             });
-            final PostMethod postMethod1 = postMethod;
+
+            // Replace any cookies in the response.
+            gatherCookies(responseHeaders, ssg);
+
+            final GenericHttpResponse cleanup = httpResponse;
             context.runOnClose(new Runnable() {
                 public void run() {
-                    postMethod1.releaseConnection();
+                    cleanup.close();
                 }
             });
+            httpResponse = null; // no longer need to close the response
 
             // Assert that response is XML
             Document responseDocument = response.getXmlKnob().getDocumentWritable();
@@ -791,33 +801,47 @@ public class MessageProcessor {
                 processorResult = null;
             }
 
-            response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(headers));
+            response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(responseHeaders));
             response.getXmlKnob().setProcessorResult(processorResult);
             response.getHttpResponseKnob().setStatus(status);
-            checkStatus(status, postMethod, url, ssg);
+            checkStatus(status, responseHeaders, url, ssg);
 
         } catch (NoSuchPartException e) {
             throw new CausedIOException("Response from Gateway used invalid or unsupported MIME multipart syntax", e);
         } finally {
-            if (postMethod != null) {
-                if (state.getCookies() == null) {
-                    context.getSsg().getRuntime().clearSessionCookies();
-                } else {
-                    context.getSsg().getRuntime().setSessionCookies(state.getCookies());
+            if (httpRequest != null || httpResponse != null) {
+                if (httpRequest != null)
+                    httpRequest.close();
+                if (httpResponse != null) {
+                    httpResponse.close();
                 }
             }
         }
     }
 
-    /** Check for 401 or 402 status codes, and log and throw as appropriate. */
-    private void checkStatus(int status, PostMethod postMethod, URL url, final Ssg ssg)
+    private void gatherCookies(HttpHeaders responseHeaders, Ssg ssg) {
+        List cookies = new ArrayList();
+        List values = responseHeaders.getValues("Set-Cookie");
+        for (Iterator i = values.iterator(); i.hasNext();) {
+            String s = (String)i.next();
+            HttpCookie cookie = new HttpCookie(s);
+            cookies.add(cookie);
+        }
+        ssg.getRuntime().setSessionCookies((HttpCookie[])cookies.toArray(new HttpCookie[0]));
+    }
+
+    /**
+     * Check for 401 or 402 status codes, and log and throw as appropriate.
+     * TODO Remove.  Whatever this code might have done in the past, it now appears to be fairly useless.
+     */
+    private void checkStatus(int status, HttpHeaders responseHeaders, URL url, final Ssg ssg)
             throws BadCredentialsException
     {
         if (status == 401 || status == 402) {
-            Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
-            log.info("Got auth header: " + (authHeader == null ? "<null>" : authHeader.getValue()));
+            String authHeader = responseHeaders.getFirstValue("WWW-Authenticate");
+            log.info("Got auth header: " + (authHeader == null ? "<null>" : authHeader));
             if (authHeader == null && "https".equals(url.getProtocol()) && ssg.getClientCertificate() != null) {
-                log.info("Got 401 response from Gateway over https; possible that client cert is no good");
+                log.info("Got 401 response from Gateway over https, but no HTTP challenge; possible that client cert is no good");
             }
 
             throw new BadCredentialsException();
@@ -827,6 +851,7 @@ public class MessageProcessor {
     private static class LogFlags {
         private static final boolean logPosts = Boolean.getBoolean(PROPERTY_LOGPOSTS);
         private static final boolean logResponse = Boolean.getBoolean(PROPERTY_LOGRESPONSE);
+        private static final boolean logRawResponseStream = Boolean.getBoolean(PROPERTY_LOGRAWRESPONSESTREAM);
         private static final boolean logAttachments = Boolean.getBoolean(PROPERTY_LOGATTACHMENTS);
         private static final boolean reformatLoggedXml = Boolean.getBoolean(PROPERTY_REFORMATLOGGEDXML);
         private static final boolean logPolicies = Boolean.getBoolean(PROPERTY_LOGPOLICIES);
@@ -837,32 +862,29 @@ public class MessageProcessor {
      * the specified PendingRequest, and set the request to be unbuffered if possible (ie, if Digest
      * is not required).
      *
-     * @param context        the Context containing the request that might require HTTP level authentication
-     * @param state      the HttpState to adjust
-     * @param postMethod the PostMethod to adjust
+     * @param context  the Context containing the request that might require HTTP level authentication
+     * @param params   the HTTP request parameters to configure
      */
-    private void setAuthenticationAndBufferingState(PolicyApplicationContext context, HttpState state, PostMethod postMethod)
+    private void setAuthenticationAndBufferingState(PolicyApplicationContext context, GenericHttpRequestParamsImpl params)
             throws OperationCanceledException, IOException
     {
         // Turn off request buffering unless HTTP digest is required (Bug #1376)
         if (!context.isDigestAuthRequired()) {
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
             final long contentLength = context.getRequest().getMimeKnob().getContentLength();
-            if (contentLength > Integer.MAX_VALUE)
-                throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
-            postMethod.setRequestContentLength((int)contentLength);
+            params.setContentLength(new Long(contentLength));
         }
-
-        // Turn on preemptive authentication only if HTTP basic is called for in the policy
-        state.setAuthenticationPreemptive(context.isBasicAuthRequired());
 
         // Do we need HTTP client auth?
         if (!context.isBasicAuthRequired() && !context.isDigestAuthRequired()) {
             // No -- tell the HTTP client to keep the password to itself (if it's caching one)
             log.info("No HTTP Basic or Digest authentication required by current policy");
-            postMethod.setDoAuthentication(false);
+            params.setPasswordAuthentication(null);
             return;
         }
+
+        // Turn on preemptive authentication only if HTTP basic is called for in the policy
+        params.setPreemptiveAuthentication(context.isBasicAuthRequired());
 
         if (context.getSsg().isFederatedGateway()) // can't happen; password based assertions should have all failed
             throw new OperationCanceledException("Password based authentication is not supported for Federated Gateway");
@@ -871,8 +893,6 @@ public class MessageProcessor {
         String username = context.getUsername();
         char[] password = context.getPassword();
         log.info("Enabling HTTP Basic or Digest auth with user name=" + username);
-        postMethod.setDoAuthentication(true);
-        state.setCredentials(null, null,
-                             new UsernamePasswordCredentials(username, new String(password)));
+        params.setPasswordAuthentication(new PasswordAuthentication(username, password));
     }
 }

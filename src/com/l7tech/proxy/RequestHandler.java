@@ -1,5 +1,7 @@
 package com.l7tech.proxy;
 
+import com.l7tech.common.http.*;
+import com.l7tech.common.message.HttpHeadersKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -9,10 +11,12 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
-import com.l7tech.proxy.message.HttpHeadersKnob;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
@@ -33,6 +37,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -76,21 +81,43 @@ public class RequestHandler extends AbstractHttpHandler {
     }
 
     private HttpHeaders gatherHeaders(final HttpRequest request) {
-        HttpHeaders headers = new HttpHeaders(request.getFieldNames(), new HttpHeaders.ValueProvider() {
-            public String getHeaderValue(String headerName) {
-                StringBuffer sb = new StringBuffer();
-                Enumeration values = request.getFieldValues(headerName);
-                boolean isFirst = true;
-                while (values.hasMoreElements()) {
-                    String value = (String)values.nextElement();
-                    if (!isFirst)
-                        sb.append("; ");
-                    sb.append(value);
-                    isFirst = false;
-                }
-                return sb.toString();
+        // Since the request headers are only used rarely for logging, and since reconstructing the original headers
+        // is surprisingly difficult and expensive with Jetty, we'll defer the actual creation
+        // of the GenericHttpHeaders until the first time they are actually used (if ever).
+        HttpHeaders headers = new HttpHeaders() {
+            private GenericHttpHeaders gen = null;
+
+            private GenericHttpHeaders gen() {
+                if (gen != null) return gen;
+                return gen = new GenericHttpHeaders(makeArray());
             }
-        });
+
+            private HttpHeader[] makeArray() {
+                List got = new ArrayList();
+                Enumeration names = request.getFieldNames();
+                while (names.hasMoreElements()) {
+                    String name = (String)names.nextElement();
+                    Enumeration values = request.getFieldValues(name);
+                    StringBuffer sb = new StringBuffer();
+                    boolean isFirst = true;
+                    while (values.hasMoreElements()) {
+                        String value = (String)values.nextElement();
+                        if (!isFirst)
+                            sb.append("; ");
+                        sb.append(value);
+                        isFirst = false;
+                    }
+                    got.add(new GenericHttpHeader(name, sb.toString()));
+                }
+                return (HttpHeader[])got.toArray(new HttpHeader[0]);
+            }
+
+            public String getFirstValue(String name) { return gen().getFirstValue(name); }
+            public String getOnlyOneValue(String name) throws GenericHttpException { return gen().getOnlyOneValue(name); }
+            public List getValues(String name) { return gen().getValues(name); }
+            public HttpHeader[] toArray() { return gen().toArray(); }
+            public String toExternalForm() { return gen().toExternalForm(); }
+        };
         return headers;
     }
 

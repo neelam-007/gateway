@@ -1,15 +1,15 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
+import com.l7tech.common.http.HttpHeaders;
+import com.l7tech.common.message.HttpHeadersKnob;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
-import com.l7tech.proxy.message.HttpHeadersKnob;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.w3c.dom.Document;

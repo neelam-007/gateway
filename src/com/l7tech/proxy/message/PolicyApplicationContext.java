@@ -56,7 +56,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     private final RequestInterceptor requestInterceptor;
     private final PolicyAttachmentKey policyAttachmentKey;
     private final URL originalUrl;
-    private boolean isPolicyUpdated = false;
+    private boolean policyUpdated = false;
     private Long nonce = null; // nonce.  set on-demand, and only set once
     private String secureConversationId = null;
     private byte[] secureConversationSharedSecret = null;
@@ -178,12 +178,9 @@ public class PolicyApplicationContext extends ProcessingContext {
         policySettings.isDigestAuthRequired = digestAuthRequired;
     }
 
+    /** @return true if a new policy has been downloaded for this request once already. */
     public boolean isPolicyUpdated() {
-        return isPolicyUpdated;
-    }
-
-    public void setPolicyUpdated(boolean policyUpdated) {
-        isPolicyUpdated = policyUpdated;
+        return policyUpdated;
     }
 
     /**
@@ -618,7 +615,8 @@ public class PolicyApplicationContext extends ProcessingContext {
         ssg.getRuntime().rootPolicyManager().setPolicy(pak, policy);
         if (requestInterceptor != null)
             requestInterceptor.onPolicyUpdated(ssg, pak, policy);
-        setPolicyUpdated(true);
+        policyUpdated = true;
+        ssg.getRuntime().clearSessionCookies();
         logger.info("New policy saved successfully");
     }
 

@@ -26,7 +26,7 @@ public interface GenericHttpResponseParams {
      *
      * @return the HTTP headers.  May be empty but never null.
      */
-    HttpHeader[] getHeaders();
+    HttpHeaders getHeaders();
 
     /**
      * Get the content-type of the response, if one was present.

@@ -114,7 +114,7 @@ public class CommonsHttpClient implements GenericHttpClient {
                         return status;
                     }
 
-                    public HttpHeader[] getHeaders() {
+                    public HttpHeaders getHeaders() {
                         if (response == null)
                             throw new IllegalStateException("This response has already been closed");
                         Header[] in = response.getResponseHeaders();
@@ -123,7 +123,7 @@ public class CommonsHttpClient implements GenericHttpClient {
                             Header header = in[i];
                             out.add(new GenericHttpHeader(header.getName(), header.getValue()));
                         }
-                        return (HttpHeader[])out.toArray(new HttpHeader[0]);
+                        return new GenericHttpHeaders((HttpHeader[])out.toArray(new HttpHeader[0]));
                     }
 
                     public ContentTypeHeader getContentType() {

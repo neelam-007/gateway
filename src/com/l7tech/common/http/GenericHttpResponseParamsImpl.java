@@ -13,7 +13,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
  */
 public class GenericHttpResponseParamsImpl implements GenericHttpResponseParams {
     private int status;
-    private HttpHeader[] headers;
+    private HttpHeaders headers;
     private ContentTypeHeader contentType;
     private Long contentLength;
 
@@ -27,7 +27,7 @@ public class GenericHttpResponseParamsImpl implements GenericHttpResponseParams 
         this.contentLength = source.getContentLength();
     }
 
-    public GenericHttpResponseParamsImpl(int status, HttpHeader[] headers, ContentTypeHeader contentType, Long contentLength) {
+    public GenericHttpResponseParamsImpl(int status, HttpHeaders headers, ContentTypeHeader contentType, Long contentLength) {
         this.status = status;
         this.headers = headers;
         this.contentType = contentType;
@@ -42,11 +42,11 @@ public class GenericHttpResponseParamsImpl implements GenericHttpResponseParams 
         this.status = status;
     }
 
-    public HttpHeader[] getHeaders() {
+    public HttpHeaders getHeaders() {
         return headers;
     }
 
-    public void setHeaders(HttpHeader[] headers) {
+    public void setHeaders(HttpHeaders headers) {
         this.headers = headers;
     }
 

@@ -4,13 +4,12 @@
  * $Id$
  */
 
-package com.l7tech.proxy.message;
+package com.l7tech.common.message;
 
-import com.l7tech.common.message.MessageKnob;
-import com.l7tech.proxy.datamodel.HttpHeaders;
+import com.l7tech.common.http.HttpHeaders;
 
 /**
- * A MessageKnob that provides possibly-lazy access to a set of HttpHeaders.
+ * A MessageKnob that provides possibly-lazy access to a set of GenericHttpHeaders.
  */
 public class HttpHeadersKnob implements MessageKnob {
     private final HttpHeaders headers;

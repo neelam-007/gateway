@@ -13,7 +13,8 @@ import java.io.InputStream;
  */
 public interface GenericHttpResponse extends GenericHttpResponseParams {
     /**
-     * Get the InputStream from which the response body can be read.
+     * Get the InputStream from which the response body can be read.  Some implementations may close the
+     * entire HTTP response when this InputStream is closed.
      *
      * @return the InputStream of the response body.  Never null.
      * @throws GenericHttpException if there is a network problem or protocol violation.
@@ -23,7 +24,11 @@ public interface GenericHttpResponse extends GenericHttpResponseParams {
     /**
      * Free all resources used by this response.
      * <p>
-     * After close() has been called, the behaviour of this class is not defined.
+     * After close() has been called, the behaviour of this class is not defined.  Any InputStream obtained
+     * from {@link #getInputStream} should no longer be used.
+     * <p>
+     * However, any {@link HttpHeaders} object returned from {@link #getHeaders} is guaranteed to remain useable even
+     * after this request has been closed.    
      * <p>
      * Might throw unavoidable Errors (ie, OutOfMemoryError), but will never throw runtime exceptions.
      */

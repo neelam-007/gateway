@@ -67,7 +67,7 @@ public class SslPeerHttpClient implements GenericHttpClient {
                         return response.getStatus();
                     }
 
-                    public HttpHeader[] getHeaders() {
+                    public HttpHeaders getHeaders() {
                         return response.getHeaders();
                     }
 

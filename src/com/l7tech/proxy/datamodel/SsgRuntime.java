@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.security.token.SecurityTokenType;
@@ -14,7 +15,6 @@ import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.*;
-import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
 import javax.net.ssl.SSLContext;
@@ -56,7 +56,7 @@ public class SsgRuntime {
     private boolean passwordWorkedForPrivateKey = false;
     private SSLContext sslContext = null;
     private ClientProxyTrustManager trustManager = null;
-    private Cookie[] sessionCookies = null;
+    private HttpCookie[] sessionCookies = null;
     private X509Certificate serverCert = null;
     private X509Certificate clientCert = null;
     private byte[] secureConversationSharedSecret = null;
@@ -462,10 +462,35 @@ public class SsgRuntime {
     /**
      * Return the HTTP cookies of the user session established with SiteMinder Policy Server.
      *
-     * @return  Cookie[]  The list of session cookies.
+     * @return  HttpCookie[]  The list of session cookies.
      */
-    public Cookie[] getSessionCookies() {
+    public HttpCookie[] getSessionCookies() {
         synchronized (ssg) {
+            return sessionCookies;
+        }
+    }
+
+    /**
+     * Get the cookies as a string.
+     *
+     * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
+     */
+    public String getSessionCookiesHeaderValue() {
+        StringBuffer sb = new StringBuffer();
+        HttpCookie[] sessionCookies = getSessionCookies();
+        if (sessionCookies == null)
+            return "";
+        for (int i = 0; i < sessionCookies.length; i++) {
+            if (i > 0)
+                sb.append("; ");
+            HttpCookie cook = sessionCookies[i];
+            sb.append(cook.toExternalForm());
+        }
+        return sb.toString();
+    }
+
+    // TODO remove this if it isn't needed
+    private static void logSessionCookies(HttpCookie[] sessionCookies) {
             String cookieString = "HTTP cookies: ";
             if (sessionCookies != null && sessionCookies.length > 0) {
 
@@ -477,8 +502,6 @@ public class SsgRuntime {
             }
 
             log.info(cookieString);
-            return sessionCookies;
-        }
     }
 
     /**
@@ -486,7 +509,7 @@ public class SsgRuntime {
      *
      * @param cookies  The HTTP cookies to be saved.
      */
-    public void setSessionCookies(Cookie[] cookies) {
+    public void setSessionCookies(HttpCookie[] cookies) {
         synchronized (ssg) {
             sessionCookies = cookies;
         }
@@ -497,7 +520,7 @@ public class SsgRuntime {
      */
     public void clearSessionCookies() {
         synchronized (ssg) {
-            sessionCookies = new Cookie[0];
+            sessionCookies = new HttpCookie[0];
         }
     }
 

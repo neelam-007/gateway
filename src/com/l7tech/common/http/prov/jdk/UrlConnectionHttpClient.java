@@ -102,6 +102,8 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                                 headers.add(new GenericHttpHeader(key, value));
                             n++;
                         } while (value != null);
+                        final GenericHttpHeaders genericHttpHeaders =
+                                new GenericHttpHeaders((HttpHeader[])headers.toArray(HTTPHEADER_EMPTY_ARRAY));
 
                         completedRequest = true;
                         
@@ -122,8 +124,8 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                                 return status;
                             }
 
-                            public HttpHeader[] getHeaders() {
-                                return (HttpHeader[])headers.toArray(HTTPHEADER_EMPTY_ARRAY);
+                            public HttpHeaders getHeaders() {
+                                return genericHttpHeaders;
                             }
 
                             public ContentTypeHeader getContentType() {
