@@ -1,5 +1,13 @@
 package com.l7tech.server.policy.validator;
 
+import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.util.Locator;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.User;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -9,24 +17,18 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.common.util.Locator;
-import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.service.PublishedService;
 
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Performs server side policy validation.
@@ -183,12 +185,26 @@ public class ServerPolicyValidator extends PolicyValidator {
                 boolean idexists = false;
                 if (identityAssertion instanceof SpecificUser) {
                     SpecificUser su = (SpecificUser)identityAssertion;
-                    if (prov.getUserManager().findByPrimaryKey(su.getUserUid()) != null) {
+                    final String uid = su.getUserUid();
+                    User u = null;
+                    if (uid == null) {
+                        u = prov.getUserManager().findByLogin(su.getUserLogin());
+                    } else {
+                        u = prov.getUserManager().findByPrimaryKey(uid);
+                    }
+                    if (u != null) {
                         idexists = true;
                     }
                 } else if (identityAssertion instanceof MemberOfGroup) {
                     MemberOfGroup mog = (MemberOfGroup)identityAssertion;
-                    if (prov.getGroupManager().findByPrimaryKey(mog.getGroupId()) != null) {
+                    Group g = null;
+                    final String gid = mog.getGroupId();
+                    if (gid == null) {
+                        g = prov.getGroupManager().findByName(mog.getGroupName());
+                    } else {
+                        g = prov.getGroupManager().findByPrimaryKey(gid);
+                    }
+                    if (g != null) {
                         idexists = true;
                     }
                 } else {
