@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions targetNamespace="http://kira.l7tech.com:8080/axis/services/urn:xmltoday-delayed-quotes" xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:apachesoap="http://xml.apache.org/xml-soap" xmlns:impl="http://kira.l7tech.com:8080/axis/services/urn:xmltoday-delayed-quotes" xmlns:intf="http://kira.l7tech.com:8080/axis/services/urn:xmltoday-delayed-quotes" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <wsdl:message name="getQuoteResponse">
+    <wsdl:part name="getQuoteReturn" type="xsd:float"/>
+  </wsdl:message>
+  <wsdl:message name="testRequest">
+  </wsdl:message>
+  <wsdl:message name="getQuoteRequest">
+    <wsdl:part name="symbol" type="xsd:string"/>
+  </wsdl:message>
+  <wsdl:message name="testResponse">
+    <wsdl:part name="testReturn" type="xsd:string"/>
+  </wsdl:message>
+
+  <wsdl:portType name="StockQuoteService">
+    <wsdl:operation name="getQuote" parameterOrder="symbol">
+      <wsdl:input message="impl:getQuoteRequest" name="getQuoteRequest"/>
+      <wsdl:output message="impl:getQuoteResponse" name="getQuoteResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:portType name="StockQuoteTest">
+    <wsdl:operation name="test">
+      <wsdl:input message="impl:testRequest" name="testRequest"/>
+      <wsdl:output message="impl:testResponse" name="testResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="GetQuoteSoapBinding" type="impl:StockQuoteService">
+    <wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="getQuote">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="getQuoteRequest">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://stock.samples" use="encoded"/>
+      </wsdl:input>
+      <wsdl:output name="getQuoteResponse">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://kira.l7tech.com:8080/axis/services/urn:xmltoday-delayed-quotes" use="encoded"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:binding name="GetQuoteTestSoapBinding" type="impl:StockQuoteTest">
+    <wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="test">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="testRequest">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://stock.samples" use="encoded"/>
+      </wsdl:input>
+      <wsdl:output name="testResponse">
+        <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://kira.l7tech.com:8080/axis/services/urn:xmltoday-delayed-quotes" use="encoded"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="StockQuoteServiceService">
+    <wsdl:port binding="impl:GetQuoteSoapBinding" name="GetQuoteKira">
+      <wsdlsoap:address location="http://kira.l7tech.com:8080/axis/services/urn:xmltoday-delayed-quotes"/>
+    </wsdl:port>
+    <wsdl:port binding="impl:GetQuoteSoapBinding" name="GetQuoteSisko">
+      <wsdlsoap:address location="http://sisko.l7tech.com:8080/axis/services/urn:xmltoday-delayed-quotes"/>
+    </wsdl:port>
+  </wsdl:service>
+
+  <wsdl:service name="StockQuoteTestService">
+    <wsdl:port binding="impl:GetQuoteTestSoapBinding" name="GetQuoteTestKira">
+      <wsdlsoap:address location="http://kira.l7tech.com:8080/axis/services/urn:xmltoday-delayed-quotes"/>
+    </wsdl:port>
+    <wsdl:port binding="impl:GetQuoteSoapBinding" name="GetQuoteTestSisko">
+      <wsdlsoap:address location="http://sisko.l7tech.com:8080/axis/services/urn:xmltoday-delayed-quotes"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>
