@@ -31,7 +31,7 @@ import java.util.logging.Level;
  * $Id$<br/>
  */
 public class PasswdServlet extends AuthenticatableHttpServlet {
-    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         if (!req.isSecure()) {
             logger.warning("Request came over insecure channel (not https). Returning 403.");
             res.sendError(HttpServletResponse.SC_FORBIDDEN, "Please come back over https");
@@ -144,8 +144,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        // GET, POST, who cares  ...
-        doGet(req, res);
+    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        throw new ServletException("Method not supported; cert revocation must use POST");
     }
 }
