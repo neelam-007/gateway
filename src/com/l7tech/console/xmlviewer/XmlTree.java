@@ -21,6 +21,7 @@
 package com.l7tech.console.xmlviewer;
 
 import javax.swing.*;
+import javax.swing.text.Position;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
@@ -46,8 +47,8 @@ public class XmlTree extends JTree {
         rootElement = element;
         this.viewer = viewer;
         setRowHeight(0); // there should be a bigparade # but search does not work on javasoft.com at the moment...
-                         // the alternative description is avail at http://developer.apple.com/qa/qa2001/qa1091.html
-        if(element != null) {
+        // the alternative description is avail at http://developer.apple.com/qa/qa2001/qa1091.html
+        if (element != null) {
             root = new XmlElementNode(viewer, element);
         }
         model = new DefaultTreeModel(root);
@@ -59,7 +60,7 @@ public class XmlTree extends JTree {
         getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         setCellRenderer(new XmlCellRenderer());
         setRootVisible(true);
-        if (root !=null) {
+        if (root != null) {
             expand(3);
         }
     }
@@ -187,4 +188,50 @@ public class XmlTree extends JTree {
 
         return null;
     }
-} 
+
+    /**
+     * Returns the TreePath to the next tree element that
+     * begins with a prefix. Overriden so a null check on the
+     * {@link JTree#convertValueToText} could be performed.
+     * is used.
+     *
+     * @param prefix      the string to test for a match
+     * @param startingRow the row for starting the search
+     * @param bias        the search direction, either
+     *                    Position.Bias.Forward or Position.Bias.Backward.
+     * @return the TreePath of the next tree element that
+     *         starts with the prefix; otherwise null
+     * @throws IllegalArgumentException if prefix is null
+     *                                  or startingRow is out of bounds
+     * @since 1.4
+     */
+    public TreePath getNextMatch(String prefix, int startingRow,
+                                 Position.Bias bias) {
+
+        int max = getRowCount();
+        if (prefix == null) {
+            throw new IllegalArgumentException();
+        }
+        if (startingRow < 0 || startingRow >= max) {
+            throw new IllegalArgumentException();
+        }
+        prefix = prefix.toUpperCase();
+
+        // start search from the next/previous element froom the
+        // selected element
+        int increment = (bias == Position.Bias.Forward) ? 1 : -1;
+        int row = startingRow;
+        do {
+            TreePath path = getPathForRow(row);
+            String text = convertValueToText(path.getLastPathComponent(), isRowSelected(row),
+              isExpanded(row), true, row, false);
+            if (text != null) {
+                if (text.toUpperCase().startsWith(prefix)) {
+                    return path;
+                }
+            }
+            row = (row + increment + max) % max;
+        } while (row != startingRow);
+        return null;
+    }
+}
