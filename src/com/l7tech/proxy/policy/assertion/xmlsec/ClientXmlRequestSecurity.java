@@ -99,7 +99,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         } catch ( MessageNotSoapException e ) {
             throw new RuntimeException(e);
         }
-//        XmlUtil.documentToOutputStream(soapmsg, System.out);
+//        XmlUtil.nodeToOutputStream(soapmsg, System.out);
         request.setSoapEnvelope(soapmsg);
 
         if (!request.isSslRequired() || request.isSslForbidden()) {

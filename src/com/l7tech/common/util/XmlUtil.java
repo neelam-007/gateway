@@ -108,34 +108,32 @@ public class XmlUtil {
         return (Canonicalizer)transparentXMLSerializer.get();
     }
 
-    public static void documentToOutputStream(Document doc, OutputStream os) throws IOException {
+    public static void nodeToOutputStream(Node node, OutputStream os) throws IOException {
         Canonicalizer canon = getTransparentXMLSerializer();
-        canon.canonicalize(doc, os);
+        canon.canonicalize(node, os);
     }
 
-    public static void documentToFormattedOutputStream(Document doc, OutputStream os) throws IOException {
-        getFormattedXmlSerializer().setOutputCharStream(new OutputStreamWriter(os));
-        getFormattedXmlSerializer().serialize(doc);
-    }
-
-    public static String nodeToString(Node node) throws IOException {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
-        Canonicalizer canon = getTransparentXMLSerializer();
-        canon.canonicalize(node, out);
-        return out.toString();
-    }
-
-    public static String nodeToFormattedString(Node node) throws IOException {
-        final StringWriter sw = new StringWriter();
+    public static void nodeToFormattedOutputStream(Node node, OutputStream os) throws IOException {
         XMLSerializer ser = getFormattedXmlSerializer();
-        ser.setOutputCharStream(sw);
+        ser.setOutputByteStream(os);
         if (node instanceof Document)
             ser.serialize((Document)node);
         else if (node instanceof Element)
             ser.serialize((Element)node);
         else
             throw new IllegalArgumentException("Node must be either a Document or an Element");
-        return sw.toString();
+    }
+
+    public static String nodeToString(Node node) throws IOException {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
+        nodeToOutputStream(node, out);
+        return out.toString();
+    }
+
+    public static String nodeToFormattedString(Node node) throws IOException {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
+        nodeToFormattedOutputStream(node, out);
+        return out.toString();
     }
 
     /**

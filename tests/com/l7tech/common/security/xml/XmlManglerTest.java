@@ -190,7 +190,7 @@ public class XmlManglerTest extends TestCase {
     public void testMultiplElementEncryption() throws Exception {
         Document soapDocument = makeTestMessageMultipleNodes();
         Key encryptionKey = new RawKey(16);
-        // XmlUtil.documentToOutputStream(soapDocument, System.out);
+        // XmlUtil.nodeToOutputStream(soapDocument, System.out);
 
         NodeList list = soapDocument.getElementsByTagNameNS(SOAP_METHOD_NS, "symbol");
         if (list.getLength() == 0) {
@@ -199,7 +199,7 @@ public class XmlManglerTest extends TestCase {
         Element element = (Element)list.item(0);
         XmlMangler.encryptXml(element, encryptionKey.getEncoded(), "MyKeyName", "ref1");
 
-        // XmlUtil.documentToOutputStream(soapDocument, System.out);
+        // XmlUtil.nodeToOutputStream(soapDocument, System.out);
 
         list = soapDocument.getElementsByTagNameNS(SOAP_METHOD_NS, "date");
         if (list.getLength() == 0) {

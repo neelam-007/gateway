@@ -65,7 +65,7 @@ public class SoapMsgSignerTest extends TestCase {
         assertTrue(encryptedElementsEqual( testDoc, "amount", getKeyReq() ));
 
         System.out.println("Approximate reconstruction of test document: \n");
-        XmlUtil.documentToOutputStream( testDoc, System.out );
+        XmlUtil.nodeToOutputStream( testDoc, System.out );
     }
 
     public void testSignEnvelope() {
@@ -90,7 +90,7 @@ public class SoapMsgSignerTest extends TestCase {
 
         ReceiverXmlSecurityProcessor foo = new ReceiverXmlSecurityProcessor(s, getKeyReq(), s.getId(), esecs );
         SecurityProcessor.Result bar = foo.processInPlace( testDoc ); // todo OMGWTFBBQ
-        XmlUtil.documentToOutputStream( testDoc, System.out );
+        XmlUtil.nodeToOutputStream( testDoc, System.out );
         System.out.println( bar.getCertificateChain() );
     }
 

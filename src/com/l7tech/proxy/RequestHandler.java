@@ -367,7 +367,7 @@ public class RequestHandler extends AbstractHttpHandler {
             }
 
             response.addField("Content-Type", "text/xml");
-            XmlUtil.documentToOutputStream(wsil, response.getOutputStream());
+            XmlUtil.nodeToOutputStream(wsil, response.getOutputStream());
             response.commit();
             return;
         } catch (WsdlProxy.ServiceNotFoundException e) {

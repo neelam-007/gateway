@@ -135,7 +135,7 @@ public class SessionlessEncryption {
         addWSSHeader(soapMsg);
 
         // Output encrypted to console. Demo alternative output method.
-        XmlUtil.documentToOutputStream(soapMsg, System.out);
+        XmlUtil.nodeToOutputStream(soapMsg, System.out);
 
         // Output to file
         Writer wr = new OutputStreamWriter(System.out, "UTF-8");

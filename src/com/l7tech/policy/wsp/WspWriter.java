@@ -59,7 +59,7 @@ public class WspWriter {
     }
 
     private void writeToOutputStream() throws IOException {
-        XmlUtil.documentToFormattedOutputStream(document, output);
+        XmlUtil.nodeToFormattedOutputStream(document, output);
     }
 
     /**
