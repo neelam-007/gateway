@@ -43,12 +43,22 @@ public class ResolutionParameters extends EntityImp implements Serializable {
         this.serviceid = serviceid;
     }
 
+    public String getUri() {
+        return uri;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
     /**
      * this must be overriden (hibernate requirement for composite id classes)
      */
     public boolean equals(Object obj) {
         if (!(obj instanceof ResolutionParameters)) return false;
         ResolutionParameters theotherone = (ResolutionParameters)obj;
+        if (uri == null) {
+            if (uri != theotherone.getUri()) return false;
+        } else if (!uri.equals(theotherone.getUri())) return false;
         if (soapaction == null) {
             if (soapaction != theotherone.getSoapaction()) return false;
         } else if (!soapaction.equals(theotherone.getSoapaction())) return false;
@@ -63,10 +73,11 @@ public class ResolutionParameters extends EntityImp implements Serializable {
      * this must be overriden (hibernate requirement for composite id classes)
      */
     public int hashCode() {
-	return com.l7tech.common.util.HashCode.compute(new String[]{urn, soapaction});
+	    return com.l7tech.common.util.HashCode.compute(new String[]{urn, soapaction, uri});
     }
 
     private String soapaction;
     private String urn;
+    private String uri;
     private long serviceid;
 }

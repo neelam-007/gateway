@@ -151,7 +151,8 @@ CREATE TABLE service_resolution (
   serviceid number(38,0) NOT NULL ,
   soapaction varchar(128) default '',
   urn varchar(255) default '',
-  unique(soapaction, urn)
+  uri varchar(128) default '',
+  unique(soapaction, urn, uri)
 );
 
 --

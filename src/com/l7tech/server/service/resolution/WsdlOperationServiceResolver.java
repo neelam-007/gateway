@@ -22,8 +22,11 @@ import java.util.logging.Logger;
  */
 public abstract class WsdlOperationServiceResolver extends NameValueServiceResolver {
     protected Object[] doGetTargetValues( PublishedService service ) {
+        // non soap services do not have those parameters
+        if (!service.isSoap()) {
+            return new Object[] {null};
+        }
         List values = new ArrayList(2);
-
         try {
             Wsdl wsdl = service.parsedWsdl();
             Iterator operations = wsdl.getBindingOperations().iterator();
@@ -46,7 +49,12 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
      * @return a Set containing distinct strings
      */
     public Set getDistinctParameters(PublishedService candidateService) {
-        Set out = new HashSet();        
+        Set out = new HashSet();
+        // non soap services do not have those parameters
+        if (!candidateService.isSoap()) {
+            out.add(null);
+            return out;
+        }
         try {
             Wsdl wsdl = candidateService.parsedWsdl();
             Iterator operations = wsdl.getBindingOperations().iterator();
