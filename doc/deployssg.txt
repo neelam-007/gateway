@@ -21,7 +21,7 @@ SSG deployment steps for a clean linux box
 		1. GRANT ALL ON ssg.* TO ssg@localhost IDENTIFIED BY the_ssg_password;
 [SSG]	check out UneasyRooster somewhere (3 steps)
 		1. cvs -d :pserver:flascell@sarek:/home/cvsuser login
-		2. cvs -d :pserver:flascell@sarek:/home/cvsuser co UneasyRooster
+		2. cvs -d :pserver:flascell@sarek:/home/cvsuser co -r beta_candidate_1 UneasyRooster
 		3. cvs -d :pserver:flascell@sarek:/home/cvsuser logout
 
 [ROOT]  copy UneasyRooster/etc/ssgruntimedefs.sh to /etc/profile.d
