@@ -88,12 +88,13 @@ public class ServerSamlSecurity implements ServerAssertion {
             }
 
             AssertionType at = doc.getAssertion();
-            if (assertion.isValidateValidityPeriod()) {
-                if (!validateIntervalConditions(at)) {
-                    return AssertionStatus.FALSIFIED;
-                }
-            }
-            return AssertionStatus.NONE;
+            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
+            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
+            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
+            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
+            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
+            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
+            return AssertionStatus.NOT_YET_IMPLEMENTED;
         } catch (NoSuchElementException e) {
             logger.log(Level.SEVERE, "SAML Assertion element missing", e);
             return AssertionStatus.FALSIFIED;
@@ -103,9 +104,6 @@ public class ServerSamlSecurity implements ServerAssertion {
         } catch (XmlException e) {
             logger.log(Level.SEVERE, "error parsing the SAML assertion", e);
             return AssertionStatus.FALSIFIED;
-        } catch (InvalidAssertionException e) {
-              logger.log(Level.SEVERE, "Invalid saml assertion", e);
-            return AssertionStatus.BAD_REQUEST;
         }
     }
 

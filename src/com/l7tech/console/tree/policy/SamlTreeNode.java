@@ -22,29 +22,7 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
 
     public String getName() {
         SamlSecurity ss = (SamlSecurity)asAssertion();
-        StringBuffer sb = new StringBuffer("[");
-        int nprops = 0;
-        if (ss.isValidateValidityPeriod()) {
-            if (nprops > 0) {
-                sb.append(", ");
-            }
-            sb.append("check period");
-            nprops++;
-        }
-
-        if (ss.isValidateSignature()) {
-            if (nprops > 0) {
-                sb.append(", ");
-            }
-            sb.append("require signature");
-            nprops++;
-        }
-
-        if (nprops == 0) {
-            sb.append("No Properties Set");
-        }
-        sb.append("]");
-        return "SAML Properties " + sb.toString();
+        return "SAML Holder-of-key authentication";
     }
 
     /**
