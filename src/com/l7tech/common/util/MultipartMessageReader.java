@@ -49,6 +49,12 @@ public class MultipartMessageReader {
         return parseMultipart(0);
     }
 
+    /**
+     * Get all attachements of the message.
+     *
+     * @return Map a list of attachments.
+     * @throws IOException
+     */
     public Map getMessageAttachments() throws IOException {
 
         // parse all multiple parts
@@ -73,6 +79,13 @@ public class MultipartMessageReader {
         return attachments;
     }
 
+    /**
+     * This parser only peels the the multipart message up to the part required.
+     *
+     * @param position The position of the part to be parsed
+     * @return Part The part parsed.  Return NULL if not found.
+     * @throws IOException
+     */
     public MultipartUtil.Part getMessagePart(int position) throws IOException {
 
         if(multipartParts.size() < position) {
@@ -82,6 +95,23 @@ public class MultipartMessageReader {
         }
     }
 
+    /**
+     * This parser only peels the the multipart message up to the part required.
+     *
+     * @param cid The content Id of the part to be parsed
+     * @return Part The part parsed.  Return NULL if not found.
+     * @throws IOException
+     */
+    public MultipartUtil.Part getMessagePart(String cid) throws IOException {
+        return parseMultipart(cid);
+    }
+
+    /**
+     * Get the part from the parsed part list given the position of the part.
+     *
+     * @param position  The position of the part to be retrieved.
+     * @return Part The part parsed.  Return NULL if not found.
+     */
     private MultipartUtil.Part getMessagePartFromMap(int position) {
 
         MultipartUtil.Part part = null;
@@ -99,11 +129,35 @@ public class MultipartMessageReader {
         return part;
     }
 
+   /**
+     * Get the part from the parsed part list given the content Id of the part.
+     *
+     * @param cid  The content id of the part to be retrieved.
+     * @return Part The part parsed.  Return NULL if not found.
+     */
+    private MultipartUtil.Part getMessagePartFromMap(String cid) {
+
+        MultipartUtil.Part part = null;
+
+        Set keys = multipartParts.keySet();
+
+        Iterator itr = keys.iterator();
+        while (itr.hasNext()) {
+            String partName = (String) itr.next();
+            if(cid.equals(partName)) {
+                MultipartUtil.Part currentPart = (MultipartUtil.Part) multipartParts.get(partName);
+                part = currentPart;
+                break;
+            }
+        }
+        return part;
+    }
+
     /**
      * This parser only peels the the multipart message up to the part required.
      *
      * @param lastPart The part to be parsed
-     * @return Part The part parsed
+     * @return Part The part parsed.  Return NULL if not found.
      * @throws IOException
      */
     private MultipartUtil.Part parseMultipart(int lastPart) throws IOException {
@@ -154,6 +208,67 @@ public class MultipartMessageReader {
             multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
         }
         return part;
+    }
+
+    /**
+     * This parser only peels the the multipart message up to the part required.
+     *
+     * @param cid The part to be parsed given the content id of the part.
+     * @return Part The part parsed. Return NULL if not found.
+     * @throws IOException
+     */
+    private MultipartUtil.Part parseMultipart(String cid) throws IOException {
+
+        StringBuffer xml = new StringBuffer();
+        MultipartUtil.Part part = null;
+        boolean partFound = false;
+
+        if( cid == null) throw new IllegalArgumentException("Cannot find the MIME part. The content id cannot NULL");
+
+        // the part to be retrived is already parsed
+        if((part = getMessagePartFromMap(cid)) != null) return part;
+        String line;
+
+        while (!partFound && (line = readLine()) != null)  {
+            part = new MultipartUtil.Part();
+            boolean headers = true;
+            do {
+                if (headers) {
+                    if (line.length() == 0) {
+                        headers = false;
+                        continue;
+                    }
+                    MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
+                    part.headers.put(header.getName(), header);
+                } else {
+                    if (line.startsWith("--" + multipartBoundary)) {
+                        // The boundary is on a line by itself so the previous content doesn't actually contain the last \n
+                        // The next part is left in the reader for later
+                        if (xml.length() > 0 && xml.charAt(xml.length()-1) == '\n')
+                            xml.deleteCharAt(xml.length()-1);
+                        break;
+                    } else {
+                        xml.append(line);
+                        xml.append("\n");
+                    }
+                }
+            } while ((line = readLine()) != null);
+
+            part.content = xml.toString();
+            part.setPostion(multipartParts.size());
+            String contentId = part.getHeader(XmlUtil.CONTENT_ID).getValue();
+            multipartParts.put(contentId, part);
+            if(cid.endsWith(contentId)) {
+                // the requested MIME part is found, stop here.
+                partFound = true;
+            }
+        }
+
+        if(partFound) {
+            return part;
+        } else {
+            return null;
+        }
     }
 
     private String readLine() throws IOException {

@@ -11,6 +11,7 @@ import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.MultipartUtil;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -34,7 +35,6 @@ import org.jaxen.JaxenException;
  */
 public class ServerRequestSwAAssertion implements ServerAssertion {
     private final RequestSwAAssertion _data;
-    private DOMXPath _domXpath;
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     public ServerRequestSwAAssertion(RequestSwAAssertion data) {
@@ -43,23 +43,23 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
     }
 
     private synchronized DOMXPath getDOMXpath(String pattern) throws JaxenException {
-        if (_domXpath == null) {
-            Map namespaceMap = _data.getNamespaceMap();
+        DOMXPath domXpath = null;
 
-            if (pattern != null) {
-                _domXpath = new DOMXPath(pattern);
+        Map namespaceMap = _data.getNamespaceMap();
 
-                if (namespaceMap != null) {
-                    for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
-                        String key = (String) i.next();
-                        String uri = (String) namespaceMap.get(key);
-                        _domXpath.addNamespace(key, uri);
-                    }
+        if (pattern != null) {
+            domXpath = new DOMXPath(pattern);
+
+            if (namespaceMap != null) {
+                for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
+                    String key = (String) i.next();
+                    String uri = (String) namespaceMap.get(key);
+                    domXpath.addNamespace(key, uri);
                 }
             }
         }
 
-        return _domXpath;
+        return domXpath;
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
@@ -109,8 +109,8 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                     String parameterName= (String) parameterItr.next();
                                     MimePartInfo part = (MimePartInfo) bo.getMultipart().get(parameterName);
 
-                                    DOMXPath parameterXPath = getDOMXpath(operationXPath + "/" + part.getName());
-                                    result = operationXPath.selectNodes(doc);
+                                    DOMXPath parameterXPath = getDOMXpath(bo.getXpath() + "/" + part.getName());
+                                    result = parameterXPath.selectNodes(doc);
 
                                     if(result != null) {
                                         o = result.get(0);
@@ -118,15 +118,28 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                             n = (Node)o;
                                             type = n.getNodeType();
                                             if(type == Node.ELEMENT_NODE) {
-                                                Element parameterElement = XmlUtil.findFirstChildElement((Element) n);
-                                                logger.fine("The parameter " + part.getName() + " is found in the request");
 
-                                                //todo: validate the part
+                                                logger.fine("The parameter " + part.getName() + " is found in the request");
+                                                Element parameterElement = (Element) n;
                                                 Attr href = parameterElement.getAttributeNode("href");
                                                 String mimePardCID = href.getValue();
                                                 logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePardCID);
 
-                                                return AssertionStatus.NONE;
+                                                MultipartUtil.Part mimepart = xreq.getMultipartReader().getMessagePart(mimePardCID);
+
+                                                if(mimepart != null) {
+                                                    // validate the content type
+                                                    if(mimepart.getHeader(XmlUtil.CONTENT_TYPE).equals(part.getContentType())) {
+                                                        return AssertionStatus.NONE;
+                                                    }
+
+                                                    // check the max. length allowed
+                                                    if(mimepart.getContent().length() <= part.getMaxLength()) {
+                                                        return AssertionStatus.NONE;
+                                                    }
+                                                }
+
+                                                return AssertionStatus.FALSIFIED;
                                             } else {
                                                 logger.info( "XPath pattern " + bo.getXpath() + "/" + part.getName() + " found some other node '" + n.toString() + "'" );
                                                 return AssertionStatus.FALSIFIED;
@@ -134,7 +147,6 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                         }
                                     }
                                 }
-
                             }
                         }
                         operationFound = true;
