@@ -25,9 +25,9 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private String username = null;
     private transient char[] password = null;
     private HashMap policyMap = new HashMap();
-    private boolean promptForUsernameAndPassword = true;
     private boolean defaultSsg = false;
 
+    private transient boolean promptForUsernameAndPassword = true;
     private transient int numTimesLogonDialogCanceled = 0;
 
     public int compareTo(final Object o) {
