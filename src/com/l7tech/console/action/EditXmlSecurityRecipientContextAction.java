@@ -7,7 +7,11 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.XpathBasedAssertionTreeNode;
+import com.l7tech.console.panels.XmlSecurityRecipientContextEditor;
+import com.l7tech.console.MainWindow;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
+import com.l7tech.common.gui.util.Utilities;
 
 /**
  * Action that lets the manager admin change the {@link com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext}
@@ -36,6 +40,11 @@ public class EditXmlSecurityRecipientContextAction extends NodeAction {
     }
 
     protected void performAction() {
-        // todo (plug in the new gui element)
+        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        XmlSecurityRecipientContextEditor dlg = new XmlSecurityRecipientContextEditor(mw, assertion);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        dlg.show();
+        // todo, pass old value, get new value
     }
 }

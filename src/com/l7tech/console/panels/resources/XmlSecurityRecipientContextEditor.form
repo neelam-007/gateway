@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.XmlSecurityRecipientContextEditor">
+  <grid id="75f38" binding="mainPanel" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="10" left="10" bottom="10" right="10"/>
+    <constraints>
+      <xy x="57" y="54" width="638" height="472"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <grid id="b43a3" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="10" y="321" width="618" height="141"/>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="c9abd" class="javax.swing.JButton" binding="helpButton">
+            <constraints>
+              <xy x="557" y="58" width="61" height="25"/>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Help"/>
+            </properties>
+          </component>
+          <component id="216db" class="javax.swing.JButton" binding="cancelButton">
+            <constraints>
+              <xy x="475" y="58" width="72" height="25"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Cancel"/>
+            </properties>
+          </component>
+          <component id="7d4aa" class="javax.swing.JButton" binding="okButton">
+            <constraints>
+              <xy x="414" y="58" width="51" height="25"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="OK"/>
+            </properties>
+          </component>
+          <hspacer id="5ed1">
+            <constraints>
+              <xy x="0" y="65" width="414" height="11"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+            </constraints>
+          </hspacer>
+        </children>
+      </grid>
+      <component id="3cfaf" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="10" y="12" width="389" height="15"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Specify for which recipient is this xml security element intended for:"/>
+        </properties>
+      </component>
+      <component id="15e09" class="javax.swing.JRadioButton" binding="defaultRadio">
+        <constraints>
+          <xy x="10" y="35" width="151" height="23"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="default request target"/>
+        </properties>
+      </component>
+      <component id="586cc" class="javax.swing.JRadioButton" binding="specificRecipientRradio">
+        <constraints>
+          <xy x="10" y="63" width="122" height="23"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="specific recipient"/>
+        </properties>
+      </component>
+      <grid id="4b8fb" binding="detailsPanel" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="15" bottom="0" right="0"/>
+        <constraints>
+          <xy x="10" y="91" width="618" height="225"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="etched" title="Recipient details:"/>
+        <children>
+          <grid id="de554" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="21" y="21" width="591" height="110"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="dbb8e" class="javax.swing.JComboBox" binding="actorComboBox">
+                <constraints>
+                  <xy x="196" y="15" width="395" height="24"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
+                </constraints>
+                <properties/>
+              </component>
+              <component id="9da94" class="javax.swing.JLabel" binding="label1">
+                <constraints>
+                  <xy x="0" y="19" width="186" height="15"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Security header 'Actor' attribute:"/>
+                </properties>
+              </component>
+              <component id="22179" class="javax.swing.JLabel" binding="label2">
+                <constraints>
+                  <xy x="0" y="77" width="129" height="15"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Recipient cert subject:"/>
+                </properties>
+              </component>
+              <component id="f5463" class="javax.swing.JTextField" binding="certSubject">
+                <constraints>
+                  <xy x="196" y="73" width="395" height="22"/>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <editable value="false"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <grid id="83005" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="21" y="136" width="591" height="83"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="7b72d" class="javax.swing.JButton" binding="assignCertButton">
+                <constraints>
+                  <xy x="0" y="29" width="124" height="25"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="Assign new cert"/>
+                </properties>
+              </component>
+              <hspacer id="ef921">
+                <constraints>
+                  <xy x="124" y="36" width="467" height="11"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                </constraints>
+              </hspacer>
+            </children>
+          </grid>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>
