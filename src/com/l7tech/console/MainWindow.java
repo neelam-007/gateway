@@ -1250,14 +1250,14 @@ public class MainWindow extends JFrame {
                   if (path == null) return;
                   int keyCode = e.getKeyCode();
                   if (keyCode == KeyEvent.VK_DELETE) {
-                      EntityTreeNode node =
-                        (EntityTreeNode)path.getLastPathComponent();
-                      if (node == null) return;
 
-                      removeNode(node);
+                      AbstractTreeNode node =
+                        (AbstractTreeNode)path.getLastPathComponent();
+                      if (node == null) return;
+                      //removeNode(node);
                   } else if (keyCode == KeyEvent.VK_BACK_SPACE) {
-                      EntityTreeNode node =
-                        (EntityTreeNode)path.getLastPathComponent();
+                      AbstractTreeNode node =
+                        (AbstractTreeNode)path.getLastPathComponent();
                       if (node == null) return;
 
                       DefaultMutableTreeNode parent =
