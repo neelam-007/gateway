@@ -27,7 +27,8 @@ import java.awt.event.ActionListener;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -82,7 +83,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         super("Gateway Properties");
         this.clientProxy = clientProxy;
         tabbedPane.add("General", getGeneralPane());
-        tabbedPane.add("Identity", getIdentityPane());
+        tabbedPane.add("Identity", getIdentityPane(ssg));
         tabbedPane.add("Network", getNetworkPane());
         tabbedPane.add("Agent Policy", getAgentPolicyPane());
         tabbedPane.add("Service Policies", getPoliciesPane());
@@ -239,7 +240,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         policyTree.setModel((policy == null || policy.getClientAssertion() == null) ? null : new PolicyTreeModel(policy.getClientAssertion()));
     }
 
-    private SsgPropertyPanel getIdentityPane() {
+    private SsgPropertyPanel getIdentityPane(final Ssg ssg) {
         if (identityPane != null) return identityPane;
 
         identityPane = new SsgPropertyPanel();
@@ -295,6 +296,18 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     updateIdentityEnableState();
                 }
             });
+
+        List sslList = clientProxy.getSsgFinder().getSsgList();
+
+        for (int i = 0; i < sslList.size(); i++) {
+            Ssg item = (Ssg) sslList.get(i);
+            if(!item.getLocalEndpoint().equals(ssg.getLocalEndpoint())) {
+                identityPane.getTrustedSSGComboBox().addItem(item.getLocalEndpoint());
+            }
+            if(identityPane.getTrustedSSGComboBox().getItemCount() <= 0) {
+                identityPane.getTrustedSSGComboBox().addItem("<No trusted gateways configured>");
+            }
+        }
 
         return identityPane;
 
@@ -403,14 +416,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     }
 
     private void updateIdentityEnableState() {
-        if (getIdentityPane().getUseClientCredentialCheckBox().isSelected()) {
-            getIdentityPane().getUserPasswordField().setEnabled(false);
-            getIdentityPane().getUsernameTextField().setEditable(false);
-            getIdentityPane().getUserPasswordField().setEditable(false);
+        if (identityPane.getUseClientCredentialCheckBox().isSelected()) {
+            identityPane.getUserPasswordField().setEnabled(false);
+            identityPane.getUsernameTextField().setEditable(false);
+            identityPane.getUserPasswordField().setEditable(false);
         } else {
-            getIdentityPane().getSavePasswordCheckBox().setEnabled(true);
-            getIdentityPane().getUserPasswordField().setEditable(true);
-            getIdentityPane().getUsernameTextField().setEditable(lookupClientCertUsername(ssg) == null);
+            identityPane.getSavePasswordCheckBox().setEnabled(true);
+            identityPane.getUserPasswordField().setEditable(true);
+            identityPane.getUsernameTextField().setEditable(lookupClientCertUsername(ssg) == null);
         }
     }
 
@@ -729,26 +742,26 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldWsdlEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
                                       ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
             fieldServerAddress.setText(ssg.getSsgAddress());
-            getIdentityPane().getUsernameTextField().setText(ssg.getUsername());
+            identityPane.getUsernameTextField().setText(ssg.getUsername());
             char[] pass = ssg.cmPassword();
             boolean hasPassword = pass != null;
-            getIdentityPane().getUserPasswordField().setText(new String(hasPassword ? pass : "".toCharArray()));
+            identityPane.getUserPasswordField().setText(new String(hasPassword ? pass : "".toCharArray()));
             policyFlushRequested = false;
             fieldSsgPort.setText(Integer.toString(ssg.getSsgPort()));
             fieldSslPort.setText(Integer.toString(ssg.getSslPort()));
             boolean customPorts = isPortsCustom(ssg);
             radioStandardPorts.setSelected(!customPorts);
             radioNonstandardPorts.setSelected(customPorts);
-            getIdentityPane().getSavePasswordCheckBox().setSelected(ssg.isSavePasswordToDisk());
-            getIdentityPane().getUseClientCredentialCheckBox().setSelected(ssg.isChainCredentialsFromClient());
+            identityPane.getSavePasswordCheckBox().setSelected(ssg.isSavePasswordToDisk());
+            identityPane.getUseClientCredentialCheckBox().setSelected(ssg.isChainCredentialsFromClient());
             cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
             updateCustomPortsEnableState();
             updateIdentityEnableState();
 
             String clientCertUsername = lookupClientCertUsername(ssg);
             if (clientCertUsername != null) {
-                    getIdentityPane().getUsernameTextField().setText(clientCertUsername);
-                    getIdentityPane().getUsernameTextField().setEditable(false);
+                    identityPane.getUsernameTextField().setText(clientCertUsername);
+                    identityPane.getUsernameTextField().setEditable(false);
             }
 
             updatePolicyPanel();
@@ -764,19 +777,19 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     protected void commitChanges() {
         synchronized (ssg) {
             ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
-            ssg.setUsername(getIdentityPane().getUsernameTextField().getText().trim());
-            ssg.setSavePasswordToDisk(getIdentityPane().getSavePasswordCheckBox().isSelected());
+            ssg.setUsername(identityPane.getUsernameTextField().getText().trim());
+            ssg.setSavePasswordToDisk(identityPane.getSavePasswordCheckBox().isSelected());
             ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
-            ssg.setChainCredentialsFromClient(getIdentityPane().getUseClientCredentialCheckBox().isSelected());
+            ssg.setChainCredentialsFromClient(identityPane.getUseClientCredentialCheckBox().isSelected());
 
             // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
             // a blank password to access a service, he can leave the password field blank in the logon
             // dialog when it eventually appears.
-            char[] pass = getIdentityPane().getUserPasswordField().getPassword();
+            char[] pass = identityPane.getUserPasswordField().getPassword();
 
             // Make sure prompting is enabled
             ssg.promptForUsernameAndPassword(true);
-            ssg.cmPassword(pass.length > 0 ? getIdentityPane().getUserPasswordField().getPassword() : null);
+            ssg.cmPassword(pass.length > 0 ? identityPane.getUserPasswordField().getPassword() : null);
 
             if (radioNonstandardPorts.isSelected()) {
                 ssg.setSsgPort(Integer.parseInt(fieldSsgPort.getText()));
