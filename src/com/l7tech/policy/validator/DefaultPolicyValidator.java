@@ -141,6 +141,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         private void processPrecondition(Assertion a) {
             if (a instanceof SslAssertion) {
                 seenSsl = true;
+                // ssl assertion might be there but it could be forbidden...
                 if (((SslAssertion)a).getOption() == SslAssertion.FORBIDDEN) {
                     sslForbidden = true;
                 }
