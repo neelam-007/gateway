@@ -210,7 +210,7 @@ public class XmlMangler {
      * @throws IOException                  if there was an IO error while reading the document or a key
      * @throws SAXException                 if there was a problem parsing the document
      */
-    public static void decryptElement(Element messagePartElement, Key key)
+    public static void decryptElement(Element messagePartElement, Key key, Element keyKefList)
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
             XMLSecurityElementNotFoundException
     {
@@ -221,24 +221,22 @@ public class XmlMangler {
         if (encryptedDataElement == null)
             throw new XMLSecurityElementNotFoundException("No EncryptedData found inside the 'encrypted' message part");
 
-        String messagePartId = encryptedDataElement.getAttribute( "Id" );
-        Element envelope = soapMsg.getDocumentElement();
-        if (!"Envelope".equals(envelope.getLocalName())) // todo: move this validation to somewhere more sensible
-
-            throw new IllegalArgumentException("Invalid SOAP envelope: document element is not named 'Envelope'");
-        String envelopeNs = envelope.getNamespaceURI();
-        if (!SoapUtil.ENVELOPE_URIS.contains(envelopeNs)) // todo: move this validation to somewhere more sensible
-            throw new IllegalArgumentException("Invalid SOAP message: unrecognized envelope namespace \"" + envelopeNs + "\"");
-
-        // Locate EncryptedData element by its reference in the Security header
-        Element header = XmlUtil.findFirstChildElementByName(envelope, envelopeNs, "Header");
+        String messagePartId = SoapUtil.getElementId(encryptedDataElement);
+        Element header = SoapUtil.getHeaderElement(soapMsg);
         if (header == null)
             throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there is no SOAP header");
 
         Element security = SoapUtil.getSecurityElement(header);
 
-        List referenceListList = XmlUtil.findChildElementsByName(security, SoapUtil.XMLENC_NS, "ReferenceList");
-        if (referenceListList == null)
+        List referenceListList = null;
+        if (keyKefList != null) {
+            referenceListList = new ArrayList();
+            referenceListList.add(keyKefList);
+        } else {
+            // find reference lists
+            referenceListList = XmlUtil.findChildElementsByName(security, SoapUtil.XMLENC_NS, "ReferenceList");
+        }
+        if (referenceListList == null || referenceListList.isEmpty())
             throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there is no ReferenceList");
         for (Iterator i = referenceListList.iterator(); i.hasNext();) {
             Element referenceList = (Element)i.next();
@@ -277,6 +275,8 @@ public class XmlMangler {
                     if (!referenceList.hasChildNodes())
                         referenceList.getParentNode().removeChild(referenceList);
                     return;
+                } else {
+                    System.out.println("URI did not match the id " + dataRefUri + ", " + messagePartId);
                 }
             }
         }
@@ -304,7 +304,12 @@ public class XmlMangler {
             throws GeneralSecurityException, XMLSecurityElementNotFoundException, IOException,
             ParserConfigurationException, SAXException
     {
-        decryptElement(soapMsg.getDocumentElement(), key);
+        decryptElement(soapMsg.getDocumentElement(), key, null);
+    }
+
+    public static class ProcessedEncryptedKey {
+        public Key decryptedKey;
+        public Element referenceList;
     }
 
     /**
@@ -312,7 +317,7 @@ public class XmlMangler {
      * that can be cedrypted with the passed recipientPrivateKey.
      * @return never null;
      */
-    public static Key[] getEncryptedKeyFromMessage(Document soapMsg, PrivateKey recipientPrivateKey) {
+    public static ProcessedEncryptedKey[] getEncryptedKeyFromMessage(Document soapMsg, PrivateKey recipientPrivateKey) {
         ArrayList output = new ArrayList();
 
         // look for the Header/Security/EncryptedKey element
@@ -377,16 +382,24 @@ public class XmlMangler {
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "decryption error", e);
                 }
-                output.add(new AesKey(decrypted, 128));
+                ProcessedEncryptedKey item = new ProcessedEncryptedKey();
+                item.decryptedKey = new AesKey(decrypted, 128);
                 //todo, figure out padding issue
+                try {
+                    item.referenceList = XmlUtil.findOnlyOneChildElementByName(encryptedKey, SoapUtil.XMLENC_NS, "ReferenceList");
+                } catch (XmlUtil.MultipleChildElementsException e) {
+                    logger.warning("unexpected multiple reference list elements in encrypted key " + e.getMessage());
+                }
+                output.add(item);
+
             }
         }
         if (output.isEmpty()) {
-            return new Key[0];
+            return new ProcessedEncryptedKey[0];
         } else {
-            Key[] realoutput = new Key[output.size()];
+            ProcessedEncryptedKey[] realoutput = new ProcessedEncryptedKey[output.size()];
             for (int i = 0; i < realoutput.length; i++) {
-                realoutput[i] = (Key)output.get(i);
+                realoutput[i] = (ProcessedEncryptedKey)output.get(i);
             }
             return realoutput;
         }
