@@ -50,7 +50,7 @@ public class UptimeMonitor {
     private void startMonitor() {
         this.result = findUptime(UPTIME_PATHS);
         if (foundUptime != null) {
-            this.thread = new Thread(new Runnable() { public void run() { runMonitorThread(); }});
+            this.thread = new Thread(new Runnable() { public void run() { runMonitorThread(); }}, "Uptime Monitor");
             thread.setDaemon(true);
             thread.start();
         }
