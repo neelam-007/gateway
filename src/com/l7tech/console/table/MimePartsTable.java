@@ -20,8 +20,12 @@ public class MimePartsTable extends JTable {
     public MimePartsTable() {
 
         setModel(getMimePartsTableModel());
-        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX).setPreferredWidth(50);
-        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX).setPreferredWidth(70);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX).setMinWidth(50);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX).setPreferredWidth(60);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX).setMinWidth(180);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX).setPreferredWidth(220);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX).setMinWidth(100);
+        getColumnModel().getColumn(MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX).setPreferredWidth(120);
         getTableHeader().setReorderingAllowed(false);
         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
