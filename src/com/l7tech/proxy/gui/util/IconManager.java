@@ -3,6 +3,7 @@ package com.l7tech.proxy.gui.util;
 import com.l7tech.proxy.gui.Gui;
 
 import javax.swing.*;
+import java.awt.*;
 import java.net.URL;
 
 /**
@@ -18,27 +19,40 @@ public class IconManager {
     private static ImageIcon iconAdd;
     private static ImageIcon iconEdit;
     private static ImageIcon iconRemove;
+    private static Image iconAppIcon;
 
-    private static ImageIcon loadImage(String path) {
+    private static ImageIcon loadImageIcon(String path) {
         URL url = cl.getResource(path);
         return url == null ? new ImageIcon() : new ImageIcon(url);
     }
 
+    private static Image loadImage(String path) {
+        URL url = cl.getResource(path);
+        return url == null ? (new ImageIcon()).getImage()
+                           : Toolkit.getDefaultToolkit().createImage(url);
+    }
+
     public static ImageIcon getAdd() {
         if (iconAdd == null)
-            iconAdd = loadImage(Gui.RESOURCE_PATH + "/New16.gif");
+            iconAdd = loadImageIcon(Gui.RESOURCE_PATH + "/New16.gif");
         return iconAdd;
     }
 
     public static ImageIcon getEdit() {
         if (iconEdit == null)
-            iconEdit = loadImage(Gui.RESOURCE_PATH + "/Edit16.gif");
+            iconEdit = loadImageIcon(Gui.RESOURCE_PATH + "/Edit16.gif");
         return iconEdit;
     }
 
     public static ImageIcon getRemove() {
         if (iconRemove == null)
-            iconRemove = loadImage(Gui.RESOURCE_PATH + "/Delete16.gif");
+            iconRemove = loadImageIcon(Gui.RESOURCE_PATH + "/Delete16.gif");
         return iconRemove;
+    }
+
+    public static Image getAppImage() {
+        if (iconAppIcon == null)
+            iconAppIcon = loadImage(Gui.RESOURCE_PATH + "/layer7_logo_small_32x32.png");
+        return iconAppIcon;
     }
 }
