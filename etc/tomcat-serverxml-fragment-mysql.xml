@@ -1,5 +1,11 @@
-<Resource name="jdbc/ssg" scope="Shareable" type="javax.sql.DataSource"/>
+<Resource name="jdbc/ssg" scope="Shareable" type="javax.sql.XADataSource"/>
+
 <ResourceParams name="jdbc/ssg">
+   <parameter>
+      <name>factory</name>
+      <value>org.apache.commons.dbcp.BasicDataSourceFactory</value>
+  </parameter>
+
   <parameter>
     <name>validationQuery</name>
     <value></value>
