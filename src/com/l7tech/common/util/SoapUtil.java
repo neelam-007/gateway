@@ -224,10 +224,14 @@ public class SoapUtil {
      * @return the leement or null if no such element exists
      */
     public static Element getElementById(Document doc, String elementId) {
+        String url = null;
+        if (elementId.charAt(0) == '#') {
+            url = elementId.substring(1);
+        } else url = elementId;
         NodeList elements = doc.getElementsByTagName("*");
         for (int i = 0; i < elements.getLength(); i++) {
             Element element = (Element)elements.item(i);
-            if (elementId.equals(getElementId(element))) {
+            if (url.equals(getElementId(element))) {
                 return element;
             }
         }
