@@ -32,7 +32,7 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
     }
 
     // String compare that treats null as being less than any other string
-    private int compareStrings(String s1, String s2) {
+    private static int compareStrings(String s1, String s2) {
         if (s1 == null && s2 == null)
             return 0;
         else if (s1 == null)
