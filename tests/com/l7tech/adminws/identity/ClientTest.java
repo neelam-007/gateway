@@ -5,6 +5,10 @@ import junit.framework.TestSuite;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.User;
 import com.l7tech.identity.ldap.LdapConfigSettings;
+import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.util.Locator;
+
+import java.net.PasswordAuthentication;
 
 /**
  * Layer 7 Technologies, inc.
@@ -22,7 +26,7 @@ public class ClientTest extends junit.framework.TestCase {
     }
 
     public void testFinds() throws Exception {
-        Client me = new Client("http://localhost:8080/ssg/services/identityAdmin", "ssgadmin", "ssgadminpasswd");
+        Client me = new Client("http://localhost:8080/ssg/services/identityAdmin");
 
         // test echo
         System.out.println(me.echoVersion());
@@ -71,7 +75,7 @@ public class ClientTest extends junit.framework.TestCase {
     }
 
     public void testCreateSpockLdapIDProviderConfig() throws Exception {
-        Client me = new Client("http://localhost:8080/ssg/services/identityAdmin", "ssgadmin", "ssgadminpasswd");
+        Client me = new Client("http://localhost:8080/ssg/services/identityAdmin");
 
         // test echo
         System.out.println(me.echoVersion());
@@ -92,6 +96,10 @@ public class ClientTest extends junit.framework.TestCase {
     }
 
     public static void main(String[] args) throws Exception {
+        ClientCredentialManager credsManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+        PasswordAuthentication creds = new PasswordAuthentication("ssgadmin", "ssgadminpasswd".toCharArray());
+        credsManager.login(creds);
+        
         ClientTest toto = new ClientTest();
         toto.testFinds();
         // toto.testCreateSpockLdapIDProviderConfig();
