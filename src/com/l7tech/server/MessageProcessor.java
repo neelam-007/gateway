@@ -9,10 +9,14 @@ package com.l7tech.server;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SessionNotFoundException;
+import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.message.SoapRequest;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -26,13 +30,21 @@ import com.l7tech.service.resolution.ServiceResolutionException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateException;
+import java.security.PrivateKey;
+import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
 
 /**
  * @author alex
@@ -42,6 +54,45 @@ public class MessageProcessor {
     public AssertionStatus processMessage( Request request, Response response )
             throws IOException, PolicyAssertionException, PolicyVersionException {
 
+        // WSS-Processing Step
+        if (request instanceof SoapRequest) {
+            SoapRequest req = (SoapRequest)request;
+            WssProcessor trogdor = (WssProcessor)Locator.getDefault().lookup(WssProcessor.class);
+            X509Certificate serverSSLcert = null;
+            PrivateKey sslPrivateKey = null;
+            try {
+                serverSSLcert = getServerCert();
+                sslPrivateKey = getServerKey();
+            } catch (CertificateException e) {
+                logger.log(Level.SEVERE, "Error getting server cert/private key", e);
+                return AssertionStatus.SERVER_ERROR;
+            } catch (KeyStoreException e) {
+                logger.log(Level.SEVERE, "Error getting server cert/private key", e);
+                return AssertionStatus.SERVER_ERROR;
+            }
+            WssProcessor.ProcessorResult wssOutput = null;
+            try {
+                wssOutput = trogdor.undecorateMessage(req.getDocument(), serverSSLcert, sslPrivateKey);
+            } catch (WssProcessor.ProcessorException e) {
+                logger.log(Level.SEVERE, "Error in WSS processing of request", e);
+                return AssertionStatus.SERVER_ERROR;
+            } catch (InvalidDocumentFormatException e) {
+                logger.log(Level.SEVERE, "Error in WSS processing of request", e);
+                return AssertionStatus.SERVER_ERROR;
+            } catch (GeneralSecurityException e) {
+                logger.log(Level.SEVERE, "Error in WSS processing of request", e);
+                return AssertionStatus.SERVER_ERROR;
+            } catch (SAXException e) {
+                logger.log(Level.SEVERE, "Error getting xml document from request", e);
+                return AssertionStatus.SERVER_ERROR;
+            }
+            // todo, refactor SoapRequest so that it keeps a hold on the original message
+            if (wssOutput.getUndecoratedMessage() != null) {
+                req.setDocument(wssOutput.getUndecoratedMessage());
+            }
+            logger.finest("WSS processing of request complete.");
+        }
+        // Policy Verification Step
         try {
             ServiceManager manager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
             PublishedService service = manager.resolve(request);
@@ -164,6 +215,22 @@ public class MessageProcessor {
         }
     }
 
+    private synchronized PrivateKey getServerKey() throws KeyStoreException {
+        if (privateServerKey == null) {
+            privateServerKey = KeystoreUtils.getInstance().getSSLPrivateKey();
+        }
+        return privateServerKey;
+    }
+
+    private synchronized X509Certificate getServerCert() throws IOException, CertificateException {
+        if (serverCert == null) {
+            byte[] buf = KeystoreUtils.getInstance().readSSLCert();
+            ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+            serverCert = (X509Certificate)(CertificateFactory.getInstance("X.509").generateCertificate(bais));
+        }
+        return serverCert;
+    }
+
     public static MessageProcessor getInstance() {
         /*if ( _instance == null )
             _instance = new MessageProcessor();
@@ -256,4 +323,7 @@ public class MessageProcessor {
 
     private DocumentBuilderFactory _dbf;
     private XmlPullParserFactory _xppf;
+
+    private PrivateKey privateServerKey = null;
+    private X509Certificate serverCert = null;
 }
