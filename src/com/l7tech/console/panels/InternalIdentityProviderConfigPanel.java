@@ -79,7 +79,8 @@ public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
      * @return  String  The descritpion of the step.
      */
     public String getDescription() {
-        return "Modification of the Internal Identity Provider properties is not allowed. The data shown above is for viewing purpose only.";
+        return "Modification of the Internal Identity Provider is not " +
+                "allowed. The data shown above is for viewing purposes only.";
     }
 
     /**
