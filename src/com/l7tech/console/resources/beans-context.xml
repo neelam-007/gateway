@@ -20,6 +20,7 @@
         <property name="serviceInterface">
             <value>com.l7tech.admin.AdminLogin</value>
         </property>
+        <property name="refreshStubOnConnectFailure"><value>true</value></property>
         <property name="lookupStubOnStartup"><value>false</value></property>
         <property name="registryClientSocketFactory"><ref bean="rmiClientSocketFactory"/></property>
     </bean>
