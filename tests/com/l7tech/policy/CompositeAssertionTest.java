@@ -22,6 +22,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerExactlyOneAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion;
+import com.l7tech.server.audit.AuditContextStub;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -57,6 +58,7 @@ public class CompositeAssertionTest extends TestCase {
         PolicyEnforcementContext context = new
           PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
                                    ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message(), null, null);
+        context.setAuditContext(new AuditContextStub());
 
         {
             final List kidsTrueFalseTrue = Arrays.asList(new Assertion[] {
@@ -111,6 +113,7 @@ public class CompositeAssertionTest extends TestCase {
           new PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
                                        ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
                                        new Message(), null, null);
+        context.setAuditContext(new AuditContextStub());
 
         final List kidsTrueFalseTrue = Arrays.asList(new Assertion[] {
             new TrueAssertion(),

@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.audit.AuditContextStub;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -98,6 +99,7 @@ public class ServerPolicyFactoryTest extends TestCase {
         ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
 
         PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message());
+        pp.setAuditContext(new AuditContextStub());
 
         ServerAssertion serverAllTrue = pfac.makeServerPolicy(allTrue);
         assertTrue(serverAllTrue.checkRequest(pp) == AssertionStatus.NONE);
