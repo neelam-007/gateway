@@ -25,20 +25,20 @@ public class Session {
         this.highestSeq = highestSeq;
     }
 
-    public byte[] getKeyIn() {
-        return keyin;
+    public byte[] getKeyReq() {
+        return keyreq;
     }
 
-    public void setKeyIn(byte[] key) {
-        this.keyin = key;
+    public void setKeyReq(byte[] key) {
+        this.keyreq = key;
     }
 
-    public byte[] getKeyOut() {
-        return keyout;
+    public byte[] getKeyRes() {
+        return keyres;
     }
 
-    public void setKeyOut(byte[] key) {
-        this.keyout = key;
+    public void setKeyRes(byte[] key) {
+        this.keyres = key;
     }
 
     public long getId() {
@@ -67,8 +67,8 @@ public class Session {
 
     private long id = 0;
     private long highestSeq = 0;
-    private byte[] keyin = null;
-    private byte[] keyout = null;
+    private byte[] keyreq = null;
+    private byte[] keyres = null;
     private long creationTimestamp = 0;
     private long nrRequestsUsed = 0;
 }

@@ -49,10 +49,10 @@ public class SessionManager {
         byte[] randbytes = new byte[32];
 
         getRand().nextBytes(randbytes);
-        newsession.setKeyIn(randbytes);
+        newsession.setKeyReq(randbytes);
         randbytes = new byte[32];
         getRand().nextBytes(randbytes);
-        newsession.setKeyOut(randbytes);
+        newsession.setKeyRes(randbytes);
 
         sessions.put(new Long(newsession.getId()), newsession);
         return newsession;

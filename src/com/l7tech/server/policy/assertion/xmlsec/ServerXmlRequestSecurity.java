@@ -133,7 +133,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             }
 
             try {
-                XmlMangler.decryptXml(soapmsg, new AesKey(xmlsession.getKeyIn()));
+                XmlMangler.decryptXml(soapmsg, new AesKey(xmlsession.getKeyReq()));
             } catch (GeneralSecurityException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);

@@ -93,7 +93,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
 
             // encrypt the message
             try {
-                XmlMangler.encryptXml(soapmsg, xmlsession.getKeyOut(), sessionIDHeaderValue);
+                XmlMangler.encryptXml(soapmsg, xmlsession.getKeyRes(), sessionIDHeaderValue);
             } catch (GeneralSecurityException e) {
                 String msg = "Exception trying to encrypt response";
                 logger.log(Level.SEVERE, msg, e);
