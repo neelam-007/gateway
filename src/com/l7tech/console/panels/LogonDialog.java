@@ -62,7 +62,10 @@ public class LogonDialog extends JDialog {
     private JTextField userNameTextField = null;
     /** password text field */
     private JPasswordField passwordField = null;
-    /** toolbars property (icons, text, icons and text) */
+
+    /**
+     * VM property (-D) that triggers off the server check
+     * */
     private static final String DISABLE_SERVER_CHECK = "disable.server.check";
 
     /** context field (company.realm)
