@@ -120,7 +120,7 @@ public class WssProcessorTest extends TestCase {
         makeEttkTestDocument("ettk signed encrypted request", TestDocuments.ETTK_SIGNED_ENCRYPTED_REQUEST),
 
         makeDotNetTestDocument("request wrapped l7 actor", TestDocuments.WRAPED_L7ACTOR),
-        makeDotNetTestDocument("request multiple wrapped l7 actor", TestDocuments.MULTIPLE_WRAPED_L7ACTOR),
+        makeDotNetTestDocument("request multiple wrapped l7 actor", TestDocuments.MULTIPLE_WRAPED_L7ACTOR)
     };
 
     private TestDocument makeEttkTestDocument(String testname, String docname) {
