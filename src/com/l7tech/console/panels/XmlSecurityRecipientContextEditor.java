@@ -7,8 +7,11 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -94,12 +97,18 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
             actorComboBox.setEnabled(true);
             label2.setEnabled(true);
             label1.setEnabled(true);
+            TitledBorder border = ((TitledBorder)detailsPanel.getBorder());
+            border.setTitleColor(Color.BLACK);
+            detailsPanel.repaint();
         } else {
             assignCertButton.setEnabled(false);
             certSubject.setEnabled(false);
             actorComboBox.setEnabled(false);
             label2.setEnabled(false);
             label1.setEnabled(false);
+            TitledBorder border = ((TitledBorder)detailsPanel.getBorder());
+            border.setTitleColor(Color.GRAY);
+            detailsPanel.repaint();
         }
     }
 
@@ -110,5 +119,14 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
 
     private void cancel() {
         XmlSecurityRecipientContextEditor.this.dispose();
+    }
+
+    public static void main(String[] args) {
+        RequestWssIntegrity assertion = new RequestWssIntegrity();
+        XmlSecurityRecipientContextEditor dlg = new XmlSecurityRecipientContextEditor(null, assertion);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        dlg.show();
+        System.exit(0);
     }
 }
