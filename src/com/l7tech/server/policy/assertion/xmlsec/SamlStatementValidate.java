@@ -10,10 +10,9 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.server.policy.assertion.xmlsec.SamlAuthenticationStatementValidate;
+import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.context.ApplicationContext;
@@ -21,10 +20,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import x0Assertion.oasisNamesTcSAML1.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -46,6 +42,7 @@ public abstract class SamlStatementValidate {
         statementMapping.put(SamlAuthorizationStatement.class, AuthorizationDecisionStatementType.class);
         statementMapping.put(SamlAttributeStatement.class, AttributeStatementType.class);
     }
+    protected static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
     protected Collection errorCollector = new ArrayList();
@@ -80,7 +77,7 @@ public abstract class SamlStatementValidate {
      * Construct  the <code>SamlStatementValidate</code> for the statement assertion
      *
      * @param statementAssertion the saml statemenet assertion
-     * @param applicationContext the applicaiton context to allo access to components and services
+     * @param applicationContext the application context to allow access to components and services
      */
     SamlStatementValidate(SamlStatementAssertion statementAssertion, ApplicationContext applicationContext) {
         this.statementAssertionConstraints = statementAssertion;
@@ -91,34 +88,30 @@ public abstract class SamlStatementValidate {
         this.applicationContext = applicationContext;
     }
 
-
     /**
-     * Validate the Saml assertion document
+     * Validates the SAML statement.
      *
-     * @param document
+     * @param document the document/message to validate
+     * @param wssResults  the wssresults
+     * @param validationResults
      */
     public void validate(Document document, ProcessorResult wssResults, Collection validationResults) {
-        validateCommonAssertionProperties(document, wssResults, validationResults);
-
-
-    }
-
-    /**
-     * Validates the Saml Assertion common properties
-     */
-    protected void validateCommonAssertionProperties(Document document, ProcessorResult wssResults, Collection validationResults) {
         String securityNS = wssResults.getSecurityNS();
-        if (null == securityNS) {
+        if (null == securityNS) {  // assume no security header was found
             validationResults.add(new Error("No Security Header found", document, null, null));
+            return;
         }
         boolean assertionFound = false;
-        boolean proofOfPosession = false;
+        boolean statementFound = false;
+        SignedElement signedAssertionElement = null;
+        SignedElement proofOfPossessionElement = null;
+
         SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
         for (int i = 0; i < signedElements.length; i++) {
             SignedElement signedElement = signedElements[i];
             Element element = signedElement.asElement();
 
-            if ("Assertion".equals(element.getNodeName())) {
+            if ("Assertion".equals(element.getNodeName()) && !statementFound) {
                 assertionFound = true;
                 try {
                     AssertionType assertionType = AssertionType.Factory.parse(element);
@@ -129,6 +122,7 @@ public abstract class SamlStatementValidate {
                             validateSubjectConfirmation(subjectStatementAbstractType, validationResults);
                             validateConditions(assertionType, validationResults);
                             validateStatement(document, subjectStatementAbstractType, wssResults, validationResults);
+                            statementFound = true;
                         }
                     }
                 } catch (XmlException e) {
@@ -143,16 +137,36 @@ public abstract class SamlStatementValidate {
                 try {
                     Element bodyElement = SoapUtil.getBodyElement(document);
                     if (XmlUtil.isElementAncestor(element, bodyElement)) {
-                        proofOfPosession = true;
+                        proofOfPossessionElement = signedElement;
                     }
                 } catch (InvalidDocumentFormatException e) {
                     validationResults.add(new Error("Non SOAP document", document, null, null));
                 }
             }
         }
+
         if (!assertionFound) {
             validationResults.add(new Error("No SAML assertion found in security Header", document, null, null));
+            return;
         }
+
+        if (signedAssertionElement == null) {
+            validationResults.add(new Error("Unsigned SAML assertion found in security Header", document, null, null));
+            return;
+        }
+
+        if (statementAssertionConstraints.isRequireProofOfPosession()) {
+            if (proofOfPossessionElement == null) {
+                validationResults.add(new Error("No Proof Of Possesion found", document, null, null));
+                return;
+            }
+            if (proofOfPossessionElement.getSigningSecurityToken() != signedAssertionElement.getSigningSecurityToken()) {
+                validationResults.add(new Error("Proof Of Possesion Security token and Assertion token do not match",
+                                                document, new Object[] {proofOfPossessionElement.getSigningSecurityToken(),
+                                                                        signedAssertionElement.getSigningSecurityToken()}, null));
+            }
+        }
+
     }
 
     /**
@@ -163,8 +177,46 @@ public abstract class SamlStatementValidate {
      */
     private void validateConditions(AssertionType assertionType, Collection validationResults) {
         ConditionsType conditionsType = assertionType.getConditions();
-        conditionsType.getNotBefore();
+        if (!statementAssertionConstraints.isCheckAssertionValidity()) {
+            logger.finer("No Assertion Validity requested");
+        }
 
+        Calendar notBefore = conditionsType.getNotBefore();
+        Calendar notOnOrAfter = conditionsType.getNotOnOrAfter();
+        Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
+        now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
+        if (!now.before(notBefore)) {
+            logger.finer("Condition 'Not Before' check failed, now :"+now.toString()+" Not Before:"+notBefore.toString());
+            validationResults.add(new Error("Condition 'Not Before' check failed",
+                                            conditionsType.toString(), new Object[] {notBefore.toString(), now.toString()}, null));
+        }
+
+        if (now.equals(notOnOrAfter) || !now.after(notOnOrAfter)) {
+            logger.finer("Condition 'Not On Or After' check failed, now :"+now.toString()+" Not Before:"+notOnOrAfter.toString());
+            validationResults.add(new Error("Condition 'Not On Or After' check failed",
+                                            conditionsType.toString(), new Object[] {notOnOrAfter.toString(), now.toString()}, null));
+        }
+        final String audienceRestriction = statementAssertionConstraints.getAudienceRestriction();
+        if (audienceRestriction == null) {
+            logger.finer("No audience restriction requested");
+        }
+        AudienceRestrictionConditionType[] audienceRestrictionArray = conditionsType.getAudienceRestrictionConditionArray();
+        boolean audienceRestrictionMatch = false;
+        for (int i = 0; i < audienceRestrictionArray.length; i++) {
+            AudienceRestrictionConditionType audienceRestrictionConditionType = audienceRestrictionArray[i];
+            String[] audienceArray = audienceRestrictionConditionType.getAudienceArray();
+            for (int j = 0; j < audienceArray.length; j++) {
+                String s = audienceArray[j];
+                if (audienceRestriction.equals(s)) {
+                    audienceRestrictionMatch = true;
+                    break;
+                }
+            }
+        }
+        if (!audienceRestrictionMatch) {
+            validationResults.add(new Error("Audience Restriction Check Failed",
+                                               conditionsType.toString(), new Object[] {audienceRestriction}, null));
+        }
     }
 
     private void validateSubjectConfirmation(SubjectStatementAbstractType subjectStatementAbstractType, Collection validationResults) {

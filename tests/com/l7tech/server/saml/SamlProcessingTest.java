@@ -5,6 +5,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.security.Keys;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
+import java.net.InetAddress;
 
 /**
  * Class SamlProcessingTest.
@@ -41,6 +43,7 @@ public class SamlProcessingTest extends TestCase {
     private static MockServletApi servletApi;
     private static ServiceDescriptor[] serviceDescriptors;
     private SoapMessageProcessingServlet messageProcessingServlet;
+    private static Keys authorityKeys;
 
     /**
      * test <code>SamlProcessingTest</code> constructor
@@ -69,6 +72,7 @@ public class SamlProcessingTest extends TestCase {
                 servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
                 ApplicationContext context = servletApi.getApplicationContext();
                 initializeServicesAndPolicies(context);
+                authorityKeys = new Keys("cn=testauthority");
             }
 
             protected void tearDown() throws Exception {
@@ -95,6 +99,11 @@ public class SamlProcessingTest extends TestCase {
      * @throws Exception
      */
     public void testAuthenticationAssertion() throws Exception {
+        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+        samlOptions.setClientAddress(InetAddress.getLocalHost());
+        SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authorityKeys.asSignerInfo());
+
+        //samlGenerator.createAutenticationStatement()
         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(serviceDescriptors[0].wsdlXml));
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
         SoapMessageGenerator sm = new SoapMessageGenerator();
@@ -172,7 +181,7 @@ public class SamlProcessingTest extends TestCase {
             // Saml Authentication Statement:
             new SamlAuthenticationStatement(),
             // Route:
-            new HttpRoutingAssertion()
+            //new HttpRoutingAssertion()
         }));
 
         return WspWriter.getPolicyXml(policy);
