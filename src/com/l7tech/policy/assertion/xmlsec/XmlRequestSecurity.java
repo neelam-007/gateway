@@ -14,4 +14,5 @@ package com.l7tech.policy.assertion.xmlsec;
  * Whether XML encryption is used depends on the property encryption
  */
 public class XmlRequestSecurity extends XmlSecurityAssertion {
+    public static final String SESSION_STATUS_HTTP_HEADER = "l7-session-status";
 }
