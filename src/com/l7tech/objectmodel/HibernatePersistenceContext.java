@@ -284,6 +284,9 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
     public Object doInTransaction(PersistenceAction r) throws ObjectModelException {
         beginTransaction();
+        if (r instanceof TransactionListener) {
+            registerTransactionListener((TransactionListener)r);
+        }
         boolean ok = false;
         Object result;
         try {
