@@ -104,6 +104,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 readFromWsdl();
             }
         });
+        if (!service.isSoap()) {
+            readFromWsdlButton.setEnabled(false);
+        }
         resolveButton.addActionListener( new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 readFromUrl();
