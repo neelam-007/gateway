@@ -143,13 +143,13 @@ public class Xss4jWrapper {
         if (security == null)
             throw new IllegalArgumentException("Encrypted data is present, but there is no security element");
 
-        List referenceListList = XmlUtil.findChildElementsByName(security, SoapUtil.XMLENC_NS, "ReferenceList");
+        List referenceListList = XmlUtil.findChildElementsByName(security, SoapUtil.XMLENC_NS, SoapUtil.REFLIST_EL_NAME);
         if (referenceListList == null)
             throw new IllegalArgumentException("Encrypted data is present, but there is no ReferenceList");
         for (Iterator i = referenceListList.iterator(); i.hasNext();) {
             Element referenceList = (Element)i.next();
 
-            List dataRefEls = XmlUtil.findChildElementsByName(referenceList, SoapUtil.XMLENC_NS, "DataReference");
+            List dataRefEls = XmlUtil.findChildElementsByName(referenceList, SoapUtil.XMLENC_NS, SoapUtil.DATAREF_EL_NAME);
             if ( dataRefEls == null || dataRefEls.isEmpty() )
                 throw new Exception("Encrypted data is present, but there are no DataReference tags in the message");
 
@@ -179,7 +179,7 @@ public class Xss4jWrapper {
     private static void cleanEmptyRefList(Document soapMsg) {
         List refs = new ArrayList();
         {
-            NodeList listRefElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "ReferenceList");
+            NodeList listRefElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, SoapUtil.REFLIST_EL_NAME);
             if (listRefElements.getLength() < 1)
                 return;
             for (int i = 0; i < listRefElements.getLength(); ++i)
@@ -307,7 +307,7 @@ public class Xss4jWrapper {
         Element securityEl = getOrMakeSecurityElement(document);
 
         // Check if there's already a ReferenceList
-        NodeList refEls = securityEl.getElementsByTagNameNS( XMLENC_NS, "ReferenceList" );
+        NodeList refEls = securityEl.getElementsByTagNameNS(XMLENC_NS, SoapUtil.REFLIST_EL_NAME);
         Element refEl = null;
         if ( refEls.getLength() == 0 ) {
             refEl = document.createElementNS(XMLENC_NS, "xenc:ReferenceList");

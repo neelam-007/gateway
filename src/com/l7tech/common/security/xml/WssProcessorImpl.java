@@ -169,7 +169,7 @@ public class WssProcessorImpl implements WssProcessor {
                     logger.info("Encountered DerivedKey element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
-            } else if (securityChildToProcess.getLocalName().equals("ReferenceList")) {
+            } else if (securityChildToProcess.getLocalName().equals(SoapUtil.REFLIST_EL_NAME)) {
                 // In the case of a Secure Conversation the reference list is declared outside
                 // of the DerivedKeyToken
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.XMLENC_NS)) {
@@ -259,7 +259,7 @@ public class WssProcessorImpl implements WssProcessor {
 
     private void processReferenceList(Element referenceListEl, ProcessingStatusHolder cntx) throws ProcessorException, InvalidDocumentFormatException {
         // get each element one by one
-        List dataRefEls = XmlUtil.findChildElementsByName(referenceListEl, SoapUtil.XMLENC_NS, "DataReference");
+        List dataRefEls = XmlUtil.findChildElementsByName(referenceListEl, SoapUtil.XMLENC_NS, SoapUtil.DATAREF_EL_NAME);
         if ( dataRefEls == null || dataRefEls.isEmpty() ) {
             logger.warning("ReferenceList is present, but is empty");
             return;
@@ -275,7 +275,7 @@ public class WssProcessorImpl implements WssProcessor {
                 throw new ProcessorException(msg);
             }
             // get the reference to the derived key token from the http://www.w3.org/2000/09/xmldsig#:KeyInfo element
-            Element keyInfo = XmlUtil.findFirstChildElementByName(encryptedDataElement, SoapUtil.DIGSIG_URI, "KeyInfo");
+            Element keyInfo = XmlUtil.findFirstChildElementByName(encryptedDataElement, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME);
             if (keyInfo == null) {
                 throw new InvalidDocumentFormatException("The DataReference here should contain a KeyInfo child");
             }
@@ -419,7 +419,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         // If there's a KeyIdentifier, log whether it's talking about our key
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
-        Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.DIGSIG_URI, "KeyInfo");
+        Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME);
         if (kinfo != null) {
             Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
                                                                 SoapUtil.SECURITY_URIS_ARRAY,
@@ -542,7 +542,7 @@ public class WssProcessorImpl implements WssProcessor {
         // We got the key. Get the list of elements to decrypt.
         Element refList = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
                                                                 SoapUtil.XMLENC_NS,
-                                                                "ReferenceList");
+                                                                SoapUtil.REFLIST_EL_NAME);
         try {
             decryptReferencedElements(new AesKey(unencryptedKey, unencryptedKey.length*8), refList, cntx);
         } catch (ParserConfigurationException e) {
@@ -614,7 +614,7 @@ public class WssProcessorImpl implements WssProcessor {
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
                    ProcessorException, InvalidDocumentFormatException
     {
-        List dataRefEls = XmlUtil.findChildElementsByName(refList, SoapUtil.XMLENC_NS, "DataReference");
+        List dataRefEls = XmlUtil.findChildElementsByName(refList, SoapUtil.XMLENC_NS, SoapUtil.DATAREF_EL_NAME);
         if ( dataRefEls == null || dataRefEls.isEmpty() ) {
             logger.warning("EncryptedData is present, but contains at least one empty ReferenceList");
             return;
@@ -813,13 +813,13 @@ public class WssProcessorImpl implements WssProcessor {
         // 1. look for a wsse:SecurityTokenReference element
         List secTokReferences = XmlUtil.findChildElementsByName(parentElement,
                                                           SoapUtil.SECURITY_URIS_ARRAY,
-                                                          "SecurityTokenReference");
+                                                          SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
         if (secTokReferences.size() > 0) {
             // 2. Resolve the child reference
             Element securityTokenReference = (Element)secTokReferences.get(0);
             List references = XmlUtil.findChildElementsByName(securityTokenReference,
                                                               SoapUtil.SECURITY_URIS_ARRAY,
-                                                              "Reference");
+                                                              SoapUtil.REFERENCE_EL_NAME);
             if (references.size() > 0) {
                 // get the URI
                 Element reference = (Element)references.get(0);
@@ -854,13 +854,13 @@ public class WssProcessorImpl implements WssProcessor {
         // 1. look for a wsse:SecurityTokenReference element
         List secTokReferences = XmlUtil.findChildElementsByName(parentElement,
                                                           SoapUtil.SECURITY_URIS_ARRAY,
-                                                          "SecurityTokenReference");
+                                                          SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
         if (secTokReferences.size() > 0) {
             // 2. Resolve the child reference
             Element securityTokenReference = (Element)secTokReferences.get(0);
             List references = XmlUtil.findChildElementsByName(securityTokenReference,
                                                               SoapUtil.SECURITY_URIS_ARRAY,
-                                                              "Reference");
+                                                              SoapUtil.REFERENCE_EL_NAME);
             if (references.size() > 0) {
                 // get the URI
                 Element reference = (Element)references.get(0);

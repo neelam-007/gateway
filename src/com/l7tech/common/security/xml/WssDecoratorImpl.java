@@ -201,13 +201,13 @@ public class WssDecoratorImpl implements WssDecorator {
         String bstId = getOrCreateWsuId(c, binarySecurityToken, null);
         String wssePrefix = securityHeader.getPrefix();
         Element keyInfoEl = securityHeader.getOwnerDocument().createElementNS(emptySignatureElement.getNamespaceURI(),
-                                                                              "KeyInfo");
+                                                                              SoapUtil.KINFO_EL_NAME);
         keyInfoEl.setPrefix("ds");
         Element secTokRefEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
-                                                                                "SecurityTokenReference");
+                                                                                SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME);
         secTokRefEl.setPrefix(wssePrefix);
         Element refEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
-                                                                          "Reference");
+                                                                          SoapUtil.REFERENCE_EL_NAME);
         refEl.setPrefix(wssePrefix);
         secTokRefEl.appendChild(refEl);
         keyInfoEl.appendChild(secTokRefEl);
@@ -318,13 +318,13 @@ public class WssDecoratorImpl implements WssDecorator {
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
         final String base64 = encryptWithRsa(c, keyBytes, recipientCertificate.getPublicKey());
         cipherValue.appendChild(soapMsg.createTextNode(base64));
-        Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, "ReferenceList", xencNs, xenc);
+        Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, SoapUtil.REFLIST_EL_NAME, xencNs, xenc);
 
         for (int i = 0; i < elementsToEncrypt.length; i++) {
             Element element = elementsToEncrypt[i];
             Element encryptedElement = encryptElement(element, keyBytes);
 
-            Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
+            Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, SoapUtil.DATAREF_EL_NAME, xencNs, xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
         }
 
@@ -453,7 +453,7 @@ public class WssDecoratorImpl implements WssDecorator {
         String wsseNs = encryptedKey.getParentNode().getNamespaceURI();
         String wssePrefix = encryptedKey.getParentNode().getPrefix();
 
-        Element keyInfo = XmlUtil.createAndAppendElementNS(encryptedKey, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
+        Element keyInfo = XmlUtil.createAndAppendElementNS(encryptedKey, SoapUtil.KINFO_EL_NAME, SoapUtil.DIGSIG_URI, "dsig");
         Element securityTokenRef = XmlUtil.createAndAppendElementNS(keyInfo, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
                                                                     wsseNs, wssePrefix);
         Element keyId = XmlUtil.createAndAppendElementNS(securityTokenRef, SoapUtil.KEYIDENTIFIER_EL_NAME,
