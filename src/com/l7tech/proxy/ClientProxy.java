@@ -61,6 +61,9 @@ public class ClientProxy {
     private volatile boolean isDestroyed = false;
     private volatile boolean isInitialized = false;
 
+    private ClientProxyTrustManager trustManager = null;
+    private ClientProxyKeyManager keyManager = null;
+
     /**
      * Create a ClientProxy with the specified settings.
      * @param ssgFinder provides the list of SSGs to which we are proxying.
@@ -72,6 +75,28 @@ public class ClientProxy {
         this.bindPort = bindPort;
         this.minThreads = minThreads;
         this.maxThreads = maxThreads;
+    }
+
+    private ClientProxyTrustManager getTrustManager() {
+        if (trustManager == null)
+            trustManager = new ClientProxyTrustManager(ssgFinder);
+        return trustManager;
+    }
+
+    private ClientProxyKeyManager getKeyManager() {
+        if (keyManager == null)
+            keyManager = new ClientProxyKeyManager(ssgFinder);
+        return keyManager;
+    }
+
+    /** Used by the tests to configure a "trust-all" trust manager, for simple SSL tests. */
+    void setTrustManager(ClientProxyTrustManager trustManager) {
+        this.trustManager = trustManager;
+    }
+
+    /** Used by the tests to configure a client-cert-less key manager, for simple SSL tests. */
+    void setKeyManager(ClientProxyKeyManager keyManager) {
+        this.keyManager = keyManager;
     }
 
     /** Used by ClientProxyStub, a fake CP for testing GUI widgets. */
@@ -114,8 +139,8 @@ public class ClientProxy {
             throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
     {
         // Set up SSL context
-        ClientProxyKeyManager keyManager = new ClientProxyKeyManager(ssgFinder);
-        ClientProxyTrustManager trustManager = new ClientProxyTrustManager(ssgFinder);
+        ClientProxyKeyManager keyManager = getKeyManager();
+        ClientProxyTrustManager trustManager = getTrustManager();
         SSLContext sslContext = SSLContext.getInstance("SSL", "SunJSSE");
         sslContext.init(new X509KeyManager[] {keyManager},
                         new X509TrustManager[] {trustManager},
