@@ -391,7 +391,7 @@
     <target name="db.properties.mysql" if="db.mysql">
         <echo>Setting database properties for MySQL...</echo>
         <property name="database.driver" value="${my.database.driver}"/>
-        <property name="database.connection.url" value="${my.database.connection.url}"/>
+        <property name="database.url" value="${my.database.url}"/>
         <property name="database.user" value="${my.database.user}"/>
         <property name="database.password" value="${my.database.password}"/>
     </target>
@@ -399,7 +399,7 @@
     <target name="db.properties.postgres" if="db.postgres">
         <echo>Setting database properties for PostgreSQL...</echo>
         <property name="database.driver" value="${pg.database.driver}"/>
-        <property name="database.connection.url" value="${pg.database.connection.url}"/>
+        <property name="database.url" value="${pg.database.url}"/>
         <property name="database.user" value="${pg.database.user}"/>
         <property name="database.password" value="${pg.database.password}"/>
     </target>
@@ -411,7 +411,7 @@
     <target name="configure_properties" unless="dist.build" depends="db.properties">
 
         <!--
-        <echo message="The database url is '${database.connection.url}'"/>
+        <echo message="The database url is '${database.url}'"/>
         <echo message="The database url is '${database.user}'"/>
         <echo message="The database url is '${database.password}'"/>
         -->
@@ -419,7 +419,7 @@
         <replace file="${build.classes}/hibernate.properties"
             token="DB_DRIVER" value="${database.driver}"/>
         <replace file="${build.classes}/hibernate.properties"
-            token="DB_URL" value="${database.connection.url}"/>
+            token="DB_URL" value="${database.url}"/>
         <replace file="${build.classes}/hibernate.properties"
             token="DB_USER" value="${database.user}"/>
         <replace file="${build.classes}/hibernate.properties"
