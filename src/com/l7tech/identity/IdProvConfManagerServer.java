@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.logging.Level;
 
 /**
  * Layer 7 Technologies, inc.
@@ -58,6 +59,35 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         IdentityProviderConfig conf = findByPrimaryKey(oid);
         if (conf == null) return null;
         return IdentityProviderFactory.makeProvider(conf);
+    }
+
+    public void test(IdentityProviderConfig identityProviderConfig)
+            throws InvalidIdProviderCfgException {
+        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL ) {
+            if (identityProviderConfig.getOid() != INTERNALPROVIDER_SPECIAL_OID) {
+                logger.warning("Testing an internal id provider with no good oid. " +
+                        "Throwing InvalidIdProviderCfgException");
+                throw new InvalidIdProviderCfgException("This internal ID provider config" +
+                        "is not valid.");
+            }
+        } else if (identityProviderConfig.type() == IdentityProviderType.LDAP ) {
+            Collection res = null;
+            try {
+                // construct temp provider
+                LdapIdentityProviderServer tmpProvider = new LdapIdentityProviderServer();
+                tmpProvider.initialize(identityProviderConfig);
+                res = tmpProvider.getUserManager().findAllHeaders();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Cannot list users from this tmp provider", e);
+                throw new InvalidIdProviderCfgException("This LDAP id provider config is not " +
+                        "valid, the directory is not responding or the directory has no entries.", e);
+            }
+            if (res == null || res.size() < 1) {
+                logger.log(Level.SEVERE, "Listing users from this tmp provider yeilded no results.");
+                throw new InvalidIdProviderCfgException("This LDAP id provider config is not " +
+                        "valid, the directory is not responding or the directory has no entries.");
+            }
+        }
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {

@@ -22,4 +22,14 @@ public interface IdentityProviderConfigManager extends EntityManager {
      * @throws FindException if there was an persistence error
      */
     IdentityProvider getIdentityProvider(long oid) throws FindException;
+
+    /**
+     * Allows the administrator to test the validity of a new IPC before saving
+     * it.
+     *
+     * If the IPC is not valid an InvalidIdProviderCfgException is thrown
+     * 
+     * @param identityProviderConfig the new config object (not yet saved)
+     */
+    void test(IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException;
 }

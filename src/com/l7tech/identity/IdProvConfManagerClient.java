@@ -92,6 +92,10 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
         return provider;
     }
 
+    public void test(IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException {
+        // test
+    }
+
     public Collection findAllHeaders() throws FindException {
         com.l7tech.objectmodel.EntityHeader[] array = null;
         try {
