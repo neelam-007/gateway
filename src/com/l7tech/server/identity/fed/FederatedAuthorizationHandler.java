@@ -25,13 +25,9 @@ public class FederatedAuthorizationHandler {
     FederatedAuthorizationHandler( FederatedIdentityProvider provider, TrustedCertManager trustedCertManager,
                                    ClientCertManager clientCertManager, Set certOidSet ) {
         this.provider = provider;
-        this.userManager = (FederatedUserManager)provider.getUserManager();
-        this.groupManager = (FederatedGroupManager)provider.getGroupManager();
-
         this.trustedCertManager = trustedCertManager;
         this.clientCertManager = clientCertManager;
         this.certOidSet = certOidSet;
-
         this.providerConfig = (FederatedIdentityProviderConfig) provider.getConfig();
     }
 
@@ -51,11 +47,17 @@ public class FederatedAuthorizationHandler {
         }
     }
 
+    protected FederatedUserManager getUserManager() {
+        return (FederatedUserManager)provider.getUserManager();
+    }
+
+    protected FederatedGroupManager getGroupManager() {
+        return (FederatedGroupManager)provider.getGroupManager();
+    }
+
     protected final FederatedIdentityProvider provider;
     protected final TrustedCertManager trustedCertManager;
     protected final Set certOidSet;
     protected final FederatedIdentityProviderConfig providerConfig;
-    protected final FederatedUserManager userManager;
-    protected final FederatedGroupManager groupManager;
     protected final ClientCertManager clientCertManager;
 }

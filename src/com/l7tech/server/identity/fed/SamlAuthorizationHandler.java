@@ -145,7 +145,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             }
 
             try {
-                FederatedUser u = userManager.findBySubjectDN(certSubjectDn);
+                FederatedUser u = getUserManager().findBySubjectDN(certSubjectDn);
                 if (u == null) {
                     if (certOidSet.isEmpty()) return null; // Virtual groups not supported with no trusted certs
 

@@ -106,7 +106,7 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
             }
         }
 
-        FederatedUser u = userManager.findBySubjectDN(subjectDn);
+        FederatedUser u = getUserManager().findBySubjectDN(subjectDn);
         if (u == null) {
             if (certOidSet.isEmpty()) {
                 logger.fine("No Federated User with DN = '" + subjectDn + "' could be found, and virtual groups" +
