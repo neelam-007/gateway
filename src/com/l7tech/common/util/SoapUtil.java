@@ -227,8 +227,14 @@ public class SoapUtil {
             // if the body is there, get it so that the header can be inserted before it
             Element body = getBody(soapMsg);
             if (body == null) {
-                // Body is required in SOAP; this isn't a SOAP message.
-                return null;
+                // Body is required but it might have been encrypted
+                Element envelope = getEnvelope(soapMsg);
+                if ( envelope == null ) {
+                    // Not a SOAP message
+                    return null;
+                } else {
+                    return (Element)envelope.appendChild(header);
+                }
             } else
                 soapMsg.getDocumentElement().insertBefore(header, body);
             return header;
