@@ -37,10 +37,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
-import javax.wsdl.Binding;
-import javax.wsdl.BindingOperation;
-import javax.wsdl.Output;
-import javax.wsdl.WSDLException;
+import javax.wsdl.*;
 import javax.xml.soap.Name;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
@@ -86,7 +83,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private Wsdl serviceWsdl;
     private JScrollPane tableScrollPane;
     private JScrollPane treeScrollPane;
-    private JScrollPane messageViewerScrollPane;
     private SecuredMessagePartsTableModel securedMessagePartsTableModel;
     private SecuredMessagePartsTableModel memoTableModelEntireMessage;
     private SecuredMessagePartsTableModel memoTableModelMessageParts;
@@ -636,8 +632,11 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 Output output = bop.getOperation().getOutput();
                 if (output == null) continue;
                 javax.wsdl.Message message = output.getMessage();
-                if (outputName.equals(message.getQName().getLocalPart())) {
-                    return bop;
+                Map parts = message.getParts();
+                for (Iterator ip = parts.values().iterator(); ip.hasNext();) {
+                    Part part = (Part)ip.next();
+                    if (outputName.equals(part.getElementName().getLocalPart()))
+                        return bop;
                 }
             }
         }
