@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.RequestXpathAssertion;
 import org.jaxen.dom.DOMXPath;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -62,12 +63,39 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
 
                 List result = getDOMXpath().selectNodes(doc);
 
-                if ( result != null && result.size() > 0 ) {
-                    _logger.fine( "XPath pattern " + _data.getPattern() + " matched request" );
-                    return AssertionStatus.NONE;
-                } else {
-                    _logger.info( "XPath pattern " + _data.getPattern()  + " didn't match request!" );
+                String pattern = _data.getPattern();
+
+                if ( result == null || result.size() == 0 ) {
+                    _logger.info( "XPath pattern " + pattern  + " didn't match request!" );
                     return AssertionStatus.FALSIFIED;
+                } else {
+                    Object o = result.get(0);
+                    if ( o instanceof Boolean ) {
+                        if ( ((Boolean)o).booleanValue() ) {
+                            _logger.fine( "XPath pattern " + pattern + " returned true" );
+                            return AssertionStatus.NONE;
+                        } else {
+                            _logger.info( "XPath pattern " + pattern + " returned false" );
+                            return AssertionStatus.FALSIFIED;
+                        }
+                    } else if ( o instanceof Node ) {
+                        Node n = (Node)o;
+                        int type = n.getNodeType();
+                        switch( type ) {
+                            case Node.TEXT_NODE:
+                                _logger.fine( "XPath pattern " + pattern + " found a text node '" + n.getNodeValue() + "'" );
+                                return AssertionStatus.NONE;
+                            case Node.ELEMENT_NODE:
+                                _logger.fine( "XPath pattern " + pattern + " found an element '" + n.getNodeName() + "'" );
+                                return AssertionStatus.NONE;
+                            default:
+                                _logger.fine( "XPath pattern " + pattern + " found some other node '" + n.toString() + "'" );
+                                return AssertionStatus.NONE;
+                        }
+                    } else {
+                        _logger.fine( "XPath pattern " + pattern + " matched request" );
+                        return AssertionStatus.NONE;
+                    }
                 }
             } catch (SAXException e) {
                 _logger.log( Level.WARNING, "Caught SAXException during XPath query", e );
