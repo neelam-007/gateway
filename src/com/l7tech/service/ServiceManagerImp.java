@@ -51,6 +51,8 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                     ServiceCache.getInstance().cache(service);
                 }
             }
+            // make sure the integrity check is running
+            ServiceCache.getInstance().initiateIntegrityCheckProcess();
         } catch (InterruptedException e) {
             throw new ObjectModelException("exception building cache", e);
         } catch (IOException e) {
