@@ -7,6 +7,7 @@
 package com.l7tech.service;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.message.Request;
@@ -27,13 +28,14 @@ import org.apache.log4j.Category;
  * @author alex
  */
 public class PublishedService extends NamedEntityImp {
-    public synchronized Assertion rootAssertion() {
-        if ( _rootAssertion == null )
-            try {
-                _rootAssertion = WspReader.parse( getPolicyXml() );
-            } catch (IOException e) {
-                throw new IllegalStateException("Expected policy XML; found (wrong kind of) gibberish");
-            }
+    public synchronized Assertion rootAssertion() throws IOException {
+        String policyXml = getPolicyXml();
+        if ( policyXml == null ) {
+            return new TrueAssertion();
+        } else {
+            if ( _rootAssertion == null ) _rootAssertion = WspReader.parse( policyXml );
+        }
+
         return _rootAssertion;
     }
 
@@ -109,9 +111,13 @@ public class PublishedService extends NamedEntityImp {
                 if ( ports == null ) continue;
 
                 Iterator portKeys = ports.keySet().iterator();
+                String portKey;
                 if ( portKeys.hasNext() ) {
                     numPorts++;
-                    if ( wsdlPort == null ) wsdlPort = (Port)portKeys.next();
+                    if ( wsdlPort == null ) {
+                        portKey = (String)portKeys.next();
+                        wsdlPort = (Port)ports.get(portKey);
+                    }
                 }
                 if ( numPorts > 1 ) _log.warn( "WSDL " + getWsdlUrl() + " has more than one port, used the first." );
             }
