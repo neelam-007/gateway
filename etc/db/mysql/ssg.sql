@@ -412,7 +412,7 @@ CREATE TABLE audit_message (
   KEY idx_client_address (client_address),
   KEY idx_service_oid (service_oid),
   KEY idx_provider_oid (provider_oid),
-  KEY idx_user_id (user_id),
+  KEY idx_user_id (user_id)
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS audit_system;
