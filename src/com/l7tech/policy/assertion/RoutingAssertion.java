@@ -32,11 +32,11 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 100; // Flagrantly in contravention of RFC2616!
 
     public RoutingAssertion() {
-        this(null, null, null, null, -1);
+        this(null, null, null, null );
     }
 
     public RoutingAssertion(String protectedServiceUrl) {
-        this(protectedServiceUrl, null, null, null, -1);
+        this(protectedServiceUrl, null, null, null );
     }
 
 
@@ -62,6 +62,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         _maxConnections = maxConnections;
         _connectionManager = new MultiThreadedHttpConnectionManager();
         _connectionManager.setMaxConnectionsPerHost( maxConnections );
+        _connectionManager.setMaxTotalConnections( maxConnections * 10 );
     }
 
     public Object clone() throws CloneNotSupportedException {
@@ -75,7 +76,10 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
 
     public void setMaxConnections( int maxConnections ) {
         _maxConnections = maxConnections;
-        if ( _connectionManager != null ) _connectionManager.setMaxConnectionsPerHost( maxConnections );
+        if ( _connectionManager != null ) {
+            _connectionManager.setMaxConnectionsPerHost( maxConnections );
+            _connectionManager.setMaxTotalConnections( maxConnections * 10 );
+        }
     }
 
     public String getLogin() {
