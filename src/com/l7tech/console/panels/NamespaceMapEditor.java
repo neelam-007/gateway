@@ -6,7 +6,9 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.util.Map;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * A dialog that lets the administrator specify a list of namespaces with corresponding
@@ -28,9 +30,29 @@ public class NamespaceMapEditor extends JDialog {
     private JButton helpButton;
     private JButton cancelButton;
 
-    public NamespaceMapEditor(Frame owner) {
+    private java.util.List prefixes = new ArrayList();
+    private java.util.List namespaces = new ArrayList();
+    boolean cancelled = false;
+
+    public NamespaceMapEditor(Frame owner, Map predefinedNamespaces) {
         super(owner, true);
+        if (predefinedNamespaces != null) {
+            prefixes.addAll(predefinedNamespaces.keySet());
+            namespaces.addAll(predefinedNamespaces.values());
+        }
         initialize();
+    }
+
+    /**
+     * @return null if the dialog was canceled, otherwise a map with the namespaces.
+     */
+    public Map newNSMap() {
+        if (cancelled) return null;
+        Map output = new HashMap();
+        for (int i = 0; i < prefixes.size(); i++) {
+            output.put(prefixes.get(i), namespaces.get(i));
+        }
+        return output;
     }
 
     private void initialize() {
@@ -119,10 +141,24 @@ public class NamespaceMapEditor extends JDialog {
         if (prefixes.contains(grabber.prefix)) {
             JOptionPane.showMessageDialog(addButton, "The prefix " + grabber.prefix + " is already specified.");
             return;
+        } else if (grabber.prefix.indexOf("=") >= 0 ||
+                   grabber.prefix.indexOf("/") >= 0 ||
+                   grabber.prefix.indexOf("<") >= 0 ||
+                   grabber.prefix.indexOf(">") >= 0 ||
+                   grabber.prefix.indexOf(":") >= 0 ||
+                   grabber.prefix.indexOf("?") >= 0 ||
+                   grabber.prefix.indexOf("!") >= 0 ||
+                   grabber.prefix.indexOf("\"") >= 0) {
+            JOptionPane.showMessageDialog(addButton, grabber.prefix + " is not a valid namespace prefix value.");
+            return;
         }
 
         if (namespaces.contains(grabber.nsuri)) {
             JOptionPane.showMessageDialog(addButton, "The namespace " + grabber.nsuri + " is already specified.");
+            return;
+        } else if (grabber.nsuri.indexOf("\'") >= 0 ||
+                   grabber.nsuri.indexOf("\"") >= 0) {
+            JOptionPane.showMessageDialog(addButton, grabber.nsuri + " is not a valid namespace value.");
             return;
         }
         prefixes.add(grabber.prefix);
@@ -155,11 +191,11 @@ public class NamespaceMapEditor extends JDialog {
     }
 
     private void ok() {
-        // todo
-        cancel();
+        NamespaceMapEditor.this.dispose();
     }
 
     private void cancel() {
+        cancelled = true;
         NamespaceMapEditor.this.dispose();
     }
 
@@ -169,12 +205,9 @@ public class NamespaceMapEditor extends JDialog {
 
     public static void main(String[] args) {
         // test the dlg
-        NamespaceMapEditor blah = new NamespaceMapEditor(null);
+        NamespaceMapEditor blah = new NamespaceMapEditor(null, null);
         blah.pack();
         blah.show();
         System.exit(0);
     }
-
-    private java.util.List prefixes = new ArrayList();
-    private java.util.List namespaces = new ArrayList();
 }
