@@ -43,6 +43,17 @@ public class LdapIdentityProviderTest extends TestCase {
         return msadTemplate;
     }
 
+    private LdapIdentityProviderConfig getConfigForOracle() throws IOException {
+        LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
+        LdapIdentityProviderConfig orclTemplate = templateManager.getTemplate("Oracle");
+        //orclTemplate.setLdapUrl("ldap://localhost:3899");
+        orclTemplate.setLdapUrl("ldap://hugh.l7tech.com:389");
+        orclTemplate.setSearchBase("dc=l7tech,dc=com");
+        orclTemplate.setBindDN("cn=orcladmin");
+        orclTemplate.setBindPasswd("7layer");
+        return orclTemplate;
+    }
+
     private LdapIdentityProvider getSpockProvider() throws IOException {
         LdapIdentityProvider spock =  new LdapIdentityProvider();
         spock.initialize(getConfigForSpock());
@@ -53,6 +64,12 @@ public class LdapIdentityProviderTest extends TestCase {
         LdapIdentityProvider spock =  new LdapIdentityProvider();
         spock.initialize(getConfigForMSAD());
         return spock;
+    }
+
+    private LdapIdentityProvider getOracleProvider() throws IOException {
+        LdapIdentityProvider orcl =  new LdapIdentityProvider();
+        orcl.initialize(getConfigForOracle());
+        return orcl;
     }
 
     public void testGetUsers() throws Exception {
@@ -105,7 +122,8 @@ public class LdapIdentityProviderTest extends TestCase {
         LdapIdentityProviderTest me = new LdapIdentityProviderTest();
 
         //me.localProvider = me.getSpockProvider();
-        me.localProvider = me.getMSADProvider();
+        //me.localProvider = me.getMSADProvider();
+        me.localProvider = me.getOracleProvider();
 
         me.testAuthenticate();
         me.testGetUsers();
