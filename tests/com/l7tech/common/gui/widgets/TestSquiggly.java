@@ -9,6 +9,7 @@ package com.l7tech.common.gui.widgets;
 import com.l7tech.common.gui.widgets.SquigglyTextField;
 
 import javax.swing.JFrame;
+import javax.swing.JTextField;
 
 /**
  * @author alex
@@ -19,6 +20,7 @@ public class TestSquiggly extends JFrame {
         super( "Test squiggly" );
         setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
         SquigglyTextField text = new SquigglyTextField(80);
+        text.setSquiggle(5, SquigglyTextField.ALL);
         getContentPane().add(text);
         pack();
         show();

@@ -35,29 +35,74 @@ public class SquigglyTextField extends JTextField {
         super(doc, text, columns);
     }
 
+    public synchronized int getSquiggleBegin() {
+        return _squiggleBegin;
+    }
+
+    public synchronized int getSquiggleEnd() {
+        return _squiggleEnd;
+    }
+
+    public synchronized void setSquiggle( int begin, int end ) {
+        _squiggleBegin = begin;
+        _squiggleEnd = end;
+    }
+
+    public synchronized void setSquiggleAll() {
+        _squiggleBegin = ALL;
+        _squiggleEnd = ALL;
+    }
+
+    public synchronized void setSquiggleNone() {
+        _squiggleBegin = NONE;
+        _squiggleEnd = NONE;
+    }
+
     public void paint( Graphics g ) {
         super.paint(g);
+
+        int begin;
+        int end;
+        synchronized( this ) {
+            begin = _squiggleBegin;
+            end = _squiggleEnd;
+        }
+
+        if ( begin == NONE || end == NONE ) return;
+
         g.setColor( Color.RED );
 
         int ya = getHeight()-7;
         int xb = 0;
         int xe = getWidth();
+
+        String text = getText();
+        int len = text.length();
+
+        if ( begin > len ) return;
+
         try {
-            Rectangle firstChar = modelToView(0);
+            Rectangle firstChar = modelToView( begin == ALL ? 0 : begin );
             ya = (int)(firstChar.getY() + firstChar.getHeight());
             xb = (int)firstChar.getX();
-            Rectangle lastChar = modelToView(getText().length());
+            Rectangle lastChar = modelToView( _squiggleEnd == ALL || _squiggleEnd > len ? len : _squiggleEnd );
             xe = (int)(lastChar.getX()+lastChar.getWidth());
         } catch (BadLocationException e) {
         }
-        int oldx = 0;
+
+        int oldx = xb;
         int oldy = ya;
         for ( int x = xb; x < xe; x++ ) {
-            int y = (int)(Math.sin(x/0.8) * 2.2)+ya;
+            int y = (int)(0.5 + ya + (Math.sin(x/0.8) * 2) );
             g.drawLine( oldx, oldy, x, y );
             oldx = x;
             oldy = y;
         }
     }
 
+    private int _squiggleBegin = NONE;
+    private int _squiggleEnd = NONE;
+
+    public static final int NONE = -2;
+    public static final int ALL = -1;
 }
