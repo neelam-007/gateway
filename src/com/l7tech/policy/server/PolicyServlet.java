@@ -330,7 +330,6 @@ public class PolicyServlet extends HttpServlet {
             return null;
         }
 
-        // TODO: Realm?
         ServerHttpBasic httpBasic = new ServerHttpBasic( new HttpBasic() );
         PrincipalCredentials creds = null;
         try {
