@@ -22,7 +22,6 @@ import org.springframework.transaction.support.*;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
