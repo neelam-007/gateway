@@ -18,8 +18,6 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.Random;
 
-import cirrus.hibernate.ObjectNotFoundException;
-
 /**
  * @author alex
  */
