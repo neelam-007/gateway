@@ -341,7 +341,7 @@ public class Wsdl {
         Map namespaceMap = definition.getNamespaces();
         String tnsUri = definition.getTargetNamespace();
 
-        Map result = new HashMap();
+        SortedMap result = new TreeMap();
         boolean soapenv = false;
         int ns = 1;
         for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
