@@ -2,10 +2,7 @@ package com.l7tech.proxy;
 
 import org.apache.axis.AxisEngine;
 import org.apache.axis.encoding.DeserializationContextImpl;
-import org.apache.axis.message.SOAPBody;
-import org.apache.axis.message.SOAPEnvelope;
-import org.apache.axis.message.SOAPHandler;
-import org.apache.axis.message.SOAPHeader;
+import org.apache.axis.message.*;
 import org.apache.log4j.Category;
 import org.mortbay.http.*;
 import org.mortbay.http.handler.AbstractHttpHandler;
@@ -15,8 +12,6 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.soap.SOAPException;
 import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.net.URL;
 
 /**
  * A "test" Ssg that can be controlled programmatically.  Used to test the Client Proxy.
@@ -37,7 +32,7 @@ public class SsgFaker {
     private String ssgUrl = "http://localhost:" + localPort + "/" + localEndpoint;
     private String sslUrl = "https://localhost:" + sslPort + "/" + localEndpoint;
     private boolean destroyed = false;
-    private static final String KEYSTORE = "com/l7tech/proxy/resources/ssgfaker-sv.keystore";
+    //private static final String KEYSTORE = "com/l7tech/proxy/resources/ssgfaker-sv.keystore";
 
     /**
      * Create an SsgFaker with default settings.
@@ -60,9 +55,9 @@ public class SsgFaker {
         context.addHandler(requestHandler);
         httpServer.addContext(context);
 
-        URL ksUrl = getClass().getClassLoader().getResource(KEYSTORE);
-        if (ksUrl == null)
-            throw new FileNotFoundException("Can't find keystore file: " + KEYSTORE);
+        //URL ksUrl = getClass().getClassLoader().getResource(KEYSTORE);
+        //if (ksUrl == null)
+        //    throw new FileNotFoundException("Can't find keystore file: " + KEYSTORE);
 
         // Set up HTTP listener
         SocketListener socketListener = new SocketListener();
@@ -72,14 +67,14 @@ public class SsgFaker {
         httpServer.addListener(socketListener);
 
         // Set up SSL listener
-        SunJsseListener sslListener = new SunJsseListener();
-        sslListener.setMaxThreads(maxThreads);
-        sslListener.setMinThreads(minThreads);
-        sslListener.setPort(sslPort);
-        sslListener.setKeystore(ksUrl.getPath());
-        sslListener.setKeyPassword("password");
-        sslListener.setPassword("password");
-        httpServer.addListener(sslListener);
+        //SunJsseListener sslListener = new SunJsseListener();
+        //sslListener.setMaxThreads(maxThreads);
+        //sslListener.setMinThreads(minThreads);
+        //sslListener.setPort(sslPort);
+        //sslListener.setKeystore(ksUrl.getPath());
+        //sslListener.setKeyPassword("password");
+        //sslListener.setPassword("password");
+        //httpServer.addListener(sslListener);
 
         try {
             httpServer.start();
