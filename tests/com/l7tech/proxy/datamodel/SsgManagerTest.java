@@ -160,10 +160,10 @@ public class SsgManagerTest extends TestCase {
         final String SSG2P2_SA = "http://foaaao.bar.baz/afdsasdf/fdsa";
         final String SSG2P1_URI = "http://asdf.fasd.awgq/";
         final String SSG2P1_SA = "http://agarg.geqw.qrgq";
-        SSG1.attachPolicy(SSG1P1_URI, SSG1P1_SA, policy1);
-        SSG1.attachPolicy(SSG1P2_URI, SSG1P2_SA, policy2);
-        SSG2.attachPolicy(SSG2P2_URI, SSG2P2_SA, policy2);
-        SSG2.attachPolicy(SSG2P1_URI, SSG2P1_SA, policy1);
+        SSG1.attachPolicy(SSG1P1_URI, SSG1P1_SA, new Policy(policy1, "test"));
+        SSG1.attachPolicy(SSG1P2_URI, SSG1P2_SA, new Policy(policy2, "test"));
+        SSG2.attachPolicy(SSG2P2_URI, SSG2P2_SA, new Policy(policy2, "test"));
+        SSG2.attachPolicy(SSG2P1_URI, SSG2P1_SA, new Policy(policy1, "test"));
 
         sm.add(SSG1);
         sm.add(SSG2);

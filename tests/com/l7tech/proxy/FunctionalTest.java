@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.proxy.datamodel.PolicyManagerStub;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
+import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.processor.MessageProcessor;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -104,7 +105,7 @@ public class FunctionalTest extends TestCase {
 
         // Make a do-nothing PolicyManager
         policyManager = new PolicyManagerStub();
-        policyManager.setPolicy(new TrueAssertion());
+        policyManager.setPolicy(new Policy(new TrueAssertion(), "testpolicy"));
         MessageProcessor messageProcessor = new MessageProcessor(policyManager);
 
         // Start the client proxy
@@ -146,7 +147,7 @@ public class FunctionalTest extends TestCase {
         String payload = "ping 1 2 3";
         SOAPEnvelope reqEnvelope = makePingRequest(payload);
 
-        policyManager.setPolicy(new TrueAssertion());
+        policyManager.setPolicy(new Policy(new TrueAssertion(), "testpolicy"));
         ssgFake.setSsgFile("/soap/ssg");
 
         Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
@@ -163,7 +164,7 @@ public class FunctionalTest extends TestCase {
         String payload = "ping 1 2 3";
         SOAPEnvelope reqEnvelope = makePingRequest(payload);
 
-        policyManager.setPolicy(new HttpBasic());
+        policyManager.setPolicy(new Policy(new HttpBasic(), "testpolicy"));
         URL url = new URL(ssgUrl);
         ssgFake.setSsgAddress(url.getHost());
         ssgFake.setSsgPort(url.getPort());
@@ -203,7 +204,7 @@ public class FunctionalTest extends TestCase {
     }
 
     public void testSslBasicAuthPing() throws SOAPException, RemoteException, MalformedURLException {
-        /* not working atm
+        /* TODO not working atm
         String payload = "ping 1 2 3";
         SOAPEnvelope reqEnvelope = makePingRequest(payload);
 

@@ -28,7 +28,7 @@ public interface PolicyManager {
      * @param request the request whos policy is to be found
      * @return The root of policy Assertion tree.
      */
-    ClientAssertion getClientPolicy(PendingRequest request);
+    Policy getPolicy(PendingRequest request);
 
     /**
      * Notify the PolicyManager that a policy may be out-of-date.

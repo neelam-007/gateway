@@ -1,9 +1,6 @@
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.policy.ClientPolicyFactory;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.xmlenc.Session;
 import org.apache.log4j.Category;
 
@@ -45,7 +42,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     // they do not use the getFoo() / setFoo() naming convention in their accessors and mutators.
     private transient char[] password = null;
     private transient HashMap policyMap = new HashMap(); /* Policy cache */
-    private transient HashMap clientPolicyMap = new HashMap(); /* Client policy cache */
     private transient boolean promptForUsernameAndPassword = true;
     private transient KeyStore keyStore = null;
     private transient Boolean haveClientCert = null;
@@ -100,7 +96,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     public Object clone() throws CloneNotSupportedException {
         Ssg ssg = (Ssg)super.clone();
         ssg.policyMap = (HashMap)this.policyMap.clone();
-        ssg.clientPolicyMap = (HashMap)this.clientPolicyMap.clone();
         return ssg;
     }
 
@@ -143,7 +138,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * @param policy
      * @throws IllegalArgumentException if neither uri nor soapAction is specified, or policy is null
      */
-    public synchronized void attachPolicy(String uri, String soapAction, Assertion policy )
+    public synchronized void attachPolicy(String uri, String soapAction, Policy policy )
             throws IllegalArgumentException
     {
         if (uri == null)
@@ -160,10 +155,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * @param key
      * @param policy
      */
-    public synchronized void attachPolicy(PolicyAttachmentKey key, Assertion policy ) {
+    public synchronized void attachPolicy(PolicyAttachmentKey key, Policy policy ) {
         policyMap.put(key, policy);
-        ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
-        clientPolicyMap.put( key, clientPolicy );
     }
 
     /**
@@ -171,17 +164,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * @param policyAttachmentKey the URI/SoapAction/etc to look up
      * @return the associated policy, or null if no such policy was found
      */
-    public synchronized Assertion lookupPolicy(PolicyAttachmentKey policyAttachmentKey) {
-        return (Assertion)policyMap.get(policyAttachmentKey);
-    }
-
-    /**
-     * Look up a clientPolicy by PolicyAttachmentKey.
-     * @param policyAttachmentKey the URI/SoapAction/etc to look up
-     * @return the associated policy, or null if no such policy was found
-     */
-    public synchronized ClientAssertion lookupClientPolicy(PolicyAttachmentKey policyAttachmentKey) {
-        return (ClientAssertion)clientPolicyMap.get(policyAttachmentKey);
+    public synchronized Policy lookupPolicy(PolicyAttachmentKey policyAttachmentKey) {
+        return (Policy)policyMap.get(policyAttachmentKey);
     }
 
     /**
@@ -190,20 +174,9 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * @param soapAction the contents of the SOAPAction HTTP header.
      * @return A policy if found, or null
      */
-    public synchronized Assertion lookupPolicy(String uri, String soapAction) {
+    public synchronized Policy lookupPolicy(String uri, String soapAction) {
         return lookupPolicy(new PolicyAttachmentKey(uri, soapAction));
     }
-
-    /**
-     * Look up a clientPolicy by URI and SOAPAction.
-     * @param uri The namespace of the first element within the SOAP message body.
-     * @param soapAction the contents of the SOAPAction HTTP header.
-     * @return A policy if found, or null
-     */
-    public synchronized ClientAssertion lookupClientPolicy(String uri, String soapAction) {
-        return lookupClientPolicy( new PolicyAttachmentKey(uri, soapAction) );
-    }
-
 
     /**
      * Get the set of PolicyAttachmentKey that we currently know about.
@@ -220,7 +193,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      */
     public synchronized void clearPolicies() {
         policyMap.clear();
-        clientPolicyMap.clear();
     }
 
     /* generated getters and setters */

@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
@@ -23,7 +24,6 @@ import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.ssl.ClientProxySslException;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
@@ -92,9 +92,9 @@ public class MessageProcessor {
         for (int attempts = 0; attempts < MAX_TRIES; ++attempts) {
             try {
                 try {
-                    ClientAssertion rootassertion = enforcePolicy(req);
-                    SsgResponse res = obtainResponse(req);
-                    undecorateResponse(req, res, rootassertion);
+                    Policy appliedPolicy = enforcePolicy(req);
+                    SsgResponse res = obtainResponse(req, appliedPolicy);
+                    undecorateResponse(req, res, appliedPolicy);
                     return res;
                 } catch (SSLException e) {
 
@@ -141,14 +141,17 @@ public class MessageProcessor {
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException   if the user declined to provide a username and password
      * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
-    private ClientAssertion enforcePolicy(PendingRequest req)
+    private Policy enforcePolicy(PendingRequest req)
             throws PolicyAssertionException, OperationCanceledException,
             ServerCertificateUntrustedException, BadCredentialsException
     {
-        ClientAssertion policy = policyManager.getClientPolicy(req);
+        Policy policy = policyManager.getPolicy(req);
+        if (policy == null)
+            return null;
+
         AssertionStatus result;
         try {
-            result = policy.decorateRequest(req);
+            result = policy.getClientAssertion().decorateRequest(req);
         } catch (PolicyAssertionException e) {
             if (e.getCause() instanceof BadCredentialsException || e.getCause() instanceof UnrecoverableKeyException)
                 throw new BadCredentialsException(e);
@@ -165,15 +168,15 @@ public class MessageProcessor {
      *
      * @param req
      * @param res
-     * @param rootassertion
+     * @param appliedPolicy                 the policy that was applied to the original request.
      * @throws PolicyAssertionException     if the policy evaluation could not be completed due to a serious error
      */
-    private void undecorateResponse(PendingRequest req, SsgResponse res, ClientAssertion rootassertion)
+    private void undecorateResponse(PendingRequest req, SsgResponse res, Policy appliedPolicy)
             throws PolicyAssertionException, OperationCanceledException,
                    ServerCertificateUntrustedException, BadCredentialsException
     {
-        log.info("undecorating response");
-        AssertionStatus result = rootassertion.unDecorateReply(req, res);
+        log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
+        AssertionStatus result = appliedPolicy.getClientAssertion().unDecorateReply(req, res);
         if (result != AssertionStatus.NONE)
             log.warn("Response policy processing failed with status " + result + "; continuing anyway");
     }
@@ -229,7 +232,7 @@ public class MessageProcessor {
      *                                    the keystore.
      * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException if the SSG rejected our SSG username and/or password.
      */
-    private SsgResponse obtainResponse(PendingRequest req)
+    private SsgResponse obtainResponse(PendingRequest req, Policy policy)
             throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
             OperationCanceledException, ClientCertificateException, BadCredentialsException
     {
@@ -250,6 +253,8 @@ public class MessageProcessor {
             if (req.getSession() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME,
                                             Long.toString(req.getSession().getId()));
+            if (policy != null)
+                postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
             String postBody = XmlUtil.documentToString(req.getSoapEnvelopeDirectly());
             //log.info("Posting to SSG: " + postBody);

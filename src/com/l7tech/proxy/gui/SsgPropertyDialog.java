@@ -4,8 +4,8 @@ import com.l7tech.common.gui.CertificatePanel;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
@@ -196,11 +196,11 @@ public class SsgPropertyDialog extends PropertyDialog {
 
     private void displaySelectedPolicy() {
         // do this?    if (e.getValueIsAdjusting()) return;
-        Assertion policy = null;
+        Policy policy = null;
         int row = policyTable.getSelectedRow();
         if (row >= 0 && row < displayPolicies.size())
             policy = ssg.lookupPolicy((PolicyAttachmentKey)displayPolicies.get(row));
-        policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy));
+        policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy.getAssertion()));
     }
 
     /** Create panel controls.  Should be called only from a constructor. */

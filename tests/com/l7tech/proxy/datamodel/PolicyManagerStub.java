@@ -6,10 +6,7 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.policy.ClientPolicyFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -21,24 +18,18 @@ import java.net.URL;
  * Time: 2:50:49 PM
  */
 public class PolicyManagerStub implements PolicyManager {
-    private Assertion policy;
-    private ClientAssertion clientPolicy;
+    private Policy policy;
 
-    public void setPolicy(Assertion policy) {
+    public void setPolicy(Policy policy) {
         this.policy = policy;
-        this.clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
     }
 
-    public Assertion getPolicy() {
+    public Policy getPolicy() {
         return policy;
     }
 
-    public Assertion getPolicy(PendingRequest request) {
+    public Policy getPolicy(PendingRequest request) {
         return policy;
-    }
-
-    public ClientAssertion getClientPolicy(PendingRequest request) {
-        return clientPolicy;
     }
 
     public void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException {

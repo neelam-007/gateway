@@ -6,15 +6,13 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
@@ -23,8 +21,8 @@ import org.apache.log4j.Category;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * The ClientProxy's default PolicyManager.  Loads policies from the SSG on-demand
@@ -35,7 +33,6 @@ import java.net.MalformedURLException;
 public class PolicyManagerImpl implements PolicyManager {
     private static final Category log = Category.getInstance(PolicyManagerImpl.class);
     private static final PolicyManagerImpl INSTANCE = new PolicyManagerImpl();
-    private static final ClientAssertion nullClientPolicy = new ClientTrueAssertion();
 
     private PolicyManagerImpl() {
     }
@@ -50,14 +47,14 @@ public class PolicyManagerImpl implements PolicyManager {
      * us to download a new policy.
      *
      * @param request the request whose policy is to be found
-     * @return The root of policy Assertion tree.
+     * @return The Policy we found, or null if we didn't find one.
      */
-    public ClientAssertion getClientPolicy(PendingRequest request) {
-        ClientAssertion policy = null;
+    public Policy getPolicy(PendingRequest request) {
+        Policy policy = null;
         if (policy == null && request.getSoapAction().length() > 0)
-            policy = request.getSsg().lookupClientPolicy(request.getUri(), request.getSoapAction());
+            policy = request.getSsg().lookupPolicy(request.getUri(), request.getSoapAction());
         log.info(policy != null ? "Located policy for this request" : "No policy found for this request");
-        return policy == null ? nullClientPolicy : policy;
+        return policy;
     }
 
     /**
@@ -133,11 +130,15 @@ public class PolicyManagerImpl implements PolicyManager {
                 }
             }
 
+            Header versionHeader = getMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+            if (versionHeader == null)
+                throw new ConfigurationException("SSG failed to provide a " + SecureSpanConstants.HttpHeaders.POLICY_VERSION + " header");
+
             log.info("Policy download completed with HTTP status " + status);
-            Assertion policy = WspReader.parse(getMethod.getResponseBodyAsStream());
+            Assertion assertion = WspReader.parse(getMethod.getResponseBodyAsStream());
             PolicyAttachmentKey pak = new PolicyAttachmentKey(request.getUri(), request.getSoapAction());
-            request.getSsg().attachPolicy(pak, policy);
-            request.getRequestInterceptor().onPolicyUpdated(request.getSsg(), pak, policy);
+            request.getSsg().attachPolicy(pak, new Policy(assertion, versionHeader.getValue()));
+            request.getRequestInterceptor().onPolicyUpdated(request.getSsg(), pak, assertion);
             log.info("New policy saved successfully");
         } catch (IllegalArgumentException e) {
             throw new ConfigurationException(
