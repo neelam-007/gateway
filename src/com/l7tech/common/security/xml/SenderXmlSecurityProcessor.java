@@ -100,7 +100,14 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                         logger.warning(logmessage);
                         throw new SecurityProcessorException(message);
                     }
-                    element = (Element)nodes.get(0);
+                    Object o = nodes.get(0);
+                    if ( o instanceof Element ) {
+                        element = (Element)nodes.get(0);
+                    } else {
+                        final String message = "The XPath result is not an element '" + xpath.getExpression() + "'";
+                        logger.warning(message);
+                        throw new SecurityProcessorException(message);
+                    }
                 } else {
                     element = document.getDocumentElement();
                     envelopeProcessed = true; //signal to ignore everything else. Should scream if more lements exist?
