@@ -11,6 +11,7 @@ package com.l7tech.message;
  * @version $Revision$
  */
 public class TransportProtocol {
+    public static final TransportProtocol UNKNOWN = new TransportProtocol( -1, "unknown" );
     public static final TransportProtocol HTTP  = new TransportProtocol( 0, "http" );
     public static final TransportProtocol HTTPS = new TransportProtocol( 1, "https" );
 
