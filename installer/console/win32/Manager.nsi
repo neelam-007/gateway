@@ -138,7 +138,6 @@ Section "Uninstall"
   Delete "$INSTDIR\${MUI_PRODUCT}.exe"
   Delete "$INSTDIR\${MUI_PRODUCT}.ini"
   Delete "$INSTDIR\logging.properties"
-  File "logging.properties"
   Delete "$INSTDIR\Manager.jar"
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%JARFILE_DELETE_LINES%%%
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%INCLUDE_DELETE_LINES%%%
