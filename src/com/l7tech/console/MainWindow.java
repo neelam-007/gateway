@@ -445,9 +445,9 @@ public class MainWindow extends JFrame {
 
             newProviderSubMenu.setText("Create Identity Provider");
             newProviderSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/providers16.gif")));
-
-            newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
+           
             newProviderSubMenu.add(getNewProviderAction());
+            newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
         }
         return newProviderSubMenu;
     }
