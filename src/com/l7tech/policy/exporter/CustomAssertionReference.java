@@ -22,15 +22,24 @@ public class CustomAssertionReference extends ExternalReference {
     }
 
     public static CustomAssertionReference parseFromElement(Element el) throws InvalidDocumentFormatException {
-        // todo
-        return null;
+        // make sure passed element has correct name
+        if (!el.getLocalName().equals(REF_EL_NAME)) {
+            throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
+        }
+        CustomAssertionReference output = new CustomAssertionReference();
+        output.customAssertionName = getParamFromEl(el, ASSNAME_EL_NAME);
+        return output;
+    }
+
+    private CustomAssertionReference() {
+        super();
     }
 
     public void serializeToRefElement(Element referencesParentElement) {
-        Element refEl = referencesParentElement.getOwnerDocument().createElement("CustomAssertionReference");
+        Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, CustomAssertionReference.class.getName());
         referencesParentElement.appendChild(refEl);
-        Element nameEl = referencesParentElement.getOwnerDocument().createElement("CustomAssertionName");
+        Element nameEl = referencesParentElement.getOwnerDocument().createElement(ASSNAME_EL_NAME);
         if (customAssertionName != null) {
             Text txt = referencesParentElement.getOwnerDocument().createTextNode(customAssertionName);
             nameEl.appendChild(txt);
@@ -54,4 +63,6 @@ public class CustomAssertionReference extends ExternalReference {
     }
 
     private String customAssertionName;
+    public static final String REF_EL_NAME = "CustomAssertionReference";
+    public static final String ASSNAME_EL_NAME = "CustomAssertionName";
 }

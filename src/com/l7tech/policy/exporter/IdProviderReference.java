@@ -52,19 +52,32 @@ public class IdProviderReference extends ExternalReference {
     }
 
     public static IdProviderReference parseFromElement(Element el) throws InvalidDocumentFormatException {
-        // todo
-        return null;
+        // make sure passed element has correct name
+        if (!el.getLocalName().equals(REF_EL_NAME)) {
+            throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
+        }
+        IdProviderReference output = new IdProviderReference();
+        String val = getParamFromEl(el, OID_EL_NAME);
+        if (val != null) {
+            output.providerId = Long.parseLong(val);
+        }
+        output.idProviderConfProps = getParamFromEl(el, PROPS_EL_NAME);
+        return output;
+    }
+
+    private IdProviderReference() {
+        super();
     }
 
     public void serializeToRefElement(Element referencesParentElement) {
-        Element refEl = referencesParentElement.getOwnerDocument().createElement("IDProviderReference");
+        Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
         refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, IdProviderReference.class.getName());
         referencesParentElement.appendChild(refEl);
-        Element oidEl = referencesParentElement.getOwnerDocument().createElement("OID");
+        Element oidEl = referencesParentElement.getOwnerDocument().createElement(OID_EL_NAME);
         Text txt = referencesParentElement.getOwnerDocument().createTextNode(Long.toString(providerId));
         oidEl.appendChild(txt);
         refEl.appendChild(oidEl);
-        Element propsEl = referencesParentElement.getOwnerDocument().createElement("Props");
+        Element propsEl = referencesParentElement.getOwnerDocument().createElement(PROPS_EL_NAME);
         if (idProviderConfProps != null) {
             txt = referencesParentElement.getOwnerDocument().createTextNode(idProviderConfProps);
             propsEl.appendChild(txt);
@@ -103,4 +116,8 @@ public class IdProviderReference extends ExternalReference {
     private long providerId;
     private String idProviderConfProps;
     private final Logger logger = Logger.getLogger(IdProviderReference.class.getName());
+
+    public static final String REF_EL_NAME = "IDProviderReference";
+    public static final String PROPS_EL_NAME = "Props";
+    public static final String OID_EL_NAME = "OID";
 }

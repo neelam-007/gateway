@@ -3,12 +3,10 @@ package com.l7tech.policy.exporter;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
 import java.rmi.RemoteException;
@@ -67,17 +65,7 @@ public class JMSEndpointReference extends ExternalReference {
         output.queueFactoryUrl = getParamFromEl(el, QUEUE_EL_NAME);
         output.topicFactoryUrl = getParamFromEl(el, TOPIC_EL_NAME);
         output.destinationFactoryUrl = getParamFromEl(el, DESTINATION_EL_NAME);
-        return null;
-    }
-
-    private static String getParamFromEl(Element parent, String param) {
-        NodeList nodeList = parent.getElementsByTagName(param);
-        for (int i = 0; i < nodeList.getLength(); i++) {
-            Element node = (Element)nodeList.item(i);
-            String val = XmlUtil.getTextValue(node);
-            if (val != null && val.length() > 0) return val;
-        }
-        return null;
+        return output;
     }
 
     private JMSEndpointReference() {
