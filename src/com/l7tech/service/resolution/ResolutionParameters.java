@@ -40,6 +40,19 @@ public class ResolutionParameters implements Serializable {
         this.serviceid = serviceid;
     }
 
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ResolutionParameters)) return false;
+        ResolutionParameters theotherone = (ResolutionParameters)obj;
+        if (soapaction == null) {
+            if (soapaction != theotherone.getSoapaction()) return false;
+        } else if (!soapaction.equals(theotherone.getSoapaction())) return false;
+        if (urn == null) {
+            if (urn != theotherone.getUrn()) return false;
+        } else if (!urn.equals(theotherone.getUrn())) return false;
+        if (serviceid != theotherone.getServiceid()) return false;
+        return true;
+    }
+
     private String soapaction;
     private String urn;
     private long serviceid;
