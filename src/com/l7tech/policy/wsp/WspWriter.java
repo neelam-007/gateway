@@ -1,7 +1,12 @@
 package com.l7tech.policy.wsp;
 
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,10 +26,17 @@ import java.util.Map;
  */
 public class WspWriter {
     private OutputStream output;
-    private int indent = 0;
+    Document document;
 
     private WspWriter(OutputStream output) {
-        this.output = output;
+        try {
+            this.output = output;
+            this.document = XmlUtil.stringToDocument("<Policy xmlns=\"" + WspConstants.POLICY_NS + "\"/>");
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (SAXException e) {
+            throw new RuntimeException(e); // can't happen
+        }
     }
 
     /**
@@ -37,9 +49,8 @@ public class WspWriter {
      */
     public static void writePolicy(Assertion assertion, OutputStream output) throws IOException {
         WspWriter writer = new WspWriter(output);
-        writer.emitHeader();
         try {
-            writer.emitNode(assertion);
+            writer.emitNode(assertion, writer.document.getDocumentElement());
         } catch (StackOverflowError e) {
             throw new InvalidPolicyTreeException("Policy is too deeply nested to be processed");
         } catch (Exception e) {
@@ -47,7 +58,11 @@ public class WspWriter {
                 throw (IOException)e;
             throw new InvalidPolicyTreeException("Unable to serialize this policy tree", e);
         }
-        writer.emitFooter();
+        writer.writeToOutputStream();
+    }
+
+    private void writeToOutputStream() throws IOException {
+        XmlUtil.documentToOutputStream(document, output);
     }
 
     /**
@@ -70,54 +85,25 @@ public class WspWriter {
         return sw.toString();
     }
 
-    private void emitHeader() throws IOException {
-        output.write(("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                     "<Policy" +
-                     " xmlns=\"" + WspConstants.POLICY_NS + "\">\n"
-                     ).getBytes());
-        ++indent;
-    }
 
-    private void emitIndentedString(String what) throws IOException {
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < indent; ++i)
-            sb.append(" ");
-        sb.append(what);
-        output.write(sb.toString().getBytes());
-    }
-
-    private void emitTag(String tag) throws IOException {
-        emitIndentedString("<" + tag + ">\n");
-        indent++;
-    }
-
-    private void emitEndTag(String tag) throws IOException {
-        --indent;
-        emitIndentedString("</" + tag + ">\n");
-    }
-
-    private void emitEmptyTag(String tag, String parm, String value) throws IOException {
-        emitIndentedString("<" + tag + " " + parm + "=\"" + value + "\"/>\n");
-    }
-
-    private void emitCompositeAssertion(CompositeAssertion cass) throws IOException {
+    private void emitCompositeAssertion(CompositeAssertion cass, Node container) throws IOException {
         WspConstants.AssertionMapping mapping = WspConstants.findAssertionMappingByAssertion(WspConstants.supportedCompositeAssertions, cass);
         if (mapping == null)
             throw new InvalidPolicyTreeException("Invalid policy: unknown CompositeAssertion: " + cass.getClass());
         String tag = mapping.tag;
 
-        emitTag(tag);
+        Element element = document.createElement(tag);
+        container.appendChild(element);
         List kids = cass.getChildren();
         for (Iterator i = kids.iterator(); i.hasNext();) {
             Assertion kid = (Assertion) i.next();
-            emitNode(kid);
+            emitNode(kid, element);
         }
-        emitEndTag(tag);
     }
 
-    private void emitNode(Assertion assertion) throws IOException {
+    private void emitNode(Assertion assertion, Node container) throws IOException {
         if (assertion instanceof CompositeAssertion) {
-            emitCompositeAssertion((CompositeAssertion) assertion);
+            emitCompositeAssertion((CompositeAssertion) assertion, container);
             return;
         }
 
@@ -126,21 +112,18 @@ public class WspWriter {
             throw new InvalidPolicyTreeException("Unrecognized policy assertion type: " + assertion.getClass());
         String tag = mapping.tag;
 
-        emitTag(tag);
-        ++indent;
+        Element element = document.createElement(tag);
+        container.appendChild(element);
         try {
-            emitProperties(assertion);
+            emitProperties(assertion, element);
         } catch (InvocationTargetException e) {
             throw new InvalidPolicyTreeException("Unable to serialize this policy", e);
         } catch (IllegalAccessException e) {
             throw new InvalidPolicyTreeException("Unable to serialize this policy", e);
-        } finally {
-            --indent;
         }
-        emitEndTag(tag);
     }
 
-    private void emitProperties(Assertion assertion)
+    private void emitProperties(Assertion assertion, Element element)
             throws InvocationTargetException, IllegalAccessException, IOException
     {
         Class ac = assertion.getClass();
@@ -175,17 +158,15 @@ public class WspWriter {
                 throw new InvalidPolicyTreeException("Assertion " + assertion.getClass() + " has property \"" + parm + "\" with unsupported type " + returnType);
             String stype = tm.typeName;
             String svalue = tm.freezer.freeze(getter.invoke(assertion, new Object[0]));
+            Element parmElement = document.createElement(parm);
+            element.appendChild(parmElement);
             if (svalue == null) {
                 if (!WspConstants.isNullableType(tm.type))
                     throw new InvalidPolicyTreeException("Assertion " + assertion.getClass() + " has property \"" + parm + "\" which must't be null yet is");
-                emitEmptyTag(parm, stype + "Null", "null");
-            } else
-                emitEmptyTag(parm, stype, svalue);
+                parmElement.setAttribute(stype + "Null", "null");
+            } else {
+                parmElement.setAttribute(stype, svalue);
+            }
         }
-    }
-
-    private void emitFooter() throws IOException {
-        --indent;
-        output.write("</Policy>\n".getBytes());
     }
 }

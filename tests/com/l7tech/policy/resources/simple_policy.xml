@@ -1,71 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Policy xmlns="http://www.layer7tech.com/ws/policy">
- <ExactlyOne>
-  <All>
-   <TrueAssertion>
-   </TrueAssertion>
-   <OneOrMore>
-    <HttpBasic>
-      <Realm stringValueNull="null"/>
-    </HttpBasic>
-    <HttpClientCert>
-      <Realm stringValueNull="null"/>
-    </HttpClientCert>
-    <HttpDigest>
-      <NonceTimeout intValue="1800000"/>
-      <Realm stringValueNull="null"/>
-      <MaxNonceCount intValue="30"/>
-    </HttpDigest>
-    <WssBasic>
-    </WssBasic>
-    <WssDigest>
-    </WssDigest>
-    <All>
-    </All>
     <ExactlyOne>
+        <All>
+            <TrueAssertion/>
+            <OneOrMore>
+                <HttpBasic>
+                    <Realm stringValueNull="null"/>
+                </HttpBasic>
+                <HttpClientCert>
+                    <Realm stringValueNull="null"/>
+                </HttpClientCert>
+                <HttpDigest>
+                    <NonceTimeout intValue="1800000"/>
+                    <Realm stringValueNull="null"/>
+                    <MaxNonceCount intValue="30"/>
+                </HttpDigest>
+                <WssBasic/>
+                <WssDigest/>
+                <All/>
+                <ExactlyOne/>
+                <OneOrMore/>
+                <FalseAssertion/>
+                <SslAssertion>
+                    <Option optionValue="Required"/>
+                </SslAssertion>
+                <RoutingAssertion>
+                    <Password stringValueNull="null"/>
+                    <Realm stringValueNull="null"/>
+                    <UserAgent stringValueNull="null"/>
+                    <ProtectedServiceUrl stringValueNull="null"/>
+                    <MaxConnections intValue="100"/>
+                    <Login stringValueNull="null"/>
+                </RoutingAssertion>
+                <TrueAssertion/>
+                <MemberOfGroup>
+                    <GroupName stringValueNull="null"/>
+                    <IdentityProviderOid longValue="-1"/>
+                </MemberOfGroup>
+                <SpecificUser>
+                    <UserLogin stringValueNull="null"/>
+                    <IdentityProviderOid longValue="-1"/>
+                </SpecificUser>
+                <XmlResponseSecurity>
+                    <Encryption booleanValue="false"/>
+                </XmlResponseSecurity>
+                <XmlRequestSecurity>
+                    <Encryption booleanValue="false"/>
+                </XmlRequestSecurity>
+            </OneOrMore>
+        </All>
+        <ExactlyOne>
+            <TrueAssertion/>
+            <FalseAssertion/>
+            <RoutingAssertion>
+                <Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
+                <Realm stringValue=""/>
+                <UserAgent stringValueNull="null"/>
+                <ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
+                <MaxConnections intValue="-5"/>
+                <Login stringValue="bob&amp;joe"/>
+            </RoutingAssertion>
+        </ExactlyOne>
+        <TrueAssertion/>
+        <FalseAssertion/>
     </ExactlyOne>
-    <OneOrMore>
-    </OneOrMore>
-    <FalseAssertion>
-    </FalseAssertion>
-    <SslAssertion>
-      <Option optionValue="Required"/>
-    </SslAssertion>
-    <RoutingAssertion>
-      <Password stringValueNull="null"/>
-      <Realm stringValueNull="null"/>
-      <UserAgent stringValueNull="null"/>
-      <ProtectedServiceUrl stringValueNull="null"/>
-      <MaxConnections intValue="100"/>
-      <Login stringValueNull="null"/>
-    </RoutingAssertion>
-    <TrueAssertion>
-    </TrueAssertion>
-    <MemberOfGroup>
-      <GroupName stringValueNull="null"/>
-      <IdentityProviderOid longValue="-1"/>
-    </MemberOfGroup>
-    <SpecificUser>
-      <UserLogin stringValueNull="null"/>
-      <IdentityProviderOid longValue="-1"/>
-    </SpecificUser>
-    <XmlResponseSecurity>
-      <Encryption booleanValue="false"/>
-    </XmlResponseSecurity>
-    <XmlRequestSecurity>
-      <Encryption booleanValue="false"/>
-    </XmlRequestSecurity>
-   </OneOrMore>
-  </All>
-  <ExactlyOne>
-   <TrueAssertion>
-   </TrueAssertion>
-   <FalseAssertion>
-   </FalseAssertion>
-  </ExactlyOne>
-  <TrueAssertion>
-  </TrueAssertion>
-  <FalseAssertion>
-  </FalseAssertion>
- </ExactlyOne>
 </Policy>

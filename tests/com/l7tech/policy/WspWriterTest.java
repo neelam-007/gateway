@@ -3,10 +3,12 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.wsp.WspReader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -55,7 +57,8 @@ public class WspWriterTest extends TestCase {
             })),
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
                 new TrueAssertion(),
-                new FalseAssertion()
+                new FalseAssertion(),
+                new RoutingAssertion("http://floomp.boomp.foomp/", "bob&joe", "james;bloo=foo&goo\"poo\"\\sss\\", "", -5),
             })),
             new TrueAssertion(),
             new FalseAssertion()
@@ -84,6 +87,9 @@ public class WspWriterTest extends TestCase {
         fos = new FileOutputStream("WspWriterTest_knownStr.xml");
         fos.write(knownStr.getBytes());
         fos.close();
+
+        Assertion tree = WspReader.parse(gotXml);
+        log.info("After parsing: " + tree);
 
         assertTrue(knownStr.equals(gotXml));
 
