@@ -52,16 +52,18 @@ abstract class LeafAssertionTreeNode extends AssertionTreeNode {
         JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(PolicyTree.NAME);
         if (tree != null) {
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            Assertion nass = node.asAssertion();
-
+            Assertion[] nass = node.asAssertions();
             if (nass != null) {
-                AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nass);
-                final MutableTreeNode parent = (MutableTreeNode)getParent();
-                int index = parent.getIndex(this);
-                if (index == -1) {
-                    throw new IllegalStateException("Unknown node to the three model " + this);
+                for (int i = 0; i < nass.length; i++) {
+                    Assertion nas = nass[i];
+                    AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nas);
+                    final MutableTreeNode parent = (MutableTreeNode)getParent();
+                    int index = parent.getIndex(this);
+                    if (index == -1) {
+                        throw new IllegalStateException("Unknown node to the three model " + this);
+                    }
+                    model.insertNodeInto(as, parent, index + (i + 1));
                 }
-                model.insertNodeInto(as, parent, index + 1);
             } else {
                 log.log(Level.WARNING, "The node has no associated assertion " + node);
             }
