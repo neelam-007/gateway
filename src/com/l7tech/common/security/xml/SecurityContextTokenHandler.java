@@ -9,6 +9,10 @@ import sun.misc.BASE64Encoder;
 
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+import java.util.Date;
 
 /**
  * Appends and parses out xml security session information in/out of soap messages.
@@ -126,7 +130,13 @@ public class SecurityContextTokenHandler {
     }
 
     private static void appendCreationElement(Element securityCtxTokenEl, long creationTimeStamp) {
-        // todo, add the creation
+        Element createdEl = securityCtxTokenEl.getOwnerDocument().createElementNS(WSU_NAMESPACE, CREATED_ELNAME);
+        createdEl.setAttribute("xmlsn:" + DEF_WSU_PREFIX, WSU_NAMESPACE);
+        createdEl.setPrefix(DEF_WSU_PREFIX);
+        String stamp = ISO8601Local.format(new Date(creationTimeStamp));
+        Text valNode = securityCtxTokenEl.getOwnerDocument().createTextNode(stamp);
+        createdEl.appendChild(valNode);
+        securityCtxTokenEl.insertBefore(createdEl, null);
     }
 
     private static void appendIDElement(Element securityCtxTokenEl, byte[] sessionid) {
@@ -158,11 +168,21 @@ public class SecurityContextTokenHandler {
 
     private static final SecureRandom rand = new SecureRandom();
     public static final String URI_PREFIX = "uuid:";
+    private static DateFormat ISO8601Local = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    static {
+        ISO8601Local.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
+
 
     public static final String WSC_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/sc";
     public static final String SCTOKEN_ELNAME = "SecurityContextToken";
     public static final String SCTOKEN_ID_ELNAME = "Identifier";
     public static final String DEF_WSC_NAMESPACE_PREFIX = "wsc";
+    public static final String WSU_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/07/utility";
+    // Note, the new ws-trust and ws-secure conversation use a different namespace but it looks stupid:
+    // "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+    public static final String DEF_WSU_PREFIX = "wsu";
+    public static final String CREATED_ELNAME = "Created";
     public static final String REQUESTSECURITYTOKEN_SOAPMSG =
             "<S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
                 "<S:Body>" +
