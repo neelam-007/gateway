@@ -1,23 +1,22 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
-import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.identity.User;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
 import com.l7tech.message.SoapResponse;
-import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.SecureConversationSession;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The SSG-side processing of the SecureConversation assertion.
@@ -68,8 +67,9 @@ public class ServerSecureConversation implements ServerAssertion {
                 return AssertionStatus.NONE;
             }
         }
-        response.setPolicyViolated(true);
         logger.info("This request did not seem to refer to a Secure Conversation token.");
+        response.setAuthenticationMissing(true);
+        response.setPolicyViolated(true);
         return AssertionStatus.AUTH_REQUIRED;
     }
 
