@@ -22,8 +22,9 @@ import java.util.logging.Logger;
 public class InternalUserManagerServer extends HibernateEntityManager implements UserManager {
     public static final String IMPCLASSNAME = InternalUser.class.getName();
 
-    public InternalUserManagerServer() {
+    public InternalUserManagerServer( InternalIdentityProviderServer provider ) {
         super();
+        _provider = provider;
         logger = LogManager.getInstance().getSystemLogger();
     }
 
@@ -79,7 +80,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         searchString = searchString.replace('?', '_');
         try {
             List results = PersistenceManager.find(getContext(),
-                                                   allHeadersQuery + " where " + getTableName() + ".login like ?",
+                                                   getAllHeadersQuery() + " where " + getTableName() + ".login like ?",
                                                    searchString, String.class);
             List headers = new ArrayList();
             for (Iterator i = results.iterator(); i.hasNext();) {
@@ -97,6 +98,10 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
         }
+    }
+
+    protected String getAllHeadersQuery() {
+        return allHeadersQuery;
     }
 
     public void delete(User user) throws DeleteException {
@@ -125,7 +130,11 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         delete( imp );
     }
 
-    public String save(User user) throws SaveException {
+    public String save( User user ) throws SaveException {
+        return save( user, null );
+    }
+
+    public String save(User user, Set groupHeaders ) throws SaveException {
         InternalUser imp = cast(user);
 
         try {
@@ -140,7 +149,22 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                 throw new SaveException("Cannot save this user. Existing user with login \'"
                                         + user.getLogin() + "\' present.");
             }
-            return new Long( _manager.save( getContext(), imp ) ).toString();
+
+            String oid = Long.toString( _manager.save( getContext(), imp ) );
+
+            if ( groupHeaders != null ) {
+                try {
+                    _provider.getGroupManager().setGroupHeaders(user, groupHeaders);
+                } catch (FindException e) {
+                    logger.log( Level.SEVERE, e.getMessage(), e );
+                    throw new SaveException( e.getMessage(), e );
+                } catch (UpdateException e) {
+                    logger.log( Level.SEVERE, e.getMessage(), e );
+                    throw new SaveException( e.getMessage(), e );
+                }
+            }
+
+            return oid;
         } catch ( SQLException se ) {
             logger.log(Level.SEVERE, null, se);
             throw new SaveException( se.toString(), se );
@@ -157,34 +181,21 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         return imp;
     }
 
+
+    public void update( User user ) throws UpdateException {
+        update( user, null );
+    }
+
     /**
      * checks that passwd was changed. if so, also revokes the existing cert
      * checks if the user is the last standing admin account, throws if so
      * @param user existing user
      */
-    public void update( User user ) throws UpdateException {
+    public void update( User user, Set groupHeaders ) throws UpdateException {
         InternalUser imp = cast( user );
 
         try {
             InternalUser originalUser = (InternalUser)findByPrimaryKey( user.getUniqueIdentifier() );
-            // here, we should make sure that IF the user is an administrator, he should not
-            // delete his membership to the admin group unless there is another exsiting member
-            if (isLastAdmin(originalUser)) {
-                // was he stupid enough to nuke his admin membership?
-                boolean stillAdmin = false;
-                Iterator newgrpsiterator = imp.getGroups().iterator();
-                while (newgrpsiterator.hasNext()) {
-                    Group grp = (Group)newgrpsiterator.next();
-                    if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
-                        stillAdmin = true;
-                        break;
-                    }
-                }
-                if (!stillAdmin) {
-                    logger.severe("An attempt was made to update the last standing administrator with no membership to the admin group!");
-                    throw new UpdateException("This update would revoke admin membership on the last standing administrator");
-                }
-            }
 
             // check for version conflict
             if (originalUser.getVersion() != imp.getVersion()) {
@@ -210,6 +221,10 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                             " perhaps this user had no existing cert", e);
                 }
             }
+
+            if ( groupHeaders != null )
+                _provider.getGroupManager().setGroupHeaders( user.getUniqueIdentifier(), groupHeaders );
+
             // update user
             originalUser.copyFrom(imp);
             // update from existing user
@@ -255,15 +270,17 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
      * @param currentUser
      * @return true is this user is an administrator and no other users are
      */
-    private boolean isLastAdmin(User currentUser) {
+    private boolean isLastAdmin(User currentUser) throws FindException {
         InternalUser imp = (InternalUser)currentUser;
-        Iterator i = imp.getGroups().iterator();
+        GroupManager gman = _provider.getGroupManager();
+        Iterator i = gman.getGroupHeaders(imp).iterator();
         while (i.hasNext()) {
-            Group grp = (Group)i.next();
+            EntityHeader grp = (EntityHeader)i.next();
             // is he an administrator?
             if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
                 // is he the last one ?
-                if (grp.getMembers().size() <= 1) return true;
+                Set adminUserHeaders = gman.getUserHeaders( grp.getStrId() );
+                if ( adminUserHeaders.size() <= 1 ) return true;
                 return false;
             }
         }
@@ -272,13 +289,13 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
 
     private String alias = getTableName();
 
-    protected final String allHeadersQuery = "select " + alias + ".oid, " +
+    private final String allHeadersQuery = "select " + alias + ".oid, " +
                                              alias + ".login from " + alias + " in class "+
                                              getImpClass().getName();
 
     public static final String F_LOGIN = "login";
     public static final String F_NAME = "name";
     private Logger logger = null;
-
+    private InternalIdentityProviderServer _provider;
 
 }
