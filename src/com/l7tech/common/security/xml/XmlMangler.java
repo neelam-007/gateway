@@ -14,7 +14,6 @@ import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CommonLogger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
@@ -360,5 +359,5 @@ public class XmlMangler {
     }
 
     // Use a logger that will work inside either the Agent or the Gateway.
-    private static final Logger logger = CommonLogger.getSystemLogger();
+    private static final Logger logger = Logger.getLogger(XmlMangler.class.getName());
 }

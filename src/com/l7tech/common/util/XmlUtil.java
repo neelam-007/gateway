@@ -252,5 +252,5 @@ public class XmlUtil {
         return true;
     }
 
-    private static final Logger logger = CommonLogger.getSystemLogger();
+    private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
 }

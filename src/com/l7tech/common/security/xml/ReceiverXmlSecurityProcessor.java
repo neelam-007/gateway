@@ -6,31 +6,32 @@
  */
 package com.l7tech.common.security.xml;
 
-import com.l7tech.common.util.CommonLogger;
+import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
-import com.ibm.xml.dsig.util.AdHocIDResolver;
+import org.jaxen.JaxenException;
+import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.jaxen.dom.DOMXPath;
-import org.jaxen.JaxenException;
 import org.xml.sax.SAXException;
 
-import javax.xml.soap.SOAPConstants;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
 
 class ReceiverXmlSecurityProcessor extends SecurityProcessor {
-    static Logger logger = CommonLogger.getSystemLogger();
+    static Logger logger = Logger.getLogger(ReceiverXmlSecurityProcessor.class.getName());
 
     private Key decryptionKey;
     private long keyName;

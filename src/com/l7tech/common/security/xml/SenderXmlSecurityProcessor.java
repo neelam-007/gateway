@@ -4,7 +4,6 @@ import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CommonLogger;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import org.jaxen.JaxenException;
@@ -13,9 +12,9 @@ import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.security.*;
-import java.util.List;
-import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -33,7 +32,7 @@ import java.util.logging.Logger;
   *      com.l7tech.common.security.xml.ElementSecurity[])}
  */
 class SenderXmlSecurityProcessor extends SecurityProcessor {
-    static Logger logger = CommonLogger.getSystemLogger();
+    static Logger logger = Logger.getLogger(SenderXmlSecurityProcessor.class.getName());
     private SignerInfo signerInfo;
     private Session session;
     private Key encryptionKey;

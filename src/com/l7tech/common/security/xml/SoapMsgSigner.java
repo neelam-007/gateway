@@ -2,7 +2,6 @@ package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
-import com.l7tech.common.util.CommonLogger;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.*;
@@ -401,5 +400,5 @@ public final class SoapMsgSigner {
     }
 
     // Use a logger that will work inside either the Agent or the Gateway.
-    private static final Logger logger = CommonLogger.getSystemLogger();
+    private static final Logger logger = Logger.getLogger(SoapMsgSigner.class.getName());
 }
