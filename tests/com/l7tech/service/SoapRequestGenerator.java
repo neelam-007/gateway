@@ -65,8 +65,8 @@ public class SoapRequestGenerator {
         }
         InputStreamReader reader = new InputStreamReader(in);
 
-        wsdl = Wsdl.newInstance(null, reader);
-        return generate(wsdl);
+        Wsdl newWsdl = Wsdl.newInstance(null, reader);
+        return generate(newWsdl);
     }
 
     /**
@@ -76,6 +76,7 @@ public class SoapRequestGenerator {
       * @throws SOAPException on error generating SOAP messages
       */
      public SOAPRequest[] generate(Wsdl wsdl) throws SOAPException {
+        this.wsdl = wsdl;
         List requests = new ArrayList();
         Iterator it = wsdl.getBindings().iterator();
         while (it.hasNext()) {
