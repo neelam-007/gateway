@@ -139,6 +139,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
         PublishedService service = null;
 
         try {
+            beginTransaction();
             manager = getServiceManager();
             service = manager.findByPrimaryKey(oid);
             manager.delete(service);
