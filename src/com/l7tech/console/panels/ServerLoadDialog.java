@@ -7,10 +7,7 @@ import com.l7tech.adminws.logging.Log;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -21,7 +18,7 @@ import java.rmi.RemoteException;
  * Dialog to display server statistics
  * @author flascell
  */
-public class ServerLoadDialog extends JDialog {
+public class ServerLoadDialog extends JDialog implements ActionListener, KeyListener  {
     static Logger log = Logger.getLogger(ServerLoadDialog.class.getName());
 
     /**
@@ -34,15 +31,8 @@ public class ServerLoadDialog extends JDialog {
     private JLabel fiveminuteLoadText = null;
     private JLabel fifteenminuteLoadText = null;
 
-
-    /**
-     * Command string for a cancel action (e.g., a button or menu item).
-     */
     private String CMD_CANCEL = "cmd.cancel";
-
-    /**
-     * Command string for a help action (e.g., a button or menu item).
-     */
+    private String CMD_REFRESH = "cmd.refresh";
     private String CMD_HELP = "cmd.help";
 
     /**
@@ -55,6 +45,16 @@ public class ServerLoadDialog extends JDialog {
         initComponents();
         loadValues();
         pack();
+    }
+
+    protected void processKeyEvent(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_F5) {
+            e.consume();
+            refresh();
+            System.out.println("hit f5");
+        }
+        System.out.println("other key event");
+        super.processKeyEvent(e);
     }
 
     /**
@@ -186,15 +186,13 @@ public class ServerLoadDialog extends JDialog {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, 0));
 
-        // ok button
+        // refresh button
         JButton refreshButton = new JButton();
         refreshButton.setText(resources.getString("refreshButton.label"));
-        refreshButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                refresh();
-            }
-        });
+        refreshButton.setActionCommand(CMD_REFRESH);
+
         buttonPanel.add(refreshButton);
+        refreshButton.addActionListener(this);
 
         // space
         buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
@@ -203,12 +201,8 @@ public class ServerLoadDialog extends JDialog {
         JButton cancelButton = new JButton();
         cancelButton.setText(resources.getString("cancelButton.label"));
         cancelButton.setActionCommand(CMD_CANCEL);
-        cancelButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                windowAction(event.getActionCommand());
-            }
-        });
         buttonPanel.add(cancelButton);
+        cancelButton.addActionListener(this);
 
         // space
         buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
@@ -217,14 +211,10 @@ public class ServerLoadDialog extends JDialog {
         JButton helpButton = new JButton();
         helpButton.setText(resources.getString("helpButton.label"));
         helpButton.setMnemonic(
-          resources.getString("helpButton.mnemonic").charAt(0));
+        resources.getString("helpButton.mnemonic").charAt(0));
         helpButton.setActionCommand(CMD_HELP);
-        helpButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                windowAction(event.getActionCommand());
-            }
-        });
         buttonPanel.add(helpButton);
+        helpButton.addActionListener(this);
 
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
@@ -234,6 +224,10 @@ public class ServerLoadDialog extends JDialog {
         constraints.insets = new Insets(17, 12, 11, 11);
 
         contents.add(buttonPanel, constraints);
+
+        refreshButton.addKeyListener(this);
+        cancelButton.addKeyListener(this);
+        helpButton.addKeyListener(this);
 
         // equalize button sizes
         getRootPane().setDefaultButton(refreshButton);
@@ -253,9 +247,7 @@ public class ServerLoadDialog extends JDialog {
 
         // equalize label sizes
         Utilities.equalizeLabelSizes(jLabels);
-
     }
-
 
     /**
      * The user has selected an option.
@@ -273,11 +265,17 @@ public class ServerLoadDialog extends JDialog {
             closeWindow = true;
         } else if (actionCommand.equals(CMD_HELP)) {
             ;
+        } else if (actionCommand.equals(CMD_REFRESH)) {
+            refresh();
         }
         if (closeWindow) {
             setVisible(false);
             dispose();
         }
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        windowAction(e.getActionCommand());
     }
 
     private void refresh() {
@@ -311,5 +309,16 @@ public class ServerLoadDialog extends JDialog {
             fifteenminuteLoadText.setText(Double.toString(metrics.getLoad3()));
         }
     }
+
+    public void keyPressed(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_F5) windowAction(CMD_REFRESH);
+        else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) windowAction(CMD_CANCEL);
+        else if (e.getKeyCode() == KeyEvent.VK_F1) windowAction(CMD_HELP);
+    }
+
+    public void keyTyped(KeyEvent e) {}
+
+    public void keyReleased(KeyEvent e) {}
+
     private Log logstub = null;
 }
