@@ -25,10 +25,7 @@ import javax.security.auth.login.FailedLoginException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.Principal;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.security.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -86,7 +83,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                     ServiceInvocation si = (ServiceInvocation)sa.newInstance();
                     si.setCustomAssertion(customAssertion);
                     if (isPostRouting(request)) {
-                        si.onResponse(new CustomServiceResponse((XmlResponse)response));
+                        si.onResponse(new CustomServiceResponse((XmlResponse)response, (XmlRequest)request));
                     } else {
                         si.onRequest(new CustomServiceRequest((XmlRequest)request));
                     }
@@ -127,12 +124,15 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
     private class CustomServiceResponse implements ServiceResponse {
         private final XmlResponse response;
+        private final XmlRequest request;
         private final Map context = new HashMap();
         private final TransportMetadata transportMetadata;
         private final Document document;
+        private final SecurityContext securityContext;
 
-        public CustomServiceResponse(XmlResponse response) throws IOException, SAXException {
+        public CustomServiceResponse(XmlResponse response, XmlRequest request) throws IOException, SAXException {
             this.response = response;
+            this.request = request;
             this.transportMetadata = response.getTransportMetadata();
             this.document = (Document)response.getDocument().cloneNode(true);
             if (transportMetadata instanceof HttpTransportMetadata) {
@@ -141,6 +141,19 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                 context.put("httpRequest", req);
                 context.put("httpResponse", res);
             }
+            securityContext = new SecurityContext() {
+                public Subject getSubject() {
+                    return Subject.getSubject(AccessController.getContext());
+                }
+
+                public boolean isAuthenticated() {
+                    return CustomServiceResponse.this.request.isAuthenticated();
+                }
+
+                public void setAuthenticated() throws GeneralSecurityException {
+                    throw new GeneralSecurityException("Cannot authenticate in the response");
+                }
+            };
         }
 
         public Document getDocument() {
@@ -158,6 +171,10 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
         }
 
+        public SecurityContext getSecurityContext() {
+            return securityContext;
+        }
+
         public Map getContext() {
             return context;
         }
@@ -168,6 +185,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         private final Map context = new HashMap();
         private final TransportMetadata transportMetadata;
         private final Document document;
+        private final SecurityContext securityContext;
 
         public CustomServiceRequest(XmlRequest request)
           throws IOException, SAXException {
@@ -180,6 +198,22 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                 context.put("httpRequest", req);
                 context.put("httpResponse", res);
             }
+            securityContext = new SecurityContext() {
+                public Subject getSubject() {
+                    return Subject.getSubject(AccessController.getContext());
+                }
+
+                public boolean isAuthenticated() {
+                    return CustomServiceRequest.this.request.isAuthenticated();
+                }
+
+                public void setAuthenticated() throws GeneralSecurityException {
+                    if (CustomServiceRequest.this.request.isAuthenticated()) {
+                        throw new GeneralSecurityException("already authenticated");
+                    }
+                    CustomServiceRequest.this.request.setAuthenticated(true);
+                }
+            };
         }
 
         public Document getDocument() {
@@ -194,6 +228,10 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Error stringyfing document", e);
             }
+        }
+
+        public SecurityContext getSecurityContext() {
+            return securityContext;
         }
 
         public Map getContext() {

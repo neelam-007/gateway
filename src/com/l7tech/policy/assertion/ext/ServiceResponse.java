@@ -27,6 +27,13 @@ public interface ServiceResponse {
     void setDocument(Document document);
 
     /**
+     * Get the security context associated with the request
+     *
+     * @return the security context associated with the request.
+     */
+    SecurityContext getSecurityContext();
+
+    /**
      * Context is a <code>Map</code> of key/value properties that is associated
      * with the service invocation.
      * When running within the servlet engine the contaxt will contain elements
