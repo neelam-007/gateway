@@ -357,7 +357,7 @@ public class SsgPropertyDialog extends PropertyDialog {
         this.ssg = ssg;
 
         fieldName.setText(ssg.getName());
-        fieldLocalEndpoint.setText("/" + ssg.getLocalEndpoint());
+        fieldLocalEndpoint.setText("http://localhost:5555/" + ssg.getLocalEndpoint());
         fieldServerUrl.setText(ssg.getServerUrl());
         fieldUsername.setText(ssg.getUsername());
         editPassword = ssg.getPassword();
@@ -377,7 +377,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     protected void commitChanges() {
         synchronized (ssg) {
             ssg.setName(fieldName.getText());
-            ssg.setLocalEndpoint(fieldLocalEndpoint.getText());
+            //ssg.setLocalEndpoint(fieldLocalEndpoint.getText());  // need to strip http://localhost:5555
             ssg.setServerUrl(fieldServerUrl.getText());
             ssg.setUsername(fieldUsername.getText());
             ssg.setPassword(editPassword);
