@@ -4,7 +4,7 @@
     <dataSource>
       <name>ssg</name>
       <jar>@TOMCAT_HOME@/common/lib/mysql-connector-java-3.0.7-stable-bin.jar</jar>
-      <class>org.gjt.mm.mysql.jdbc2.optional.MysqlConnectionPoolDataSource</class>
+      <class>com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource</class>
       <config>
         <user>webuser</user>
         <password>resubew</password>
