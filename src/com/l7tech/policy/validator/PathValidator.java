@@ -291,6 +291,12 @@ class PathValidator {
                   "This assertion will never work because there is no response yet. This assertion should be moved " +
                   "after the routing assertion.", null));
             }
+        } else if (a instanceof RequestWssReplayProtection) {
+            if (!seenWssSignature && !seenSecureConversation && !seenSamlSecurity) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion should be preceeded by an WSS Signature assertion, " +
+                  "a Secure Conversation assertion, or a SAML Security assertion.", null));
+            }
         }
         seenPreconditions = true;
     }
@@ -457,7 +463,8 @@ class PathValidator {
           a instanceof XpathBasedAssertion ||
           a instanceof HttpClientCert ||
           a instanceof XslTransformation ||
-          a instanceof RequestSwAAssertion)
+          a instanceof RequestSwAAssertion ||
+          a instanceof RequestWssReplayProtection)
             return true;
         return false;
     }
