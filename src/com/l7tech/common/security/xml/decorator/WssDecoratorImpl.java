@@ -489,9 +489,11 @@ public class WssDecoratorImpl implements WssDecorator {
         // create elements
         UsernameTokenImpl ut = new UsernameTokenImpl(creds.getLogin(),
                                                      creds.getCredentials());
-        return ut.asElement(securityHeader.getOwnerDocument(),
-                            securityHeader.getNamespaceURI(),
-                            securityHeader.getPrefix());
+        Element token = ut.asElement(securityHeader.getOwnerDocument(),
+                                     securityHeader.getNamespaceURI(),
+                                     securityHeader.getPrefix());
+        securityHeader.appendChild(token);
+        return token;
     }
 
 

@@ -111,7 +111,9 @@ public class UsernameTokenImpl implements UsernameToken {
         Element untokEl = factory.createElementNS(securityNs, "UsernameToken");
         untokEl.setPrefix(securityPrefix);
         fillInDetails(untokEl);
-        return element = XmlUtil.findFirstChildElement(factory.getDocumentElement());
+        //return element = XmlUtil.findFirstChildElement(factory.getDocumentElement());
+        // mike, i assume, you mean to return that instead:
+        return element = untokEl;
     }
 
     /**
