@@ -50,6 +50,7 @@ public class PolicyManagerImpl implements PolicyManager {
             policy = request.getSsg().getPolicyBySoapAction(request.getSoapAction());
         if (policy == null && request.getUri().length() > 0)
             policy = request.getSsg().getPolicyByUri(request.getUri());
+        log.info(policy != null ? "Located policy for this request" : "No policy found for this request");
         return policy == null ? nullPolicy : policy;
     }
 
@@ -68,10 +69,12 @@ public class PolicyManagerImpl implements PolicyManager {
         GetMethod getMethod = new GetMethod(policyUrl.toString());
         getMethod.setDoAuthentication(false); // TODO: will authentication be required to download a policy?
         try {
+            log.info("Downloading new policy from " + policyUrl);
             int status = client.executeMethod(getMethod);
             Assertion policy = WspReader.parse(getMethod.getResponseBodyAsStream());
             request.getSsg().attachPolicy(request.getUri(), request.getSoapAction(), policy);
             Managers.getSsgManager().save(); // save changes
+            log.info("New policy saved successfully");
         } catch (IllegalArgumentException e) {
             throw new ConfigurationException(
                     "Client request must have either a SOAPAction header or a valid SOAP body namespace URI");
