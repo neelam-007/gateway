@@ -110,7 +110,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
                                                 IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
                 UserManager userManager = provider.getUserManager();
                 userManager.update(internalUser);
-                logger.fine("Password changed for user" + internalUser.getLogin());
+                logger.fine("Password changed for user " + internalUser.getLogin());
                 // end transaction
                 pc.commitTransaction();
                 // return 200
