@@ -2,16 +2,22 @@ package com.l7tech.console.panels;
 
 import javax.swing.*;
 import java.awt.*;
+import java.security.cert.*;
+import java.security.NoSuchAlgorithmException;
+import java.io.*;
+import java.net.URL;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p/>
  * $Id$
  */
-public class CertDetailsPanel extends WizardStepPanel{
+public class CertDetailsPanel extends WizardStepPanel {
     private JPanel mainPanel;
+    private JScrollPane certScrollPane;
+    private X509Certificate cert;
 
-     public CertDetailsPanel(WizardStepPanel next) {
+    public CertDetailsPanel(WizardStepPanel next) {
         super(next);
         initialize();
     }
@@ -21,11 +27,108 @@ public class CertDetailsPanel extends WizardStepPanel{
         add(mainPanel);
     }
 
+    public void readSettings(Object settings) throws IllegalArgumentException {
+        if (settings != null) {
+
+            if (settings instanceof CertInfo) {
+
+                CertInfo ci = (CertInfo) settings;
+                InputStream is = null;
+                CertificateFactory cf = null;
+
+                try {
+
+                    cf = CertificateFactory.getInstance("X.509");
+
+                } catch (CertificateException e) {
+                    //todo:
+                }
+
+
+                if (ci.getCertDataSource() instanceof File) {
+
+                    try {
+                        is = new FileInputStream(((File) ci.getCertDataSource()).getAbsolutePath());
+
+                        cert = (X509Certificate) cf.generateCertificate(is);
+
+                        is.close();
+                    } catch (FileNotFoundException fne) {
+
+                    } catch (CertificateException ce) {
+
+                    } catch (IOException ioe) {
+
+                    }
+                } else if (ci.getCertDataSource() instanceof URL) {
+
+                } else if (ci.getCertDataSource() instanceof String) {
+
+                }
+            }
+        }
+
+        try {
+            JComponent certView = getCertView();
+            if(certView == null) {
+                 certView = new JLabel();
+            } else {
+                //certScrollPane.setViewportBorder(BorderFactory.createLineBorder(Color.black));
+                certScrollPane.setViewportView(certView);;
+            }
+
+            revalidate();
+            repaint();
+
+        } catch (CertificateEncodingException ee) {
+            //todo:
+        } catch (NoSuchAlgorithmException ae) {
+            //todo:
+        }
+    }
+
+
+     /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
+    public void storeSettings(Object settings) {
+
+        if (settings != null) {
+
+            if (settings instanceof CertInfo) {
+                CertInfo ci = (CertInfo) settings;
+
+                try {
+                    ci.getTrustedCert().setCertificate(cert);
+
+                } catch (CertificateEncodingException e) {
+                    //todo:
+                }
+            }
+        }
+    }
+
     /**
      * @return the wizard step label
      */
     public String getStepLabel() {
         return "View Certificate Details";
+    }
+
+    /**
+     * Returns a properties instance filled out with info about the certificate.
+     */
+    private JComponent getCertView()
+            throws CertificateEncodingException, NoSuchAlgorithmException {
+        if (cert == null)
+            return null;
+        com.l7tech.common.gui.widgets.CertificatePanel i = new com.l7tech.common.gui.widgets.CertificatePanel(cert);
+        i.setCertBorderEnabled(false);
+        return i;
     }
 
     {
@@ -61,13 +164,11 @@ public class CertDetailsPanel extends WizardStepPanel{
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
         final JScrollPane _6;
         _6 = new JScrollPane();
+        certScrollPane = _6;
         _1.add(_6, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 0, 3, 7, 7, null, null, null));
-        final JTable _7;
-        _7 = new JTable();
-        _6.setViewportView(_7);
-        final com.intellij.uiDesigner.core.Spacer _8;
-        _8 = new com.intellij.uiDesigner.core.Spacer();
-        _1.add(_8, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 2, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
+        final com.intellij.uiDesigner.core.Spacer _7;
+        _7 = new com.intellij.uiDesigner.core.Spacer();
+        _1.add(_7, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 2, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
     }
 
 }

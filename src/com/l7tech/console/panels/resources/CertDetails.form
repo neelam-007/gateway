@@ -12,7 +12,7 @@
       <grid id="fdf98" row-count="3" column-count="1" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="26" y="0" width="479" height="60"/>
+          <xy x="20" y="0" width="485" height="60"/>
           <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -29,7 +29,7 @@
           </component>
           <vspacer id="28b25">
             <constraints>
-              <xy x="234" y="0" width="11" height="20"/>
+              <xy x="237" y="0" width="11" height="20"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -38,7 +38,7 @@
           </vspacer>
           <vspacer id="29320">
             <constraints>
-              <xy x="234" y="40" width="11" height="20"/>
+              <xy x="237" y="40" width="11" height="20"/>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -47,23 +47,18 @@
           </vspacer>
         </children>
       </grid>
-      <scrollpane id="faceb">
+      <scrollpane id="faceb" binding="certScrollPane">
         <constraints>
-          <xy x="26" y="65" width="459" height="240"/>
+          <xy x="20" y="65" width="465" height="131"/>
           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
-        <children>
-          <component id="2daf7" class="javax.swing.JTable">
-            <constraints/>
-            <properties/>
-          </component>
-        </children>
+        <children/>
       </scrollpane>
       <vspacer id="2bd7a">
         <constraints>
-          <xy x="260" y="305" width="11" height="20"/>
+          <xy x="257" y="196" width="11" height="129"/>
           <grid row="2" column="1" row-span="1" col-span="2" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="10"/>
             <preferred-size width="-1" height="10"/>

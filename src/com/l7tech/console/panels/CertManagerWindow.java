@@ -5,14 +5,29 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.event.*;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.tree.identity.IdentityProvidersTree;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.util.Locator;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 
 /**
@@ -74,18 +89,15 @@ public class CertManagerWindow extends JDialog {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
 
-                        CertImportMethodsPanel sp = new CertImportMethodsPanel(
-                                        new CertDetailsPanel(
-                                        new CertUsagePanel(null)
-                                        ));
+                        CertImportMethodsPanel sp = new CertImportMethodsPanel(new CertDetailsPanel(new CertUsagePanel(null)));
 
 
                         JFrame f = TopComponents.getInstance().getMainWindow();
                         Wizard w = new AddCertificateWizard(f, sp);
-                        //todo: w.addWizardListener(wizardListener);
+                        w.addWizardListener(wizardListener);
 
                         // register itself to listen to the addEvent
-                        //todo: addEntityListener(listener);
+                        //addEntityListener(listener);
 
                         w.pack();
                         w.setSize(780, 560);
@@ -129,6 +141,58 @@ public class CertManagerWindow extends JDialog {
         }*/
         removeButton.setEnabled(removeEnabled);
         propertiesButton.setEnabled(propsEnabled);
+    }
+
+    private WizardListener wizardListener = new WizardAdapter() {
+        /**
+         * Invoked when the wizard has finished.
+         *
+         * @param we the event describing the wizard finish
+         */
+        public void wizardFinished(WizardEvent we) {
+
+            // update the provider
+            Wizard w = (Wizard) we.getSource();
+
+            Object o = w.getCollectedInformation();
+
+            if (o instanceof CertInfo) {
+
+                final CertInfo ci = (CertInfo) o;
+
+                if (ci != null && ci.getTrustedCert() != null) {
+
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+
+                            try {
+                                getTrustedCertAdmin().saveCert(ci.getTrustedCert());
+                            } catch (SaveException e) {
+                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                            } catch (RemoteException e) {
+                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                            } catch (VersionException e) {
+                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                            } catch (UpdateException e) {
+                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+    };
+
+    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
+        TrustedCertAdmin tca =
+                (TrustedCertAdmin) Locator.
+                getDefault().lookup(TrustedCertAdmin.class);
+        if (tca == null) {
+            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
+        }
+
+        return tca;
     }
 
     {
@@ -202,5 +266,6 @@ public class CertManagerWindow extends JDialog {
         _15 = new Spacer();
         _1.add(_15, new GridConstraints(0, 1, 1, 1, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
     }
+
 
 }

@@ -29,9 +29,7 @@ public class AddCertificateWizard extends CertificateWizard {
         // create a holder for the new identity provider
         // NOTE: we only support creating LDAP provider
 
-        // wizardInput = new LdapIdentityProviderConfig();
-        //
-        //  ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
+        wizardInput = new CertInfo();
 
         pack();
 

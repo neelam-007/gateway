@@ -7,6 +7,8 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -61,6 +63,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
         // urlConnection as the default
         urlConnRadioButton.setSelected(true);
+        browseButton.setEnabled(false);
 
         copyAndPasteRadioButton.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
@@ -82,22 +85,20 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     }
 
     private void updateEnableDisable() {
-        if(copyAndPasteRadioButton.isSelected()) {
+        if (copyAndPasteRadioButton.isSelected()) {
             browseButton.setEnabled(false);
             copyAndPasteTextArea.setEnabled(true);
             urlConnTextField.setEnabled(false);
             certFileName.setEnabled(false);
 
-        } else
-
-        if(fileRadioButton.isSelected()) {
+        } else if (fileRadioButton.isSelected()) {
             browseButton.setEnabled(true);
             copyAndPasteTextArea.setEnabled(false);
             urlConnTextField.setEnabled(false);
             certFileName.setEnabled(true);
         }
 
-        if(urlConnRadioButton.isSelected()) {
+        if (urlConnRadioButton.isSelected()) {
             browseButton.setEnabled(false);
             copyAndPasteTextArea.setEnabled(false);
             urlConnTextField.setEnabled(true);
@@ -110,6 +111,47 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      */
     public String getStepLabel() {
         return "Enter Certificate Info";
+    }
+
+    /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
+    public void storeSettings(Object settings) {
+
+        if (settings != null) {
+
+            if (settings instanceof CertInfo) {
+
+                CertInfo ci =  (CertInfo) settings;
+
+                if (copyAndPasteRadioButton.isSelected()) {
+                    ci.setCertDataSource(new String(copyAndPasteTextArea.getText()));
+
+                } else if (fileRadioButton.isSelected()) {
+                    try {
+                       ci.setCertDataSource(new File(certFileName.getText().trim()));
+                    } finally {
+                        //do nothing
+                    }
+                } else if (urlConnRadioButton.isSelected()) {
+                    try {
+                        ci.setCertDataSource(new URL(urlConnTextField.getText().trim()));
+
+                    } catch (MalformedURLException e) {
+                        //todo:
+                    }
+
+                } else {
+                    //todo:
+                }
+
+            }
+        }
+
     }
 
     {
@@ -143,8 +185,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         final JRadioButton _4;
         _4 = new JRadioButton();
         fileRadioButton = _4;
-        _4.setText("Import from a File");
         _4.setEnabled(true);
+        _4.setText("Import from a File");
         _4.setSelected(false);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;

@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.l7tech.common.security.TrustedCert;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,7 +29,30 @@ public class CertUsagePanel extends WizardStepPanel{
         setLayout(new BorderLayout());
         add(mainPanel);
     }
-    
+
+    /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
+    public void storeSettings(Object settings) {
+
+        if (settings != null) {
+
+            if (settings instanceof CertInfo) {
+                CertInfo ci = (CertInfo) settings;
+
+                TrustedCert tc = ci.getTrustedCert();
+                tc.setTrustedForSigningClientCerts(signingClientCertCheckBox.isSelected());
+                tc.setTrustedForSigningSamlTokens(signingSAMLTokenCheckBox.isSelected());
+                tc.setTrustedForSigningServerCerts(signingCertOutboundSSLConnCheckBox.isSelected());
+                tc.setTrustedForSsl(outboundSSLConnCheckBox.isSelected());
+            }
+        }
+    }
+
     /**
      * @return the wizard step label
      */
