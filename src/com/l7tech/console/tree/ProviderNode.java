@@ -76,8 +76,8 @@ public class ProviderNode extends EntityHeaderNode {
             } else {
                 List list =
                   Arrays.asList(new AbstractTreeNode[]{
-                      new UserFolderNode(ip.getUserManager(), oid, "Users"),
-                      new GroupFolderNode(ip.getGroupManager(), oid, "Groups")
+                      new UserFolderNode(ip, "Users"),
+                      new GroupFolderNode(ip, "Groups")
                   });
                 kids = Collections.enumeration(list);
             }

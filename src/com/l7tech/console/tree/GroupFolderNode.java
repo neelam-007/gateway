@@ -3,15 +3,16 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.NewGroupAction;
 import com.l7tech.console.action.RefreshAction;
-import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
-import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
-import java.util.Enumeration;
 import java.awt.*;
+import java.util.Enumeration;
 
 
 /**
@@ -23,26 +24,24 @@ import java.awt.*;
  */
 public class GroupFolderNode extends AbstractTreeNode {
     public final static String INTERNAL_GROUPS_NAME = "Internal Groups";
-    private final GroupManager groupManager;
-    private long providerId;
+    private IdentityProvider identityProvider;
     private String name;
 
     /**
      * construct the <CODE>GroupFolderNode</CODE> instance for
      * a given provider.
      */
-    public GroupFolderNode(GroupManager gm, long providerId) {
-        this(gm, providerId, INTERNAL_GROUPS_NAME);
+    public GroupFolderNode(IdentityProvider ip) {
+        this(ip, INTERNAL_GROUPS_NAME);
     }
 
     /**
      * construct the <CODE>GroupFolderNode</CODE> instance for
      * a given provider.
      */
-    public GroupFolderNode(GroupManager gm, long providerId, String name) {
+    public GroupFolderNode(IdentityProvider ip, String name) {
         super(null);
-        groupManager = gm;
-        this.providerId = providerId;
+        identityProvider = ip;
         this.name = name;
     }
 
@@ -67,12 +66,13 @@ public class GroupFolderNode extends AbstractTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
-        Enumeration e =
-          TreeNodeFactory.
-          getTreeNodeEnumeration(
-            new EntitiesEnumeration(new GroupEntitiesCollection(groupManager)));
-        int index = 0;
+        final IdentityEntitiesCollection collection =
+                new IdentityEntitiesCollection(identityProvider, new EntityType[] {EntityType.GROUP});
 
+        Enumeration e =
+          TreeNodeFactory.getTreeNodeEnumeration(new EntitiesEnumeration(collection));
+
+        int index = 0;
         children = null;
         for (; e.hasMoreElements();) {
             insert((MutableTreeNode)e.nextElement(), index++);
@@ -94,7 +94,8 @@ public class GroupFolderNode extends AbstractTreeNode {
      */
     public Action[] getActions() {
         final NewGroupAction newGroupAction = new NewGroupAction(this);
-        newGroupAction.setEnabled(providerId == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        final long oid = identityProvider.getConfig().getOid();
+        newGroupAction.setEnabled(oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         RefreshAction ra = new GroupFolderRefreshAction(this);
 
         return new Action[]{newGroupAction, ra};
@@ -106,7 +107,7 @@ public class GroupFolderNode extends AbstractTreeNode {
      * @return the provider id
      */
     public long getProviderId() {
-        return providerId;
+        return identityProvider.getConfig().getOid();
     }
 
     /**

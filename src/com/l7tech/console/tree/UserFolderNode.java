@@ -1,16 +1,17 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.identity.UserManager;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.console.action.NewUserAction;
 import com.l7tech.console.action.RefreshAction;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.EntityType;
 
-import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
 import javax.swing.*;
-import java.util.Enumeration;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.util.Enumeration;
 
 
 /**
@@ -23,30 +24,27 @@ import java.awt.*;
 public class UserFolderNode extends AbstractTreeNode {
     public static String INTERNAL_USERS_NAME = "Internal Users";
 
-    private UserManager userManager;
-    private long providerId;
+    private IdentityProvider identityProvider;
     private String name;
 
     /**
      * construct the <CODE>UserFolderNode</CODE> instance
      *
-     * @param um the user manager
+     * @param ip the identity provider
      */
-    public UserFolderNode(UserManager um, long providerId) {
-        this(um, providerId, INTERNAL_USERS_NAME);
+    public UserFolderNode(IdentityProvider ip) {
+        this(ip,  INTERNAL_USERS_NAME);
     }
 
     /**
      * construct the <CODE>UserFolderNode</CODE> instance
      *
-     * @param um the user manager
-     * @param providerId the provider id
+     * @param ip the identity provider
      * @param name the folder name
      */
-    public UserFolderNode(UserManager um, long providerId, String name) {
+    public UserFolderNode(IdentityProvider ip, String name) {
         super(null);
-        userManager = um;
-        this.providerId = providerId;
+        identityProvider = ip;
         this.name = name;
     }
 
@@ -82,7 +80,8 @@ public class UserFolderNode extends AbstractTreeNode {
      */
     public Action[] getActions() {
         final NewUserAction newUserAction = new NewUserAction(this);
-        newUserAction.setEnabled(providerId == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        final long oid = identityProvider.getConfig().getOid();
+        newUserAction.setEnabled(oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         RefreshAction ra = new UserFolderRefreshAction(this);
 
         return new Action[]{newUserAction, ra};
@@ -94,7 +93,7 @@ public class UserFolderNode extends AbstractTreeNode {
      * @return the provider id
      */
     public long getProviderId() {
-        return providerId;
+        return identityProvider.getConfig().getOid();
     }
 
     /**
@@ -111,10 +110,11 @@ public class UserFolderNode extends AbstractTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
+        final IdentityEntitiesCollection collection =
+          new IdentityEntitiesCollection(identityProvider, new EntityType[] {EntityType.USER});
         Enumeration e =
           TreeNodeFactory.
-          getTreeNodeEnumeration(
-            new EntitiesEnumeration(new UserEntitiesCollection(userManager)));
+          getTreeNodeEnumeration(new EntitiesEnumeration(collection));
         int index = 0;
         children = null;
         for (; e.hasMoreElements();) {
