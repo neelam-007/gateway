@@ -231,7 +231,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         if (r == NoClientCert.REQUESTED_IMPORT) {
                             importClientCertificate();
                         } else if (r == NoClientCert.REQUESTED_CSR) {
-                            // TODO, fla
+                            manualCSR();
                         }
                         return;
                     }
@@ -270,6 +270,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         ssgIdentityPane.getSsgCertButton().addActionListener(ssgCertButtonAction);
 
         return ssgIdentityPane;
+    }
+
+    private void manualCSR() {
+        // Todo, fla
     }
 
     private void importClientCertificate() {
