@@ -21,6 +21,9 @@ public class CreateFederatedIPWizard extends IdentityProviderWizard {
     public CreateFederatedIPWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
 
+        // unregister the old wizard if any
+        TopComponents.getInstance().unregisterComponent(CreateFederatedIPWizard.NAME);
+
         TopComponents.getInstance().registerComponent(CreateFederatedIPWizard.NAME, this);
         setResizable(true);
         setTitle("Create Federated Identity Provider Wizard");
@@ -45,11 +48,7 @@ public class CreateFederatedIPWizard extends IdentityProviderWizard {
     }
 
     protected void finish(ActionEvent evt) {
-        if( TopComponents.getInstance().unregisterComponent(CreateFederatedIPWizard.NAME) != null) {
-              System.out.println("Unregister CreateFederatedIPWizard component succeeded");
-        } else {
-            System.out.println("Unregister CreateFederatedIPWizard component failed.");
-        }
+        TopComponents.getInstance().unregisterComponent(CreateFederatedIPWizard.NAME);
         super.finish(evt);
     }
 }
